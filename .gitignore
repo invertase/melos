@@ -11,3 +11,10 @@
 /pubspec.lock
 /.idea/libraries/Flutter_Plugins.xml
 /flutterfire/
+/workspace/pubspec.yaml
+/workspace/workspace.iml
+/workspace/.flutter-plugins-dependencies
+/workspace/.packages
+/workspace/pubspec.lock
+/workspace/.flutter-plugins
+/workspace/.dart_tool/
