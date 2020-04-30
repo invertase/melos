@@ -77,6 +77,7 @@ Directory getWorkspacesDirectory() {
 
 Future<void> linkPluginDependencies(
     FlutterPlugin plugin, List<FlutterPlugin> pluginsToLink) async {
+  // .flutter-plugins
   File flutterPluginsFile =
       File(plugin.path + Platform.pathSeparator + '.flutter-plugins');
 
@@ -89,6 +90,20 @@ Future<void> linkPluginDependencies(
     });
 
     await flutterPluginsFile.writeAsString(flutterPluginsContent);
+  }
+
+  // .packages
+  File packagesFile = File(plugin.path + Platform.pathSeparator + '.packages');
+
+  if (await packagesFile.exists()) {
+    String packagesContents = await packagesFile.readAsString();
+    pluginsToLink.forEach((pluginToLink) {
+      RegExp regex = RegExp("^${pluginToLink.name}:.*\$", multiLine: true);
+      packagesContents = packagesContents.replaceAll(
+          regex, "${pluginToLink.name}:file://${pluginToLink.path}");
+    });
+
+    await packagesFile.writeAsString(packagesContents);
   }
 }
 
