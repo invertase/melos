@@ -122,11 +122,39 @@ Future<void> linkPluginDependencies(Directory workspaceDirectory,
       if (pubspecLock['packages'][pluginToLink.name] != null) {
         Map pluginPackage = json.decode(
             json.encode(workspacePubspecLock['packages'][pluginToLink.name]));
-        pluginPackage['description']['path'] = relativePath(pluginToLink.path, plugin.path);
+        pluginPackage['description']['path'] =
+            relativePath(pluginToLink.path, plugin.path);
         pubspecLock['packages'][pluginToLink.name] = pluginPackage;
       }
     });
     await pubspecLockFile.writeAsString(toYamlString(pubspecLock));
+  }
+
+  // .dart_tool/package_config.json
+  File packageConfigFile = File(plugin.path +
+      Platform.pathSeparator +
+      '.dart_tool' +
+      Platform.pathSeparator +
+      'package_config.json');
+
+  if (await packageConfigFile.exists()) {
+    Map packageConfig = json.decode(await packageConfigFile.readAsString());
+    if (packageConfig['packages'] != null) {
+      pluginsToLink.forEach((pluginToLink) {
+        var packages = packageConfig['packages'];
+        List newPackages = List();
+        packages.forEach((package) {
+          if (package['name'] == pluginToLink.name) {
+            package['rootUri'] = relativePath(pluginToLink.path, plugin.path);
+          }
+          newPackages.add(package);
+        });
+        packageConfig['packages'] = newPackages;
+      });
+
+      JsonEncoder encoder = new JsonEncoder.withIndent("  ");
+      await packageConfigFile.writeAsString(encoder.convert(packageConfig));
+    }
   }
 }
 
