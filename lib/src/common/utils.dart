@@ -145,7 +145,9 @@ Future<void> linkPluginDependencies(Directory workspaceDirectory,
         List newPackages = List();
         packages.forEach((package) {
           if (package['name'] == pluginToLink.name) {
-            package['rootUri'] = relativePath(pluginToLink.path, plugin.path);
+            package['rootUri'] = "file://${pluginToLink.path}";
+            // TODO relative path
+            // package['rootUri'] = relativePath(pluginToLink.path, plugin.path);
           }
           newPackages.add(package);
         });
