@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:melos_cli/melos_cli.dart';
 import 'package:melos_cli/src/common/plugin.dart';
 import 'package:path/path.dart' show dirname, join, relative;
 import 'package:yaml/yaml.dart';
+import 'package:yamlicious/yamlicious.dart';
 
 enum IDE { AndroidStudio, IntelliJ }
 
@@ -75,7 +77,7 @@ Directory getWorkspacesDirectory() {
       getToolsDirectory().path + Platform.pathSeparator + 'workspaces');
 }
 
-Future<void> linkPluginDependencies(
+Future<void> linkPluginDependencies(Directory workspaceDirectory,
     FlutterPlugin plugin, List<FlutterPlugin> pluginsToLink) async {
   // .flutter-plugins
   File flutterPluginsFile =
@@ -100,10 +102,31 @@ Future<void> linkPluginDependencies(
     pluginsToLink.forEach((pluginToLink) {
       RegExp regex = RegExp("^${pluginToLink.name}:.*\$", multiLine: true);
       packagesContents = packagesContents.replaceAll(
-          regex, "${pluginToLink.name}:file://${pluginToLink.path}");
+          regex, "${pluginToLink.name}:file://${pluginToLink.path}/lib/");
     });
 
     await packagesFile.writeAsString(packagesContents);
+  }
+
+  // .pubspec.lock
+  File pubspecLockFile =
+      File(plugin.path + Platform.pathSeparator + 'pubspec.lock');
+  if (await pubspecLockFile.exists()) {
+    Map workspacePubspecLock = loadYamlFileSync(
+        File(workspaceDirectory.path + Platform.pathSeparator + 'pubspec.lock')
+            .path);
+    Map pubspecLock =
+        json.decode(json.encode(loadYamlFileSync(pubspecLockFile.path)));
+
+    pluginsToLink.forEach((pluginToLink) {
+      if (pubspecLock['packages'][pluginToLink.name] != null) {
+        Map pluginPackage = json.decode(
+            json.encode(workspacePubspecLock['packages'][pluginToLink.name]));
+        pluginPackage['description']['path'] = relativePath(pluginToLink.path, plugin.path);
+        pubspecLock['packages'][pluginToLink.name] = pluginPackage;
+      }
+    });
+    await pubspecLockFile.writeAsString(toYamlString(pubspecLock));
   }
 }
 
