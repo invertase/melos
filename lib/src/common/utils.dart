@@ -11,11 +11,9 @@ enum IDE { AndroidStudio, IntelliJ }
 Future<void> flutterPubCommand(String pubCommand, String workingDirectory,
     {bool root = false}) async {
   return Process.run("flutter", ["pub", pubCommand],
-      workingDirectory: workingDirectory, runInShell: true)
+          workingDirectory: workingDirectory, runInShell: true)
       .then((result) {
-    if (result.stderr != null && !root && result.stderr
-        .toString()
-        .length > 0) {
+    if (result.stderr != null && !root && result.stderr.toString().length > 0) {
       logger.stderr(
           "Error running 'flutter pub $pubCommand' in '$workingDirectory':");
       logger.stderr(result.stderr);
@@ -77,6 +75,23 @@ Directory getWorkspacesDirectory() {
       getToolsDirectory().path + Platform.pathSeparator + 'workspaces');
 }
 
+Future<void> linkPluginDependencies(
+    FlutterPlugin plugin, List<FlutterPlugin> pluginsToLink) async {
+  File flutterPluginsFile =
+      File(plugin.path + Platform.pathSeparator + '.flutter-plugins');
+
+  if (await flutterPluginsFile.exists()) {
+    String flutterPluginsContent = await flutterPluginsFile.readAsString();
+    pluginsToLink.forEach((pluginToLink) {
+      RegExp regex = RegExp("^${pluginToLink.name}=.*\$", multiLine: true);
+      flutterPluginsContent = flutterPluginsContent.replaceAll(
+          regex, "${pluginToLink.name}=${pluginToLink.path}");
+    });
+
+    await flutterPluginsFile.writeAsString(flutterPluginsContent);
+  }
+}
+
 Directory getTemplateDirectory(String templateName) {
   return Directory(getToolsDirectory().path +
       Platform.pathSeparator +
@@ -108,8 +123,8 @@ String relativePath(String path, String from) {
   return relative(path, from: from);
 }
 
-void templateCopyTo(String templateName, Directory destination,
-    Map<String, String> variables) {
+void templateCopyTo(
+    String templateName, Directory destination, Map<String, String> variables) {
   Directory templateDirectory = getTemplateDirectory(templateName);
   templateDirectory
       .listSync(recursive: true)

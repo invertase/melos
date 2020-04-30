@@ -46,6 +46,13 @@ class WorkspacePubCommand extends Command {
       progress.finish(showTiming: true);
     });
 
+    await Future.forEach(plugins, (FlutterPlugin plugin) async {
+      Progress progress = logger.progress(
+          "Linking dependencies in plugin '${plugin.name}'");
+      await utils.linkPluginDependencies(plugin, plugins);
+      progress.finish(showTiming: true);
+    });
+
     Progress pubGetRoot =
     logger.progress("Running 'flutter pub $pubCommand' in workspace");
     await utils.flutterPubCommand(pubCommand, workspaceIdeRootDirectory.path,
