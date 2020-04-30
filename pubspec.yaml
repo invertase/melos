@@ -1,7 +1,11 @@
-name: "flutterfire_tools"
+name: "melos_cli"
 description: ""
 version: "0.0.1"
-dependencies: 
+executables:
+  melos:
+dependencies:
+  args: "1.6.0"
+  cli_util: ^0.1.3+2
   yaml: "2.2.1"
   yamlicious: "0.1.0"
 environment:
