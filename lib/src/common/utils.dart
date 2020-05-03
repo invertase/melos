@@ -75,15 +75,15 @@ Directory getWorkspacesDirectory() {
 Future<void> linkPluginDependencies(Directory workspaceDirectory,
     MelosPackage plugin, List<MelosPackage> pluginsToLink) async {
   // .flutter-plugins
-  File flutterPluginsFile =
+  final flutterPluginsFile =
       File(plugin.path + Platform.pathSeparator + '.flutter-plugins');
 
   if (await flutterPluginsFile.exists()) {
-    String flutterPluginsContent = await flutterPluginsFile.readAsString();
+    var flutterPluginsContent = await flutterPluginsFile.readAsString();
     pluginsToLink.forEach((pluginToLink) {
-      RegExp regex = RegExp("^${pluginToLink.name}=.*\$", multiLine: true);
+      final regex = RegExp('^${pluginToLink.name}=.*\$', multiLine: true);
       flutterPluginsContent = flutterPluginsContent.replaceAll(
-          regex, "${pluginToLink.name}=${pluginToLink.path}");
+          regex, '${pluginToLink.name}=${pluginToLink.path}');
     });
 
     await flutterPluginsFile.writeAsString(flutterPluginsContent);

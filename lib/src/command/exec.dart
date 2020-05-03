@@ -1,10 +1,11 @@
 import 'dart:io';
 
 import 'package:args/command_runner.dart' show Command;
-import 'package:melos_cli/src/common/workspace.dart';
 import 'package:pool/pool.dart' show Pool;
 
+import '../common/logger.dart';
 import '../common/package.dart';
+import '../common/workspace.dart';
 
 class ExecCommand extends Command {
   @override
@@ -36,7 +37,10 @@ class ExecCommand extends Command {
       exit(1);
     }
 
-    final pool = Pool(int.parse(argResults['concurrency'] as String));
+    print(
+        'Running command ${logger.ansi.bold + logger.ansi.cyan}${execArgs.join(' ') + logger.ansi.none} in ${currentWorkspace.packages.length} packages.');
+
+    var pool = Pool(int.parse(argResults['concurrency'] as String));
 
     await pool
         .forEach<MelosPackage, void>(currentWorkspace.packages,
