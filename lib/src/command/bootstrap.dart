@@ -1,6 +1,17 @@
-part of flutterfire_tools;
+import 'dart:convert';
+import 'dart:io';
 
-class WorkspaceBootstrapCommand extends Command {
+import 'package:args/command_runner.dart' show Command;
+import 'package:cli_util/cli_logging.dart' show Progress;
+import 'package:yaml/yaml.dart' as yaml;
+import 'package:yamlicious/yamlicious.dart' show toYamlString;
+
+import '../common/logger.dart';
+import '../common/partials.dart' as partials;
+import '../common/plugin.dart';
+import '../common/utils.dart' as utils;
+
+class BootstrapCommand extends Command {
   final String name = "bootstrap";
 
   final List<String> aliases = ["bs"];
@@ -11,7 +22,7 @@ class WorkspaceBootstrapCommand extends Command {
   void run() async {
     Directory currentDirectory = Directory.current;
 
-    if (!utils.isValidPluginsDirectory(currentDirectory)) {
+    if (!utils.isWorkspaceDirectory(currentDirectory)) {
       logger.stderr(
           "Your current directory does not appear to be a valid plugins repository.");
       logger.trace("Current directory: $currentDirectory");
@@ -19,9 +30,9 @@ class WorkspaceBootstrapCommand extends Command {
     }
 
     Progress progress =
-    logger.progress('Looking for plugins in current directory');
-    List<FlutterPlugin> plugins =
-    utils.getPluginsForDirectory(Directory.current);
+        logger.progress('Looking for plugins in current directory');
+    List<Package> plugins =
+        utils.getPluginsForDirectory(Directory.current);
     progress.finish(showTiming: true);
 
     if (plugins.isEmpty) {
@@ -34,14 +45,12 @@ class WorkspaceBootstrapCommand extends Command {
       logger
           .stdout("  ${logger.ansi.bullet} ${logger.ansi.emphasized(f.name)}");
       logger.stdout(
-          "    └> ${logger.ansi.blue +
-              f.path.replaceAll(currentDirectory.path, ".") +
-              logger.ansi.none}");
+          "    └> ${logger.ansi.blue + f.path.replaceAll(currentDirectory.path, ".") + logger.ansi.none}");
     });
 
     String workspaceName = "MelosWorkspace";
     Directory workspaceDirectory =
-    utils.getWorkspaceDirectoryForProjectDirectory(currentDirectory);
+        utils.getWorkspaceDirectoryForProjectDirectory(currentDirectory);
     Directory workspaceIdeRootDirectory = Directory(
         workspaceDirectory.path + Platform.pathSeparator + workspaceName);
 
@@ -52,15 +61,15 @@ class WorkspaceBootstrapCommand extends Command {
         .writeAsStringSync(currentDirectory.path);
 
     Map workspacePubspec =
-    json.decode(json.encode(yaml.loadYaml(partials.workspacePubspec)));
+        json.decode(json.encode(yaml.loadYaml(partials.workspacePubspec)));
     workspacePubspec['dependencies'] = {};
     workspacePubspec['dependency_overrides'] = {};
 
     String workspaceImlContentRoots = '';
 
-    plugins.forEach((FlutterPlugin plugin) {
+    plugins.forEach((Package plugin) {
       String pluginRelativePath =
-      utils.relativePath(plugin.path, workspaceIdeRootDirectory.path);
+          utils.relativePath(plugin.path, workspaceIdeRootDirectory.path);
 
       workspacePubspec['dependencies'][plugin.name] = {
         "path": pluginRelativePath,

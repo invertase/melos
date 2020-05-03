@@ -1,16 +1,21 @@
-part of flutterfire_tools;
+import 'dart:io';
 
-class WorkspaceLaunchCommand extends Command {
-  final String name = "launch";
+import 'package:args/command_runner.dart' show Command;
 
-  final List<String> aliases = ["l"];
+import '../common/logger.dart';
+import '../common/utils.dart' as utils;
+
+class CleanCommand extends Command {
+  final String name = "clean";
+
+  final List<String> aliases = ["c"];
 
   final String description =
       "Opens your IDE for the workspace in the current directory.";
 
   void run() async {
     Directory currentDirectory = Directory.current;
-    if (!utils.isValidPluginsDirectory(currentDirectory)) {
+    if (!utils.isWorkspaceDirectory(currentDirectory)) {
       logger.stderr(
           "Your current directory does not appear to be a valid plugins repository.");
       logger.trace("Current directory: $currentDirectory");
@@ -20,7 +25,7 @@ class WorkspaceLaunchCommand extends Command {
     // TODO workspace name customise maybe
     String workspaceName = "MelosWorkspace";
     Directory workspaceDirectory =
-    utils.getWorkspaceDirectoryForProjectDirectory(currentDirectory);
+        utils.getWorkspaceDirectoryForProjectDirectory(currentDirectory);
     Directory workspaceIdeRootDirectory = Directory(
         workspaceDirectory.path + Platform.pathSeparator + workspaceName);
 

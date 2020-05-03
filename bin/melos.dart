@@ -1,10 +1,5 @@
-import 'package:melos_cli/melos_cli.dart';
-import 'package:cli_util/cli_logging.dart';
+import 'package:melos_cli/src/command_runner.dart';
 
 main(List<String> arguments) {
-  if (arguments.contains('-v')) {
-    arguments.removeAt(arguments.indexOf('-v'));
-    logger = new Logger.verbose();
-  }
-  commandRunner.run(arguments);
+  MelosCommandRunner().run(arguments);
 }

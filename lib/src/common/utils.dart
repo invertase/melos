@@ -2,27 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:melos_cli/melos_cli.dart';
-import 'package:melos_cli/src/common/plugin.dart';
 import 'package:path/path.dart' show dirname, join, relative;
 import 'package:yaml/yaml.dart';
 import 'package:yamlicious/yamlicious.dart';
 
-enum IDE { AndroidStudio, IntelliJ }
+import 'logger.dart';
+import 'package.dart';
 
-Future<void> flutterPubCommand(String pubCommand, String workingDirectory,
-    {bool root = false}) async {
-  return Process.run("flutter", ["pub", pubCommand],
-          workingDirectory: workingDirectory, runInShell: true)
-      .then((result) {
-    if (result.stderr != null && !root && result.stderr.toString().length > 0) {
-      logger.stderr(
-          "Error running 'flutter pub $pubCommand' in '$workingDirectory':");
-      logger.stderr(result.stderr);
-    }
-    // TODO if verbose log stdout
-  });
-}
+enum IDE { AndroidStudio, IntelliJ }
 
 String getAndroidSdkRoot() {
   String possibleSdkRoot = Platform.environment["ANDROID_SDK_ROOT"];
@@ -68,6 +55,14 @@ Map loadYamlFileSync(String path) {
   return null;
 }
 
+Future<Map> loadYamlFile(String path) async {
+  File file = new File(path);
+  if (await file?.exists() == true) {
+    return loadYaml(await file.readAsString());
+  }
+  return null;
+}
+
 Directory getToolsDirectory() {
   return Directory(dirname(Platform.script.path)).parent;
 }
@@ -78,7 +73,7 @@ Directory getWorkspacesDirectory() {
 }
 
 Future<void> linkPluginDependencies(Directory workspaceDirectory,
-    FlutterPlugin plugin, List<FlutterPlugin> pluginsToLink) async {
+    MelosPackage plugin, List<MelosPackage> pluginsToLink) async {
   // .flutter-plugins
   File flutterPluginsFile =
       File(plugin.path + Platform.pathSeparator + '.flutter-plugins');
@@ -179,11 +174,11 @@ Directory getWorkspaceDirectoryForProjectDirectory(Directory projectDirectory) {
       projectDirectory.path.hashCode.toString());
 }
 
-Directory packagesDirectoryForProjectDirectory(Directory projectDirectory) {
-  return Directory(projectDirectory.path + Platform.pathSeparator + 'packages');
+String melosYamlPathForDirectory(Directory pluginDirectory) {
+  return pluginDirectory.path + Platform.pathSeparator + 'melos.yaml';
 }
 
-String pluginYamlPathForPluginDirectory(Directory pluginDirectory) {
+String pubspecPathForDirectory(Directory pluginDirectory) {
   return pluginDirectory.path + Platform.pathSeparator + 'pubspec.yaml';
 }
 
@@ -216,41 +211,13 @@ void templateCopyTo(
   });
 }
 
-List<FlutterPlugin> getPluginsForDirectory(Directory directory) {
-  Set<FlutterPlugin> detectedPlugins = Set();
-  Directory packagesDir = packagesDirectoryForProjectDirectory(directory);
-
-  packagesDir.listSync().forEach((FileSystemEntity rootEntity) {
-    if (!FileSystemEntity.isDirectorySync(rootEntity.path)) return;
-    Directory subDirectory = Directory(rootEntity.path);
-
-    if (isValidPluginDirectory(subDirectory)) {
-      detectedPlugins.add(FlutterPlugin.fromDirectory(subDirectory));
-      return;
-    }
-
-    subDirectory.listSync().forEach((FileSystemEntity childEntity) {
-      if (!FileSystemEntity.isDirectorySync(childEntity.path)) return;
-      Directory subDirectory = Directory(childEntity.path);
-
-      if (isValidPluginDirectory(subDirectory)) {
-        detectedPlugins.add(FlutterPlugin.fromDirectory(subDirectory));
-      }
-    });
-  });
-
-  List<FlutterPlugin> detectedPluginsAsList = detectedPlugins.toList();
-  detectedPluginsAsList.sort((a, b) => a.name.compareTo(b.name));
-  return detectedPluginsAsList;
-}
-
 /// Simple check to see if the [Directory] qualifies as a plugin repository.
-bool isValidPluginsDirectory(Directory directory) {
-  Directory packagesDir = packagesDirectoryForProjectDirectory(directory);
-  return FileSystemEntity.isDirectorySync(packagesDir.path);
+bool isWorkspaceDirectory(Directory directory) {
+  String melosYamlPath = melosYamlPathForDirectory(directory);
+  return FileSystemEntity.isFileSync(melosYamlPath);
 }
 
-bool isValidPluginDirectory(Directory directory) {
-  String pluginYamlPath = pluginYamlPathForPluginDirectory(directory);
+bool isPackageDirectory(Directory directory) {
+  String pluginYamlPath = pubspecPathForDirectory(directory);
   return FileSystemEntity.isFileSync(pluginYamlPath);
 }
