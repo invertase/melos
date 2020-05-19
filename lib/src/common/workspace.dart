@@ -6,6 +6,7 @@ import 'package:glob/glob.dart';
 import 'package:melos_cli/src/common/workspace_config.dart';
 import 'package:meta/meta.dart';
 
+import 'logger.dart';
 import 'package.dart';
 
 MelosWorkspace currentWorkspace;
@@ -78,5 +79,34 @@ class MelosWorkspace {
     }).toList();
 
     return _packages;
+  }
+
+  /// Execute a command in the root of this workspace.
+  Future<void> exec(
+    List<String> execArgs,
+  ) async {
+    final execProcess = await Process.start(execArgs[0], execArgs.sublist(1),
+        workingDirectory: _path,
+        runInShell: true,
+        includeParentEnvironment: true,
+        environment: {
+          'MELOS_ROOT_PATH': currentWorkspace.path,
+        });
+
+    var stdoutSub;
+    var stderrSub;
+
+    final stdoutStream = execProcess.stdout;
+    final stderrStream = execProcess.stderr;
+    var completeFuture = Completer();
+
+    stdoutSub =
+        stdoutStream.listen(stdout.add, onDone: completeFuture.complete);
+    stderrSub = stderrStream.listen(stderr.add);
+
+    await completeFuture.future;
+    await stdoutSub.cancel();
+    await stderrSub.cancel();
+    logger.stdout('\n');
   }
 }

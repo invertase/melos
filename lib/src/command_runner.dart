@@ -4,6 +4,7 @@ import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:cli_util/cli_logging.dart';
 
+import 'command/bootstrap.dart';
 import 'command/exec.dart';
 import 'common/logger.dart';
 import 'common/workspace.dart';
@@ -13,14 +14,14 @@ final lineLength = stdout.hasTerminal ? stdout.terminalColumns : 80;
 class MelosCommandRunner extends CommandRunner {
   MelosCommandRunner()
       : super('melos', 'A CLI for package development in monorepos.',
-      usageLineLength: lineLength) {
+            usageLineLength: lineLength) {
     argParser.addFlag('verbose',
         abbr: 'v', negatable: false, help: 'Enable verbose logging.');
 
     argParser.addFlag('no-private',
         negatable: false,
         help:
-        'Exclude private packages (`publish_to: none`). They are included by default.');
+            'Exclude private packages (`publish_to: none`). They are included by default.');
 
     argParser.addMultiOption('scope',
         help: 'Include only packages with names matching the given glob.');
@@ -34,7 +35,7 @@ class MelosCommandRunner extends CommandRunner {
     //        'Only include packages that have been changed since the specified ref. If no ref is passed, it defaults to the most-recent tag.');
 
     addCommand(ExecCommand());
-    //    addCommand(BootstrapCommand());
+    addCommand(BootstrapCommand());
     //    addCommand(LaunchCommand());
     //    addCommand(CleanCommand());
     //    addCommand(PubCommand());

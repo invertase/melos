@@ -1,97 +1,84 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/command_runner.dart' show Command;
-import 'package:cli_util/cli_logging.dart' show Progress;
-import 'package:yaml/yaml.dart' as yaml;
 import 'package:yamlicious/yamlicious.dart' show toYamlString;
 
 import '../common/logger.dart';
+import '../common/package.dart';
 import '../common/partials.dart' as partials;
-import '../common/plugin.dart';
 import '../common/utils.dart' as utils;
+import '../common/workspace.dart';
 
 class BootstrapCommand extends Command {
-  final String name = "bootstrap";
+  @override
+  final String name = 'bootstrap';
 
-  final List<String> aliases = ["bs"];
+  @override
+  final List<String> aliases = ['bs'];
 
+  @override
   final String description =
-      "Initialize a workspace for the FlutterFire repository in the current directory.";
+      'Initialize a workspace for the FlutterFire repository in the current directory.';
 
+  @override
   void run() async {
-    Directory currentDirectory = Directory.current;
-
-    if (!utils.isWorkspaceDirectory(currentDirectory)) {
-      logger.stderr(
-          "Your current directory does not appear to be a valid plugins repository.");
-      logger.trace("Current directory: $currentDirectory");
-      exit(1);
-    }
-
-    Progress progress =
-        logger.progress('Looking for plugins in current directory');
-    List<Package> plugins =
-        utils.getPluginsForDirectory(Directory.current);
-    progress.finish(showTiming: true);
-
-    if (plugins.isEmpty) {
-      logger.stderr("No plugins have been detected in the current directory.");
-      exit(1);
-    }
-
-    logger.stdout("Found ${plugins.length} plugins:");
-    plugins.forEach((f) {
-      logger
-          .stdout("  ${logger.ansi.bullet} ${logger.ansi.emphasized(f.name)}");
-      logger.stdout(
-          "    └> ${logger.ansi.blue + f.path.replaceAll(currentDirectory.path, ".") + logger.ansi.none}");
-    });
-
-    String workspaceName = "MelosWorkspace";
-    Directory workspaceDirectory =
-        utils.getWorkspaceDirectoryForProjectDirectory(currentDirectory);
-    Directory workspaceIdeRootDirectory = Directory(
+    var workspaceName = currentWorkspace.config.name ?? 'MelosWorkspace';
+    var workspaceDirectory = utils.getWorkspaceDirectoryForProjectDirectory(
+        Directory(currentWorkspace.path));
+    var workspaceIdeRootDirectory = Directory(
         workspaceDirectory.path + Platform.pathSeparator + workspaceName);
 
     workspaceIdeRootDirectory.createSync(recursive: true);
-    File(workspaceDirectory.path + Platform.pathSeparator + ".name")
+    File(workspaceDirectory.path + Platform.pathSeparator + '.name')
         .writeAsStringSync(workspaceName);
-    File(workspaceDirectory.path + Platform.pathSeparator + ".path")
-        .writeAsStringSync(currentDirectory.path);
+    File(workspaceDirectory.path + Platform.pathSeparator + '.path')
+        .writeAsStringSync(currentWorkspace.path);
 
-    Map workspacePubspec =
-        json.decode(json.encode(yaml.loadYaml(partials.workspacePubspec)));
-    workspacePubspec['dependencies'] = {};
-    workspacePubspec['dependency_overrides'] = {};
+    var workspacePubspec = {};
+    var workspaceImlContentRoots = '';
 
-    String workspaceImlContentRoots = '';
+    workspacePubspec['name'] = workspaceName;
+    workspacePubspec['version'] = currentWorkspace.config.version ?? '0.0.0';
+    workspacePubspec['dependencies'] =
+        Map.from(currentWorkspace.config.dependencies);
+    workspacePubspec['dependency_overrides'] =
+        Map.from(currentWorkspace.config.devDependencies);
+    workspacePubspec['environment'] =
+        Map.from(currentWorkspace.config.environment);
 
-    plugins.forEach((Package plugin) {
-      String pluginRelativePath =
-          utils.relativePath(plugin.path, workspaceIdeRootDirectory.path);
-
+    currentWorkspace.packages.forEach((MelosPackage plugin) {
+      var pluginRelativePath =
+          utils.relativePath(plugin.path, currentWorkspace.path);
       workspacePubspec['dependencies'][plugin.name] = {
-        "path": pluginRelativePath,
+        'path': pluginRelativePath,
       };
       workspacePubspec['dependency_overrides'][plugin.name] = {
-        "path": pluginRelativePath,
+        'path': pluginRelativePath,
       };
       workspaceImlContentRoots += partials.workspaceImlContentRoot
           .replaceAll('__pluginRelativePath__', pluginRelativePath);
     });
 
-    utils.templateCopyTo("intellij", workspaceIdeRootDirectory, {
-      "workspaceName": workspaceName,
-      "pubspecYaml": toYamlString(workspacePubspec),
-      "projectPath": currentDirectory.path,
-      "workspaceImlContentRoots": workspaceImlContentRoots,
-      "androidSdkRoot": utils.getAndroidSdkRoot(),
-      "flutterSdkRoot": utils.getFlutterSdkRoot(),
-      "flutterSdkRootRelative": utils.relativePath(
-          utils.getFlutterSdkRoot(), workspaceIdeRootDirectory.path),
-    });
+    var header = '# Generated file - do not modify or commit this file.';
+    var pubspecYaml = '${header}\n${toYamlString(workspacePubspec)}';
 
-    logger.stdout("Workspace succesfully initialized!");
+    await File(utils.pubspecPathForDirectory(Directory(currentWorkspace.path)))
+        .writeAsString(pubspecYaml);
+
+    await currentWorkspace.exec(['flutter', 'pub', 'get']);
+
+//    utils.templateCopyTo('intellij', workspaceIdeRootDirectory, {
+//      'workspaceName': workspaceName,
+//      'pubspecYaml': toYamlString(workspacePubspec),
+//      'projectPath': currentWorkspace.path,
+//      'workspaceImlContentRoots': workspaceImlContentRoots,
+//      'androidSdkRoot': utils.getAndroidSdkRoot(),
+//      'flutterSdkRoot': utils.getFlutterSdkRoot(),
+//      'flutterSdkRootRelative': utils.relativePath(
+//          utils.getFlutterSdkRoot(), workspaceIdeRootDirectory.path),
+//    });
+
+    logger.stdout('Workspace succesfully initialized!');
+    logger.stdout(workspaceDirectory.path);
   }
 }
