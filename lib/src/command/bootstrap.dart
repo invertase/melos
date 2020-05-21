@@ -5,7 +5,6 @@ import 'package:yamlicious/yamlicious.dart' show toYamlString;
 
 import '../common/logger.dart';
 import '../common/package.dart';
-import '../common/partials.dart' as partials;
 import '../common/utils.dart' as utils;
 import '../common/workspace.dart';
 
@@ -35,7 +34,6 @@ class BootstrapCommand extends Command {
         .writeAsStringSync(currentWorkspace.path);
 
     var workspacePubspec = {};
-    var workspaceImlContentRoots = '';
 
     workspacePubspec['name'] = workspaceName;
     workspacePubspec['version'] = currentWorkspace.config.version ?? '0.0.0';
@@ -55,28 +53,15 @@ class BootstrapCommand extends Command {
       workspacePubspec['dependency_overrides'][plugin.name] = {
         'path': pluginRelativePath,
       };
-      workspaceImlContentRoots += partials.workspaceImlContentRoot
-          .replaceAll('__pluginRelativePath__', pluginRelativePath);
     });
 
     var header = '# Generated file - do not modify or commit this file.';
-    var pubspecYaml = '${header}\n${toYamlString(workspacePubspec)}';
+    var pubspecYaml = '$header\n${toYamlString(workspacePubspec)}';
 
     await File(utils.pubspecPathForDirectory(Directory(currentWorkspace.path)))
         .writeAsString(pubspecYaml);
 
     await currentWorkspace.exec(['flutter', 'pub', 'get']);
-
-//    utils.templateCopyTo('intellij', workspaceIdeRootDirectory, {
-//      'workspaceName': workspaceName,
-//      'pubspecYaml': toYamlString(workspacePubspec),
-//      'projectPath': currentWorkspace.path,
-//      'workspaceImlContentRoots': workspaceImlContentRoots,
-//      'androidSdkRoot': utils.getAndroidSdkRoot(),
-//      'flutterSdkRoot': utils.getFlutterSdkRoot(),
-//      'flutterSdkRootRelative': utils.relativePath(
-//          utils.getFlutterSdkRoot(), workspaceIdeRootDirectory.path),
-//    });
 
     logger.stdout('Workspace succesfully initialized!');
     logger.stdout(workspaceDirectory.path);
