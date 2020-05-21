@@ -45,7 +45,7 @@ class MelosCommandRunner extends CommandRunner {
         arguments: argResults);
 
     if (currentWorkspace == null) {
-      // TODO log init help?
+      // TODO(salakar): log init help once init command complete
       logger.stderr(
           'Your current directory does not appear to be a valid workspace.');
       exit(1);

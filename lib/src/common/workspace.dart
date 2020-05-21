@@ -214,7 +214,8 @@ class MelosWorkspace {
         'path': pluginRelativePath,
       };
 
-      // TODO semver checks when multiple packages depend on a dependency with different versions
+      // TODO(salakar): this is a hacky work around for dev deps - look at using
+      //                pub cache add etc and manually generating file:// links
       var devDependencies = plugin.devDependencies;
       plugin.devDependenciesSet.forEach((name) {
         var linkedPackageExists = packages.firstWhere((package) {
