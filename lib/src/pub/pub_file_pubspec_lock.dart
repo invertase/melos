@@ -49,7 +49,7 @@ class PubspecLockPubFile extends PubFile {
     var dependencyGraph = package.getDependencyGraph();
 
     workspacePubspecLockPubFile.packages.forEach((name, packageMap) {
-      if (!dependencyGraph.contains(name)) {
+      if (!dependencyGraph.contains(name) && name != package.name) {
         return;
       }
 

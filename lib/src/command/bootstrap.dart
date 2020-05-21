@@ -52,7 +52,7 @@ class BootstrapCommand extends Command {
 
     logger.stdout('Running pub get...');
 
-    await currentWorkspace.exec(['flutter', 'pub', 'get']);
+    await currentWorkspace.exec(['flutter', 'pub', 'get'], silent: false);
 
     logger.stdout('Linking packages...');
 

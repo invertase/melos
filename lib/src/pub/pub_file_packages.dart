@@ -42,7 +42,7 @@ class PackagesPubFile extends PubFile {
     var dependencyGraph = package.getDependencyGraph();
 
     workspacePackagesPubFile.entries.forEach((name, path) {
-      if (!dependencyGraph.contains(name)) {
+      if (!dependencyGraph.contains(name) && name != package.name) {
         return;
       }
 
