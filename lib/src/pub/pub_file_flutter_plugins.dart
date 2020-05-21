@@ -49,7 +49,7 @@ class FlutterPluginsPubFile extends PubFile {
       var _path = path;
       if (path.contains(currentWorkspace.path)) {
         // path is fully qualified already, so we'll just make it relative
-        _path = utils.relativePath(_path, package.path);
+        _path = utils.relativePath(_path, package.path) + '/';
       }
 
       newEntries[name] = _path;
