@@ -50,7 +50,7 @@ class RunCommand extends Command {
     var scriptParts = scriptSource.split(' ');
 
     logger.stdout(
-        '  └> ${logger.ansi.cyan}${logger.ansi.emphasized(scriptSource)}${logger.ansi.noColor}\n');
+        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(scriptSource)}${logger.ansi.noColor}\n');
 
     final execProcess = await Process.start(
         scriptParts[0], scriptParts.sublist(1),
