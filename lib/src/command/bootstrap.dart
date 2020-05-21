@@ -19,8 +19,9 @@ class BootstrapCommand extends Command {
   @override
   void run() async {
     logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos bootstrap")}\n');
-
+        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos bootstrap")}');
+    logger.stdout(
+        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(currentWorkspace.path)}${logger.ansi.noColor}\n');
     var bootstrapProgress = logger.progress('Bootstrapping project');
     await currentWorkspace.generatePubspecFile();
 
