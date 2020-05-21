@@ -172,7 +172,7 @@ class MelosWorkspace {
       FlutterPluginsPubFile.fromWorkspacePackage(this, package).write();
       PubspecLockPubFile.fromWorkspacePackage(this, package).write();
       PackageConfigPubFile.fromWorkspacePackage(this, package).write();
-      // TODO .flutter-plugins-dependencies
+      // TODO(salakar): .flutter-plugins-dependencies
     });
   }
 
@@ -182,7 +182,7 @@ class MelosWorkspace {
     FlutterPluginsPubFile.fromDirectory(path).delete();
     PubspecLockPubFile.fromDirectory(path).delete();
     PackageConfigPubFile.fromDirectory(path).delete();
-    // TODO .flutter-plugins-dependencies
+    // TODO(salakar): .flutter-plugins-dependencies
 
     // clean all packages
     packages.forEach((MelosPackage package) {
@@ -190,7 +190,7 @@ class MelosWorkspace {
       FlutterPluginsPubFile.fromDirectory(package.path).delete();
       PubspecLockPubFile.fromDirectory(package.path).delete();
       PackageConfigPubFile.fromDirectory(package.path).delete();
-      // TODO .flutter-plugins-dependencies
+      // TODO(salakar): .flutter-plugins-dependencies
     });
   }
 
