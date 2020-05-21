@@ -2,7 +2,7 @@
 
 > TODO
 
-### Setup CLI
+### Local CLI Setup
 
  - clone this repository
  - run `pub get` at root
