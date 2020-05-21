@@ -5,6 +5,7 @@ import 'package:args/command_runner.dart';
 import 'package:cli_util/cli_logging.dart';
 
 import 'command/bootstrap.dart';
+import 'command/clean.dart';
 import 'command/exec.dart';
 import 'common/logger.dart';
 import 'common/workspace.dart';
@@ -29,16 +30,9 @@ class MelosCommandRunner extends CommandRunner {
     argParser.addMultiOption('ignore',
         help: 'Exclude packages with names matching the given glob.');
 
-    // TODO
-    //    argParser.addOption('since',
-    //        help:
-    //        'Only include packages that have been changed since the specified ref. If no ref is passed, it defaults to the most-recent tag.');
-
     addCommand(ExecCommand());
     addCommand(BootstrapCommand());
-    //    addCommand(LaunchCommand());
-    //    addCommand(CleanCommand());
-    //    addCommand(PubCommand());
+    addCommand(CleanCommand());
   }
 
   @override

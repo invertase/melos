@@ -3,11 +3,16 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:glob/glob.dart';
-import 'package:melos_cli/src/common/workspace_config.dart';
 import 'package:meta/meta.dart';
 
+import '../pub/pub_deps_list.dart';
+import '../pub/pub_file_flutter_plugins.dart';
+import '../pub/pub_file_package_config.dart';
+import '../pub/pub_file_packages.dart';
+import '../pub/pub_file_pubspec_lock.dart';
 import 'logger.dart';
 import 'package.dart';
+import 'workspace_config.dart';
 
 MelosWorkspace currentWorkspace;
 
@@ -19,6 +24,8 @@ class MelosWorkspace {
   final String _path;
 
   String get path => _path;
+
+  Map<String, Set<String>> _dependencyGraph;
 
   final MelosWorkspaceConfig _config;
 
@@ -81,10 +88,62 @@ class MelosWorkspace {
     return _packages;
   }
 
+  Map<String, Set<String>> dependencyGraph() {
+    if (_dependencyGraph != null) {
+      return _dependencyGraph;
+    }
+
+    final pubListCommandOutput = Process.runSync(
+      'flutter',
+      ['pub', 'deps', '--', '--style=list', '--dev'],
+      runInShell: true,
+      workingDirectory: _path,
+    );
+
+    final pubDepList = PubDepsList.parse(pubListCommandOutput.stdout as String);
+    final allEntries = pubDepList.allEntries;
+    final allEntriesMap = allEntries.map((entry, map) {
+      return MapEntry(entry.name, map);
+    });
+
+    void addNestedEntries(Set entriesSet) {
+      var countBefore = entriesSet.length;
+      var entriesSetClone = Set.from(entriesSet);
+
+      entriesSetClone.forEach((entryName) {
+        var depsForEntry = allEntriesMap[entryName];
+        if (depsForEntry != null && depsForEntry.isNotEmpty) {
+          depsForEntry.forEach((dependentName, _) {
+            entriesSet.add(dependentName);
+          });
+        }
+      });
+
+      if (countBefore != entriesSet.length) {
+        addNestedEntries(entriesSet);
+      }
+    }
+
+    // ignore: omit_local_variable_types
+    Map<String, Set<String>> dependencyGraphFlat = {};
+
+    allEntries.forEach((entry, dependencies) {
+      var entriesSet = <String>{};
+      if (dependencies.isNotEmpty) {
+        dependencies.forEach((dependentName, _) {
+          entriesSet.add(dependentName);
+        });
+      }
+      addNestedEntries(entriesSet);
+      dependencyGraphFlat[entry.name] = entriesSet;
+    });
+
+    _dependencyGraph = dependencyGraphFlat;
+    return dependencyGraphFlat;
+  }
+
   /// Execute a command in the root of this workspace.
-  Future<void> exec(
-    List<String> execArgs,
-  ) async {
+  Future<void> exec(List<String> execArgs, {bool silent = true}) async {
     final execProcess = await Process.start(execArgs[0], execArgs.sublist(1),
         workingDirectory: _path,
         runInShell: true,
@@ -93,20 +152,60 @@ class MelosWorkspace {
           'MELOS_ROOT_PATH': currentWorkspace.path,
         });
 
-    var stdoutSub;
-    var stderrSub;
+    if (!silent) {
+      var stdoutSub;
+      var stderrSub;
 
-    final stdoutStream = execProcess.stdout;
-    final stderrStream = execProcess.stderr;
-    var completeFuture = Completer();
+      final stdoutStream = execProcess.stdout;
+      final stderrStream = execProcess.stderr;
+      var completeFuture = Completer();
 
-    stdoutSub =
-        stdoutStream.listen(stdout.add, onDone: completeFuture.complete);
-    stderrSub = stderrStream.listen(stderr.add);
+      stdoutSub =
+          stdoutStream.listen(stdout.add, onDone: completeFuture.complete);
+      stderrSub = stderrStream.listen(stderr.add);
 
-    await completeFuture.future;
-    await stdoutSub.cancel();
-    await stderrSub.cancel();
-    logger.stdout('\n');
+      await completeFuture.future;
+      await stdoutSub.cancel();
+      await stderrSub.cancel();
+      logger.stdout('\n');
+    } else {
+      await execProcess.exitCode;
+    }
+  }
+
+  void linkPackages() {
+//    await _readWorkspacePubFiles();
+
+//    var forPackageTest =
+//    PackageConfigPubFile.fromWorkspacePackage(this, packages[0]);
+//    print(packages[0].name);
+//    print(forPackageTest.toString());
+
+//    forPackageTest.write();
+//    forPackageTest.delete();
+//    print(forPackageTest.toString());
+
+    packages.forEach((MelosPackage package) {
+      PackagesPubFile.fromWorkspacePackage(this, package).write();
+      FlutterPluginsPubFile.fromWorkspacePackage(this, package).write();
+      PubspecLockPubFile.fromWorkspacePackage(this, package).write();
+      PackageConfigPubFile.fromWorkspacePackage(this, package).write();
+    });
+  }
+
+  void clean() {
+    // clean workspace
+    PackagesPubFile.fromDirectory(path).delete();
+    FlutterPluginsPubFile.fromDirectory(path).delete();
+    PubspecLockPubFile.fromDirectory(path).delete();
+    PackageConfigPubFile.fromDirectory(path).delete();
+
+    // clean all packages
+    packages.forEach((MelosPackage package) {
+      PackagesPubFile.fromDirectory(package.path).delete();
+      FlutterPluginsPubFile.fromDirectory(package.path).delete();
+      PubspecLockPubFile.fromDirectory(package.path).delete();
+      PackageConfigPubFile.fromDirectory(package.path).delete();
+    });
   }
 }

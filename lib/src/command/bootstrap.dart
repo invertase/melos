@@ -21,19 +21,8 @@ class BootstrapCommand extends Command {
 
   @override
   void run() async {
-    var workspaceName = currentWorkspace.config.name ?? 'MelosWorkspace';
-    var workspaceDirectory = utils.getWorkspaceDirectoryForProjectDirectory(
-        Directory(currentWorkspace.path));
-    var workspaceIdeRootDirectory = Directory(
-        workspaceDirectory.path + Platform.pathSeparator + workspaceName);
-
-    workspaceIdeRootDirectory.createSync(recursive: true);
-    File(workspaceDirectory.path + Platform.pathSeparator + '.name')
-        .writeAsStringSync(workspaceName);
-    File(workspaceDirectory.path + Platform.pathSeparator + '.path')
-        .writeAsStringSync(currentWorkspace.path);
-
     var workspacePubspec = {};
+    var workspaceName = currentWorkspace.config.name ?? 'MelosWorkspace';
 
     workspacePubspec['name'] = workspaceName;
     workspacePubspec['version'] = currentWorkspace.config.version ?? '0.0.0';
@@ -46,7 +35,7 @@ class BootstrapCommand extends Command {
 
     currentWorkspace.packages.forEach((MelosPackage plugin) {
       var pluginRelativePath =
-          utils.relativePath(plugin.path, currentWorkspace.path);
+      utils.relativePath(plugin.path, currentWorkspace.path);
       workspacePubspec['dependencies'][plugin.name] = {
         'path': pluginRelativePath,
       };
@@ -61,9 +50,14 @@ class BootstrapCommand extends Command {
     await File(utils.pubspecPathForDirectory(Directory(currentWorkspace.path)))
         .writeAsString(pubspecYaml);
 
+    logger.stdout('Running pub get...');
+
     await currentWorkspace.exec(['flutter', 'pub', 'get']);
 
+    logger.stdout('Linking packages...');
+
+    currentWorkspace.linkPackages();
+
     logger.stdout('Workspace succesfully initialized!');
-    logger.stdout(workspaceDirectory.path);
   }
 }

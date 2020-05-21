@@ -20,12 +20,61 @@ class MelosPackage {
 
   MelosPackage._(this._name, this._path, this._yamlContents);
 
+  Set<String> get dependencies {
+    if (_yamlContents['dependencies'] != null) {
+      // ignore: omit_local_variable_types
+      Set<String> keysSet = <String>{};
+      _yamlContents['dependencies'].keys.forEach((key) {
+        keysSet.add(key as String);
+      });
+      return keysSet;
+    }
+    return {};
+  }
+
+  Set<String> get devDependencies {
+    if (_yamlContents['dev_dependencies'] != null) {
+      // ignore: omit_local_variable_types
+      Set<String> keysSet = <String>{};
+      _yamlContents['dev_dependencies'].keys.forEach((key) {
+        keysSet.add(key as String);
+      });
+      return keysSet;
+    }
+    return {};
+  }
+
   static Future<MelosPackage> fromPubspecPath(
       FileSystemEntity pubspecPath) async {
     final yamlFileContents = await loadYamlFile(pubspecPath.path);
     final pluginName = yamlFileContents['name'] as String;
     return MelosPackage._(
         pluginName, pubspecPath.parent.path, yamlFileContents);
+  }
+
+  Set<String> getDependencyGraph({bool includeDev = true}) {
+    var dependencyGraph = <String>{};
+    var workspaceGraph = currentWorkspace.dependencyGraph();
+
+    dependencies.forEach((name) {
+      dependencyGraph.add(name);
+      var children = workspaceGraph[name];
+      if (children != null && children.isNotEmpty) {
+        dependencyGraph.addAll(children);
+      }
+    });
+
+    if (includeDev) {
+      devDependencies.forEach((name) {
+        dependencyGraph.add(name);
+        var children = workspaceGraph[name];
+        if (children != null && children.isNotEmpty) {
+          dependencyGraph.addAll(children);
+        }
+      });
+    }
+
+    return dependencyGraph;
   }
 
   /// Execute a command from this packages root directory.
@@ -93,5 +142,9 @@ class MelosPackage {
         print(stderrLogs.reduce((value, log) => value + '\n$value'));
       }
     }
+  }
+
+  void linkDependencies() {
+    // TODO
   }
 }
