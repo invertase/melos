@@ -1,8 +1,9 @@
 import 'dart:io';
 
 import 'package:glob/glob.dart';
-import 'package:melos_cli/src/common/utils.dart';
 import 'package:yaml/yaml.dart';
+
+import 'utils.dart';
 
 class MelosWorkspaceConfig {
   final String _name;

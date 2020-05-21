@@ -14,7 +14,7 @@ class BootstrapCommand extends Command {
 
   @override
   final String description =
-      'Initialize a workspace for the FlutterFire repository in the current directory.';
+      'Initialize a workspace for the FlutterFire repository in the current directory. Supports all package filtering options.';
 
   @override
   void run() async {

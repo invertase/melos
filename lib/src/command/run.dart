@@ -7,18 +7,18 @@ import '../common/logger.dart';
 import '../common/package.dart';
 import '../common/workspace.dart';
 
-class ExecCommand extends Command {
+class RunCommand extends Command {
   @override
-  final String name = 'exec';
+  final String name = 'run';
 
   @override
-  final List<String> aliases = ['e'];
+  final List<String> aliases = ['r'];
 
   @override
   final String description =
       'Execute an arbitrary command in each package. Supports all package filtering options.';
 
-  ExecCommand() {
+  RunCommand() {
     argParser.addOption('concurrency', defaultsTo: '5', abbr: 'c');
     argParser.addFlag('stream',
         abbr: 's',

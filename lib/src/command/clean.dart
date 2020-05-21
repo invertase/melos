@@ -12,7 +12,7 @@ class CleanCommand extends Command {
 
   @override
   final String description =
-      'Clean this workspace and all packages. This deletes the temporary pub files such as ".packages" & ".flutter-plugins".';
+      'Clean this workspace and all packages. This deletes the temporary pub files such as ".packages" & ".flutter-plugins". Supports all package filtering options.';
 
   @override
   void run() async {

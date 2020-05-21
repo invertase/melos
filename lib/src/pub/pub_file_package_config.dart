@@ -30,16 +30,16 @@ class PackageConfigPubFile extends PubFile {
 
   PackageConfigPubFile._(String rootDirectory)
       : super(rootDirectory,
-      '.dart_tool${Platform.pathSeparator}package_config.json');
+            '.dart_tool${Platform.pathSeparator}package_config.json');
 
   factory PackageConfigPubFile.fromDirectory(String fileRootDirectory) {
     return PackageConfigPubFile._(fileRootDirectory);
   }
 
-  factory PackageConfigPubFile.fromWorkspacePackage(MelosWorkspace workspace,
-      MelosPackage package) {
+  factory PackageConfigPubFile.fromWorkspacePackage(
+      MelosWorkspace workspace, MelosPackage package) {
     var workspacePackageConfigPubFile =
-    PackageConfigPubFile.fromDirectory(workspace.path);
+        PackageConfigPubFile.fromDirectory(workspace.path);
 
     // ignore: omit_local_variable_types
     List<Map> newPackages = [];
@@ -56,8 +56,7 @@ class PackageConfigPubFile extends PubFile {
 
       if (!rootUri.startsWith('file:')) {
         rootUri = utils.relativePath(
-            '${workspace.path}${Platform.pathSeparator}${Platform
-                .pathSeparator}.dart_tool${Platform.pathSeparator}$rootUri',
+            '${workspace.path}${Platform.pathSeparator}${Platform.pathSeparator}.dart_tool${Platform.pathSeparator}$rootUri',
             '${package.path}${Platform.pathSeparator}.dart_tool');
 
         pluginPackage['rootUri'] = rootUri;

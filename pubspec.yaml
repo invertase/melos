@@ -1,18 +1,21 @@
-name: "melos_cli"
-description: ""
-version: "0.0.1"
+name: "melos"
+description: "A tool for managing Dart projects with multiple packages. Inspired by JavaScripts Lerna package."
+version: "0.1.0-1.0.pre"
+homepage: "https://github.com/invertase/melos"
 executables:
   melos:
 dependencies:
-  args: "1.6.0"
-  pool: "1.4.0"
+  args: ^1.6.0
+  pool: ^1.4.0
   collection: ^1.14.12
   string_scanner: ^1.0.5
   cli_util: ^0.1.4
-  glob: "1.2.0"
-  yaml: "2.2.1"
-  yamlicious: "0.1.0"
-  pub_semver: "1.4.4"
+  glob: ^1.2.0
+  path: ^1.7.0
+  yaml: ^2.2.1
+  meta: ^1.1.8
+  yamlicious: ^0.1.0
+  pub_semver: ^1.4.4
 dev_dependencies:
   pedantic: ^1.9.0
 environment:

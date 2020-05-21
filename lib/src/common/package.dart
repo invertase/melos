@@ -2,10 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:melos_cli/src/common/workspace.dart';
-
 import 'logger.dart';
 import 'utils.dart';
+import 'workspace.dart';
 
 class MelosPackage {
   final Map _yamlContents;
@@ -106,15 +105,15 @@ class MelosPackage {
         });
 
     final pluginPrefixTransformer =
-    StreamTransformer<String, String>.fromHandlers(
-        handleData: (String data, EventSink sink) {
-          final lineSplitter = LineSplitter();
-          var lines = lineSplitter.convert(data);
-          if (prefix == true) {
-            lines = lines.map((line) => '[$pluginPrefix]: $line').toList();
-          }
-          sink.add(lines.join('\n'));
-        });
+        StreamTransformer<String, String>.fromHandlers(
+            handleData: (String data, EventSink sink) {
+      final lineSplitter = LineSplitter();
+      var lines = lineSplitter.convert(data);
+      if (prefix == true) {
+        lines = lines.map((line) => '[$pluginPrefix]: $line').toList();
+      }
+      sink.add(lines.join('\n'));
+    });
 
     var stdoutSub;
     var stdoutLogs = [];

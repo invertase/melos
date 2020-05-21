@@ -26,7 +26,8 @@ class FlutterPluginsPubFile extends PubFile {
     return _entries;
   }
 
-  FlutterPluginsPubFile._(String rootDirectory) : super(rootDirectory, '.flutter-plugins');
+  FlutterPluginsPubFile._(String rootDirectory)
+      : super(rootDirectory, '.flutter-plugins');
 
   factory FlutterPluginsPubFile.fromDirectory(String fileRootDirectory) {
     return FlutterPluginsPubFile._(fileRootDirectory);
@@ -62,7 +63,8 @@ class FlutterPluginsPubFile extends PubFile {
 
   @override
   String toString() {
-    var string = '# This is a generated file; do not edit or check into version control.';
+    var string =
+        '# This is a generated file; do not edit or check into version control.';
     _entries.forEach((key, value) {
       string += '\n$key=$value';
     });
