@@ -47,7 +47,7 @@ class PackagesPubFile extends PubFile {
       }
 
       var _path = path;
-      if (!path.startsWith('file://')) {
+      if (!path.startsWith('file:')) {
         // path is relative to the workspace root, make it relative to the package
         _path = utils.relativePath(
             '${workspace.path}${Platform.pathSeparator}$_path', package.path);

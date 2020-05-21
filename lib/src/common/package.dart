@@ -20,7 +20,7 @@ class MelosPackage {
 
   MelosPackage._(this._name, this._path, this._yamlContents);
 
-  Set<String> get dependencies {
+  Set<String> get dependenciesSet {
     if (_yamlContents['dependencies'] != null) {
       // ignore: omit_local_variable_types
       Set<String> keysSet = <String>{};
@@ -32,7 +32,19 @@ class MelosPackage {
     return {};
   }
 
-  Set<String> get devDependencies {
+  Map<String, dynamic> get devDependencies {
+    if (_yamlContents['dev_dependencies'] != null) {
+      // ignore: omit_local_variable_types
+      Map<String, dynamic> devDeps = {};
+      _yamlContents['dev_dependencies'].keys.forEach((key) {
+        devDeps[key as String] = _yamlContents['dev_dependencies'][key];
+      });
+      return devDeps;
+    }
+    return {};
+  }
+
+  Set<String> get devDependenciesSet {
     if (_yamlContents['dev_dependencies'] != null) {
       // ignore: omit_local_variable_types
       Set<String> keysSet = <String>{};
@@ -56,7 +68,7 @@ class MelosPackage {
     var dependencyGraph = <String>{};
     var workspaceGraph = currentWorkspace.dependencyGraph();
 
-    dependencies.forEach((name) {
+    dependenciesSet.forEach((name) {
       dependencyGraph.add(name);
       var children = workspaceGraph[name];
       if (children != null && children.isNotEmpty) {
@@ -65,7 +77,7 @@ class MelosPackage {
     });
 
     if (includeDev) {
-      devDependencies.forEach((name) {
+      devDependenciesSet.forEach((name) {
         dependencyGraph.add(name);
         var children = workspaceGraph[name];
         if (children != null && children.isNotEmpty) {
