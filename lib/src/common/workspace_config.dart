@@ -16,6 +16,8 @@ class MelosWorkspaceConfig {
 
   Map get environment => _yamlContents['environment'] as Map ?? {};
 
+  Map get scripts => _yamlContents['scripts'] as Map ?? {};
+
   Map get dependencies => _yamlContents['dependencies'] as Map ?? {};
 
   Map get devDependencies => _yamlContents['dev_dependencies'] as Map ?? {};

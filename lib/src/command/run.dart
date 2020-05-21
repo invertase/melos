@@ -1,10 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:args/command_runner.dart' show Command;
-import 'package:pool/pool.dart' show Pool;
 
 import '../common/logger.dart';
-import '../common/package.dart';
 import '../common/workspace.dart';
 
 class RunCommand extends Command {
@@ -16,36 +15,66 @@ class RunCommand extends Command {
 
   @override
   final String description =
-      'Execute an arbitrary command in each package. Supports all package filtering options.';
+      'Run a script by name defined in the workspace melos.yaml config file.';
 
-  RunCommand() {
-    argParser.addOption('concurrency', defaultsTo: '5', abbr: 'c');
-    argParser.addFlag('stream',
-        abbr: 's',
-        defaultsTo: false,
-        negatable: false,
-        help:
-            'Stream output from child processes immediately, prefixed with the originating package name. This allows output from different packages to be interleaved.');
-  }
+  @override
+  final String invocation = 'melos run <name>';
+
+  RunCommand();
 
   @override
   void run() async {
-    final execArgs = argResults.rest;
+    logger.stdout(
+        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos run ${argResults.arguments[0]}")}');
 
-    if (execArgs.isEmpty) {
-      print(description);
-      print(argParser.usage);
+    if (argResults.arguments == null) {
+      logger.stderr('Invalid run script name specified.\n');
+      logger.stdout(usage);
       exit(1);
     }
 
-    print(
-        'Running command ${logger.ansi.bold + logger.ansi.cyan}${execArgs.join(' ') + logger.ansi.none} in ${currentWorkspace.packages.length} packages.');
+    if (currentWorkspace.config.scripts.isEmpty) {
+      logger.stderr('You have no scripts defined in your melos.yaml file.\n');
+      logger.stdout(usage);
+      exit(1);
+    }
 
-    var pool = Pool(int.parse(argResults['concurrency'] as String));
+    var scriptName = argResults.arguments[0];
+    if (!currentWorkspace.config.scripts.containsKey(scriptName)) {
+      logger.stderr('Invalid run script name specified.\n');
+      logger.stdout(usage);
+      exit(1);
+    }
 
-    await pool
-        .forEach<MelosPackage, void>(currentWorkspace.packages,
-            (package) => package.exec(execArgs, stream: argResults['stream']))
-        .drain();
+    var scriptSource = currentWorkspace.config.scripts[scriptName] as String;
+    var scriptParts = scriptSource.split(' ');
+
+    logger.stdout(
+        '  └> ${logger.ansi.cyan}${logger.ansi.emphasized(scriptSource)}${logger.ansi.noColor}\n');
+
+    final execProcess = await Process.start(
+        scriptParts[0], scriptParts.sublist(1),
+        workingDirectory: currentWorkspace.path,
+        runInShell: true,
+        includeParentEnvironment: true,
+        environment: {
+          'MELOS_ROOT_PATH': currentWorkspace.path,
+        });
+
+    var stdoutSub;
+    var stderrSub;
+
+    var stdoutCompleteFuture = Completer();
+    var stderrCompleteFuture = Completer();
+    stdoutSub = execProcess.stdout
+        .listen(stdout.add, onDone: stdoutCompleteFuture.complete);
+    stderrSub = execProcess.stderr
+        .listen(stderr.add, onDone: stderrCompleteFuture.complete);
+
+    await stdoutCompleteFuture.future;
+    await stderrCompleteFuture.future;
+
+    await stdoutSub.cancel();
+    await stderrSub.cancel();
   }
 }
