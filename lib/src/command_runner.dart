@@ -37,7 +37,7 @@ class MelosCommandRunner extends CommandRunner {
 
   @override
   Future runCommand(ArgResults argResults) async {
-    if (argResults['verbose'] != null) {
+    if (argResults['verbose'] == true) {
       logger = Logger.verbose();
     }
 

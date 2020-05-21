@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
+import 'package:yamlicious/yamlicious.dart';
 
 import '../pub/pub_deps_list.dart';
 import '../pub/pub_file_flutter_plugins.dart';
@@ -12,6 +13,7 @@ import '../pub/pub_file_packages.dart';
 import '../pub/pub_file_pubspec_lock.dart';
 import 'logger.dart';
 import 'package.dart';
+import 'utils.dart' as utils;
 import 'workspace_config.dart';
 
 MelosWorkspace currentWorkspace;
@@ -85,6 +87,10 @@ class MelosWorkspace {
       return matchedPattern == null;
     }).toList();
 
+    _packages.sort((a, b) {
+      return a.name.compareTo(b.name);
+    });
+
     return _packages;
   }
 
@@ -143,8 +149,8 @@ class MelosWorkspace {
   }
 
   /// Execute a command in the root of this workspace.
-  Future<void> exec(List<String> execArgs, {bool silent = true}) async {
-    final execProcess = await Process.start(execArgs[0], execArgs.sublist(1),
+  bool exec(List<String> execArgs) {
+    final execProcess = Process.runSync(execArgs[0], execArgs.sublist(1),
         workingDirectory: _path,
         runInShell: true,
         includeParentEnvironment: true,
@@ -152,25 +158,12 @@ class MelosWorkspace {
           'MELOS_ROOT_PATH': currentWorkspace.path,
         });
 
-    if (!silent) {
-      var stdoutSub;
-      var stderrSub;
-
-      final stdoutStream = execProcess.stdout;
-      final stderrStream = execProcess.stderr;
-      var completeFuture = Completer();
-
-      stdoutSub =
-          stdoutStream.listen(stdout.add, onDone: completeFuture.complete);
-      stderrSub = stderrStream.listen(stderr.add);
-
-      await completeFuture.future;
-      await stdoutSub.cancel();
-      await stderrSub.cancel();
-      logger.stdout('\n');
-    } else {
-      await execProcess.exitCode;
+    if (execProcess.exitCode > 0) {
+      logger.stdout(execProcess.stdout as String);
+      logger.stderr(execProcess.stderr as String);
     }
+
+    return execProcess.exitCode == 0;
   }
 
   void linkPackages() {
@@ -179,6 +172,7 @@ class MelosWorkspace {
       FlutterPluginsPubFile.fromWorkspacePackage(this, package).write();
       PubspecLockPubFile.fromWorkspacePackage(this, package).write();
       PackageConfigPubFile.fromWorkspacePackage(this, package).write();
+      // TODO .flutter-plugins-dependencies
     });
   }
 
@@ -188,6 +182,7 @@ class MelosWorkspace {
     FlutterPluginsPubFile.fromDirectory(path).delete();
     PubspecLockPubFile.fromDirectory(path).delete();
     PackageConfigPubFile.fromDirectory(path).delete();
+    // TODO .flutter-plugins-dependencies
 
     // clean all packages
     packages.forEach((MelosPackage package) {
@@ -195,6 +190,48 @@ class MelosWorkspace {
       FlutterPluginsPubFile.fromDirectory(package.path).delete();
       PubspecLockPubFile.fromDirectory(package.path).delete();
       PackageConfigPubFile.fromDirectory(package.path).delete();
+      // TODO .flutter-plugins-dependencies
     });
+  }
+
+  Future<void> generatePubspecFile() async {
+    var workspacePubspec = {};
+    var workspaceName = config.name ?? 'MelosWorkspace';
+
+    workspacePubspec['name'] = workspaceName;
+    workspacePubspec['version'] = config.version ?? '0.0.0';
+    workspacePubspec['dependencies'] = Map.from(config.dependencies);
+    workspacePubspec['dev_dependencies'] = Map.from(config.devDependencies);
+    workspacePubspec['dependency_overrides'] = {};
+    workspacePubspec['environment'] = Map.from(config.environment);
+
+    packages.forEach((MelosPackage plugin) {
+      var pluginRelativePath = utils.relativePath(plugin.path, path);
+      workspacePubspec['dependencies'][plugin.name] = {
+        'path': pluginRelativePath,
+      };
+      workspacePubspec['dependency_overrides'][plugin.name] = {
+        'path': pluginRelativePath,
+      };
+
+      // TODO semver checks when multiple packages depend on a dependency with different versions
+      var devDependencies = plugin.devDependencies;
+      plugin.devDependenciesSet.forEach((name) {
+        var linkedPackageExists = packages.firstWhere((package) {
+          return package.name == name;
+        }, orElse: () {
+          return null;
+        });
+        if (linkedPackageExists == null) {
+          workspacePubspec['dev_dependencies'][name] = devDependencies[name];
+        }
+      });
+    });
+
+    var header = '# Generated file - do not modify or commit this file.';
+    var pubspecYaml = '$header\n${toYamlString(workspacePubspec)}';
+
+    await File(utils.pubspecPathForDirectory(Directory(path)))
+        .writeAsString(pubspecYaml);
   }
 }
