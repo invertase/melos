@@ -13,7 +13,7 @@ You now have `melos` available as a command on your terminal.
 
 In a monorepo directory, e.g. the root of `flutterfire` repository run the following;
 
- - `melos workspace bootstrap` (`melos ws bs`)
+ - `melos bootstrap` (`melos ws bs`)
     - initial bootstrap/creating of a workspace for a monorepo in the current directory.
  - `melos workspace pub get` (`melos ws p get`)
     - runs pub get on all monorepo plugins, and at the root of the workspace.
