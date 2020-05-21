@@ -174,17 +174,6 @@ class MelosWorkspace {
   }
 
   void linkPackages() {
-//    await _readWorkspacePubFiles();
-
-//    var forPackageTest =
-//    PackageConfigPubFile.fromWorkspacePackage(this, packages[0]);
-//    print(packages[0].name);
-//    print(forPackageTest.toString());
-
-//    forPackageTest.write();
-//    forPackageTest.delete();
-//    print(forPackageTest.toString());
-
     packages.forEach((MelosPackage package) {
       PackagesPubFile.fromWorkspacePackage(this, package).write();
       FlutterPluginsPubFile.fromWorkspacePackage(this, package).write();
