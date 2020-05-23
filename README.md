@@ -223,10 +223,10 @@ This project is heavily inspired by [Lerna](https://lerna.js.org/).
 
 ## README Badge
 
-Using Melos? Add a README badge to show it off: [![melos](https://img.shields.io/badge/maintained%20with-melos-f700ff.svg)](https://github.com/invertase/melos)
+Using Melos? Add a README badge to show it off: [![melos](https://img.shields.io/badge/maintained%20with-melos-f700ff.svg?style=flat-square)](https://github.com/invertase/melos)
 
 ```
-[![melos](https://img.shields.io/badge/maintained%20with-melos-f700ff.svg)](https://github.com/invertase/melos)
+[![melos](https://img.shields.io/badge/maintained%20with-melos-f700ff.svg?style=flat-square)](https://github.com/invertase/melos)
 ```
 
 ## License
