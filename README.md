@@ -1,6 +1,14 @@
-# Melos
+<p align="center">
+  <h2 align="center">Melos</h2>
+  🌋 A tool for managing Dart projects with multiple packages.
+</p>
 
-> 🌋 A tool for managing Dart projects with multiple packages. 
+<p align="center">
+  <a href="https://invertase.link/discord"><img src="https://img.shields.io/discord/295953187817521152.svg?style=flat-square&colorA=7289da&label=Chat%20on%20Discord" alt="Chat on Discord"></a>
+  <a href="https://twitter.com/invertase"><img src="https://img.shields.io/twitter/follow/invertase.svg?style=flat-square&colorA=1da1f2&colorB=&label=Follow%20on%20Twitter" alt="Follow on Twitter"></a>
+</p>
+
+---
 
 > ⚠️ Note: this project is still very early on in development.
 
@@ -98,6 +106,8 @@ dev_dependencies:
 
 Full commands list and args can be viewed by running `melos --help`.
 
+---
+
 #### `bootstrap`
 
 > Initialize the workspace, link local packages together and install remaining package dependencies. 
@@ -133,6 +143,8 @@ Packages:
  -> 39 plugins bootstrapped
 ```
 
+---
+
 #### `clean`
 
 > Clean this workspace and all packages. This deletes the temporary pub files such as ".packages" & ".flutter-plugins"
@@ -141,6 +153,8 @@ Packages:
 ```
 melos clean
 ```
+
+---
 
 #### `exec`
 
@@ -165,6 +179,8 @@ $ melos exec --
 [cloud_functions]: Checking project cloud_functions...
 ...
 ```
+
+---
 
 #### `run`
 
@@ -204,7 +220,11 @@ $ melos exec --
 ...
 ```
 
-----
+---
+
+## Lerna
+
+This project is heavily inspired by [Lerna](https://lerna.js.org/).
 
 ## README Badge
 
@@ -213,3 +233,18 @@ Using Melos? Add a README badge to show it off: [![melos](https://img.shields.io
 ```
 [![melos](https://img.shields.io/badge/maintained%20with-melos-f700ff.svg)](https://github.com/invertase/melos)
 ```
+
+## License
+
+- See [LICENSE](/LICENSE)
+
+---
+
+<p>
+  <img align="left" width="75px" src="https://static.invertase.io/assets/invertase-logo-small.png">
+  <p align="left">
+    Built and maintained with 💛 by <a href="https://invertase.io">Invertase</a>.
+  </p>
+</p>
+
+---
