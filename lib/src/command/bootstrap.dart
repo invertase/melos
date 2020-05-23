@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart' show Command;
 
+import '../command_runner.dart';
 import '../common/logger.dart';
 import '../common/workspace.dart';
 
@@ -14,7 +15,7 @@ class BootstrapCommand extends Command {
 
   @override
   final String description =
-      'Initialize a workspace for the FlutterFire repository in the current directory. Supports all package filtering options.';
+      'Initialize the workspace, link local packages together and install remaining package dependencies.';
 
   @override
   void run() async {
@@ -25,8 +26,9 @@ class BootstrapCommand extends Command {
     var bootstrapProgress = logger.progress('Bootstrapping project');
     await currentWorkspace.generatePubspecFile();
 
-    var successful = currentWorkspace.exec(['flutter', 'pub', 'get']);
-    if (!successful) {
+    var exitCode = await currentWorkspace
+        .exec(['flutter', 'pub', 'get'], onlyOutputOnError: true);
+    if (exitCode > 0) {
       logger
           .stderr('Bootstrap failed, reason: pub get failed, see logs above.');
       exit(1);
@@ -37,10 +39,16 @@ class BootstrapCommand extends Command {
         showTiming: true);
     var linkingProgress = logger.progress('Linking project packages');
 
-    currentWorkspace.linkPackages();
+    await currentWorkspace.linkPackages();
+
     linkingProgress.finish(
         message: '${logger.ansi.green}SUCCESS${logger.ansi.noColor}',
         showTiming: true);
+
+    if (currentWorkspace.config.scripts.containsKey('postbootstrap')) {
+      logger.stdout('Running postbootstrap script...\n');
+      await MelosCommandRunner.instance.run(['run', 'postbootstrap']);
+    }
 
     logger.stdout('\nPackages:');
     currentWorkspace.packages.forEach((package) {

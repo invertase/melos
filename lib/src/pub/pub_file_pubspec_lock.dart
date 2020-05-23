@@ -15,10 +15,10 @@ class PubspecLockPubFile extends PubFile {
 
   Map<String, Map> _yamlParsed;
 
-  Map<String, Map> get packages {
+  Future<Map<String, Map>> get packages async {
     if (_packages != null) return _packages;
 
-    var input = File(filePath).readAsStringSync();
+    var input = await File(filePath).readAsString();
 
     _yamlParsed =
         Map.from(json.decode(json.encode(loadYaml(input))) as LinkedHashMap);
@@ -39,16 +39,15 @@ class PubspecLockPubFile extends PubFile {
     return PubspecLockPubFile._(fileRootDirectory);
   }
 
-  factory PubspecLockPubFile.fromWorkspacePackage(
-      MelosWorkspace workspace, MelosPackage package) {
-    var workspacePubspecLockPubFile =
+  static Future<PubspecLockPubFile> fromWorkspacePackage(
+      MelosWorkspace workspace, MelosPackage package) async {
+    PubspecLockPubFile workspaceFile =
         PubspecLockPubFile.fromDirectory(workspace.path);
+    Map<String, Map> packagePackages = {};
+    Map<String, Map> workspacePackages = await workspaceFile.packages;
+    Set<String> dependencyGraph = await package.getDependencyGraph();
 
-    // ignore: omit_local_variable_types
-    Map<String, Map> newPackages = {};
-    var dependencyGraph = package.getDependencyGraph();
-
-    workspacePubspecLockPubFile.packages.forEach((name, packageMap) {
+    workspacePackages.forEach((name, packageMap) {
       if (!dependencyGraph.contains(name) && name != package.name) {
         return;
       }
@@ -74,15 +73,14 @@ class PubspecLockPubFile extends PubFile {
         pluginPackage['description']['relative'] = true;
       }
 
-      newPackages[name] = pluginPackage;
+      packagePackages[name] = pluginPackage;
     });
 
-    var pubspecLockFile = PubspecLockPubFile._(package.path);
-    pubspecLockFile._packages = newPackages;
-    pubspecLockFile._yamlParsed =
-        Map.from(workspacePubspecLockPubFile._yamlParsed);
-    pubspecLockFile._yamlParsed['packages'] = newPackages;
-    return pubspecLockFile;
+    var packageFile = PubspecLockPubFile._(package.path);
+    packageFile._packages = packagePackages;
+    packageFile._yamlParsed = Map.from(workspaceFile._yamlParsed);
+    packageFile._yamlParsed['packages'] = packagePackages;
+    return packageFile;
   }
 
   @override

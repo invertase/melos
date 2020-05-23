@@ -11,7 +11,6 @@ import '../pub/pub_file_flutter_plugins.dart';
 import '../pub/pub_file_package_config.dart';
 import '../pub/pub_file_packages.dart';
 import '../pub/pub_file_pubspec_lock.dart';
-import 'logger.dart';
 import 'package.dart';
 import 'utils.dart' as utils;
 import 'workspace_config.dart';
@@ -94,12 +93,12 @@ class MelosWorkspace {
     return _packages;
   }
 
-  Map<String, Set<String>> dependencyGraph() {
+  Future<Map<String, Set<String>>> getDependencyGraph() async {
     if (_dependencyGraph != null) {
       return _dependencyGraph;
     }
 
-    final pubListCommandOutput = Process.runSync(
+    final pubListCommandOutput = await Process.run(
       'flutter',
       ['pub', 'deps', '--', '--style=list', '--dev'],
       runInShell: true,
@@ -130,7 +129,6 @@ class MelosWorkspace {
       }
     }
 
-    // ignore: omit_local_variable_types
     Map<String, Set<String>> dependencyGraphFlat = {};
 
     allEntries.forEach((entry, dependencies) {
@@ -149,49 +147,49 @@ class MelosWorkspace {
   }
 
   /// Execute a command in the root of this workspace.
-  bool exec(List<String> execArgs) {
-    final execProcess = Process.runSync(execArgs[0], execArgs.sublist(1),
-        workingDirectory: _path,
-        runInShell: true,
-        includeParentEnvironment: true,
-        environment: {
-          'MELOS_ROOT_PATH': currentWorkspace.path,
-        });
+  Future<int> exec(List<String> execArgs, {bool onlyOutputOnError = false}) {
+    final environment = {
+      'MELOS_ROOT_PATH': path,
+    };
 
-    if (execProcess.exitCode > 0) {
-      logger.stdout(execProcess.stdout as String);
-      logger.stderr(execProcess.stderr as String);
-    }
-
-    return execProcess.exitCode == 0;
+    return utils.startProcess(execArgs,
+        environment: environment,
+        workingDirectory: path,
+        onlyOutputOnError: onlyOutputOnError);
   }
 
-  void linkPackages() {
-    packages.forEach((MelosPackage package) {
-      PackagesPubFile.fromWorkspacePackage(this, package).write();
-      FlutterPluginsPubFile.fromWorkspacePackage(this, package).write();
-      PubspecLockPubFile.fromWorkspacePackage(this, package).write();
-      PackageConfigPubFile.fromWorkspacePackage(this, package).write();
-      // TODO(salakar): .flutter-plugins-dependencies
+  Future<void> linkPackages() async {
+    await getDependencyGraph();
+    await Future.forEach(packages, (MelosPackage package) {
+      return package.linkPackages(this);
     });
   }
 
-  void clean() {
+  void clean({bool cleanPackages = true}) {
     // clean workspace
     PackagesPubFile.fromDirectory(path).delete();
     FlutterPluginsPubFile.fromDirectory(path).delete();
-    PubspecLockPubFile.fromDirectory(path).delete();
     PackageConfigPubFile.fromDirectory(path).delete();
     // TODO(salakar): .flutter-plugins-dependencies
 
-    // clean all packages
-    packages.forEach((MelosPackage package) {
-      PackagesPubFile.fromDirectory(package.path).delete();
-      FlutterPluginsPubFile.fromDirectory(package.path).delete();
-      PubspecLockPubFile.fromDirectory(package.path).delete();
-      PackageConfigPubFile.fromDirectory(package.path).delete();
-      // TODO(salakar): .flutter-plugins-dependencies
-    });
+    // Delete generated pubspec.yaml file, only if cli generated it.
+    var pubspecFileRoot = File('$path${Platform.pathSeparator}pubspec.yaml');
+    if (pubspecFileRoot.existsSync()) {
+      var contents = pubspecFileRoot.readAsStringSync();
+      if (contents.startsWith(
+          '# Generated file - do not modify or commit this file.')) {
+        pubspecFileRoot.deleteSync();
+        PubspecLockPubFile.fromDirectory(path).delete();
+      }
+    } else {
+      PubspecLockPubFile.fromDirectory(path).delete();
+    }
+
+    if (cleanPackages) {
+      packages.forEach((MelosPackage package) {
+        package.clean();
+      });
+    }
   }
 
   Future<void> generatePubspecFile() async {
@@ -200,6 +198,7 @@ class MelosWorkspace {
 
     workspacePubspec['name'] = workspaceName;
     workspacePubspec['version'] = config.version ?? '0.0.0';
+    workspacePubspec['publish_to'] = 'none';
     workspacePubspec['dependencies'] = Map.from(config.dependencies);
     workspacePubspec['dev_dependencies'] = Map.from(config.devDependencies);
     workspacePubspec['dependency_overrides'] = {};

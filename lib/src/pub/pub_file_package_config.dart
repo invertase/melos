@@ -12,10 +12,10 @@ class PackageConfigPubFile extends PubFile {
 
   Map<String, dynamic> _jsonParsed;
 
-  List<Map> get packages {
+  Future<List<Map>> get packages async {
     if (_packages != null) return _packages;
 
-    var input = File(filePath).readAsStringSync();
+    var input = await File(filePath).readAsString();
 
     _jsonParsed = Map.from(json.decode(input) as LinkedHashMap);
 
@@ -36,16 +36,15 @@ class PackageConfigPubFile extends PubFile {
     return PackageConfigPubFile._(fileRootDirectory);
   }
 
-  factory PackageConfigPubFile.fromWorkspacePackage(
-      MelosWorkspace workspace, MelosPackage package) {
-    var workspacePackageConfigPubFile =
+  static Future<PackageConfigPubFile> fromWorkspacePackage(
+      MelosWorkspace workspace, MelosPackage package) async {
+    PackageConfigPubFile workspaceFile =
         PackageConfigPubFile.fromDirectory(workspace.path);
+    List<Map> packagePackages = [];
+    List<Map> workspacePackages = await workspaceFile.packages;
+    Set<String> dependencyGraph = await package.getDependencyGraph();
 
-    // ignore: omit_local_variable_types
-    List<Map> newPackages = [];
-    var dependencyGraph = package.getDependencyGraph();
-
-    workspacePackageConfigPubFile.packages.forEach((packageMap) {
+    workspacePackages.forEach((packageMap) {
       if (!dependencyGraph.contains(packageMap['name']) &&
           packageMap['name'] != package.name) {
         return;
@@ -62,15 +61,14 @@ class PackageConfigPubFile extends PubFile {
         pluginPackage['rootUri'] = rootUri;
       }
 
-      newPackages.add(pluginPackage);
+      packagePackages.add(pluginPackage);
     });
 
-    var packageConfigFile = PackageConfigPubFile._(package.path);
-    packageConfigFile._packages = newPackages;
-    packageConfigFile._jsonParsed =
-        Map.from(workspacePackageConfigPubFile._jsonParsed);
-    packageConfigFile._jsonParsed['packages'] = newPackages;
-    return packageConfigFile;
+    var packageFile = PackageConfigPubFile._(package.path);
+    packageFile._packages = packagePackages;
+    packageFile._jsonParsed = Map.from(workspaceFile._jsonParsed);
+    packageFile._jsonParsed['packages'] = packagePackages;
+    return packageFile;
   }
 
   @override

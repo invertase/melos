@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' show relative;
@@ -63,4 +64,85 @@ bool isWorkspaceDirectory(Directory directory) {
 bool isPackageDirectory(Directory directory) {
   var pluginYamlPath = pubspecPathForDirectory(directory);
   return FileSystemEntity.isFileSync(pluginYamlPath);
+}
+
+Future<int> startProcess(List<String> execArgs,
+    {String prefix,
+    Map<String, String> environment,
+    String workingDirectory,
+    bool onlyOutputOnError = false}) async {
+  final environmentVariables = environment ?? {};
+  final workingDirectoryPath = workingDirectory ?? Directory.current.path;
+
+  final executable =
+      Platform.isWindows ? '%WINDIR%\\system32\\cmd.exe' : '/bin/sh';
+
+  final execProcess = await Process.start(executable, [],
+      workingDirectory: workingDirectoryPath,
+      includeParentEnvironment: true,
+      environment: environmentVariables);
+
+  final execString = execArgs.map((arg) {
+    var _arg = arg;
+    environment.forEach((key, value) {
+      _arg = _arg.replaceAll('\$$key', value);
+      _arg = _arg.replaceAll(key, value);
+    });
+    return _arg;
+  }).join(' ');
+
+  execProcess.stdin.writeln(execString);
+
+  // exit with the exit code of the previous command
+  if (Platform.isWindows) {
+    execProcess.stdin.writeln('exit /b %errorlevel%');
+  } else {
+    execProcess.stdin.writeln('exit \$?');
+  }
+
+  var stdoutStream = execProcess.stdout;
+  var stderrStream = execProcess.stderr;
+
+  if (prefix != null && prefix.isNotEmpty) {
+    final pluginPrefixTransformer =
+        StreamTransformer<String, String>.fromHandlers(
+            handleData: (String data, EventSink sink) {
+      final lineSplitter = LineSplitter();
+      var lines = lineSplitter.convert(data);
+      lines = lines
+          .map((line) => '$prefix$line${line.contains('\n') ? '' : '\n'}')
+          .toList();
+      sink.add(lines.join(''));
+    });
+
+    stdoutStream = execProcess.stdout
+        .transform<String>(utf8.decoder)
+        .transform<String>(pluginPrefixTransformer)
+        .transform<List<int>>(utf8.encoder);
+
+    stderrStream = execProcess.stderr
+        .transform<String>(utf8.decoder)
+        .transform<String>(pluginPrefixTransformer)
+        .transform<List<int>>(utf8.encoder);
+  }
+
+  var stdoutSubscriber;
+  var stderrSubscriber;
+
+  if (!onlyOutputOnError) {
+    stdoutSubscriber = stdoutStream.listen(stdout.add);
+    stderrSubscriber = stderrStream.listen(stderr.add);
+  }
+
+  var exitCode = await execProcess.exitCode;
+
+  if (!onlyOutputOnError) {
+    await stdoutSubscriber.cancel();
+    await stderrSubscriber.cancel();
+  } else if (exitCode > 0) {
+    (await execProcess.stdout.toList()).forEach(stdout.add);
+    (await execProcess.stderr.toList()).forEach(stdout.add);
+  }
+
+  return exitCode;
 }

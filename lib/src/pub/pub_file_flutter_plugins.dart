@@ -8,10 +8,10 @@ import '../pub/pub_file.dart';
 class FlutterPluginsPubFile extends PubFile {
   Map<String, String> _entries;
 
-  Map<String, String> get entries {
+  Future<Map<String, String>> get entries async {
     if (_entries != null) return _entries;
 
-    var input = File(filePath).readAsStringSync();
+    var input = await File(filePath).readAsString();
 
     // ignore: omit_local_variable_types
     Map<String, String> packages = {};
@@ -33,16 +33,16 @@ class FlutterPluginsPubFile extends PubFile {
     return FlutterPluginsPubFile._(fileRootDirectory);
   }
 
-  factory FlutterPluginsPubFile.fromWorkspacePackage(
-      MelosWorkspace workspace, MelosPackage package) {
-    var workspaceFlutterPluginsPubFile =
+  static Future<FlutterPluginsPubFile> fromWorkspacePackage(
+      MelosWorkspace workspace, MelosPackage package) async {
+    FlutterPluginsPubFile workspaceFlutterPluginsPubFile =
         FlutterPluginsPubFile.fromDirectory(workspace.path);
-
-    // ignore: omit_local_variable_types
     Map<String, String> newEntries = {};
-    var dependencyGraph = package.getDependencyGraph();
+    Map<String, String> workspaceEntries =
+        await workspaceFlutterPluginsPubFile.entries;
+    Set<String> dependencyGraph = await package.getDependencyGraph();
 
-    workspaceFlutterPluginsPubFile.entries.forEach((name, path) {
+    workspaceEntries.forEach((name, path) {
       if (!dependencyGraph.contains(name) && name != package.name) {
         return;
       }

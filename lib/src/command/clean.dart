@@ -1,5 +1,6 @@
 import 'package:args/command_runner.dart' show Command;
 
+import '../command_runner.dart';
 import '../common/logger.dart';
 import '../common/workspace.dart';
 
@@ -17,7 +18,11 @@ class CleanCommand extends Command {
   @override
   void run() async {
     logger.stdout('Cleaning workspace...');
-    await currentWorkspace.clean();
+    currentWorkspace.clean();
+    if (currentWorkspace.config.scripts.containsKey('postclean')) {
+      logger.stdout('Running postclean script...\n');
+      await MelosCommandRunner.instance.run(['run', 'postclean']);
+    }
     logger.stdout(
         'Workspace cleaned, you will need to run the bootstrap command again.');
   }

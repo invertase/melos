@@ -14,6 +14,8 @@ import 'common/workspace.dart';
 final lineLength = stdout.hasTerminal ? stdout.terminalColumns : 80;
 
 class MelosCommandRunner extends CommandRunner {
+  static MelosCommandRunner instance = MelosCommandRunner();
+
   MelosCommandRunner()
       : super('melos', 'A CLI for package development in monorepos.',
             usageLineLength: lineLength) {

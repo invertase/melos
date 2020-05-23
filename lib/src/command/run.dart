@@ -1,9 +1,9 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:args/command_runner.dart' show Command;
 
 import '../common/logger.dart';
+import '../common/utils.dart';
 import '../common/workspace.dart';
 
 class RunCommand extends Command {
@@ -50,31 +50,30 @@ class RunCommand extends Command {
     var scriptParts = scriptSource.split(' ');
 
     logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(scriptSource)}${logger.ansi.noColor}\n');
+        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(scriptSource)}${logger.ansi.noColor}');
+    logger.stdout(
+        '       └> ${logger.ansi.yellow}${logger.ansi.emphasized('RUNNING')}${logger.ansi.noColor}\n');
 
-    final execProcess = await Process.start(
-        scriptParts[0], scriptParts.sublist(1),
-        workingDirectory: currentWorkspace.path,
-        runInShell: true,
-        includeParentEnvironment: true,
-        environment: {
-          'MELOS_ROOT_PATH': currentWorkspace.path,
-        });
+    var environment = {
+      'MELOS_ROOT_PATH': currentWorkspace.path,
+    };
 
-    var stdoutSub;
-    var stderrSub;
+    int exitCode = await startProcess(scriptParts,
+        environment: environment, workingDirectory: currentWorkspace.path);
 
-    var stdoutCompleteFuture = Completer();
-    var stderrCompleteFuture = Completer();
-    stdoutSub = execProcess.stdout
-        .listen(stdout.add, onDone: stdoutCompleteFuture.complete);
-    stderrSub = execProcess.stderr
-        .listen(stderr.add, onDone: stderrCompleteFuture.complete);
+    logger.stdout('');
+    logger.stdout(
+        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos run ${argResults.arguments[0]}")}');
+    logger.stdout(
+        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(scriptSource)}${logger.ansi.noColor}');
 
-    await stdoutCompleteFuture.future;
-    await stderrCompleteFuture.future;
-
-    await stdoutSub.cancel();
-    await stderrSub.cancel();
+    if (exitCode > 0) {
+      logger.stdout(
+          '       └> ${logger.ansi.red}${logger.ansi.emphasized('FAILED')}${logger.ansi.noColor}');
+      exit(exitCode);
+    } else {
+      logger.stdout(
+          '       └> ${logger.ansi.green}${logger.ansi.emphasized('SUCCESS')}${logger.ansi.noColor}');
+    }
   }
 }

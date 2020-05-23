@@ -9,11 +9,12 @@ class PubFile {
 
   PubFile(this._directory, this._file);
 
-  void write() {
+  Future<void> write() {
     if (_file.contains(Platform.pathSeparator)) {
-      File(filePath).createSync(recursive: true);
+      return File(filePath).create(recursive: true);
     }
-    File(filePath).writeAsStringSync(toString());
+
+    return File(filePath).writeAsString(toString());
   }
 
   void delete() {

@@ -1,7 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
+import '../pub/pub_file.dart';
+import '../pub/pub_file_flutter_plugins.dart';
+import '../pub/pub_file_package_config.dart';
+import '../pub/pub_file_packages.dart';
+import '../pub/pub_file_pubspec_lock.dart';
 import 'logger.dart';
 import 'utils.dart';
 import 'workspace.dart';
@@ -63,9 +67,9 @@ class MelosPackage {
         pluginName, pubspecPath.parent.path, yamlFileContents);
   }
 
-  Set<String> getDependencyGraph({bool includeDev = true}) {
+  Future<Set<String>> getDependencyGraph({bool includeDev = true}) async {
     var dependencyGraph = <String>{};
-    var workspaceGraph = currentWorkspace.dependencyGraph();
+    var workspaceGraph = await currentWorkspace.getDependencyGraph();
 
     dependenciesSet.forEach((name) {
       dependencyGraph.add(name);
@@ -89,73 +93,42 @@ class MelosPackage {
   }
 
   /// Execute a command from this packages root directory.
-  Future<void> exec(List<String> execArgs,
-      {stream = false, prefix = true}) async {
-    final pluginPrefix =
-        logger.ansi.blue + logger.ansi.emphasized(_name) + logger.ansi.none;
+  Future<int> exec(List<String> execArgs) {
+    final packagePrefix =
+        '[${logger.ansi.blue + logger.ansi.emphasized(_name) + logger.ansi.noColor}]: ';
 
-    final execProcess = await Process.start(execArgs[0], execArgs.sublist(1),
-        workingDirectory: _path,
-        runInShell: true,
-        includeParentEnvironment: true,
-        environment: {
-          'MELOS_PACKAGE_NAME': _name,
-          'MELOS_PACKAGE_PATH': _path,
-          'MELOS_ROOT_PATH': currentWorkspace.path,
-        });
+    final environment = {
+      'MELOS_PACKAGE_NAME': name,
+      'MELOS_PACKAGE_PATH': path,
+      'MELOS_ROOT_PATH': currentWorkspace.path,
+    };
 
-    final pluginPrefixTransformer =
-        StreamTransformer<String, String>.fromHandlers(
-            handleData: (String data, EventSink sink) {
-      final lineSplitter = LineSplitter();
-      var lines = lineSplitter.convert(data);
-      if (prefix == true) {
-        lines = lines.map((line) => '[$pluginPrefix]: $line').toList();
-      }
-      sink.add(lines.join('\n'));
-    });
-
-    var stdoutSub;
-    var stdoutLogs = [];
-    var stderrSub;
-    var stderrLogs = [];
-
-    final stdoutStream = execProcess.stdout
-        .transform<String>(utf8.decoder)
-        .transform<String>(pluginPrefixTransformer);
-
-    final stderrStream = execProcess.stderr
-        .transform<String>(utf8.decoder)
-        .transform<String>(pluginPrefixTransformer);
-
-    var completeFuture = Completer();
-    if (stream == true) {
-      stdoutSub = stdoutStream
-          .transform<List<int>>(utf8.encoder)
-          .listen(stdout.add, onDone: completeFuture.complete);
-      stderrSub =
-          stderrStream.transform<List<int>>(utf8.encoder).listen(stderr.add);
-    } else {
-      stdoutSub =
-          stdoutStream.listen(stdoutLogs.add, onDone: completeFuture.complete);
-      stderrSub = stderrStream.listen(stderrLogs.add);
-    }
-
-    await completeFuture.future;
-    await stdoutSub.cancel();
-    await stderrSub.cancel();
-
-    if (stream == false) {
-      if (stdoutLogs.isNotEmpty) {
-        print(stdoutLogs.reduce((value, log) => value + '\n$value'));
-      }
-      if (stderrLogs.isNotEmpty) {
-        print(stderrLogs.reduce((value, log) => value + '\n$value'));
-      }
-    }
+    return startProcess(execArgs,
+        environment: environment,
+        workingDirectory: path,
+        prefix: packagePrefix);
   }
 
-  void linkDependencies() {
-    // TODO
+  // TODO(salakar): conditionally write these files only if they exist in root
+  Future<void> linkPackages(MelosWorkspace workspace) async {
+    await Future.forEach([
+      PackagesPubFile.fromWorkspacePackage(workspace, this),
+      FlutterPluginsPubFile.fromWorkspacePackage(workspace, this),
+      PubspecLockPubFile.fromWorkspacePackage(workspace, this),
+      PackageConfigPubFile.fromWorkspacePackage(workspace, this),
+    ], (Future<PubFile> future) async {
+      PubFile pubFile = await future;
+      return pubFile.write();
+    });
+
+    // TODO(salakar): .flutter-plugins-dependencies
+  }
+
+  void clean() {
+    PackagesPubFile.fromDirectory(path).delete();
+    FlutterPluginsPubFile.fromDirectory(path).delete();
+    PubspecLockPubFile.fromDirectory(path).delete();
+    PackageConfigPubFile.fromDirectory(path).delete();
+    // TODO(salakar): .flutter-plugins-dependencies
   }
 }

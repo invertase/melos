@@ -8,10 +8,10 @@ import '../pub/pub_file.dart';
 class PackagesPubFile extends PubFile {
   Map<String, String> _entries;
 
-  Map<String, String> get entries {
+  Future<Map<String, String>> get entries async {
     if (_entries != null) return _entries;
 
-    var input = File(filePath).readAsStringSync();
+    var input = await File(filePath).readAsString();
 
     // ignore: omit_local_variable_types
     Map<String, String> packages = {};
@@ -32,16 +32,16 @@ class PackagesPubFile extends PubFile {
     return PackagesPubFile._(fileRootDirectory);
   }
 
-  factory PackagesPubFile.fromWorkspacePackage(
-      MelosWorkspace workspace, MelosPackage package) {
-    var workspacePackagesPubFile =
+  static Future<PackagesPubFile> fromWorkspacePackage(
+      MelosWorkspace workspace, MelosPackage package) async {
+    PackagesPubFile workspaceFile =
         PackagesPubFile.fromDirectory(workspace.path);
+    Map<String, String> packageEntries = {};
+    Map<String, String> workspaceEntries = await workspaceFile.entries;
 
-    // ignore: omit_local_variable_types
-    Map<String, String> newEntries = {};
-    var dependencyGraph = package.getDependencyGraph();
+    var dependencyGraph = await package.getDependencyGraph();
 
-    workspacePackagesPubFile.entries.forEach((name, path) {
+    workspaceEntries.forEach((name, path) {
       if (!dependencyGraph.contains(name) && name != package.name) {
         return;
       }
@@ -55,12 +55,12 @@ class PackagesPubFile extends PubFile {
             '/';
       }
 
-      newEntries[name] = _path;
+      packageEntries[name] = _path;
     });
 
-    var packagesFile = PackagesPubFile._(package.path);
-    packagesFile._entries = newEntries;
-    return packagesFile;
+    var packageFile = PackagesPubFile._(package.path);
+    packageFile._entries = packageEntries;
+    return packageFile;
   }
 
   @override
