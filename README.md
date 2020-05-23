@@ -2,6 +2,8 @@
 
 > 🌋 A tool for managing Dart projects with multiple packages. 
 
+> ⚠️ Note: this project is still very early on in development.
+
 ----
 
  - [About](#about)
