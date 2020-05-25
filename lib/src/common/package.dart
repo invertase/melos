@@ -130,7 +130,8 @@ class MelosPackage {
         prefix: packagePrefix);
   }
 
-  // TODO(salakar): conditionally write these files only if they exist in root
+  // TODO(salakar): Conditionally write these files only if they exist in root.
+  // TODO(salakar): Only write Flutter specific files to packages that are Flutter plugins.
   Future<void> linkPackages(MelosWorkspace workspace) async {
     await Future.forEach([
       PackagesPubFile.fromWorkspacePackage(workspace, this),
@@ -204,5 +205,11 @@ class MelosPackage {
   /// Returns whether the given directory contains a Flutter linux plugin.
   bool isLinuxPlugin() {
     return supportsFlutterPlatform(kLinux);
+  }
+
+  bool isPrivate() {
+    if (!_yamlContents.containsKey('publish_to')) return false;
+    if (_yamlContents['publish_to'].runtimeType != String) return false;
+    return _yamlContents['publish_to'] == 'none';
   }
 }

@@ -56,7 +56,8 @@ class MelosWorkspace {
       {List<String> scope,
       List<String> ignore,
       List<String> dirExists,
-      List<String> fileExists}) async {
+      List<String> fileExists,
+      bool skipPrivate}) async {
     if (_packages != null) return Future.value(_packages);
 
     _packages = await Directory(_path)
@@ -106,6 +107,10 @@ class MelosWorkspace {
         return File(join(package.path, _fileExistsPath)).existsSync();
       }, orElse: () => null);
       return fileExistsMatched != null;
+    }).where((package) {
+      // Directory exists packages filter.
+      if (!skipPrivate) return true;
+      return !package.isPrivate();
     }).toList();
 
     _packages.sort((a, b) {

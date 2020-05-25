@@ -65,6 +65,7 @@ class MelosCommandRunner extends CommandRunner {
 
     await currentWorkspace.loadPackages(
       scope: argResults['scope'] as List<String>,
+      skipPrivate: argResults['no-private'] as bool,
       ignore: argResults['ignore'] as List<String>,
       dirExists: argResults['dir-exists'] as List<String>,
       fileExists: argResults['file-exists'] as List<String>,

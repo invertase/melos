@@ -50,18 +50,17 @@ class ExecCommand extends Command {
     var failures = <String, int>{};
     var pool = Pool(int.parse(argResults['concurrency'] as String));
 
-    await pool
-        .forEach<MelosPackage, void>(
-            currentWorkspace.packages,
-            (package) => package.exec(execArgs).then((result) async {
-                  if (result > 0) {
-                    failures[package.name] = result;
-                    if (argResults['fail-fast'] == true) {
-                      await pool.close();
-                    }
-                  }
-                }))
-        .drain();
+    await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
+        (package) {
+      if (argResults['fail-fast'] == true && failures.isNotEmpty) {
+        return Future.value(null);
+      }
+      return package.exec(execArgs).then((result) async {
+        if (result > 0) {
+          failures[package.name] = result;
+        }
+      });
+    }).drain();
 
     logger.stdout('');
     logger.stdout(

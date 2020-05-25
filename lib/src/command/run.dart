@@ -51,7 +51,7 @@ class RunCommand extends Command {
     var scriptParts = scriptSource.split(' ');
 
     logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(scriptSource)}${logger.ansi.noColor}');
+        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(scriptSource.replaceAll('\n', ''))}${logger.ansi.noColor}');
     logger.stdout(
         '       └> ${logger.ansi.yellow}${logger.ansi.emphasized('RUNNING')}${logger.ansi.noColor}\n');
 
@@ -66,7 +66,7 @@ class RunCommand extends Command {
     logger.stdout(
         '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos run ${argResults.arguments[0]}")}');
     logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(scriptSource)}${logger.ansi.noColor}');
+        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(scriptSource.replaceAll('\n', ''))}${logger.ansi.noColor}');
 
     if (exitCode > 0) {
       logger.stdout(
