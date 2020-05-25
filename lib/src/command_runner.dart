@@ -63,6 +63,7 @@ class MelosCommandRunner extends CommandRunner {
       exit(1);
     }
 
+    // TODO(Salakar): Optimise this, this causes the greatest startup delay currently.
     await currentWorkspace.loadPackages(
       scope: argResults['scope'] as List<String>,
       skipPrivate: argResults['no-private'] as bool,

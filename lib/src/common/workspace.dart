@@ -60,59 +60,86 @@ class MelosWorkspace {
       bool skipPrivate}) async {
     if (_packages != null) return Future.value(_packages);
 
-    _packages = await Directory(_path)
+    final packageGlobs = _config.packages;
+
+    var filterResult = Directory(_path)
         .list(recursive: true, followLinks: false)
         .where((file) {
       return file.path.endsWith('pubspec.yaml');
     }).where((file) {
       // Filter matching 'packages' config from melos.yaml
-      final packageGlobs = _config.packages;
       // No 'package' glob patterns in 'melos.yaml' so skip all packages.
       if (packageGlobs.isEmpty) return false;
       final matchedPattern = packageGlobs.firstWhere((pattern) {
         return pattern.matches(file.path);
       }, orElse: () => null);
       return matchedPattern != null;
-    }).asyncMap((entity) async {
+    }).asyncMap((entity) {
       // Convert into Package for further filtering
       return MelosPackage.fromPubspecPath(entity);
-    }).where((package) {
-      // Scoped packages filter.
-      if (scope.isEmpty) return true;
-      final matchedPattern = scope.firstWhere((pattern) {
-        return Glob(pattern).matches(package.name);
-      }, orElse: () => null);
-      return matchedPattern != null;
-    }).where((package) {
-      // Ignore packages filter.
-      if (ignore.isEmpty) return true;
-      final matchedPattern = ignore.firstWhere((pattern) {
-        return Glob(pattern).matches(package.name);
-      }, orElse: () => null);
-      return matchedPattern == null;
-    }).where((package) {
-      // Directory exists packages filter, multiple filters behaviour is 'AND'.
-      if (dirExists.isEmpty) return true;
-      final dirExistsMatched = dirExists.where((dirExistsPath) {
-        return Directory(join(package.path, dirExistsPath)).existsSync();
-      });
-      return dirExistsMatched.length == dirExists.length;
-    }).where((package) {
-      // File exists packages filter.
-      if (fileExists.isEmpty) return true;
-      final fileExistsMatched = fileExists.firstWhere((fileExistsPath) {
-        // TODO(Salakar): Make replacer reusable, currently used in a few places.
-        var _fileExistsPath =
-            fileExistsPath.replaceAll('\$MELOS_PACKAGE_NAME', package.name);
-        return File(join(package.path, _fileExistsPath)).existsSync();
-      }, orElse: () => null);
-      return fileExistsMatched != null;
-    }).where((package) {
-      // Whether we should skip packages with 'publish_to: none' set.
-      if (!skipPrivate) return true;
-      return !package.isPrivate();
-    }).toList();
+    });
 
+    if (scope.isNotEmpty) {
+      // Scoped packages filter.
+      filterResult = filterResult.where((package) {
+        final matchedPattern = scope.firstWhere((pattern) {
+          return Glob(pattern).matches(package.name);
+        }, orElse: () => null);
+        return matchedPattern != null;
+      });
+    }
+
+    if (ignore.isNotEmpty) {
+      // Ignore packages filter.
+      filterResult = filterResult.where((package) {
+        final matchedPattern = ignore.firstWhere((pattern) {
+          return Glob(pattern).matches(package.name);
+        }, orElse: () => null);
+        return matchedPattern == null;
+      });
+    }
+
+    if (ignore.isNotEmpty) {
+      // Ignore packages filter.
+      filterResult = filterResult.where((package) {
+        final matchedPattern = ignore.firstWhere((pattern) {
+          return Glob(pattern).matches(package.name);
+        }, orElse: () => null);
+        return matchedPattern == null;
+      });
+    }
+
+    if (dirExists.isNotEmpty) {
+      // Directory exists packages filter, multiple filters behaviour is 'AND'.
+      filterResult = filterResult.where((package) {
+        final dirExistsMatched = dirExists.where((dirExistsPath) {
+          return Directory(join(package.path, dirExistsPath)).existsSync();
+        });
+        return dirExistsMatched.length == dirExists.length;
+      });
+    }
+
+    if (fileExists.isNotEmpty) {
+      // File exists packages filter.
+      filterResult = filterResult.where((package) {
+        final fileExistsMatched = fileExists.firstWhere((fileExistsPath) {
+          // TODO(Salakar): Make replacer reusable, currently used in a few places.
+          var _fileExistsPath =
+              fileExistsPath.replaceAll('\$MELOS_PACKAGE_NAME', package.name);
+          return File(join(package.path, _fileExistsPath)).existsSync();
+        }, orElse: () => null);
+        return fileExistsMatched != null;
+      });
+    }
+
+    if (skipPrivate) {
+        // Whether we should skip packages with 'publish_to: none' set.
+      filterResult = filterResult.where((package) {
+        return !package.isPrivate();
+      });
+    }
+
+    _packages = await filterResult.toList();
     _packages.sort((a, b) {
       return a.name.compareTo(b.name);
     });
