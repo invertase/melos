@@ -91,12 +91,12 @@ class MelosWorkspace {
       }, orElse: () => null);
       return matchedPattern == null;
     }).where((package) {
-      // Directory exists packages filter.
+      // Directory exists packages filter, multiple filters behaviour is 'AND'.
       if (dirExists.isEmpty) return true;
-      final dirExistsMatched = dirExists.firstWhere((dirExistsPath) {
+      final dirExistsMatched = dirExists.where((dirExistsPath) {
         return Directory(join(package.path, dirExistsPath)).existsSync();
-      }, orElse: () => null);
-      return dirExistsMatched != null;
+      });
+      return dirExistsMatched.length == dirExists.length;
     }).where((package) {
       // File exists packages filter.
       if (fileExists.isEmpty) return true;
@@ -108,7 +108,7 @@ class MelosWorkspace {
       }, orElse: () => null);
       return fileExistsMatched != null;
     }).where((package) {
-      // Directory exists packages filter.
+      // Whether we should skip packages with 'publish_to: none' set.
       if (!skipPrivate) return true;
       return !package.isPrivate();
     }).toList();

@@ -83,6 +83,7 @@ class MelosPackage {
   static Future<MelosPackage> fromPubspecPath(
       FileSystemEntity pubspecPath) async {
     final yamlFileContents = await loadYamlFile(pubspecPath.path);
+    if (yamlFileContents == null) return null;
     final pluginName = yamlFileContents['name'] as String;
     return MelosPackage._(
         pluginName, pubspecPath.parent.path, yamlFileContents);
@@ -114,15 +115,25 @@ class MelosPackage {
   }
 
   /// Execute a command from this packages root directory.
-  Future<int> exec(List<String> execArgs) {
+  Future<int> exec(List<String> execArgs) async {
     final packagePrefix =
         '[${logger.ansi.blue + logger.ansi.emphasized(_name) + logger.ansi.noColor}]: ';
 
-    final environment = {
+    var environment = {
       'MELOS_PACKAGE_NAME': name,
       'MELOS_PACKAGE_PATH': path,
       'MELOS_ROOT_PATH': currentWorkspace.path,
     };
+
+    if (path.endsWith('example')) {
+      var exampleParentPackagePath = Directory(path).parent.path;
+      var exampleParentPackage = await fromPubspecPath(File(
+          '$exampleParentPackagePath${Platform.pathSeparator}pubspec.yaml'));
+      if (exampleParentPackage != null) {
+        environment['MELOS_PARENT_PACKAGE_NAME'] = exampleParentPackage.name;
+        environment['MELOS_PARENT_PACKAGE_PATH'] = exampleParentPackage.path;
+      }
+    }
 
     return startProcess(execArgs,
         environment: environment,
