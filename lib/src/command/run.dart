@@ -28,6 +28,7 @@ class RunCommand extends Command {
         '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos run ${argResults.arguments[0]}")}');
 
     if (argResults.arguments == null) {
+      // TODO(Salakar): could pretty print a list of available scripts here
       logger.stderr('Invalid run script name specified.\n');
       logger.stdout(usage);
       exit(1);

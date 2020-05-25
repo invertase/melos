@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:yaml/yaml.dart';
+
 import '../pub/pub_file.dart';
+import '../pub/pub_file_flutter_dependencies.dart';
 import '../pub/pub_file_flutter_plugins.dart';
 import '../pub/pub_file_package_config.dart';
 import '../pub/pub_file_packages.dart';
@@ -9,6 +12,24 @@ import '../pub/pub_file_pubspec_lock.dart';
 import 'logger.dart';
 import 'utils.dart';
 import 'workspace.dart';
+
+/// Key for windows platform.
+const String kWindows = 'windows';
+
+/// Key for macos platform.
+const String kMacos = 'macos';
+
+/// Key for linux platform.
+const String kLinux = 'linux';
+
+/// Key for IPA (iOS) platform.
+const String kIos = 'ios';
+
+/// Key for APK (Android) platform.
+const String kAndroid = 'android';
+
+/// Key for Web platform.
+const String kWeb = 'web';
 
 class MelosPackage {
   final Map _yamlContents;
@@ -116,12 +137,11 @@ class MelosPackage {
       FlutterPluginsPubFile.fromWorkspacePackage(workspace, this),
       PubspecLockPubFile.fromWorkspacePackage(workspace, this),
       PackageConfigPubFile.fromWorkspacePackage(workspace, this),
+      FlutterDependenciesPubFile.fromWorkspacePackage(workspace, this),
     ], (Future<PubFile> future) async {
       PubFile pubFile = await future;
       return pubFile.write();
     });
-
-    // TODO(salakar): .flutter-plugins-dependencies
   }
 
   void clean() {
@@ -129,6 +149,60 @@ class MelosPackage {
     FlutterPluginsPubFile.fromDirectory(path).delete();
     PubspecLockPubFile.fromDirectory(path).delete();
     PackageConfigPubFile.fromDirectory(path).delete();
-    // TODO(salakar): .flutter-plugins-dependencies
+    FlutterDependenciesPubFile.fromDirectory(path).delete();
+  }
+
+  bool isFlutterPackage() {
+    final YamlMap dependencies = _yamlContents['dependencies'] as YamlMap;
+    if (dependencies == null) {
+      return false;
+    }
+    return dependencies.containsKey('flutter');
+  }
+
+  bool supportsFlutterPlatform(String platform) {
+    assert(platform == kIos ||
+        platform == kAndroid ||
+        platform == kWeb ||
+        platform == kMacos ||
+        platform == kWindows ||
+        platform == kLinux);
+
+    final YamlMap flutterSection = _yamlContents['flutter'] as YamlMap;
+    if (flutterSection == null) {
+      return false;
+    }
+
+    final YamlMap pluginSection = flutterSection['plugin'] as YamlMap;
+    if (pluginSection == null) {
+      return false;
+    }
+
+    final YamlMap platforms = pluginSection['platforms'] as YamlMap;
+    if (platforms == null) {
+      return false;
+    }
+
+    return platforms.containsKey(platform);
+  }
+
+  /// Returns whether the given directory contains a Flutter web plugin.
+  bool supportsFlutterWeb() {
+    return supportsFlutterPlatform(kWeb);
+  }
+
+  /// Returns whether the given directory contains a Flutter Windows plugin.
+  bool supportsFlutterWindows() {
+    return supportsFlutterPlatform(kWindows);
+  }
+
+  /// Returns whether the given directory contains a Flutter macOS plugin.
+  bool isMacOsPlugin() {
+    return supportsFlutterPlatform(kMacos);
+  }
+
+  /// Returns whether the given directory contains a Flutter linux plugin.
+  bool isLinuxPlugin() {
+    return supportsFlutterPlatform(kLinux);
   }
 }

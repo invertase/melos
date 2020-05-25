@@ -4,9 +4,11 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
+import 'package:path/path.dart';
 import 'package:yamlicious/yamlicious.dart';
 
 import '../pub/pub_deps_list.dart';
+import '../pub/pub_file_flutter_dependencies.dart';
 import '../pub/pub_file_flutter_plugins.dart';
 import '../pub/pub_file_package_config.dart';
 import '../pub/pub_file_packages.dart';
@@ -51,7 +53,10 @@ class MelosWorkspace {
   }
 
   Future<List<MelosPackage>> loadPackages(
-      {List<String> scope, List<String> ignore}) async {
+      {List<String> scope,
+      List<String> ignore,
+      List<String> dirExists,
+      List<String> fileExists}) async {
     if (_packages != null) return Future.value(_packages);
 
     _packages = await Directory(_path)
@@ -84,6 +89,23 @@ class MelosWorkspace {
         return Glob(pattern).matches(package.name);
       }, orElse: () => null);
       return matchedPattern == null;
+    }).where((package) {
+      // Directory exists packages filter.
+      if (dirExists.isEmpty) return true;
+      final dirExistsMatched = dirExists.firstWhere((dirExistsPath) {
+        return Directory(join(package.path, dirExistsPath)).existsSync();
+      }, orElse: () => null);
+      return dirExistsMatched != null;
+    }).where((package) {
+      // File exists packages filter.
+      if (fileExists.isEmpty) return true;
+      final fileExistsMatched = fileExists.firstWhere((fileExistsPath) {
+        // TODO(Salakar): Make replacer reusable, currently used in a few places.
+        var _fileExistsPath =
+            fileExistsPath.replaceAll('\$MELOS_PACKAGE_NAME', package.name);
+        return File(join(package.path, _fileExistsPath)).existsSync();
+      }, orElse: () => null);
+      return fileExistsMatched != null;
     }).toList();
 
     _packages.sort((a, b) {
@@ -170,7 +192,7 @@ class MelosWorkspace {
     PackagesPubFile.fromDirectory(path).delete();
     FlutterPluginsPubFile.fromDirectory(path).delete();
     PackageConfigPubFile.fromDirectory(path).delete();
-    // TODO(salakar): .flutter-plugins-dependencies
+    FlutterDependenciesPubFile.fromDirectory(path).delete();
 
     // Delete generated pubspec.yaml file, only if cli generated it.
     var pubspecFileRoot = File('$path${Platform.pathSeparator}pubspec.yaml');
@@ -214,7 +236,7 @@ class MelosWorkspace {
       };
 
       // TODO(salakar): this is a hacky work around for dev deps - look at using
-      //                pub cache add etc and manually generating file:// links
+      //                `pub cache add` etc and manually generating file:// links
       var devDependencies = plugin.devDependencies;
       plugin.devDependenciesSet.forEach((name) {
         var linkedPackageExists = packages.firstWhere((package) {

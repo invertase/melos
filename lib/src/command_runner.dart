@@ -33,6 +33,14 @@ class MelosCommandRunner extends CommandRunner {
     argParser.addMultiOption('ignore',
         help: 'Exclude packages with names matching the given glob.');
 
+    argParser.addMultiOption('dir-exists',
+        help:
+            'Include only packages where a specific directory exists inside the package.');
+
+    argParser.addMultiOption('file-exists',
+        help:
+            'Include only packages where a specific file exists in the package.');
+
     addCommand(ExecCommand());
     addCommand(BootstrapCommand());
     addCommand(CleanCommand());
@@ -56,8 +64,11 @@ class MelosCommandRunner extends CommandRunner {
     }
 
     await currentWorkspace.loadPackages(
-        scope: argResults['scope'] as List<String>,
-        ignore: argResults['ignore'] as List<String>);
+      scope: argResults['scope'] as List<String>,
+      ignore: argResults['ignore'] as List<String>,
+      dirExists: argResults['dir-exists'] as List<String>,
+      fileExists: argResults['file-exists'] as List<String>,
+    );
 
     await super.runCommand(argResults);
   }

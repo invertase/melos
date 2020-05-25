@@ -9,9 +9,9 @@ class PubFile {
 
   PubFile(this._directory, this._file);
 
-  Future<void> write() {
+  Future<void> write() async {
     if (_file.contains(Platform.pathSeparator)) {
-      return File(filePath).create(recursive: true);
+      await File(filePath).create(recursive: true);
     }
 
     return File(filePath).writeAsString(toString());
