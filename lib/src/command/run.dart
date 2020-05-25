@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:args/command_runner.dart' show Command;
+import 'package:prompts/prompts.dart' as prompts;
 
 import '../common/logger.dart';
 import '../common/utils.dart';
@@ -24,14 +25,19 @@ class RunCommand extends Command {
 
   @override
   void run() async {
-    logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos run ${argResults.arguments[0]}")}');
-
-    if (argResults.arguments == null) {
-      // TODO(Salakar): could pretty print a list of available scripts here
+    var scriptName;
+    if (argResults.arguments.isEmpty) {
       logger.stderr('Invalid run script name specified.\n');
-      logger.stdout(usage);
-      exit(1);
+      if (currentWorkspace.config.scripts.isNotEmpty) {
+        scriptName = prompts.choose(
+            'Select a script to run:', currentWorkspace.config.scripts.keys,
+            defaultsTo: currentWorkspace.config.scripts.keys.first);
+        logger.stdout('');
+      } else {
+        logger.stderr('You have no scripts defined in your melos.yaml file.\n');
+        logger.stdout(usage);
+        exit(1);
+      }
     }
 
     if (currentWorkspace.config.scripts.isEmpty) {
@@ -40,9 +46,17 @@ class RunCommand extends Command {
       exit(1);
     }
 
-    var scriptName = argResults.arguments[0];
+    scriptName ??= argResults.arguments[0];
+
     if (!currentWorkspace.config.scripts.containsKey(scriptName)) {
       logger.stderr('Invalid run script name specified.\n');
+      if (currentWorkspace.config.scripts.isNotEmpty) {
+        logger.stdout('Available scripts:');
+        currentWorkspace.config.scripts.keys.forEach((key) {
+          logger.stdout(' - ${logger.ansi.blue}$key${logger.ansi.noColor}');
+        });
+        logger.stdout('');
+      }
       logger.stdout(usage);
       exit(1);
     }
@@ -50,6 +64,8 @@ class RunCommand extends Command {
     var scriptSource = currentWorkspace.config.scripts[scriptName] as String;
     var scriptParts = scriptSource.split(' ');
 
+    logger.stdout(
+        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos run $scriptName")}');
     logger.stdout(
         '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(scriptSource.replaceAll('\n', ''))}${logger.ansi.noColor}');
     logger.stdout(
@@ -64,7 +80,7 @@ class RunCommand extends Command {
 
     logger.stdout('');
     logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos run ${argResults.arguments[0]}")}');
+        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos run $scriptName")}');
     logger.stdout(
         '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(scriptSource.replaceAll('\n', ''))}${logger.ansi.noColor}');
 
