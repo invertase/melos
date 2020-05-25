@@ -24,8 +24,15 @@ gets complicated really fast.
 To solve these (and many other) problems, some projects will organize their
 code bases into multi-package repositories (sometimes called [monorepos](https://en.wikipedia.org/wiki/Monorepo))
 
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/5347038/82810703-0c28de80-9e87-11ea-888b-4b0b14c8e658.png" />
+</p>
+
 **Melos is a tool that optimizes the workflow around managing multi-package
 repositories with git and Pub.**
+
+
 
 ### What does a Melos repo look like?
 
