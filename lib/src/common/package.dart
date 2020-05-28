@@ -38,6 +38,8 @@ class MelosPackage {
 
   String get name => _name;
 
+  String get version => _yamlContents['version'] as String;
+
   final String _path;
 
   String get path => _path;
@@ -121,6 +123,7 @@ class MelosPackage {
 
     var environment = {
       'MELOS_PACKAGE_NAME': name,
+      'MELOS_PACKAGE_VERSION': version,
       'MELOS_PACKAGE_PATH': path,
       'MELOS_ROOT_PATH': currentWorkspace.path,
     };
@@ -131,6 +134,7 @@ class MelosPackage {
           '$exampleParentPackagePath${Platform.pathSeparator}pubspec.yaml'));
       if (exampleParentPackage != null) {
         environment['MELOS_PARENT_PACKAGE_NAME'] = exampleParentPackage.name;
+        environment['MELOS_PARENT_PACKAGE_VERSION'] = exampleParentPackage.version;
         environment['MELOS_PARENT_PACKAGE_PATH'] = exampleParentPackage.path;
       }
     }
