@@ -123,7 +123,7 @@ class MelosPackage {
 
     var environment = {
       'MELOS_PACKAGE_NAME': name,
-      'MELOS_PACKAGE_VERSION': version,
+      'MELOS_PACKAGE_VERSION': version ?? '0.0.0',
       'MELOS_PACKAGE_PATH': path,
       'MELOS_ROOT_PATH': currentWorkspace.path,
     };
