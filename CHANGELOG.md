@@ -2,8 +2,7 @@
 
 - Added a new filter for filtering published or unpublished packages: `--[no-]published`.
   - Unpublished in this case means the package either does not exist on the Pub registry or the current local version of the package is not yet published to the Pub registry.
-  - Example logging out all unpublished packages and their versions:
-- Added a new command to pretty print currently unpublished packages: `melos unpublished`:
+- Added a new command to pretty print currently unpublished packages: `melos unpublished`.
 
 #### Example `--[no-]published` usage
 
