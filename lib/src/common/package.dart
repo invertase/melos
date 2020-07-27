@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:yaml/yaml.dart';
+import 'package:http/http.dart' as http;
 
 import '../pub/pub_file.dart';
 import '../pub/pub_file_flutter_dependencies.dart';
@@ -33,6 +35,7 @@ const String kWeb = 'web';
 
 class MelosPackage {
   final Map _yamlContents;
+  List<String> _registryVersions;
 
   final String _name;
 
@@ -134,7 +137,8 @@ class MelosPackage {
           '$exampleParentPackagePath${Platform.pathSeparator}pubspec.yaml'));
       if (exampleParentPackage != null) {
         environment['MELOS_PARENT_PACKAGE_NAME'] = exampleParentPackage.name;
-        environment['MELOS_PARENT_PACKAGE_VERSION'] = exampleParentPackage.version;
+        environment['MELOS_PARENT_PACKAGE_VERSION'] =
+            exampleParentPackage.version;
         environment['MELOS_PARENT_PACKAGE_PATH'] = exampleParentPackage.path;
       }
     }
@@ -158,6 +162,28 @@ class MelosPackage {
       PubFile pubFile = await future;
       return pubFile.write();
     });
+  }
+
+  Future<List<String>> getPublishedVersions() async {
+    if (_registryVersions != null) {
+      return _registryVersions;
+    }
+    var url = 'https://pub.dev/packages/$name.json';
+    var response = await http.get(url);
+    if (response.statusCode == 404) {
+      return [];
+    } else if (response.statusCode != 200) {
+      throw Exception(
+          'Error reading pub.dev registry for package "$name" (HTTP Status ${response.statusCode}), response: ${response.body}');
+    }
+    var versions = <String>[];
+    var versionsRaw = json.decode(response.body)['versions'] as List<dynamic>;
+    versionsRaw.forEach((element) {
+      versions.add(element as String);
+    });
+    versions.sort();
+    _registryVersions = versions.reversed.toList();
+    return _registryVersions;
   }
 
   void clean() {
@@ -226,5 +252,10 @@ class MelosPackage {
     if (!_yamlContents.containsKey('publish_to')) return false;
     if (_yamlContents['publish_to'].runtimeType != String) return false;
     return _yamlContents['publish_to'] == 'none';
+  }
+
+  @override
+  String toString() {
+    return 'MelosPackage[$name@$version]';
   }
 }

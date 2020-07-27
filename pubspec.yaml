@@ -6,6 +6,7 @@ executables:
   melos:
 dependencies:
   args: ^1.6.0
+  http: ^0.12.2
   pool: ^1.4.0
   collection: ^1.14.12
   string_scanner: ^1.0.5
