@@ -5,6 +5,7 @@ import 'package:args/args.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';
+import 'package:pool/pool.dart';
 import 'package:yamlicious/yamlicious.dart';
 
 import '../pub/pub_deps_list.dart';
@@ -57,7 +58,8 @@ class MelosWorkspace {
       List<String> ignore,
       List<String> dirExists,
       List<String> fileExists,
-      bool skipPrivate}) async {
+      bool skipPrivate,
+      bool published}) async {
     if (_packages != null) return Future.value(_packages);
 
     final packageGlobs = _config.packages;
@@ -133,13 +135,33 @@ class MelosWorkspace {
     }
 
     if (skipPrivate) {
-        // Whether we should skip packages with 'publish_to: none' set.
+      // Whether we should skip packages with 'publish_to: none' set.
       filterResult = filterResult.where((package) {
         return !package.isPrivate();
       });
     }
 
-    _packages = await filterResult.toList();
+    if (published != null) {
+      _packages = await filterResult.toList();
+      // Pooling to parrellize registry requests for performance.
+      var pool = Pool(10);
+      var packagesFilteredWithPublishStatus = <MelosPackage>[];
+      await pool.forEach<MelosPackage, void>(_packages, (package) {
+        return package.getPublishedVersions().then((versions) async {
+          var isOnPubRegistry = versions.contains(package.version);
+          if (published == false && !isOnPubRegistry) {
+            return packagesFilteredWithPublishStatus.add(package);
+          }
+          if (published == true && isOnPubRegistry) {
+            return packagesFilteredWithPublishStatus.add(package);
+          }
+        });
+      }).drain();
+      _packages = packagesFilteredWithPublishStatus;
+    } else {
+      _packages = await filterResult.toList();
+    }
+
     _packages.sort((a, b) {
       return a.name.compareTo(b.name);
     });

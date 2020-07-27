@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import '../common/package.dart';
-import '../common/utils.dart' as utils;
 import '../common/workspace.dart';
 import '../pub/pub_file.dart';
 

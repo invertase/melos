@@ -1,0 +1,85 @@
+## 0.2.0
+
+- Added a new filter for filtering published or unpublished packages: `--[no-]published`.
+  - Unpublished in this case means the package either does not exist on the Pub registry or the current local version of the package is not yet published to the Pub registry.
+- Added a new command to pretty print currently unpublished packages: `melos unpublished`.
+
+#### Example `--[no-]published` usage
+
+Example logging out all unpublished packages and their versions:
+
+```bash
+mike@MikeMacMini fe_ff_master % melos exec --no-published --ignore="*example*" -- echo MELOS_PACKAGE_NAME MELOS_PACKAGE_VERSION
+$ melos exec --no-published
+   └> echo MELOS_PACKAGE_NAME MELOS_PACKAGE_VERSION
+       └> RUNNING (in 12 packages)
+
+[firebase_admob]: firebase_admob 0.9.3+4
+[firebase_analytics_platform_interface]: firebase_analytics_platform_interface 1.0.3
+[firebase_auth]: firebase_auth 0.17.0-dev.1
+[firebase_auth_web]: firebase_auth_web 0.2.0-dev.1
+[firebase_core]: firebase_core 0.5.0-dev.2
+[firebase_crashlytics]: firebase_crashlytics 0.1.4+1
+[firebase_database]: firebase_database 4.0.0-dev.1
+[firebase_dynamic_links]: firebase_dynamic_links 0.5.3
+[firebase_ml_vision]: firebase_ml_vision 0.9.5
+[firebase_remote_config]: firebase_remote_config 0.3.1+1
+[firebase_storage]: firebase_storage 4.0.0-dev.1
+
+$ melos exec --no-published
+   └> echo MELOS_PACKAGE_NAME MELOS_PACKAGE_VERSION
+       └> SUCCESS
+mike@MikeMacMini fe_ff_master %
+```
+
+#### Example `unpublished` usage
+
+```bash
+mike@MikeMacMini fe_ff_master % melos unpublished --ignore="*example*"
+$ melos unpublished
+   └> /Users/mike/Documents/Projects/Flutter/fe_ff_master
+
+Reading registry for package information... SUCCESS
+
+$ melos unpublished
+   └> /Users/mike/Documents/Projects/Flutter/fe_ff_master
+       └> UNPUBLISHED PACKAGES (12 packages)
+           └> firebase_analytics_platform_interface
+               • Local:   1.0.3
+               • Remote:  1.0.1
+           └> cloud_functions
+               • Local:   0.6.0-dev.2
+               • Remote:  0.6.0-dev.1
+           └> firebase_core
+               • Local:   0.5.0-dev.2
+               • Remote:  0.5.0-dev.1
+           └> firebase_auth_web
+               • Local:   0.2.0-dev.1
+               • Remote:  0.1.3+1
+           └> firebase_dynamic_links
+               • Local:   0.5.3
+               • Remote:  0.5.1
+           └> firebase_crashlytics
+               • Local:   0.1.4+1
+               • Remote:  0.1.3+3
+           └> firebase_admob
+               • Local:   0.9.3+4
+               • Remote:  0.9.3+2
+           └> firebase_ml_vision
+               • Local:   0.9.5
+               • Remote:  0.9.4
+           └> firebase_remote_config
+               • Local:   0.3.1+1
+               • Remote:  0.3.1
+           └> firebase_database
+               • Local:   4.0.0-dev.1
+               • Remote:  3.1.6
+           └> firebase_auth
+               • Local:   0.17.0-dev.1
+               • Remote:  0.9.0
+           └> firebase_storage
+               • Local:   4.0.0-dev.1
+               • Remote:  3.1.6
+
+mike@MikeMacMini fe_ff_master %
+```
