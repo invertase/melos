@@ -75,7 +75,7 @@ Future<int> startProcess(List<String> execArgs,
   final workingDirectoryPath = workingDirectory ?? Directory.current.path;
 
   final executable =
-      Platform.isWindows ? '%WINDIR%\\system32\\cmd.exe' : '/bin/sh';
+      Platform.isWindows ? '%WINDIR%\\System32\\cmd.exe' : '/bin/sh';
 
   final execProcess = await Process.start(executable, [],
       workingDirectory: workingDirectoryPath,
