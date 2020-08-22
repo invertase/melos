@@ -17,6 +17,10 @@ String getAndroidSdkRoot() {
   return possibleSdkRoot;
 }
 
+String getMelosRoot() {
+  return File.fromUri(Platform.script).parent.parent.path;
+}
+
 String getFlutterSdkRoot() {
   var result = Process.runSync('which', ['flutter']);
   var possiblePath = result.stdout.toString();

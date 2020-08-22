@@ -137,7 +137,7 @@ class MelosWorkspace {
     if (skipPrivate) {
       // Whether we should skip packages with 'publish_to: none' set.
       filterResult = filterResult.where((package) {
-        return !package.isPrivate();
+        return !package.isPrivate;
       });
     }
 

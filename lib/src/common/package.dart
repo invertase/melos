@@ -47,6 +47,9 @@ class MelosPackage {
 
   String get path => _path;
 
+  String get pathInWorkspace =>
+      _path.replaceFirst('${currentWorkspace.path}/', '');
+
   MelosPackage._(this._name, this._path, this._yamlContents);
 
   Set<String> get dependenciesSet {
@@ -149,21 +152,32 @@ class MelosPackage {
         prefix: packagePrefix);
   }
 
-  // TODO(salakar): Conditionally write these files only if they exist in root.
-  // TODO(salakar): Only write Flutter specific files to packages that are Flutter plugins.
+  /// Generates Pub/Flutter related temporary files such as .packages or pubspec.lock.
   Future<void> linkPackages(MelosWorkspace workspace) async {
+    // Dart specific files.
     await Future.forEach([
       PackagesPubFile.fromWorkspacePackage(workspace, this),
-      FlutterPluginsPubFile.fromWorkspacePackage(workspace, this),
       PubspecLockPubFile.fromWorkspacePackage(workspace, this),
       PackageConfigPubFile.fromWorkspacePackage(workspace, this),
-      FlutterDependenciesPubFile.fromWorkspacePackage(workspace, this),
     ], (Future<PubFile> future) async {
       PubFile pubFile = await future;
       return pubFile.write();
     });
+
+    // Additional Flutter application specific files, only if package is an App.
+    if (isFlutterApp) {
+      await Future.forEach([
+        FlutterPluginsPubFile.fromWorkspacePackage(workspace, this),
+        FlutterDependenciesPubFile.fromWorkspacePackage(workspace, this),
+      ], (Future<PubFile> future) async {
+        PubFile pubFile = await future;
+        return pubFile.write();
+      });
+    }
   }
 
+  /// Queries the registry for published versions of this package.
+  /// Primarily used for publish filters and versioning.
   Future<List<String>> getPublishedVersions() async {
     if (_registryVersions != null) {
       return _registryVersions;
@@ -186,20 +200,15 @@ class MelosPackage {
     return _registryVersions;
   }
 
+  /// Cleans up all Melos generated files in this package.
   void clean() {
     PackagesPubFile.fromDirectory(path).delete();
-    FlutterPluginsPubFile.fromDirectory(path).delete();
     PubspecLockPubFile.fromDirectory(path).delete();
     PackageConfigPubFile.fromDirectory(path).delete();
-    FlutterDependenciesPubFile.fromDirectory(path).delete();
-  }
-
-  bool isFlutterPackage() {
-    final YamlMap dependencies = _yamlContents['dependencies'] as YamlMap;
-    if (dependencies == null) {
-      return false;
+    if (isFlutterPackage) {
+      FlutterPluginsPubFile.fromDirectory(path).delete();
+      FlutterDependenciesPubFile.fromDirectory(path).delete();
     }
-    return dependencies.containsKey('flutter');
   }
 
   bool supportsFlutterPlatform(String platform) {
@@ -228,27 +237,64 @@ class MelosPackage {
     return platforms.containsKey(platform);
   }
 
-  /// Returns whether the given directory contains a Flutter web plugin.
-  bool supportsFlutterWeb() {
+  /// Returns whether this package is for Flutter.
+  /// This is determined by whether the package depends on the Flutter SDK.
+  bool get isFlutterPackage {
+    final YamlMap dependencies = _yamlContents['dependencies'] as YamlMap;
+    if (dependencies == null) {
+      return false;
+    }
+    return dependencies.containsKey('flutter');
+  }
+
+  /// Returns whether this package is a Flutter app.
+  /// This is determined by ensuring all the following conditions are met:
+  ///  a) the package depends on the Flutter SDK.
+  ///  b) the package does not define itself as a Flutter plugin inside pubspec.yaml.
+  bool get isFlutterApp {
+    // Must directly depend on the Flutter SDK.
+    if (!isFlutterPackage) return false;
+
+    // Must not have a Flutter plugin definition in it's pubspec.yaml.
+    final YamlMap flutterSection = _yamlContents['flutter'] as YamlMap;
+    if (flutterSection == null) {
+      return true;
+    }
+    final YamlMap pluginSection = flutterSection['plugin'] as YamlMap;
+    if (pluginSection == null) {
+      return true;
+    }
+
+    // Package is a plugin not an app.
+    return false;
+  }
+
+  /// Returns whether this package supports Flutter for Android.
+  bool get supportsFlutterAndroid {
+    return supportsFlutterPlatform(kAndroid);
+  }
+  /// Returns whether this package supports Flutter for Web.
+  bool get supportsFlutterWeb {
     return supportsFlutterPlatform(kWeb);
   }
 
-  /// Returns whether the given directory contains a Flutter Windows plugin.
-  bool supportsFlutterWindows() {
+  /// Returns whether this package supports Flutter for Windows.
+  bool get supportsFlutterWindows {
     return supportsFlutterPlatform(kWindows);
   }
 
-  /// Returns whether the given directory contains a Flutter macOS plugin.
-  bool isMacOsPlugin() {
+  /// Returns whether this package supports Flutter for MacOS.
+  bool get supportsFlutterMacos {
     return supportsFlutterPlatform(kMacos);
   }
 
-  /// Returns whether the given directory contains a Flutter linux plugin.
-  bool isLinuxPlugin() {
+  /// Returns whether this package supports Flutter for Linux.
+  bool get supportsFlutterLinux {
     return supportsFlutterPlatform(kLinux);
   }
 
-  bool isPrivate() {
+  /// Returns whether this package is private (publish_to set to 'none').
+  bool get isPrivate {
     if (!_yamlContents.containsKey('publish_to')) return false;
     if (_yamlContents['publish_to'].runtimeType != String) return false;
     return _yamlContents['publish_to'] == 'none';

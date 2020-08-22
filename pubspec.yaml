@@ -10,7 +10,7 @@ dependencies:
   pool: ^1.4.0
   collection: ^1.14.12
   string_scanner: ^1.0.5
-  cli_util: ^0.1.4
+  cli_util: ^0.2.0
   glob: ^1.2.0
   path: ^1.7.0
   yaml: ^2.2.1
