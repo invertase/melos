@@ -1,3 +1,20 @@
+/*
+ * Copyright (c) 2016-present Invertase Limited & Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this library except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -6,6 +23,10 @@ import 'package:path/path.dart' show relative;
 import 'package:yaml/yaml.dart';
 
 import 'logger.dart';
+
+String getMelosRoot() {
+  return File.fromUri(Platform.script).parent.parent.path;
+}
 
 String getAndroidSdkRoot() {
   var possibleSdkRoot = Platform.environment['ANDROID_SDK_ROOT'];
@@ -17,10 +38,7 @@ String getAndroidSdkRoot() {
   return possibleSdkRoot;
 }
 
-String getMelosRoot() {
-  return File.fromUri(Platform.script).parent.parent.path;
-}
-
+// TODO not Windows compatible
 String getFlutterSdkRoot() {
   var result = Process.runSync('which', ['flutter']);
   var possiblePath = result.stdout.toString();
@@ -79,12 +97,13 @@ Future<int> startProcess(List<String> execArgs,
   final workingDirectoryPath = workingDirectory ?? Directory.current.path;
 
   final executable =
-      Platform.isWindows ? '%WINDIR%\\System32\\cmd.exe' : '/bin/sh';
+      Platform.isWindows ? '%WINDIR%\\system32\\cmd.exe' : '/bin/sh';
 
   final execProcess = await Process.start(executable, [],
       workingDirectory: workingDirectoryPath,
       includeParentEnvironment: true,
-      environment: environmentVariables);
+      environment: environmentVariables,
+      runInShell: Platform.isWindows);
 
   final execString = execArgs.map((arg) {
     var _arg = arg;

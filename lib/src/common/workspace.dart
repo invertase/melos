@@ -1,3 +1,20 @@
+/*
+ * Copyright (c) 2016-present Invertase Limited & Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this library except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 import 'dart:async';
 import 'dart:io';
 
@@ -29,7 +46,7 @@ class MelosWorkspace {
 
   String get path => _path;
 
-  Map<String, Set<String>> _dependencyGraph;
+  Map<String, Set<String>> _cacheDependencyGraph;
 
   final MelosWorkspaceConfig _config;
 
@@ -61,7 +78,6 @@ class MelosWorkspace {
       bool skipPrivate,
       bool published}) async {
     if (_packages != null) return Future.value(_packages);
-
     final packageGlobs = _config.packages;
 
     var filterResult = Directory(_path)
@@ -78,7 +94,7 @@ class MelosWorkspace {
       return matchedPattern != null;
     }).asyncMap((entity) {
       // Convert into Package for further filtering
-      return MelosPackage.fromPubspecPath(entity);
+      return MelosPackage.fromPubspecPathAndWorkspace(entity, this);
     });
 
     if (scope.isNotEmpty) {
@@ -169,9 +185,10 @@ class MelosWorkspace {
     return _packages;
   }
 
+  /// Builds a dependency graph of dependencies and their dependents in this workspace.
   Future<Map<String, Set<String>>> getDependencyGraph() async {
-    if (_dependencyGraph != null) {
-      return _dependencyGraph;
+    if (_cacheDependencyGraph != null) {
+      return _cacheDependencyGraph;
     }
 
     final pubListCommandOutput = await Process.run(
@@ -218,7 +235,7 @@ class MelosWorkspace {
       dependencyGraphFlat[entry.name] = entriesSet;
     });
 
-    _dependencyGraph = dependencyGraphFlat;
+    _cacheDependencyGraph = dependencyGraphFlat;
     return dependencyGraphFlat;
   }
 
@@ -242,7 +259,7 @@ class MelosWorkspace {
   }
 
   void clean({bool cleanPackages = true}) {
-    // clean workspace
+    // Clean workspace.
     PackagesPubFile.fromDirectory(path).delete();
     FlutterPluginsPubFile.fromDirectory(path).delete();
     PackageConfigPubFile.fromDirectory(path).delete();
@@ -292,7 +309,7 @@ class MelosWorkspace {
       // TODO(salakar): this is a hacky work around for dev deps - look at using
       //                `pub cache add` etc and manually generating file:// links
       var devDependencies = plugin.devDependencies;
-      plugin.devDependenciesSet.forEach((name) {
+      plugin.devDependencies.keys.toSet().forEach((name) {
         var linkedPackageExists = packages.firstWhere((package) {
           return package.name == name;
         }, orElse: () {
