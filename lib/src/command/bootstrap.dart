@@ -132,7 +132,6 @@ class BootstrapCommand extends Command {
 
   @override
   void run() async {
-    await initIntellijProject();
     logger.stdout(
         '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos bootstrap")}');
     logger.stdout(
@@ -159,10 +158,10 @@ class BootstrapCommand extends Command {
         message: '${logger.ansi.green}SUCCESS${logger.ansi.noColor}',
         showTiming: true);
 
-    if (currentWorkspace.config.scripts.containsKey('postbootstrap')) {
-      logger.stdout('Running postbootstrap script...\n');
-      await MelosCommandRunner.instance.run(['run', 'postbootstrap']);
-    }
+    // if (currentWorkspace.config.scripts.containsKey('postbootstrap')) {
+    //   logger.stdout('Running postbootstrap script...\n');
+    //   await MelosCommandRunner.instance.run(['run', 'postbootstrap']);
+    // }
 
     logger.stdout('\nPackages:');
     currentWorkspace.packages.forEach((package) {
@@ -173,5 +172,7 @@ class BootstrapCommand extends Command {
     });
     logger.stdout(
         '\n -> ${currentWorkspace.packages.length} plugins bootstrapped');
+
+    await initIntellijProject();
   }
 }
