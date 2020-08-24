@@ -29,6 +29,7 @@ const String _kIntellijDirName = 'intellij';
 const String _kDotIdeaDirName = '.idea';
 const String _kTmplExtension = '.tmpl';
 
+/// IntelliJ project IDE configuration helper.
 class IntellijProject {
   final MelosWorkspace _workspace;
 
@@ -36,10 +37,12 @@ class IntellijProject {
 
   IntellijProject._(this._workspace);
 
+  /// Build a new [IntellijProject] from a [MelosWorkspace].
   static IntellijProject fromWorkspace(MelosWorkspace workspace) {
     return IntellijProject._(workspace);
   }
 
+  /// Fully qualified path to the intellij templates shiped as part of Melos.
   String get pathTemplates {
     return joinAll([
       utils.getMelosRoot(),
@@ -48,20 +51,27 @@ class IntellijProject {
     ]);
   }
 
+  /// Path to the .idea folder in the current workspace.
   String get pathDotIdea {
     return joinAll([_workspace.path, _kDotIdeaDirName]);
   }
 
+  /// Path to the .idea/.name file in the current workspace.
+  /// This file generated with the workspace name as its contents. IntelliJ
+  /// uses this to change the project display name the IDE.
   String get pathDotName {
     return joinAll([pathDotIdea, '.name']);
   }
 
+  /// Path to the .idea/modules.xml file in the current workspace.
+  /// This file is generated with a module for each discovered package in the
+  /// current workspace.
   String get pathModulesXml {
     return joinAll([pathDotIdea, 'modules.xml']);
   }
 
-  String pathTemplatesForCategory(String category) {
-    return joinAll([pathTemplates, category]);
+  String pathTemplatesForDirectory(String directory) {
+    return joinAll([pathTemplates, directory]);
   }
 
   String pathPackageModuleIml(MelosPackage package) {
@@ -111,7 +121,7 @@ class IntellijProject {
     }
     String templatesRootPath;
     if (templateCategory != null) {
-      templatesRootPath = pathTemplatesForCategory(templateCategory);
+      templatesRootPath = pathTemplatesForDirectory(templateCategory);
     } else {
       templatesRootPath = pathTemplates;
     }
@@ -183,6 +193,45 @@ class IntellijProject {
     return forceWriteToFile(pathModulesXml, generatedModulesXml);
   }
 
+  Future<void> writeMelosScripts() async {
+    String melosScriptTemplate = await readFileTemplate('melos_script.xml',
+        templateCategory: 'runConfigurations');
+
+    Map<String, String> runConfigurations = <String, String>{
+      'Melos -&gt; Bootstrap Workspace': 'bootstrap',
+      'Melos -&gt; Clean Workspace': 'clean',
+    };
+    _workspace.config.scripts.keys.forEach((key) {
+      runConfigurations["Melos Run -&gt; '$key'"] = 'run $key';
+    });
+
+    await Future.forEach(runConfigurations.keys, (String scriptName) async {
+      String scriptArgs = runConfigurations[scriptName];
+      String generatedRunConfiguration = injectTemplateVariable(
+          template: melosScriptTemplate,
+          variableName: 'scriptName',
+          variableValue: scriptName);
+      generatedRunConfiguration = injectTemplateVariable(
+          template: generatedRunConfiguration,
+          variableName: 'scriptArgs',
+          variableValue: scriptArgs);
+      String outputFile = joinAll([
+        pathDotIdea,
+        'runConfigurations',
+        'melos_${scriptArgs.replaceAll(' ', '_')}.xml'
+      ]);
+      await forceWriteToFile(outputFile, generatedRunConfiguration);
+    });
+  }
+
+  Future<void> writeFlutterRunScripts() async {
+    // todo
+  }
+
+  Future<void> writeFlutterTestScripts() async {
+    // todo
+  }
+
   Future<void> writeFiles() async {
     // <WORKSPACE_ROOT>/.idea/.name
     await writeNameFile();
@@ -198,34 +247,9 @@ class IntellijProject {
     // <WORKSPACE_ROOT>/.idea/modules.xml
     await writeModulesXml();
 
-    // TODO move to own fn
-    // TODO flutter run scripts for apps
-    // TODO flutter test scripts for flutter packages (but not apps)
-    // TODO dart test scripts for dart packages
-    // Generate Melos scripts.
-    String melosScriptTemplate = await readFileTemplate('melos_script.xml',
-        templateCategory: 'runConfigurations');
-    Map<String, String> runConfigurations = <String, String>{
-      'Melos -&gt; Bootstrap Workspace': 'bootstrap',
-      'Melos -&gt; Clean Workspace': 'clean',
-    };
-    _workspace.config.scripts.keys.forEach((key) {
-      runConfigurations["Melos Run -&gt; '$key'"] = 'run $key';
-    });
-    await Future.forEach(runConfigurations.keys, (String scriptName) async {
-      String scriptArgs = runConfigurations[scriptName];
-      String generatedRunConfiguration = injectTemplateVariable(
-          template: melosScriptTemplate,
-          variableName: 'scriptName',
-          variableValue: scriptName);
-      generatedRunConfiguration = injectTemplateVariable(
-          template: generatedRunConfiguration,
-          variableName: 'scriptArgs',
-          variableValue: scriptArgs);
-      await forceWriteToFile(
-          File('$pathDotIdea${Platform.pathSeparator}runConfigurations${Platform.pathSeparator}melos_${scriptArgs.replaceAll(' ', '_')}.xml')
-              .path,
-          generatedRunConfiguration);
-    });
+    // <WORKSPACE_ROOT>/.idea/runConfigurations/<SCRIPT_NAME>.xml
+    await writeMelosScripts();
+    await writeFlutterRunScripts();
+    await writeFlutterTestScripts();
   }
 }
