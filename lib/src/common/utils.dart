@@ -129,9 +129,9 @@ Future<int> startProcess(List<String> execArgs,
 
   // exit with the exit code of the previous command
   // if (!Platform.isWindows) {
-    //   execProcess.stdin.writeln('EXIT /b %ERRORLEVEL%');
-    // } else {
-    // execProcess.stdin.writeln('exit \$?');
+  //   execProcess.stdin.writeln('EXIT /b %ERRORLEVEL%');
+  // } else {
+  // execProcess.stdin.writeln('exit \$?');
   // }
 
   var stdoutStream = execProcess.stdout;
@@ -174,8 +174,14 @@ Future<int> startProcess(List<String> execArgs,
     await stdoutSubscriber.cancel();
     await stderrSubscriber.cancel();
   } else if (exitCode > 0) {
-    (await execProcess.stdout.toList()).forEach(stdout.add);
-    (await execProcess.stderr.toList()).forEach(stdout.add);
+    if (Platform.isWindows) {
+      (await Future.any(
+              [execProcess.stdout.toList(), execProcess.stderr.toList()]))
+          .forEach(stdout.add);
+    } else {
+      (await execProcess.stdout.toList()).forEach(stdout.add);
+      (await execProcess.stderr.toList()).forEach(stdout.add);
+    }
   }
 
   return exitCode;
