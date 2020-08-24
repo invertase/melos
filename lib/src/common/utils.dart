@@ -137,15 +137,22 @@ Future<int> startProcess(List<String> execArgs,
     return 0;
   }
 
-  final execProcess = await Process.start(executable,
-      Platform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : ['-c', r'$MELOS_SCRIPT'],
+  final execProcess = await Process.start(
+      executable, Platform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
       workingDirectory: workingDirectoryPath,
       includeParentEnvironment: true,
       environment: {
         ...environmentVariables,
         'MELOS_SCRIPT': filteredArgs.join(' '),
       },
-      runInShell: true);
+      runInShell: Platform.isWindows);
+
+  if (!Platform.isWindows) {
+    // Pipe in the arguments to trigger the script to run.
+    execProcess.stdin.writeln(filteredArgs.join(' '));
+    // Exit the process with the same exit code as the previous command.
+    execProcess.stdin.writeln('exit \$?');
+  }
 
   var stdoutStream = execProcess.stdout;
   var stderrStream = execProcess.stderr;
