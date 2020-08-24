@@ -1,3 +1,8 @@
+## 0.3.0
+
+- Added support for Windows.
+- Added workspace support for IntelliJ IDEs (Android Studio).
+
 ## 0.2.0
 
 - Added a new filter for filtering published or unpublished packages: `--[no-]published`.
