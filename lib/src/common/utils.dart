@@ -99,32 +99,40 @@ Future<int> startProcess(List<String> execArgs,
   final environmentVariables = environment ?? {};
   final workingDirectoryPath = workingDirectory ?? Directory.current.path;
 
-  final executable =
-      Platform.isWindows ? '%WINDIR%\\system32\\cmd.exe' : '/bin/sh';
+  // final executable =
+  //     Platform.isWindows ? '%WINDIR%\\system32\\cmd.exe' : '/bin/sh';
 
-  final execProcess = await Process.start(executable, [],
-      workingDirectory: workingDirectoryPath,
-      includeParentEnvironment: true,
-      environment: environmentVariables,
-      runInShell: Platform.isWindows);
-
-  final execString = execArgs.map((arg) {
-    var _arg = arg;
-    environment.forEach((key, value) {
-      _arg = _arg.replaceAll('\$$key', value);
-      _arg = _arg.replaceAll(key, value);
-    });
-    return _arg;
-  }).join(' ');
-
-  execProcess.stdin.writeln(execString);
-
-  // exit with the exit code of the previous command
+  Process execProcess;
   if (Platform.isWindows) {
-    execProcess.stdin.writeln('exit /b %errorlevel%');
+    execProcess = await Process.start(execArgs[0], execArgs.skip(1).toList(),
+        workingDirectory: workingDirectoryPath,
+        includeParentEnvironment: true,
+        environment: environmentVariables,
+        runInShell: true);
   } else {
+    execProcess = await Process.start('/bin/sh', [],
+        workingDirectory: workingDirectoryPath,
+        includeParentEnvironment: true,
+        environment: environmentVariables,
+        runInShell: false);
+    final execString = execArgs.map((arg) {
+      var _arg = arg;
+      environment.forEach((key, value) {
+        _arg = _arg.replaceAll('\$$key', value);
+        _arg = _arg.replaceAll(key, value);
+      });
+      return _arg;
+    }).join(' ');
+    execProcess.stdin.writeln(execString);
     execProcess.stdin.writeln('exit \$?');
   }
+
+  // exit with the exit code of the previous command
+  // if (!Platform.isWindows) {
+    //   execProcess.stdin.writeln('EXIT /b %ERRORLEVEL%');
+    // } else {
+    // execProcess.stdin.writeln('exit \$?');
+  // }
 
   var stdoutStream = execProcess.stdout;
   var stderrStream = execProcess.stderr;
