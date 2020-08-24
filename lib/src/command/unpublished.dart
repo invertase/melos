@@ -82,7 +82,8 @@ class UnpublishedCommand extends Command {
             '               ${logger.ansi.bullet} ${logger.ansi.cyan}Remote:${logger.ansi.noColor}  ${latestPackageVersion[package.name]}');
       });
       logger.stdout('');
-      exit(1);
+      exitCode = 1;
+      return;
     } else {
       logger.stdout(
           '       └> ${logger.ansi.green}${logger.ansi.emphasized('NO UNPUBLISHED PACKAGES')}${logger.ansi.noColor}');

@@ -45,12 +45,13 @@ class BootstrapCommand extends Command {
     var bootstrapProgress = logger.progress('Bootstrapping project');
     await currentWorkspace.generatePubspecFile();
 
-    var exitCode = await currentWorkspace
+    var processExitCode = await currentWorkspace
         .exec(['flutter', 'pub', 'get'], onlyOutputOnError: true);
-    if (exitCode > 0) {
+    if (processExitCode > 0) {
       logger
           .stderr('Bootstrap failed, reason: pub get failed, see logs above.');
-      exit(1);
+      exitCode = 1;
+      return;
     }
 
     bootstrapProgress.finish(message: successMessage, showTiming: true);

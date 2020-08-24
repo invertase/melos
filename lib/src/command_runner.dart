@@ -86,7 +86,8 @@ class MelosCommandRunner extends CommandRunner {
       logger.stderr(
           'Your current directory does not appear to be a valid workspace.');
       logger.stderr('Does the "melos.yaml" file exist in the root?');
-      exit(1);
+      exitCode = 1;
+      return;
     }
 
     // TODO(Salakar): Optimise this, this causes the greatest startup delay currently.

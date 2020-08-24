@@ -1,2 +1,2 @@
-// Generated file. Do not commit.
-String melosVersion = '0.3.3';
+// TODO make this generated.
+String melosVersion = '0.3.5';
