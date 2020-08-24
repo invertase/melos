@@ -24,6 +24,8 @@ import 'package:yaml/yaml.dart';
 
 import 'logger.dart';
 
+var _didLogRmWarning = false;
+
 String getMelosRoot() {
   return File.fromUri(Platform.script).parent.parent.path;
 }
@@ -123,6 +125,17 @@ Future<int> startProcess(List<String> execArgs,
 
     return _arg;
   }).where((element) => element != null);
+
+  // TODO This is just a temporary workaround to keep FlutterFire working on Windows
+  // TODO until all the run scripts have been updated in its melos.yaml file.
+  if (filteredArgs.toList()[0] == 'rm' && Platform.isWindows) {
+    if (!_didLogRmWarning) {
+      print(
+          '> Warning: skipped executing a script as "rm" is not supported on Windows.');
+      _didLogRmWarning = true;
+    }
+    return 0;
+  }
 
   final execProcess = await Process.start(executable,
       Platform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : ['-c', r'$MELOS_SCRIPT'],

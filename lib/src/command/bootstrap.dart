@@ -41,6 +41,7 @@ class BootstrapCommand extends Command {
         '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos bootstrap")}');
     logger.stdout(
         '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(currentWorkspace.path)}${logger.ansi.noColor}\n');
+    var successMessage = '${logger.ansi.green}SUCCESS${logger.ansi.noColor}';
     var bootstrapProgress = logger.progress('Bootstrapping project');
     await currentWorkspace.generatePubspecFile();
 
@@ -52,17 +53,22 @@ class BootstrapCommand extends Command {
       exit(1);
     }
 
-    bootstrapProgress.finish(
-        message: '${logger.ansi.green}SUCCESS${logger.ansi.noColor}',
-        showTiming: true);
+    bootstrapProgress.finish(message: successMessage, showTiming: true);
+    if (Platform.isWindows) {
+      // TODO Manual print finish status as it doesn't show on Windows, bug with progress library.
+      print('  > $successMessage');
+    }
+
     var linkingProgress = logger.progress('Linking project packages');
 
     await currentWorkspace.linkPackages();
     currentWorkspace.clean(cleanPackages: false);
 
-    linkingProgress.finish(
-        message: '${logger.ansi.green}SUCCESS${logger.ansi.noColor}',
-        showTiming: true);
+    linkingProgress.finish(message: successMessage, showTiming: true);
+    if (Platform.isWindows) {
+      // TODO Manual print finish status as it doesn't show on Windows, bug with progress library.
+      print('  > $successMessage');
+    }
 
     if (currentWorkspace.config.scripts.containsKey('postbootstrap')) {
       logger.stdout('Running postbootstrap script...\n');

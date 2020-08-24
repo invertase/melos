@@ -42,7 +42,7 @@ class ExecCommand extends Command {
         defaultsTo: false,
         negatable: true,
         help:
-            'Wether exec should fail fast and not execute the script in further packages if the script fails in a individual package.');
+            'Whether exec should fail fast and not execute the script in further packages if the script fails in a individual package.');
   }
 
   @override

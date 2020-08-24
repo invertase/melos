@@ -42,7 +42,7 @@ class IntellijProject {
     return IntellijProject._(workspace);
   }
 
-  /// Fully qualified path to the intellij templates shiped as part of Melos.
+  /// Fully qualified path to the intellij templates shipped as part of Melos.
   String get pathTemplates {
     return joinAll([
       utils.getMelosRoot(),
@@ -106,10 +106,6 @@ class IntellijProject {
     }
     // Pad to preserve formatting on generated file. Indent x6.
     return '      $module';
-  }
-
-  Future<void> cleanProject() async {
-    // TODO
   }
 
   /// Reads a file template from the templates directory.
@@ -226,6 +222,10 @@ class IntellijProject {
       ]);
       await forceWriteToFile(outputFile, generatedRunConfiguration);
     });
+  }
+
+  Future<void> cleanFiles() async {
+    // TODO
   }
 
   Future<void> writeFlutterRunScripts() async {

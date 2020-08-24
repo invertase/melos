@@ -85,6 +85,7 @@ class MelosCommandRunner extends CommandRunner {
       // TODO(salakar): log init help once init command complete
       logger.stderr(
           'Your current directory does not appear to be a valid workspace.');
+      logger.stderr('Does the "melos.yaml" file exist in the root?');
       exit(1);
     }
 

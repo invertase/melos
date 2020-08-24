@@ -22,9 +22,8 @@ import 'package:yaml/yaml.dart';
 
 import 'utils.dart';
 
-
 // TODO validation of config
-//   name should be required, alphanumeric dasherized/underscoped
+//   name should be required, alphanumeric dasherized/underscored
 class MelosWorkspaceConfig {
   final String _name;
 

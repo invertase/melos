@@ -16,6 +16,7 @@
  */
 
 import 'package:args/command_runner.dart' show Command;
+import 'package:melos/src/common/intellij_project.dart';
 
 import '../command_runner.dart';
 import '../common/logger.dart';
@@ -30,17 +31,18 @@ class CleanCommand extends Command {
 
   @override
   final String description =
-      'Clean this workspace and all packages. This deletes the temporary pub files such as ".packages" & ".flutter-plugins". Supports all package filtering options.';
+      'Clean this workspace and all packages. This deletes the temporary pub & ide files such as ".packages" & ".flutter-plugins". Supports all package filtering options.';
 
   @override
   void run() async {
     logger.stdout('Cleaning workspace...');
     currentWorkspace.clean();
+    await IntellijProject.fromWorkspace(currentWorkspace).cleanFiles();
     if (currentWorkspace.config.scripts.containsKey('postclean')) {
       logger.stdout('Running postclean script...\n');
       await MelosCommandRunner.instance.run(['run', 'postclean']);
     }
     logger.stdout(
-        'Workspace cleaned, you will need to run the bootstrap command again.');
+        '\nWorkspace cleaned. You will need to run the bootstrap command again to use this workspace.');
   }
 }
