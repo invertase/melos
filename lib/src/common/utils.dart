@@ -19,14 +19,25 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:path/path.dart' show relative, normalize, windows;
+import 'package:path/path.dart' show relative, normalize, windows, joinAll;
 import 'package:yaml/yaml.dart';
 
+import '../../version.dart';
 import 'logger.dart';
 
 var _didLogRmWarning = false;
 
 String getMelosRoot() {
+  if (Platform.script.path.contains('global_packages')) {
+    print(Platform.script.path);
+    print(File.fromUri(Platform.script).parent.parent.parent.parent.path);
+    return joinAll([
+      File.fromUri(Platform.script).parent.parent.parent.parent.path,
+      'hosted',
+      'pub.dartlang.org',
+      'melos-$melosVersion'
+    ]);
+  }
   return File.fromUri(Platform.script).parent.parent.path;
 }
 
