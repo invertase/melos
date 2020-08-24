@@ -98,41 +98,49 @@ Future<int> startProcess(List<String> execArgs,
     bool onlyOutputOnError = false}) async {
   final environmentVariables = environment ?? {};
   final workingDirectoryPath = workingDirectory ?? Directory.current.path;
+  final executable =
+      Platform.isWindows ? r'%WINDIR%\system32\cmd.exe' : '/bin/sh';
 
-  // final executable =
-  //     Platform.isWindows ? '%WINDIR%\\system32\\cmd.exe' : '/bin/sh';
+  final execProcess = await Process.start(executable, [],
+      workingDirectory: workingDirectoryPath,
+      includeParentEnvironment: true,
+      environment: environmentVariables,
+      runInShell: Platform.isWindows);
 
-  Process execProcess;
+  final filteredArgs = execArgs.map((arg) {
+    var _arg = arg;
+
+    // Remove empty args.
+    if (_arg.trim().isEmpty) {
+      return null;
+    }
+
+    // Swap line continuation characters to make them work cross platform.
+    if (_arg.trim() == r'\') {
+      return Platform.isWindows ? _arg.replaceAll(r'\', '^') : _arg;
+    }
+    if (_arg.trim() == r'^') {
+      return Platform.isWindows ? _arg : _arg.replaceAll('^', r'\');
+    }
+
+    // Inject Melos variables if any.
+    environment.forEach((key, value) {
+      _arg = _arg.replaceAll('\$$key', value);
+      _arg = _arg.replaceAll(key, value);
+    });
+
+    return _arg;
+  }).where((element) => element != null);
+
+  // Execute the command in the process.
+  execProcess.stdin.writeln(filteredArgs.join(' '));
+
+  // Exit with the exit code of the previous command.
   if (Platform.isWindows) {
-    execProcess = await Process.start(execArgs[0], execArgs.skip(1).toList(),
-        workingDirectory: workingDirectoryPath,
-        includeParentEnvironment: true,
-        environment: environmentVariables,
-        runInShell: true);
+    execProcess.stdin.writeln('EXIT /b %ERRORLEVEL%');
   } else {
-    execProcess = await Process.start('/bin/sh', [],
-        workingDirectory: workingDirectoryPath,
-        includeParentEnvironment: true,
-        environment: environmentVariables,
-        runInShell: false);
-    final execString = execArgs.map((arg) {
-      var _arg = arg;
-      environment.forEach((key, value) {
-        _arg = _arg.replaceAll('\$$key', value);
-        _arg = _arg.replaceAll(key, value);
-      });
-      return _arg;
-    }).join(' ');
-    execProcess.stdin.writeln(execString);
     execProcess.stdin.writeln('exit \$?');
   }
-
-  // exit with the exit code of the previous command
-  // if (!Platform.isWindows) {
-  //   execProcess.stdin.writeln('EXIT /b %ERRORLEVEL%');
-  // } else {
-  // execProcess.stdin.writeln('exit \$?');
-  // }
 
   var stdoutStream = execProcess.stdout;
   var stderrStream = execProcess.stderr;
@@ -160,34 +168,32 @@ Future<int> startProcess(List<String> execArgs,
         .transform<List<int>>(utf8.encoder);
   }
 
-  var stdoutSubscriber;
-  var stderrSubscriber;
+  final List<int> processStdout = <int>[];
+  final List<int> processStderr = <int>[];
+  final Completer<int> processStdoutCompleter = Completer();
+  final Completer<int> processStderrCompleter = Completer();
 
-  if (!onlyOutputOnError) {
-    stdoutSubscriber = stdoutStream.listen(stdout.add);
-    stderrSubscriber = stderrStream.listen(stderr.add);
-  }
-
-  if (!onlyOutputOnError) {
-    await stdoutSubscriber.cancel();
-    await stderrSubscriber.cancel();
-    return await execProcess.exitCode;
-  }
-
-  if (Platform.isWindows) {
-    List<List<int>> output = await Future.any(
-        [execProcess.stdout.toList(), execProcess.stderr.toList()]);
-    var exitCode = await execProcess.exitCode;
-    if (exitCode > 0) {
-      output.forEach(stdout.add);
+  stdoutStream.listen((List<int> event) {
+    processStdout.addAll(event);
+    if (!onlyOutputOnError) {
+      stdout.add(event);
     }
-    return exitCode;
-  } else {
-    var exitCode = await execProcess.exitCode;
-    if (exitCode > 0) {
-      (await execProcess.stdout.toList()).forEach(stdout.add);
-      (await execProcess.stderr.toList()).forEach(stdout.add);
+  }, onDone: () => processStdoutCompleter.complete());
+  stderrStream.listen((List<int> event) {
+    processStderr.addAll(event);
+    if (!onlyOutputOnError) {
+      stderr.add(event);
     }
-    return exitCode;
+  }, onDone: () => processStderrCompleter.complete());
+
+  await processStdoutCompleter.future;
+  await processStderrCompleter.future;
+  var exitCode = await execProcess.exitCode;
+
+  if (onlyOutputOnError && exitCode > 0) {
+    stdout.add(processStdout);
+    stderr.add(processStderr);
   }
+
+  return exitCode;
 }
