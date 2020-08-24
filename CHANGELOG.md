@@ -1,3 +1,7 @@
+## 0.3.5
+
+- Use `exitCode` setter instead of `exit()`.
+
 ## 0.3.0
 
 - Added support for Windows.
