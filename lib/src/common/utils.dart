@@ -168,21 +168,26 @@ Future<int> startProcess(List<String> execArgs,
     stderrSubscriber = stderrStream.listen(stderr.add);
   }
 
-  var exitCode = await execProcess.exitCode;
-
   if (!onlyOutputOnError) {
     await stdoutSubscriber.cancel();
     await stderrSubscriber.cancel();
-  } else if (exitCode > 0) {
-    if (Platform.isWindows) {
-      (await Future.any(
-              [execProcess.stdout.toList(), execProcess.stderr.toList()]))
-          .forEach(stdout.add);
-    } else {
+    return await execProcess.exitCode;
+  }
+
+  if (Platform.isWindows) {
+    List<List<int>> output = await Future.any(
+        [execProcess.stdout.toList(), execProcess.stderr.toList()]);
+    var exitCode = await execProcess.exitCode;
+    if (exitCode > 0) {
+      output.forEach(stdout.add);
+    }
+    return exitCode;
+  } else {
+    var exitCode = await execProcess.exitCode;
+    if (exitCode > 0) {
       (await execProcess.stdout.toList()).forEach(stdout.add);
       (await execProcess.stderr.toList()).forEach(stdout.add);
     }
+    return exitCode;
   }
-
-  return exitCode;
 }
