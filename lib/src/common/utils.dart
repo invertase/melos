@@ -75,7 +75,7 @@ String pubspecPathForDirectory(Directory pluginDirectory) {
 
 String relativePath(String path, String from) {
   if (Platform.isWindows) {
-    return windows.normalize(path);
+    return windows.normalize(path).replaceAll(r'\', r'\\');
   }
   return normalize(relative(path, from: from));
 }

@@ -58,7 +58,7 @@ class BootstrapCommand extends Command {
     var linkingProgress = logger.progress('Linking project packages');
 
     await currentWorkspace.linkPackages();
-    // currentWorkspace.clean(cleanPackages: false);
+    currentWorkspace.clean(cleanPackages: false);
 
     linkingProgress.finish(
         message: '${logger.ansi.green}SUCCESS${logger.ansi.noColor}',
