@@ -218,7 +218,7 @@ class IntellijProject {
       String outputFile = joinAll([
         pathDotIdea,
         'runConfigurations',
-        'melos_${scriptArgs.replaceAll(' ', '_')}.xml'
+        'melos_${scriptArgs.replaceAll(' ', '_').replaceAll(':', '_')}.xml'
       ]);
       await forceWriteToFile(outputFile, generatedRunConfiguration);
     });
