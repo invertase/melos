@@ -139,7 +139,7 @@ Future<int> startProcess(List<String> execArgs,
   if (Platform.isWindows) {
     execProcess.stdin.writeln('EXIT /b %ERRORLEVEL%');
   } else {
-    execProcess.stdin.writeln('exit \$?');
+    execProcess.stdin.writeln(r'exit $?');
   }
 
   var stdoutStream = execProcess.stdout;
