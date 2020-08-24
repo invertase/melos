@@ -1,3 +1,7 @@
+## 0.3.6
+
+- Fixed an issue on Windows where Pub Cache can also being the the 'Roaming' AppData directory.
+
 ## 0.3.5
 
 - Use `exitCode` setter instead of `exit()`.

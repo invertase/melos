@@ -190,6 +190,9 @@ class IntellijProject {
 
   String getMelosBinForIde() {
     if (Platform.isWindows) {
+      if (Platform.script.path.contains('Roaming')) {
+        return r'$USER_HOME$/AppData/Roaming/Pub/Cache/bin/melos.bat';
+      }
       return r'$USER_HOME$/AppData/Local/Pub/Cache/bin/melos.bat';
     }
     return r'$USER_HOME$/.pub-cache/bin/melos';

@@ -1,2 +1,2 @@
 // TODO make this generated.
-String melosVersion = '0.3.5';
+String melosVersion = '0.3.6';
