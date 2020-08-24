@@ -19,7 +19,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:path/path.dart' show relative;
+import 'package:path/path.dart' show relative, normalize, windows;
 import 'package:yaml/yaml.dart';
 
 import 'logger.dart';
@@ -74,7 +74,10 @@ String pubspecPathForDirectory(Directory pluginDirectory) {
 }
 
 String relativePath(String path, String from) {
-  return relative(path, from: from);
+  if (Platform.isWindows) {
+    return windows.normalize(windows.relative(path, from: from));
+  }
+  return normalize(relative(path, from: from));
 }
 
 /// Simple check to see if the [Directory] qualifies as a plugin repository.
