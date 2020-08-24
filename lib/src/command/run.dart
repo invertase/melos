@@ -53,14 +53,16 @@ class RunCommand extends Command {
       } else {
         logger.stderr('You have no scripts defined in your melos.yaml file.\n');
         logger.stdout(usage);
-        exit(1);
+        exitCode = 1;
+        return;
       }
     }
 
     if (currentWorkspace.config.scripts.isEmpty) {
       logger.stderr('You have no scripts defined in your melos.yaml file.\n');
       logger.stdout(usage);
-      exit(1);
+      exitCode = 1;
+      return;
     }
 
     scriptName ??= argResults.arguments[0];
@@ -75,7 +77,8 @@ class RunCommand extends Command {
         logger.stdout('');
       }
       logger.stdout(usage);
-      exit(1);
+      exitCode = 1;
+      return;
     }
 
     var scriptSource = currentWorkspace.config.scripts[scriptName] as String;
@@ -92,7 +95,7 @@ class RunCommand extends Command {
       'MELOS_ROOT_PATH': currentWorkspace.path,
     };
 
-    int exitCode = await startProcess(scriptParts,
+    int processExitCode = await startProcess(scriptParts,
         environment: environment, workingDirectory: currentWorkspace.path);
 
     logger.stdout('');
@@ -101,10 +104,10 @@ class RunCommand extends Command {
     logger.stdout(
         '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(scriptSource.replaceAll('\n', ''))}${logger.ansi.noColor}');
 
-    if (exitCode > 0) {
+    if (processExitCode > 0) {
       logger.stdout(
           '       └> ${logger.ansi.red}${logger.ansi.emphasized('FAILED')}${logger.ansi.noColor}');
-      exit(exitCode);
+      exitCode = processExitCode;
     } else {
       logger.stdout(
           '       └> ${logger.ansi.green}${logger.ansi.emphasized('SUCCESS')}${logger.ansi.noColor}');

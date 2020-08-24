@@ -19,14 +19,23 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:path/path.dart' show relative, normalize, windows;
+import 'package:path/path.dart' show relative, normalize, windows, joinAll;
 import 'package:yaml/yaml.dart';
 
+import '../../version.dart';
 import 'logger.dart';
 
 var _didLogRmWarning = false;
 
 String getMelosRoot() {
+  if (Platform.script.path.contains('global_packages')) {
+    return joinAll([
+      File.fromUri(Platform.script).parent.parent.parent.parent.path,
+      'hosted',
+      'pub.dartlang.org',
+      'melos-$melosVersion'
+    ]);
+  }
   return File.fromUri(Platform.script).parent.parent.path;
 }
 
@@ -46,7 +55,7 @@ String getFlutterSdkRoot() {
   var possiblePath = result.stdout.toString();
   if (!possiblePath.contains('bin/flutter')) {
     logger.stderr('Flutter SDK could not be found.');
-    exit(1);
+    return null;
   }
   return File(result.stdout as String).parent.parent.path;
 }
@@ -145,7 +154,7 @@ Future<int> startProcess(List<String> execArgs,
         ...environmentVariables,
         'MELOS_SCRIPT': filteredArgs.join(' '),
       },
-      runInShell: Platform.isWindows);
+      runInShell: true);
 
   if (!Platform.isWindows) {
     // Pipe in the arguments to trigger the script to run.

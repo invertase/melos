@@ -52,7 +52,8 @@ class ExecCommand extends Command {
     if (execArgs.isEmpty) {
       print(description);
       print(argParser.usage);
-      exit(1);
+      exitCode = 1;
+      return;
     }
 
     var execArgsString = execArgs.join(' ');
@@ -92,7 +93,7 @@ class ExecCommand extends Command {
         logger.stdout(
             '           └> ${logger.ansi.yellow}$packageName${logger.ansi.noColor} (with exit code ${failures[packageName]})');
       });
-      exit(1);
+      exitCode = 1;
     } else {
       logger.stdout(
           '       └> ${logger.ansi.green}${logger.ansi.emphasized('SUCCESS')}${logger.ansi.noColor}');
