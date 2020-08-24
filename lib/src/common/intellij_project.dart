@@ -163,7 +163,6 @@ class IntellijProject {
     String template = await readFileTemplate(
         moduleTemplateFileForPackageType(package.type),
         templateCategory: 'modules');
-    // Generate package module.
     return forceWriteToFile(pathPackageModuleIml(package), template);
   }
 
@@ -193,8 +192,15 @@ class IntellijProject {
     return forceWriteToFile(pathModulesXml, generatedModulesXml);
   }
 
+  String getMelosBinForIde() {
+    if (Platform.isWindows) {
+      return r'$USER_HOME$/AppData/Local/Pub/Cache/bin/melos.bat';
+    }
+    return r'$USER_HOME$/.pub-cache/bin/melos';
+  }
+
   Future<void> writeMelosScripts() async {
-    String melosScriptTemplate = await readFileTemplate('melos_script.xml',
+    String melosScriptTemplate = await readFileTemplate('shell_script.xml',
         templateCategory: 'runConfigurations');
 
     Map<String, String> runConfigurations = <String, String>{
@@ -207,14 +213,12 @@ class IntellijProject {
 
     await Future.forEach(runConfigurations.keys, (String scriptName) async {
       String scriptArgs = runConfigurations[scriptName];
-      String generatedRunConfiguration = injectTemplateVariable(
-          template: melosScriptTemplate,
-          variableName: 'scriptName',
-          variableValue: scriptName);
-      generatedRunConfiguration = injectTemplateVariable(
-          template: generatedRunConfiguration,
-          variableName: 'scriptArgs',
-          variableValue: scriptArgs);
+      String generatedRunConfiguration =
+          injectTemplateVariables(melosScriptTemplate, {
+        'scriptName': scriptName,
+        'scriptArgs': scriptArgs,
+        'scriptPath': getMelosBinForIde(),
+      });
       String outputFile = joinAll([
         pathDotIdea,
         'runConfigurations',
@@ -225,11 +229,11 @@ class IntellijProject {
   }
 
   Future<void> writeFlutterRunScripts() async {
-    // todo
+    // TODO
   }
 
   Future<void> writeFlutterTestScripts() async {
-    // todo
+    // TODO
   }
 
   Future<void> writeFiles() async {
@@ -249,6 +253,8 @@ class IntellijProject {
 
     // <WORKSPACE_ROOT>/.idea/runConfigurations/<SCRIPT_NAME>.xml
     await writeMelosScripts();
+
+    // TODO - don't do anything for now
     await writeFlutterRunScripts();
     await writeFlutterTestScripts();
   }

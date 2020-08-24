@@ -98,15 +98,7 @@ Future<int> startProcess(List<String> execArgs,
     bool onlyOutputOnError = false}) async {
   final environmentVariables = environment ?? {};
   final workingDirectoryPath = workingDirectory ?? Directory.current.path;
-  final executable =
-      Platform.isWindows ? r'%WINDIR%\system32\cmd.exe' : '/bin/sh';
-
-  final execProcess = await Process.start(executable, [],
-      workingDirectory: workingDirectoryPath,
-      includeParentEnvironment: true,
-      environment: environmentVariables,
-      runInShell: Platform.isWindows);
-
+  final executable = Platform.isWindows ? 'cmd' : '/bin/sh';
   final filteredArgs = execArgs.map((arg) {
     var _arg = arg;
 
@@ -115,7 +107,7 @@ Future<int> startProcess(List<String> execArgs,
       return null;
     }
 
-    // Swap line continuation characters to make them work cross platform.
+    // Attempt to make line continuations Windows & Linux compatible.
     if (_arg.trim() == r'\') {
       return Platform.isWindows ? _arg.replaceAll(r'\', '^') : _arg;
     }
@@ -132,15 +124,15 @@ Future<int> startProcess(List<String> execArgs,
     return _arg;
   }).where((element) => element != null);
 
-  // Execute the command in the process.
-  execProcess.stdin.writeln(filteredArgs.join(' '));
-
-  // Exit with the exit code of the previous command.
-  if (Platform.isWindows) {
-    execProcess.stdin.writeln('EXIT /b %ERRORLEVEL%');
-  } else {
-    execProcess.stdin.writeln(r'exit $?');
-  }
+  final execProcess = await Process.start(executable,
+      Platform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : ['-c', r'$MELOS_SCRIPT'],
+      workingDirectory: workingDirectoryPath,
+      includeParentEnvironment: true,
+      environment: {
+        ...environmentVariables,
+        'MELOS_SCRIPT': filteredArgs.join(' '),
+      },
+      runInShell: true);
 
   var stdoutStream = execProcess.stdout;
   var stderrStream = execProcess.stderr;
