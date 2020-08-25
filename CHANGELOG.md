@@ -1,3 +1,7 @@
+## 0.3.7
+
+- IntelliJ support for automatically generating Flutter Test & Run configurations.
+
 ## 0.3.6
 
 - Fixed an issue on Windows where Pub Cache can also being the the 'Roaming' AppData directory.

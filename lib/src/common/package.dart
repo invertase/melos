@@ -20,7 +20,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:yaml/yaml.dart';
-import 'package:path/path.dart' show relative, normalize;
+import 'package:path/path.dart' show relative, normalize, joinAll;
 import 'package:http/http.dart' as http;
 
 import '../pub/pub_file.dart';
@@ -273,20 +273,19 @@ class MelosPackage {
   /// This is determined by ensuring all the following conditions are met:
   ///  a) the package depends on the Flutter SDK.
   ///  b) the package does not define itself as a Flutter plugin inside pubspec.yaml.
+  ///  c) a lib/main.dart file exists in the package.
   bool get isFlutterApp {
     // Must directly depend on the Flutter SDK.
     if (!isFlutterPackage) return false;
     // Must not have a Flutter plugin definition in it's pubspec.yaml.
     final YamlMap flutterSection = _yamlContents[_kFlutter] as YamlMap;
-    if (flutterSection == null) {
-      return true;
+    if (flutterSection != null) {
+      final YamlMap pluginSection = flutterSection[_kPlugin] as YamlMap;
+      if (pluginSection != null) {
+        return false;
+      }
     }
-    final YamlMap pluginSection = flutterSection[_kPlugin] as YamlMap;
-    if (pluginSection == null) {
-      return true;
-    }
-    // Package is a plugin not an app.
-    return false;
+    return File(joinAll([path, 'lib', 'main.dart'])).existsSync();
   }
 
   /// Returns whether this package supports Flutter for Android.
@@ -370,6 +369,11 @@ class MelosPackage {
     return _yamlContents[_kPublishTo] == 'none';
   }
 
+  /// Returns whether this package contains a test directory.
+  bool get hasTests {
+    return Directory(joinAll([path, 'test'])).existsSync();
+  }
+
   bool _flutterAppSupportsPlatform(String platform) {
     assert(platform == kIos ||
         platform == kAndroid ||
@@ -377,7 +381,7 @@ class MelosPackage {
         platform == kMacos ||
         platform == kWindows ||
         platform == kLinux);
-    return File('$path${Platform.pathSeparator}$platform').existsSync();
+    return Directory('$path${Platform.pathSeparator}$platform').existsSync();
   }
 
   bool _flutterPluginSupportsPlatform(String platform) {

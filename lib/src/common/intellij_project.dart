@@ -232,11 +232,55 @@ class IntellijProject {
   }
 
   Future<void> writeFlutterRunScripts() async {
-    // TODO
+    String flutterTestTemplate = await readFileTemplate('flutter_run.xml',
+        templateCategory: 'runConfigurations');
+
+    await Future.forEach(_workspace.packages, (MelosPackage package) async {
+      if (!package.isFlutterApp) {
+        return;
+      }
+
+      String generatedRunConfiguration =
+          injectTemplateVariables(flutterTestTemplate, {
+        'flutterRunName': "Flutter Run -&gt; '${package.name}'",
+        'flutterRunMainDartPathRelative':
+            joinAll([package.pathRelativeToWorkspace, 'lib', 'main.dart']),
+      });
+      String outputFile = joinAll([
+        pathDotIdea,
+        'runConfigurations',
+        'flutter_run_${package.name}.xml'
+      ]);
+
+      await forceWriteToFile(outputFile, generatedRunConfiguration);
+    });
   }
 
   Future<void> writeFlutterTestScripts() async {
-    // TODO
+    String flutterTestTemplate = await readFileTemplate('flutter_test.xml',
+        templateCategory: 'runConfigurations');
+
+    await Future.forEach(_workspace.packages, (MelosPackage package) async {
+      if (!package.isFlutterPackage ||
+          package.isFlutterApp ||
+          !package.hasTests) {
+        return;
+      }
+
+      String generatedRunConfiguration =
+          injectTemplateVariables(flutterTestTemplate, {
+        'flutterTestsName': "Flutter Test -&gt; '${package.name}'",
+        'flutterTestsRelativePath':
+            joinAll([package.pathRelativeToWorkspace, 'test']),
+      });
+      String outputFile = joinAll([
+        pathDotIdea,
+        'runConfigurations',
+        'flutter_test_${package.name}.xml'
+      ]);
+
+      await forceWriteToFile(outputFile, generatedRunConfiguration);
+    });
   }
 
   Future<void> writeFiles() async {
