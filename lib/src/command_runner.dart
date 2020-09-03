@@ -26,6 +26,7 @@ import 'command/bootstrap.dart';
 import 'command/clean.dart';
 import 'command/exec.dart';
 import 'command/run.dart';
+import 'command/version.dart';
 import 'common/logger.dart';
 import 'common/workspace.dart';
 
@@ -70,6 +71,7 @@ class MelosCommandRunner extends CommandRunner {
     addCommand(CleanCommand());
     addCommand(RunCommand());
     addCommand(UnpublishedCommand());
+    addCommand(VersionCommand());
   }
 
   @override
