@@ -1,3 +1,7 @@
+## 0.3.9
+
+- Fix version.dart versioning
+
 ## 0.3.8
 
 - Move all generated pub files into a `.melos_tool` sub directory in workspace root to prevent conflicts.
