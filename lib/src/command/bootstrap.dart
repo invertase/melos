@@ -45,8 +45,9 @@ class BootstrapCommand extends Command {
     var bootstrapProgress = logger.progress('Bootstrapping project');
     await currentWorkspace.generatePubspecFile();
 
-    var processExitCode = await currentWorkspace
-        .exec(['flutter', 'pub', 'get'], onlyOutputOnError: true);
+    var processExitCode = await currentWorkspace.execInMelosToolPath(
+        ['flutter', 'pub', 'get'],
+        onlyOutputOnError: true);
     if (processExitCode > 0) {
       logger
           .stderr('Bootstrap failed, reason: pub get failed, see logs above.');
@@ -61,9 +62,10 @@ class BootstrapCommand extends Command {
     }
 
     var linkingProgress = logger.progress('Linking project packages');
-
+    var intellijProject = IntellijProject.fromWorkspace(currentWorkspace);
     await currentWorkspace.linkPackages();
     currentWorkspace.clean(cleanPackages: false);
+    await intellijProject.cleanFiles();
 
     linkingProgress.finish(message: successMessage, showTiming: true);
     if (Platform.isWindows) {

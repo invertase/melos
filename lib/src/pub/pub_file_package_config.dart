@@ -56,7 +56,7 @@ class PackageConfigPubFile extends PubFile {
   static Future<PackageConfigPubFile> fromWorkspacePackage(
       MelosWorkspace workspace, MelosPackage package) async {
     PackageConfigPubFile workspaceFile =
-        PackageConfigPubFile.fromDirectory(workspace.path);
+        PackageConfigPubFile.fromDirectory(workspace.melosToolPath);
     List<Map> packagePackages = [];
     List<Map> workspacePackages = await workspaceFile.packages;
     Set<String> dependencyGraph = await package.getDependencyGraph();
@@ -72,7 +72,7 @@ class PackageConfigPubFile extends PubFile {
 
       if (!rootUri.startsWith('file:')) {
         rootUri = utils.relativePath(
-            '${workspace.path}${Platform.pathSeparator}${Platform.pathSeparator}.dart_tool${Platform.pathSeparator}$rootUri',
+            '${workspace.melosToolPath}${Platform.pathSeparator}${Platform.pathSeparator}.dart_tool${Platform.pathSeparator}$rootUri',
             '${package.path}${Platform.pathSeparator}.dart_tool');
 
         pluginPackage['rootUri'] = rootUri;

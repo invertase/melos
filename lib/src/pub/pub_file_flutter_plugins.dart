@@ -52,7 +52,7 @@ class FlutterPluginsPubFile extends PubFile {
   static Future<FlutterPluginsPubFile> fromWorkspacePackage(
       MelosWorkspace workspace, MelosPackage package) async {
     FlutterPluginsPubFile workspaceFlutterPluginsPubFile =
-        FlutterPluginsPubFile.fromDirectory(workspace.path);
+        FlutterPluginsPubFile.fromDirectory(workspace.melosToolPath);
     Map<String, String> newEntries = {};
     Map<String, String> workspaceEntries =
         await workspaceFlutterPluginsPubFile.entries;

@@ -19,9 +19,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:yaml/yaml.dart';
-import 'package:path/path.dart' show relative, normalize, joinAll;
 import 'package:http/http.dart' as http;
+import 'package:path/path.dart' show relative, normalize, joinAll;
+import 'package:yaml/yaml.dart';
 
 import '../pub/pub_file.dart';
 import '../pub/pub_file_flutter_dependencies.dart';

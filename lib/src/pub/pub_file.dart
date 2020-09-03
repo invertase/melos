@@ -17,12 +17,14 @@
 
 import 'dart:io';
 
+import 'package:path/path.dart' show joinAll;
+
 class PubFile {
   final String _file;
 
   final String _directory;
 
-  String get filePath => '$_directory${Platform.pathSeparator}$_file';
+  String get filePath => joinAll([_directory, _file]);
 
   PubFile(this._directory, this._file);
 

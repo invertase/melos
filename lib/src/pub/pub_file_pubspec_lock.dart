@@ -59,7 +59,7 @@ class PubspecLockPubFile extends PubFile {
   static Future<PubspecLockPubFile> fromWorkspacePackage(
       MelosWorkspace workspace, MelosPackage package) async {
     PubspecLockPubFile workspaceFile =
-        PubspecLockPubFile.fromDirectory(workspace.path);
+        PubspecLockPubFile.fromDirectory(workspace.melosToolPath);
     Map<String, Map> packagePackages = {};
     Map<String, Map> workspacePackages = await workspaceFile.packages;
     Set<String> dependencyGraph = await package.getDependencyGraph();
@@ -80,7 +80,8 @@ class PubspecLockPubFile extends PubFile {
         if (relative) {
           // path is relative to the workspace root, make it relative to the package
           path = utils.relativePath(
-              '${workspace.path}${Platform.pathSeparator}$path', package.path);
+              '${workspace.melosToolPath}${Platform.pathSeparator}$path',
+              package.path);
         } else {
           // path is fully qualified already, so we'll just make it relative
           path = utils.relativePath(path, package.path);

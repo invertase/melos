@@ -72,7 +72,7 @@ class FlutterDependenciesPubFile extends PubFile {
   static Future<FlutterDependenciesPubFile> fromWorkspacePackage(
       MelosWorkspace workspace, MelosPackage package) async {
     FlutterDependenciesPubFile workspaceFile =
-        FlutterDependenciesPubFile.fromDirectory(workspace.path);
+        FlutterDependenciesPubFile.fromDirectory(workspace.melosToolPath);
 
     List<Map> packageDependencyGraph = [];
     Map<String, List> packagePlugins = {

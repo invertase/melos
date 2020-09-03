@@ -145,6 +145,14 @@ Future<int> startProcess(List<String> execArgs,
     }
     return 0;
   }
+  if (filteredArgs.toList()[0] == 'cp' && Platform.isWindows) {
+    if (!_didLogRmWarning) {
+      print(
+          '> Warning: skipped executing a script as "cp" is not supported on Windows.');
+      _didLogRmWarning = true;
+    }
+    return 0;
+  }
 
   final execProcess = await Process.start(
       executable, Platform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],

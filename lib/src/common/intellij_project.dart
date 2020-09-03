@@ -75,7 +75,7 @@ class IntellijProject {
   }
 
   String pathPackageModuleIml(MelosPackage package) {
-    return joinAll([package.path, '${package.name}.iml']);
+    return joinAll([package.path, 'melos_${package.name}.iml']);
   }
 
   String injectTemplateVariable(
@@ -99,10 +99,10 @@ class IntellijProject {
     String module = '';
     if (relativePath == null) {
       module =
-          '<module fileurl="file://\$PROJECT_DIR\$/$moduleName.iml" filepath="\$PROJECT_DIR\$/$moduleName.iml" />';
+          '<module fileurl="file://\$PROJECT_DIR\$/melos_$moduleName.iml" filepath="\$PROJECT_DIR\$/melos_$moduleName.iml" />';
     } else {
       module =
-          '<module fileurl="file://\$PROJECT_DIR\$/$relativePath/$moduleName.iml" filepath="\$PROJECT_DIR\$/$relativePath/$moduleName.iml" />';
+          '<module fileurl="file://\$PROJECT_DIR\$/$relativePath/melos_$moduleName.iml" filepath="\$PROJECT_DIR\$/$relativePath/melos_$moduleName.iml" />';
     }
     // Pad to preserve formatting on generated file. Indent x6.
     return '      $module';
@@ -168,7 +168,7 @@ class IntellijProject {
         templateCategory: 'modules');
     String workspaceModuleName = _workspace.config.name.toLowerCase();
     return forceWriteToFile(
-        joinAll([_workspace.path, '$workspaceModuleName.iml']),
+        joinAll([_workspace.path, 'melos_$workspaceModuleName.iml']),
         ideaWorkspaceModuleImlTemplate);
   }
 
@@ -221,14 +221,19 @@ class IntellijProject {
       String outputFile = joinAll([
         pathDotIdea,
         'runConfigurations',
-        'melos_${scriptArgs.replaceAll(' ', '_').replaceAll(':', '_')}.xml'
+        'melos_${scriptArgs.replaceAll(RegExp(r'[^A-Za-z0-9]'), '_')}.xml'
       ]);
       await forceWriteToFile(outputFile, generatedRunConfiguration);
     });
   }
 
   Future<void> cleanFiles() async {
-    // TODO
+    var runConfigurationsDirectory =
+        Directory(joinAll([pathDotIdea, 'runConfigurations']));
+    if (await runConfigurationsDirectory.exists()) {
+      await Directory(joinAll([pathDotIdea, 'runConfigurations']))
+          .delete(recursive: true);
+    }
   }
 
   Future<void> writeFlutterRunScripts() async {
@@ -249,7 +254,7 @@ class IntellijProject {
       String outputFile = joinAll([
         pathDotIdea,
         'runConfigurations',
-        'flutter_run_${package.name}.xml'
+        'melos_flutter_run_${package.name}.xml'
       ]);
 
       await forceWriteToFile(outputFile, generatedRunConfiguration);
@@ -276,7 +281,7 @@ class IntellijProject {
       String outputFile = joinAll([
         pathDotIdea,
         'runConfigurations',
-        'flutter_test_${package.name}.xml'
+        'melos_flutter_test_${package.name}.xml'
       ]);
 
       await forceWriteToFile(outputFile, generatedRunConfiguration);
@@ -301,7 +306,6 @@ class IntellijProject {
     // <WORKSPACE_ROOT>/.idea/runConfigurations/<SCRIPT_NAME>.xml
     await writeMelosScripts();
 
-    // TODO - don't do anything for now
     await writeFlutterRunScripts();
     await writeFlutterTestScripts();
   }

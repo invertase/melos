@@ -26,11 +26,6 @@ import 'package:pool/pool.dart';
 import 'package:yamlicious/yamlicious.dart';
 
 import '../pub/pub_deps_list.dart';
-import '../pub/pub_file_flutter_dependencies.dart';
-import '../pub/pub_file_flutter_plugins.dart';
-import '../pub/pub_file_package_config.dart';
-import '../pub/pub_file_packages.dart';
-import '../pub/pub_file_pubspec_lock.dart';
 import 'package.dart';
 import 'utils.dart' as utils;
 import 'workspace_config.dart';
@@ -68,6 +63,10 @@ class MelosWorkspace {
 
     return MelosWorkspace._(
         workspaceConfig.name, workspaceConfig.path, workspaceConfig);
+  }
+
+  String get melosToolPath {
+    return joinAll([path, '.melos_tool']);
   }
 
   Future<List<MelosPackage>> loadPackages(
@@ -159,7 +158,7 @@ class MelosWorkspace {
 
     if (published != null) {
       _packages = await filterResult.toList();
-      // Pooling to parrellize registry requests for performance.
+      // Pooling to parallelize registry requests for performance.
       var pool = Pool(10);
       var packagesFilteredWithPublishStatus = <MelosPackage>[];
       await pool.forEach<MelosPackage, void>(_packages, (package) {
@@ -195,7 +194,7 @@ class MelosWorkspace {
       'flutter',
       ['pub', 'deps', '--', '--style=list', '--dev'],
       runInShell: true,
-      workingDirectory: _path,
+      workingDirectory: melosToolPath,
     );
 
     final pubDepList = PubDepsList.parse(pubListCommandOutput.stdout as String);
@@ -251,6 +250,19 @@ class MelosWorkspace {
         onlyOutputOnError: onlyOutputOnError);
   }
 
+  /// Execute a command in the .melos_tool directory of this workspace.
+  Future<int> execInMelosToolPath(List<String> execArgs,
+      {bool onlyOutputOnError = false}) {
+    final environment = {
+      'MELOS_ROOT_PATH': path,
+    };
+
+    return utils.startProcess(execArgs,
+        environment: environment,
+        workingDirectory: melosToolPath,
+        onlyOutputOnError: onlyOutputOnError);
+  }
+
   Future<void> linkPackages() async {
     await getDependencyGraph();
     await Future.forEach(packages, (MelosPackage package) {
@@ -259,25 +271,9 @@ class MelosWorkspace {
   }
 
   void clean({bool cleanPackages = true}) {
-    // Clean workspace.
-    PackagesPubFile.fromDirectory(path).delete();
-    FlutterPluginsPubFile.fromDirectory(path).delete();
-    PackageConfigPubFile.fromDirectory(path).delete();
-    FlutterDependenciesPubFile.fromDirectory(path).delete();
-
-    // Delete generated pubspec.yaml file, only if cli generated it.
-    var pubspecFileRoot = File('$path${Platform.pathSeparator}pubspec.yaml');
-    if (pubspecFileRoot.existsSync()) {
-      var contents = pubspecFileRoot.readAsStringSync();
-      if (contents.startsWith(
-          '# Generated file - do not modify or commit this file.')) {
-        pubspecFileRoot.deleteSync();
-        PubspecLockPubFile.fromDirectory(path).delete();
-      }
-    } else {
-      PubspecLockPubFile.fromDirectory(path).delete();
+    if (Directory(melosToolPath).existsSync()) {
+      Directory(melosToolPath).deleteSync(recursive: true);
     }
-
     if (cleanPackages) {
       packages.forEach((MelosPackage package) {
         package.clean();
@@ -298,7 +294,7 @@ class MelosWorkspace {
     workspacePubspec['environment'] = Map.from(config.environment);
 
     packages.forEach((MelosPackage plugin) {
-      var pluginRelativePath = utils.relativePath(plugin.path, path);
+      var pluginRelativePath = utils.relativePath(plugin.path, melosToolPath);
       workspacePubspec['dependencies'][plugin.name] = {
         'path': pluginRelativePath,
       };
@@ -324,7 +320,9 @@ class MelosWorkspace {
     var header = '# Generated file - do not modify or commit this file.';
     var pubspecYaml = '$header\n${toYamlString(workspacePubspec)}';
 
-    await File(utils.pubspecPathForDirectory(Directory(path)))
+    await File(utils.pubspecPathForDirectory(Directory(melosToolPath)))
+        .create(recursive: true);
+    await File(utils.pubspecPathForDirectory(Directory(melosToolPath)))
         .writeAsString(pubspecYaml);
   }
 }
