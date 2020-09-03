@@ -1,3 +1,9 @@
+## 0.3.8
+
+- Move all generated pub files into a `.melos_tool` sub directory in workspace root to prevent conflicts.
+- Clean up IntelliJ `runConfigurations` as part of the `clean` command.
+- Prefix all IntelliJ generated project files with `melos_`.
+
 ## 0.3.7
 
 - IntelliJ support for automatically generating Flutter Test & Run configurations.
