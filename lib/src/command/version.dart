@@ -16,14 +16,15 @@
  */
 
 import 'package:args/command_runner.dart' show Command;
-import 'package:melos/src/common/conventional_commit.dart';
-import 'package:melos/src/common/git.dart';
 import 'package:pool/pool.dart' show Pool;
 
+import '../common/conventional_commit.dart';
+import '../common/git.dart';
 import '../common/logger.dart';
 import '../common/package.dart';
 import '../common/workspace.dart';
 
+// TODO this command is incomplete and currently being used for local testing purposes
 class VersionCommand extends Command {
   @override
   final String name = 'version';
@@ -48,7 +49,7 @@ class VersionCommand extends Command {
     await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
         (package) {
       return commitsInPackage(
-              tagOrSince: '63dd7fe83b0d628f9b965c1aca24a8a8d0684803',
+              since: '63dd7fe83b0d628f9b965c1aca24a8a8d0684803',
               package: package)
           .then((commits) {
         if (commits.isEmpty) {

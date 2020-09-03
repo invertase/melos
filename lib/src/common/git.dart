@@ -21,13 +21,13 @@ import 'git_commit.dart';
 import 'package.dart';
 
 Future<List<GitCommit>> commitsInPackage(
-    {String tagOrSince, MelosPackage package}) async {
+    {String since, MelosPackage package}) async {
   final processResult = await Process.run(
       'git',
       [
         '--no-pager',
         'log',
-        tagOrSince != null ? '$tagOrSince...@' : '@',
+        since != null ? '$since...@' : '@',
         '--pretty=format:%H|||%aN <%aE>|||%ai|||%B||||',
         '--',
         '.',
