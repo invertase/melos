@@ -76,12 +76,16 @@ Future<Map> loadYamlFile(String path) async {
   return null;
 }
 
-String melosYamlPathForDirectory(Directory pluginDirectory) {
-  return pluginDirectory.path + Platform.pathSeparator + 'melos.yaml';
+String melosYamlPathForDirectory(Directory directory) {
+  return joinAll([directory.path, 'melos.yaml']);
 }
 
-String pubspecPathForDirectory(Directory pluginDirectory) {
-  return pluginDirectory.path + Platform.pathSeparator + 'pubspec.yaml';
+String melosStatePathForDirectory(Directory directory) {
+  return joinAll([directory.path, '.melos']);
+}
+
+String pubspecPathForDirectory(Directory directory) {
+  return joinAll([directory.path, 'pubspec.yaml']);
 }
 
 String relativePath(String path, String from) {

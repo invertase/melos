@@ -76,6 +76,8 @@ class MelosPackage {
   final String _name;
   final String _path;
 
+  MelosWorkspace get workspace => _workspace;
+
   /// Package name.
   /// As defined in pubspec.yaml.
   String get name => _name;
@@ -170,7 +172,8 @@ class MelosPackage {
   /// Execute a shell command inside this package.
   Future<int> exec(List<String> execArgs) async {
     final packagePrefix =
-        '[${logger.ansi.blue + logger.ansi.emphasized(_name) + logger.ansi.noColor}]: ';
+        '[${logger.ansi.blue + logger.ansi.emphasized(_name) +
+        logger.ansi.noColor}]: ';
 
     var environment = {
       'MELOS_PACKAGE_NAME': name,
@@ -236,7 +239,8 @@ class MelosPackage {
       return [];
     } else if (response.statusCode != 200) {
       throw Exception(
-          'Error reading pub.dev registry for package "$name" (HTTP Status ${response.statusCode}), response: ${response.body}');
+          'Error reading pub.dev registry for package "$name" (HTTP Status ${response
+              .statusCode}), response: ${response.body}');
     }
     var versions = <String>[];
     var versionsRaw = json.decode(response.body)['versions'] as List<dynamic>;

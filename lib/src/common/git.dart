@@ -20,14 +20,57 @@ import 'dart:io';
 import 'git_commit.dart';
 import 'package.dart';
 
-Future<List<GitCommit>> commitsInPackage(
-    {String since, MelosPackage package}) async {
+enum TagReleaseType {
+  all,
+  dev,
+  stable,
+}
+
+/// Return a list of git tags for a Melos package, in date created descending order.
+/// Optionally specify [tagReleaseType] to specify [TagReleaseType].
+Future<List<String>> gitTagsForPackage(MelosPackage package,
+    {TagReleaseType tagReleaseType = TagReleaseType.all}) async {
+  final String filterPattern = tagReleaseType == TagReleaseType.dev
+      ? '${package.name}-v*-dev.*'
+      : '${package.name}-v*';
+  final processResult = await Process.run(
+      'git', ['tag', '-l', '--sort=-creatordate', filterPattern],
+      workingDirectory: package.path);
+  return (processResult.stdout as String)
+      .split('\n')
+      .map((e) => e.trim())
+      .where((tag) => tagReleaseType == TagReleaseType.stable
+          ? !tag.contains('-dev.')
+          : true)
+      .toList();
+}
+
+/// Return the latest (by date created) git tag for a Melos package.
+/// Optionally specify [tagReleaseType] to specify [TagReleaseType].
+Future<String> gitLatestTagForPackage(MelosPackage package,
+    {TagReleaseType tagReleaseType = TagReleaseType.all}) async {
+  List<String> tags =
+      await gitTagsForPackage(package, tagReleaseType: tagReleaseType);
+  if (tags.isEmpty) {
+    return null;
+  }
+  return tags.first;
+}
+
+/// Returns a list of [GitCommit]s for a Melos package.
+/// Optionally specify [since] to start after a specified commit or tag. Defaults
+/// to the latest stable release tag.
+Future<List<GitCommit>> gitCommitsForPackage(MelosPackage package,
+    {String since}) async {
+  String sinceOrLatestTag = since;
+  sinceOrLatestTag ??= await gitLatestTagForPackage(package,
+      tagReleaseType: TagReleaseType.stable);
   final processResult = await Process.run(
       'git',
       [
         '--no-pager',
         'log',
-        since != null ? '$since...@' : '@',
+        sinceOrLatestTag != null ? '$sinceOrLatestTag...@' : '@',
         '--pretty=format:%H|||%aN <%aE>|||%ai|||%B||||',
         '--',
         '.',

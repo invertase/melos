@@ -38,6 +38,9 @@ class VersionCommand extends Command {
 
   @override
   void run() async {
+    print(globalResults['since']);
+    print(globalResults['since']);
+    print(globalResults['since']);
     logger.stdout(
         '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos version")}');
     logger.stdout(
@@ -45,12 +48,27 @@ class VersionCommand extends Command {
 
     var pool = Pool(10);
 
-    // TODO just testing
+//    await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
+//        (package) {
+//      return gitTagsForPackage(package, tagReleaseType: TagReleaseType.stable)
+//          .then((tags) {
+//        if (tags.isEmpty) {
+//          return;
+//        }
+//        print('       ');
+//        print(package.name);
+//        tags.forEach((tag) {
+//          print(tag);
+//        });
+//        print('       ');
+//      });
+//    }).drain();
+//    pool = Pool(10);
+//     TODO just testing
     await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
         (package) {
-      return commitsInPackage(
-              since: '63dd7fe83b0d628f9b965c1aca24a8a8d0684803',
-              package: package)
+      return gitCommitsForPackage(package,
+              since: globalResults['since'] as String)
           .then((commits) {
         if (commits.isEmpty) {
           return;

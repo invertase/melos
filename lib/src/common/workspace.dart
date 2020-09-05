@@ -29,11 +29,14 @@ import '../pub/pub_deps_list.dart';
 import 'package.dart';
 import 'utils.dart' as utils;
 import 'workspace_config.dart';
+import 'workspace_state.dart';
 
 MelosWorkspace currentWorkspace;
 
 class MelosWorkspace {
   final String _name;
+
+  String _since;
 
   String get name => _name;
 
@@ -47,31 +50,36 @@ class MelosWorkspace {
 
   MelosWorkspaceConfig get config => _config;
 
+  final MelosWorkspaceState _state;
+
+  MelosWorkspaceState get state => _state;
+
   List<MelosPackage> _packages;
 
   List<MelosPackage> get packages => _packages;
 
-  MelosWorkspace._(this._name, this._path, this._config);
+  MelosWorkspace._(this._name, this._path, this._config, this._state);
 
   static Future<MelosWorkspace> fromDirectory(Directory directory,
       {@required ArgResults arguments}) async {
     final workspaceConfig = await MelosWorkspaceConfig.fromDirectory(directory);
-
     if (workspaceConfig == null) {
       return null;
     }
 
-    return MelosWorkspace._(
-        workspaceConfig.name, workspaceConfig.path, workspaceConfig);
+    final workspaceState = await MelosWorkspaceState.fromDirectory(directory);
+    return MelosWorkspace._(workspaceConfig.name, workspaceConfig.path,
+        workspaceConfig, workspaceState);
   }
 
   String get melosToolPath {
     return joinAll([path, '.melos_tool']);
   }
 
-  Future<List<MelosPackage>> loadPackages(
+  Future<List<MelosPackage>> loadPackagesWithFilters(
       {List<String> scope,
       List<String> ignore,
+      String since,
       List<String> dirExists,
       List<String> fileExists,
       bool skipPrivate,
