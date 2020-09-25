@@ -24,23 +24,16 @@ import '../common/logger.dart';
 import '../common/package.dart';
 import '../common/workspace.dart';
 
-// TODO this command is incomplete and currently being used for local testing purposes
 class VersionCommand extends Command {
   @override
   final String name = 'version';
 
   @override
-  final List<String> aliases = ['v'];
-
-  @override
   final String description =
-      'Automatically version and generate changelogs for all packages that have had commits since this command was last ran.';
+      'Automatically version and generate changelogs for all packages.';
 
   @override
   void run() async {
-    print(globalResults['since']);
-    print(globalResults['since']);
-    print(globalResults['since']);
     logger.stdout(
         '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos version")}');
     logger.stdout(
@@ -48,43 +41,38 @@ class VersionCommand extends Command {
 
     var pool = Pool(10);
 
-//    await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
-//        (package) {
-//      return gitTagsForPackage(package, tagReleaseType: TagReleaseType.stable)
-//          .then((tags) {
-//        if (tags.isEmpty) {
-//          return;
-//        }
-//        print('       ');
-//        print(package.name);
-//        tags.forEach((tag) {
-//          print(tag);
-//        });
-//        print('       ');
-//      });
-//    }).drain();
-//    pool = Pool(10);
-//     TODO just testing
+    var packageCommits = {};
     await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
         (package) {
       return gitCommitsForPackage(package,
               since: globalResults['since'] as String)
           .then((commits) {
-        if (commits.isEmpty) {
-          return;
-        }
-        print('       ');
-        print(package.name);
-        commits.forEach((commit) {
-          var conventionalCommit =
-              ConventionalCommit.fromCommitMessage(commit.message);
-          if (conventionalCommit != null) {
-            print(conventionalCommit.asChangelogEntry);
-          }
-        });
-        print('       ');
+        packageCommits[package.name] = commits
+            .map((commit) =>
+                ConventionalCommit.fromCommitMessage(commit.message))
+            .where((element) => element != null)
+            .toList();
       });
     }).drain();
+
+    var packageWithVersionableCommits = {};
+    packageCommits.entries.forEach((entry) {
+      String packageName = entry.key as String;
+      List<ConventionalCommit> packageCommits =
+          entry.value as List<ConventionalCommit>;
+
+      print('');
+      print('');
+      print(packageName);
+      print(packageCommits.map((e) => e.asChangelogEntry).join('\n'));
+    });
+    // packageCommits.entries.forEach((element) {
+    //   print('');
+    //   print('');
+    //   print('');
+    //   print(element.key);
+    //   print(element.value);
+    // });
 
     logger.stdout('');
     logger.stdout(

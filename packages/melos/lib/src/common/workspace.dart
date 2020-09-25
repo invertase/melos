@@ -26,6 +26,7 @@ import 'package:pool/pool.dart';
 import 'package:yamlicious/yamlicious.dart';
 
 import '../pub/pub_deps_list.dart';
+import 'git.dart';
 import 'package.dart';
 import 'utils.dart' as utils;
 import 'workspace_config.dart';
@@ -35,8 +36,6 @@ MelosWorkspace currentWorkspace;
 
 class MelosWorkspace {
   final String _name;
-
-  String _since;
 
   String get name => _name;
 
@@ -164,9 +163,10 @@ class MelosWorkspace {
       });
     }
 
+    _packages = await filterResult.toList();
+
+    // --published / --no-published
     if (published != null) {
-      _packages = await filterResult.toList();
-      // Pooling to parallelize registry requests for performance.
       var pool = Pool(10);
       var packagesFilteredWithPublishStatus = <MelosPackage>[];
       await pool.forEach<MelosPackage, void>(_packages, (package) {
@@ -181,8 +181,21 @@ class MelosWorkspace {
         });
       }).drain();
       _packages = packagesFilteredWithPublishStatus;
-    } else {
-      _packages = await filterResult.toList();
+    }
+
+    // --scope
+    if (since != null) {
+      var pool = Pool(10);
+      var packagesFilteredWithGitCommitsSince = <MelosPackage>[];
+      await pool.forEach<MelosPackage, void>(_packages, (package) {
+        return gitCommitsForPackage(package, since: since)
+            .then((commits) async {
+          if (commits.isNotEmpty) {
+            packagesFilteredWithGitCommitsSince.add(package);
+          }
+        });
+      }).drain();
+      _packages = packagesFilteredWithGitCommitsSince;
     }
 
     _packages.sort((a, b) {

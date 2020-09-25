@@ -18,6 +18,11 @@
 var _conventionalCommitRegex = RegExp(
     r'^(?<type>build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(?<scope>\([a-zA-Z0-9_,]+\)?((?=:\s)|(?=!:\s)))?(?<breaking>!)?(?<subject>:\s.*)?|^(?<merge>Merge \w+)');
 
+enum SemverReleaseType {
+  patch,
+  minor,
+  major,
+}
 // TODO(Salakar): parse commit body & footer.
 
 /// A representation of a parsed conventional commit message.
@@ -76,7 +81,8 @@ class ConventionalCommit {
       return null;
     }
 
-    bool isBreakingChange = match.namedGroup('breaking') != null;
+    bool isBreakingChange = match.namedGroup('breaking') != null ||
+        commitMessage.contains('BREAKING:');
     List<String> scopes = (match.namedGroup('scope') ?? '')
         .replaceAll(RegExp(r'^\('), '')
         .replaceAll(RegExp(r'\)$'), '')
@@ -92,6 +98,31 @@ class ConventionalCommit {
         subject: subject,
         isBreakingChange: isBreakingChange,
         isMergeCommit: isMergeCommit);
+  }
+
+  bool get isVersionableCommit {
+    return isBreakingChange ||
+        [
+          'docs',
+          'feat',
+          'fix',
+          'perf',
+          'refactor',
+          'revert',
+          'style',
+        ].contains(type);
+  }
+
+  SemverReleaseType get semverReleaseType {
+    if (isBreakingChange) {
+      return SemverReleaseType.major;
+    }
+
+    if (type == 'feat') {
+      return SemverReleaseType.minor;
+    }
+
+    return SemverReleaseType.patch;
   }
 
   String get asChangelogEntry {

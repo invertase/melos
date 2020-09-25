@@ -119,6 +119,50 @@ class MelosPackage {
     return {};
   }
 
+  /// Dependencies of this package that are also packages in the current workspace.
+  List<MelosPackage> get dependenciesInWorkspace {
+    List<MelosPackage> out = [];
+    _workspace.packages.forEach((package) {
+      if (dependencies[package.name] != null) {
+        out.add(package);
+      }
+    });
+    return out;
+  }
+
+  /// Dev dependencies of this package that are also packages in the current workspace.
+  List<MelosPackage> get devDependenciesInWorkspace {
+    List<MelosPackage> out = [];
+    _workspace.packages.forEach((package) {
+      if (devDependencies[package.name] != null) {
+        out.add(package);
+      }
+    });
+    return out;
+  }
+
+  /// Packages in current workspace that directly depend on this package.
+  List<MelosPackage> get dependentsInWorkspace {
+    List<MelosPackage> out = [];
+    _workspace.packages.forEach((package) {
+      if (package.dependencies[name] != null) {
+        out.add(package);
+      }
+    });
+    return out;
+  }
+
+  /// Packages in current workspace that list this package as a dev dependency.
+  List<MelosPackage> get devDependentsInWorkspace {
+    List<MelosPackage> out = [];
+    _workspace.packages.forEach((package) {
+      if (package.devDependencies[name] != null) {
+        out.add(package);
+      }
+    });
+    return out;
+  }
+
   /// Dev dependencies of this package.
   /// Sourced from pubspec.yaml.
   Map<String, dynamic> get devDependencies {
@@ -172,8 +216,7 @@ class MelosPackage {
   /// Execute a shell command inside this package.
   Future<int> exec(List<String> execArgs) async {
     final packagePrefix =
-        '[${logger.ansi.blue + logger.ansi.emphasized(_name) +
-        logger.ansi.noColor}]: ';
+        '[${logger.ansi.blue + logger.ansi.emphasized(_name) + logger.ansi.noColor}]: ';
 
     var environment = {
       'MELOS_PACKAGE_NAME': name,
@@ -239,8 +282,7 @@ class MelosPackage {
       return [];
     } else if (response.statusCode != 200) {
       throw Exception(
-          'Error reading pub.dev registry for package "$name" (HTTP Status ${response
-              .statusCode}), response: ${response.body}');
+          'Error reading pub.dev registry for package "$name" (HTTP Status ${response.statusCode}), response: ${response.body}');
     }
     var versions = <String>[];
     var versionsRaw = json.decode(response.body)['versions'] as List<dynamic>;
@@ -316,6 +358,12 @@ class MelosPackage {
     return _flutterAppSupportsPlatform(kMacos);
   }
 
+  /// Returns whether this package supports Flutter for iOS.
+  bool get flutterAppSupportsIos {
+    if (!isFlutterApp) return false;
+    return _flutterAppSupportsPlatform(kIos);
+  }
+
   /// Returns whether this package supports Flutter for Linux.
   bool get flutterAppSupportsLinux {
     if (!isFlutterApp) return false;
@@ -358,6 +406,12 @@ class MelosPackage {
   bool get flutterPluginSupportsMacos {
     if (!isFlutterPlugin) return false;
     return _flutterPluginSupportsPlatform(kMacos);
+  }
+
+  /// Returns whether this package supports Flutter for iOS.
+  bool get flutterPluginSupportsIos {
+    if (!isFlutterPlugin) return false;
+    return _flutterPluginSupportsPlatform(kIos);
   }
 
   /// Returns whether this package supports Flutter for Linux.

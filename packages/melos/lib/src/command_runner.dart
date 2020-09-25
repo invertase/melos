@@ -25,6 +25,7 @@ import 'package:melos/src/command/unpublished.dart';
 import 'command/bootstrap.dart';
 import 'command/clean.dart';
 import 'command/exec.dart';
+import 'command/list.dart';
 import 'command/run.dart';
 import 'command/version.dart';
 import 'common/logger.dart';
@@ -36,7 +37,7 @@ class MelosCommandRunner extends CommandRunner {
   static MelosCommandRunner instance = MelosCommandRunner();
 
   MelosCommandRunner()
-      : super('melos', 'A CLI for package development in monorepos.',
+      : super('melos', 'A CLI for Dart package development in monorepos.',
             usageLineLength: lineLength) {
     argParser.addFlag('verbose', callback: (bool enabled) {
       if (enabled) {
@@ -84,6 +85,7 @@ class MelosCommandRunner extends CommandRunner {
     addCommand(BootstrapCommand());
     addCommand(CleanCommand());
     addCommand(RunCommand());
+    addCommand(ListCommand());
     addCommand(UnpublishedCommand());
     addCommand(VersionCommand());
   }

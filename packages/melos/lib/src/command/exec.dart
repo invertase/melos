@@ -29,9 +29,6 @@ class ExecCommand extends Command {
   final String name = 'exec';
 
   @override
-  final List<String> aliases = ['e'];
-
-  @override
   final String description =
       'Execute an arbitrary command in each package. Supports all package filtering options.';
 

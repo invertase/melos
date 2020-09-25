@@ -29,9 +29,6 @@ class UnpublishedCommand extends Command {
   final String name = 'unpublished';
 
   @override
-  final List<String> aliases = ['unp'];
-
-  @override
   final String description =
       'Discover and list unpublished packages or package versions in your repository.';
 

@@ -29,9 +29,6 @@ class RunCommand extends Command {
   final String name = 'run';
 
   @override
-  final List<String> aliases = ['r'];
-
-  @override
   final String description =
       'Run a script by name defined in the workspace melos.yaml config file.';
 

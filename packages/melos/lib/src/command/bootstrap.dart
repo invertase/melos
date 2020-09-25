@@ -29,9 +29,6 @@ class BootstrapCommand extends Command {
   final String name = 'bootstrap';
 
   @override
-  final List<String> aliases = ['bs'];
-
-  @override
   final String description =
       'Initialize the workspace, link local packages together and install remaining package dependencies.';
 
@@ -63,9 +60,13 @@ class BootstrapCommand extends Command {
 
     var linkingProgress = logger.progress('Linking project packages');
     var intellijProject = IntellijProject.fromWorkspace(currentWorkspace);
+
     await currentWorkspace.linkPackages();
     currentWorkspace.clean(cleanPackages: false);
-    await intellijProject.cleanFiles();
+
+    if (currentWorkspace.config.generateIntellijIdeFiles) {
+      await intellijProject.cleanFiles();
+    }
 
     linkingProgress.finish(message: successMessage, showTiming: true);
     if (Platform.isWindows) {
@@ -88,6 +89,8 @@ class BootstrapCommand extends Command {
     logger.stdout(
         '\n -> ${currentWorkspace.packages.length} plugins bootstrapped');
 
-    await IntellijProject.fromWorkspace(currentWorkspace).writeFiles();
+    if (currentWorkspace.config.generateIntellijIdeFiles) {
+      await IntellijProject.fromWorkspace(currentWorkspace).writeFiles();
+    }
   }
 }

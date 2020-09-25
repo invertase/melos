@@ -95,6 +95,43 @@ String relativePath(String path, String from) {
   return normalize(relative(path, from: from));
 }
 
+String stripAnsi(String input) {
+  var pattern = [
+    '[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)',
+    '(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-ntqry=><~]))'
+  ].join('|');
+  return input.replaceAll(RegExp(pattern), '');
+}
+
+String listAsPaddedTable(List<List<String>> list) {
+  Map<int, int> maxColumnSizes = {};
+  List<String> output = [];
+  list.forEach((cells) {
+    var i = 0;
+    cells.forEach((cell) {
+      if (maxColumnSizes[i] == null ||
+          maxColumnSizes[i] < stripAnsi(cell).length) {
+        maxColumnSizes[i] = stripAnsi(cell).length;
+      }
+      i++;
+    });
+  });
+  list.forEach((cells) {
+    var i = 0;
+    var row = '';
+    cells.forEach((cell) {
+      var colWidth = maxColumnSizes[i] + 1;
+      var cellWidth = stripAnsi(cell).length;
+      var padding = colWidth - cellWidth;
+      if (padding < 1) padding = 1;
+      row += '$cell${List.filled(padding, ' ').join()}';
+      i++;
+    });
+    output.add(row);
+  });
+  return output.join('\n');
+}
+
 /// Simple check to see if the [Directory] qualifies as a plugin repository.
 bool isWorkspaceDirectory(Directory directory) {
   var melosYamlPath = melosYamlPathForDirectory(directory);
