@@ -100,19 +100,20 @@ class ConventionalCommit {
         isMergeCommit: isMergeCommit);
   }
 
+  // TODO(Salakar): allow workspace customization
   bool get isVersionableCommit {
     return isBreakingChange ||
         [
-          'docs',
+          'docs', // TODO: what if markdown docs and not code docs
           'feat',
           'fix',
           'perf',
           'refactor',
           'revert',
-          'style',
         ].contains(type);
   }
 
+  // TODO(Salakar): allow workspace customization
   SemverReleaseType get semverReleaseType {
     if (isBreakingChange) {
       return SemverReleaseType.major;

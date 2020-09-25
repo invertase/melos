@@ -55,24 +55,38 @@ class VersionCommand extends Command {
       });
     }).drain();
 
-    var packageWithVersionableCommits = {};
+    var packagesWithVersionableCommits = {};
     packageCommits.entries.forEach((entry) {
       String packageName = entry.key as String;
       List<ConventionalCommit> packageCommits =
           entry.value as List<ConventionalCommit>;
-
-      print('');
-      print('');
-      print(packageName);
-      print(packageCommits.map((e) => e.asChangelogEntry).join('\n'));
+      List<ConventionalCommit> versionableCommits =
+          packageCommits.where((e) => e.isVersionableCommit).toList();
+      if (versionableCommits.isNotEmpty) {
+        packagesWithVersionableCommits[packageName] = versionableCommits;
+        // print('');
+        // print('');
+        // print(packageName);
+        // print(versionableCommits.map((e) => e.asChangelogEntry).join('\n'));
+      }
     });
-    // packageCommits.entries.forEach((element) {
-    //   print('');
-    //   print('');
-    //   print('');
-    //   print(element.key);
-    //   print(element.value);
-    // });
+
+    Set<MelosPackage> packagesToVersion = <MelosPackage>{};
+    Set<MelosPackage> dependentPackagesToVersion = <MelosPackage>{};
+    currentWorkspace.packages.forEach((package) {
+      if (packagesWithVersionableCommits.containsKey(package.name)) {
+        packagesToVersion.add(package);
+        dependentPackagesToVersion.addAll(package.dependentsInWorkspace);
+      }
+    });
+
+    print('');
+    print('');
+    print(packagesToVersion);
+    print('');
+    print('');
+    print('');
+    print(dependentPackagesToVersion);
 
     logger.stdout('');
     logger.stdout(
