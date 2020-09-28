@@ -18,10 +18,13 @@
 import 'package:args/command_runner.dart' show Command;
 import 'package:pool/pool.dart' show Pool;
 
+import '../common/ansi_style.dart';
 import '../common/conventional_commit.dart';
 import '../common/git.dart';
 import '../common/logger.dart';
 import '../common/package.dart';
+import '../common/pending_package_update.dart';
+import '../common/utils.dart';
 import '../common/workspace.dart';
 
 class VersionCommand extends Command {
@@ -30,7 +33,22 @@ class VersionCommand extends Command {
 
   @override
   final String description =
-      'Automatically version and generate changelogs for all packages.';
+      'Automatically version and generate changelogs for all packages. Supports all Melos filtering flags.';
+
+  VersionCommand() {
+    argParser.addFlag('prerelease',
+        abbr: 'p',
+        defaultsTo: false,
+        negatable: false,
+        help:
+            'Version any packages with changes as a prerelease. Cannot be combined with graduate flag.');
+    argParser.addFlag('graduate',
+        abbr: 'g',
+        defaultsTo: false,
+        negatable: false,
+        help:
+            'Graduate current prerelease versioned packages to stable versions, e.g. "0.10.0-dev.1" becomes "0.10.0". Cannot be combined with prerelease flag.');
+  }
 
   @override
   void run() async {
@@ -39,10 +57,39 @@ class VersionCommand extends Command {
     logger.stdout(
         '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(currentWorkspace.path)}${logger.ansi.noColor}\n');
 
-    var pool = Pool(10);
+    bool graduate = argResults['graduate'] as bool;
+    bool prerelease = argResults['prerelease'] as bool;
+    Set<MelosPackage> packagesToVersion = <MelosPackage>{};
+    Map<String, List<ConventionalCommit>> packageCommits = {};
+    Set<MelosPackage> dependentPackagesToVersion = <MelosPackage>{};
+    Map<String, List<ConventionalCommit>> packagesWithVersionableCommits = {};
+    List<MelosPendingPackageUpdate> pendingPackageUpdates = [];
 
-    var packageCommits = {};
-    await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
+    if (graduate && prerelease) {
+      logger.stdout(
+          '${logger.ansi.yellow}WARNING:${logger.ansi.noColor} graduate & prerelease flags cannot be combined. Versioning will continue with graduate off.');
+      graduate = false;
+    }
+
+    if (graduate) {
+      currentWorkspace.packages.forEach((package) {
+        if (package.version.isPreRelease) {
+          pendingPackageUpdates.add(MelosPendingPackageUpdate(
+            package,
+            [],
+            PackageUpdateReason.graduate,
+            graduate: graduate,
+            prerelease: prerelease,
+          ));
+          package.dependentsInWorkspace.forEach((package) {
+            if (graduate && package.version.isPreRelease) return;
+            dependentPackagesToVersion.add(package);
+          });
+        }
+      });
+    }
+
+    await Pool(10).forEach<MelosPackage, void>(currentWorkspace.packages,
         (package) {
       return gitCommitsForPackage(package,
               since: globalResults['since'] as String)
@@ -55,38 +102,96 @@ class VersionCommand extends Command {
       });
     }).drain();
 
-    var packagesWithVersionableCommits = {};
     packageCommits.entries.forEach((entry) {
-      String packageName = entry.key as String;
-      List<ConventionalCommit> packageCommits =
-          entry.value as List<ConventionalCommit>;
+      String packageName = entry.key;
+      List<ConventionalCommit> packageCommits = entry.value;
       List<ConventionalCommit> versionableCommits =
           packageCommits.where((e) => e.isVersionableCommit).toList();
       if (versionableCommits.isNotEmpty) {
         packagesWithVersionableCommits[packageName] = versionableCommits;
-        // print('');
-        // print('');
-        // print(packageName);
-        // print(versionableCommits.map((e) => e.asChangelogEntry).join('\n'));
       }
     });
 
-    Set<MelosPackage> packagesToVersion = <MelosPackage>{};
-    Set<MelosPackage> dependentPackagesToVersion = <MelosPackage>{};
     currentWorkspace.packages.forEach((package) {
       if (packagesWithVersionableCommits.containsKey(package.name)) {
+        if (graduate && package.version.isPreRelease) return;
         packagesToVersion.add(package);
         dependentPackagesToVersion.addAll(package.dependentsInWorkspace);
       }
     });
 
-    print('');
-    print('');
-    print(packagesToVersion);
-    print('');
-    print('');
-    print('');
-    print(dependentPackagesToVersion);
+    pendingPackageUpdates.addAll(packagesToVersion.map((package) =>
+        MelosPendingPackageUpdate(
+            package, packageCommits[package.name], PackageUpdateReason.commit,
+            graduate: graduate, prerelease: prerelease)));
+
+    dependentPackagesToVersion.forEach((package) {
+      if (graduate && package.version.isFirstPreRelease) return;
+      if (!packagesToVersion.contains(package)) {
+        pendingPackageUpdates.add(MelosPendingPackageUpdate(
+          package,
+          [],
+          PackageUpdateReason.dependency,
+          graduate: graduate,
+          prerelease: prerelease,
+        ));
+      }
+    });
+
+    if (pendingPackageUpdates.isEmpty) {
+      logger.stdout(
+          AnsiStyle.yellow('No packages were found that required versioning.'));
+      logger.stdout(AnsiStyle.gray(
+          'Hint: try running "melos list" with the same filtering options to see a list of packages that were included.'));
+      return;
+    }
+
+    logger.stdout(
+        AnsiStyle.blueBright('The following packages will be updated:\n'));
+
+    logger.stdout(listAsPaddedTable([
+      [
+        AnsiStyle.underline(AnsiStyle.bold('Package Name')),
+        AnsiStyle.underline(AnsiStyle.bold('Current Version')),
+        AnsiStyle.underline(AnsiStyle.bold('Updated Version')),
+        AnsiStyle.underline(AnsiStyle.bold('Update Reason')),
+      ],
+      ...pendingPackageUpdates.map((pendingUpdate) {
+        return [
+          AnsiStyle.italic(pendingUpdate.package.name),
+          AnsiStyle.dim(pendingUpdate.currentVersion.toString()),
+          AnsiStyle.green(pendingUpdate.pendingVersion.toString()),
+          AnsiStyle.italic((() {
+            switch (pendingUpdate.reason) {
+              case PackageUpdateReason.commit:
+                var semverType = pendingUpdate.semverReleaseType
+                    .toString()
+                    .substring(pendingUpdate.semverReleaseType
+                            .toString()
+                            .indexOf('.') +
+                        1);
+                return 'updated with ${AnsiStyle.underline(semverType)} changes';
+              case PackageUpdateReason.dependency:
+                return 'dependency was updated';
+              case PackageUpdateReason.graduate:
+                return 'graduate to stable';
+              default:
+                return 'unknown';
+            }
+          })()),
+        ];
+      }),
+    ], paddingSize: 3));
+
+    bool shouldContinue = promptBool();
+    if (!shouldContinue) {
+      logger.stdout(AnsiStyle.yellow('Operation was canceled.'));
+      return;
+    }
+
+    // TODO generate release files, git tags & commits.
+    // TODO generate release files, git tags & commits.
+    // TODO generate release files, git tags & commits.
 
     logger.stdout('');
     logger.stdout(

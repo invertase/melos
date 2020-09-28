@@ -126,26 +126,6 @@ class ConventionalCommit {
     return SemverReleaseType.patch;
   }
 
-  String get asChangelogEntry {
-    String entry;
-    if (isMergeCommit) {
-      entry = header;
-    } else {
-      entry = '**${type.toUpperCase()}**: $subject';
-    }
-
-    bool shouldPunctuate = !entry.contains(RegExp(r'[\.\?\!]$'));
-    if (shouldPunctuate) {
-      entry = '$entry.';
-    }
-
-    if (isBreakingChange) {
-      entry = '**BREAKING** $entry';
-    }
-
-    return ' - $entry';
-  }
-
   @override
   String toString() {
     return '''ConventionalCommit[

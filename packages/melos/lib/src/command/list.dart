@@ -19,6 +19,7 @@ import 'dart:convert';
 
 import 'package:args/command_runner.dart' show Command;
 
+import '../common/ansi_style.dart';
 import '../common/logger.dart';
 import '../common/utils.dart';
 import '../common/workspace.dart';
@@ -177,6 +178,13 @@ class ListCommand extends Command {
     } else if (parseable) {
       printParseableFormat(long: long, all: all);
     } else {
+      if (currentWorkspace.packages.isEmpty) {
+        logger.stdout(AnsiStyle.yellow(
+            'No packages were found with the current filters.'));
+        logger.stdout(AnsiStyle.gray(
+            'Hint: if this is unexpected, try running the command again with a reduced number of filters applied.'));
+        return;
+      }
       printDefaultFormat(long: long, all: all);
     }
   }

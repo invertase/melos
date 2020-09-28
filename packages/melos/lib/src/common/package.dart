@@ -21,6 +21,7 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' show relative, normalize, joinAll;
+import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 
 import '../pub/pub_file.dart';
@@ -84,7 +85,8 @@ class MelosPackage {
 
   /// Package version.
   /// As defined in pubspec.yaml.
-  String get version => _yamlContents[_kVersion] as String;
+  Version get version =>
+      Version.parse((_yamlContents[_kVersion] as String) ?? '0.0.0');
 
   /// Package path.
   /// Fully qualified path to this package location.
@@ -220,7 +222,7 @@ class MelosPackage {
 
     var environment = {
       'MELOS_PACKAGE_NAME': name,
-      'MELOS_PACKAGE_VERSION': version ?? 'none',
+      'MELOS_PACKAGE_VERSION': version.toString(),
       'MELOS_PACKAGE_PATH': path,
       'MELOS_ROOT_PATH': _workspace.path,
     };
@@ -235,7 +237,7 @@ class MelosPackage {
       if (exampleParentPackage != null) {
         environment['MELOS_PARENT_PACKAGE_NAME'] = exampleParentPackage.name;
         environment['MELOS_PARENT_PACKAGE_VERSION'] =
-            exampleParentPackage.version;
+            exampleParentPackage.version.toString();
         environment['MELOS_PARENT_PACKAGE_PATH'] = exampleParentPackage.path;
       }
     }

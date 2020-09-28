@@ -23,9 +23,48 @@ import 'package:path/path.dart' show relative, normalize, windows, joinAll;
 import 'package:yaml/yaml.dart';
 
 import '../../version.dart';
+import 'ansi_style.dart';
 import 'logger.dart';
 
 var _didLogRmWarning = false;
+
+bool promptBool({String prompt, bool valueForCI = true}) {
+  if (isCI()) {
+    return valueForCI;
+  }
+
+  List<int> validInputs = [
+    'y'.codeUnitAt(0),
+    'Y'.codeUnitAt(0),
+    'n'.codeUnitAt(0),
+    'N'.codeUnitAt(0)
+  ];
+  String inputPrompt = prompt ??
+      '\n${AnsiStyle.bgYellow('Continue?')} [${AnsiStyle.gray('y/n')}]: ';
+
+  while (true) {
+    stdout.write(inputPrompt);
+    stdin.lineMode = false;
+    int input = stdin.readByteSync();
+
+    if (validInputs.contains(input)) {
+      stdin.lineMode = true;
+      logger.stdout('');
+      return input == 'y'.codeUnitAt(0) || input == 'Y'.codeUnitAt(0);
+    }
+
+    logger.stdout(
+        '\n\n${AnsiStyle.red('Invalid input, valid inputs are y/Y/n/N.')}');
+  }
+}
+
+bool isCI() {
+  var keys = Platform.environment.keys;
+  return keys.contains('CI') ||
+      keys.contains('CONTINUOUS_INTEGRATION') ||
+      keys.contains('BUILD_NUMBER') ||
+      keys.contains('RUN_ID');
+}
 
 String getMelosRoot() {
   if (Platform.script.path.contains('global_packages')) {
@@ -103,7 +142,7 @@ String stripAnsi(String input) {
   return input.replaceAll(RegExp(pattern), '');
 }
 
-String listAsPaddedTable(List<List<String>> list) {
+String listAsPaddedTable(List<List<String>> list, {int paddingSize = 1}) {
   Map<int, int> maxColumnSizes = {};
   List<String> output = [];
   list.forEach((cells) {
@@ -120,10 +159,10 @@ String listAsPaddedTable(List<List<String>> list) {
     var i = 0;
     var row = '';
     cells.forEach((cell) {
-      var colWidth = maxColumnSizes[i] + 1;
+      var colWidth = maxColumnSizes[i] + paddingSize;
       var cellWidth = stripAnsi(cell).length;
       var padding = colWidth - cellWidth;
-      if (padding < 1) padding = 1;
+      if (padding < paddingSize) padding = paddingSize;
       row += '$cell${List.filled(padding, ' ').join()}';
       i++;
     });

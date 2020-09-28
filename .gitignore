@@ -1,0 +1,12 @@
+.flutter-plugins
+.flutter-plugin-dependencies
+.dart_tool
+/.idea
+/.flutter-plugins-dependencies
+/.packages
+/local.properties
+/pubspec.lock
+/flutterfire/
+/workspaces
+.DS_Store
+.idea
