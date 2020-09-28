@@ -1,6 +1,6 @@
 <p align="center">
-  <h2 align="center">Melos</h2>
-  🌋 A tool for managing Dart projects with multiple packages.
+  <img src="https://static.invertase.io/assets/melos-logo.png" alt="Melos" /> <br /><br />
+  <span>A tool for managing Dart projects with multiple packages.</span>
 </p>
 
 ---
