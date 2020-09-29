@@ -38,31 +38,40 @@ class MelosPendingPackageUpdate {
   /// [PackageUpdateReason] is [PackageUpdateReason.dependency].
   final List<ConventionalCommit> commits;
 
+  /// The package that this update will apply to when commited.
   final MelosPackage package;
 
+  /// A reason why this package needs updating.
   final PackageUpdateReason reason;
 
+  /// Whether the next package version will be made a prerelease version.
   final bool prerelease;
 
+  /// If true and the package is currently a prerelease version, the next package version
+  /// will graduate to a stable, non-prerelease version.
   final bool graduate;
 
+  /// The prerelease id that will be used for prereleases, e.g. "0.1.0-[preId].1".
   final String preId;
 
-  MelosPendingPackageUpdate(this.package,
-      this.commits,
-      this.reason, {
-        this.prerelease = false,
-        this.graduate = false,
-        this.preId = 'dev',
-      });
+  MelosPendingPackageUpdate(
+    this.package,
+    this.commits,
+    this.reason, {
+    this.prerelease = false,
+    this.graduate = false,
+    // TODO(Salakar): Expose as a `--preid` flag to version command
+    this.preId = 'dev',
+  });
 
-  /// Current pub version.
+  /// Current version specified in the packages pubspec.yaml.
   Version get currentVersion {
     return package.version;
   }
 
-  Version get nextRelease {
-    // For simplicity's sake, avoid using + after the version reaches 1.0.0.
+  /// Returns the next stable version based on the commits in this 
+  Version get nextStableRelease {
+    // For simplicity's sake, we avoid using + after the version reaches 1.0.0.
     if (currentVersion.major > 0) {
       switch (semverReleaseType) {
         case SemverReleaseType.major:
@@ -87,6 +96,7 @@ class MelosPendingPackageUpdate {
           return currentVersion.nextPatch;
         case SemverReleaseType.patch:
         default:
+          // Bump the build number, or set it if it does not exist.
           int currentBuild = currentVersion.build.length == 1
               ? currentVersion.build[0] as int
               : 0;
@@ -107,27 +117,27 @@ class MelosPendingPackageUpdate {
           pre: '$preId.${currentPre + 1}');
     }
 
-    var nextVersion = nextRelease;
+    var nextVersion = nextStableRelease;
     return Version(nextVersion.major, nextVersion.minor, nextVersion.patch,
         pre: '$preId.1');
   }
 
   /// Next pub version that will occur as part of this package update.
-  Version get pendingVersion {
+  Version get nextVersion {
     if (reason == PackageUpdateReason.graduate) {
       return Version(
           currentVersion.major, currentVersion.minor, currentVersion.patch);
     }
 
     if (currentVersion.isPreRelease && graduate) {
-      return nextRelease;
+      return nextStableRelease;
     } else if (currentVersion.isPreRelease) {
       return nextPreRelease;
     } else if (prerelease) {
       return nextPreRelease;
     }
 
-    return nextRelease;
+    return nextStableRelease;
   }
 
   /// Taking into account all the commits in this update, what is the highest [SemverReleaseType].
@@ -159,7 +169,7 @@ class MelosPendingPackageUpdate {
   }
 
   String get changelogHeader {
-    return '## $pendingVersion';
+    return '## $nextVersion';
   }
 
   List<String> get changelogEntries {
@@ -175,6 +185,7 @@ class MelosPendingPackageUpdate {
 
     List<ConventionalCommit> entries = List.from(commits);
 
+    // Sort so that Breaking Changes appear at the top.
     entries.sort((a, b) {
       var r = a.isBreakingChange
           .toString()
@@ -212,8 +223,7 @@ class MelosPendingPackageUpdate {
 
   @override
   String toString() {
-    return 'MelosPendingPackageUpdate(packageName: ${package
-        .name}, semverType: $semverReleaseType, currentVersion: $currentVersion, pendingVersion: $pendingVersion)';
+    return 'MelosPendingPackageUpdate(packageName: ${package.name}, semverType: $semverReleaseType, currentVersion: $currentVersion, nextVersion: $nextVersion)';
   }
 
   @override
