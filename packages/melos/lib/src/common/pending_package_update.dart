@@ -48,14 +48,13 @@ class MelosPendingPackageUpdate {
 
   final String preId;
 
-  MelosPendingPackageUpdate(
-    this.package,
-    this.commits,
-    this.reason, {
-    this.prerelease = false,
-    this.graduate = false,
-    this.preId = 'dev',
-  });
+  MelosPendingPackageUpdate(this.package,
+      this.commits,
+      this.reason, {
+        this.prerelease = false,
+        this.graduate = false,
+        this.preId = 'dev',
+      });
 
   /// Current pub version.
   Version get currentVersion {
@@ -155,12 +154,36 @@ class MelosPendingPackageUpdate {
         .reduce(math.max)];
   }
 
+  String get changelogContents {
+    return '$changelogHeader\n\n - ${changelogEntries.join('\n - ')}\n';
+  }
+
   String get changelogHeader {
-    return '## $pendingVersion\n';
+    return '## $pendingVersion';
   }
 
   List<String> get changelogEntries {
-    return commits.map((commit) {
+    if (reason == PackageUpdateReason.dependency) {
+      return ['Update a dependency to the latest release.'];
+    }
+
+    if (reason == PackageUpdateReason.graduate) {
+      return [
+        'Graduate package to a stable release. See pre-releases prior to this version for changelog entries.'
+      ];
+    }
+
+    List<ConventionalCommit> entries = List.from(commits);
+
+    entries.sort((a, b) {
+      var r = a.isBreakingChange
+          .toString()
+          .compareTo(b.isBreakingChange.toString());
+      if (r != 0) return r;
+      return b.type.compareTo(a.type);
+    });
+
+    return entries.map((commit) {
       String entry;
       if (commit.isMergeCommit) {
         entry = commit.header;
@@ -177,7 +200,7 @@ class MelosPendingPackageUpdate {
         entry = '**BREAKING** $entry';
       }
 
-      return ' - $entry';
+      return entry;
     }).toList();
   }
 
@@ -189,7 +212,8 @@ class MelosPendingPackageUpdate {
 
   @override
   String toString() {
-    return 'MelosPendingPackageUpdate(packageName: ${package.name}, semverType: $semverReleaseType, currentVersion: $currentVersion, pendingVersion: $pendingVersion)';
+    return 'MelosPendingPackageUpdate(packageName: ${package
+        .name}, semverType: $semverReleaseType, currentVersion: $currentVersion, pendingVersion: $pendingVersion)';
   }
 
   @override

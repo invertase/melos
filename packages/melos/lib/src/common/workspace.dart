@@ -75,14 +75,13 @@ class MelosWorkspace {
     return joinAll([path, '.melos_tool']);
   }
 
-  Future<List<MelosPackage>> loadPackagesWithFilters(
-      {List<String> scope,
-      List<String> ignore,
-      String since,
-      List<String> dirExists,
-      List<String> fileExists,
-      bool skipPrivate,
-      bool published}) async {
+  Future<List<MelosPackage>> loadPackagesWithFilters({List<String> scope,
+    List<String> ignore,
+    String since,
+    List<String> dirExists,
+    List<String> fileExists,
+    bool skipPrivate,
+    bool published}) async {
     if (_packages != null) return Future.value(_packages);
     final packageGlobs = _config.packages;
 
@@ -149,7 +148,7 @@ class MelosWorkspace {
         final fileExistsMatched = fileExists.firstWhere((fileExistsPath) {
           // TODO(Salakar): Make replacer reusable, currently used in a few places.
           var _fileExistsPath =
-              fileExistsPath.replaceAll('\$MELOS_PACKAGE_NAME', package.name);
+          fileExistsPath.replaceAll('\$MELOS_PACKAGE_NAME', package.name);
           return File(join(package.path, _fileExistsPath)).existsSync();
         }, orElse: () => null);
         return fileExistsMatched != null;

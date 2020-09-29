@@ -39,9 +39,10 @@ Future<List<String>> gitTagsForPackage(MelosPackage package,
   return (processResult.stdout as String)
       .split('\n')
       .map((e) => e.trim())
-      .where((tag) => tagReleaseType == TagReleaseType.stable
-          ? !tag.contains('-dev.')
-          : true)
+      .where((tag) =>
+  tagReleaseType == TagReleaseType.stable
+      ? !tag.contains('-dev.')
+      : true)
       .toList();
 }
 
@@ -50,7 +51,7 @@ Future<List<String>> gitTagsForPackage(MelosPackage package,
 Future<String> gitLatestTagForPackage(MelosPackage package,
     {TagReleaseType tagReleaseType = TagReleaseType.all}) async {
   List<String> tags =
-      await gitTagsForPackage(package, tagReleaseType: tagReleaseType);
+  await gitTagsForPackage(package, tagReleaseType: tagReleaseType);
   if (tags.isEmpty) {
     return null;
   }
@@ -79,7 +80,10 @@ Future<List<GitCommit>> gitCommitsForPackage(MelosPackage package,
 
   List<String> rawCommits = (processResult.stdout as String)
       .split('||||\n')
-      .where((element) => element.trim().isNotEmpty)
+      .where((element) =>
+  element
+      .trim()
+      .isNotEmpty)
       .toList();
 
   return rawCommits.map((String rawCommit) {

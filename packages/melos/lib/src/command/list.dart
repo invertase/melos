@@ -92,9 +92,9 @@ class ListCommand extends Command {
           'flutter_app': package.isFlutterApp,
           'flutter_plugin': package.isFlutterPlugin,
           'dependencies':
-              package.dependenciesInWorkspace.map((_) => _.name).toList(),
+          package.dependenciesInWorkspace.map((_) => _.name).toList(),
           'dependents':
-              package.dependentsInWorkspace.map((_) => _.name).toList(),
+          package.dependentsInWorkspace.map((_) => _.name).toList(),
         });
         if (package.isFlutterApp) {
           jsonObject.addAll({
@@ -109,13 +109,13 @@ class ListCommand extends Command {
         if (package.isFlutterPlugin) {
           jsonObject.addAll({
             'flutter_plugin_supports_android':
-                package.flutterPluginSupportsAndroid,
+            package.flutterPluginSupportsAndroid,
             'flutter_plugin_supports_linux': package.flutterPluginSupportsLinux,
             'flutter_plugin_supports_macos': package.flutterPluginSupportsMacos,
             'flutter_plugin_supports_ios': package.flutterPluginSupportsIos,
             'flutter_plugin_supports_web': package.flutterPluginSupportsWeb,
             'flutter_plugin_supports_windows':
-                package.flutterPluginSupportsWindows,
+            package.flutterPluginSupportsWindows,
           });
         }
       }
@@ -147,7 +147,8 @@ class ListCommand extends Command {
 
   void printParseableFormat({bool all = false, bool long = false}) {
     if (long) {
-      currentWorkspace.packages.forEach((package) => print([
+      currentWorkspace.packages.forEach((package) =>
+          print([
             package.path,
             package.name,
             package.version ?? '',

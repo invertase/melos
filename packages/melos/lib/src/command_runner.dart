@@ -38,7 +38,7 @@ class MelosCommandRunner extends CommandRunner {
 
   MelosCommandRunner()
       : super('melos', 'A CLI for Dart package development in monorepos.',
-            usageLineLength: lineLength) {
+      usageLineLength: lineLength) {
     argParser.addFlag('verbose', callback: (bool enabled) {
       if (enabled) {
         logger = Logger.verbose();
@@ -48,38 +48,38 @@ class MelosCommandRunner extends CommandRunner {
     argParser.addFlag('no-private',
         negatable: false,
         help:
-            'Exclude private packages (`publish_to: none`). They are included by default.');
+        'Exclude private packages (`publish_to: none`). They are included by default.');
 
     argParser.addFlag('published',
         negatable: true,
         defaultsTo: null,
         help:
-            'Filter packages where the current local package version exists on pub.dev. Or "-no-published" to filter packages that have not had their current version published yet.');
+        'Filter packages where the current local package version exists on pub.dev. Or "-no-published" to filter packages that have not had their current version published yet.');
 
     argParser.addMultiOption('scope',
         valueHelp: 'glob',
         help:
-            'Include only packages with names matching the given glob. This option can be repeated.');
+        'Include only packages with names matching the given glob. This option can be repeated.');
 
     argParser.addMultiOption('ignore',
         valueHelp: 'glob',
         help:
-            'Exclude packages with names matching the given glob. This option can be repeated.');
+        'Exclude packages with names matching the given glob. This option can be repeated.');
 
     argParser.addOption('since',
         valueHelp: 'ref',
         help:
-            'Only include packages that have been changed since the specified `ref`, e.g. a commit sha or git tag.');
+        'Only include packages that have been changed since the specified `ref`, e.g. a commit sha or git tag.');
 
     argParser.addMultiOption('dir-exists',
         valueHelp: 'dirRelativeToPackageRoot',
         help:
-            'Include only packages where a specific directory exists inside the package.');
+        'Include only packages where a specific directory exists inside the package.');
 
     argParser.addMultiOption('file-exists',
         valueHelp: 'fileRelativeToPackageRoot',
         help:
-            'Include only packages where a specific file exists in the package.');
+        'Include only packages where a specific file exists in the package.');
 
     addCommand(ExecCommand());
     addCommand(BootstrapCommand());
