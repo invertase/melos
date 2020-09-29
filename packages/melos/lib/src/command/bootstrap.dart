@@ -19,6 +19,7 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart' show Command;
 import 'package:melos/src/common/intellij_project.dart';
+import 'package:ansi_styles/ansi_styles.dart';
 
 import '../command_runner.dart';
 import '../common/logger.dart';
@@ -34,11 +35,9 @@ class BootstrapCommand extends Command {
 
   @override
   void run() async {
-    logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos bootstrap")}');
-    logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(currentWorkspace.path)}${logger.ansi.noColor}\n');
-    var successMessage = '${logger.ansi.green}SUCCESS${logger.ansi.noColor}';
+    logger.stdout(AnsiStyles.yellow.bold('melos bootstrap'));
+    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
+    var successMessage = AnsiStyles.green('SUCCESS');
     var bootstrapProgress = logger.progress('Bootstrapping project');
     await currentWorkspace.generatePubspecFile();
 
@@ -81,10 +80,9 @@ class BootstrapCommand extends Command {
 
     logger.stdout('\nPackages:');
     currentWorkspace.packages.forEach((package) {
+      logger.stdout('${AnsiStyles.bullet} ${AnsiStyles.bold(package.name)}');
       logger.stdout(
-          '  ${logger.ansi.bullet} ${logger.ansi.emphasized(package.name)}');
-      logger.stdout(
-          "    └> ${logger.ansi.blue + package.path.replaceAll(currentWorkspace.path, ".") + logger.ansi.none}");
+          '    └> ${AnsiStyles.blue(package.path.replaceAll(currentWorkspace.path, "."))}');
     });
     logger.stdout(
         '\n -> ${currentWorkspace.packages.length} plugins bootstrapped');

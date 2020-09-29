@@ -23,6 +23,7 @@ import 'package:http/http.dart' as http;
 import 'package:path/path.dart' show relative, normalize, joinAll;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
+import 'package:ansi_styles/ansi_styles.dart';
 
 import '../pub/pub_file.dart';
 import '../pub/pub_file_flutter_dependencies.dart';
@@ -217,8 +218,7 @@ class MelosPackage {
 
   /// Execute a shell command inside this package.
   Future<int> exec(List<String> execArgs) async {
-    final packagePrefix =
-        '[${logger.ansi.blue + logger.ansi.emphasized(_name) + logger.ansi.noColor}]: ';
+    final packagePrefix = '[${AnsiStyles.blue.bold(_name)}]';
 
     var environment = {
       'MELOS_PACKAGE_NAME': name,

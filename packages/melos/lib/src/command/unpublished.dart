@@ -19,6 +19,7 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart' show Command;
 import 'package:pool/pool.dart' show Pool;
+import 'package:ansi_styles/ansi_styles.dart';
 
 import '../common/logger.dart';
 import '../common/package.dart';
@@ -34,10 +35,8 @@ class UnpublishedCommand extends Command {
 
   @override
   void run() async {
-    logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos unpublished")}');
-    logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(currentWorkspace.path)}${logger.ansi.noColor}\n');
+    logger.stdout(AnsiStyles.yellow.bold('melos unpublished'));
+    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
     var readRegistryProgress =
         logger.progress('Reading registry for package information');
 
@@ -59,31 +58,28 @@ class UnpublishedCommand extends Command {
     }).drain();
 
     readRegistryProgress.finish(
-        message: '${logger.ansi.green}SUCCESS${logger.ansi.noColor}',
-        showTiming: true);
+        message: AnsiStyles.green('SUCCESS'), showTiming: true);
 
     logger.stdout('');
     logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos unpublished")}');
-    logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(currentWorkspace.path)}${logger.ansi.noColor}');
+        '${AnsiStyles.yellow('\$')} ${AnsiStyles.bold('melos unpublished')}');
+    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}');
     if (unpublishedPackages.isNotEmpty) {
       logger.stdout(
-          '       └> ${logger.ansi.red}${logger.ansi.emphasized('UNPUBLISHED PACKAGES')}${logger.ansi.noColor} (${unpublishedPackages.length} packages)');
+          '       └> ${AnsiStyles.red.bold('UNPUBLISHED PACKAGES')} (${unpublishedPackages.length} packages)');
       unpublishedPackages.forEach((package) {
+        logger.stdout('           └> ${AnsiStyles.yellow(package.name)}');
         logger.stdout(
-            '           └> ${logger.ansi.yellow}${package.name}${logger.ansi.noColor}');
+            '               ${AnsiStyles.bullet} ${AnsiStyles.green('Local:')}   ${package.version ?? 'none'}');
         logger.stdout(
-            '               ${logger.ansi.bullet} ${logger.ansi.green}Local:${logger.ansi.noColor}   ${package.version ?? 'none'}');
-        logger.stdout(
-            '               ${logger.ansi.bullet} ${logger.ansi.cyan}Remote:${logger.ansi.noColor}  ${latestPackageVersion[package.name]}');
+            '               ${AnsiStyles.bullet} ${AnsiStyles.cyan('Remote:')}   ${latestPackageVersion[package.name]}');
       });
       logger.stdout('');
       exitCode = 1;
       return;
     } else {
       logger.stdout(
-          '       └> ${logger.ansi.green}${logger.ansi.emphasized('NO UNPUBLISHED PACKAGES')}${logger.ansi.noColor}');
+          '       └> ${AnsiStyles.green.bold('NO UNPUBLISHED PACKAGES')}');
       logger.stdout('');
     }
   }

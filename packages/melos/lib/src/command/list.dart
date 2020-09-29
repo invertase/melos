@@ -18,8 +18,8 @@
 import 'dart:convert';
 
 import 'package:args/command_runner.dart' show Command;
+import 'package:ansi_styles/ansi_styles.dart';
 
-import '../common/ansi_style.dart';
 import '../common/logger.dart';
 import '../common/utils.dart';
 import '../common/workspace.dart';
@@ -131,11 +131,9 @@ class ListCommand extends Command {
       String table = listAsPaddedTable(currentWorkspace.packages
           .map((package) => [
                 package.name,
-                '${logger.ansi.green}${package.version ?? ''}${logger.ansi.noColor}',
-                '\u001b[1;37m${package.pathRelativeToWorkspace}${logger.ansi.noColor}',
-                all && package.isPrivate
-                    ? '(${logger.ansi.red}PRIVATE${logger.ansi.noColor})'
-                    : ''
+                AnsiStyles.green(package.version.toString()),
+                AnsiStyles.gray(package.pathRelativeToWorkspace),
+                all && package.isPrivate ? AnsiStyles.red('PRIVATE') : ''
               ])
           .toList());
       print(table);
@@ -179,9 +177,9 @@ class ListCommand extends Command {
       printParseableFormat(long: long, all: all);
     } else {
       if (currentWorkspace.packages.isEmpty) {
-        logger.stdout(AnsiStyle.yellow(
+        logger.stdout(AnsiStyles.yellow(
             'No packages were found with the current filters.'));
-        logger.stdout(AnsiStyle.gray(
+        logger.stdout(AnsiStyles.gray(
             'Hint: if this is unexpected, try running the command again with a reduced number of filters applied.'));
         return;
       }

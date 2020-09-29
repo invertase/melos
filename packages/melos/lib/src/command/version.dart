@@ -17,8 +17,8 @@
 
 import 'package:args/command_runner.dart' show Command;
 import 'package:pool/pool.dart' show Pool;
+import 'package:ansi_styles/ansi_styles.dart';
 
-import '../common/ansi_style.dart';
 import '../common/conventional_commit.dart';
 import '../common/git.dart';
 import '../common/logger.dart';
@@ -52,10 +52,8 @@ class VersionCommand extends Command {
 
   @override
   void run() async {
-    logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos version")}');
-    logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(currentWorkspace.path)}${logger.ansi.noColor}\n');
+    logger.stdout(AnsiStyles.yellow.bold('melos version'));
+    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
 
     bool graduate = argResults['graduate'] as bool;
     bool prerelease = argResults['prerelease'] as bool;
@@ -67,7 +65,7 @@ class VersionCommand extends Command {
 
     if (graduate && prerelease) {
       logger.stdout(
-          '${logger.ansi.yellow}WARNING:${logger.ansi.noColor} graduate & prerelease flags cannot be combined. Versioning will continue with graduate off.');
+          '${AnsiStyles.yellow('WARNING:')} graduate & prerelease flags cannot be combined. Versioning will continue with graduate off.');
       graduate = false;
     }
 
@@ -139,29 +137,29 @@ class VersionCommand extends Command {
     });
 
     if (pendingPackageUpdates.isEmpty) {
-      logger.stdout(
-          AnsiStyle.yellow('No packages were found that required versioning.'));
-      logger.stdout(AnsiStyle.gray(
+      logger.stdout(AnsiStyles.yellow(
+          'No packages were found that required versioning.'));
+      logger.stdout(AnsiStyles.gray(
           'Hint: try running "melos list" with the same filtering options to see a list of packages that were included.'));
       return;
     }
 
     logger.stdout(
-        AnsiStyle.blueBright('The following packages will be updated:\n'));
+        AnsiStyles.blueBright('The following packages will be updated:\n'));
 
     logger.stdout(listAsPaddedTable([
       [
-        AnsiStyle.underline(AnsiStyle.bold('Package Name')),
-        AnsiStyle.underline(AnsiStyle.bold('Current Version')),
-        AnsiStyle.underline(AnsiStyle.bold('Updated Version')),
-        AnsiStyle.underline(AnsiStyle.bold('Update Reason')),
+        AnsiStyles.underline.bold('Package Name'),
+        AnsiStyles.underline.bold('Current Version'),
+        AnsiStyles.underline.bold('Updated Version'),
+        AnsiStyles.underline.bold('Update Reason'),
       ],
       ...pendingPackageUpdates.map((pendingUpdate) {
         return [
-          AnsiStyle.italic(pendingUpdate.package.name),
-          AnsiStyle.dim(pendingUpdate.currentVersion.toString()),
-          AnsiStyle.green(pendingUpdate.pendingVersion.toString()),
-          AnsiStyle.italic((() {
+          AnsiStyles.italic(pendingUpdate.package.name),
+          AnsiStyles.dim(pendingUpdate.currentVersion.toString()),
+          AnsiStyles.green(pendingUpdate.pendingVersion.toString()),
+          AnsiStyles.italic((() {
             switch (pendingUpdate.reason) {
               case PackageUpdateReason.commit:
                 var semverType = pendingUpdate.semverReleaseType
@@ -170,7 +168,7 @@ class VersionCommand extends Command {
                             .toString()
                             .indexOf('.') +
                         1);
-                return 'updated with ${AnsiStyle.underline(semverType)} changes';
+                return 'updated with ${AnsiStyles.underline(semverType)} changes';
               case PackageUpdateReason.dependency:
                 return 'dependency was updated';
               case PackageUpdateReason.graduate:
@@ -185,7 +183,7 @@ class VersionCommand extends Command {
 
     bool shouldContinue = promptBool();
     if (!shouldContinue) {
-      logger.stdout(AnsiStyle.yellow('Operation was canceled.'));
+      logger.stdout(AnsiStyles.yellow('Operation was canceled.'));
       return;
     }
 
@@ -195,8 +193,7 @@ class VersionCommand extends Command {
 
     logger.stdout('');
     logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos version")}');
-    logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(currentWorkspace.path)}${logger.ansi.noColor}');
+        '${AnsiStyles.yellow('\$')} ${AnsiStyles.bold('melos version')}');
+    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}');
   }
 }

@@ -19,6 +19,7 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart' show Command;
 import 'package:prompts/prompts.dart' as prompts;
+import 'package:ansi_styles/ansi_styles.dart';
 
 import '../common/logger.dart';
 import '../common/utils.dart';
@@ -69,7 +70,7 @@ class RunCommand extends Command {
       if (currentWorkspace.config.scripts.isNotEmpty) {
         logger.stdout('Available scripts:');
         currentWorkspace.config.scripts.keys.forEach((key) {
-          logger.stdout(' - ${logger.ansi.blue}$key${logger.ansi.noColor}');
+          logger.stdout(' - ${AnsiStyles.blue(key as String)}');
         });
         logger.stdout('');
       }
@@ -81,12 +82,10 @@ class RunCommand extends Command {
     var scriptSource = currentWorkspace.config.scripts[scriptName] as String;
     var scriptParts = scriptSource.split(' ');
 
+    logger.stdout(AnsiStyles.yellow.bold('melos run $scriptName'));
     logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos run $scriptName")}');
-    logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(scriptSource.replaceAll('\n', ''))}${logger.ansi.noColor}');
-    logger.stdout(
-        '       └> ${logger.ansi.yellow}${logger.ansi.emphasized('RUNNING')}${logger.ansi.noColor}\n');
+        '   └> ${AnsiStyles.cyan.bold(scriptSource.replaceAll('\n', ''))}');
+    logger.stdout('       └> ${AnsiStyles.yellow.bold('RUNNING')}');
 
     var environment = {
       'MELOS_ROOT_PATH': currentWorkspace.path,
@@ -96,18 +95,15 @@ class RunCommand extends Command {
         environment: environment, workingDirectory: currentWorkspace.path);
 
     logger.stdout('');
+    logger.stdout(AnsiStyles.yellow.bold('melos run $scriptName'));
     logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos run $scriptName")}');
-    logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(scriptSource.replaceAll('\n', ''))}${logger.ansi.noColor}');
+        '   └> ${AnsiStyles.cyan.bold(scriptSource.replaceAll('\n', ''))}');
 
     if (processExitCode > 0) {
-      logger.stdout(
-          '       └> ${logger.ansi.red}${logger.ansi.emphasized('FAILED')}${logger.ansi.noColor}');
+      logger.stdout('       └> ${AnsiStyles.red.bold('FAILED')}');
       exitCode = processExitCode;
     } else {
-      logger.stdout(
-          '       └> ${logger.ansi.green}${logger.ansi.emphasized('SUCCESS')}${logger.ansi.noColor}');
+      logger.stdout('       └> ${AnsiStyles.green.bold('SUCCESS')}');
     }
   }
 }

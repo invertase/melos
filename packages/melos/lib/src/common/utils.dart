@@ -21,9 +21,9 @@ import 'dart:io';
 
 import 'package:path/path.dart' show relative, normalize, windows, joinAll;
 import 'package:yaml/yaml.dart';
+import 'package:ansi_styles/ansi_styles.dart';
 
 import '../../version.dart';
-import 'ansi_style.dart';
 import 'logger.dart';
 
 var _didLogRmWarning = false;
@@ -40,7 +40,7 @@ bool promptBool({String prompt, bool valueForCI = true}) {
     'N'.codeUnitAt(0)
   ];
   String inputPrompt = prompt ??
-      '\n${AnsiStyle.bgYellow('Continue?')} [${AnsiStyle.gray('y/n')}]: ';
+      '\n${AnsiStyles.bgYellow('Continue?')} [${AnsiStyles.gray('y/n')}]: ';
 
   while (true) {
     stdout.write(inputPrompt);
@@ -54,7 +54,7 @@ bool promptBool({String prompt, bool valueForCI = true}) {
     }
 
     logger.stdout(
-        '\n\n${AnsiStyle.red('Invalid input, valid inputs are y/Y/n/N.')}');
+        '\n\n${AnsiStyles.red('Invalid input, valid inputs are y/Y/n/N.')}');
   }
 }
 
@@ -134,14 +134,6 @@ String relativePath(String path, String from) {
   return normalize(relative(path, from: from));
 }
 
-String stripAnsi(String input) {
-  var pattern = [
-    '[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)',
-    '(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-ntqry=><~]))'
-  ].join('|');
-  return input.replaceAll(RegExp(pattern), '');
-}
-
 String listAsPaddedTable(List<List<String>> list, {int paddingSize = 1}) {
   Map<int, int> maxColumnSizes = {};
   List<String> output = [];
@@ -149,8 +141,8 @@ String listAsPaddedTable(List<List<String>> list, {int paddingSize = 1}) {
     var i = 0;
     cells.forEach((cell) {
       if (maxColumnSizes[i] == null ||
-          maxColumnSizes[i] < stripAnsi(cell).length) {
-        maxColumnSizes[i] = stripAnsi(cell).length;
+          maxColumnSizes[i] < AnsiStyles.strip(cell).length) {
+        maxColumnSizes[i] = AnsiStyles.strip(cell).length;
       }
       i++;
     });
@@ -160,7 +152,7 @@ String listAsPaddedTable(List<List<String>> list, {int paddingSize = 1}) {
     var row = '';
     cells.forEach((cell) {
       var colWidth = maxColumnSizes[i] + paddingSize;
-      var cellWidth = stripAnsi(cell).length;
+      var cellWidth = AnsiStyles.strip(cell).length;
       var padding = colWidth - cellWidth;
       if (padding < paddingSize) padding = paddingSize;
       row += '$cell${List.filled(padding, ' ').join()}';
