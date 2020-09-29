@@ -15,8 +15,6 @@
  *
  */
 
-import 'dart:io';
-
 import 'package:args/command_runner.dart' show Command;
 import 'package:pool/pool.dart' show Pool;
 import 'package:ansi_styles/ansi_styles.dart';
@@ -50,6 +48,23 @@ class VersionCommand extends Command {
         negatable: false,
         help:
             'Graduate current prerelease versioned packages to stable versions, e.g. "0.10.0-dev.1" becomes "0.10.0". Cannot be combined with prerelease flag.');
+    argParser.addFlag('changelog',
+        abbr: 'c',
+        defaultsTo: true,
+        negatable: true,
+        help: 'Generate/update any CHANGELOG.md files.');
+    argParser.addFlag('push',
+        abbr: 'u',
+        defaultsTo: true,
+        negatable: true,
+        help:
+            'By default, melos version will push the committed and tagged changes to the configured git remote. Pass --no-push to disable this behavior.');
+    argParser.addFlag('git-tag-version',
+        abbr: 't',
+        defaultsTo: true,
+        negatable: true,
+        help:
+            'By default, melos version will commit changes to package.json files and tag the release. Pass --no-git-tag-version to disable the behavior..');
   }
 
   @override
@@ -57,7 +72,10 @@ class VersionCommand extends Command {
     logger.stdout(AnsiStyles.yellow.bold('melos version'));
     logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
 
+    bool changelog = argResults['changelog'] as bool;
     bool graduate = argResults['graduate'] as bool;
+    bool tag = argResults['git-tag-version'] as bool;
+    bool push = argResults['push'] as bool;
     bool prerelease = argResults['prerelease'] as bool;
     Set<MelosPackage> packagesToVersion = <MelosPackage>{};
     Map<String, List<ConventionalCommit>> packageCommits = {};
@@ -189,15 +207,39 @@ class VersionCommand extends Command {
       return;
     }
 
-    await Pool(10).forEach<MelosPendingPackageUpdate, void>(
-        pendingPackageUpdates, (pendingPackageUpdate) async {
-      // TODO update pubspecs
-      await pendingPackageUpdate.changelog.write();
-    }).drain();
+    // TODO preserve original pubspec & changelog contents in memory to allow rollback if anything fails.
+    // Note: not pooling & parrellelzing rights to avoid possible file contention.
+    await Future.forEach(pendingPackageUpdates,
+        (MelosPendingPackageUpdate pendingPackageUpdate) async {
+      // Update package pubspec version.
+      await pendingPackageUpdate.package
+          .setPubspecVersion(pendingPackageUpdate.nextVersion.toString());
 
-    // TODO generate release files, git tags & commits.
-    // TODO generate release files, git tags & commits.
-    // TODO generate release files, git tags & commits.
+      // Update dependents.
+      await Future.forEach(
+          pendingPackageUpdate.package.dependentsInWorkspace,
+          (MelosPackage package) => package.setDependencyVersion(
+              pendingPackageUpdate.package.name,
+              // Dependency range using carret syntax to ensure the range allows
+              // all versions guaranteed to be backwards compatible with the specified version.
+              // For example, ^1.2.3 is equivalent to '>=1.2.3 <2.0.0', and ^0.1.2 is equivalent to '>=0.1.2 <0.2.0'.
+              '^${pendingPackageUpdate.nextVersion.toString()}'));
+
+      // Update changelogs if requested.
+      if (changelog) {
+        await pendingPackageUpdate.changelog.write();
+      }
+    });
+
+    await Future.forEach(pendingPackageUpdates,
+        (MelosPendingPackageUpdate pendingPackageUpdate) async {
+      if (tag) {
+        // TODO git tag
+      }
+      if (push) {
+        // TODO git push
+      }
+    });
 
     logger.stdout('');
     logger.stdout(

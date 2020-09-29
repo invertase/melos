@@ -20,6 +20,7 @@ import 'dart:io';
 import 'package:path/path.dart';
 
 import 'conventional_commit.dart';
+import 'logger.dart';
 import 'pending_package_update.dart';
 
 class Changelog {
@@ -49,6 +50,11 @@ class Changelog {
 
   Future<void> write() async {
     String contents = await read();
+    if (contents.contains(markdown)) {
+      logger.trace(
+          'Identical changelog content for ${update.package.name} v${update.nextVersion.toString()} already exists, skipping.');
+      return;
+    }
     contents = '$markdown$contents';
     return File(path).writeAsString(contents);
   }

@@ -70,6 +70,18 @@ enum PackageType {
   flutterApp,
 }
 
+// https://regex101.com/r/RAdBOn/3
+RegExp _versionReplaceRegex = RegExp(
+    '''^(version\\s?:\\s*?['"]?)(?<version>[-\\d\\.+\\w_]{5,})(.*\$)''',
+    multiLine: true);
+
+// https://regex101.com/r/sY3jXt/2/
+RegExp _dependencyVersionReplaceRegex(String dependencyName) {
+  return RegExp(
+      '''(?<dependency>^\\s+$dependencyName\\s?:\\s?)(?!\$)(?<version>any|["'^<>=]*\\d\\.\\d\\.\\d['"._\\s<>=\\d-\\w+]*)\$''',
+      multiLine: true);
+}
+
 /// A workspace representation of a Dart package.
 class MelosPackage {
   final MelosWorkspace _workspace;
@@ -131,6 +143,43 @@ class MelosPackage {
       }
     });
     return out;
+  }
+
+  Future<void> setPubspecVersion(String newVersion) async {
+    File pubspec = File(pubspecPathForDirectory(Directory(path)));
+    String contents = await pubspec.readAsString();
+    String updatedContents =
+        contents.replaceAllMapped(_versionReplaceRegex, (Match match) {
+      return '${match.group(1)}$newVersion${match.group(3)}';
+    });
+
+    // Sanity check that contents actually changed.
+    if (contents == updatedContents) {
+      logger.trace(
+          'Failed to update a pubspec.yaml version to $newVersion for package $name, you should probably report this issue with a copy of your pubspec.yaml file.');
+      return;
+    }
+
+    return pubspec.writeAsString(updatedContents);
+  }
+
+  Future<void> setDependencyVersion(
+      String dependencyName, String dependencyVersion) async {
+    File pubspec = File(pubspecPathForDirectory(Directory(path)));
+    String contents = await pubspec.readAsString();
+    String updatedContents = contents.replaceAllMapped(
+        _dependencyVersionReplaceRegex(dependencyName), (Match match) {
+      return '${match.group(1)}$dependencyVersion';
+    });
+
+    // Sanity check that contents actually changed.
+    if (contents == updatedContents) {
+      logger.trace(
+          'Failed to update dependency $dependencyName version to $dependencyVersion for package $name, you should probably report this issue with a copy of your pubspec.yaml file.');
+      return;
+    }
+
+    return pubspec.writeAsString(updatedContents);
   }
 
   /// Dev dependencies of this package that are also packages in the current workspace.

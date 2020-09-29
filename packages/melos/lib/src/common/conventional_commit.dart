@@ -23,7 +23,7 @@ enum SemverReleaseType {
   minor,
   major,
 }
-// TODO(Salakar): parse commit body & footer.
+// TODO(Salakar): parse commit body & footer for more detailed changelogs.
 
 /// A representation of a parsed conventional commit message.
 class ConventionalCommit {
