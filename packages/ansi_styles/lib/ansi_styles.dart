@@ -113,8 +113,3 @@ class _AnsiStyles {
 
 // ignore: constant_identifier_names
 const AnsiStyles = _AnsiStyles._([]);
-
-void main() {
-  print('running');
-  print(AnsiStyles.bgCyan.underline.strip('hello'));
-}
