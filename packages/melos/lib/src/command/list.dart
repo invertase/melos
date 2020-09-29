@@ -81,7 +81,7 @@ class ListCommand extends Command {
       if (!all && package.isPrivate) return;
       Map<String, dynamic> jsonObject = {
         'name': package.name,
-        'version': package.version ?? '',
+        'version': package.version.toString(),
         'private': package.isPrivate,
         'location': package.path,
         'type': package.type.index
