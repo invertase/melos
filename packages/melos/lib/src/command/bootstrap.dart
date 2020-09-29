@@ -35,9 +35,11 @@ class BootstrapCommand extends Command {
   @override
   void run() async {
     logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos bootstrap")}');
+        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized(
+            "melos bootstrap")}');
     logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(currentWorkspace.path)}${logger.ansi.noColor}\n');
+        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(
+            currentWorkspace.path)}${logger.ansi.noColor}\n');
     var successMessage = '${logger.ansi.green}SUCCESS${logger.ansi.noColor}';
     var bootstrapProgress = logger.progress('Bootstrapping project');
     await currentWorkspace.generatePubspecFile();
@@ -84,7 +86,9 @@ class BootstrapCommand extends Command {
       logger.stdout(
           '  ${logger.ansi.bullet} ${logger.ansi.emphasized(package.name)}');
       logger.stdout(
-          "    └> ${logger.ansi.blue + package.path.replaceAll(currentWorkspace.path, ".") + logger.ansi.none}");
+          "    └> ${logger.ansi.blue +
+              package.path.replaceAll(currentWorkspace.path, ".") +
+              logger.ansi.none}");
     });
     logger.stdout(
         '\n -> ${currentWorkspace.packages.length} plugins bootstrapped');

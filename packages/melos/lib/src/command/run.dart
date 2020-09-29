@@ -82,11 +82,14 @@ class RunCommand extends Command {
     var scriptParts = scriptSource.split(' ');
 
     logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos run $scriptName")}');
+        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized(
+            "melos run $scriptName")}');
     logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(scriptSource.replaceAll('\n', ''))}${logger.ansi.noColor}');
+        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(
+            scriptSource.replaceAll('\n', ''))}${logger.ansi.noColor}');
     logger.stdout(
-        '       └> ${logger.ansi.yellow}${logger.ansi.emphasized('RUNNING')}${logger.ansi.noColor}\n');
+        '       └> ${logger.ansi.yellow}${logger.ansi.emphasized(
+            'RUNNING')}${logger.ansi.noColor}\n');
 
     var environment = {
       'MELOS_ROOT_PATH': currentWorkspace.path,
@@ -97,17 +100,21 @@ class RunCommand extends Command {
 
     logger.stdout('');
     logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos run $scriptName")}');
+        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized(
+            "melos run $scriptName")}');
     logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(scriptSource.replaceAll('\n', ''))}${logger.ansi.noColor}');
+        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(
+            scriptSource.replaceAll('\n', ''))}${logger.ansi.noColor}');
 
     if (processExitCode > 0) {
       logger.stdout(
-          '       └> ${logger.ansi.red}${logger.ansi.emphasized('FAILED')}${logger.ansi.noColor}');
+          '       └> ${logger.ansi.red}${logger.ansi.emphasized(
+              'FAILED')}${logger.ansi.noColor}');
       exitCode = processExitCode;
     } else {
       logger.stdout(
-          '       └> ${logger.ansi.green}${logger.ansi.emphasized('SUCCESS')}${logger.ansi.noColor}');
+          '       └> ${logger.ansi.green}${logger.ansi.emphasized(
+              'SUCCESS')}${logger.ansi.noColor}');
     }
   }
 }

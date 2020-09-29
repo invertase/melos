@@ -49,10 +49,10 @@ class PackagesPubFile extends PubFile {
     return PackagesPubFile._(fileRootDirectory);
   }
 
-  static Future<PackagesPubFile> fromWorkspacePackage(
-      MelosWorkspace workspace, MelosPackage package) async {
+  static Future<PackagesPubFile> fromWorkspacePackage(MelosWorkspace workspace,
+      MelosPackage package) async {
     PackagesPubFile workspaceFile =
-        PackagesPubFile.fromDirectory(workspace.melosToolPath);
+    PackagesPubFile.fromDirectory(workspace.melosToolPath);
     Map<String, String> packageEntries = {};
     Map<String, String> workspaceEntries = await workspaceFile.entries;
 
@@ -67,8 +67,8 @@ class PackagesPubFile extends PubFile {
       if (!path.startsWith('file:')) {
         // path is relative to the workspace root, make it relative to the package
         _path = utils.relativePath(
-                '${workspace.melosToolPath}${Platform.pathSeparator}$_path',
-                package.path) +
+            '${workspace.melosToolPath}${Platform.pathSeparator}$_path',
+            package.path) +
             '/';
       }
 

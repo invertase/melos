@@ -35,28 +35,30 @@ class UnpublishedCommand extends Command {
   @override
   void run() async {
     logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos unpublished")}');
+        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized(
+            "melos unpublished")}');
     logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(currentWorkspace.path)}${logger.ansi.noColor}\n');
+        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(
+            currentWorkspace.path)}${logger.ansi.noColor}\n');
     var readRegistryProgress =
-        logger.progress('Reading registry for package information');
+    logger.progress('Reading registry for package information');
 
     var pool = Pool(10);
     var unpublishedPackages = <MelosPackage>[];
     var latestPackageVersion = <String, String>{};
     await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
-        (package) {
-      return package.getPublishedVersions().then((versions) async {
-        if (versions.isEmpty || !versions.contains(package.version)) {
-          unpublishedPackages.add(package);
-          if (versions.isEmpty) {
-            latestPackageVersion[package.name] = 'none';
-          } else {
-            latestPackageVersion[package.name] = versions[0];
-          }
-        }
-      });
-    }).drain();
+            (package) {
+          return package.getPublishedVersions().then((versions) async {
+            if (versions.isEmpty || !versions.contains(package.version)) {
+              unpublishedPackages.add(package);
+              if (versions.isEmpty) {
+                latestPackageVersion[package.name] = 'none';
+              } else {
+                latestPackageVersion[package.name] = versions[0];
+              }
+            }
+          });
+        }).drain();
 
     readRegistryProgress.finish(
         message: '${logger.ansi.green}SUCCESS${logger.ansi.noColor}',
@@ -64,26 +66,36 @@ class UnpublishedCommand extends Command {
 
     logger.stdout('');
     logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos unpublished")}');
+        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized(
+            "melos unpublished")}');
     logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(currentWorkspace.path)}${logger.ansi.noColor}');
+        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(
+            currentWorkspace.path)}${logger.ansi.noColor}');
     if (unpublishedPackages.isNotEmpty) {
       logger.stdout(
-          '       └> ${logger.ansi.red}${logger.ansi.emphasized('UNPUBLISHED PACKAGES')}${logger.ansi.noColor} (${unpublishedPackages.length} packages)');
+          '       └> ${logger.ansi.red}${logger.ansi.emphasized(
+              'UNPUBLISHED PACKAGES')}${logger.ansi
+              .noColor} (${unpublishedPackages.length} packages)');
       unpublishedPackages.forEach((package) {
         logger.stdout(
-            '           └> ${logger.ansi.yellow}${package.name}${logger.ansi.noColor}');
+            '           └> ${logger.ansi.yellow}${package.name}${logger.ansi
+                .noColor}');
         logger.stdout(
-            '               ${logger.ansi.bullet} ${logger.ansi.green}Local:${logger.ansi.noColor}   ${package.version ?? 'none'}');
+            '               ${logger.ansi.bullet} ${logger.ansi
+                .green}Local:${logger.ansi.noColor}   ${package.version ??
+                'none'}');
         logger.stdout(
-            '               ${logger.ansi.bullet} ${logger.ansi.cyan}Remote:${logger.ansi.noColor}  ${latestPackageVersion[package.name]}');
+            '               ${logger.ansi.bullet} ${logger.ansi
+                .cyan}Remote:${logger.ansi
+                .noColor}  ${latestPackageVersion[package.name]}');
       });
       logger.stdout('');
       exitCode = 1;
       return;
     } else {
       logger.stdout(
-          '       └> ${logger.ansi.green}${logger.ansi.emphasized('NO UNPUBLISHED PACKAGES')}${logger.ansi.noColor}');
+          '       └> ${logger.ansi.green}${logger.ansi.emphasized(
+              'NO UNPUBLISHED PACKAGES')}${logger.ansi.noColor}');
       logger.stdout('');
     }
   }

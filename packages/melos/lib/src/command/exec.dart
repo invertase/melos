@@ -39,7 +39,7 @@ class ExecCommand extends Command {
         defaultsTo: false,
         negatable: true,
         help:
-            'Whether exec should fail fast and not execute the script in further packages if the script fails in a individual package.');
+        'Whether exec should fail fast and not execute the script in further packages if the script fails in a individual package.');
   }
 
   @override
@@ -56,44 +56,54 @@ class ExecCommand extends Command {
     var execArgsString = execArgs.join(' ');
 
     logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos exec ${argResults.arguments[0]}")}');
+        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized(
+            "melos exec ${argResults.arguments[0]}")}');
     logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(execArgsString)}${logger.ansi.noColor}');
+        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(
+            execArgsString)}${logger.ansi.noColor}');
     logger.stdout(
-        '       └> ${logger.ansi.yellow}${logger.ansi.emphasized('RUNNING')}${logger.ansi.noColor} (in ${currentWorkspace.packages.length} packages)\n');
+        '       └> ${logger.ansi.yellow}${logger.ansi.emphasized(
+            'RUNNING')}${logger.ansi.noColor} (in ${currentWorkspace.packages
+            .length} packages)\n');
 
     var failures = <String, int>{};
     var pool = Pool(int.parse(argResults['concurrency'] as String));
 
     await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
-        (package) {
-      if (argResults['fail-fast'] == true && failures.isNotEmpty) {
-        return Future.value(null);
-      }
-      return package.exec(execArgs).then((result) async {
-        if (result > 0) {
-          failures[package.name] = result;
-        }
-      });
-    }).drain();
+            (package) {
+          if (argResults['fail-fast'] == true && failures.isNotEmpty) {
+            return Future.value(null);
+          }
+          return package.exec(execArgs).then((result) async {
+            if (result > 0) {
+              failures[package.name] = result;
+            }
+          });
+        }).drain();
 
     logger.stdout('');
     logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos exec ${argResults.arguments[0]}")}');
+        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized(
+            "melos exec ${argResults.arguments[0]}")}');
     logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(execArgsString)}${logger.ansi.noColor}');
+        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(
+            execArgsString)}${logger.ansi.noColor}');
 
     if (failures.isNotEmpty) {
       logger.stdout(
-          '       └> ${logger.ansi.red}${logger.ansi.emphasized('FAILED')}${logger.ansi.noColor} (in ${failures.length} packages)');
+          '       └> ${logger.ansi.red}${logger.ansi.emphasized(
+              'FAILED')}${logger.ansi.noColor} (in ${failures
+              .length} packages)');
       failures.keys.forEach((packageName) {
         logger.stdout(
-            '           └> ${logger.ansi.yellow}$packageName${logger.ansi.noColor} (with exit code ${failures[packageName]})');
+            '           └> ${logger.ansi.yellow}$packageName${logger.ansi
+                .noColor} (with exit code ${failures[packageName]})');
       });
       exitCode = 1;
     } else {
       logger.stdout(
-          '       └> ${logger.ansi.green}${logger.ansi.emphasized('SUCCESS')}${logger.ansi.noColor}');
+          '       └> ${logger.ansi.green}${logger.ansi.emphasized(
+              'SUCCESS')}${logger.ansi.noColor}');
     }
   }
 }

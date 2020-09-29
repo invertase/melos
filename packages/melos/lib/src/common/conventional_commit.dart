@@ -45,13 +45,12 @@ class ConventionalCommit {
   /// The original commit message header.
   final String header;
 
-  ConventionalCommit._(
-      {this.header,
-      this.scopes,
-      this.type,
-      this.isBreakingChange,
-      this.subject,
-      this.isMergeCommit});
+  ConventionalCommit._({this.header,
+    this.scopes,
+    this.type,
+    this.isBreakingChange,
+    this.subject,
+    this.isMergeCommit});
 
   /// Create a new [ConventionalCommit] from a commit message [String].
   ///

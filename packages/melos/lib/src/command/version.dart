@@ -41,21 +41,23 @@ class VersionCommand extends Command {
         defaultsTo: false,
         negatable: false,
         help:
-            'Version any packages with changes as a prerelease. Cannot be combined with graduate flag.');
+        'Version any packages with changes as a prerelease. Cannot be combined with graduate flag.');
     argParser.addFlag('graduate',
         abbr: 'g',
         defaultsTo: false,
         negatable: false,
         help:
-            'Graduate current prerelease versioned packages to stable versions, e.g. "0.10.0-dev.1" becomes "0.10.0". Cannot be combined with prerelease flag.');
+        'Graduate current prerelease versioned packages to stable versions, e.g. "0.10.0-dev.1" becomes "0.10.0". Cannot be combined with prerelease flag.');
   }
 
   @override
   void run() async {
     logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos version")}');
+        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized(
+            "melos version")}');
     logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(currentWorkspace.path)}${logger.ansi.noColor}\n');
+        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(
+            currentWorkspace.path)}${logger.ansi.noColor}\n');
 
     bool graduate = argResults['graduate'] as bool;
     bool prerelease = argResults['prerelease'] as bool;
@@ -67,7 +69,8 @@ class VersionCommand extends Command {
 
     if (graduate && prerelease) {
       logger.stdout(
-          '${logger.ansi.yellow}WARNING:${logger.ansi.noColor} graduate & prerelease flags cannot be combined. Versioning will continue with graduate off.');
+          '${logger.ansi.yellow}WARNING:${logger.ansi
+              .noColor} graduate & prerelease flags cannot be combined. Versioning will continue with graduate off.');
       graduate = false;
     }
 
@@ -90,23 +93,23 @@ class VersionCommand extends Command {
     }
 
     await Pool(10).forEach<MelosPackage, void>(currentWorkspace.packages,
-        (package) {
-      return gitCommitsForPackage(package,
+            (package) {
+          return gitCommitsForPackage(package,
               since: globalResults['since'] as String)
-          .then((commits) {
-        packageCommits[package.name] = commits
-            .map((commit) =>
+              .then((commits) {
+            packageCommits[package.name] = commits
+                .map((commit) =>
                 ConventionalCommit.fromCommitMessage(commit.message))
-            .where((element) => element != null)
-            .toList();
-      });
-    }).drain();
+                .where((element) => element != null)
+                .toList();
+          });
+        }).drain();
 
     packageCommits.entries.forEach((entry) {
       String packageName = entry.key;
       List<ConventionalCommit> packageCommits = entry.value;
       List<ConventionalCommit> versionableCommits =
-          packageCommits.where((e) => e.isVersionableCommit).toList();
+      packageCommits.where((e) => e.isVersionableCommit).toList();
       if (versionableCommits.isNotEmpty) {
         packagesWithVersionableCommits[packageName] = versionableCommits;
       }
@@ -157,6 +160,9 @@ class VersionCommand extends Command {
         AnsiStyle.underline(AnsiStyle.bold('Update Reason')),
       ],
       ...pendingPackageUpdates.map((pendingUpdate) {
+        // print('----');
+        // print(pendingUpdate.changelogContents);
+        // print('----');
         return [
           AnsiStyle.italic(pendingUpdate.package.name),
           AnsiStyle.dim(pendingUpdate.currentVersion.toString()),
@@ -167,10 +173,11 @@ class VersionCommand extends Command {
                 var semverType = pendingUpdate.semverReleaseType
                     .toString()
                     .substring(pendingUpdate.semverReleaseType
-                            .toString()
-                            .indexOf('.') +
-                        1);
-                return 'updated with ${AnsiStyle.underline(semverType)} changes';
+                    .toString()
+                    .indexOf('.') +
+                    1);
+                return 'updated with ${AnsiStyle.underline(
+                    semverType)} changes';
               case PackageUpdateReason.dependency:
                 return 'dependency was updated';
               case PackageUpdateReason.graduate:
@@ -195,8 +202,10 @@ class VersionCommand extends Command {
 
     logger.stdout('');
     logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos version")}');
+        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized(
+            "melos version")}');
     logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(currentWorkspace.path)}${logger.ansi.noColor}');
+        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(
+            currentWorkspace.path)}${logger.ansi.noColor}');
   }
 }
