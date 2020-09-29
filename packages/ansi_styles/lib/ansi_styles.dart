@@ -15,12 +15,29 @@
  *
  */
 
-import 'dart:io' as io;
+import 'src/supports_ansi.dart'
+    if (dart.library.io) 'src/supports_ansi_io.dart';
 
 final RegExp _stripRegex = RegExp([
   '[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)',
   '(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-ntqry=><~]))'
 ].join('|'));
+
+void _assertRGBValue(num value) {
+  assert(value >= 0);
+  assert(value <= 255);
+}
+
+num _getRGBColor({num r = 255, num g = 255, num b = 255}) {
+  _assertRGBValue(r);
+  _assertRGBValue(g);
+  _assertRGBValue(b);
+  return (((r.clamp(0, 255) / 255) * 5).toInt() * 36 +
+          ((g.clamp(0, 255) / 255) * 5).toInt() * 6 +
+          ((b.clamp(0, 255) / 255) * 5).toInt() +
+          16)
+      .clamp(0, 256);
+}
 
 class _AnsiStyles {
   final List<List<String>> styles;
@@ -93,13 +110,22 @@ class _AnsiStyles {
   _AnsiStyles get gray => blackBright;
   _AnsiStyles get bgGray => bgBlackBright;
 
-  String get bullet => call(io.stdout.supportsAnsiEscapes ? '•' : '-');
+  _AnsiStyles rgb(num r, num g, num b) {
+    final num color = _getRGBColor(r: r ?? 255, g: g ?? 255, b: b ?? 255);
+    return _AnsiStyles(
+        List.from(styles)..add(['\x1B[38;5;${color}m', '\x1B[0m']));
+  }
+
+  _AnsiStyles bgRgb(num r, num g, num b) {
+    final num color = _getRGBColor(r: r ?? 255, g: g ?? 255, b: b ?? 255);
+    return _AnsiStyles(
+        List.from(styles)..add(['\x1B[48;5;${color}m', '\x1B[0m']));
+  }
+
+  String get bullet => call(!ansiStylesDisabled ? '•' : '-');
 
   String call(String input) {
-    if (input != null &&
-        styles.isNotEmpty &&
-        io.stdout.supportsAnsiEscapes &&
-        io.stdioType(io.stdout) == io.StdioType.terminal) {
+    if (input != null && styles.isNotEmpty && !ansiStylesDisabled) {
       String output = input;
       styles.forEach((List<String> style) {
         output = '${style[0]}$output${style[1]}';
@@ -111,5 +137,21 @@ class _AnsiStyles {
   }
 }
 
+/// The entry point to using ansi styling.
+///
+/// Different styles can be chained successively, and once satified called:
+///
+/// ```dart
+/// print(AnsiStyles.red.underline('Underlined red text'));
+/// print(AnsiStyles.inverse.italic.green('Inversed italic green text'));
+/// print(AnsiStyles.cyan('Cyan text'));
+/// print(AnsiStyles.bgYellowBright.bold('Text bold with a yellow background'));
+/// ```
 // ignore: constant_identifier_names
 const AnsiStyles = _AnsiStyles._([]);
+
+/// Flag used to enabled/disable styling support.
+///
+/// This is mainly used for environments where the raw output is required but is
+/// not supported (e.g. testing).
+bool ansiStylesDisabled = !supportsAnsiColor;
