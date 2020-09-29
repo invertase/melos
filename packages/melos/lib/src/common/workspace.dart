@@ -59,6 +59,12 @@ class MelosWorkspace {
 
   MelosWorkspace._(this._name, this._path, this._config, this._state);
 
+  bool get isFlutterWorkspace {
+    return packages.firstWhere((package) => package.isFlutterPackage,
+            orElse: () => null) !=
+        null;
+  }
+
   static Future<MelosWorkspace> fromDirectory(Directory directory,
       {@required ArgResults arguments}) async {
     final workspaceConfig = await MelosWorkspaceConfig.fromDirectory(directory);
@@ -75,13 +81,14 @@ class MelosWorkspace {
     return joinAll([path, '.melos_tool']);
   }
 
-  Future<List<MelosPackage>> loadPackagesWithFilters({List<String> scope,
-    List<String> ignore,
-    String since,
-    List<String> dirExists,
-    List<String> fileExists,
-    bool skipPrivate,
-    bool published}) async {
+  Future<List<MelosPackage>> loadPackagesWithFilters(
+      {List<String> scope,
+      List<String> ignore,
+      String since,
+      List<String> dirExists,
+      List<String> fileExists,
+      bool skipPrivate,
+      bool published}) async {
     if (_packages != null) return Future.value(_packages);
     final packageGlobs = _config.packages;
 
@@ -148,7 +155,7 @@ class MelosWorkspace {
         final fileExistsMatched = fileExists.firstWhere((fileExistsPath) {
           // TODO(Salakar): Make replacer reusable, currently used in a few places.
           var _fileExistsPath =
-          fileExistsPath.replaceAll('\$MELOS_PACKAGE_NAME', package.name);
+              fileExistsPath.replaceAll('\$MELOS_PACKAGE_NAME', package.name);
           return File(join(package.path, _fileExistsPath)).existsSync();
         }, orElse: () => null);
         return fileExistsMatched != null;
@@ -210,9 +217,12 @@ class MelosWorkspace {
       return _cacheDependencyGraph;
     }
 
+    List<String> pubDepsExecArgs = ['--style=list', '--dev'];
     final pubListCommandOutput = await Process.run(
-      'flutter',
-      ['pub', 'deps', '--', '--style=list', '--dev'],
+      isFlutterWorkspace ? 'flutter' : 'pub',
+      isFlutterWorkspace
+          ? ['pub', 'deps', '--', ...pubDepsExecArgs]
+          : ['deps', ...pubDepsExecArgs],
       runInShell: true,
       workingDirectory: melosToolPath,
     );

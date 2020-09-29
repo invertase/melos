@@ -161,7 +161,7 @@ class VersionCommand extends Command {
         return [
           AnsiStyles.italic(pendingUpdate.package.name),
           AnsiStyles.dim(pendingUpdate.currentVersion.toString()),
-          AnsiStyles.green(pendingUpdate.pendingVersion.toString()),
+          AnsiStyles.green(pendingUpdate.nextVersion.toString()),
           AnsiStyles.italic((() {
             switch (pendingUpdate.reason) {
               case PackageUpdateReason.commit:

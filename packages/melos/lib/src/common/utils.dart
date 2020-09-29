@@ -29,7 +29,7 @@ import 'logger.dart';
 var _didLogRmWarning = false;
 
 bool promptBool({String prompt, bool valueForCI = true}) {
-  if (isCI()) {
+  if (isCI) {
     return valueForCI;
   }
 
@@ -58,7 +58,7 @@ bool promptBool({String prompt, bool valueForCI = true}) {
   }
 }
 
-bool isCI() {
+bool get isCI {
   var keys = Platform.environment.keys;
   return keys.contains('CI') ||
       keys.contains('CONTINUOUS_INTEGRATION') ||

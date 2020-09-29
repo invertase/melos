@@ -41,8 +41,11 @@ class BootstrapCommand extends Command {
     var bootstrapProgress = logger.progress('Bootstrapping project');
     await currentWorkspace.generatePubspecFile();
 
+    List<String> pubGetArgs = ['pub', 'get'];
     var processExitCode = await currentWorkspace.execInMelosToolPath(
-        ['flutter', 'pub', 'get'],
+        currentWorkspace.isFlutterWorkspace
+            ? ['flutter', ...pubGetArgs]
+            : pubGetArgs,
         onlyOutputOnError: true);
     if (processExitCode > 0) {
       logger
