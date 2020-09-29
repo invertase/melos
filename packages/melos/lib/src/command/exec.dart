@@ -19,6 +19,7 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart' show Command;
 import 'package:pool/pool.dart' show Pool;
+import 'package:ansi_styles/ansi_styles.dart';
 
 import '../common/logger.dart';
 import '../common/package.dart';
@@ -54,17 +55,11 @@ class ExecCommand extends Command {
     }
 
     var execArgsString = execArgs.join(' ');
-
     logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized(
-            "melos exec ${argResults.arguments[0]}")}');
+        '${AnsiStyles.yellow('\$')} ${AnsiStyles.bold("melos exec ${argResults.arguments[0]}")}');
+    logger.stdout('   └> ${AnsiStyles.cyan.bold(execArgsString)}');
     logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(
-            execArgsString)}${logger.ansi.noColor}');
-    logger.stdout(
-        '       └> ${logger.ansi.yellow}${logger.ansi.emphasized(
-            'RUNNING')}${logger.ansi.noColor} (in ${currentWorkspace.packages
-            .length} packages)\n');
+        '       └> ${AnsiStyles.yellow.bold('RUNNING')} (in ${currentWorkspace.packages.length} packages)\n');
 
     var failures = <String, int>{};
     var pool = Pool(int.parse(argResults['concurrency'] as String));
@@ -83,27 +78,19 @@ class ExecCommand extends Command {
 
     logger.stdout('');
     logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized(
-            "melos exec ${argResults.arguments[0]}")}');
-    logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(
-            execArgsString)}${logger.ansi.noColor}');
+        '${AnsiStyles.yellow('\$')} ${AnsiStyles.bold("melos exec ${argResults.arguments[0]}")}');
+    logger.stdout('   └> ${AnsiStyles.cyan.bold(execArgsString)}');
 
     if (failures.isNotEmpty) {
       logger.stdout(
-          '       └> ${logger.ansi.red}${logger.ansi.emphasized(
-              'FAILED')}${logger.ansi.noColor} (in ${failures
-              .length} packages)');
+          '       └> ${AnsiStyles.red.bold('FAILED')} (in ${failures.length} packages)');
       failures.keys.forEach((packageName) {
         logger.stdout(
-            '           └> ${logger.ansi.yellow}$packageName${logger.ansi
-                .noColor} (with exit code ${failures[packageName]})');
+            '           └> ${AnsiStyles.yellow(packageName)} (with exit code ${failures[packageName]})');
       });
       exitCode = 1;
     } else {
-      logger.stdout(
-          '       └> ${logger.ansi.green}${logger.ansi.emphasized(
-              'SUCCESS')}${logger.ansi.noColor}');
+      logger.stdout('       └> ${AnsiStyles.green.bold('SUCCESS')}');
     }
   }
 }
