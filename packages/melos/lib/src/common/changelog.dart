@@ -15,28 +15,103 @@
  *
  */
 
-// TODO WIP
+import 'dart:io';
+
+import 'package:path/path.dart';
 
 import 'conventional_commit.dart';
+import 'pending_package_update.dart';
 
 class Changelog {
-  static String entryForConventionalCommit(ConventionalCommit commit) {
-    String entry;
-    if (commit.isMergeCommit) {
-      entry = commit.header;
-    } else {
-      entry = '**${commit.type.toUpperCase()}**: ${commit.subject}';
+  final MelosPendingPackageUpdate update;
+  Changelog(this.update);
+
+  String get markdown {
+    throw UnimplementedError();
+  }
+
+  String get path {
+    return joinAll([update.package.path, 'CHANGELOG.md']);
+  }
+
+  @override
+  String toString() {
+    return markdown;
+  }
+
+  Future<String> read() async {
+    bool exists = await File(path).exists();
+    if (exists) {
+      return File(path).readAsString();
+    }
+    return '';
+  }
+
+  Future<void> write() async {
+    String contents = await read();
+    contents = '$markdown$contents';
+    return File(path).writeAsString(contents);
+  }
+}
+
+class MelosChangelog extends Changelog {
+  MelosChangelog(MelosPendingPackageUpdate update) : super(update);
+
+  @override
+  String get markdown {
+    String body = '';
+    String header = '## ${update.nextVersion}';
+    List<String> entries = [];
+
+    if (update.reason == PackageUpdateReason.dependency) {
+      entries = ['Update a dependency to the latest release.'];
     }
 
-    bool shouldPunctuate = !entry.contains(RegExp(r'[\.\?\!]$'));
-    if (shouldPunctuate) {
-      entry = '$entry.';
+    if (update.reason == PackageUpdateReason.graduate) {
+      entries = [
+        'Graduate package to a stable release. See pre-releases prior to this version for changelog entries.'
+      ];
     }
 
-    if (commit.isBreakingChange) {
-      entry = '**BREAKING** $entry';
+    if (update.reason == PackageUpdateReason.commit) {
+      if (update.semverReleaseType == SemverReleaseType.major) {
+        header += '\n\n> Note: This release has breaking changes.';
+      }
+
+      List<ConventionalCommit> commits = List.from(update.commits);
+
+      // Sort so that Breaking Changes appear at the top.
+      commits.sort((a, b) {
+        var r = a.isBreakingChange
+            .toString()
+            .compareTo(b.isBreakingChange.toString());
+        if (r != 0) return r;
+        return b.type.compareTo(a.type);
+      });
+
+      entries = commits.map((commit) {
+        String entry;
+        if (commit.isMergeCommit) {
+          entry = commit.header;
+        } else {
+          entry = '**${commit.type.toUpperCase()}**: ${commit.subject}';
+        }
+
+        bool shouldPunctuate = !entry.contains(RegExp(r'[\.\?\!]$'));
+        if (shouldPunctuate) {
+          entry = '$entry.';
+        }
+
+        if (commit.isBreakingChange) {
+          entry = '**BREAKING** $entry';
+        }
+
+        return entry;
+      }).toList();
     }
 
-    return ' - $entry';
+    body = entries.join('\n - ');
+
+    return '$header\n\n - $body\n\n';
   }
 }

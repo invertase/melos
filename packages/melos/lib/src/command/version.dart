@@ -15,6 +15,8 @@
  *
  */
 
+import 'dart:io';
+
 import 'package:args/command_runner.dart' show Command;
 import 'package:pool/pool.dart' show Pool;
 import 'package:ansi_styles/ansi_styles.dart';
@@ -41,13 +43,13 @@ class VersionCommand extends Command {
         defaultsTo: false,
         negatable: false,
         help:
-        'Version any packages with changes as a prerelease. Cannot be combined with graduate flag.');
+            'Version any packages with changes as a prerelease. Cannot be combined with graduate flag.');
     argParser.addFlag('graduate',
         abbr: 'g',
         defaultsTo: false,
         negatable: false,
         help:
-        'Graduate current prerelease versioned packages to stable versions, e.g. "0.10.0-dev.1" becomes "0.10.0". Cannot be combined with prerelease flag.');
+            'Graduate current prerelease versioned packages to stable versions, e.g. "0.10.0-dev.1" becomes "0.10.0". Cannot be combined with prerelease flag.');
   }
 
   @override
@@ -88,23 +90,23 @@ class VersionCommand extends Command {
     }
 
     await Pool(10).forEach<MelosPackage, void>(currentWorkspace.packages,
-            (package) {
-          return gitCommitsForPackage(package,
+        (package) {
+      return gitCommitsForPackage(package,
               since: globalResults['since'] as String)
-              .then((commits) {
-            packageCommits[package.name] = commits
-                .map((commit) =>
+          .then((commits) {
+        packageCommits[package.name] = commits
+            .map((commit) =>
                 ConventionalCommit.fromCommitMessage(commit.message))
-                .where((element) => element != null)
-                .toList();
-          });
-        }).drain();
+            .where((element) => element != null)
+            .toList();
+      });
+    }).drain();
 
     packageCommits.entries.forEach((entry) {
       String packageName = entry.key;
       List<ConventionalCommit> packageCommits = entry.value;
       List<ConventionalCommit> versionableCommits =
-      packageCommits.where((e) => e.isVersionableCommit).toList();
+          packageCommits.where((e) => e.isVersionableCommit).toList();
       if (versionableCommits.isNotEmpty) {
         packagesWithVersionableCommits[packageName] = versionableCommits;
       }
@@ -155,9 +157,6 @@ class VersionCommand extends Command {
         AnsiStyles.underline.bold('Update Reason'),
       ],
       ...pendingPackageUpdates.map((pendingUpdate) {
-        // print('----');
-        // print(pendingUpdate.changelogContents);
-        // print('----');
         return [
           AnsiStyles.italic(pendingUpdate.package.name),
           AnsiStyles.dim(pendingUpdate.currentVersion.toString()),
@@ -189,6 +188,12 @@ class VersionCommand extends Command {
       logger.stdout(AnsiStyles.yellow('Operation was canceled.'));
       return;
     }
+
+    await Pool(10).forEach<MelosPendingPackageUpdate, void>(
+        pendingPackageUpdates, (pendingPackageUpdate) async {
+      // TODO update pubspecs
+      await pendingPackageUpdate.changelog.write();
+    }).drain();
 
     // TODO generate release files, git tags & commits.
     // TODO generate release files, git tags & commits.

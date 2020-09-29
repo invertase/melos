@@ -59,7 +59,7 @@ class PubspecLockPubFile extends PubFile {
   static Future<PubspecLockPubFile> fromWorkspacePackage(
       MelosWorkspace workspace, MelosPackage package) async {
     PubspecLockPubFile workspaceFile =
-    PubspecLockPubFile.fromDirectory(workspace.melosToolPath);
+        PubspecLockPubFile.fromDirectory(workspace.melosToolPath);
     Map<String, Map> packagePackages = {};
     Map<String, Map> workspacePackages = await workspaceFile.packages;
     Set<String> dependencyGraph = await package.getDependencyGraph();

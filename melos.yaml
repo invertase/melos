@@ -19,6 +19,9 @@ ide:
     # use_dart_test_tasks: false
     # use_recommended_settings: true
 
+scripts:
+  format: dartfmt -w .
+
 dev_dependencies:
   pedantic: 1.8.0
 

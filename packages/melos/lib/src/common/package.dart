@@ -284,8 +284,7 @@ class MelosPackage {
       return [];
     } else if (response.statusCode != 200) {
       throw Exception(
-          'Error reading pub.dev registry for package "$name" (HTTP Status ${response
-              .statusCode}), response: ${response.body}');
+          'Error reading pub.dev registry for package "$name" (HTTP Status ${response.statusCode}), response: ${response.body}');
     }
     var versions = <String>[];
     var versionsRaw = json.decode(response.body)['versions'] as List<dynamic>;

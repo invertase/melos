@@ -40,7 +40,7 @@ class ExecCommand extends Command {
         defaultsTo: false,
         negatable: true,
         help:
-        'Whether exec should fail fast and not execute the script in further packages if the script fails in a individual package.');
+            'Whether exec should fail fast and not execute the script in further packages if the script fails in a individual package.');
   }
 
   @override
@@ -65,16 +65,16 @@ class ExecCommand extends Command {
     var pool = Pool(int.parse(argResults['concurrency'] as String));
 
     await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
-            (package) {
-          if (argResults['fail-fast'] == true && failures.isNotEmpty) {
-            return Future.value(null);
-          }
-          return package.exec(execArgs).then((result) async {
-            if (result > 0) {
-              failures[package.name] = result;
-            }
-          });
-        }).drain();
+        (package) {
+      if (argResults['fail-fast'] == true && failures.isNotEmpty) {
+        return Future.value(null);
+      }
+      return package.exec(execArgs).then((result) async {
+        if (result > 0) {
+          failures[package.name] = result;
+        }
+      });
+    }).drain();
 
     logger.stdout('');
     logger.stdout(

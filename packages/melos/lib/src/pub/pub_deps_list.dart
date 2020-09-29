@@ -26,14 +26,16 @@ class PubDepsList extends VersionedEntry {
 
   final Map<String, Version> sdks;
   final Map<String, Map<VersionedEntry, Map<String, VersionConstraint>>>
-  sections;
+      sections;
 
   Map<VersionedEntry, Map<String, VersionConstraint>> get allEntries =>
       CombinedMapView(sections.values);
 
-  PubDepsList._(VersionedEntry entry,
-      this.sdks,
-      this.sections,) : super.copy(entry);
+  PubDepsList._(
+    VersionedEntry entry,
+    this.sdks,
+    this.sections,
+  ) : super.copy(entry);
 
   factory PubDepsList.parse(String input) {
     final _scanner = StringScanner(input);
@@ -55,7 +57,7 @@ class PubDepsList extends VersionedEntry {
     final sourcePackage = VersionedEntry.fromMatch(_scanner.lastMatch);
 
     final sections =
-    <String, Map<VersionedEntry, Map<String, VersionConstraint>>>{};
+        <String, Map<VersionedEntry, Map<String, VersionConstraint>>>{};
 
     while (_scanner.scan(_emptyLine)) {
       final section = _scanSection(_scanner);
@@ -79,7 +81,7 @@ final _usageLine = RegExp('- ($_pkgName) (.+)\n');
 final _depLine = RegExp('  - ($_pkgName) (.+)\n');
 
 MapEntry<String, Map<VersionedEntry, Map<String, VersionConstraint>>>
-_scanSection(StringScanner scanner) {
+    _scanSection(StringScanner scanner) {
   scanner.expect(_sectionHeaderLine, name: 'section header');
   final header = scanner.lastMatch[1];
 
@@ -115,8 +117,7 @@ class VersionedEntry {
       : name = other.name,
         version = other.version;
 
-  factory VersionedEntry.fromMatch(Match match) =>
-      VersionedEntry(
+  factory VersionedEntry.fromMatch(Match match) => VersionedEntry(
         match[1],
         Version.parse(match[2]),
       );

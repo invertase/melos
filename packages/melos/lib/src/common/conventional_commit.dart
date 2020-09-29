@@ -16,7 +16,7 @@
  */
 
 var _conventionalCommitRegex = RegExp(
-    r'^(?<type>build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(?<scope>\([a-zA-Z0-9_,]+\)?((?=:\s)|(?=!:\s)))?(?<breaking>!)?(?<subject>:\s.*)?|^(?<merge>Merge \w+)');
+    r'^(?<type>build|chore|ci|docs|feat|fix|bug|perf|refactor|revert|style|test)(?<scope>\([a-zA-Z0-9_,]+\)?((?=:\s)|(?=!:\s)))?(?<breaking>!)?(?<subject>:\s.*)?|^(?<merge>Merge \w+)');
 
 enum SemverReleaseType {
   patch,
@@ -45,12 +45,13 @@ class ConventionalCommit {
   /// The original commit message header.
   final String header;
 
-  ConventionalCommit._({this.header,
-    this.scopes,
-    this.type,
-    this.isBreakingChange,
-    this.subject,
-    this.isMergeCommit});
+  ConventionalCommit._(
+      {this.header,
+      this.scopes,
+      this.type,
+      this.isBreakingChange,
+      this.subject,
+      this.isMergeCommit});
 
   /// Create a new [ConventionalCommit] from a commit message [String].
   ///
@@ -106,6 +107,7 @@ class ConventionalCommit {
           'docs', // TODO: what if markdown docs and not code docs
           'feat',
           'fix',
+          'bug',
           'perf',
           'refactor',
           'revert',

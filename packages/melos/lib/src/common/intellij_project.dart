@@ -78,14 +78,15 @@ class IntellijProject {
     return joinAll([package.path, 'melos_${package.name}.iml']);
   }
 
-  String injectTemplateVariable({@required String template,
-    @required String variableName,
-    @required String variableValue}) {
+  String injectTemplateVariable(
+      {@required String template,
+      @required String variableName,
+      @required String variableValue}) {
     return template.replaceAll('{{#$variableName}}', variableValue);
   }
 
-  String injectTemplateVariables(String template,
-      Map<String, String> variables) {
+  String injectTemplateVariables(
+      String template, Map<String, String> variables) {
     String updatedTemplate = template;
     variables.forEach((key, value) {
       updatedTemplate = injectTemplateVariable(
@@ -98,10 +99,10 @@ class IntellijProject {
     String module = '';
     if (relativePath == null) {
       module =
-      '<module fileurl="file://\$PROJECT_DIR\$/melos_$moduleName.iml" filepath="\$PROJECT_DIR\$/melos_$moduleName.iml" />';
+          '<module fileurl="file://\$PROJECT_DIR\$/melos_$moduleName.iml" filepath="\$PROJECT_DIR\$/melos_$moduleName.iml" />';
     } else {
       module =
-      '<module fileurl="file://\$PROJECT_DIR\$/$relativePath/melos_$moduleName.iml" filepath="\$PROJECT_DIR\$/$relativePath/melos_$moduleName.iml" />';
+          '<module fileurl="file://\$PROJECT_DIR\$/$relativePath/melos_$moduleName.iml" filepath="\$PROJECT_DIR\$/$relativePath/melos_$moduleName.iml" />';
     }
     // Pad to preserve formatting on generated file. Indent x6.
     return '      $module';
@@ -122,7 +123,7 @@ class IntellijProject {
     }
 
     File templateFile =
-    File(joinAll([templatesRootPath, '$fileName$_kTmplExtension']));
+        File(joinAll([templatesRootPath, '$fileName$_kTmplExtension']));
 
     String template = await templateFile.readAsString();
     _cacheTemplates[fileName] = template;
@@ -212,7 +213,7 @@ class IntellijProject {
     await Future.forEach(runConfigurations.keys, (String scriptName) async {
       String scriptArgs = runConfigurations[scriptName];
       String generatedRunConfiguration =
-      injectTemplateVariables(melosScriptTemplate, {
+          injectTemplateVariables(melosScriptTemplate, {
         'scriptName': scriptName,
         'scriptArgs': scriptArgs,
         'scriptPath': getMelosBinForIde(),
@@ -228,7 +229,7 @@ class IntellijProject {
 
   Future<void> cleanFiles() async {
     var runConfigurationsDirectory =
-    Directory(joinAll([pathDotIdea, 'runConfigurations']));
+        Directory(joinAll([pathDotIdea, 'runConfigurations']));
     if (await runConfigurationsDirectory.exists()) {
       await Directory(joinAll([pathDotIdea, 'runConfigurations']))
           .delete(recursive: true);
@@ -245,10 +246,10 @@ class IntellijProject {
       }
 
       String generatedRunConfiguration =
-      injectTemplateVariables(flutterTestTemplate, {
+          injectTemplateVariables(flutterTestTemplate, {
         'flutterRunName': "Flutter Run -&gt; '${package.name}'",
         'flutterRunMainDartPathRelative':
-        joinAll([package.pathRelativeToWorkspace, 'lib', 'main.dart']),
+            joinAll([package.pathRelativeToWorkspace, 'lib', 'main.dart']),
       });
       String outputFile = joinAll([
         pathDotIdea,
@@ -272,10 +273,10 @@ class IntellijProject {
       }
 
       String generatedRunConfiguration =
-      injectTemplateVariables(flutterTestTemplate, {
+          injectTemplateVariables(flutterTestTemplate, {
         'flutterTestsName': "Flutter Test -&gt; '${package.name}'",
         'flutterTestsRelativePath':
-        joinAll([package.pathRelativeToWorkspace, 'test']),
+            joinAll([package.pathRelativeToWorkspace, 'test']),
       });
       String outputFile = joinAll([
         pathDotIdea,

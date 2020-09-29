@@ -69,23 +69,13 @@ bool get isCI {
 String getMelosRoot() {
   if (Platform.script.path.contains('global_packages')) {
     return joinAll([
-      File
-          .fromUri(Platform.script)
-          .parent
-          .parent
-          .parent
-          .parent
-          .path,
+      File.fromUri(Platform.script).parent.parent.parent.parent.path,
       'hosted',
       'pub.dartlang.org',
       'melos-$melosVersion'
     ]);
   }
-  return File
-      .fromUri(Platform.script)
-      .parent
-      .parent
-      .path;
+  return File.fromUri(Platform.script).parent.parent.path;
 }
 
 String getAndroidSdkRoot() {
@@ -186,9 +176,9 @@ bool isPackageDirectory(Directory directory) {
 
 Future<int> startProcess(List<String> execArgs,
     {String prefix,
-      Map<String, String> environment,
-      String workingDirectory,
-      bool onlyOutputOnError = false}) async {
+    Map<String, String> environment,
+    String workingDirectory,
+    bool onlyOutputOnError = false}) async {
   final environmentVariables = environment ?? {};
   final workingDirectoryPath = workingDirectory ?? Directory.current.path;
   final executable = Platform.isWindows ? 'cmd' : '/bin/sh';
@@ -196,9 +186,7 @@ Future<int> startProcess(List<String> execArgs,
     var _arg = arg;
 
     // Remove empty args.
-    if (_arg
-        .trim()
-        .isEmpty) {
+    if (_arg.trim().isEmpty) {
       return null;
     }
 
@@ -260,15 +248,15 @@ Future<int> startProcess(List<String> execArgs,
 
   if (prefix != null && prefix.isNotEmpty) {
     final pluginPrefixTransformer =
-    StreamTransformer<String, String>.fromHandlers(
-        handleData: (String data, EventSink sink) {
-          final lineSplitter = LineSplitter();
-          var lines = lineSplitter.convert(data);
-          lines = lines
-              .map((line) => '$prefix$line${line.contains('\n') ? '' : '\n'}')
-              .toList();
-          sink.add(lines.join(''));
-        });
+        StreamTransformer<String, String>.fromHandlers(
+            handleData: (String data, EventSink sink) {
+      final lineSplitter = LineSplitter();
+      var lines = lineSplitter.convert(data);
+      lines = lines
+          .map((line) => '$prefix$line${line.contains('\n') ? '' : '\n'}')
+          .toList();
+      sink.add(lines.join(''));
+    });
 
     stdoutStream = execProcess.stdout
         .transform<String>(utf8.decoder)

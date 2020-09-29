@@ -18,6 +18,7 @@
 import 'dart:math' as math;
 import 'package:pub_semver/pub_semver.dart';
 
+import 'changelog.dart';
 import 'conventional_commit.dart';
 import 'package.dart';
 
@@ -64,12 +65,17 @@ class MelosPendingPackageUpdate {
     this.preId = 'dev',
   });
 
+  Changelog get changelog {
+    // TODO change log styles can be changed here if supported in future.
+    return MelosChangelog(this);
+  }
+
   /// Current version specified in the packages pubspec.yaml.
   Version get currentVersion {
     return package.version;
   }
 
-  /// Returns the next stable version based on the commits in this 
+  /// Returns the next stable version based on the commits in this
   Version get nextStableRelease {
     // For simplicity's sake, we avoid using + after the version reaches 1.0.0.
     if (currentVersion.major > 0) {
@@ -162,57 +168,6 @@ class MelosPendingPackageUpdate {
         .map((e) => e.semverReleaseType.index)
         .toList()
         .reduce(math.max)];
-  }
-
-  String get changelogContents {
-    return '$changelogHeader\n\n - ${changelogEntries.join('\n - ')}\n';
-  }
-
-  String get changelogHeader {
-    return '## $nextVersion';
-  }
-
-  List<String> get changelogEntries {
-    if (reason == PackageUpdateReason.dependency) {
-      return ['Update a dependency to the latest release.'];
-    }
-
-    if (reason == PackageUpdateReason.graduate) {
-      return [
-        'Graduate package to a stable release. See pre-releases prior to this version for changelog entries.'
-      ];
-    }
-
-    List<ConventionalCommit> entries = List.from(commits);
-
-    // Sort so that Breaking Changes appear at the top.
-    entries.sort((a, b) {
-      var r = a.isBreakingChange
-          .toString()
-          .compareTo(b.isBreakingChange.toString());
-      if (r != 0) return r;
-      return b.type.compareTo(a.type);
-    });
-
-    return entries.map((commit) {
-      String entry;
-      if (commit.isMergeCommit) {
-        entry = commit.header;
-      } else {
-        entry = '**${commit.type.toUpperCase()}**: ${commit.subject}';
-      }
-
-      bool shouldPunctuate = !entry.contains(RegExp(r'[\.\?\!]$'));
-      if (shouldPunctuate) {
-        entry = '$entry.';
-      }
-
-      if (commit.isBreakingChange) {
-        entry = '**BREAKING** $entry';
-      }
-
-      return entry;
-    }).toList();
   }
 
   @override

@@ -38,24 +38,24 @@ class UnpublishedCommand extends Command {
     logger.stdout(AnsiStyles.yellow.bold('melos unpublished'));
     logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
     var readRegistryProgress =
-    logger.progress('Reading registry for package information');
+        logger.progress('Reading registry for package information');
 
     var pool = Pool(10);
     var unpublishedPackages = <MelosPackage>[];
     var latestPackageVersion = <String, String>{};
     await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
-            (package) {
-          return package.getPublishedVersions().then((versions) async {
-            if (versions.isEmpty || !versions.contains(package.version)) {
-              unpublishedPackages.add(package);
-              if (versions.isEmpty) {
-                latestPackageVersion[package.name] = 'none';
-              } else {
-                latestPackageVersion[package.name] = versions[0];
-              }
-            }
-          });
-        }).drain();
+        (package) {
+      return package.getPublishedVersions().then((versions) async {
+        if (versions.isEmpty || !versions.contains(package.version)) {
+          unpublishedPackages.add(package);
+          if (versions.isEmpty) {
+            latestPackageVersion[package.name] = 'none';
+          } else {
+            latestPackageVersion[package.name] = versions[0];
+          }
+        }
+      });
+    }).drain();
 
     readRegistryProgress.finish(
         message: AnsiStyles.green('SUCCESS'), showTiming: true);
