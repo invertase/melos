@@ -190,7 +190,6 @@ class VersionCommand extends Command {
         AnsiStyles.underline.bold('Update Reason'),
       ],
       ...pendingPackageUpdates.map((pendingUpdate) {
-        print(pendingUpdate.changelog);
         return [
           AnsiStyles.italic(pendingUpdate.package.name),
           AnsiStyles.dim(pendingUpdate.currentVersion.toString()),
@@ -290,10 +289,5 @@ class VersionCommand extends Command {
       logger.stdout(AnsiStyles.greenBright.bold(
           'Versioning successful. Ensure you push your git changes and tags (if applicable) via ${AnsiStyles.bgBlack.gray('git push --follow-tags')}'));
     }
-
-    logger.stdout('');
-    logger.stdout(
-        '${AnsiStyles.yellow('\$')} ${AnsiStyles.bold('melos version')}');
-    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}');
   }
 }
