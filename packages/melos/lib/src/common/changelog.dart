@@ -84,7 +84,9 @@ class MelosChangelog extends Changelog {
         header += '\n\n> Note: This release has breaking changes.';
       }
 
-      List<ConventionalCommit> commits = List.from(update.commits);
+      List<ConventionalCommit> commits = List.from(update.commits
+          .where((ConventionalCommit commit) => !commit.isMergeCommit)
+          .toList());
 
       // Sort so that Breaking Changes appear at the top.
       commits.sort((a, b) {

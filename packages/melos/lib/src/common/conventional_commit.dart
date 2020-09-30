@@ -102,6 +102,7 @@ class ConventionalCommit {
 
   // TODO(Salakar): allow workspace customization
   bool get isVersionableCommit {
+    if (isMergeCommit) return false;
     return isBreakingChange ||
         [
           'docs', // TODO: what if markdown docs and not code docs
