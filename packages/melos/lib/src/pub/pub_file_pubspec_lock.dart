@@ -73,7 +73,7 @@ class PubspecLockPubFile extends PubFile {
 
       if (pluginPackage['description'] != null &&
           pluginPackage['description'].runtimeType != String &&
-          pluginPackage['description']['path'] != null) {
+          pluginPackage['source'] == 'path') {
         var path = pluginPackage['description']['path'] as String;
         var relative = pluginPackage['description']['relative'] as bool;
 
