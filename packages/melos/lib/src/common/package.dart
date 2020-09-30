@@ -352,7 +352,9 @@ class MelosPackage {
     versionsRaw.forEach((element) {
       versions.add(element as String);
     });
-    versions.sort();
+    versions.sort((String a, String b) {
+      return Version.prioritize(Version.parse(a), Version.parse(b));
+    });
     _registryVersions = versions.reversed.toList();
     return _registryVersions;
   }
