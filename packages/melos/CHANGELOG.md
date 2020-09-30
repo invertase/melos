@@ -1,3 +1,10 @@
+## 0.3.10-dev.1
+
+ - **REFACTOR**: code cleanup.
+ - **REFACTOR**: remove commited .iml files.
+ - **FEAT**: semver & conventional commits (#10).
+ - **CHORE**: bump dep version.
+
 ## 0.3.9
 
 - Fix version.dart versioning
