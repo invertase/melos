@@ -40,7 +40,7 @@ bool promptBool({String prompt, bool valueForCI = true}) {
     'N'.codeUnitAt(0)
   ];
   String inputPrompt = prompt ??
-      '\n${AnsiStyles.bgYellow('Continue?')} [${AnsiStyles.gray('y/n')}]: ';
+      '\n${AnsiStyles.bgBlack.whiteBright('Continue?')} [${AnsiStyles.gray('y/n')}]${AnsiStyles.blink(':')} ';
 
   while (true) {
     stdout.write(inputPrompt);

@@ -165,6 +165,18 @@ class MelosPackage {
 
   Future<void> setDependencyVersion(
       String dependencyName, String dependencyVersion) async {
+    if (dependencies[dependencyName] != null &&
+        !(dependencies[dependencyName] is String)) {
+      logger.trace(
+          'Skipping updating dependency $dependencyName for package $name - the version is a Map definition and is most likely a dependency that is importing from a path or git remote.');
+      return;
+    }
+    if (devDependencies[dependencyName] != null &&
+        !(devDependencies[dependencyName] is String)) {
+      logger.trace(
+          'Skipping updating dev dependency $dependencyName for package $name - the version is a Map definition and is most likely a dependency that is importing from a path or git remote.');
+      return;
+    }
     File pubspec = File(pubspecPathForDirectory(Directory(path)));
     String contents = await pubspec.readAsString();
     String updatedContents = contents.replaceAllMapped(
@@ -267,7 +279,7 @@ class MelosPackage {
 
   /// Execute a shell command inside this package.
   Future<int> exec(List<String> execArgs) async {
-    final packagePrefix = '[${AnsiStyles.blue.bold(_name)}]';
+    final packagePrefix = '[${AnsiStyles.blue.bold(_name)}]: ';
 
     var environment = {
       'MELOS_PACKAGE_NAME': name,
@@ -473,6 +485,10 @@ class MelosPackage {
 
   /// Returns whether this package is private (publish_to set to 'none').
   bool get isPrivate {
+    // Unversioned package, assuming private, e.g. example apps.
+    if (!_yamlContents.containsKey(_kVersion)) return true;
+
+    // Check if publish_to explicitly set to none.
     if (!_yamlContents.containsKey(_kPublishTo)) return false;
     if (_yamlContents[_kPublishTo].runtimeType != String) return false;
     return _yamlContents[_kPublishTo] == 'none';

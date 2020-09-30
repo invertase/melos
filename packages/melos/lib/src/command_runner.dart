@@ -20,12 +20,12 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:cli_util/cli_logging.dart';
-import 'package:melos/src/command/unpublished.dart';
 
 import 'command/bootstrap.dart';
 import 'command/clean.dart';
 import 'command/exec.dart';
 import 'command/list.dart';
+import 'command/publish.dart';
 import 'command/run.dart';
 import 'command/version.dart';
 import 'common/logger.dart';
@@ -86,7 +86,7 @@ class MelosCommandRunner extends CommandRunner {
     addCommand(CleanCommand());
     addCommand(RunCommand());
     addCommand(ListCommand());
-    addCommand(UnpublishedCommand());
+    addCommand(PublishCommand());
     addCommand(VersionCommand());
   }
 

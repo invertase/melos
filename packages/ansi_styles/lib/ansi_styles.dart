@@ -64,6 +64,7 @@ class _AnsiStyles {
   _AnsiStyles get dim => _cloneWithStyles(2, 22);
   _AnsiStyles get italic => _cloneWithStyles(3, 23);
   _AnsiStyles get underline => _cloneWithStyles(4, 24);
+  _AnsiStyles get blink => _cloneWithStyles(5, 25);
   _AnsiStyles get inverse => _cloneWithStyles(7, 27);
   _AnsiStyles get hidden => _cloneWithStyles(8, 28);
   _AnsiStyles get strikethrough => _cloneWithStyles(9, 29);

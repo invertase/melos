@@ -120,11 +120,29 @@ Future<String> gitLatestTagForPackage(MelosPackage package,
   return tags.first;
 }
 
+Future<void> gitAdd(String filePattern, {String workingDirectory}) async {
+  List<String> gitArgs = ['add', filePattern];
+  await Process.run('git', gitArgs,
+      workingDirectory: workingDirectory ?? Directory.current.path);
+  // TODO validate added?
+}
+
+Future<void> gitCommit(String message, {String workingDirectory}) async {
+  // TODO validate has staged changes?
+  List<String> gitArgs = ['commit', '-m', message];
+  await Process.run('git', gitArgs,
+      workingDirectory: workingDirectory ?? Directory.current.path);
+  // TODO validate comitted?
+}
+
 /// Returns a list of [GitCommit]s for a Melos package.
 /// Optionally specify [since] to start after a specified commit or tag. Defaults
 /// to the latest release tag.
 Future<List<GitCommit>> gitCommitsForPackage(MelosPackage package,
     {String since, String preid = 'dev'}) async {
+  if (package.isPrivate) {
+    return [];
+  }
   String sinceOrLatestTag = since;
   if (sinceOrLatestTag != null && sinceOrLatestTag.isEmpty) {
     sinceOrLatestTag = null;

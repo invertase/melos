@@ -43,42 +43,46 @@ class ExecCommand extends Command {
             'Whether exec should fail fast and not execute the script in further packages if the script fails in a individual package.');
   }
 
-  @override
-  void run() async {
-    final execArgs = argResults.rest;
+  static Future<void> execInPackages(
+    List<MelosPackage> packages,
+    List<String> execArgs, {
+    int concurrency = 5,
+    bool failFast = false,
+  }) async {
+    var failures = <String, int>{};
+    var pool = Pool(concurrency);
+    String execArgsString = execArgs.join(' ');
 
-    if (execArgs.isEmpty) {
-      print(description);
-      print(argParser.usage);
-      exitCode = 1;
-      return;
-    }
-
-    var execArgsString = execArgs.join(' ');
-    logger.stdout(
-        '${AnsiStyles.yellow('\$')} ${AnsiStyles.bold("melos exec ${argResults.arguments[0]}")}');
+    logger
+        .stdout('${AnsiStyles.yellow('\$')} ${AnsiStyles.bold("melos exec")}');
     logger.stdout('   └> ${AnsiStyles.cyan.bold(execArgsString)}');
     logger.stdout(
-        '       └> ${AnsiStyles.yellow.bold('RUNNING')} (in ${currentWorkspace.packages.length} packages)\n');
+        '       └> ${AnsiStyles.yellow.bold('RUNNING')} (in ${packages.length} packages)\n');
 
-    var failures = <String, int>{};
-    var pool = Pool(int.parse(argResults['concurrency'] as String));
-
-    await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
-        (package) {
-      if (argResults['fail-fast'] == true && failures.isNotEmpty) {
+    await pool.forEach<MelosPackage, void>(packages, (package) {
+      if (failFast && failures.isNotEmpty) {
         return Future.value(null);
+      }
+      if (concurrency == 1) {
+        logger.stdout(AnsiStyles.bgBlack.bold.italic('${package.name}:'));
       }
       return package.exec(execArgs).then((result) async {
         if (result > 0) {
           failures[package.name] = result;
+        } else if (concurrency == 1) {
+          logger.stdout(AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
+              AnsiStyles.bold.green.bgBlack('SUCCESS'));
+        }
+
+        if (concurrency == 1) {
+          logger.stdout('\n');
         }
       });
     }).drain();
 
     logger.stdout('');
-    logger.stdout(
-        '${AnsiStyles.yellow('\$')} ${AnsiStyles.bold("melos exec ${argResults.arguments[0]}")}');
+    logger
+        .stdout('${AnsiStyles.yellow('\$')} ${AnsiStyles.bold("melos exec")}');
     logger.stdout('   └> ${AnsiStyles.cyan.bold(execArgsString)}');
 
     if (failures.isNotEmpty) {
@@ -92,5 +96,21 @@ class ExecCommand extends Command {
     } else {
       logger.stdout('       └> ${AnsiStyles.green.bold('SUCCESS')}');
     }
+  }
+
+  @override
+  void run() async {
+    final execArgs = argResults.rest;
+
+    if (execArgs.isEmpty) {
+      print(description);
+      print(argParser.usage);
+      exitCode = 1;
+      return;
+    }
+
+    await execInPackages(currentWorkspace.packages, execArgs,
+        concurrency: int.parse(argResults['concurrency'] as String),
+        failFast: argResults['fail-fast'] as bool);
   }
 }

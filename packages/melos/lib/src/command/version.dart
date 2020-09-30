@@ -15,6 +15,8 @@
  *
  */
 
+import 'dart:io';
+
 import 'package:args/command_runner.dart' show Command;
 import 'package:pool/pool.dart' show Pool;
 import 'package:ansi_styles/ansi_styles.dart';
@@ -55,16 +57,16 @@ class VersionCommand extends Command {
         help: 'Generate/update any CHANGELOG.md files.');
     argParser.addFlag('push',
         abbr: 'u',
-        defaultsTo: true,
+        defaultsTo: false,
         negatable: true,
         help:
-            'By default, melos version will push the committed and tagged changes to the configured git remote. Pass --no-push to disable this behavior.');
+            'TODO: UNIMPLEMENTED. By default, melos version will push the committed and tagged changes to the configured git remote. Pass --no-push to disable this behavior.');
     argParser.addFlag('git-tag-version',
         abbr: 't',
         defaultsTo: true,
         negatable: true,
         help:
-            'By default, melos version will commit changes to package.json files and tag the release. Pass --no-git-tag-version to disable the behavior..');
+            'By default, melos version will commit changes to package.json files and tag the release. Pass --no-git-tag-version to disable the behavior.');
   }
 
   @override
@@ -111,6 +113,9 @@ class VersionCommand extends Command {
 
     await Pool(10).forEach<MelosPackage, void>(currentWorkspace.packages,
         (package) {
+      if (package.isPrivate) {
+        return Future.value();
+      }
       return gitCommitsForPackage(package,
               since: globalResults['since'] as String)
           .then((commits) {
@@ -161,6 +166,11 @@ class VersionCommand extends Command {
       }
     });
 
+    // Filter out private packages.
+    pendingPackageUpdates = pendingPackageUpdates
+        .where((update) => !update.package.isPrivate)
+        .toList();
+
     if (pendingPackageUpdates.isEmpty) {
       logger.stdout(AnsiStyles.yellow(
           'No packages were found that required versioning.'));
@@ -170,7 +180,7 @@ class VersionCommand extends Command {
     }
 
     logger.stdout(
-        AnsiStyles.blueBright('The following packages will be updated:\n'));
+        AnsiStyles.magentaBright('The following packages will be updated:\n'));
 
     logger.stdout(listAsPaddedTable([
       [
@@ -180,6 +190,7 @@ class VersionCommand extends Command {
         AnsiStyles.underline.bold('Update Reason'),
       ],
       ...pendingPackageUpdates.map((pendingUpdate) {
+        print(pendingUpdate.changelog);
         return [
           AnsiStyles.italic(pendingUpdate.package.name),
           AnsiStyles.dim(pendingUpdate.currentVersion.toString()),
@@ -208,11 +219,11 @@ class VersionCommand extends Command {
 
     bool shouldContinue = promptBool();
     if (!shouldContinue) {
-      logger.stdout(AnsiStyles.yellow('Operation was canceled.'));
+      logger.stdout(AnsiStyles.red('Operation was canceled.'));
+      exitCode = 1;
       return;
     }
 
-    // TODO preserve original pubspec & changelog contents in memory to allow rollback if anything fails.
     // Note: not pooling & parrellelzing rights to avoid possible file contention.
     await Future.forEach(pendingPackageUpdates,
         (MelosPendingPackageUpdate pendingPackageUpdate) async {
@@ -236,15 +247,49 @@ class VersionCommand extends Command {
       }
     });
 
-    await Future.forEach(pendingPackageUpdates,
-        (MelosPendingPackageUpdate pendingPackageUpdate) async {
-      if (tag) {
-        // TODO git tag
-      }
-      if (push) {
-        // TODO git push
-      }
-    });
+    if (tag) {
+      // 1) Stage changes:
+      await Future.forEach(pendingPackageUpdates,
+          (MelosPendingPackageUpdate pendingPackageUpdate) async {
+        await gitAdd('pubspec.yaml',
+            workingDirectory: pendingPackageUpdate.package.path);
+        await gitAdd('CHANGELOG.md',
+            workingDirectory: pendingPackageUpdate.package.path);
+        await Future.forEach(pendingPackageUpdate.package.dependentsInWorkspace,
+            (MelosPackage dependentPackage) async {
+          await gitAdd('pubspec.yaml', workingDirectory: dependentPackage.path);
+        });
+      });
+
+      // 2) Commit changes:
+      String publishedPackagesMessage = pendingPackageUpdates
+          .map((e) => ' - ${e.package.name}@${e.nextVersion.toString()}')
+          .join('\n');
+      // TODO commit message customization support would go here.
+      // TODO this is currently blocking git submodules support (if we decide to support it later) for packages as commit is only ran at the root.
+      await gitCommit(
+          'chore(release): publish packages\n\n$publishedPackagesMessage',
+          workingDirectory: currentWorkspace.path);
+
+      // // 3) Tag changes:
+      await Future.forEach(pendingPackageUpdates,
+          (MelosPendingPackageUpdate pendingPackageUpdate) async {
+        // TODO '--tag-version-prefix' support (if we decide to support it later) would pass prefix named arg to gitTagForPackageVersion:
+        String tag = gitTagForPackageVersion(pendingPackageUpdate.package.name,
+            pendingPackageUpdate.nextVersion.toString());
+        await gitTagCreate(tag, pendingPackageUpdate.changelog.markdown,
+            workingDirectory: pendingPackageUpdate.package.path);
+      });
+    }
+
+    if (push) {
+      // TODO git push support would go here
+      logger.stdout(AnsiStyles.greenBright.bold(
+          'Versioning successful however push support is not implemented yet, ensure you push your git changes and tags (if applicable) via ${AnsiStyles.bgBlack.gray('git push --follow-tags')}'));
+    } else {
+      logger.stdout(AnsiStyles.greenBright.bold(
+          'Versioning successful. Ensure you push your git changes and tags (if applicable) via ${AnsiStyles.bgBlack.gray('git push --follow-tags')}'));
+    }
 
     logger.stdout('');
     logger.stdout(
