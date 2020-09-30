@@ -21,11 +21,50 @@ import 'dart:io';
 
 import 'package:path/path.dart' show relative, normalize, windows, joinAll;
 import 'package:yaml/yaml.dart';
+import 'package:ansi_styles/ansi_styles.dart';
 
 import '../../version.dart';
 import 'logger.dart';
 
 var _didLogRmWarning = false;
+
+bool promptBool({String prompt, bool valueForCI = true}) {
+  if (isCI) {
+    return valueForCI;
+  }
+
+  List<int> validInputs = [
+    'y'.codeUnitAt(0),
+    'Y'.codeUnitAt(0),
+    'n'.codeUnitAt(0),
+    'N'.codeUnitAt(0)
+  ];
+  String inputPrompt = prompt ??
+      '\n${AnsiStyles.bgBlack.whiteBright('Continue?')} [${AnsiStyles.gray('y/n')}]${AnsiStyles.blink(':')} ';
+
+  while (true) {
+    stdout.write(inputPrompt);
+    stdin.lineMode = false;
+    int input = stdin.readByteSync();
+
+    if (validInputs.contains(input)) {
+      stdin.lineMode = true;
+      logger.stdout('');
+      return input == 'y'.codeUnitAt(0) || input == 'Y'.codeUnitAt(0);
+    }
+
+    logger.stdout(
+        '\n\n${AnsiStyles.red('Invalid input, valid inputs are y/Y/n/N.')}');
+  }
+}
+
+bool get isCI {
+  var keys = Platform.environment.keys;
+  return keys.contains('CI') ||
+      keys.contains('CONTINUOUS_INTEGRATION') ||
+      keys.contains('BUILD_NUMBER') ||
+      keys.contains('RUN_ID');
+}
 
 String getMelosRoot() {
   if (Platform.script.path.contains('global_packages')) {
@@ -76,12 +115,16 @@ Future<Map> loadYamlFile(String path) async {
   return null;
 }
 
-String melosYamlPathForDirectory(Directory pluginDirectory) {
-  return pluginDirectory.path + Platform.pathSeparator + 'melos.yaml';
+String melosYamlPathForDirectory(Directory directory) {
+  return joinAll([directory.path, 'melos.yaml']);
 }
 
-String pubspecPathForDirectory(Directory pluginDirectory) {
-  return pluginDirectory.path + Platform.pathSeparator + 'pubspec.yaml';
+String melosStatePathForDirectory(Directory directory) {
+  return joinAll([directory.path, '.melos']);
+}
+
+String pubspecPathForDirectory(Directory directory) {
+  return joinAll([directory.path, 'pubspec.yaml']);
 }
 
 String relativePath(String path, String from) {
@@ -89,6 +132,35 @@ String relativePath(String path, String from) {
     return windows.normalize(path).replaceAll(r'\', r'\\');
   }
   return normalize(relative(path, from: from));
+}
+
+String listAsPaddedTable(List<List<String>> list, {int paddingSize = 1}) {
+  Map<int, int> maxColumnSizes = {};
+  List<String> output = [];
+  list.forEach((cells) {
+    var i = 0;
+    cells.forEach((cell) {
+      if (maxColumnSizes[i] == null ||
+          maxColumnSizes[i] < AnsiStyles.strip(cell).length) {
+        maxColumnSizes[i] = AnsiStyles.strip(cell).length;
+      }
+      i++;
+    });
+  });
+  list.forEach((cells) {
+    var i = 0;
+    var row = '';
+    cells.forEach((cell) {
+      var colWidth = maxColumnSizes[i] + paddingSize;
+      var cellWidth = AnsiStyles.strip(cell).length;
+      var padding = colWidth - cellWidth;
+      if (padding < paddingSize) padding = paddingSize;
+      row += '$cell${List.filled(padding, ' ').join()}';
+      i++;
+    });
+    output.add(row);
+  });
+  return output.join('\n');
 }
 
 /// Simple check to see if the [Directory] qualifies as a plugin repository.

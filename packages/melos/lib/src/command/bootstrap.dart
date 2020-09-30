@@ -19,6 +19,7 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart' show Command;
 import 'package:melos/src/common/intellij_project.dart';
+import 'package:ansi_styles/ansi_styles.dart';
 
 import '../command_runner.dart';
 import '../common/logger.dart';
@@ -29,24 +30,22 @@ class BootstrapCommand extends Command {
   final String name = 'bootstrap';
 
   @override
-  final List<String> aliases = ['bs'];
-
-  @override
   final String description =
       'Initialize the workspace, link local packages together and install remaining package dependencies.';
 
   @override
   void run() async {
-    logger.stdout(
-        '${logger.ansi.yellow}\$${logger.ansi.noColor} ${logger.ansi.emphasized("melos bootstrap")}');
-    logger.stdout(
-        '   └> ${logger.ansi.cyan}${logger.ansi.emphasized(currentWorkspace.path)}${logger.ansi.noColor}\n');
-    var successMessage = '${logger.ansi.green}SUCCESS${logger.ansi.noColor}';
+    logger.stdout(AnsiStyles.yellow.bold('melos bootstrap'));
+    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
+    var successMessage = AnsiStyles.green('SUCCESS');
     var bootstrapProgress = logger.progress('Bootstrapping project');
     await currentWorkspace.generatePubspecFile();
 
+    List<String> pubGetArgs = ['pub', 'get'];
     var processExitCode = await currentWorkspace.execInMelosToolPath(
-        ['flutter', 'pub', 'get'],
+        currentWorkspace.isFlutterWorkspace
+            ? ['flutter', ...pubGetArgs]
+            : pubGetArgs,
         onlyOutputOnError: true);
     if (processExitCode > 0) {
       logger
@@ -63,9 +62,13 @@ class BootstrapCommand extends Command {
 
     var linkingProgress = logger.progress('Linking project packages');
     var intellijProject = IntellijProject.fromWorkspace(currentWorkspace);
+
     await currentWorkspace.linkPackages();
     currentWorkspace.clean(cleanPackages: false);
-    await intellijProject.cleanFiles();
+
+    if (currentWorkspace.config.generateIntellijIdeFiles) {
+      await intellijProject.cleanFiles();
+    }
 
     linkingProgress.finish(message: successMessage, showTiming: true);
     if (Platform.isWindows) {
@@ -80,14 +83,15 @@ class BootstrapCommand extends Command {
 
     logger.stdout('\nPackages:');
     currentWorkspace.packages.forEach((package) {
+      logger.stdout('${AnsiStyles.bullet} ${AnsiStyles.bold(package.name)}');
       logger.stdout(
-          '  ${logger.ansi.bullet} ${logger.ansi.emphasized(package.name)}');
-      logger.stdout(
-          "    └> ${logger.ansi.blue + package.path.replaceAll(currentWorkspace.path, ".") + logger.ansi.none}");
+          '    └> ${AnsiStyles.blue(package.path.replaceAll(currentWorkspace.path, "."))}');
     });
     logger.stdout(
         '\n -> ${currentWorkspace.packages.length} plugins bootstrapped');
 
-    await IntellijProject.fromWorkspace(currentWorkspace).writeFiles();
+    if (currentWorkspace.config.generateIntellijIdeFiles) {
+      await IntellijProject.fromWorkspace(currentWorkspace).writeFiles();
+    }
   }
 }

@@ -27,9 +27,6 @@ class CleanCommand extends Command {
   final String name = 'clean';
 
   @override
-  final List<String> aliases = ['c'];
-
-  @override
   final String description =
       'Clean this workspace and all packages. This deletes the temporary pub & ide files such as ".packages" & ".flutter-plugins". Supports all package filtering options.';
 

@@ -21,7 +21,9 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' show relative, normalize, joinAll;
+import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
+import 'package:ansi_styles/ansi_styles.dart';
 
 import '../pub/pub_file.dart';
 import '../pub/pub_file_flutter_dependencies.dart';
@@ -68,6 +70,18 @@ enum PackageType {
   flutterApp,
 }
 
+// https://regex101.com/r/RAdBOn/3
+RegExp _versionReplaceRegex = RegExp(
+    '''^(version\\s?:\\s*?['"]?)(?<version>[-\\d\\.+\\w_]{5,})(.*\$)''',
+    multiLine: true);
+
+// https://regex101.com/r/sY3jXt/2/
+RegExp _dependencyVersionReplaceRegex(String dependencyName) {
+  return RegExp(
+      '''(?<dependency>^\\s+$dependencyName\\s?:\\s?)(?!\$)(?<version>any|["'^<>=]*\\d\\.\\d\\.\\d['"._\\s<>=\\d-\\w+]*)\$''',
+      multiLine: true);
+}
+
 /// A workspace representation of a Dart package.
 class MelosPackage {
   final MelosWorkspace _workspace;
@@ -76,13 +90,16 @@ class MelosPackage {
   final String _name;
   final String _path;
 
+  MelosWorkspace get workspace => _workspace;
+
   /// Package name.
   /// As defined in pubspec.yaml.
   String get name => _name;
 
   /// Package version.
   /// As defined in pubspec.yaml.
-  String get version => _yamlContents[_kVersion] as String;
+  Version get version =>
+      Version.parse((_yamlContents[_kVersion] as String) ?? '0.0.0');
 
   /// Package path.
   /// Fully qualified path to this package location.
@@ -115,6 +132,99 @@ class MelosPackage {
       return deps;
     }
     return {};
+  }
+
+  /// Dependencies of this package that are also packages in the current workspace.
+  List<MelosPackage> get dependenciesInWorkspace {
+    List<MelosPackage> out = [];
+    _workspace.packages.forEach((package) {
+      if (dependencies[package.name] != null) {
+        out.add(package);
+      }
+    });
+    return out;
+  }
+
+  Future<void> setPubspecVersion(String newVersion) async {
+    File pubspec = File(pubspecPathForDirectory(Directory(path)));
+    String contents = await pubspec.readAsString();
+    String updatedContents =
+        contents.replaceAllMapped(_versionReplaceRegex, (Match match) {
+      return '${match.group(1)}$newVersion${match.group(3)}';
+    });
+
+    // Sanity check that contents actually changed.
+    if (contents == updatedContents) {
+      logger.trace(
+          'Failed to update a pubspec.yaml version to $newVersion for package $name, you should probably report this issue with a copy of your pubspec.yaml file.');
+      return;
+    }
+
+    return pubspec.writeAsString(updatedContents);
+  }
+
+  Future<void> setDependencyVersion(
+      String dependencyName, String dependencyVersion) async {
+    if (dependencies[dependencyName] != null &&
+        !(dependencies[dependencyName] is String)) {
+      logger.trace(
+          'Skipping updating dependency $dependencyName for package $name - the version is a Map definition and is most likely a dependency that is importing from a path or git remote.');
+      return;
+    }
+    if (devDependencies[dependencyName] != null &&
+        !(devDependencies[dependencyName] is String)) {
+      logger.trace(
+          'Skipping updating dev dependency $dependencyName for package $name - the version is a Map definition and is most likely a dependency that is importing from a path or git remote.');
+      return;
+    }
+    File pubspec = File(pubspecPathForDirectory(Directory(path)));
+    String contents = await pubspec.readAsString();
+    String updatedContents = contents.replaceAllMapped(
+        _dependencyVersionReplaceRegex(dependencyName), (Match match) {
+      return '${match.group(1)}$dependencyVersion';
+    });
+
+    // Sanity check that contents actually changed.
+    if (contents == updatedContents) {
+      logger.trace(
+          'Failed to update dependency $dependencyName version to $dependencyVersion for package $name, you should probably report this issue with a copy of your pubspec.yaml file.');
+      return;
+    }
+
+    return pubspec.writeAsString(updatedContents);
+  }
+
+  /// Dev dependencies of this package that are also packages in the current workspace.
+  List<MelosPackage> get devDependenciesInWorkspace {
+    List<MelosPackage> out = [];
+    _workspace.packagesNoScope.forEach((package) {
+      if (devDependencies[package.name] != null) {
+        out.add(package);
+      }
+    });
+    return out;
+  }
+
+  /// Packages in current workspace that directly depend on this package.
+  List<MelosPackage> get dependentsInWorkspace {
+    List<MelosPackage> out = [];
+    _workspace.packagesNoScope.forEach((package) {
+      if (package.dependencies[name] != null) {
+        out.add(package);
+      }
+    });
+    return out;
+  }
+
+  /// Packages in current workspace that list this package as a dev dependency.
+  List<MelosPackage> get devDependentsInWorkspace {
+    List<MelosPackage> out = [];
+    _workspace.packagesNoScope.forEach((package) {
+      if (package.devDependencies[name] != null) {
+        out.add(package);
+      }
+    });
+    return out;
   }
 
   /// Dev dependencies of this package.
@@ -169,12 +279,11 @@ class MelosPackage {
 
   /// Execute a shell command inside this package.
   Future<int> exec(List<String> execArgs) async {
-    final packagePrefix =
-        '[${logger.ansi.blue + logger.ansi.emphasized(_name) + logger.ansi.noColor}]: ';
+    final packagePrefix = '[${AnsiStyles.blue.bold(_name)}]: ';
 
     var environment = {
       'MELOS_PACKAGE_NAME': name,
-      'MELOS_PACKAGE_VERSION': version ?? 'none',
+      'MELOS_PACKAGE_VERSION': version.toString(),
       'MELOS_PACKAGE_PATH': path,
       'MELOS_ROOT_PATH': _workspace.path,
     };
@@ -189,7 +298,7 @@ class MelosPackage {
       if (exampleParentPackage != null) {
         environment['MELOS_PARENT_PACKAGE_NAME'] = exampleParentPackage.name;
         environment['MELOS_PARENT_PACKAGE_VERSION'] =
-            exampleParentPackage.version;
+            exampleParentPackage.version.toString();
         environment['MELOS_PARENT_PACKAGE_PATH'] = exampleParentPackage.path;
       }
     }
@@ -243,7 +352,9 @@ class MelosPackage {
     versionsRaw.forEach((element) {
       versions.add(element as String);
     });
-    versions.sort();
+    versions.sort((String a, String b) {
+      return Version.prioritize(Version.parse(a), Version.parse(b));
+    });
     _registryVersions = versions.reversed.toList();
     return _registryVersions;
   }
@@ -312,6 +423,12 @@ class MelosPackage {
     return _flutterAppSupportsPlatform(kMacos);
   }
 
+  /// Returns whether this package supports Flutter for iOS.
+  bool get flutterAppSupportsIos {
+    if (!isFlutterApp) return false;
+    return _flutterAppSupportsPlatform(kIos);
+  }
+
   /// Returns whether this package supports Flutter for Linux.
   bool get flutterAppSupportsLinux {
     if (!isFlutterApp) return false;
@@ -356,6 +473,12 @@ class MelosPackage {
     return _flutterPluginSupportsPlatform(kMacos);
   }
 
+  /// Returns whether this package supports Flutter for iOS.
+  bool get flutterPluginSupportsIos {
+    if (!isFlutterPlugin) return false;
+    return _flutterPluginSupportsPlatform(kIos);
+  }
+
   /// Returns whether this package supports Flutter for Linux.
   bool get flutterPluginSupportsLinux {
     if (!isFlutterPlugin) return false;
@@ -364,6 +487,10 @@ class MelosPackage {
 
   /// Returns whether this package is private (publish_to set to 'none').
   bool get isPrivate {
+    // Unversioned package, assuming private, e.g. example apps.
+    if (!_yamlContents.containsKey(_kVersion)) return true;
+
+    // Check if publish_to explicitly set to none.
     if (!_yamlContents.containsKey(_kPublishTo)) return false;
     if (_yamlContents[_kPublishTo].runtimeType != String) return false;
     return _yamlContents[_kPublishTo] == 'none';

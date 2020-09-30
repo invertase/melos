@@ -20,12 +20,14 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:cli_util/cli_logging.dart';
-import 'package:melos/src/command/unpublished.dart';
 
 import 'command/bootstrap.dart';
 import 'command/clean.dart';
 import 'command/exec.dart';
+import 'command/list.dart';
+import 'command/publish.dart';
 import 'command/run.dart';
+import 'command/version.dart';
 import 'common/logger.dart';
 import 'common/workspace.dart';
 
@@ -35,10 +37,13 @@ class MelosCommandRunner extends CommandRunner {
   static MelosCommandRunner instance = MelosCommandRunner();
 
   MelosCommandRunner()
-      : super('melos', 'A CLI for package development in monorepos.',
+      : super('melos', 'A CLI for Dart package development in monorepos.',
             usageLineLength: lineLength) {
-    argParser.addFlag('verbose',
-        abbr: 'v', negatable: false, help: 'Enable verbose logging.');
+    argParser.addFlag('verbose', callback: (bool enabled) {
+      if (enabled) {
+        logger = Logger.verbose();
+      }
+    }, negatable: false, help: 'Enable verbose logging.');
 
     argParser.addFlag('no-private',
         negatable: false,
@@ -52,16 +57,27 @@ class MelosCommandRunner extends CommandRunner {
             'Filter packages where the current local package version exists on pub.dev. Or "-no-published" to filter packages that have not had their current version published yet.');
 
     argParser.addMultiOption('scope',
-        help: 'Include only packages with names matching the given glob.');
+        valueHelp: 'glob',
+        help:
+            'Include only packages with names matching the given glob. This option can be repeated.');
 
     argParser.addMultiOption('ignore',
-        help: 'Exclude packages with names matching the given glob.');
+        valueHelp: 'glob',
+        help:
+            'Exclude packages with names matching the given glob. This option can be repeated.');
+
+    argParser.addOption('since',
+        valueHelp: 'ref',
+        help:
+            'Only include packages that have been changed since the specified `ref`, e.g. a commit sha or git tag.');
 
     argParser.addMultiOption('dir-exists',
+        valueHelp: 'dirRelativeToPackageRoot',
         help:
             'Include only packages where a specific directory exists inside the package.');
 
     argParser.addMultiOption('file-exists',
+        valueHelp: 'fileRelativeToPackageRoot',
         help:
             'Include only packages where a specific file exists in the package.');
 
@@ -69,15 +85,13 @@ class MelosCommandRunner extends CommandRunner {
     addCommand(BootstrapCommand());
     addCommand(CleanCommand());
     addCommand(RunCommand());
-    addCommand(UnpublishedCommand());
+    addCommand(ListCommand());
+    addCommand(PublishCommand());
+    addCommand(VersionCommand());
   }
 
   @override
   Future runCommand(ArgResults argResults) async {
-    if (argResults['verbose'] == true) {
-      logger = Logger.verbose();
-    }
-
     currentWorkspace = await MelosWorkspace.fromDirectory(Directory.current,
         arguments: argResults);
 
@@ -90,9 +104,9 @@ class MelosCommandRunner extends CommandRunner {
       return;
     }
 
-    // TODO(Salakar): Optimise this, this causes the greatest startup delay currently.
-    await currentWorkspace.loadPackages(
+    await currentWorkspace.loadPackagesWithFilters(
       scope: argResults['scope'] as List<String>,
+      since: argResults['since'] as String,
       skipPrivate: argResults['no-private'] as bool,
       published: argResults['published'] as bool,
       ignore: argResults['ignore'] as List<String>,
