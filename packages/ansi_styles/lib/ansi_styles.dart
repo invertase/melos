@@ -140,11 +140,11 @@ class _AnsiStyles {
 
 /// The entry point to using ansi styling.
 ///
-/// Different styles can be chained successively, and once satified called:
+/// Different styles can be chained successively, and once satisfied called:
 ///
 /// ```dart
 /// print(AnsiStyles.red.underline('Underlined red text'));
-/// print(AnsiStyles.inverse.italic.green('Inversed italic green text'));
+/// print(AnsiStyles.inverse.italic.green('Inverted italic green text'));
 /// print(AnsiStyles.cyan('Cyan text'));
 /// print(AnsiStyles.bgYellowBright.bold('Text bold with a yellow background'));
 /// ```

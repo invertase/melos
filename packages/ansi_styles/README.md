@@ -10,17 +10,22 @@ Import the package:
 import 'package:ansi_styles/ansi_styles.dart';
 ```
 
-Use the `AnsiStyle` export to created styled text by chaining properties. For example, if using
-a [`Logger`](https://pub.dev/documentation/cli_util/latest/cli_logging/Logger-class.html):
+Use the `AnsiStyle` export to create styled text by chaining properties. For example:
 
 ```dart
-logger.stdout(AnsiStyles.red.underline('Underlined red text'));
-logger.stdout(AnsiStyles.inverse.italic.green('Inversed italic green text'));
-logger.stdout(AnsiStyles.cyan('Cyan text'));
-logger.stdout(AnsiStyles.bgYellowBright.bold('Bold text with a yellow background'));
-logger.stdout(AnsiStyles.bold.rgb(255,192,203)('Bold pink text'));
-logger.stdout(AnsiStyles.strikethrough.bgRgb(255,165,0)('Strikethough text with an orange background'));
+void main() {
+  print(AnsiStyles.red.underline('Underlined red text'));
+  print(AnsiStyles.inverse.italic.green('Inverted italic green text'));
+  print(AnsiStyles.cyan('Cyan text'));
+  print(AnsiStyles.bgYellowBright.bold('Bold text with a yellow background'));
+  print(AnsiStyles.bold.rgb(255,192,203)('Bold pink text'));
+  print(AnsiStyles.strikethrough.bgRgb(255,165,0)('Strikethrough text with an orange background'));
+}
 ```
+
+**Output preview**:
+
+![ansi_styles_preview](https://static.invertase.io/assets/ansi_styles_example.png)
 
 To remove any ansi styling from text, call the `strip()` method:
 

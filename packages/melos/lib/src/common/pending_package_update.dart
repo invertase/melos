@@ -39,7 +39,7 @@ class MelosPendingPackageUpdate {
   /// [PackageUpdateReason] is [PackageUpdateReason.dependency].
   final List<ConventionalCommit> commits;
 
-  /// The package that this update will apply to when commited.
+  /// The package that this update will apply to when committed.
   final MelosPackage package;
 
   /// A reason why this package needs updating.
@@ -150,7 +150,7 @@ class MelosPendingPackageUpdate {
   SemverReleaseType get semverReleaseType {
     if (reason == PackageUpdateReason.dependency) {
       // Version bumps for dependencies should be patches.
-      // If the dependencies had breaking changes then this package would have had commits to update it seperately.
+      // If the dependencies had breaking changes then this package would have had commits to update it separately.
       return SemverReleaseType.patch;
     }
 

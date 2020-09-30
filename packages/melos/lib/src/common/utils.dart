@@ -22,40 +22,17 @@ import 'dart:io';
 import 'package:path/path.dart' show relative, normalize, windows, joinAll;
 import 'package:yaml/yaml.dart';
 import 'package:ansi_styles/ansi_styles.dart';
+import 'package:prompts/prompts.dart' as prompts;
 
 import '../../version.dart';
 import 'logger.dart';
 
 var _didLogRmWarning = false;
 
-bool promptBool({String prompt, bool valueForCI = true}) {
-  if (isCI) {
-    return valueForCI;
-  }
-
-  List<int> validInputs = [
-    'y'.codeUnitAt(0),
-    'Y'.codeUnitAt(0),
-    'n'.codeUnitAt(0),
-    'N'.codeUnitAt(0)
-  ];
-  String inputPrompt = prompt ??
-      '\n${AnsiStyles.bgBlack.whiteBright('Continue?')} [${AnsiStyles.gray('y/n')}]${AnsiStyles.blink(':')} ';
-
-  while (true) {
-    stdout.write(inputPrompt);
-    stdin.lineMode = false;
-    int input = stdin.readByteSync();
-
-    if (validInputs.contains(input)) {
-      stdin.lineMode = true;
-      logger.stdout('');
-      return input == 'y'.codeUnitAt(0) || input == 'Y'.codeUnitAt(0);
-    }
-
-    logger.stdout(
-        '\n\n${AnsiStyles.red('Invalid input, valid inputs are y/Y/n/N.')}');
-  }
+bool promptBool() {
+  logger.stdout('');
+  return prompts.getBool('Continue?',
+      appendYesNo: true, chevron: true, defaultsTo: false, color: true);
 }
 
 bool get isCI {

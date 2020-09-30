@@ -68,6 +68,7 @@ class PublishCommand extends Command {
           if (versions.isEmpty) {
             latestPackageVersion[package.name] = 'none';
           } else {
+            // TODO if current version is a prerelease version then get the latest prerelease version instead
             latestPackageVersion[package.name] = versions[0];
           }
         }

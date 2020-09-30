@@ -132,7 +132,7 @@ Future<void> gitCommit(String message, {String workingDirectory}) async {
   List<String> gitArgs = ['commit', '-m', message];
   await Process.run('git', gitArgs,
       workingDirectory: workingDirectory ?? Directory.current.path);
-  // TODO validate comitted?
+  // TODO validate committed?
 }
 
 /// Returns a list of [GitCommit]s for a Melos package.

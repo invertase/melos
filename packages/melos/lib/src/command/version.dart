@@ -54,19 +54,13 @@ class VersionCommand extends Command {
         abbr: 'c',
         defaultsTo: true,
         negatable: true,
-        help: 'Generate/update any CHANGELOG.md files.');
-    argParser.addFlag('push',
-        abbr: 'u',
-        defaultsTo: false,
-        negatable: true,
-        help:
-            'TODO: UNIMPLEMENTED. By default, melos version will push the committed and tagged changes to the configured git remote. Pass --no-push to disable this behavior.');
+        help: 'Update CHANGELOG.md files.');
     argParser.addFlag('git-tag-version',
         abbr: 't',
         defaultsTo: true,
         negatable: true,
         help:
-            'By default, melos version will commit changes to package.json files and tag the release. Pass --no-git-tag-version to disable the behavior.');
+            'By default, melos version will commit changes to pubspec.yaml files and tag the release. Pass --no-git-tag-version to disable the behavior.');
   }
 
   @override
@@ -77,7 +71,6 @@ class VersionCommand extends Command {
     bool changelog = argResults['changelog'] as bool;
     bool graduate = argResults['graduate'] as bool;
     bool tag = argResults['git-tag-version'] as bool;
-    bool push = argResults['push'] as bool;
     bool prerelease = argResults['prerelease'] as bool;
     Set<MelosPackage> packagesToVersion = <MelosPackage>{};
     Map<String, List<ConventionalCommit>> packageCommits = {};
@@ -216,6 +209,7 @@ class VersionCommand extends Command {
       }),
     ], paddingSize: 3));
 
+    // TODO prompt skip support for CI environments (--yes)
     bool shouldContinue = promptBool();
     if (!shouldContinue) {
       logger.stdout(AnsiStyles.red('Operation was canceled.'));
@@ -235,7 +229,7 @@ class VersionCommand extends Command {
           pendingPackageUpdate.package.dependentsInWorkspace,
           (MelosPackage package) => package.setDependencyVersion(
               pendingPackageUpdate.package.name,
-              // Dependency range using carret syntax to ensure the range allows
+              // Dependency range using caret syntax to ensure the range allows
               // all versions guaranteed to be backwards compatible with the specified version.
               // For example, ^1.2.3 is equivalent to '>=1.2.3 <2.0.0', and ^0.1.2 is equivalent to '>=0.1.2 <0.2.0'.
               '^${pendingPackageUpdate.nextVersion.toString()}'));
@@ -281,13 +275,8 @@ class VersionCommand extends Command {
       });
     }
 
-    if (push) {
-      // TODO git push support would go here
-      logger.stdout(AnsiStyles.greenBright.bold(
-          'Versioning successful however push support is not implemented yet, ensure you push your git changes and tags (if applicable) via ${AnsiStyles.bgBlack.gray('git push --follow-tags')}'));
-    } else {
-      logger.stdout(AnsiStyles.greenBright.bold(
-          'Versioning successful. Ensure you push your git changes and tags (if applicable) via ${AnsiStyles.bgBlack.gray('git push --follow-tags')}'));
-    }
+    // TODO automatic push support
+    logger.stdout(AnsiStyles.greenBright.bold(
+        'Versioning successful. Ensure you push your git changes and tags (if applicable) via ${AnsiStyles.bgBlack.gray('git push --follow-tags')}'));
   }
 }

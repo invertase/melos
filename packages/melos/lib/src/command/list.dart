@@ -48,11 +48,11 @@ class ListCommand extends Command {
         defaultsTo: false,
         negatable: false,
         help: 'Show private packages that are hidden by default.');
-    argParser.addFlag('parseable',
+    argParser.addFlag('parsable',
         abbr: 'p',
         defaultsTo: false,
         negatable: false,
-        help: 'Show parseable output instead of columnified view.');
+        help: 'Show parsable output instead of columnified view.');
     argParser.addFlag('json',
         defaultsTo: false,
         negatable: false,
@@ -129,12 +129,15 @@ class ListCommand extends Command {
   void printDefaultFormat({bool all = false, bool long = false}) {
     if (long) {
       String table = listAsPaddedTable(currentWorkspace.packages
-          .map((package) => [
-                package.name,
-                AnsiStyles.green(package.version.toString()),
-                AnsiStyles.gray(package.pathRelativeToWorkspace),
-                all && package.isPrivate ? AnsiStyles.red('PRIVATE') : ''
-              ])
+          .map((package) => package.isPrivate && !all
+              ? null
+              : [
+                  package.name,
+                  AnsiStyles.green(package.version.toString()),
+                  AnsiStyles.gray(package.pathRelativeToWorkspace),
+                  all && package.isPrivate ? AnsiStyles.red('PRIVATE') : ''
+                ])
+          .where((element) => element != null)
           .toList());
       print(table);
     } else {
@@ -145,14 +148,17 @@ class ListCommand extends Command {
     }
   }
 
-  void printParseableFormat({bool all = false, bool long = false}) {
+  void printParsableFormat({bool all = false, bool long = false}) {
     if (long) {
-      currentWorkspace.packages.forEach((package) => print([
-            package.path,
-            package.name,
-            package.version ?? '',
-            all && package.isPrivate ? 'PRIVATE' : null
-          ].where((element) => element != null).join(':')));
+      currentWorkspace.packages.forEach((package) {
+        if (package.isPrivate && !all) return;
+        print([
+          package.path,
+          package.name,
+          package.version ?? '',
+          all && package.isPrivate ? 'PRIVATE' : null
+        ].where((element) => element != null).join(':'));
+      });
     } else {
       currentWorkspace.packages.forEach((package) {
         if (!all && package.isPrivate) return;
@@ -165,7 +171,7 @@ class ListCommand extends Command {
   void run() async {
     bool long = argResults['long'] as bool;
     bool all = argResults['all'] as bool;
-    bool parseable = argResults['parseable'] as bool;
+    bool parsable = argResults['parsable'] as bool;
     bool json = argResults['json'] as bool;
     bool graph = argResults['graph'] as bool;
 
@@ -173,8 +179,8 @@ class ListCommand extends Command {
       printGraphFormat(all: all);
     } else if (json) {
       printJsonFormat(long: long, all: all);
-    } else if (parseable) {
-      printParseableFormat(long: long, all: all);
+    } else if (parsable) {
+      printParsableFormat(long: long, all: all);
     } else {
       if (currentWorkspace.packages.isEmpty) {
         logger.stdout(AnsiStyles.yellow(

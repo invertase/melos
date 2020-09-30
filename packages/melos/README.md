@@ -1,19 +1,19 @@
 <p align="center">
-  <img src="logo.png" />
-  <h2 align="center">Melos</h2>
-  🌋 A tool for managing Dart projects with multiple packages.
+  <img src="https://static.invertase.io/assets/melos-logo.png" alt="Melos" /> <br /><br />
+  <span>A tool for managing Dart projects with multiple packages.</span>
 </p>
 
 ---
 
-> ⚠️ Note: this project is still very early on in development.
+> ⚠️ Note: this project is still in active development.
 
-----
+---
 
- - [About](#about)
- - [Getting Started](#getting-started)
- - [Commands](#commands)
-----
+- [About](#about)
+- [Getting Started](#getting-started)
+- [Commands](#commands)
+
+---
 
 ## About
 
@@ -25,15 +25,12 @@ gets complicated really fast.
 To solve these (and many other) problems, some projects will organize their
 code bases into multi-package repositories (sometimes called [monorepos](https://en.wikipedia.org/wiki/Monorepo))
 
-
 <p align="center">
   <img src="https://user-images.githubusercontent.com/5347038/82810703-0c28de80-9e87-11ea-888b-4b0b14c8e658.png" />
 </p>
 
 **Melos is a tool that optimizes the workflow around managing multi-package
 repositories with git and Pub.**
-
-
 
 ### What does a Melos repo look like?
 
@@ -51,11 +48,11 @@ my-melos-repo/
 
 ### What can Melos do?
 
-The two primary commands in Melos are `melos bootstrap` and `melos publish`.
+The three primary commands in Melos are `melos bootstrap`, `melos version` & `melos publish`.
 
- - `bootstrap` will link local packages in the repo together and install any remaining package dependencies.
- - `publish` will help publish any updated packages.
-   - ⚠️ `publish` support is still a work in progress
+- `bootstrap` will link local packages in the repo together and install any remaining package dependencies.
+- `version` bump packages versions (and their dependents) and generate changelogs using the conventional commits specification.
+- `publish` will help publish any locally updated packages that are not yet on the Pub registry.
 
 ## Getting Started
 
@@ -113,16 +110,18 @@ Full commands list and args can be viewed by running `melos --help`.
 
 #### `bootstrap`
 
-> Initialize the workspace, link local packages together and install remaining package dependencies. 
+> Initialize the workspace, link local packages together and install remaining package dependencies.
 
 Supports all package filtering options.
 
 **Example:**
+
 ```
 melos bootstrap --ignore="*example*"
 ```
 
 **Output:**
+
 ```
 $ melos bootstrap
    └> /Users/mike/Documents/Projects/Flutter/ff_internal
@@ -153,6 +152,7 @@ Packages:
 > Clean this workspace and all packages. This deletes the temporary pub files such as ".packages" & ".flutter-plugins"
 
 **Example:**
+
 ```
 melos clean
 ```
@@ -170,6 +170,7 @@ melos exec -- pub global run tuneup check
 ```
 
 **Output:**
+
 ```
 $ melos exec --
    └> pub global run tuneup check
@@ -187,14 +188,16 @@ $ melos exec --
 
 #### `run`
 
-> Execute an arbitrary command in each package. 
+> Execute an arbitrary command in each package.
 
 **Example:** Running a script named `analyze` that is defined in `melos.yaml`
+
 ```
 melos run analyze
 ```
 
 **`melos.yaml`**:
+
 ```yaml
 name: flutterfire
 packages:
@@ -205,6 +208,7 @@ scripts:
 ```
 
 **Output:**
+
 ```
 $ melos run analyze
    └> melos exec -- pub global run tuneup check
@@ -231,7 +235,7 @@ This project is heavily inspired by [Lerna](https://lerna.js.org/).
 
 ## README Badge
 
-Using Melos? Add a README badge to show it off: 
+Using Melos? Add a README badge to show it off:
 
 [![melos](https://img.shields.io/badge/maintained%20with-melos-f700ff.svg?style=flat-square)](https://github.com/invertase/melos)
 

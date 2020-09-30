@@ -18,10 +18,10 @@
 import 'dart:io';
 
 import 'package:args/command_runner.dart' show Command;
-import 'package:melos/src/common/intellij_project.dart';
 import 'package:ansi_styles/ansi_styles.dart';
 
 import '../command_runner.dart';
+import '../common/intellij_project.dart';
 import '../common/logger.dart';
 import '../common/workspace.dart';
 

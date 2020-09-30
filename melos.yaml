@@ -4,7 +4,7 @@ packages:
 
 ide:
   intellij:
-    false
+    true
     # TODO(Salakar): more granular control
     # use_workspace_tasks: true
     # use_flutter_test_tasks: true
