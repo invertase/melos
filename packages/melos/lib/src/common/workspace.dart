@@ -55,7 +55,11 @@ class MelosWorkspace {
 
   List<MelosPackage> _packages;
 
+  List<MelosPackage> _packagesNoScope;
+
   List<MelosPackage> get packages => _packages;
+
+  List<MelosPackage> get packagesNoScope => _packagesNoScope;
 
   MelosWorkspace._(this._name, this._path, this._config, this._state);
 
@@ -108,16 +112,6 @@ class MelosWorkspace {
       // Convert into Package for further filtering
       return MelosPackage.fromPubspecPathAndWorkspace(entity, this);
     });
-
-    if (scope.isNotEmpty) {
-      // Scoped packages filter.
-      filterResult = filterResult.where((package) {
-        final matchedPattern = scope.firstWhere((pattern) {
-          return Glob(pattern).matches(package.name);
-        }, orElse: () => null);
-        return matchedPattern != null;
-      });
-    }
 
     if (ignore.isNotEmpty) {
       // Ignore packages filter.
@@ -207,6 +201,21 @@ class MelosWorkspace {
     _packages.sort((a, b) {
       return a.name.compareTo(b.name);
     });
+
+    // We filter scopes last so we can keep a track of packages prior to scope filter,
+    // this is used for melos version to bump dependant package versions without scope filtering them out.
+    if (scope.isNotEmpty) {
+      _packagesNoScope = List.from(_packages);
+      // Scoped packages filter.
+      _packages = _packages.where((package) {
+        final matchedPattern = scope.firstWhere((pattern) {
+          return Glob(pattern).matches(package.name);
+        }, orElse: () => null);
+        return matchedPattern != null;
+      }).toList();
+    } else {
+      _packagesNoScope = _packages;
+    }
 
     return _packages;
   }

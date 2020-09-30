@@ -20,17 +20,17 @@ class GitCommit {
 
   final String author;
 
-  final String sha;
+  final String id;
 
   final DateTime date;
 
-  GitCommit({this.message, this.author, this.sha, this.date});
+  GitCommit({this.message, this.author, this.id, this.date});
 
   @override
   String toString() {
     return '''GitCommit[
   author="$author",
-  sha="$sha",
+  id="$id",
   date=${date.toIso8601String()},
   message="${message.replaceAll('\n', '').padRight(60).substring(0, 60).trim()}...",
 ]''';

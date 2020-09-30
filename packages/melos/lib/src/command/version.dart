@@ -99,7 +99,9 @@ class VersionCommand extends Command {
             graduate: graduate,
             prerelease: prerelease,
           ));
-          package.dependentsInWorkspace.forEach((package) {
+          MelosPackage packageUnscoped = currentWorkspace.packagesNoScope
+              .firstWhere((element) => element.name == package.name);
+          packageUnscoped.dependentsInWorkspace.forEach((package) {
             if (graduate && package.version.isPreRelease) return;
             dependentPackagesToVersion.add(package);
           });
@@ -134,7 +136,10 @@ class VersionCommand extends Command {
       if (packagesWithVersionableCommits.containsKey(package.name)) {
         if (graduate && package.version.isPreRelease) return;
         packagesToVersion.add(package);
-        dependentPackagesToVersion.addAll(package.dependentsInWorkspace);
+        MelosPackage packageUnscoped = currentWorkspace.packagesNoScope
+            .firstWhere((element) => element.name == package.name);
+        dependentPackagesToVersion
+            .addAll(packageUnscoped.dependentsInWorkspace);
       }
     });
 

@@ -185,7 +185,7 @@ class MelosPackage {
   /// Dev dependencies of this package that are also packages in the current workspace.
   List<MelosPackage> get devDependenciesInWorkspace {
     List<MelosPackage> out = [];
-    _workspace.packages.forEach((package) {
+    _workspace.packagesNoScope.forEach((package) {
       if (devDependencies[package.name] != null) {
         out.add(package);
       }
@@ -196,7 +196,7 @@ class MelosPackage {
   /// Packages in current workspace that directly depend on this package.
   List<MelosPackage> get dependentsInWorkspace {
     List<MelosPackage> out = [];
-    _workspace.packages.forEach((package) {
+    _workspace.packagesNoScope.forEach((package) {
       if (package.dependencies[name] != null) {
         out.add(package);
       }
@@ -207,7 +207,7 @@ class MelosPackage {
   /// Packages in current workspace that list this package as a dev dependency.
   List<MelosPackage> get devDependentsInWorkspace {
     List<MelosPackage> out = [];
-    _workspace.packages.forEach((package) {
+    _workspace.packagesNoScope.forEach((package) {
       if (package.devDependencies[name] != null) {
         out.add(package);
       }
