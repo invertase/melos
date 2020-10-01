@@ -19,7 +19,6 @@ flutter_export_environment.sh
 .project
 .classpath
 .settings
-/pubspec.yaml
 .last_build_id
 
 

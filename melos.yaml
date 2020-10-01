@@ -1,6 +1,7 @@
 name: Melos
 packages:
   - packages/**
+  - "*"
 
 ide:
   intellij:
@@ -21,9 +22,7 @@ ide:
 
 scripts:
   format: dartfmt -w .
-
-dev_dependencies:
-  pedantic: 1.8.0
+  version: dart scripts/generate_version.dart
 
 environment:
   sdk: ">=2.2.2 <3.0.0"
