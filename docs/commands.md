@@ -29,7 +29,7 @@ executed, you'll need to rerun the `bootstrap` command again for Melos to work.
 
 ## exec
 
-Execute an arbitrary command in each package.
+Execute an arbitrary command in each package. 
 
 ```bash
 melos exec
@@ -208,88 +208,6 @@ Prints usage information about a command.
 melos --help
 melos bootstrap -h
 ```
-
-### --verbose (-v)
-
-Enable verbose logging. Defaults to `false`.
-
-```bash
-melos bootstrap -v
-```
-
-### --no-private
-
-Exclude private packages (`publish_to: none`). They are included by default.
-
-```bash
-melos bootstrap --no-private
-```
-
-### --published
-
-Filter packages where the current local package version exists on pub.dev.
-
-```bash
-melos bootstrap --no-private
-```
-
-Use `--no-published` to filter packages that have not had their current version published yet.
-
-### --scope
-
-Include only packages with names matching the given glob. This option can be repeated.
-
-```bash
-# Run `flutter build ios` on all packages with "example" in the package name
-melos exec --scope="*example*" -- flutter build ios
-```
-
-### --ignore
-
-Exclude packages with names matching the given glob. This option can be repeated.
-
-```bash
-# Run `flutter build ios` on all packages but ignore those whose packages names contain "internal"
-melos exec --ignore="*internal*" -- flutter build ios
-```
-
-### --since
-
-Only include packages that have been changed since the specified `ref`, e.g. a commit sha or git tag.
-
-```bash
-# Run `flutter build ios` on all packages but ignore those whose packages names contain "internal"
-melos version --since=<commit hash>
-```
-
-### --dir-exists
-
-Include only packages where a specific directory exists inside the package.
-
-```bash
-# Only bootstrap packages with an example directory
-melos bootstrap --dir-exists="example"
-```
-
-### --file-exists
-
-Include only packages where a specific file exists in the package.
-
-````bash
-# Only bootstrap packages with an README.md file
-melos bootstrap --file-exists="README.md"
-```## Global options
-
-Each Melos command can be used alongside the following global commands:
-
-### --help (-h)
-
-Prints usage information about a command.
-
-```bash
-melos --help
-melos bootstrap -h
-````
 
 ### --verbose (-v)
 
