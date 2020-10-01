@@ -26,9 +26,11 @@ import 'package:pool/pool.dart';
 import 'package:yamlicious/yamlicious.dart';
 
 import '../pub/pub_deps_list.dart';
+import 'git.dart';
 import 'package.dart';
 import 'utils.dart' as utils;
 import 'workspace_config.dart';
+import 'workspace_state.dart';
 
 MelosWorkspace currentWorkspace;
 
@@ -47,31 +49,46 @@ class MelosWorkspace {
 
   MelosWorkspaceConfig get config => _config;
 
+  final MelosWorkspaceState _state;
+
+  MelosWorkspaceState get state => _state;
+
   List<MelosPackage> _packages;
+
+  List<MelosPackage> _packagesNoScope;
 
   List<MelosPackage> get packages => _packages;
 
-  MelosWorkspace._(this._name, this._path, this._config);
+  List<MelosPackage> get packagesNoScope => _packagesNoScope;
+
+  MelosWorkspace._(this._name, this._path, this._config, this._state);
+
+  bool get isFlutterWorkspace {
+    return packages.firstWhere((package) => package.isFlutterPackage,
+            orElse: () => null) !=
+        null;
+  }
 
   static Future<MelosWorkspace> fromDirectory(Directory directory,
       {@required ArgResults arguments}) async {
     final workspaceConfig = await MelosWorkspaceConfig.fromDirectory(directory);
-
     if (workspaceConfig == null) {
       return null;
     }
 
-    return MelosWorkspace._(
-        workspaceConfig.name, workspaceConfig.path, workspaceConfig);
+    final workspaceState = await MelosWorkspaceState.fromDirectory(directory);
+    return MelosWorkspace._(workspaceConfig.name, workspaceConfig.path,
+        workspaceConfig, workspaceState);
   }
 
   String get melosToolPath {
     return joinAll([path, '.melos_tool']);
   }
 
-  Future<List<MelosPackage>> loadPackages(
+  Future<List<MelosPackage>> loadPackagesWithFilters(
       {List<String> scope,
       List<String> ignore,
+      String since,
       List<String> dirExists,
       List<String> fileExists,
       bool skipPrivate,
@@ -95,16 +112,6 @@ class MelosWorkspace {
       // Convert into Package for further filtering
       return MelosPackage.fromPubspecPathAndWorkspace(entity, this);
     });
-
-    if (scope.isNotEmpty) {
-      // Scoped packages filter.
-      filterResult = filterResult.where((package) {
-        final matchedPattern = scope.firstWhere((pattern) {
-          return Glob(pattern).matches(package.name);
-        }, orElse: () => null);
-        return matchedPattern != null;
-      });
-    }
 
     if (ignore.isNotEmpty) {
       // Ignore packages filter.
@@ -156,9 +163,10 @@ class MelosWorkspace {
       });
     }
 
+    _packages = await filterResult.toList();
+
+    // --published / --no-published
     if (published != null) {
-      _packages = await filterResult.toList();
-      // Pooling to parallelize registry requests for performance.
       var pool = Pool(10);
       var packagesFilteredWithPublishStatus = <MelosPackage>[];
       await pool.forEach<MelosPackage, void>(_packages, (package) {
@@ -173,13 +181,41 @@ class MelosWorkspace {
         });
       }).drain();
       _packages = packagesFilteredWithPublishStatus;
-    } else {
-      _packages = await filterResult.toList();
+    }
+
+    // --scope
+    if (since != null) {
+      var pool = Pool(10);
+      var packagesFilteredWithGitCommitsSince = <MelosPackage>[];
+      await pool.forEach<MelosPackage, void>(_packages, (package) {
+        return gitCommitsForPackage(package, since: since)
+            .then((commits) async {
+          if (commits.isNotEmpty) {
+            packagesFilteredWithGitCommitsSince.add(package);
+          }
+        });
+      }).drain();
+      _packages = packagesFilteredWithGitCommitsSince;
     }
 
     _packages.sort((a, b) {
       return a.name.compareTo(b.name);
     });
+
+    // We filter scopes last so we can keep a track of packages prior to scope filter,
+    // this is used for melos version to bump dependant package versions without scope filtering them out.
+    if (scope.isNotEmpty) {
+      _packagesNoScope = List.from(_packages);
+      // Scoped packages filter.
+      _packages = _packages.where((package) {
+        final matchedPattern = scope.firstWhere((pattern) {
+          return Glob(pattern).matches(package.name);
+        }, orElse: () => null);
+        return matchedPattern != null;
+      }).toList();
+    } else {
+      _packagesNoScope = _packages;
+    }
 
     return _packages;
   }
@@ -190,9 +226,12 @@ class MelosWorkspace {
       return _cacheDependencyGraph;
     }
 
+    List<String> pubDepsExecArgs = ['--style=list', '--dev'];
     final pubListCommandOutput = await Process.run(
-      'flutter',
-      ['pub', 'deps', '--', '--style=list', '--dev'],
+      isFlutterWorkspace ? 'flutter' : 'pub',
+      isFlutterWorkspace
+          ? ['pub', 'deps', '--', ...pubDepsExecArgs]
+          : ['deps', ...pubDepsExecArgs],
       runInShell: true,
       workingDirectory: melosToolPath,
     );

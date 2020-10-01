@@ -1,3 +1,19 @@
+## 0.3.10-dev.2
+
+ - **REFACTOR**: remove logger, woops.
+ - **REFACTOR**: remove dep override.
+ - **FIX**: don't filter packages using 'since' on version command.
+ - **FEAT**: add support for version/postversion lifecycle scripts.
+ - **BUILD**: temporary git add workaround for additional changed files in melos.
+ - **BUILD**: add version lifecycle script to generate version.dart file.
+
+## 0.3.10-dev.1
+
+ - **REFACTOR**: code cleanup.
+ - **REFACTOR**: remove commited .iml files.
+ - **FEAT**: semver & conventional commits (#10).
+ - **CHORE**: bump dep version.
+
 ## 0.3.9
 
 - Fix version.dart versioning

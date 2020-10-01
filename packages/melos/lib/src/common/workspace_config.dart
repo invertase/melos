@@ -43,6 +43,13 @@ class MelosWorkspaceConfig {
 
   String get version => _yamlContents['version'] as String;
 
+  bool get generateIntellijIdeFiles {
+    var ide = _yamlContents['ide'] as Map ?? {};
+    if (ide['intellij'] == false) return false;
+    if (ide['intellij'] == true) return true;
+    return true;
+  }
+
   final Map _yamlContents;
 
   MelosWorkspaceConfig._(this._name, this._path, this._yamlContents);

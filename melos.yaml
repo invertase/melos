@@ -1,0 +1,28 @@
+name: Melos
+packages:
+  - packages/**
+  - "*"
+
+ide:
+  intellij:
+    true
+    # TODO(Salakar): more granular control
+    # use_workspace_tasks: true
+    # use_flutter_test_tasks: true
+    # use_flutter_run_tasks: true
+    # use_dart_test_tasks: false
+  vscode:
+    false
+    # TODO(Salakar): more granular control
+    # use_workspace_tasks: true
+    # use_flutter_test_tasks: true
+    # use_flutter_run_tasks: true
+    # use_dart_test_tasks: false
+    # use_recommended_settings: true
+
+scripts:
+  format: dartfmt -w .
+  version: dart scripts/generate_version.dart
+
+environment:
+  sdk: ">=2.2.2 <3.0.0"
