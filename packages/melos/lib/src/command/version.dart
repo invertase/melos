@@ -21,6 +21,7 @@ import 'package:args/command_runner.dart' show Command;
 import 'package:pool/pool.dart' show Pool;
 import 'package:ansi_styles/ansi_styles.dart';
 
+import '../command_runner.dart';
 import '../common/conventional_commit.dart';
 import '../common/git.dart';
 import '../common/logger.dart';
@@ -240,6 +241,12 @@ class VersionCommand extends Command {
       }
     });
 
+    // TODO allow support for individual package lifecycle version scripts
+    if (currentWorkspace.config.scripts.containsKey('version')) {
+      logger.stdout('Running "version" lifecycle script...\n');
+      await MelosCommandRunner.instance.run(['run', 'version']);
+    }
+
     if (tag) {
       // 1) Stage changes:
       await Future.forEach(pendingPackageUpdates,
@@ -273,6 +280,12 @@ class VersionCommand extends Command {
         await gitTagCreate(tag, pendingPackageUpdate.changelog.markdown,
             workingDirectory: pendingPackageUpdate.package.path);
       });
+    }
+
+    // TODO allow support for individual package lifecycle postversion scripts
+    if (currentWorkspace.config.scripts.containsKey('postversion')) {
+      logger.stdout('Running "postversion" lifecycle script...\n');
+      await MelosCommandRunner.instance.run(['run', 'postversion']);
     }
 
     // TODO automatic push support
