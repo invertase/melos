@@ -263,7 +263,7 @@ class VersionCommand extends Command {
         // TODO this is a temporary workaround for adding modified files by melos version script.
         // TODO remove once options exposed for this in a later release.
         if (pendingPackageUpdate.package.name == 'melos') {
-          await gitAdd('version.dart',
+          await gitAdd('**/version.dart',
               workingDirectory: pendingPackageUpdate.package.path);
         }
       });
