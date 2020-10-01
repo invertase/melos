@@ -259,6 +259,13 @@ class VersionCommand extends Command {
             (MelosPackage dependentPackage) async {
           await gitAdd('pubspec.yaml', workingDirectory: dependentPackage.path);
         });
+
+        // TODO this is a temporary workaround for adding modified files by melos version script.
+        // TODO remove once options exposed for this in a later release.
+        if (pendingPackageUpdate.package.name == 'melos') {
+          await gitAdd('version.dart',
+              workingDirectory: pendingPackageUpdate.package.path);
+        }
       });
 
       // 2) Commit changes:
