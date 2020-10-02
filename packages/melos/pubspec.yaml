@@ -6,6 +6,7 @@ executables:
   melos:
 dependencies:
   ansi_styles: ^0.1.1
+  conventional_commit: ^0.1.0
   args: ^1.6.0
   http: ^0.12.2
   pool: ^1.4.0

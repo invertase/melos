@@ -18,8 +18,8 @@
 import 'dart:io';
 
 import 'package:path/path.dart';
+import 'package:conventional_commit/conventional_commit.dart';
 
-import 'conventional_commit.dart';
 import 'logger.dart';
 import 'pending_package_update.dart';
 

@@ -20,9 +20,9 @@ import 'dart:io';
 import 'package:args/command_runner.dart' show Command;
 import 'package:pool/pool.dart' show Pool;
 import 'package:ansi_styles/ansi_styles.dart';
+import 'package:conventional_commit/conventional_commit.dart';
 
 import '../command_runner.dart';
-import '../common/conventional_commit.dart';
 import '../common/git.dart';
 import '../common/logger.dart';
 import '../common/package.dart';

@@ -18,11 +18,18 @@
 var _conventionalCommitRegex = RegExp(
     r'^(?<type>build|chore|ci|docs|feat|fix|bug|perf|refactor|revert|style|test)(?<scope>\([a-zA-Z0-9_,]+\)?((?=:\s)|(?=!:\s)))?(?<breaking>!)?(?<subject>:\s.*)?|^(?<merge>Merge \w+)');
 
+/// Indicates the semver release type this commit message creates.
 enum SemverReleaseType {
+  /// A patch release indicates non-breaking changes (e.g. bug fixes).
   patch,
+
+  /// Indicates new API changes have been made (e.g. new features).
   minor,
+
+  /// A major release is when the breaking changes have been introduced.
   major,
 }
+
 // TODO(Salakar): parse commit body & footer for more detailed changelogs.
 
 /// A representation of a parsed conventional commit message.
@@ -60,7 +67,8 @@ class ConventionalCommit {
   /// var commit = ConventionalCommit.fromCommitMessage(message);
   /// print(commit);
   /// ```
-  static ConventionalCommit fromCommitMessage(String commitMessage) {
+  factory ConventionalCommit.fromCommitMessage(String commitMessage) {
+    assert(commitMessage != null);
     var header = commitMessage.split('\n')[0];
     var match = _conventionalCommitRegex.firstMatch(header);
     if (match == null) return null;

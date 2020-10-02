@@ -17,9 +17,9 @@
 
 import 'dart:math' as math;
 import 'package:pub_semver/pub_semver.dart';
+import 'package:conventional_commit/conventional_commit.dart';
 
 import 'changelog.dart';
-import 'conventional_commit.dart';
 import 'package.dart';
 
 /// Enum representing why the version has been changed when running 'version' command.
