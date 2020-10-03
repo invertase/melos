@@ -1,3 +1,9 @@
+## 0.3.10-dev.3
+
+ - **REFACTOR**: break out conventional_commit package.
+ - **FEAT**: re-add bootstrap `bs` alias.
+ - **BUILD**: fix version.dart not being automatically added.
+
 ## 0.3.10-dev.2
 
  - **REFACTOR**: remove logger, woops.
