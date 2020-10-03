@@ -22,6 +22,7 @@ ide:
 
 scripts:
   format: dartfmt -w .
+  test: melos exec -c 1 --file-exists="test/\$MELOS_PACKAGE_NAME_test.dart" -- "pub run test test/\$MELOS_PACKAGE_NAME_test.dart"
   version: dart scripts/generate_version.dart
 
 environment:
