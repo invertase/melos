@@ -23,7 +23,7 @@ import 'package:ansi_styles/ansi_styles.dart';
 import '../command_runner.dart';
 import '../common/intellij_project.dart';
 import '../common/logger.dart';
-import '../common/utils.dart';
+import '../common/utils.dart' as utils;
 import '../common/workspace.dart';
 
 class BootstrapCommand extends Command {
@@ -46,7 +46,7 @@ class BootstrapCommand extends Command {
     var processExitCode = await currentWorkspace.execInMelosToolPath(
         currentWorkspace.isFlutterWorkspace
             ? ['flutter', ...pubGetArgs]
-            : [if (isPubSubcommand()) 'dart', ...pubGetArgs],
+            : [if (utils.isPubSubcommand()) 'dart', ...pubGetArgs],
         onlyOutputOnError: true);
     if (processExitCode > 0) {
       logger
