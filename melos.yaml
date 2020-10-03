@@ -1,0 +1,30 @@
+name: Melos
+packages:
+  - packages/**
+  - "*"
+
+ide:
+  intellij:
+    true
+    # TODO(Salakar): more granular control
+    # use_workspace_tasks: true
+    # use_flutter_test_tasks: true
+    # use_flutter_run_tasks: true
+    # use_dart_test_tasks: false
+  vscode:
+    false
+    # TODO(Salakar): more granular control
+    # use_workspace_tasks: true
+    # use_flutter_test_tasks: true
+    # use_flutter_run_tasks: true
+    # use_dart_test_tasks: false
+    # use_recommended_settings: true
+
+scripts:
+  analyze: melos exec -c 1 --ignore="*monorepo*" -- "dartanalyzer . --options=\$MELOS_ROOT_PATH/analysis_options.yaml"
+  format: dartfmt -w .
+  test: melos exec -c 1 --file-exists="test/\$MELOS_PACKAGE_NAME_test.dart" -- "pub run test test/\$MELOS_PACKAGE_NAME_test.dart"
+  version: dart scripts/generate_version.dart
+
+environment:
+  sdk: ">=2.2.2 <3.0.0"

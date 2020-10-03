@@ -120,12 +120,6 @@ Supports all package filtering options.
 melos bootstrap --ignore="*example*"
 ```
 
-**Example (Multiple):**
-
-```
-melos bootstrap --ignore="_example_" --ignore="_example2_"
-```
-
 **Output:**
 
 ```
