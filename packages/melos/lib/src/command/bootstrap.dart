@@ -45,7 +45,7 @@ class BootstrapCommand extends Command {
     var processExitCode = await currentWorkspace.execInMelosToolPath(
         currentWorkspace.isFlutterWorkspace
             ? ['flutter', ...pubGetArgs]
-            : pubGetArgs,
+            : ['dart', ...pubGetArgs],
         onlyOutputOnError: true);
     if (processExitCode > 0) {
       logger
