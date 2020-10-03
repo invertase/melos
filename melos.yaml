@@ -21,6 +21,7 @@ ide:
     # use_recommended_settings: true
 
 scripts:
+  analyze: melos exec -c 1 --ignore="*monorepo*" -- "dartanalyzer . --options=\$MELOS_ROOT_PATH/analysis_options.yaml"
   format: dartfmt -w .
   test: melos exec -c 1 --file-exists="test/\$MELOS_PACKAGE_NAME_test.dart" -- "pub run test test/\$MELOS_PACKAGE_NAME_test.dart"
   version: dart scripts/generate_version.dart

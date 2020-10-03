@@ -15,9 +15,8 @@ jobs:
       - name: "Install Tools"
         run: |
           ./.github/workflows/scripts/install-tools.sh
-      - uses: axel-op/dart-package-analyzer@v3
-        with:
-          githubToken: ${{ secrets.GH_TOKEN }}
+      - name: "Analyze"
+        run: melos run analyze
 
   format:
     runs-on: ubuntu-latest
