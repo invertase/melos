@@ -29,6 +29,7 @@ import '../pub/pub_deps_list.dart';
 import 'git.dart';
 import 'package.dart';
 import 'utils.dart' as utils;
+import 'utils.dart';
 import 'workspace_config.dart';
 import 'workspace_state.dart';
 
@@ -228,10 +229,14 @@ class MelosWorkspace {
 
     List<String> pubDepsExecArgs = ['--style=list', '--dev'];
     final pubListCommandOutput = await Process.run(
-      isFlutterWorkspace ? 'flutter' : 'pub',
+      isFlutterWorkspace
+          ? 'flutter'
+          : isPubSubcommand()
+              ? 'dart'
+              : 'pub',
       isFlutterWorkspace
           ? ['pub', 'deps', '--', ...pubDepsExecArgs]
-          : ['deps', ...pubDepsExecArgs],
+          : [if (isPubSubcommand()) 'pub', 'deps', ...pubDepsExecArgs],
       runInShell: true,
       workingDirectory: melosToolPath,
     );
