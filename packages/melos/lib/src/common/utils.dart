@@ -275,3 +275,11 @@ Future<int> startProcess(List<String> execArgs,
 
   return exitCode;
 }
+
+bool isPubSubcommand() {
+  try {
+    return Process.runSync('pub', ['--version']).exitCode != 0;
+  } on ProcessException catch (e) {
+    return true;
+  }
+}
