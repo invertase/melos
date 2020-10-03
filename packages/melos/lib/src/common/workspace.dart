@@ -228,11 +228,7 @@ class MelosWorkspace {
 
     List<String> pubDepsExecArgs = ['--style=list', '--dev'];
     final pubListCommandOutput = await Process.run(
-      isFlutterWorkspace
-          ? 'flutter'
-          : utils.isPubSubcommand()
-              ? 'dart'
-              : 'pub',
+      isFlutterWorkspace ? 'flutter' : utils.isPubSubcommand() ? 'dart' : 'pub',
       isFlutterWorkspace
           ? ['pub', 'deps', '--', ...pubDepsExecArgs]
           : [if (utils.isPubSubcommand()) 'pub', 'deps', ...pubDepsExecArgs],

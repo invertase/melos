@@ -31,6 +31,9 @@ class BootstrapCommand extends Command {
   final String name = 'bootstrap';
 
   @override
+  final List<String> aliases = ['bs'];
+
+  @override
   final String description =
       'Initialize the workspace, link local packages together and install remaining package dependencies.';
 
