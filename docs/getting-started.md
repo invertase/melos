@@ -10,29 +10,16 @@ Melos can be installed as a global package via [pub.dev](https://pub.dev/):
 pub global activate melos
 ```
 
-### New projects
+### Setup
 
-New projects can use the `init` command to generate a new `melos.yaml` and empty
-`packages/` directory at the root of the project:
+To setup your project to use Melos, create a `melos.yaml` file in the root of the project.
 
-```bash
-melos init
-```
+> New project? Use `melos init` to initialize the file and an empty `packages` directory.
 
-Your directory will contain the following structure:
-
-```
-my-melos-repo/
-  packages/
-  melos.yaml
-```
-
-### Existing projects
-
-Existing projects should instead manually create a `melos.yaml` file in the root of the project:
+Within the `melos.yaml` file, add `name` and `packages` fields:
 
 ```yaml
-name: my-melos-repo
+name: my_project
 
 packages:
   - packages/**
@@ -69,7 +56,7 @@ Melos also provides other helpful features such as running scripts across all pa
 all packages source code for errors (using [tuneup.dart](https://pub.dev/packages/tuneup)), add a new `script` item in your `melos.yaml`:
 
 ```yaml
-name: my-melos-repo
+name: my_project
 
 packages:
   - packages/**

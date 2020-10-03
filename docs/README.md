@@ -24,6 +24,15 @@ whilst being totally independent of each other. Features include:
 
 Melos also works great on CI/CD environments to help automate complex tasks and challenges.
 
+## Projects using Melos
+
+The following projects are using Melos:
+
+- [FirebaseExtended/flutterfire](https://github.com/FirebaseExtended/flutterfire)
+- [aws-amplify/amplify-flutter](https://github.com/aws-amplify/amplify-flutter)
+
+> [Submit a PR](https://github.com/invertase/melos/edit/master/docs/README.md) to add your project to the list.
+
 ## License
 
 - See [LICENSE](https://github.com/invertase/melos/blob/master/LICENSE)
