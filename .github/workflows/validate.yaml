@@ -1,5 +1,9 @@
 name: all_packages
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+      - master
 
 jobs:
   analyze:
@@ -12,7 +16,11 @@ jobs:
         run: |
           ./.github/workflows/scripts/install-tools.sh
       - name: "Bootstrap Workspace"
-        run: melos bootstrap
+        run: |
+          # We need to manually pub get in melos to allow it to work first time
+          # as we're using melos source to bootstrap itself 
+          cd packages/melos && pub get && cd .. && cd ..
+          melos bootstrap
       - uses: axel-op/dart-package-analyzer@v3
         with:
           githubToken: ${{ secrets.GH_TOKEN }}
@@ -30,7 +38,11 @@ jobs:
         run: |
           ./.github/workflows/scripts/install-tools.sh
       - name: "Bootstrap Workspace"
-        run: melos bootstrap
+        run: |
+          # We need to manually pub get in melos to allow it to work first time
+          # as we're using melos source to bootstrap itself 
+          cd packages/melos && pub get && cd .. && cd ..
+          melos bootstrap
       - name: "Dart"
         run: |
           melos run format
@@ -49,6 +61,10 @@ jobs:
         run: |
           ./.github/workflows/scripts/install-tools.sh
       - name: "Bootstrap Workspace"
-        run: melos bootstrap
+        run: |
+          # We need to manually pub get in melos to allow it to work first time
+          # as we're using melos source to bootstrap itself 
+          cd packages/melos && pub get && cd .. && cd ..
+          melos bootstrap
       - name: "Run Tests"
         run: melos run test
