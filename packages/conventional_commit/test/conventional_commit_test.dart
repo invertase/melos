@@ -123,11 +123,15 @@ void main() {
     });
 
     test('isMergeCommit', () {
-      // TODO(ehesp): add truth tests
       expect(
           ConventionalCommit.fromCommitMessage('docs: Merge foo bar')
               .isMergeCommit,
           isFalse);
+      expect(
+          ConventionalCommit.fromCommitMessage(
+                  'Merge branch \'master\' of invertase/melos')
+              .isMergeCommit,
+          isTrue);
       expect(
           ConventionalCommit.fromCommitMessage('docs!: foo bar').isMergeCommit,
           isFalse);
