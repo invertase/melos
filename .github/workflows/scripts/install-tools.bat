@@ -1,5 +1,7 @@
-cd packages\melos\
+CD packages\melos\
 dart pub get
 dart pub global activate --source=path .
-cd ..\..\
+CD /D %GITHUB_WORKSPACE%
+
 melos bootstrap
+ECHO "Bootstrap Completed"
