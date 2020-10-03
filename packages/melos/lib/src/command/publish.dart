@@ -119,7 +119,7 @@ class PublishCommand extends Command {
         'Publishing ${unpublishedPackages.length} packages to registry:');
 
     // TODO flutter pub if flutter packages detected? May not be necessary
-    List<String> execArgs = ['pub', '--verbosity=warning', 'publish'];
+    List<String> execArgs = ['dart', 'pub', '--verbosity=warning', 'publish'];
     if (dryRun) {
       execArgs.add('--dry-run');
     } else {
