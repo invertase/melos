@@ -40,7 +40,7 @@ The following projects are using Melos:
 ---
 
 <p>
-  <img align="left" width="75px" src="https://static.invertase.io/assets/invertase-logo-small.png">
+  <img class="logo" align="left" width="75px" src="https://static.invertase.io/assets/invertase-logo-small.png">
   <p align="left">
     Built and maintained with 💛 by <a href="https://invertase.io">Invertase</a>.
   </p>
