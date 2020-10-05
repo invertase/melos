@@ -1,0 +1,7 @@
+/*
+ * General Styling
+*/
+
+p > img.logo {
+  margin-right: 1em;
+}
