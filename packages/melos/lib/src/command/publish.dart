@@ -21,6 +21,7 @@ import 'package:args/command_runner.dart' show Command;
 import 'package:pool/pool.dart' show Pool;
 import 'package:ansi_styles/ansi_styles.dart';
 
+import '../common/git.dart';
 import '../common/logger.dart';
 import '../common/package.dart';
 import '../common/utils.dart';
@@ -41,11 +42,18 @@ class PublishCommand extends Command {
         defaultsTo: true,
         negatable: true,
         help: 'Validate but do not publish the package.');
+    argParser.addFlag('git-tag-version',
+        abbr: 't',
+        defaultsTo: false,
+        negatable: false,
+        help:
+            'Add any missing git tags for release. Note tags are only created if --no-dry-run is also set.');
   }
 
   @override
   void run() async {
     bool dryRun = argResults['dry-run'] as bool;
+    bool gitTagVersion = argResults['git-tag-version'] as bool;
     logger.stdout(
         AnsiStyles.yellow.bold('melos publish${dryRun ? " --dry-run" : ''}'));
     logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
@@ -134,6 +142,17 @@ class PublishCommand extends Command {
         concurrency: 1, failFast: true);
 
     if (exitCode != 1) {
+      if (!dryRun && gitTagVersion) {
+        logger.stdout('');
+        logger.stdout(
+            'Creating git tags for any versions not already created... ');
+        await Future.forEach(unpublishedPackages, (MelosPackage package) async {
+          String tag =
+              gitTagForPackageVersion(package.name, package.version.toString());
+          await gitTagCreate(tag, 'Publish $tag.',
+              workingDirectory: package.path);
+        });
+      }
       updateRegistryProgress.finish(
           message: AnsiStyles.green('SUCCESS'), showTiming: true);
 
