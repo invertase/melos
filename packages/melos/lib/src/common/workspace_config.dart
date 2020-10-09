@@ -18,6 +18,7 @@
 import 'dart:io';
 
 import 'package:glob/glob.dart';
+import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
 
 import 'utils.dart';
@@ -68,6 +69,14 @@ class MelosWorkspaceConfig {
     final melosYamlPath = melosYamlPathForDirectory(directory);
     final yamlContents = await loadYamlFile(melosYamlPath);
     if (yamlContents == null) {
+      // Allow melos to use a project without a `melos.yaml` file if a `packages`
+      // directory exists.
+      Directory packagesDirectory =
+          Directory(joinAll([directory.path, 'packages']));
+      if (packagesDirectory.existsSync()) {
+        return MelosWorkspaceConfig._('Melos', directory.path, {});
+      }
+
       return null;
     }
 
