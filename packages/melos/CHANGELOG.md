@@ -1,3 +1,7 @@
+## 0.3.10-dev.5
+
+ - **FEAT**: allow melos to function without a yaml file if packages dir exists.
+
 ## 0.3.10-dev.4
 
  - **FEAT**: support adding git tags for missing versions on publish command.
