@@ -63,12 +63,6 @@ class MelosWorkspaceConfig {
 
   static Future<MelosWorkspaceConfig> fromDirectory(Directory directory) async {
     if (!isWorkspaceDirectory(directory)) {
-      return null;
-    }
-
-    final melosYamlPath = melosYamlPathForDirectory(directory);
-    final yamlContents = await loadYamlFile(melosYamlPath);
-    if (yamlContents == null) {
       // Allow melos to use a project without a `melos.yaml` file if a `packages`
       // directory exists.
       Directory packagesDirectory =
@@ -77,6 +71,12 @@ class MelosWorkspaceConfig {
         return MelosWorkspaceConfig._('Melos', directory.path, {});
       }
 
+      return null;
+    }
+
+    final melosYamlPath = melosYamlPathForDirectory(directory);
+    final yamlContents = await loadYamlFile(melosYamlPath);
+    if (yamlContents == null) {
       return null;
     }
 
