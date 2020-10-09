@@ -23,6 +23,12 @@ import 'package:yaml/yaml.dart';
 
 import 'utils.dart';
 
+String _yamlConfigDefault = '''
+name: Melos
+packages:
+  - packages/**
+''';
+
 // TODO validation of config
 //   name should be required, alphanumeric dasherized/underscored
 class MelosWorkspaceConfig {
@@ -68,8 +74,8 @@ class MelosWorkspaceConfig {
       Directory packagesDirectory =
           Directory(joinAll([directory.path, 'packages']));
       if (packagesDirectory.existsSync()) {
-        return MelosWorkspaceConfig._('Melos', directory.path,
-            {'packages': YamlList()..add('packages/**')});
+        return MelosWorkspaceConfig._(
+            'Melos', directory.path, loadYaml(_yamlConfigDefault) as Map);
       }
 
       return null;
