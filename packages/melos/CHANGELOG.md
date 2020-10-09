@@ -1,3 +1,7 @@
+## 0.3.10-dev.8
+
+ - **FIX**: correctly assign YamlList.
+
 ## 0.3.10-dev.7
 
  - **FIX**: add default packages path.
