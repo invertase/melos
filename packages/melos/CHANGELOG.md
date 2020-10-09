@@ -1,3 +1,7 @@
+## 0.3.10-dev.7
+
+ - **FIX**: add default packages path.
+
 ## 0.3.10-dev.6
 
  - **FIX**: melos.yaml check.
