@@ -1,3 +1,7 @@
+## 0.3.10-dev.6
+
+ - **FIX**: melos.yaml check.
+
 ## 0.3.10-dev.5
 
  - **FEAT**: allow melos to function without a yaml file if packages dir exists.
