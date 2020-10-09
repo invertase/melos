@@ -68,9 +68,8 @@ class MelosWorkspaceConfig {
       Directory packagesDirectory =
           Directory(joinAll([directory.path, 'packages']));
       if (packagesDirectory.existsSync()) {
-        return MelosWorkspaceConfig._('Melos', directory.path, {
-          'packages': ['packages/**']
-        });
+        return MelosWorkspaceConfig._('Melos', directory.path,
+            {'packages': YamlList()..add('packages/**')});
       }
 
       return null;
