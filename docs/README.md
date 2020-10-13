@@ -30,6 +30,7 @@ The following projects are using Melos:
 
 - [FirebaseExtended/flutterfire](https://github.com/FirebaseExtended/flutterfire)
 - [aws-amplify/amplify-flutter](https://github.com/aws-amplify/amplify-flutter)
+- [fluttercommunity/plus_plugins](https://github.com/fluttercommunity/plus_plugins)
 
 > [Submit a PR](https://github.com/invertase/melos/edit/master/docs/README.md) to add your project to the list.
 
