@@ -1,3 +1,7 @@
+## 0.3.10
+
+ - Graduate package to a stable release. See pre-releases prior to this version for changelog entries.
+
 ## 0.3.10-dev.9
 
  - **FIX**: use dummy yaml file.
