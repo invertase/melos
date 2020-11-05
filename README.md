@@ -3,6 +3,10 @@
   <span>A tool for managing Dart projects with multiple packages.</span>
 </p>
 
+<p align="center">
+  <a href="https://github.com/invertase/melos#readme-badge"><img src="https://img.shields.io/badge/maintained%20with-melos-f700ff.svg?style=flat-square" alt="Melos" /></a>
+</p>
+
 ---
 
 > ⚠️ Note: this project is still in active development.
@@ -83,7 +87,9 @@ my-melos-repo/
 
 ### Existing Projects
 
-To use Melos in an existing monorepo create a `melos.yaml` file in the root ofr your project.
+Melos works out the box with existing monorepos that define a `packages/` directory in the root.
+
+Alternatively you can create a `melos.yaml` file in the root of your project to customise packages location and scripts.
 
 **Sample file**:
 
