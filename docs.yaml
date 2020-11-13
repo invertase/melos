@@ -1,0 +1,22 @@
+---
+name: Melos
+logo: "https://camo.githubusercontent.com/14c372c22a8896f344b9a2f04dd4aab411670a22e190e07420ce20a9a73ff238/68747470733a2f2f7374617469632e696e766572746173652e696f2f6173736574732f6d656c6f732d6c6f676f2e706e67"
+theme: "#547484"
+
+navigation:
+- - Docs
+  - "/docs"
+- - Twitter
+  - https://twitter.com/invertaseio
+  
+sidebar:
+- - Overview
+  - "/"
+- - Getting Started
+  - "/getting-started"
+- - Commands
+  - "/commands"
+- - melos.yaml
+  - "/melos-yaml"
+- - Automated Releases
+  - "/automated-releases"
