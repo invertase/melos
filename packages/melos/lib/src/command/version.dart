@@ -62,6 +62,9 @@ class VersionCommand extends Command {
         negatable: true,
         help:
             'By default, melos version will commit changes to pubspec.yaml files and tag the release. Pass --no-git-tag-version to disable the behavior.');
+    argParser.addFlag('yes',
+       defaultsTo: false,
+       help: 'Skips the Y/N prompt');
   }
 
   @override
@@ -73,6 +76,7 @@ class VersionCommand extends Command {
     bool graduate = argResults['graduate'] as bool;
     bool tag = argResults['git-tag-version'] as bool;
     bool prerelease = argResults['prerelease'] as bool;
+    bool skipPrompt = argResults['yes'] as bool;
     Set<MelosPackage> packagesToVersion = <MelosPackage>{};
     Map<String, List<ConventionalCommit>> packageCommits = {};
     Set<MelosPackage> dependentPackagesToVersion = <MelosPackage>{};
@@ -210,8 +214,7 @@ class VersionCommand extends Command {
       }),
     ], paddingSize: 3));
 
-    // TODO prompt skip support for CI environments (--yes)
-    bool shouldContinue = promptBool();
+    bool shouldContinue = skipPrompt || promptBool();
     if (!shouldContinue) {
       logger.stdout(AnsiStyles.red('Operation was canceled.'));
       exitCode = 1;
