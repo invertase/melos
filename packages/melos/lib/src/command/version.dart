@@ -64,6 +64,7 @@ class VersionCommand extends Command {
             'By default, melos version will commit changes to pubspec.yaml files and tag the release. Pass --no-git-tag-version to disable the behavior.');
     argParser.addFlag('yes',
         defaultsTo: false,
+        negatable: false,
         help: 'Skips the Y/N prompt at the beginning of the command');
   }
 
