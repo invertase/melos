@@ -1,3 +1,8 @@
+## 0.3.11
+
+ - **FEAT**: Add `--yes` flag to `melos version` for ci support. (#27).
+ - **CHORE**: make `--yes` on `version` command non negatable.
+
 ## 0.3.10
 
  - Graduate package to a stable release. See pre-releases prior to this version for changelog entries.
