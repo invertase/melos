@@ -21,6 +21,7 @@ import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:cli_util/cli_logging.dart';
 
+import 'command/audit.dart';
 import 'command/bootstrap.dart';
 import 'command/clean.dart';
 import 'command/exec.dart';
@@ -88,6 +89,7 @@ class MelosCommandRunner extends CommandRunner {
     addCommand(ListCommand());
     addCommand(PublishCommand());
     addCommand(VersionCommand());
+    addCommand(AuditCommand());
   }
 
   @override
