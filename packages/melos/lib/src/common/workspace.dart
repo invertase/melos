@@ -123,16 +123,6 @@ class MelosWorkspace {
       });
     }
 
-    if (ignore.isNotEmpty) {
-      // Ignore packages filter.
-      filterResult = filterResult.where((package) {
-        final matchedPattern = ignore.firstWhere((pattern) {
-          return Glob(pattern).matches(package.name);
-        }, orElse: () => null);
-        return matchedPattern == null;
-      });
-    }
-
     if (dirExists.isNotEmpty) {
       // Directory exists packages filter, multiple filters behaviour is 'AND'.
       filterResult = filterResult.where((package) {
@@ -183,7 +173,7 @@ class MelosWorkspace {
       _packages = packagesFilteredWithPublishStatus;
     }
 
-    // --scope
+    // --since
     if (since != null) {
       var pool = Pool(10);
       var packagesFilteredWithGitCommitsSince = <MelosPackage>[];

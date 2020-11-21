@@ -28,6 +28,9 @@ var _header = '''# This file tracks workspace state.
 # This file should be version controlled and should not be manually edited.
 ''';
 
+// TODO MelosWorkspaceState currently not in use.
+// TODO MelosWorkspaceState currently not in use.
+// TODO MelosWorkspaceState currently not in use.
 class MelosWorkspaceState {
   final File _stateFile;
   final Map _currentState;
