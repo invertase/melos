@@ -16,8 +16,9 @@
  */
 
 import 'dart:math' as math;
-import 'package:pub_semver/pub_semver.dart';
+
 import 'package:conventional_commit/conventional_commit.dart';
+import 'package:pub_semver/pub_semver.dart';
 
 import 'changelog.dart';
 import 'package.dart';
@@ -52,8 +53,8 @@ class MelosPendingPackageUpdate {
   /// will graduate to a stable, non-prerelease version.
   final bool graduate;
 
-  /// The prerelease id that will be used for prereleases, e.g. "0.1.0-[preId].1".
-  final String preId;
+  /// The prerelease id that will be used for prereleases, e.g. "0.1.0-[preid].1".
+  final String preid;
 
   MelosPendingPackageUpdate(
     this.package,
@@ -61,8 +62,7 @@ class MelosPendingPackageUpdate {
     this.reason, {
     this.prerelease = false,
     this.graduate = false,
-    // TODO(Salakar): Expose as a `--preid` flag to version command
-    this.preId = 'dev',
+    this.preid,
   });
 
   Changelog get changelog {
@@ -107,8 +107,11 @@ class MelosPendingPackageUpdate {
               ? currentVersion.build[0] as int
               : 0;
           return Version(
-              currentVersion.major, currentVersion.minor, currentVersion.patch,
-              build: (currentBuild + 1).toString());
+            currentVersion.major,
+            currentVersion.minor,
+            currentVersion.patch,
+            build: (currentBuild + 1).toString(),
+          );
       }
     }
   }
@@ -117,22 +120,44 @@ class MelosPendingPackageUpdate {
     if (currentVersion.isPreRelease) {
       int currentPre = currentVersion.preRelease.length == 2
           ? currentVersion.preRelease[1] as int
-          : 0;
+          : -1;
+      // Note we preserve the current prereleases preid if no preid option specified.
+      // So 1.0.0-nullsafety.0 would become ...-nullsafety.X rather than use the default preid "dev".
+      int nextPreidInt = currentPre + 1;
+      String nextPreidName = preid ?? currentVersion.preRelease[0] as String;
+
+      // Reset the preid int if preid name has changed,
+      // e.g. was "...dev.3" and is now a "nullsafety" preid so the next
+      // prerelease version becomes "...nullsafety.0" instead of "...nullsafety.4".
+      if (nextPreidName != currentVersion.preRelease[0]) {
+        nextPreidInt = 0;
+      }
+
       return Version(
-          currentVersion.major, currentVersion.minor, currentVersion.patch,
-          pre: '$preId.${currentPre + 1}');
+        currentVersion.major,
+        currentVersion.minor,
+        currentVersion.patch,
+        pre: '$nextPreidName.$nextPreidInt',
+      );
     }
 
     var nextVersion = nextStableRelease;
-    return Version(nextVersion.major, nextVersion.minor, nextVersion.patch,
-        pre: '$preId.1');
+    return Version(
+      nextVersion.major,
+      nextVersion.minor,
+      nextVersion.patch,
+      pre: '${preid ?? 'dev'}.0',
+    );
   }
 
   /// Next pub version that will occur as part of this package update.
   Version get nextVersion {
     if (reason == PackageUpdateReason.graduate) {
       return Version(
-          currentVersion.major, currentVersion.minor, currentVersion.patch);
+        currentVersion.major,
+        currentVersion.minor,
+        currentVersion.patch,
+      );
     }
 
     if (currentVersion.isPreRelease && graduate) {

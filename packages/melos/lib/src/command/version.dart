@@ -17,10 +17,10 @@
 
 import 'dart:io';
 
-import 'package:args/command_runner.dart' show Command;
-import 'package:pool/pool.dart' show Pool;
 import 'package:ansi_styles/ansi_styles.dart';
+import 'package:args/command_runner.dart' show Command;
 import 'package:conventional_commit/conventional_commit.dart';
+import 'package:pool/pool.dart' show Pool;
 
 import '../command_runner.dart';
 import '../common/git.dart';
@@ -50,7 +50,7 @@ class VersionCommand extends Command {
         defaultsTo: false,
         negatable: false,
         help:
-            'Graduate current prerelease versioned packages to stable versions, e.g. "0.10.0-dev.1" becomes "0.10.0". Cannot be combined with prerelease flag.');
+            'Graduate current prerelease versioned packages to stable versions, e.g. "0.10.0-dev.1" would become "0.10.0". Cannot be combined with prerelease flag.');
     argParser.addFlag('changelog',
         abbr: 'c',
         defaultsTo: true,
@@ -66,6 +66,11 @@ class VersionCommand extends Command {
         defaultsTo: false,
         negatable: false,
         help: 'Skip the Y/n prompt at the beginning of the command.');
+    argParser.addOption('preid',
+        defaultsTo: 'dev',
+        help:
+            'When run with this option, melos version will increment prerelease versions using the specified prerelease identifier, e.g. using a "nullsafety" preid along with the --prerelease flag would result in a version in the format "1.0.0-nullsafety.0".');
+
   }
 
   @override
@@ -78,6 +83,8 @@ class VersionCommand extends Command {
     bool tag = argResults['git-tag-version'] as bool;
     bool prerelease = argResults['prerelease'] as bool;
     bool skipPrompt = argResults['yes'] as bool;
+    String preid = argResults['preid'] as String;
+
     Set<MelosPackage> packagesToVersion = <MelosPackage>{};
     Map<String, List<ConventionalCommit>> packageCommits = {};
     Set<MelosPackage> dependentPackagesToVersion = <MelosPackage>{};
@@ -99,6 +106,7 @@ class VersionCommand extends Command {
             PackageUpdateReason.graduate,
             graduate: graduate,
             prerelease: prerelease,
+            preid: preid,
           ));
           MelosPackage packageUnscoped = currentWorkspace.packagesNoScope
               .firstWhere((element) => element.name == package.name);
@@ -147,10 +155,15 @@ class VersionCommand extends Command {
       }
     });
 
-    pendingPackageUpdates.addAll(packagesToVersion.map((package) =>
-        MelosPendingPackageUpdate(
-            package, packageCommits[package.name], PackageUpdateReason.commit,
-            graduate: graduate, prerelease: prerelease)));
+    pendingPackageUpdates
+        .addAll(packagesToVersion.map((package) => MelosPendingPackageUpdate(
+              package,
+              packageCommits[package.name],
+              PackageUpdateReason.commit,
+              graduate: graduate,
+              prerelease: prerelease,
+              preid: preid,
+            )));
 
     dependentPackagesToVersion.forEach((package) {
       if (graduate && package.version.isFirstPreRelease) return;
@@ -161,6 +174,9 @@ class VersionCommand extends Command {
           PackageUpdateReason.dependency,
           graduate: graduate,
           prerelease: prerelease,
+          // TODO Should dependent packages also get the same preid, can we expose this as an option?
+          // TODO In the case of "nullsafety" it doesn't make sense for dependent packages to also become nullsafety preid versions.
+          // preid: preid,
         ));
       }
     });

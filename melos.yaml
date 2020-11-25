@@ -22,9 +22,9 @@ ide:
 
 scripts:
   analyze: melos exec -c 1 --ignore="*monorepo*" -- "dartanalyzer . --options=\$MELOS_ROOT_PATH/analysis_options.yaml"
-  format: dartfmt -w .
+  format: dart format -o write .
   test: melos exec -c 1 --file-exists="test/\$MELOS_PACKAGE_NAME_test.dart" -- "pub run test test/\$MELOS_PACKAGE_NAME_test.dart"
-  version: dart scripts/generate_version.dart
+  version: dart run scripts/generate_version.dart
 
 environment:
   sdk: ">=2.2.2 <3.0.0"
