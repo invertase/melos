@@ -70,7 +70,6 @@ class VersionCommand extends Command {
         defaultsTo: 'dev',
         help:
             'When run with this option, melos version will increment prerelease versions using the specified prerelease identifier, e.g. using a "nullsafety" preid along with the --prerelease flag would result in a version in the format "1.0.0-nullsafety.0".');
-
   }
 
   @override
