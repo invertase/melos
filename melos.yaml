@@ -23,7 +23,7 @@ ide:
 scripts:
   analyze: melos exec -c 1 --ignore="*monorepo*" -- "dartanalyzer . --options=\$MELOS_ROOT_PATH/analysis_options.yaml"
   format: dart format -o write .
-  test: melos exec -c 1 --file-exists="test/\$MELOS_PACKAGE_NAME_test.dart" -- "pub run test test/\$MELOS_PACKAGE_NAME_test.dart"
+  test: melos exec --select-package -c 1 --file-exists="test/\$MELOS_PACKAGE_NAME_test.dart" -- "pub run test test/\$MELOS_PACKAGE_NAME_test.dart"
   version: dart run scripts/generate_version.dart
 
 environment:

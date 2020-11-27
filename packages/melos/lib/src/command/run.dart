@@ -42,11 +42,14 @@ class RunCommand extends Command {
   void run() async {
     var scriptName;
     if (argResults.arguments.isEmpty) {
-      logger.stderr('Invalid run script name specified.\n');
+      logger.stdout(AnsiStyles.yellow.bold('melos run'));
+      logger.stdout('   └> No script name specified.\n');
       if (currentWorkspace.config.scripts.isNotEmpty) {
         scriptName = prompts.choose(
-            'Select a script to run:', currentWorkspace.config.scripts.keys,
-            defaultsTo: currentWorkspace.config.scripts.keys.first);
+          'Select a script to run:',
+          currentWorkspace.config.scripts.keys,
+          defaultsTo: currentWorkspace.config.scripts.keys.first,
+        );
         logger.stdout('');
       } else {
         logger.stderr('You have no scripts defined in your melos.yaml file.\n');

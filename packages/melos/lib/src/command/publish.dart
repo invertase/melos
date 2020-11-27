@@ -130,7 +130,7 @@ class PublishCommand extends Command {
     List<String> execArgs = [
       if (isPubSubcommand()) 'dart',
       'pub',
-      '--verbosity=warning',
+      // '--verbosity=warning',
       'publish'
     ];
     if (dryRun) {

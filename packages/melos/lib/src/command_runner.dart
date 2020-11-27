@@ -80,6 +80,12 @@ class MelosCommandRunner extends CommandRunner {
         valueHelp: 'fileRelativeToPackageRoot',
         help:
             'Include only packages where a specific file exists in the package.');
+    // TODO ideally this should be --select-packages, but we need to build a CLI prompter
+    //      that supports multi-select. so we're running singular for now
+    argParser.addFlag('select-package',
+        negatable: false,
+        help:
+            'TODO');
 
     addCommand(ExecCommand());
     addCommand(BootstrapCommand());
@@ -123,6 +129,7 @@ class MelosCommandRunner extends CommandRunner {
       ignore: argResults['ignore'] as List<String>,
       dirExists: argResults['dir-exists'] as List<String>,
       fileExists: argResults['file-exists'] as List<String>,
+      selectPackage: argResults['select-package'] as bool,
     );
 
     await super.runCommand(argResults);

@@ -24,6 +24,7 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 import 'package:pool/pool.dart';
 import 'package:yamlicious/yamlicious.dart';
+import 'package:prompts/prompts.dart' as prompts;
 
 import '../pub/pub_deps_list.dart';
 import 'git.dart';
@@ -69,8 +70,10 @@ class MelosWorkspace {
         null;
   }
 
-  static Future<MelosWorkspace> fromDirectory(Directory directory,
-      {@required ArgResults arguments}) async {
+  static Future<MelosWorkspace> fromDirectory(
+    Directory directory, {
+    @required ArgResults arguments,
+  }) async {
     final workspaceConfig = await MelosWorkspaceConfig.fromDirectory(directory);
     if (workspaceConfig == null) {
       return null;
@@ -85,14 +88,16 @@ class MelosWorkspace {
     return joinAll([path, '.melos_tool']);
   }
 
-  Future<List<MelosPackage>> loadPackagesWithFilters(
-      {List<String> scope,
-      List<String> ignore,
-      String since,
-      List<String> dirExists,
-      List<String> fileExists,
-      bool skipPrivate,
-      bool published}) async {
+  Future<List<MelosPackage>> loadPackagesWithFilters({
+    List<String> scope,
+    List<String> ignore,
+    String since,
+    List<String> dirExists,
+    List<String> fileExists,
+    bool skipPrivate,
+    bool published,
+    bool selectPackage,
+  }) async {
     if (_packages != null) return Future.value(_packages);
     final packageGlobs = _config.packages;
 
@@ -191,6 +196,21 @@ class MelosWorkspace {
     _packages.sort((a, b) {
       return a.name.compareTo(b.name);
     });
+
+    // if (selectPackage) {
+    //   print('\n');
+    //   var selectedPackage = prompts.choose(
+    //     'Select a package:',
+    //     _packages.map((e) => e.name).toList(),
+    //   );
+    //   print(selectedPackage);
+    //   print(selectedPackage);
+    //   print(selectedPackage);
+    //   print(selectedPackage);
+    //   print(selectedPackage);
+    //   print(selectedPackage);
+    //   print(selectedPackage);
+    // }
 
     // We filter scopes last so we can keep a track of packages prior to scope filter,
     // this is used for melos version to bump dependant package versions without scope filtering them out.

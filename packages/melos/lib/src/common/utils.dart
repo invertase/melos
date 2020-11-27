@@ -204,14 +204,16 @@ Future<int> startProcess(List<String> execArgs,
   }
 
   final execProcess = await Process.start(
-      executable, Platform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
-      workingDirectory: workingDirectoryPath,
-      includeParentEnvironment: true,
-      environment: {
-        ...environmentVariables,
-        'MELOS_SCRIPT': filteredArgs.join(' '),
-      },
-      runInShell: true);
+    executable,
+    Platform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
+    workingDirectory: workingDirectoryPath,
+    includeParentEnvironment: true,
+    environment: {
+      ...environmentVariables,
+      'MELOS_SCRIPT': filteredArgs.join(' '),
+    },
+    runInShell: true,
+  );
 
   if (!Platform.isWindows) {
     // Pipe in the arguments to trigger the script to run.
@@ -222,6 +224,10 @@ Future<int> startProcess(List<String> execArgs,
 
   var stdoutStream = execProcess.stdout;
   var stderrStream = execProcess.stderr;
+
+  // var stdinStream = execProcess.stdin;
+  // onlyOutputOnError = false;
+  // stdin.listen(stdinStream.add);
 
   if (prefix != null && prefix.isNotEmpty) {
     final pluginPrefixTransformer =
