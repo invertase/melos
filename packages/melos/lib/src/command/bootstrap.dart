@@ -80,7 +80,7 @@ class BootstrapCommand extends Command {
       print('  > $successMessage');
     }
 
-    if (currentWorkspace.config.scripts.containsKey('postbootstrap')) {
+    if (currentWorkspace.config.scripts.exists('postbootstrap')) {
       logger.stdout('Running postbootstrap script...\n');
       await MelosCommandRunner.instance.run(['run', 'postbootstrap']);
     }

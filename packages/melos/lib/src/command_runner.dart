@@ -80,12 +80,6 @@ class MelosCommandRunner extends CommandRunner {
         valueHelp: 'fileRelativeToPackageRoot',
         help:
             'Include only packages where a specific file exists in the package.');
-    // TODO ideally this should be --select-packages, but we need to build a CLI prompter
-    //      that supports multi-select. so we're running singular for now
-    argParser.addFlag('select-package',
-        negatable: false,
-        help:
-            'TODO');
 
     addCommand(ExecCommand());
     addCommand(BootstrapCommand());
@@ -121,16 +115,30 @@ class MelosCommandRunner extends CommandRunner {
       since = null;
     }
 
-    await currentWorkspace.loadPackagesWithFilters(
-      scope: argResults['scope'] as List<String>,
-      since: since,
-      skipPrivate: argResults['no-private'] as bool,
-      published: argResults['published'] as bool,
-      ignore: argResults['ignore'] as List<String>,
-      dirExists: argResults['dir-exists'] as List<String>,
-      fileExists: argResults['file-exists'] as List<String>,
-      selectPackage: argResults['select-package'] as bool,
-    );
+    // Run command does not need to load workspace packages.
+    // It can optionally self load with filters.
+    if (argResults != null &&
+        argResults.command != null &&
+        argResults.command.name == 'run') {
+      await super.runCommand(argResults);
+      return;
+    }
+
+    if (Platform.environment.containsKey('MELOS_PACKAGES')) {
+      await currentWorkspace.loadPackagesWithNames(
+        Platform.environment['MELOS_PACKAGES'].split(','),
+      );
+    } else {
+      await currentWorkspace.loadPackagesWithFilters(
+        scope: argResults['scope'] as List<String>,
+        since: since,
+        skipPrivate: argResults['no-private'] as bool,
+        published: argResults['published'] as bool,
+        ignore: argResults['ignore'] as List<String>,
+        dirExists: argResults['dir-exists'] as List<String>,
+        fileExists: argResults['file-exists'] as List<String>,
+      );
+    }
 
     await super.runCommand(argResults);
   }

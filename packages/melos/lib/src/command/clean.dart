@@ -35,7 +35,7 @@ class CleanCommand extends Command {
     logger.stdout('Cleaning workspace...');
     currentWorkspace.clean();
     await IntellijProject.fromWorkspace(currentWorkspace).cleanFiles();
-    if (currentWorkspace.config.scripts.containsKey('postclean')) {
+    if (currentWorkspace.config.scripts.exists('postclean')) {
       logger.stdout('Running postclean script...\n');
       await MelosCommandRunner.instance.run(['run', 'postclean']);
     }

@@ -29,6 +29,15 @@ import 'logger.dart';
 
 var _didLogRmWarning = false;
 
+var filterOptionScope = 'scope';
+var filterOptionIgnore = 'ignore';
+var filterOptionDirExists = 'dir-exists';
+var filterOptionFileExists = 'file-exists';
+var filterOptionSince = 'since';
+var filterOptionNoPrivate = 'no-private';
+var filterOptionPublished = 'published';
+var scriptOptionSelectPackage = 'select-package';
+
 bool promptBool() {
   logger.stdout('');
   return prompts.getBool('Continue?',
@@ -204,16 +213,14 @@ Future<int> startProcess(List<String> execArgs,
   }
 
   final execProcess = await Process.start(
-    executable,
-    Platform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
-    workingDirectory: workingDirectoryPath,
-    includeParentEnvironment: true,
-    environment: {
-      ...environmentVariables,
-      'MELOS_SCRIPT': filteredArgs.join(' '),
-    },
-    runInShell: true,
-  );
+      executable, Platform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
+      workingDirectory: workingDirectoryPath,
+      includeParentEnvironment: true,
+      environment: {
+        ...environmentVariables,
+        'MELOS_SCRIPT': filteredArgs.join(' '),
+      },
+      runInShell: true);
 
   if (!Platform.isWindows) {
     // Pipe in the arguments to trigger the script to run.
@@ -224,10 +231,6 @@ Future<int> startProcess(List<String> execArgs,
 
   var stdoutStream = execProcess.stdout;
   var stderrStream = execProcess.stderr;
-
-  // var stdinStream = execProcess.stdin;
-  // onlyOutputOnError = false;
-  // stdin.listen(stdinStream.add);
 
   if (prefix != null && prefix.isNotEmpty) {
     final pluginPrefixTransformer =
@@ -285,7 +288,7 @@ Future<int> startProcess(List<String> execArgs,
 bool isPubSubcommand() {
   try {
     return Process.runSync('pub', ['--version']).exitCode != 0;
-  } on ProcessException catch (e) {
+  } on ProcessException {
     return true;
   }
 }

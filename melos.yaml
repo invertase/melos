@@ -21,9 +21,21 @@ ide:
     # use_recommended_settings: true
 
 scripts:
-  analyze: melos exec -c 1 --ignore="*monorepo*" -- "dartanalyzer . --options=\$MELOS_ROOT_PATH/analysis_options.yaml"
+  analyze:
+    run: melos exec -c 1 -- "dart analyze . --fatal-infos"
+    description: Run dart analyzer in a specific package.
+    select-package:
+      ignore:
+        - "*monorepo*"
+
+  test:
+    description: Run tests in a specific package.
+    run: melos exec -c 1 -- "dart pub run test test/\$MELOS_PACKAGE_NAME_test.dart"
+    select-package:
+      file-exists:
+        - "test/$MELOS_PACKAGE_NAME_test.dart"
+
   format: dart format -o write .
-  test: melos exec --select-package -c 1 --file-exists="test/\$MELOS_PACKAGE_NAME_test.dart" -- "pub run test test/\$MELOS_PACKAGE_NAME_test.dart"
   version: dart run scripts/generate_version.dart
 
 environment:

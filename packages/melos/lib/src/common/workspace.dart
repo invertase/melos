@@ -24,7 +24,6 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 import 'package:pool/pool.dart';
 import 'package:yamlicious/yamlicious.dart';
-import 'package:prompts/prompts.dart' as prompts;
 
 import '../pub/pub_deps_list.dart';
 import 'git.dart';
@@ -88,6 +87,37 @@ class MelosWorkspace {
     return joinAll([path, '.melos_tool']);
   }
 
+  Future<List<MelosPackage>> loadPackagesWithNames(
+      List<String> packageNames) async {
+    if (_packages != null) return Future.value(_packages);
+    final packageGlobs = _config.packages;
+
+    var filterResult = Directory(_path)
+        .list(recursive: true, followLinks: false)
+        .where((file) {
+      return file.path.endsWith('pubspec.yaml');
+    }).where((file) {
+      // Filter matching 'packages' config from melos.yaml
+      // No 'package' glob patterns in 'melos.yaml' so skip all packages.
+      if (packageGlobs.isEmpty) return false;
+      final matchedPattern = packageGlobs.firstWhere((pattern) {
+        return pattern.matches(file.path);
+      }, orElse: () => null);
+      return matchedPattern != null;
+    }).asyncMap((entity) {
+      // Convert into Package for further filtering
+      return MelosPackage.fromPubspecPathAndWorkspace(entity, this);
+    });
+
+    filterResult = filterResult.where((package) {
+      return packageNames.contains(package.name);
+    });
+
+    _packages = await filterResult.toList();
+
+    return _packages;
+  }
+
   Future<List<MelosPackage>> loadPackagesWithFilters({
     List<String> scope,
     List<String> ignore,
@@ -96,7 +126,6 @@ class MelosWorkspace {
     List<String> fileExists,
     bool skipPrivate,
     bool published,
-    bool selectPackage,
   }) async {
     if (_packages != null) return Future.value(_packages);
     final packageGlobs = _config.packages;
@@ -142,7 +171,6 @@ class MelosWorkspace {
       // File exists packages filter.
       filterResult = filterResult.where((package) {
         final fileExistsMatched = fileExists.firstWhere((fileExistsPath) {
-          // TODO(Salakar): Make replacer reusable, currently used in a few places.
           var _fileExistsPath =
               fileExistsPath.replaceAll('\$MELOS_PACKAGE_NAME', package.name);
           return File(join(package.path, _fileExistsPath)).existsSync();
@@ -151,7 +179,7 @@ class MelosWorkspace {
       });
     }
 
-    if (skipPrivate) {
+    if (skipPrivate == true) {
       // Whether we should skip packages with 'publish_to: none' set.
       filterResult = filterResult.where((package) {
         return !package.isPrivate;
@@ -196,21 +224,6 @@ class MelosWorkspace {
     _packages.sort((a, b) {
       return a.name.compareTo(b.name);
     });
-
-    // if (selectPackage) {
-    //   print('\n');
-    //   var selectedPackage = prompts.choose(
-    //     'Select a package:',
-    //     _packages.map((e) => e.name).toList(),
-    //   );
-    //   print(selectedPackage);
-    //   print(selectedPackage);
-    //   print(selectedPackage);
-    //   print(selectedPackage);
-    //   print(selectedPackage);
-    //   print(selectedPackage);
-    //   print(selectedPackage);
-    // }
 
     // We filter scopes last so we can keep a track of packages prior to scope filter,
     // this is used for melos version to bump dependant package versions without scope filtering them out.
