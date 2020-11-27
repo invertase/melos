@@ -17,6 +17,13 @@
 
 import 'workspace_script.dart';
 
+List<String> _lifecycleScriptNames = [
+  'postclean',
+  'preversion',
+  'postversion',
+  'postbootstrap',
+];
+
 class MelosWorkspaceScripts {
   final Map _scriptsMapDefinition;
 
@@ -26,7 +33,14 @@ class MelosWorkspaceScripts {
     return _scriptsMapDefinition[name] != null;
   }
 
-  List<String> get names => List<String>.from(_scriptsMapDefinition.keys);
+  List<String> get names =>
+      List<String>.from(_scriptsMapDefinition.keys)..sort();
+
+  List<String> get namesExcludingLifecycles =>
+      List<String>.from(_scriptsMapDefinition.keys)
+          .where((name) => !_lifecycleScriptNames.contains(name))
+          .toList()
+            ..sort();
 
   MelosScript script(String name) {
     if (_scriptsMapDefinition[name] == null) {

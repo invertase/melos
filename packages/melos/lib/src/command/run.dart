@@ -47,15 +47,27 @@ class RunCommand extends Command {
 
   @override
   void run() async {
+    if (currentWorkspace.config.scripts.namesExcludingLifecycles.isEmpty) {
+      logger.stderr(
+        AnsiStyles.yellow(
+            "Warning: This workspace has no scripts defined in it's 'melos.yaml' file.\n"),
+      );
+      logger.stdout(usage);
+      exitCode = 1;
+      return;
+    }
+
     String scriptName;
 
     if (argResults.rest.isEmpty) {
-      if (currentWorkspace.config.scripts.names.isNotEmpty) {
-        var scriptChoices = currentWorkspace.config.scripts.names.map((name) {
+      if (currentWorkspace.config.scripts.namesExcludingLifecycles.isNotEmpty) {
+        var scriptChoices = currentWorkspace
+            .config.scripts.namesExcludingLifecycles
+            .map((name) {
           var script = currentWorkspace.config.scripts.script(name);
           var styledName = AnsiStyles.cyan(script.name);
           var styledDescription = script.description != null
-              ? '\n    > ${AnsiStyles.gray(script.description)}'
+              ? '\n    └> ${AnsiStyles.gray(script.description.trim().split('\n').join('\n       '))}'
               : '';
 
           return '$styledName$styledDescription';
@@ -67,7 +79,8 @@ class RunCommand extends Command {
           defaultsTo: scriptChoices[0],
         );
         var selectedScriptIndex = scriptChoices.indexOf(selectedScript);
-        scriptName = currentWorkspace.config.scripts.names[selectedScriptIndex];
+        scriptName = currentWorkspace
+            .config.scripts.namesExcludingLifecycles[selectedScriptIndex];
         logger.stdout('');
       } else {
         logger.stderr('You have no scripts defined in your melos.yaml file.\n');
@@ -77,14 +90,8 @@ class RunCommand extends Command {
       }
     }
 
-    if (currentWorkspace.config.scripts.names.isEmpty) {
-      logger.stderr('You have no scripts defined in your melos.yaml file.\n');
-      logger.stdout(usage);
-      exitCode = 1;
-      return;
-    }
-
     scriptName ??= argResults.rest[0];
+
     if (!currentWorkspace.config.scripts.exists(scriptName)) {
       logger.stderr('Invalid run script name specified.\n');
       if (currentWorkspace.config.scripts.names.isNotEmpty) {
