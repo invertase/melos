@@ -245,6 +245,7 @@ class VersionCommand extends Command {
           .setPubspecVersion(pendingPackageUpdate.nextVersion.toString());
 
       // Update dependents.
+      // TODO: This isn't updating the dev_dependencies yet but it probably should.
       await Future.forEach(
           pendingPackageUpdate.package.dependentsInWorkspace,
           (MelosPackage package) => package.setDependencyVersion(
@@ -261,7 +262,7 @@ class VersionCommand extends Command {
     });
 
     // TODO allow support for individual package lifecycle version scripts
-    if (currentWorkspace.config.scripts.containsKey('version')) {
+    if (currentWorkspace.config.scripts.exists('version')) {
       logger.stdout('Running "version" lifecycle script...\n');
       await MelosCommandRunner.instance.run(['run', 'version']);
     }
@@ -309,7 +310,7 @@ class VersionCommand extends Command {
     }
 
     // TODO allow support for individual package lifecycle postversion scripts
-    if (currentWorkspace.config.scripts.containsKey('postversion')) {
+    if (currentWorkspace.config.scripts.exists('postversion')) {
       logger.stdout('Running "postversion" lifecycle script...\n');
       await MelosCommandRunner.instance.run(['run', 'postversion']);
     }

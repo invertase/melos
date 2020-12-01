@@ -22,6 +22,7 @@ import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
 
 import 'utils.dart';
+import 'workspace_scripts.dart';
 
 String _yamlConfigDefault = '''
 name: Melos
@@ -29,8 +30,8 @@ packages:
   - packages/**
 ''';
 
-// TODO validation of config
-//   name should be required, alphanumeric dasherized/underscored
+// TODO document & cleanup class members.
+// TODO validation of config e.g. name should be alphanumeric dasherized/underscored
 class MelosWorkspaceConfig {
   final String _name;
 
@@ -42,7 +43,8 @@ class MelosWorkspaceConfig {
 
   Map get environment => _yamlContents['environment'] as Map ?? {};
 
-  Map get scripts => _yamlContents['scripts'] as Map ?? {};
+  MelosWorkspaceScripts get scripts =>
+      MelosWorkspaceScripts(_yamlContents['scripts'] as Map ?? {});
 
   Map get dependencies => _yamlContents['dependencies'] as Map ?? {};
 

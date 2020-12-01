@@ -24,10 +24,24 @@ import 'package:yaml/yaml.dart';
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:prompts/prompts.dart' as prompts;
 
-import '../../version.dart';
+import '../../version.g.dart';
 import 'logger.dart';
 
 var _didLogRmWarning = false;
+
+var filterOptionScope = 'scope';
+var filterOptionIgnore = 'ignore';
+var filterOptionDirExists = 'dir-exists';
+var filterOptionFileExists = 'file-exists';
+var filterOptionSince = 'since';
+var filterOptionNoPrivate = 'no-private';
+var filterOptionPublished = 'published';
+var scriptOptionSelectPackage = 'select-package';
+
+// MELOS_PACKAGES environment variable is a comma delimited list of
+// package names - used instead of filters if it is present.
+// This can be user defined or can come from package selection in `melos run`.
+var envKeyMelosPackages = 'MELOS_PACKAGES';
 
 bool promptBool() {
   logger.stdout('');
@@ -279,7 +293,7 @@ Future<int> startProcess(List<String> execArgs,
 bool isPubSubcommand() {
   try {
     return Process.runSync('pub', ['--version']).exitCode != 0;
-  } on ProcessException catch (e) {
+  } on ProcessException {
     return true;
   }
 }

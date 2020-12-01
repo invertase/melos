@@ -206,7 +206,7 @@ class IntellijProject {
       'Melos -&gt; Bootstrap Workspace': 'bootstrap',
       'Melos -&gt; Clean Workspace': 'clean',
     };
-    _workspace.config.scripts.keys.forEach((key) {
+    _workspace.config.scripts.names.forEach((key) {
       runConfigurations["Melos Run -&gt; '$key'"] = 'run $key';
     });
 
