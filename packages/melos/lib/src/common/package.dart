@@ -322,7 +322,8 @@ class MelosPackage {
     });
 
     // Additional Flutter application specific files, only if package is an App.
-    if (isFlutterApp) {
+    if (isFlutterApp &&
+        PubFile(workspace.melosToolPath, '.flutter-plugins').exists) {
       await Future.forEach([
         FlutterPluginsPubFile.fromWorkspacePackage(workspace, this),
         FlutterDependenciesPubFile.fromWorkspacePackage(workspace, this),

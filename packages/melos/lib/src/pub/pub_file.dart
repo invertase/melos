@@ -36,6 +36,10 @@ class PubFile {
     return File(filePath).writeAsString(toString());
   }
 
+  bool get exists {
+    return File(filePath).existsSync();
+  }
+
   void delete() {
     if (_file.contains(Platform.pathSeparator)) {
       try {
