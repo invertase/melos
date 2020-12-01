@@ -17,7 +17,6 @@
 
 import 'dart:io';
 
-import 'package:glob/glob.dart';
 import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
 
