@@ -63,10 +63,18 @@ class MelosWorkspaceConfig {
 
   MelosWorkspaceConfig._(this._name, this._path, this._yamlContents);
 
-  List<Glob> get packages {
-    final globs = _yamlContents['packages'] as YamlList;
-    if (globs == null) return <Glob>[];
-    return globs.map((globString) => Glob(globString as String)).toList();
+  List<String> get packages {
+    final patterns = _yamlContents['packages'] as YamlList;
+    if (patterns == null) return <String>[];
+    return List<String>.from(patterns);
+  }
+
+  /// Glob patterns defined in "melos.yaml" ignore of packages to always exclude
+  /// regardless of any custom CLI filter options.
+  List<String> get ignore {
+    final patterns = _yamlContents['ignore'] as YamlList;
+    if (patterns == null) return <String>[];
+    return List<String>.from(patterns);
   }
 
   static Future<MelosWorkspaceConfig> fromDirectory(Directory directory) async {
