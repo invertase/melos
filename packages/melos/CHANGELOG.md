@@ -1,3 +1,13 @@
+## 0.3.12
+
+ - **FIX**: only generate Flutter plugins files if workspace one exists.
+ - **FIX**: add default sdk constrain when no melos.yaml detected (fixes #32).
+ - **FIX**: trailing spaces in generated pubspec.lock file (fixes #36) (#38).
+ - **FIX**: re-word the help message of the --yes args in version command. (#33).
+ - **FEAT**: add "ignore" support on "melos.yaml" configuration (#37).
+ - **FEAT**: advanced custom script definitions (with package selection prompting) (#34).
+ - **FEAT**: version `--preid` support (#30).
+
 ## 0.3.11
 
  - **FEAT**: Add `--yes` flag to `melos version` for ci support. (#27).
