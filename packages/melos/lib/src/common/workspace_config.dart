@@ -23,11 +23,15 @@ import 'package:yaml/yaml.dart';
 import 'utils.dart';
 import 'workspace_scripts.dart';
 
-String _yamlConfigDefault = '''
+String get _yamlConfigDefault {
+  return '''
 name: Melos
 packages:
   - packages/**
+environment:
+  sdk: '>=$currentDartVersion <$nextDartMajorVersion'
 ''';
+}
 
 // TODO document & cleanup class members.
 // TODO validation of config e.g. name should be alphanumeric dasherized/underscored

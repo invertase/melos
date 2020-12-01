@@ -20,6 +20,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' show relative, normalize, windows, joinAll;
+import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:prompts/prompts.dart' as prompts;
@@ -42,6 +43,14 @@ var scriptOptionSelectPackage = 'select-package';
 // package names - used instead of filters if it is present.
 // This can be user defined or can come from package selection in `melos run`.
 var envKeyMelosPackages = 'MELOS_PACKAGES';
+
+String get currentDartVersion {
+  return Version.parse(Platform.version.split(' ')[0]).toString();
+}
+
+String get nextDartMajorVersion {
+  return Version.parse(currentDartVersion).nextMajor.toString();
+}
 
 bool promptBool() {
   logger.stdout('');
