@@ -126,12 +126,10 @@ class PublishCommand extends Command {
     var updateRegistryProgress = logger.progress(
         'Publishing ${unpublishedPackages.length} packages to registry:');
 
-    // TODO flutter pub if flutter packages detected? May not be necessary
     List<String> execArgs = [
       if (isPubSubcommand()) 'dart',
       'pub',
-      // '--verbosity=warning',
-      'publish'
+      'publish',
     ];
     if (dryRun) {
       execArgs.add('--dry-run');

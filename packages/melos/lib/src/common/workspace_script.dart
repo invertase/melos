@@ -96,13 +96,29 @@ Map<String, dynamic> _validateSelectPackageOptions(
   return result;
 }
 
+/// A representation of a single script definition inside a "melos.yaml" configuration file.
 class MelosScript {
+  /// The script name.
   final String name;
+
+  /// The command the script will run when called.
   final String run;
 
+  /// An optional description of what the script does. Useful for `melos run`
+  /// 'choose a script to run' behaviour.
   final String description;
+
+  /// Any additional environment variables that are defined when [run] is
+  /// executed.
   final Map<String, String> env;
+
+  /// An optional configuration of package filters for user package selection.
+  /// If this is defined for the script in the "melos.yaml" file (even if empty)
+  /// then [shouldPromptForPackageSelection] is true.
   final Map<String, dynamic> selectPackageOptions;
+
+  /// Whether this script should prompt the user to select a package.
+  /// See [selectPackageOptions].
   final bool shouldPromptForPackageSelection;
 
   MelosScript._(
@@ -114,6 +130,8 @@ class MelosScript {
     this.shouldPromptForPackageSelection = false,
   });
 
+  /// Constructs a new [MelosScript] from a raw yamlmap script definition in a
+  /// "melos.yaml" file.
   static MelosScript fromDefinition(String name, dynamic definition) {
     if (definition is String) {
       return MelosScript._(
@@ -134,8 +152,8 @@ class MelosScript {
     Map definitionMap = definition as Map;
     String runCommand = definitionMap['run'] as String;
     if (runCommand == null) {
-      // TODO better error message
-      print('Script $name missing "run" property.');
+      logger.stderr(AnsiStyles.red(
+          'The script "$name" defined in "melos.yaml" is missing the required "run" property.'));
       exit(1);
     }
 

@@ -38,11 +38,13 @@ class RunCommand extends Command {
   final String invocation = 'melos run <name>';
 
   RunCommand() {
-    argParser.addFlag('no-select',
-        defaultsTo: false,
-        negatable: false,
-        help:
-            'Skips the prompt to select a package (if defined in the script configuration). Filters defined in the scripts "select-package" options will still be applied.');
+    argParser.addFlag(
+      'no-select',
+      defaultsTo: false,
+      negatable: false,
+      help:
+          'Skips the prompt to select a package (if defined in the script configuration). Filters defined in the scripts "select-package" options will however still be applied.',
+    );
   }
 
   @override
@@ -76,7 +78,6 @@ class RunCommand extends Command {
           AnsiStyles.white('Select a script to run in this workspace'),
           scriptChoices,
           interactive: false,
-          defaultsTo: scriptChoices[0],
         );
         var selectedScriptIndex = scriptChoices.indexOf(selectedScript);
         scriptName = currentWorkspace
@@ -129,12 +130,15 @@ class RunCommand extends Command {
       var choices = currentWorkspace.packages
           .map((e) => AnsiStyles.cyan(e.name))
           .toList();
+
       if (choices.isEmpty) {
         logger.stderr(AnsiStyles.yellow(
             'No packages found with the currently applied workspace filters.\n'));
         logger.stdout(usage);
         return;
       }
+
+      // Add a select all choice.
       if (choices.length > 1) {
         choices = [
           AnsiStyles.green('*'),
@@ -144,10 +148,13 @@ class RunCommand extends Command {
 
       String selectedPackage;
       if (choices.length == 1) {
+        // Only 1 package - no need to prompt the user for a selection.
         selectedPackage = currentWorkspace.packages[0].name;
       } else if (argResults['no-select'] == true) {
+        // Skipping selection if flag present.
         selectedPackage = choices[0];
       } else {
+        // Prompt user to select a package.
         selectedPackage = prompts.choose(
           [
             AnsiStyles.white('Select a package to run the '),
@@ -160,12 +167,17 @@ class RunCommand extends Command {
           defaultsTo: choices[0],
         );
       }
+
       var selectedPackageIndex =
           choices.length > 1 ? choices.indexOf(selectedPackage) : 1;
+      // Comma delimited string of packages selected (all or a single package).
       var packagesEnv = selectedPackageIndex == 0 && choices.length > 1
           ? currentWorkspace.packages.map((e) => e.name).toList().join(',')
           : currentWorkspace.packages[selectedPackageIndex - 1].name;
-      environment['MELOS_PACKAGES'] = packagesEnv;
+      // MELOS_PACKAGES environment is detected by melos itself when through
+      // a defined script, this comma delimited list of package names is used
+      // instead of any filters if detected.
+      environment[envKeyMelosPackages] = packagesEnv;
       print('\n');
     }
 

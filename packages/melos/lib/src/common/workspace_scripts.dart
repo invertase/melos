@@ -24,24 +24,29 @@ List<String> _lifecycleScriptNames = [
   'postbootstrap',
 ];
 
+/// A representation of a "scripts" configuration in a "melos.yaml" file.
 class MelosWorkspaceScripts {
   final Map _scriptsMapDefinition;
 
   MelosWorkspaceScripts(this._scriptsMapDefinition);
 
+  /// Returns whether a script exists by name.
   bool exists(String name) {
     return _scriptsMapDefinition[name] != null;
   }
 
+  /// Returns a list of script names.
   List<String> get names =>
       List<String>.from(_scriptsMapDefinition.keys)..sort();
 
+  /// Returns a list of script names excluding lifecycle related scripts e.g. "postversion".
   List<String> get namesExcludingLifecycles =>
       List<String>.from(_scriptsMapDefinition.keys)
           .where((name) => !_lifecycleScriptNames.contains(name))
           .toList()
             ..sort();
 
+  /// Get a MelosScript for a script by name.
   MelosScript script(String name) {
     if (_scriptsMapDefinition[name] == null) {
       return null;

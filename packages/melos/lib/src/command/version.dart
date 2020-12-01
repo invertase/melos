@@ -245,6 +245,7 @@ class VersionCommand extends Command {
           .setPubspecVersion(pendingPackageUpdate.nextVersion.toString());
 
       // Update dependents.
+      // TODO: This isn't updating the dev_dependencies yet but it probably should.
       await Future.forEach(
           pendingPackageUpdate.package.dependentsInWorkspace,
           (MelosPackage package) => package.setDependencyVersion(

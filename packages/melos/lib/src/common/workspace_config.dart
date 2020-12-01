@@ -30,8 +30,8 @@ packages:
   - packages/**
 ''';
 
-// TODO validation of config
-//   name should be required, alphanumeric dasherized/underscored
+// TODO document & cleanup class members.
+// TODO validation of config e.g. name should be alphanumeric dasherized/underscored
 class MelosWorkspaceConfig {
   final String _name;
 

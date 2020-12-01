@@ -18,9 +18,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:args/args.dart';
 import 'package:glob/glob.dart';
-import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 import 'package:pool/pool.dart';
 import 'package:yamlicious/yamlicious.dart';
@@ -34,45 +32,40 @@ import 'workspace_state.dart';
 
 MelosWorkspace currentWorkspace;
 
+/// A representation of a workspace. This includes it's packages, configuration
+/// such as scripts and more.
 class MelosWorkspace {
-  final String _name;
+  /// An optional name as defined in "melos.yaml". This name is used for logging
+  /// purposes and also used when generating certain IDE files.
+  final String name;
 
-  String get name => _name;
+  /// Full file path to the location of this workspace.
+  final String path;
 
-  final String _path;
+  /// Configuration as defined in the "melos.yaml" file if it exists.
+  final MelosWorkspaceConfig config;
 
-  String get path => _path;
+  /// Persisted state that's commited to git as part of the workspaces repository.
+  /// Currently not in use, a future release for shared versioning will use this.
+  final MelosWorkspaceState state;
 
+  /// A list of all the packages detected in this workspace, after being filtered.
+  List<MelosPackage> packages;
+
+  /// The same as [packages] but excludes the "scope" filter. This is useful
+  /// for commands such as "version" to know about other dependent packages that
+  /// may need updating.
+  List<MelosPackage> packagesNoScope;
+
+  // Cached dependency graph for perf reasons.
   Map<String, Set<String>> _cacheDependencyGraph;
 
-  final MelosWorkspaceConfig _config;
+  MelosWorkspace._(this.name, this.path, this.config, this.state);
 
-  MelosWorkspaceConfig get config => _config;
-
-  final MelosWorkspaceState _state;
-
-  MelosWorkspaceState get state => _state;
-
-  List<MelosPackage> _packages;
-
-  List<MelosPackage> _packagesNoScope;
-
-  List<MelosPackage> get packages => _packages;
-
-  List<MelosPackage> get packagesNoScope => _packagesNoScope;
-
-  MelosWorkspace._(this._name, this._path, this._config, this._state);
-
-  bool get isFlutterWorkspace {
-    return packages.firstWhere((package) => package.isFlutterPackage,
-            orElse: () => null) !=
-        null;
-  }
-
-  static Future<MelosWorkspace> fromDirectory(
-    Directory directory, {
-    @required ArgResults arguments,
-  }) async {
+  /// Build a [MelosWorkspace] from a Directory.
+  /// If the directory is not a valid Melos workspace (e.g. no "melos.yaml" file)
+  /// then null is returned.
+  static Future<MelosWorkspace> fromDirectory(Directory directory) async {
     final workspaceConfig = await MelosWorkspaceConfig.fromDirectory(directory);
     if (workspaceConfig == null) {
       return null;
@@ -83,18 +76,30 @@ class MelosWorkspace {
         workspaceConfig, workspaceState);
   }
 
+  /// Returns true if this workspace contains ANY Flutter package.
+  bool get isFlutterWorkspace {
+    return packages.firstWhere((package) => package.isFlutterPackage,
+            orElse: () => null) !=
+        null;
+  }
+
+  /// Returns a string path to the '.melos_tool' directory in this workspace.
+  /// This directory should be git ignored and is used by Melos for temporary tasks
+  /// such as pub install.
   String get melosToolPath {
     return joinAll([path, '.melos_tool']);
   }
 
+  /// Detect specific packages by name in the current workspace.
+  /// This behaviour is used in conjunction with the `MELOS_PACKAGES`
+  /// environment variable.
   Future<List<MelosPackage>> loadPackagesWithNames(
       List<String> packageNames) async {
-    if (_packages != null) return Future.value(_packages);
-    final packageGlobs = _config.packages;
+    if (packages != null) return Future.value(packages);
+    final packageGlobs = config.packages;
 
-    var filterResult = Directory(_path)
-        .list(recursive: true, followLinks: false)
-        .where((file) {
+    var filterResult =
+        Directory(path).list(recursive: true, followLinks: false).where((file) {
       return file.path.endsWith('pubspec.yaml');
     }).where((file) {
       // Filter matching 'packages' config from melos.yaml
@@ -113,11 +118,13 @@ class MelosWorkspace {
       return packageNames.contains(package.name);
     });
 
-    _packages = await filterResult.toList();
+    packages = await filterResult.toList();
 
-    return _packages;
+    return packages;
   }
 
+  /// Detect packages in the workspace with the provided filters.
+  /// This is the default packages behaviour when a workspace is loaded.
   Future<List<MelosPackage>> loadPackagesWithFilters({
     List<String> scope,
     List<String> ignore,
@@ -127,12 +134,11 @@ class MelosWorkspace {
     bool skipPrivate,
     bool published,
   }) async {
-    if (_packages != null) return Future.value(_packages);
-    final packageGlobs = _config.packages;
+    if (packages != null) return Future.value(packages);
+    final packageGlobs = config.packages;
 
-    var filterResult = Directory(_path)
-        .list(recursive: true, followLinks: false)
-        .where((file) {
+    var filterResult =
+        Directory(path).list(recursive: true, followLinks: false).where((file) {
       return file.path.endsWith('pubspec.yaml');
     }).where((file) {
       // Filter matching 'packages' config from melos.yaml
@@ -186,13 +192,13 @@ class MelosWorkspace {
       });
     }
 
-    _packages = await filterResult.toList();
+    packages = await filterResult.toList();
 
     // --published / --no-published
     if (published != null) {
       var pool = Pool(10);
       var packagesFilteredWithPublishStatus = <MelosPackage>[];
-      await pool.forEach<MelosPackage, void>(_packages, (package) {
+      await pool.forEach<MelosPackage, void>(packages, (package) {
         return package.getPublishedVersions().then((versions) async {
           var isOnPubRegistry = versions.contains(package.version);
           if (published == false && !isOnPubRegistry) {
@@ -203,14 +209,14 @@ class MelosWorkspace {
           }
         });
       }).drain();
-      _packages = packagesFilteredWithPublishStatus;
+      packages = packagesFilteredWithPublishStatus;
     }
 
     // --since
     if (since != null) {
       var pool = Pool(10);
       var packagesFilteredWithGitCommitsSince = <MelosPackage>[];
-      await pool.forEach<MelosPackage, void>(_packages, (package) {
+      await pool.forEach<MelosPackage, void>(packages, (package) {
         return gitCommitsForPackage(package, since: since)
             .then((commits) async {
           if (commits.isNotEmpty) {
@@ -218,29 +224,29 @@ class MelosWorkspace {
           }
         });
       }).drain();
-      _packages = packagesFilteredWithGitCommitsSince;
+      packages = packagesFilteredWithGitCommitsSince;
     }
 
-    _packages.sort((a, b) {
+    packages.sort((a, b) {
       return a.name.compareTo(b.name);
     });
 
     // We filter scopes last so we can keep a track of packages prior to scope filter,
     // this is used for melos version to bump dependant package versions without scope filtering them out.
     if (scope.isNotEmpty) {
-      _packagesNoScope = List.from(_packages);
+      packagesNoScope = List.from(packages);
       // Scoped packages filter.
-      _packages = _packages.where((package) {
+      packages = packages.where((package) {
         final matchedPattern = scope.firstWhere((pattern) {
           return Glob(pattern).matches(package.name);
         }, orElse: () => null);
         return matchedPattern != null;
       }).toList();
     } else {
-      _packagesNoScope = _packages;
+      packagesNoScope = packages;
     }
 
-    return _packages;
+    return packages;
   }
 
   /// Builds a dependency graph of dependencies and their dependents in this workspace.
@@ -329,6 +335,7 @@ class MelosWorkspace {
         onlyOutputOnError: onlyOutputOnError);
   }
 
+  /// Calls [linkPackages] on each [MelosPackage].
   Future<void> linkPackages() async {
     await getDependencyGraph();
     await Future.forEach(packages, (MelosPackage package) {
@@ -336,6 +343,7 @@ class MelosWorkspace {
     });
   }
 
+  /// Cleans the workspace of all files generated by Melos.
   void clean({bool cleanPackages = true}) {
     if (Directory(melosToolPath).existsSync()) {
       Directory(melosToolPath).deleteSync(recursive: true);
@@ -347,6 +355,11 @@ class MelosWorkspace {
     }
   }
 
+  /// Builds a generated "pubspec.yaml" file that contains all the workspace
+  /// [packages] as paths to their packages relative to the root of the workspace
+  /// and additional "dependency_overrides" to ensure packages always point to their
+  /// local copy and not from pub hosted.
+  /// This file is written to the [melosToolPath] directory.
   Future<void> generatePubspecFile() async {
     var workspacePubspec = {};
     var workspaceName = config.name ?? 'MelosWorkspace';

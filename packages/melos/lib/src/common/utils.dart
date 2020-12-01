@@ -38,6 +38,11 @@ var filterOptionNoPrivate = 'no-private';
 var filterOptionPublished = 'published';
 var scriptOptionSelectPackage = 'select-package';
 
+// MELOS_PACKAGES environment variable is a comma delimited list of
+// package names - used instead of filters if it is present.
+// This can be user defined or can come from package selection in `melos run`.
+var envKeyMelosPackages = 'MELOS_PACKAGES';
+
 bool promptBool() {
   logger.stdout('');
   return prompts.getBool('Continue?',
