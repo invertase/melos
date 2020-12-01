@@ -65,7 +65,7 @@ class VersionCommand extends Command {
     argParser.addFlag('yes',
         defaultsTo: false,
         negatable: false,
-        help: 'Skips the Y/N prompt at the beginning of the command');
+        help: 'Skip the Y/n prompt at the beginning of the command.');
     argParser.addOption('preid',
         defaultsTo: 'dev',
         help:
