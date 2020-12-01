@@ -96,7 +96,7 @@ class MelosWorkspace {
   Future<List<MelosPackage>> loadPackagesWithNames(
       List<String> packageNames) async {
     if (packages != null) return Future.value(packages);
-    final packageGlobs = config.packages;
+    final packagePatterns = config.packages;
 
     var filterResult =
         Directory(path).list(recursive: true, followLinks: false).where((file) {
@@ -104,9 +104,9 @@ class MelosWorkspace {
     }).where((file) {
       // Filter matching 'packages' config from melos.yaml
       // No 'package' glob patterns in 'melos.yaml' so skip all packages.
-      if (packageGlobs.isEmpty) return false;
-      final matchedPattern = packageGlobs.firstWhere((pattern) {
-        return pattern.matches(file.path);
+      if (packagePatterns.isEmpty) return false;
+      final matchedPattern = packagePatterns.firstWhere((pattern) {
+        return Glob(pattern).matches(file.path);
       }, orElse: () => null);
       return matchedPattern != null;
     }).asyncMap((entity) {
@@ -135,7 +135,7 @@ class MelosWorkspace {
     bool published,
   }) async {
     if (packages != null) return Future.value(packages);
-    final packageGlobs = config.packages;
+    final packagePatterns = config.packages;
 
     var filterResult =
         Directory(path).list(recursive: true, followLinks: false).where((file) {
@@ -143,9 +143,9 @@ class MelosWorkspace {
     }).where((file) {
       // Filter matching 'packages' config from melos.yaml
       // No 'package' glob patterns in 'melos.yaml' so skip all packages.
-      if (packageGlobs.isEmpty) return false;
-      final matchedPattern = packageGlobs.firstWhere((pattern) {
-        return pattern.matches(file.path);
+      if (packagePatterns.isEmpty) return false;
+      final matchedPattern = packagePatterns.firstWhere((pattern) {
+        return Glob(pattern).matches(file.path);
       }, orElse: () => null);
       return matchedPattern != null;
     }).asyncMap((entity) {

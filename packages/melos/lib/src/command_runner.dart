@@ -160,7 +160,8 @@ class MelosCommandRunner extends CommandRunner {
         since: since,
         skipPrivate: argResults[filterOptionNoPrivate] as bool,
         published: argResults[filterOptionPublished] as bool,
-        ignore: argResults[filterOptionIgnore] as List<String>,
+        ignore: (argResults[filterOptionIgnore] as List<String>)
+          ..addAll(currentWorkspace.config.ignore),
         dirExists: argResults[filterOptionDirExists] as List<String>,
         fileExists: argResults[filterOptionFileExists] as List<String>,
       );
