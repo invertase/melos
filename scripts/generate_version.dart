@@ -6,7 +6,7 @@ import 'package:yaml/yaml.dart' show loadYaml;
 
 void main() async {
   String outputPath = joinAll(
-      [Directory.current.path, 'packages', 'melos', 'lib', 'version.dart']);
+      [Directory.current.path, 'packages', 'melos', 'lib', 'version.g.dart']);
   print('Updating generated file $outputPath');
   String melosPubspecPath =
       joinAll([Directory.current.path, 'packages', 'melos', 'pubspec.yaml']);

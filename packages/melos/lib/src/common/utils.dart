@@ -24,7 +24,7 @@ import 'package:yaml/yaml.dart';
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:prompts/prompts.dart' as prompts;
 
-import '../../version.dart';
+import '../../version.g.dart';
 import 'logger.dart';
 
 var _didLogRmWarning = false;
