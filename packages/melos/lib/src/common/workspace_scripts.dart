@@ -22,6 +22,7 @@ List<String> _lifecycleScriptNames = [
   'preversion',
   'postversion',
   'postbootstrap',
+  'version',
 ];
 
 /// A representation of a "scripts" configuration in a "melos.yaml" file.
