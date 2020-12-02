@@ -113,7 +113,7 @@ class MelosCommandRunner extends CommandRunner {
 
   @override
   Future runCommand(ArgResults argResults) async {
-    currentWorkspace = await MelosWorkspace.fromDirectory(Directory.current);
+    currentWorkspace ??= await MelosWorkspace.fromDirectory(Directory.current);
 
     if (currentWorkspace == null) {
       logger.stderr(AnsiStyles.red(
