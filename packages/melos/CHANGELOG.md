@@ -1,3 +1,8 @@
+## 0.3.12+1
+
+ - **FIX**: don't recreate currentWorkspace if already created (fixes #39) (#40).
+ - **CHORE**: correctly git add version.g.dart.
+
 ## 0.3.12
 
  - **FIX**: only generate Flutter plugins files if workspace one exists.
