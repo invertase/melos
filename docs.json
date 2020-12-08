@@ -1,6 +1,7 @@
 {
   "name": "Melos",
   "logo": "https://camo.githubusercontent.com/14c372c22a8896f344b9a2f04dd4aab411670a22e190e07420ce20a9a73ff238/68747470733a2f2f7374617469632e696e766572746173652e696f2f6173736574732f6d656c6f732d6c6f676f2e706e67",
+  "logoDark": "https://rawcdn.githack.com/invertase/melos/12e9fef3f0b8646b16b5b6aa31df676b9d916c99/logoDark.png",
   "twitter": "invertaseio",
   "theme": "#FFA03F",
   "sidebar": [
