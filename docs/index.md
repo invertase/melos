@@ -1,3 +1,7 @@
+---
+description: A tool for managing Dart projects with multiple packages.
+---
+
 <Image src="https://static.invertase.io/assets/melos-logo.png" alt="Melos" zoom={false} caption="A tool for managing Dart projects with multiple packages." />
 
 ## About
