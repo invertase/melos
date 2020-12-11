@@ -1,7 +1,7 @@
 {
   "name": "Melos",
-  "logo": "https://raw.githubusercontent.com/invertase/melos/master/logo.png",
-  "logoDark": "https://raw.githubusercontent.com/invertase/melos/master/logoDark.png",
+  "logo": "/assets/logo.png",
+  "logoDark": "/assets/logo-dark.png",
   "twitter": "invertaseio",
   "theme": "#FFA03F",
   "sidebar": [
