@@ -1,3 +1,7 @@
+---
+title: Configuration
+description: Configure Melos using the `melos.yaml` file
+---
 # melos.yaml
 
 Every project requires a `melos.yaml` project in the root. The below outlines

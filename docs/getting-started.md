@@ -1,3 +1,7 @@
+---
+title: Getting Started
+description: Learn how to start using Melos in your project
+---
 # Getting Started
 
 Melos requires a few one-off steps to be completed before you can start using it.

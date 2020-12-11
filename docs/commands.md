@@ -1,3 +1,7 @@
+---
+title: Commands
+description: Descriptions and examples of the available Melos CLI commands
+---
 # Commands
 
 Commands can be run from the root of a project using Melos.

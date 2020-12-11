@@ -1,0 +1,15 @@
+{
+  "name": "Melos",
+  "logo": "/assets/logo.png",
+  "logoDark": "/assets/logo-dark.png",
+  "twitter": "invertaseio",
+  "theme": "#FFA03F",
+  "googleAnalytics": "G-Q7ME6WLFEJ",
+  "sidebar": [
+    ["Overview", "/"],
+    ["Getting Started", "/getting-started"],
+    ["Commands", "/commands"],
+    ["melos.yaml", "/melos-yaml"],
+    ["Automated Releases", "/automated-releases"]
+  ]
+}

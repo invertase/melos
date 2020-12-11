@@ -1,5 +1,0 @@
-* [Melos](/)
-* [Getting Started](getting-started.md)
-* [Commands](commands.md)
-* [`melos.yaml`](melos-yaml.md)
-* [Automated releases](automated-releases.md)

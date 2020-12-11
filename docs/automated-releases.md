@@ -1,3 +1,8 @@
+---
+title: Automated Releases
+description: Automate your workflow by versioning and publishing packages with Melos
+---
+
 # Automated Releases
 
 Melos is able to automatically version, generate changelogs and publish to [pub.dev](https://pub.dev)

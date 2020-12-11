@@ -1,0 +1,33 @@
+---
+description: A tool for managing Dart projects with multiple packages.
+---
+
+<Image src="https://static.invertase.io/assets/melos-logo.png" alt="Melos" zoom={false} caption="A tool for managing Dart projects with multiple packages." />
+
+## About
+
+Melos is a [CLI](https://en.wikipedia.org/wiki/Command-line_interface) tool used to help manage Dart projects with multiple packages (also known as mono-repos). It is currently still in active development however is in use on projects such as [FlutterFire](https://github.com/FirebaseExtended/flutterfire).
+
+Splitting up large code bases into separate independently versioned packages is extremely useful for code sharing. However, making changes across many repositories is messy and difficult to track, and testing across repositories gets complicated. Melos helps solve these issues by allowing multiple packages to work together within one repository, whilst being totally independent of each other. Features include:
+
+- Automatic versioning & changelog generation.
+- Automated publishing of packages to pub.dev.
+- Local package linking and installation.
+- Executing simultaneous commands across packages.
+- Listing of local packages & their dependencies.
+
+Melos also works great on CI/CD environments to help automate complex tasks and challenges.
+
+## Projects using Melos
+
+The following projects are using Melos:
+
+- [FirebaseExtended/flutterfire](https://github.com/FirebaseExtended/flutterfire)
+- [aws-amplify/amplify-flutter](https://github.com/aws-amplify/amplify-flutter)
+- [fluttercommunity/plus_plugins](https://github.com/fluttercommunity/plus_plugins)
+
+> [Submit a PR](https://github.com/invertase/melos/edit/master/docs/README.md) to add your project to the list.
+
+## License
+
+See [LICENSE](https://github.com/invertase/melos/blob/master/LICENSE) for more information.
