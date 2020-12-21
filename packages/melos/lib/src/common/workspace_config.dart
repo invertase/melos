@@ -36,6 +36,10 @@ environment:
 // TODO document & cleanup class members.
 // TODO validation of config e.g. name should be alphanumeric dasherized/underscored
 class MelosWorkspaceConfig {
+  /// Does the melos.yaml file exist.
+  /// Can be false if the default configuration is used without a file present.
+  final bool exists;
+
   final String _name;
 
   String get name => _name;
@@ -44,30 +48,30 @@ class MelosWorkspaceConfig {
 
   String get path => _path;
 
-  Map get environment => _yamlContents['environment'] as Map ?? {};
+  Map get environment => map['environment'] as Map ?? {};
 
   MelosWorkspaceScripts get scripts =>
-      MelosWorkspaceScripts(_yamlContents['scripts'] as Map ?? {});
+      MelosWorkspaceScripts(map['scripts'] as Map ?? {});
 
-  Map get dependencies => _yamlContents['dependencies'] as Map ?? {};
+  Map get dependencies => map['dependencies'] as Map ?? {};
 
-  Map get devDependencies => _yamlContents['dev_dependencies'] as Map ?? {};
+  Map get devDependencies => map['dev_dependencies'] as Map ?? {};
 
-  String get version => _yamlContents['version'] as String;
+  String get version => map['version'] as String;
 
   bool get generateIntellijIdeFiles {
-    var ide = _yamlContents['ide'] as Map ?? {};
+    var ide = map['ide'] as Map ?? {};
     if (ide['intellij'] == false) return false;
     if (ide['intellij'] == true) return true;
     return true;
   }
 
-  final Map _yamlContents;
+  final Map map;
 
-  MelosWorkspaceConfig._(this._name, this._path, this._yamlContents);
+  MelosWorkspaceConfig._(this._name, this._path, this.map, this.exists);
 
   List<String> get packages {
-    final patterns = _yamlContents['packages'] as YamlList;
+    final patterns = map['packages'] as YamlList;
     if (patterns == null) return <String>[];
     return List<String>.from(patterns);
   }
@@ -75,7 +79,7 @@ class MelosWorkspaceConfig {
   /// Glob patterns defined in "melos.yaml" ignore of packages to always exclude
   /// regardless of any custom CLI filter options.
   List<String> get ignore {
-    final patterns = _yamlContents['ignore'] as YamlList;
+    final patterns = map['ignore'] as YamlList;
     if (patterns == null) return <String>[];
     return List<String>.from(patterns);
   }
@@ -87,20 +91,20 @@ class MelosWorkspaceConfig {
       Directory packagesDirectory =
           Directory(joinAll([directory.path, 'packages']));
       if (packagesDirectory.existsSync()) {
-        return MelosWorkspaceConfig._(
-            'Melos', directory.path, loadYaml(_yamlConfigDefault) as Map);
+        return MelosWorkspaceConfig._('Melos', directory.path,
+            loadYaml(_yamlConfigDefault) as Map, false);
       }
 
       return null;
     }
 
     final melosYamlPath = melosYamlPathForDirectory(directory);
-    final yamlContents = await loadYamlFile(melosYamlPath);
-    if (yamlContents == null) {
+    final map = await loadYamlFile(melosYamlPath);
+    if (map == null) {
       return null;
     }
 
     return MelosWorkspaceConfig._(
-        yamlContents['name'] as String, directory.path, yamlContents);
+        map['name'] as String, directory.path, map, true);
   }
 }

@@ -40,6 +40,9 @@ class NullsafetyVerifyCommand extends Command {
   /// Track all modified packages for logging purposes.
   final Set<MelosPackage> _modifiedPackages = {};
 
+  /// The user defined nullsafety configuration defined in melos.yaml.
+  MelosWorkspaceNullsafetyConfig _nullsafetyConfig;
+
   /// Flag to gracefully abort further processing and finally revert all [_modifiedFiles].
   bool _abort = false;
 
@@ -68,6 +71,10 @@ class NullsafetyVerifyCommand extends Command {
   Future<void> _rollbackFiles() async {
     bool rollback = argResults['rollback'] as bool;
     if (!rollback) return;
+
+    if (_modifiedFiles.isEmpty) {
+      return;
+    }
 
     logger.stdout('');
     logger.stdout(
@@ -162,23 +169,58 @@ class NullsafetyVerifyCommand extends Command {
     _capturedErrorHint = 'An unknown error occurred: ';
   }
 
+  Future<void> _validateNullsafetyMigrationRequirements() async {
+    // Check is git repo and git is clean, e.g. no uncommitted changes.
+    // Note internally we don't care about untracked files.
+    if (!(await gitExists(workingDirectory: currentWorkspace.path)) ||
+        !(await gitStatusIsClean(workingDirectory: currentWorkspace.path))) {
+      _abort = true;
+      _capturedErrorHint =
+          'For this command to function correctly; your workspace must be a git '
+          'repository and must have no tracked files with uncommitted changes.';
+      return;
+    }
+
+    // Ensure melos.yaml exists (we can't use the default - 'no file' config).
+    if (!_nullsafetyConfig.exists) {
+      _abort = true;
+      _capturedErrorHint =
+          'A melos.yaml configuration file with nullsafety configuration is '
+          'required for this command to function correctly.';
+      return;
+    }
+
+    // Ensure "nullsafety" -> "environment" -> "sdk" is defined.
+    if (_nullsafetyConfig.environmentSdkVersion == null) {
+      _abort = true;
+      _capturedErrorHint =
+          'The Melos configuration "nullsafety" -> "environment" -> "sdk" is required for this '
+          'command and must be defined in your melos.yaml configuration to continue.';
+      return;
+    }
+
+    // TODO confirm if actually required?
+    // If a Flutter workspace then ensure "nullsafety" -> "environment" -> "flutter" is defined.
+    if (currentWorkspace.isFlutterWorkspace &&
+        _nullsafetyConfig.environmentFlutterVersion == null) {
+      _abort = true;
+      _capturedErrorHint =
+          'For Flutter workspaces: the Melos configuration "nullsafety" -> '
+          '"environment" -> "flutter" is required for this command and must be '
+          'defined in your melos.yaml configuration to continue.';
+      return;
+    }
+  }
+
   @override
   void run() async {
-    // Pre-run checks to ensure project correctly configured.
-    //   1) Check melos.yaml has a `nullsafety` configuration object. Required.
-    //   2) Check melos.yaml `nullsafety` configuration has `environment.sdk` defined.
-    //   3) If workspace has Flutter packages;
-    //      Check melos.yaml `nullsafety` configuration has `environment.flutter` defined.
-    //   4) Check is git repo and git is clean, e.g. no uncommitted changes.
-    //  - figure out ordering strategy, migration/verify should happen on leaf nodes first
-    // TODO all pre-run checks above
-
-    // Package nullsafety verification stages:
-    //   1) Apply Melos nullsafety code mods in all Dart files inside each package.
-    //   2) Apply environment config to each package pubspec.yaml
-    //   3) Apply environment config to Melos.yaml if defined.
-    //   4) Apply defined nullsafety package versions to each package pubspec.yaml
-    //   5) Run Melos bootstrap to fetch new packages. Verify should fail on error.
+    _nullsafetyConfig ??=
+        MelosWorkspaceNullsafetyConfig(currentWorkspace.config);
+    await _validateNullsafetyMigrationRequirements();
+    if (_abort) {
+      await _abortAndRollbackChanges();
+      return;
+    }
 
     // --------------
     //     Step 1
@@ -191,7 +233,6 @@ class NullsafetyVerifyCommand extends Command {
       await _abortAndRollbackChanges();
       return;
     }
-
     // 1) Successful.
     logger.stdout(
         '  ${AnsiStyles.bold.greenBright('  └> SUCCESS')}: Nullsafety code mods '
@@ -255,6 +296,10 @@ class NullsafetyVerifyCommand extends Command {
     // 5) Successful.
     logger.stdout('  ${AnsiStyles.bold.greenBright('  └> SUCCESS')}: TODO...');
 
+    // TODO
+    // TODO
+    // TODO
+    // TODO
     // TODO 6) `dart pub outdated --mode=null-safety --json` to confirm no packages are missing nullsafety upgrades
     // TODO 7) verify with analyzer, use MELOS_PACKAGES env variable to limit scope
     // TODO 8) Run migration via `dart migrate --summary=summary.json --skip-import-check`

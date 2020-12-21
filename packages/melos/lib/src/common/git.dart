@@ -17,6 +17,8 @@
 
 import 'dart:io';
 
+import 'package:path/path.dart';
+
 import 'git_commit.dart';
 import 'logger.dart';
 import 'package.dart';
@@ -124,7 +126,18 @@ Future<void> gitAdd(String filePattern, {String workingDirectory}) async {
   List<String> gitArgs = ['add', filePattern];
   await Process.run('git', gitArgs,
       workingDirectory: workingDirectory ?? Directory.current.path);
-  // TODO validate added?
+}
+
+Future<bool> gitExists({String workingDirectory}) {
+  return Directory(
+      joinAll([workingDirectory ?? Directory.current.path, '.git'])).exists();
+}
+
+Future<bool> gitStatusIsClean({String workingDirectory}) async {
+  List<String> gitArgs = ['status', '--untracked-files=no', '--porcelain'];
+  var result = await Process.run('git', gitArgs,
+      workingDirectory: workingDirectory ?? Directory.current.path);
+  return result.stdout.toString().trim().isEmpty;
 }
 
 Future<void> gitRestore(String filePattern, {String workingDirectory}) async {
@@ -134,11 +147,9 @@ Future<void> gitRestore(String filePattern, {String workingDirectory}) async {
 }
 
 Future<void> gitCommit(String message, {String workingDirectory}) async {
-  // TODO validate has staged changes?
   List<String> gitArgs = ['commit', '-m', message];
   await Process.run('git', gitArgs,
       workingDirectory: workingDirectory ?? Directory.current.path);
-  // TODO validate committed?
 }
 
 /// Returns a list of [GitCommit]s for a Melos package.

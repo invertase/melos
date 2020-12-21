@@ -19,6 +19,8 @@ import 'dart:io';
 
 import 'package:dart_style/dart_style.dart' show DartFormatter;
 
+import './workspace_config.dart';
+
 export 'package:dart_style/dart_style.dart' show FormatterException;
 
 DartFormatter _dartFormatter;
@@ -42,6 +44,35 @@ class NullsafetyModifiedFile {
 
   @override
   int get hashCode => '$workingDirectory,$path'.hashCode;
+}
+
+class MelosWorkspaceNullsafetyConfig {
+  final MelosWorkspaceConfig _workspaceConfig;
+
+  bool get exists {
+    return _workspaceConfig.exists &&
+        _workspaceConfig.map['nullsafety'] != null &&
+        _workspaceConfig.map['nullsafety'] is Map;
+  }
+
+  bool get environmentExists {
+    return exists &&
+        _workspaceConfig.map['nullsafety']['environment'] != null &&
+        _workspaceConfig.map['nullsafety']['environment'] is Map;
+  }
+
+  String get environmentSdkVersion {
+    if (!environmentExists) return null;
+    return _workspaceConfig.map['nullsafety']['environment']['sdk'] as String;
+  }
+
+  String get environmentFlutterVersion {
+    if (!environmentExists) return null;
+    return _workspaceConfig.map['nullsafety']['environment']['flutter']
+        as String;
+  }
+
+  MelosWorkspaceNullsafetyConfig(this._workspaceConfig);
 }
 
 Future<CodeModType> applyNullsafetyCodeModsToFile(File file) async {
