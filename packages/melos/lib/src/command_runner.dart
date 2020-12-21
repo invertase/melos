@@ -26,6 +26,7 @@ import 'command/bootstrap.dart';
 import 'command/clean.dart';
 import 'command/exec.dart';
 import 'command/list.dart';
+import 'command/nullsafety.dart';
 import 'command/publish.dart';
 import 'command/run.dart';
 import 'command/version.dart';
@@ -109,6 +110,7 @@ class MelosCommandRunner extends CommandRunner {
     addCommand(ListCommand());
     addCommand(PublishCommand());
     addCommand(VersionCommand());
+    addCommand(NullsafetyCommand());
   }
 
   @override

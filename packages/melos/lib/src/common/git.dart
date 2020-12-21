@@ -127,6 +127,12 @@ Future<void> gitAdd(String filePattern, {String workingDirectory}) async {
   // TODO validate added?
 }
 
+Future<void> gitRestore(String filePattern, {String workingDirectory}) async {
+  List<String> gitArgs = ['restore', filePattern];
+  await Process.run('git', gitArgs,
+      workingDirectory: workingDirectory ?? Directory.current.path);
+}
+
 Future<void> gitCommit(String message, {String workingDirectory}) async {
   // TODO validate has staged changes?
   List<String> gitArgs = ['commit', '-m', message];

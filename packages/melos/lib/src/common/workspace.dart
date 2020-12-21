@@ -45,7 +45,7 @@ class MelosWorkspace {
   /// Configuration as defined in the "melos.yaml" file if it exists.
   final MelosWorkspaceConfig config;
 
-  /// Persisted state that's commited to git as part of the workspaces repository.
+  /// Persisted state that's committed to git as part of the workspaces repository.
   /// Currently not in use, a future release for shared versioning will use this.
   final MelosWorkspaceState state;
 
