@@ -17,8 +17,8 @@
 
 import 'dart:io';
 
-import 'package:args/command_runner.dart' show Command;
 import 'package:ansi_styles/ansi_styles.dart';
+import 'package:args/command_runner.dart' show Command;
 
 import '../command_runner.dart';
 import '../common/intellij_project.dart';
@@ -37,21 +37,37 @@ class BootstrapCommand extends Command {
   final String description =
       'Initialize the workspace, link local packages together and install remaining package dependencies.';
 
-  @override
-  void run() async {
-    logger.stdout(AnsiStyles.yellow.bold('melos bootstrap'));
-    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
-    var successMessage = AnsiStyles.green('SUCCESS');
-    var bootstrapProgress = logger.progress('Bootstrapping project');
+  static Future<bool> bootstrapPubGet() async {
     await currentWorkspace.generatePubspecFile();
-
     List<String> pubGetArgs = ['pub', 'get'];
     var processExitCode = await currentWorkspace.execInMelosToolPath(
         currentWorkspace.isFlutterWorkspace
             ? ['flutter', ...pubGetArgs]
             : [if (utils.isPubSubcommand()) 'dart', ...pubGetArgs],
         onlyOutputOnError: true);
-    if (processExitCode > 0) {
+    return processExitCode > 0;
+  }
+
+  static Future<void> bootstrapLinkPackages() async {
+    var intellijProject = IntellijProject.fromWorkspace(currentWorkspace);
+
+    await currentWorkspace.linkPackages();
+    currentWorkspace.clean(cleanPackages: false);
+
+    if (currentWorkspace.config.generateIntellijIdeFiles) {
+      await intellijProject.cleanFiles();
+      await intellijProject.writeFiles();
+    }
+  }
+
+  @override
+  void run() async {
+    logger.stdout(AnsiStyles.yellow.bold('melos bootstrap'));
+    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
+    var successMessage = AnsiStyles.green('SUCCESS');
+    var bootstrapProgress = logger.progress('Bootstrapping project');
+
+    if (await bootstrapPubGet()) {
       logger
           .stderr('Bootstrap failed, reason: pub get failed, see logs above.');
       exitCode = 1;
@@ -65,14 +81,8 @@ class BootstrapCommand extends Command {
     }
 
     var linkingProgress = logger.progress('Linking project packages');
-    var intellijProject = IntellijProject.fromWorkspace(currentWorkspace);
 
-    await currentWorkspace.linkPackages();
-    currentWorkspace.clean(cleanPackages: false);
-
-    if (currentWorkspace.config.generateIntellijIdeFiles) {
-      await intellijProject.cleanFiles();
-    }
+    await bootstrapLinkPackages();
 
     linkingProgress.finish(message: successMessage, showTiming: true);
     if (Platform.isWindows) {
@@ -93,9 +103,5 @@ class BootstrapCommand extends Command {
     });
     logger.stdout(
         '\n -> ${currentWorkspace.packages.length} plugins bootstrapped');
-
-    if (currentWorkspace.config.generateIntellijIdeFiles) {
-      await IntellijProject.fromWorkspace(currentWorkspace).writeFiles();
-    }
   }
 }

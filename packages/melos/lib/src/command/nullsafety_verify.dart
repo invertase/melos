@@ -19,6 +19,10 @@ import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:args/command_runner.dart' show Command;
+import 'package:melos/src/command/bootstrap.dart';
+import 'package:melos/src/command/clean.dart';
+import 'package:melos/src/command/exec.dart';
+import 'package:path/path.dart';
 
 import '../command_runner.dart';
 import '../common/git.dart';
@@ -316,6 +320,64 @@ class NullsafetyVerifyCommand extends Command {
     }
   }
 
+  Future<void> _runAnalyzer() async {
+    logger.stdout(
+      '  ${AnsiStyles.bold.cyanBright('-')} Running Dart analyzer in each package.',
+    );
+
+    var didFailAnalyzer = await ExecCommand.execInPackages(
+      currentWorkspace.packages,
+      [
+        'dart',
+        '--disable-analytics',
+        'analyze',
+        '.',
+        '--fatal-infos',
+      ],
+      concurrency: 3,
+      failFast: true,
+      onlyOutputOnError: true,
+    ).catchError(_catchError);
+
+    if (_abort || didFailAnalyzer) {
+      await _abortAndRollbackChanges();
+      logger.stdout(
+        '  ${AnsiStyles.bold.redBright('  └> FAILED')}: Some packages failed Dart code analysis, see log output above for more information.',
+      );
+      return;
+    }
+
+    logger.stdout(
+      '  ${AnsiStyles.bold.greenBright('  └> SUCCESS')}',
+    );
+    logger.stdout('');
+  }
+
+  Future<void> _bootstrapWorkspace() async {
+    logger.stdout(
+      '  ${AnsiStyles.bold.cyanBright('-')} Bootstrapping workspace.',
+    );
+    var didFailToBootstrap =
+        await BootstrapCommand.bootstrapPubGet().catchError(_catchError);
+    if (_abort || didFailToBootstrap) {
+      await _abortAndRollbackChanges();
+      logger.stdout(
+        '  ${AnsiStyles.bold.redBright('  └> FAILED')}: Bootstrap failed, see log output above for more information.',
+      );
+      return;
+    }
+    await BootstrapCommand.bootstrapLinkPackages().catchError(_catchError);
+    if (_abort) {
+      await _abortAndRollbackChanges();
+      logger.stdout(
+        '  ${AnsiStyles.bold.redBright('  └> FAILED')}: Bootstrap failed, see log output above for more information.',
+      );
+      return;
+    }
+    logger.stdout('  ${AnsiStyles.bold.greenBright('  └> SUCCESS')}');
+    logger.stdout('');
+  }
+
   @override
   void run() async {
     _nullsafetyConfig ??=
@@ -326,24 +388,26 @@ class NullsafetyVerifyCommand extends Command {
       return;
     }
 
-    var packagesLengthBeforeFilter =
-        currentWorkspace.packages.length.toString();
+    // Clean workspace.
     logger.stdout(
-      '  ${AnsiStyles.bold.cyanBright('0)')} Applying Melos nullsafety package filtering options.',
+      '  ${AnsiStyles.bold.cyanBright('-')} Cleaning workspace.',
     );
-    await MelosCommandRunner.instance.run(['clean']).catchError(_catchError);
-    if (_abort || exitCode == 1) {
-      await _abortAndRollbackChanges();
-      return;
-    }
-    await _applyNullsafetyPackageFilters().catchError(_catchError);
+    await CleanCommand.clean().catchError(_catchError);
     if (_abort) {
       await _abortAndRollbackChanges();
       return;
     }
-    await MelosCommandRunner.instance
-        .run(['bootstrap']).catchError(_catchError);
-    if (_abort || exitCode == 1) {
+    logger.stdout('  ${AnsiStyles.bold.greenBright('  └> SUCCESS')}');
+    logger.stdout('');
+
+    // Apply package filtering.
+    logger.stdout(
+      '  ${AnsiStyles.bold.cyanBright('-')} Applying nullsafety package filtering options.',
+    );
+    var packagesLengthBeforeFilter =
+        currentWorkspace.packages.length.toString();
+    await _applyNullsafetyPackageFilters().catchError(_catchError);
+    if (_abort) {
       await _abortAndRollbackChanges();
       return;
     }
@@ -355,12 +419,20 @@ class NullsafetyVerifyCommand extends Command {
     );
     logger.stdout('');
 
+    // Bootstrap the workspace now that filters have been applied.
+    await _bootstrapWorkspace();
+    if (_abort) return;
+
+    // Pre-migration check to verify dart analyze passes with current changes.
+    await _runAnalyzer();
+    if (_abort) return;
+
     // --------------
     //     Step 1
     // --------------
     // Apply Melos nullsafety code mods.
     logger.stdout(
-        '  ${AnsiStyles.bold.cyanBright('1)')} Applying Melos nullsafety code mods to packages.');
+        '  ${AnsiStyles.bold.cyanBright('-')} Applying Melos nullsafety code mods to packages.');
     await _applyNullsafetyCodeMods().catchError(_catchError);
     if (_abort) {
       await _abortAndRollbackChanges();
@@ -372,14 +444,14 @@ class NullsafetyVerifyCommand extends Command {
         'successfully applied to ${AnsiStyles.cyanBright(
       _modifiedFiles.length.toString(),
     )} files in ${AnsiStyles.cyanBright(_modifiedPackages.length.toString())} packages.');
+    logger.stdout('');
 
     // --------------
     //     Step 2
     // --------------
     // Apply defined nullsafety package versions to each package pubspec.yaml.
-    logger.stdout('');
     logger.stdout(
-        '  ${AnsiStyles.bold.cyanBright('2)')} Applying nullsafety versioning for workspace packages and their dependencies.');
+        '  ${AnsiStyles.bold.cyanBright('-')} Applying nullsafety versioning for workspace packages and their dependencies.');
     // Set package versions to current version & add -nullsafety.
     await _applyNullsafetyDependencyVersions().catchError(_catchError);
     if (_abort) {
@@ -392,57 +464,55 @@ class NullsafetyVerifyCommand extends Command {
       await _abortAndRollbackChanges();
       return;
     }
-    // 2) Successful.
     logger.stdout(
       '  ${AnsiStyles.bold.greenBright('  └> SUCCESS')}: Versions '
       'have been updated in ${AnsiStyles.cyanBright(_modifiedPackages.length.toString())} packages.',
     );
-
-    // --------------
-    //     Step 3
-    // --------------
-    // Bootstrap workspace.
     logger.stdout('');
-    logger.stdout(
-        '  ${AnsiStyles.bold.cyanBright('3)')} Bootstrapping workspace to fetch new dependencies.');
-    await MelosCommandRunner.instance
-        .run(['bootstrap']).catchError(_catchError);
-    if (_abort || exitCode == 1) {
-      await _abortAndRollbackChanges();
-      return;
-    }
-    // 3) Successful.
-    logger.stdout(
-        '  ${AnsiStyles.bold.greenBright('  └> SUCCESS')}: Bootstrap successful.');
+
+    // Bootstrap workspace so new packages and versions are updated.
+    await _bootstrapWorkspace();
+    if (_abort) return;
 
     // TODO
     // TODO
     // TODO
     // TODO
-    await MelosCommandRunner.instance.run([
-      'exec',
-      '-c 1',
-      '--fail-fast',
-      '--',
-      'dart migrate --apply-changes --skip-import-check --ignore-errors --ignore-exceptions'
-      //  --skip-import-check
-    ]).catchError(_catchError);
-    if (_abort || exitCode == 1) {
+    if (!Directory(currentWorkspace.melosToolPath).existsSync()) {
+      Directory(currentWorkspace.melosToolPath).createSync(recursive: true);
+    }
+    var didFailMigration = await ExecCommand.execInPackages(
+      currentWorkspace.packages,
+      'dart migrate --apply-changes --skip-import-check --ignore-errors --ignore-exceptions '
+              '--summary=${joinAll([
+        currentWorkspace.melosToolPath,
+        'ns_result_MELOS_PACKAGE_NAME.json'
+      ])}'
+          .split(' '),
+      concurrency: 1,
+      failFast: true,
+      onlyOutputOnError: true,
+    ).catchError(_catchError);
+    exit(1);
+    if (_abort || didFailMigration) {
       await _abortAndRollbackChanges();
       return;
     }
+
     // Apply environment versions to melos.yaml
     await _applyEnvironmentConfig().catchError(_catchError);
     if (_abort) {
       await _abortAndRollbackChanges();
       return;
     }
-    await MelosCommandRunner.instance
-        .run(['bootstrap']).catchError(_catchError);
-    if (_abort || exitCode == 1) {
-      await _abortAndRollbackChanges();
-      return;
-    }
+
+    // Bootstrap workspace so migrations and melos environment updates are picked up.
+    await _bootstrapWorkspace();
+    if (_abort) return;
+
+    // Post-migration check to verify dart analyze passes with all new changes.
+    await _runAnalyzer();
+    if (_abort) return;
 
     // TODO
     // TODO

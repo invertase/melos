@@ -30,11 +30,15 @@ class CleanCommand extends Command {
   final String description =
       'Clean this workspace and all packages. This deletes the temporary pub & ide files such as ".packages" & ".flutter-plugins". Supports all package filtering options.';
 
+  static Future<void> clean() async {
+    currentWorkspace.clean();
+    await IntellijProject.fromWorkspace(currentWorkspace).cleanFiles();
+  }
+
   @override
   void run() async {
     logger.stdout('Cleaning workspace...');
-    currentWorkspace.clean();
-    await IntellijProject.fromWorkspace(currentWorkspace).cleanFiles();
+    await clean();
     if (currentWorkspace.config.scripts.exists('postclean')) {
       logger.stdout('Running postclean script...\n');
       await MelosCommandRunner.instance.run(['run', 'postclean']);

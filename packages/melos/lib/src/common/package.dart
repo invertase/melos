@@ -296,7 +296,10 @@ class MelosPackage {
   }
 
   /// Execute a shell command inside this package.
-  Future<int> exec(List<String> execArgs) async {
+  Future<int> exec(
+    List<String> execArgs, {
+    bool onlyOutputOnError = false,
+  }) async {
     final packagePrefix = '[${AnsiStyles.blue.bold(_name)}]: ';
 
     var environment = {
@@ -321,10 +324,13 @@ class MelosPackage {
       }
     }
 
-    return startProcess(execArgs,
-        environment: environment,
-        workingDirectory: path,
-        prefix: packagePrefix);
+    return startProcess(
+      execArgs,
+      environment: environment,
+      workingDirectory: path,
+      prefix: packagePrefix,
+      onlyOutputOnError: onlyOutputOnError,
+    );
   }
 
   /// Generates Pub/Flutter related temporary files such as .packages or pubspec.lock.

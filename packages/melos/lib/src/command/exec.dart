@@ -17,9 +17,9 @@
 
 import 'dart:io';
 
+import 'package:ansi_styles/ansi_styles.dart';
 import 'package:args/command_runner.dart' show Command;
 import 'package:pool/pool.dart' show Pool;
-import 'package:ansi_styles/ansi_styles.dart';
 
 import '../common/logger.dart';
 import '../common/package.dart';
@@ -43,47 +43,60 @@ class ExecCommand extends Command {
             'Whether exec should fail fast and not execute the script in further packages if the script fails in a individual package.');
   }
 
-  static Future<void> execInPackages(
+  static Future<bool> execInPackages(
     List<MelosPackage> packages,
     List<String> execArgs, {
     int concurrency = 5,
     bool failFast = false,
+    bool onlyOutputOnError = false,
   }) async {
     var failures = <String, int>{};
     var pool = Pool(concurrency);
     String execArgsString = execArgs.join(' ');
 
-    logger
-        .stdout('${AnsiStyles.yellow('\$')} ${AnsiStyles.bold("melos exec")}');
-    logger.stdout('   └> ${AnsiStyles.cyan.bold(execArgsString)}');
-    logger.stdout(
-        '       └> ${AnsiStyles.yellow.bold('RUNNING')} (in ${packages.length} packages)\n');
+    if (!onlyOutputOnError) {
+      logger.stdout(
+          '${AnsiStyles.yellow('\$')} ${AnsiStyles.bold("melos exec")}');
+      logger.stdout('   └> ${AnsiStyles.cyan.bold(execArgsString)}');
+      logger.stdout(
+          '       └> ${AnsiStyles.yellow.bold('RUNNING')} (in ${packages.length} packages)\n');
+    }
 
     await pool.forEach<MelosPackage, void>(packages, (package) {
       if (failFast && failures.isNotEmpty) {
         return Future.value(null);
       }
       if (concurrency == 1) {
-        logger.stdout(AnsiStyles.bgBlack.bold.italic('${package.name}:'));
+        if (!onlyOutputOnError) {
+          logger.stdout(AnsiStyles.bgBlack.bold.italic('${package.name}:'));
+        }
       }
-      return package.exec(execArgs).then((result) async {
+      return package
+          .exec(execArgs, onlyOutputOnError: true)
+          .then((result) async {
         if (result > 0) {
           failures[package.name] = result;
         } else if (concurrency == 1) {
-          logger.stdout(AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
-              AnsiStyles.bold.green.bgBlack('SUCCESS'));
+          if (!onlyOutputOnError) {
+            logger.stdout(AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
+                AnsiStyles.bold.green.bgBlack('SUCCESS'));
+          }
         }
 
         if (concurrency == 1) {
-          logger.stdout('\n');
+          if (!onlyOutputOnError) {
+            logger.stdout('\n');
+          }
         }
       });
     }).drain();
 
-    logger.stdout('');
-    logger
-        .stdout('${AnsiStyles.yellow('\$')} ${AnsiStyles.bold("melos exec")}');
-    logger.stdout('   └> ${AnsiStyles.cyan.bold(execArgsString)}');
+    if (!onlyOutputOnError) {
+      logger.stdout('');
+      logger.stdout(
+          '${AnsiStyles.yellow('\$')} ${AnsiStyles.bold("melos exec")}');
+      logger.stdout('   └> ${AnsiStyles.cyan.bold(execArgsString)}');
+    }
 
     if (failures.isNotEmpty) {
       logger.stdout(
@@ -92,9 +105,12 @@ class ExecCommand extends Command {
         logger.stdout(
             '           └> ${AnsiStyles.yellow(packageName)} (with exit code ${failures[packageName]})');
       });
-      exitCode = 1;
+      return true;
     } else {
-      logger.stdout('       └> ${AnsiStyles.green.bold('SUCCESS')}');
+      if (!onlyOutputOnError) {
+        logger.stdout('       └> ${AnsiStyles.green.bold('SUCCESS')}');
+      }
+      return false;
     }
   }
 
@@ -109,8 +125,10 @@ class ExecCommand extends Command {
       return;
     }
 
-    await execInPackages(currentWorkspace.packages, execArgs,
+    if (await execInPackages(currentWorkspace.packages, execArgs,
         concurrency: int.parse(argResults['concurrency'] as String),
-        failFast: argResults['fail-fast'] as bool);
+        failFast: argResults['fail-fast'] as bool)) {
+      exitCode = 1;
+    }
   }
 }
