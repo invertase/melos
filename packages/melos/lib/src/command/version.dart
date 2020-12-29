@@ -237,7 +237,7 @@ class VersionCommand extends Command {
       return;
     }
 
-    // Note: not pooling & parrellelzing rights to avoid possible file contention.
+    // Note: not pooling & parrellelzing writes to avoid possible file contention.
     await Future.forEach(pendingPackageUpdates,
         (MelosPendingPackageUpdate pendingPackageUpdate) async {
       // Update package pubspec version.

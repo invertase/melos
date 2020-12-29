@@ -66,6 +66,20 @@ class MelosWorkspaceConfig {
     return true;
   }
 
+  bool get environmentExists {
+    return map['environment'] != null && map['environment'] is Map;
+  }
+
+  String get environmentSdkVersion {
+    if (!environmentExists) return null;
+    return map['environment']['sdk'] as String;
+  }
+
+  String get environmentFlutterVersion {
+    if (!environmentExists) return null;
+    return map['environment']['flutter'] as String;
+  }
+
   final Map map;
 
   MelosWorkspaceConfig._(this._name, this._path, this.map, this.exists);

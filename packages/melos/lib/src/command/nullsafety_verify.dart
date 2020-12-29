@@ -20,10 +20,12 @@ import 'dart:io';
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:args/command_runner.dart' show Command;
 
+import '../command_runner.dart';
 import '../common/git.dart';
 import '../common/logger.dart';
 import '../common/nullsafety.dart';
 import '../common/package.dart';
+import '../common/utils.dart';
 import '../common/workspace.dart';
 
 class NullsafetyVerifyCommand extends Command {
@@ -89,6 +91,14 @@ class NullsafetyVerifyCommand extends Command {
         workingDirectory: modifiedFile.workingDirectory,
       );
     });
+
+    // Bootstrap after reverting to ensure pub get is ran on previous files.
+    logger.stdout('Bootstrapping workspace after reverting changes...');
+    currentWorkspace = null;
+    await MelosCommandRunner.instance.run(['clean']);
+    await MelosCommandRunner.instance.run(['bootstrap']);
+    logger.stdout('');
+    logger.stdout('Rollback successful.');
   }
 
   Future<void> _abortAndRollbackChanges() async {
@@ -212,6 +222,100 @@ class NullsafetyVerifyCommand extends Command {
     }
   }
 
+  Future<void> _applyEnvironmentConfig() async {
+    // Update "environment.sdk" in melos.yaml.
+    if (_nullsafetyConfig.environmentSdkVersion != null &&
+        currentWorkspace.config.environmentSdkVersion != null) {
+      _modifiedFiles.add(NullsafetyModifiedFile(
+          currentWorkspace.path, currentWorkspace.pathToMelosFile));
+      await setEnvironmentSdkVersionForYamlFile(
+        _nullsafetyConfig.environmentSdkVersion,
+        currentWorkspace.pathToMelosFile,
+      ).catchError(_catchError);
+      if (_abort) return;
+    }
+
+    // Update "environment.flutter" in melos.yaml.
+    if (_nullsafetyConfig.environmentFlutterVersion != null &&
+        currentWorkspace.config.environmentFlutterVersion != null) {
+      _modifiedFiles.add(NullsafetyModifiedFile(
+          currentWorkspace.path, currentWorkspace.pathToMelosFile));
+      await setEnvironmentFlutterVersionForYamlFile(
+        _nullsafetyConfig.environmentFlutterVersion,
+        currentWorkspace.pathToMelosFile,
+      ).catchError(_catchError);
+    }
+  }
+
+  Future<void> _applyNullsafetyPackageVersions() {
+    return Future.forEach(currentWorkspace.packages,
+        (MelosPackage package) async {
+      if (package.isPrivate) return;
+      String nullsafetyVersion =
+          nullsafetyVersionFromCurrentVersion(package.version).toString();
+      logger.stdout(
+        '    ${AnsiStyles.bold.greenBright('├')}  ${AnsiStyles.cyanBright(package.name)}: version change ${AnsiStyles.yellow(package.version.toString())} -> ${AnsiStyles.green(nullsafetyVersion.toString())}',
+      );
+      _modifiedFiles
+          .add(NullsafetyModifiedFile(package.path, package.pathToPubspecFile));
+      await package.setPubspecVersion(nullsafetyVersion);
+      await Future.forEach(package.dependentsInWorkspace,
+          (MelosPackage dependentPackage) {
+        if (currentWorkspace.packages.contains(dependentPackage)) {
+          _modifiedFiles.add(NullsafetyModifiedFile(
+              dependentPackage.path, dependentPackage.pathToPubspecFile));
+          return dependentPackage.setDependencyVersion(
+            package.name,
+            '^$nullsafetyVersion',
+          );
+        }
+      });
+    });
+  }
+
+  Future<void> _applyNullsafetyDependencyVersions() async {
+    if (_nullsafetyConfig.shouldUpdateDependencies) {
+      await Future.forEach(currentWorkspace.packages,
+          (MelosPackage package) async {
+        await Future.forEach(_nullsafetyConfig.dependencies.keys,
+            (String dependencyName) {
+          if (package.dependencies[dependencyName] != null ||
+              package.devDependencies[dependencyName] != null) {
+            String nullsafetyVersion =
+                _nullsafetyConfig.dependencies[dependencyName];
+            logger.stdout(
+              '    ${AnsiStyles.bold.greenBright('├')}  ${AnsiStyles.cyanBright(package.name)}: dependency ${AnsiStyles.yellow(dependencyName)} updated to ${AnsiStyles.green(nullsafetyVersion)}',
+            );
+            return package.setDependencyVersion(
+                dependencyName, _nullsafetyConfig.dependencies[dependencyName]);
+          }
+        });
+      });
+    }
+  }
+
+  Future<void> _applyNullsafetyPackageFilters() async {
+    if (_nullsafetyConfig.shouldFilterPackages) {
+      await currentWorkspace.loadPackagesWithFilters(
+        scope: _nullsafetyConfig.filterPackageOptions[filterOptionScope]
+            as List<String>,
+        ignore: _nullsafetyConfig.filterPackageOptions[filterOptionIgnore]
+            as List<String>,
+        dirExists: _nullsafetyConfig.filterPackageOptions[filterOptionDirExists]
+            as List<String>,
+        fileExists: _nullsafetyConfig
+            .filterPackageOptions[filterOptionFileExists] as List<String>,
+        since:
+            _nullsafetyConfig.filterPackageOptions[filterOptionSince] as String,
+        skipPrivate: _nullsafetyConfig
+            .filterPackageOptions[filterOptionNoPrivate] as bool,
+        published: _nullsafetyConfig.filterPackageOptions[filterOptionPublished]
+            as bool,
+        override: true,
+      );
+    }
+  }
+
   @override
   void run() async {
     _nullsafetyConfig ??=
@@ -221,6 +325,35 @@ class NullsafetyVerifyCommand extends Command {
       await _abortAndRollbackChanges();
       return;
     }
+
+    var packagesLengthBeforeFilter =
+        currentWorkspace.packages.length.toString();
+    logger.stdout(
+      '  ${AnsiStyles.bold.cyanBright('0)')} Applying Melos nullsafety package filtering options.',
+    );
+    await MelosCommandRunner.instance.run(['clean']).catchError(_catchError);
+    if (_abort || exitCode == 1) {
+      await _abortAndRollbackChanges();
+      return;
+    }
+    await _applyNullsafetyPackageFilters().catchError(_catchError);
+    if (_abort) {
+      await _abortAndRollbackChanges();
+      return;
+    }
+    await MelosCommandRunner.instance
+        .run(['bootstrap']).catchError(_catchError);
+    if (_abort || exitCode == 1) {
+      await _abortAndRollbackChanges();
+      return;
+    }
+    var packagesLengthAfterFilter = currentWorkspace.packages.length.toString();
+    logger.stdout(
+      '  ${AnsiStyles.bold.greenBright('  └> SUCCESS')}: Package filtering resulted in '
+      '${AnsiStyles.cyanBright(packagesLengthAfterFilter)} out of '
+      '${AnsiStyles.cyanBright(packagesLengthBeforeFilter)} packages being selected.',
+    );
+    logger.stdout('');
 
     // --------------
     //     Step 1
@@ -243,58 +376,73 @@ class NullsafetyVerifyCommand extends Command {
     // --------------
     //     Step 2
     // --------------
-    // Apply environment config to each package pubspec.yaml
+    // Apply defined nullsafety package versions to each package pubspec.yaml.
     logger.stdout('');
     logger.stdout(
-        '  ${AnsiStyles.bold.cyanBright('2)')} Applying Dart${currentWorkspace.isFlutterWorkspace ? ' & Flutter ' : ' '}environment versions to package pubspec files.');
-    // TODO
-    // TODO
+        '  ${AnsiStyles.bold.cyanBright('2)')} Applying nullsafety versioning for workspace packages and their dependencies.');
+    // Set package versions to current version & add -nullsafety.
+    await _applyNullsafetyDependencyVersions().catchError(_catchError);
+    if (_abort) {
+      await _abortAndRollbackChanges();
+      return;
+    }
+    // Set package dependencies to match any defined in config.nullsafety.package.
+    await _applyNullsafetyPackageVersions().catchError(_catchError);
     if (_abort) {
       await _abortAndRollbackChanges();
       return;
     }
     // 2) Successful.
-    logger.stdout('  ${AnsiStyles.bold.greenBright('  └> SUCCESS')}: TODO...');
+    logger.stdout(
+      '  ${AnsiStyles.bold.greenBright('  └> SUCCESS')}: Versions '
+      'have been updated in ${AnsiStyles.cyanBright(_modifiedPackages.length.toString())} packages.',
+    );
 
     // --------------
     //     Step 3
     // --------------
-    // Apply environment config to Melos.yaml if defined.
+    // Bootstrap workspace.
     logger.stdout('');
     logger.stdout(
-        '  ${AnsiStyles.bold.cyanBright('3)')} Applying Dart${currentWorkspace.isFlutterWorkspace ? ' & Flutter ' : ' '}environment versions to workspace melos.yaml configuration file.');
-    // TODO
-    // TODO
-    if (_abort) {
+        '  ${AnsiStyles.bold.cyanBright('3)')} Bootstrapping workspace to fetch new dependencies.');
+    await MelosCommandRunner.instance
+        .run(['bootstrap']).catchError(_catchError);
+    if (_abort || exitCode == 1) {
       await _abortAndRollbackChanges();
       return;
     }
     // 3) Successful.
-    logger.stdout('  ${AnsiStyles.bold.greenBright('  └> SUCCESS')}: TODO...');
-
-    // --------------
-    //     Step 4
-    // --------------
-    // Apply defined nullsafety package versions to each package pubspec.yaml.
-    logger.stdout('');
     logger.stdout(
-        '  ${AnsiStyles.bold.cyanBright('4)')} Applying nullsafety versioning for workspace packages and their dependencies.');
-    // TODO set version to current version & -nullsafety.
-    // TODO set package dependencies to match any defined in config.nullsafety.package
-    // 4) Successful.
-    logger.stdout('  ${AnsiStyles.bold.greenBright('  └> SUCCESS')}: TODO...');
+        '  ${AnsiStyles.bold.greenBright('  └> SUCCESS')}: Bootstrap successful.');
 
-    // --------------
-    //     Step 5
-    // --------------
-    // Bootstrap workspace.
-    logger.stdout('');
-    logger.stdout(
-        '  ${AnsiStyles.bold.cyanBright('5)')} Bootstrapping workspace to fetch new dependencies.');
     // TODO
     // TODO
-    // 5) Successful.
-    logger.stdout('  ${AnsiStyles.bold.greenBright('  └> SUCCESS')}: TODO...');
+    // TODO
+    // TODO
+    await MelosCommandRunner.instance.run([
+      'exec',
+      '-c 1',
+      '--fail-fast',
+      '--',
+      'dart migrate --apply-changes --skip-import-check --ignore-errors --ignore-exceptions'
+      //  --skip-import-check
+    ]).catchError(_catchError);
+    if (_abort || exitCode == 1) {
+      await _abortAndRollbackChanges();
+      return;
+    }
+    // Apply environment versions to melos.yaml
+    await _applyEnvironmentConfig().catchError(_catchError);
+    if (_abort) {
+      await _abortAndRollbackChanges();
+      return;
+    }
+    await MelosCommandRunner.instance
+        .run(['bootstrap']).catchError(_catchError);
+    if (_abort || exitCode == 1) {
+      await _abortAndRollbackChanges();
+      return;
+    }
 
     // TODO
     // TODO

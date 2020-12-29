@@ -62,6 +62,9 @@ class MelosWorkspace {
 
   MelosWorkspace._(this.name, this.path, this.config, this.state);
 
+  /// Workspace melos.yaml file path.
+  String get pathToMelosFile => joinAll([path, 'melos.yaml']);
+
   /// Build a [MelosWorkspace] from a Directory.
   /// If the directory is not a valid Melos workspace (e.g. no "melos.yaml" file)
   /// then null is returned.
@@ -133,8 +136,9 @@ class MelosWorkspace {
     List<String> fileExists,
     bool skipPrivate,
     bool published,
+    bool override = false,
   }) async {
-    if (packages != null) return Future.value(packages);
+    if (packages != null && !override) return Future.value(packages);
     final packagePatterns = config.packages;
 
     var filterResult =

@@ -19,11 +19,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:ansi_styles/ansi_styles.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' show relative, normalize, joinAll;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
-import 'package:ansi_styles/ansi_styles.dart';
 
 import '../pub/pub_file.dart';
 import '../pub/pub_file_flutter_dependencies.dart';
@@ -105,6 +105,9 @@ class MelosPackage {
   /// Fully qualified path to this package location.
   String get path => _path;
 
+  /// Package pubspec.yaml file path.
+  String get pathToPubspecFile => joinAll([_path, 'pubspec.yaml']);
+
   /// Package path as a normalized sting relative to the root of the workspace.
   /// e.g. "packages/firebase_database".
   String get pathRelativeToWorkspace =>
@@ -116,6 +119,21 @@ class MelosPackage {
     if (isFlutterPlugin) return PackageType.flutterPlugin;
     if (isFlutterPackage) return PackageType.flutterPackage;
     return PackageType.dartPackage;
+  }
+
+  bool get environmentExists {
+    return _yamlContents['environment'] != null &&
+        _yamlContents['environment'] is Map;
+  }
+
+  String get environmentSdkVersion {
+    if (!environmentExists) return null;
+    return _yamlContents['environment']['sdk'] as String;
+  }
+
+  String get environmentFlutterVersion {
+    if (!environmentExists) return null;
+    return _yamlContents['environment']['flutter'] as String;
   }
 
   MelosPackage._(this._name, this._path, this._yamlContents, this._workspace);
