@@ -15,16 +15,15 @@
  *
  */
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:args/command_runner.dart' show Command;
 import 'package:melos/src/command/bootstrap.dart';
 import 'package:melos/src/command/clean.dart';
-import 'package:melos/src/command/exec.dart';
 import 'package:path/path.dart';
 
-import '../command_runner.dart';
 import '../common/git.dart';
 import '../common/logger.dart';
 import '../common/nullsafety.dart';
@@ -97,18 +96,19 @@ class NullsafetyVerifyCommand extends Command {
     });
 
     // Bootstrap after reverting to ensure pub get is ran on previous files.
-    logger.stdout('Bootstrapping workspace after reverting changes...');
-    currentWorkspace = null;
-    await MelosCommandRunner.instance.run(['clean']);
-    await MelosCommandRunner.instance.run(['bootstrap']);
-    logger.stdout('');
+    await CleanCommand.clean().catchError(_catchError);
+    await BootstrapCommand.bootstrapPubGet().catchError(_catchError);
+    await BootstrapCommand.bootstrapLinkPackages().catchError(_catchError);
     logger.stdout('Rollback successful.');
   }
 
   Future<void> _abortAndRollbackChanges() async {
+    _abort = true;
     await _rollbackFiles();
     logger.stdout('');
-    logger.stdout(_capturedErrorHint);
+    if (_capturedErrorHint != null) {
+      logger.stdout('${AnsiStyles.redBright('FAILED:')} $_capturedErrorHint');
+    }
     if (_capturedError != null) {
       logger.stdout('');
       logger.stdout(_capturedError.toString());
@@ -322,28 +322,41 @@ class NullsafetyVerifyCommand extends Command {
 
   Future<void> _runAnalyzer() async {
     logger.stdout(
-      '  ${AnsiStyles.bold.cyanBright('-')} Running Dart analyzer in each package.',
+      '  ${AnsiStyles.bold.cyanBright('-')} Analyzing packages.',
     );
 
-    var didFailAnalyzer = await ExecCommand.execInPackages(
-      currentWorkspace.packages,
-      [
+    await Future.forEach(currentWorkspace.packages,
+        (MelosPackage package) async {
+      if (_abort) return;
+      List<String> toolExecArgs = [
         'dart',
         '--disable-analytics',
         'analyze',
         '.',
         '--fatal-infos',
-      ],
-      concurrency: 3,
-      failFast: true,
-      onlyOutputOnError: true,
-    ).catchError(_catchError);
-
-    if (_abort || didFailAnalyzer) {
-      await _abortAndRollbackChanges();
+      ];
+      int exitCode = await package.exec(toolExecArgs, onlyOutputOnError: true);
+      if (exitCode > 0) {
+        logger.stdout(
+          '    ${AnsiStyles.bold.redBright('✘')}  ${AnsiStyles.cyanBright(package.name)}: reported analyzer issues, see logs above.',
+        );
+        _abort = true;
+        _capturedErrorHint =
+            'Package ${AnsiStyles.cyanBright(package.name)} contains analyzer issues, see logs above for more information.';
+      } else {
+        logger.stdout(
+          '    ${AnsiStyles.bold.greenBright('✔')}  ${AnsiStyles.cyanBright(package.name)}: no analyzer issues detected.',
+        );
+      }
+    });
+    if (_abort) {
       logger.stdout(
-        '  ${AnsiStyles.bold.redBright('  └> FAILED')}: Some packages failed Dart code analysis, see log output above for more information.',
+        '  ${AnsiStyles.bold.redBright('  └> FAILED')}: Some packages failed '
+        'Dart code analysis, see log output above for more information. Alternatively '
+        'you can run this step again with the `--no-rollback` flag to preserve changed files '
+        'and use your IDE integration to view analyzer issues.',
       );
+      await _abortAndRollbackChanges();
       return;
     }
 
@@ -376,6 +389,94 @@ class NullsafetyVerifyCommand extends Command {
     }
     logger.stdout('  ${AnsiStyles.bold.greenBright('  └> SUCCESS')}');
     logger.stdout('');
+  }
+
+  Future<void> _runDartMigrationTool() async {
+    // Create the melos tool directory if it does not exist.
+    // We use it to store json results of the migration tool.
+    if (!Directory(currentWorkspace.melosToolPath).existsSync()) {
+      Directory(currentWorkspace.melosToolPath).createSync(recursive: true);
+    }
+
+    await Future.forEach(currentWorkspace.packages.reversed,
+        (MelosPackage package) async {
+      if (_abort) return;
+
+      String summaryJsonPath = joinAll([
+        currentWorkspace.melosToolPath,
+        'nullsafety_summary_${package.name}.json'
+      ]);
+      List<String> toolExecArgs = [
+        'dart',
+        'migrate',
+        '--skip-import-check',
+        '--ignore-errors',
+        '--ignore-exceptions',
+      ];
+
+      int exitCode = await package.exec([
+        ...toolExecArgs,
+        '--apply-changes',
+        '--summary=$summaryJsonPath',
+      ], onlyOutputOnError: true);
+      if (exitCode > 0) {
+        _abort = true;
+        _capturedErrorHint =
+            'Package ${package.name} errored when running Dart migration tool, see logs above.';
+        return;
+      }
+
+      File jsonFile = File(summaryJsonPath);
+      bool jsonFileExists = await jsonFile.exists();
+      if (!jsonFileExists) {
+        _abort = true;
+        _capturedErrorHint =
+            'Package ${package.name} did not produce a migration summary json file when running the Dart migration tool.';
+        return;
+      }
+      String jsonFileContents = await jsonFile.readAsString();
+      Map jsonMap = jsonDecode(jsonFileContents) as Map;
+      Map changesByPath = jsonMap['changes']['byPath'] as Map;
+
+      Map<String, int> filesWithNoValidMigrationForNull = {};
+      // Map<String, int> filesWithConditionFalseInStrongMode = {};
+      // Map<String, int> filesWithNullAwareAssignmentUnnecessaryInStrongMode = {};
+      // TODO handle conditionFalseInStrongMode (Condition will always be false in strong checking mode)
+      // TODO handle nullAwareAssignmentUnnecessaryInStrongMode (Null-aware assignment will be unnecessary in strong checking mode)
+      changesByPath.forEach((key, value) {
+        _modifiedFiles.add(NullsafetyModifiedFile(package.path, key as String));
+        if (changesByPath[key]['noValidMigrationForNull'] != null) {
+          filesWithNoValidMigrationForNull[key as String] =
+              changesByPath[key]['noValidMigrationForNull'] as int;
+        }
+      });
+
+      if (filesWithNoValidMigrationForNull.isNotEmpty) {
+        logger.stdout(
+          '    ${AnsiStyles.bold.redBright('✘')}  ${AnsiStyles.cyanBright(package.name)}: the following files contain types that have no valid migration path:',
+        );
+        filesWithNoValidMigrationForNull.forEach((key, value) {
+          logger.stdout(
+            '      ${AnsiStyles.bold.redBright(AnsiStyles.bullet)}  ${AnsiStyles.cyanBright(key)} : $value types.',
+          );
+        });
+        logger.stdout(
+          '  ${AnsiStyles.bold.redBright('  └> FAILED')}',
+        );
+        _abort = true;
+        _capturedErrorHint =
+            'One or more files in the package ${AnsiStyles.cyanBright(package.name)} contain types that have'
+            ' no valid nullsafety migration path (see logs above) - ensure all necessary nullsafety hints have been'
+            ' added and try again. \n\nRun the following commands to view the interactive migration tool for this package:\n\n'
+            '${AnsiStyles.gray('cd ${package.pathRelativeToWorkspace}')}\n'
+            '${AnsiStyles.gray(toolExecArgs.join(' '))}\n';
+        return;
+      }
+
+      logger.stdout(
+        '    ${AnsiStyles.bold.greenBright('✔')}  ${AnsiStyles.cyanBright(package.name)}: migration tool reported ${changesByPath.keys.length} migrated files.',
+      );
+    });
   }
 
   @override
@@ -427,9 +528,6 @@ class NullsafetyVerifyCommand extends Command {
     await _runAnalyzer();
     if (_abort) return;
 
-    // --------------
-    //     Step 1
-    // --------------
     // Apply Melos nullsafety code mods.
     logger.stdout(
         '  ${AnsiStyles.bold.cyanBright('-')} Applying Melos nullsafety code mods to packages.');
@@ -438,7 +536,6 @@ class NullsafetyVerifyCommand extends Command {
       await _abortAndRollbackChanges();
       return;
     }
-    // 1) Successful.
     logger.stdout(
         '  ${AnsiStyles.bold.greenBright('  └> SUCCESS')}: Nullsafety code mods '
         'successfully applied to ${AnsiStyles.cyanBright(
@@ -446,9 +543,6 @@ class NullsafetyVerifyCommand extends Command {
     )} files in ${AnsiStyles.cyanBright(_modifiedPackages.length.toString())} packages.');
     logger.stdout('');
 
-    // --------------
-    //     Step 2
-    // --------------
     // Apply defined nullsafety package versions to each package pubspec.yaml.
     logger.stdout(
         '  ${AnsiStyles.bold.cyanBright('-')} Applying nullsafety versioning for workspace packages and their dependencies.');
@@ -471,33 +565,19 @@ class NullsafetyVerifyCommand extends Command {
     logger.stdout('');
 
     // Bootstrap workspace so new packages and versions are updated.
-    await _bootstrapWorkspace();
+    await _bootstrapWorkspace().catchError(_catchError);
     if (_abort) return;
 
-    // TODO
-    // TODO
-    // TODO
-    // TODO
-    if (!Directory(currentWorkspace.melosToolPath).existsSync()) {
-      Directory(currentWorkspace.melosToolPath).createSync(recursive: true);
-    }
-    var didFailMigration = await ExecCommand.execInPackages(
-      currentWorkspace.packages,
-      'dart migrate --apply-changes --skip-import-check --ignore-errors --ignore-exceptions '
-              '--summary=${joinAll([
-        currentWorkspace.melosToolPath,
-        'ns_result_MELOS_PACKAGE_NAME.json'
-      ])}'
-          .split(' '),
-      concurrency: 1,
-      failFast: true,
-      onlyOutputOnError: true,
-    ).catchError(_catchError);
-    exit(1);
-    if (_abort || didFailMigration) {
+    // Run Dart migration tool.
+    logger.stdout(
+        '  ${AnsiStyles.bold.cyanBright('-')} Running Dart nullsafety migration tool.');
+    await _runDartMigrationTool().catchError(_catchError);
+    if (_abort) {
       await _abortAndRollbackChanges();
       return;
     }
+    logger.stdout('  ${AnsiStyles.bold.greenBright('  └> SUCCESS')}');
+    logger.stdout('');
 
     // Apply environment versions to melos.yaml
     await _applyEnvironmentConfig().catchError(_catchError);
@@ -514,16 +594,11 @@ class NullsafetyVerifyCommand extends Command {
     await _runAnalyzer();
     if (_abort) return;
 
-    // TODO
-    // TODO
-    // TODO
-    // TODO
-    // TODO 6) `dart pub outdated --mode=null-safety --json` to confirm no packages are missing nullsafety upgrades
-    // TODO 7) verify with analyzer, use MELOS_PACKAGES env variable to limit scope
-    // TODO 8) Run migration via `dart migrate --summary=summary.json --skip-import-check`
-    // TODO 9) verify with analyzer again, use MELOS_PACKAGES env variable to limit scope
-
     // Finally, revert all changes if requested.
     await _rollbackFiles();
+
+    logger.stdout('');
+    logger.stdout(
+        '${AnsiStyles.bold.greenBright('SUCCESS')}: all packages are compatible for automated nullsafety package building.');
   }
 }
