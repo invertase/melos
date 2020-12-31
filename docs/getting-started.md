@@ -11,7 +11,7 @@ Melos requires a few one-off steps to be completed before you can start using it
 Melos can be installed as a global package via [pub.dev](https://pub.dev/):
 
 ```bash
-pub global activate melos
+dart pub global activate melos
 ```
 
 ### Setup
