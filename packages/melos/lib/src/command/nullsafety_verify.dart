@@ -398,7 +398,7 @@ class NullsafetyVerifyCommand extends Command {
       Directory(currentWorkspace.melosToolPath).createSync(recursive: true);
     }
 
-    await Future.forEach(currentWorkspace.packages.reversed,
+    await Future.forEach(currentWorkspace.packages,
         (MelosPackage package) async {
       if (_abort) return;
 
@@ -439,37 +439,80 @@ class NullsafetyVerifyCommand extends Command {
       Map changesByPath = jsonMap['changes']['byPath'] as Map;
 
       Map<String, int> filesWithNoValidMigrationForNull = {};
-      // Map<String, int> filesWithConditionFalseInStrongMode = {};
-      // Map<String, int> filesWithNullAwareAssignmentUnnecessaryInStrongMode = {};
-      // TODO handle conditionFalseInStrongMode (Condition will always be false in strong checking mode)
-      // TODO handle nullAwareAssignmentUnnecessaryInStrongMode (Null-aware assignment will be unnecessary in strong checking mode)
+      Map<String, int> filesWithConditionFalseInStrongMode = {};
+      Map<String, int> filesWithNullAwareAssignmentUnnecessaryInStrongMode = {};
       changesByPath.forEach((key, value) {
         _modifiedFiles.add(NullsafetyModifiedFile(package.path, key as String));
         if (changesByPath[key]['noValidMigrationForNull'] != null) {
           filesWithNoValidMigrationForNull[key as String] =
               changesByPath[key]['noValidMigrationForNull'] as int;
         }
+        if (changesByPath[key]['conditionFalseInStrongMode'] != null) {
+          filesWithConditionFalseInStrongMode[key as String] =
+              changesByPath[key]['conditionFalseInStrongMode'] as int;
+        }
+        if (changesByPath[key]['nullAwareAssignmentUnnecessaryInStrongMode'] !=
+            null) {
+          filesWithNullAwareAssignmentUnnecessaryInStrongMode[key as String] =
+              changesByPath[key]['nullAwareAssignmentUnnecessaryInStrongMode']
+                  as int;
+        }
       });
 
-      if (filesWithNoValidMigrationForNull.isNotEmpty) {
-        logger.stdout(
-          '    ${AnsiStyles.bold.redBright('✘')}  ${AnsiStyles.cyanBright(package.name)}: the following files contain types that have no valid migration path:',
-        );
-        filesWithNoValidMigrationForNull.forEach((key, value) {
-          logger.stdout(
-            '      ${AnsiStyles.bold.redBright(AnsiStyles.bullet)}  ${AnsiStyles.cyanBright(key)} : $value types.',
-          );
-        });
-        logger.stdout(
-          '  ${AnsiStyles.bold.redBright('  └> FAILED')}',
-        );
+      bool hasMigrationIssues = filesWithNoValidMigrationForNull.isNotEmpty ||
+          filesWithConditionFalseInStrongMode.isNotEmpty ||
+          filesWithNullAwareAssignmentUnnecessaryInStrongMode.isNotEmpty;
+      if (hasMigrationIssues) {
         _abort = true;
         _capturedErrorHint =
-            'One or more files in the package ${AnsiStyles.cyanBright(package.name)} contain types that have'
-            ' no valid nullsafety migration path (see logs above) - ensure all necessary nullsafety hints have been'
+            'One or more files in the package ${AnsiStyles.cyanBright(package.name)} contain nullsafety'
+            ' migration issues (see logs above) - ensure all necessary nullsafety hints have been'
             ' added and try again. \n\nRun the following commands to view the interactive migration tool for this package:\n\n'
             '${AnsiStyles.gray('cd ${package.pathRelativeToWorkspace}')}\n'
             '${AnsiStyles.gray(toolExecArgs.join(' '))}\n';
+        logger.stdout(
+          '    ${AnsiStyles.bold.redBright('✘')}  ${AnsiStyles.cyanBright(package.name)} has the following migration issues:',
+        );
+      }
+
+      if (filesWithNoValidMigrationForNull.isNotEmpty) {
+        logger.stdout(
+          '       ${AnsiStyles.bold.redBright(AnsiStyles.bullet)} ${AnsiStyles.bold.redBright('no valid nullsafety migration path')}:',
+        );
+        filesWithNoValidMigrationForNull.forEach((key, value) {
+          logger.stdout(
+            '         ${AnsiStyles.bold.redBright(AnsiStyles.bullet)}  ${AnsiStyles.cyanBright(key)} x $value.',
+          );
+        });
+      }
+
+      if (filesWithConditionFalseInStrongMode.isNotEmpty) {
+        logger.stdout(
+          '       ${AnsiStyles.bold.redBright(AnsiStyles.bullet)} ${AnsiStyles.bold.redBright('condition will always be false in strong checking mode (dead code)')}:',
+        );
+        filesWithConditionFalseInStrongMode.forEach((key, value) {
+          logger.stdout(
+            '         ${AnsiStyles.bold.redBright(AnsiStyles.bullet)}  ${AnsiStyles.cyanBright(key)} x $value.',
+          );
+        });
+      }
+
+      if (filesWithNullAwareAssignmentUnnecessaryInStrongMode.isNotEmpty) {
+        logger.stdout(
+          '       ${AnsiStyles.bold.redBright(AnsiStyles.bullet)} ${AnsiStyles.bold.redBright('null-aware assignment will be unnecessary in strong checking mode (dead code)')}:',
+        );
+        filesWithNullAwareAssignmentUnnecessaryInStrongMode
+            .forEach((key, value) {
+          logger.stdout(
+            '         ${AnsiStyles.bold.redBright(AnsiStyles.bullet)}  ${AnsiStyles.cyanBright(key)} x $value.',
+          );
+        });
+      }
+
+      if (hasMigrationIssues) {
+        logger.stdout(
+          '  ${AnsiStyles.bold.redBright('  └> FAILED')}',
+        );
         return;
       }
 
