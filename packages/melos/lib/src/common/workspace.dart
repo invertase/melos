@@ -133,6 +133,7 @@ class MelosWorkspace {
     List<String> fileExists,
     bool skipPrivate,
     bool published,
+    bool hasFlutter,
   }) async {
     if (packages != null) return Future.value(packages);
     final packagePatterns = config.packages;
@@ -211,7 +212,6 @@ class MelosWorkspace {
       }).drain();
       packages = packagesFilteredWithPublishStatus;
     }
-
     // --since
     if (since != null) {
       var pool = Pool(10);
@@ -244,6 +244,13 @@ class MelosWorkspace {
       }).toList();
     } else {
       packagesNoScope = packages;
+    }
+
+    // --flutter / --no-flutter
+    if (hasFlutter != null) {
+      packages = packages
+          .where((package) => package.isFlutterPackage == hasFlutter)
+          .toList();
     }
 
     return packages;

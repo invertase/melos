@@ -283,3 +283,13 @@ Include only packages where a specific file exists in the package.
 # Only bootstrap packages with an README.md file
 melos bootstrap --file-exists="README.md"
 ```
+
+### --flutter
+
+Filter packages where the package depends on the Flutter SDK.
+
+```bash
+melos exec --flutter -- flutter test
+```
+
+Use `--no-flutter` to filter packages that do not depend on the Flutter SDK.

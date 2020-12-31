@@ -125,6 +125,7 @@ class RunCommand extends Command {
         since: script.selectPackageOptions[filterOptionSince] as String,
         skipPrivate: script.selectPackageOptions[filterOptionNoPrivate] as bool,
         published: script.selectPackageOptions[filterOptionPublished] as bool,
+        hasFlutter: script.selectPackageOptions[filterOptionFlutter] as bool,
       );
 
       var choices = currentWorkspace.packages

@@ -92,6 +92,12 @@ Map<String, dynamic> _validateSelectPackageOptions(
       selectPackageOptions[filterOptionPublished],
     );
   }
+  if (selectPackageOptions.containsKey(filterOptionFlutter)) {
+    result[filterOptionFlutter] = _asBool(
+      filterOptionFlutter,
+      selectPackageOptions[filterOptionFlutter],
+    );
+  }
 
   return result;
 }
