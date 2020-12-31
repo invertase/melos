@@ -98,6 +98,14 @@ Map<String, dynamic> _validateFilterPackageOptions(
     filterOptionFileExists,
     filterPackageOptions[filterOptionFileExists],
   );
+  result[filterOptionDependsOn] = _asStringList(
+    filterOptionDependsOn,
+    filterPackageOptions[filterOptionDependsOn],
+  );
+  result[filterOptionNoDependsOn] = _asStringList(
+    filterOptionNoDependsOn,
+    filterPackageOptions[filterOptionNoDependsOn],
+  );
 
   // String
   if (filterPackageOptions.containsKey(filterOptionSince)) {
@@ -118,6 +126,12 @@ Map<String, dynamic> _validateFilterPackageOptions(
     result[filterOptionPublished] = _asBool(
       filterOptionPublished,
       filterPackageOptions[filterOptionPublished],
+    );
+  }
+  if (filterPackageOptions.containsKey(filterOptionFlutter)) {
+    result[filterOptionFlutter] = _asBool(
+      filterOptionFlutter,
+      filterPackageOptions[filterOptionFlutter],
     );
   }
 

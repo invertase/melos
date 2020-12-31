@@ -111,9 +111,9 @@ class NullsafetyVerifyCommand extends Command {
     }
     if (_capturedError != null) {
       logger.stdout('');
-      logger.stdout(_capturedError.toString());
+      exitCode = 1;
+      throw _capturedError;
     }
-    exitCode = 1;
   }
 
   Future<void> _applyNullsafetyCodeMods() async {
@@ -315,6 +315,12 @@ class NullsafetyVerifyCommand extends Command {
             .filterPackageOptions[filterOptionNoPrivate] as bool,
         published: _nullsafetyConfig.filterPackageOptions[filterOptionPublished]
             as bool,
+        hasFlutter:
+            _nullsafetyConfig.filterPackageOptions[filterOptionFlutter] as bool,
+        dependsOn: _nullsafetyConfig.filterPackageOptions[filterOptionDependsOn]
+            as List<String>,
+        noDependsOn: _nullsafetyConfig
+            .filterPackageOptions[filterOptionNoDependsOn] as List<String>,
         override: true,
       );
     }
