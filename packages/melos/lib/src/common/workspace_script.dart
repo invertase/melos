@@ -70,6 +70,14 @@ Map<String, dynamic> _validateSelectPackageOptions(
     filterOptionFileExists,
     selectPackageOptions[filterOptionFileExists],
   );
+  result[filterOptionDependsOn] = _asStringList(
+    filterOptionDependsOn,
+    selectPackageOptions[filterOptionDependsOn],
+  );
+  result[filterOptionNoDependsOn] = _asStringList(
+    filterOptionNoDependsOn,
+    selectPackageOptions[filterOptionNoDependsOn],
+  );
 
   // String
   if (selectPackageOptions.containsKey(filterOptionSince)) {

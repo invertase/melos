@@ -110,6 +110,18 @@ class MelosCommandRunner extends CommandRunner {
           'Include only packages where a specific file exists in the package.',
     );
 
+    argParser.addMultiOption(
+      filterOptionDependsOn,
+      valueHelp: 'dependantPackageName',
+      help: 'Include only packages that depend on specific packages.',
+    );
+
+    argParser.addMultiOption(
+      filterOptionNoDependsOn,
+      valueHelp: 'noDependantPackageName',
+      help: 'Include only packages that *dont* depend on specific packages.',
+    );
+
     addCommand(ExecCommand());
     addCommand(BootstrapCommand());
     addCommand(CleanCommand());
@@ -173,6 +185,8 @@ class MelosCommandRunner extends CommandRunner {
         dirExists: argResults[filterOptionDirExists] as List<String>,
         fileExists: argResults[filterOptionFileExists] as List<String>,
         hasFlutter: argResults[filterOptionFlutter] as bool,
+        dependsOn: argResults[filterOptionDependsOn] as List<String>,
+        noDependsOn: argResults[filterOptionNoDependsOn] as List<String>,
       );
     }
 

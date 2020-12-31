@@ -293,3 +293,12 @@ melos exec --flutter -- flutter test
 ```
 
 Use `--no-flutter` to filter packages that do not depend on the Flutter SDK.
+
+### --depends-on
+
+Include only packages that depend on specific dependencies.
+
+```bash
+melos exec --depends-on="flutter" --depends-on="firebase_core" -- flutter test
+```
+Use `--no-depends-on` to filter packages that do not depend on the given dependencies.
