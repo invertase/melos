@@ -68,6 +68,14 @@ class MelosCommandRunner extends CommandRunner {
           'Filter packages where the current local package version exists on pub.dev. Or "-no-published" to filter packages that have not had their current version published yet.',
     );
 
+    argParser.addFlag(
+      filterOptionFlutter,
+      negatable: true,
+      defaultsTo: null,
+      help:
+          'Filter packages where the package depends on the Flutter SDK. Or "-no-flutter" to filter packages that do not depend on the Flutter SDK.',
+    );
+
     argParser.addMultiOption(
       filterOptionScope,
       valueHelp: 'glob',
@@ -101,6 +109,18 @@ class MelosCommandRunner extends CommandRunner {
       valueHelp: 'fileRelativeToPackageRoot',
       help:
           'Include only packages where a specific file exists in the package.',
+    );
+
+    argParser.addMultiOption(
+      filterOptionDependsOn,
+      valueHelp: 'dependantPackageName',
+      help: 'Include only packages that depend on specific packages.',
+    );
+
+    argParser.addMultiOption(
+      filterOptionNoDependsOn,
+      valueHelp: 'noDependantPackageName',
+      help: 'Include only packages that *dont* depend on specific packages.',
     );
 
     addCommand(ExecCommand());
@@ -166,6 +186,9 @@ class MelosCommandRunner extends CommandRunner {
           ..addAll(currentWorkspace.config.ignore),
         dirExists: argResults[filterOptionDirExists] as List<String>,
         fileExists: argResults[filterOptionFileExists] as List<String>,
+        hasFlutter: argResults[filterOptionFlutter] as bool,
+        dependsOn: argResults[filterOptionDependsOn] as List<String>,
+        noDependsOn: argResults[filterOptionNoDependsOn] as List<String>,
       );
     }
 

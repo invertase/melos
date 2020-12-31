@@ -137,6 +137,9 @@ class MelosWorkspace {
     bool skipPrivate,
     bool published,
     bool override = false,
+    bool hasFlutter,
+    List<String> dependsOn,
+    List<String> noDependsOn,
   }) async {
     if (packages != null && !override) return Future.value(packages);
     final packagePatterns = config.packages;
@@ -215,7 +218,6 @@ class MelosWorkspace {
       }).drain();
       packages = packagesFilteredWithPublishStatus;
     }
-
     // --since
     if (since != null) {
       var pool = Pool(10);
@@ -248,6 +250,35 @@ class MelosWorkspace {
       }).toList();
     } else {
       packagesNoScope = packages;
+    }
+
+    // --flutter / --no-flutter
+    if (hasFlutter != null) {
+      if (hasFlutter) {
+        dependsOn.add("flutter");
+      } else {
+        noDependsOn.add("flutter");
+      }
+    }
+
+    // --depends-on
+    if (dependsOn.isNotEmpty) {
+      packages = packages.where((package) {
+        return dependsOn.every((element) {
+          return package.dependencies.containsKey(element) ||
+              package.devDependencies.containsKey(element);
+        });
+      }).toList();
+    }
+
+    // --no-depends-on
+    if (noDependsOn.isNotEmpty) {
+      packages = packages.where((package) {
+        return noDependsOn.every((element) {
+          return !package.dependencies.containsKey(element) &&
+              !package.devDependencies.containsKey(element);
+        });
+      }).toList();
     }
 
     return packages;

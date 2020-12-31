@@ -70,6 +70,14 @@ Map<String, dynamic> _validateSelectPackageOptions(
     filterOptionFileExists,
     selectPackageOptions[filterOptionFileExists],
   );
+  result[filterOptionDependsOn] = _asStringList(
+    filterOptionDependsOn,
+    selectPackageOptions[filterOptionDependsOn],
+  );
+  result[filterOptionNoDependsOn] = _asStringList(
+    filterOptionNoDependsOn,
+    selectPackageOptions[filterOptionNoDependsOn],
+  );
 
   // String
   if (selectPackageOptions.containsKey(filterOptionSince)) {
@@ -90,6 +98,12 @@ Map<String, dynamic> _validateSelectPackageOptions(
     result[filterOptionPublished] = _asBool(
       filterOptionPublished,
       selectPackageOptions[filterOptionPublished],
+    );
+  }
+  if (selectPackageOptions.containsKey(filterOptionFlutter)) {
+    result[filterOptionFlutter] = _asBool(
+      filterOptionFlutter,
+      selectPackageOptions[filterOptionFlutter],
     );
   }
 
