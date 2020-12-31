@@ -16,7 +16,11 @@
 - [Documentation](https://docs.page/invertase/melos)
 - [License](/LICENSE)
 
----
+## Install
+
+```bash
+dart pub global activate melos
+```
 
 ## README Badge
 
