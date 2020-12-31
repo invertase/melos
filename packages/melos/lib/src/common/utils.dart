@@ -37,6 +37,9 @@ var filterOptionFileExists = 'file-exists';
 var filterOptionSince = 'since';
 var filterOptionNoPrivate = 'no-private';
 var filterOptionPublished = 'published';
+var filterOptionFlutter = 'flutter';
+var filterOptionDependsOn = 'depends-on';
+var filterOptionNoDependsOn = 'no-depends-on';
 var scriptOptionSelectPackage = 'select-package';
 
 // MELOS_PACKAGES environment variable is a comma delimited list of
