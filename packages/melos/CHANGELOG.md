@@ -1,3 +1,7 @@
+## 0.3.13
+
+ - **FEAT**: add `flutter` package filter (#45).
+
 ## 0.3.12+1
 
  - **FIX**: don't recreate currentWorkspace if already created (fixes #39) (#40).
