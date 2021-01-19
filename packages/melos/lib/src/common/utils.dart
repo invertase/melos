@@ -179,7 +179,7 @@ bool isPackageDirectory(Directory directory) {
 
 Future<int> startProcess(List<String> execArgs,
     {String prefix,
-    Map<String, String> environment,
+    Map<String, String> environment = const {},
     String workingDirectory,
     bool onlyOutputOnError = false}) async {
   final environmentVariables = environment ?? {};
@@ -295,6 +295,7 @@ Future<int> startProcess(List<String> execArgs,
   var exitCode = await execProcess.exitCode;
 
   if (onlyOutputOnError && exitCode > 0) {
+    print('\n');
     stdout.add(processStdout);
     stderr.add(processStderr);
   }

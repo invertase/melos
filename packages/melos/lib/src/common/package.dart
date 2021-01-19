@@ -20,7 +20,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
-import 'package:path/path.dart' show relative, normalize, joinAll;
+import 'package:path/path.dart' show join, joinAll, normalize, relative;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 import 'package:ansi_styles/ansi_styles.dart';
@@ -59,6 +59,7 @@ const String _kVersion = 'version';
 const String _kPublishTo = 'publish_to';
 const String _kDependencies = 'dependencies';
 const String _kDevDependencies = 'dev_dependencies';
+const String _kDependencyOverrides = 'dependency_overrides';
 const String _kFlutter = 'flutter';
 const String _kPlugin = 'plugin';
 
@@ -85,7 +86,7 @@ RegExp _dependencyVersionReplaceRegex(String dependencyName) {
 /// A workspace representation of a Dart package.
 class MelosPackage {
   final MelosWorkspace _workspace;
-  final Map _yamlContents;
+  final Map yamlContents;
   List<String> _registryVersions;
   final String _name;
   final String _path;
@@ -99,7 +100,7 @@ class MelosPackage {
   /// Package version.
   /// As defined in pubspec.yaml.
   Version get version =>
-      Version.parse((_yamlContents[_kVersion] as String) ?? '0.0.0');
+      Version.parse((yamlContents[_kVersion] as String) ?? '0.0.0');
 
   /// Package path.
   /// Fully qualified path to this package location.
@@ -118,16 +119,16 @@ class MelosPackage {
     return PackageType.dartPackage;
   }
 
-  MelosPackage._(this._name, this._path, this._yamlContents, this._workspace);
+  MelosPackage._(this._name, this._path, this.yamlContents, this._workspace);
 
   /// Dependencies of this package.
   /// Sourced from pubspec.yaml.
   Map<String, dynamic> get dependencies {
-    if (_yamlContents[_kDependencies] != null) {
+    if (yamlContents[_kDependencies] != null) {
       // ignore: omit_local_variable_types
       Map<String, dynamic> deps = {};
-      _yamlContents[_kDependencies].keys.forEach((key) {
-        deps[key as String] = _yamlContents[_kDependencies][key];
+      yamlContents[_kDependencies].keys.forEach((key) {
+        deps[key as String] = yamlContents[_kDependencies][key];
       });
       return deps;
     }
@@ -227,14 +228,28 @@ class MelosPackage {
     return out;
   }
 
+  /// Dependency overrides of this package.
+  /// Sourced from pubspec.yaml.
+  Map<String, dynamic> get dependencyOverrides {
+    if (yamlContents[_kDependencyOverrides] != null) {
+      // ignore: omit_local_variable_types
+      Map<String, dynamic> overrides = {};
+      yamlContents[_kDependencyOverrides].keys.forEach((key) {
+        overrides[key as String] = yamlContents[_kDependencyOverrides][key];
+      });
+      return overrides;
+    }
+    return {};
+  }
+
   /// Dev dependencies of this package.
   /// Sourced from pubspec.yaml.
   Map<String, dynamic> get devDependencies {
-    if (_yamlContents[_kDevDependencies] != null) {
+    if (yamlContents[_kDevDependencies] != null) {
       // ignore: omit_local_variable_types
       Map<String, dynamic> devDeps = {};
-      _yamlContents[_kDevDependencies].keys.forEach((key) {
-        devDeps[key as String] = _yamlContents[_kDevDependencies][key];
+      yamlContents[_kDevDependencies].keys.forEach((key) {
+        devDeps[key as String] = yamlContents[_kDevDependencies][key];
       });
       return devDeps;
     }
@@ -311,27 +326,31 @@ class MelosPackage {
 
   /// Generates Pub/Flutter related temporary files such as .packages or pubspec.lock.
   Future<void> linkPackages(MelosWorkspace workspace) async {
-    // Dart specific files.
-    await Future.forEach([
-      PackagesPubFile.fromWorkspacePackage(workspace, this),
-      PubspecLockPubFile.fromWorkspacePackage(workspace, this),
-      PackageConfigPubFile.fromWorkspacePackage(workspace, this),
-    ], (Future<PubFile> future) async {
-      PubFile pubFile = await future;
-      return pubFile.write();
-    });
+    var pluginTemporaryPath =
+        join(currentWorkspace.melosToolPath, pathRelativeToWorkspace);
 
-    // Additional Flutter application specific files, only if package is an App.
-    if (isFlutterApp &&
-        PubFile(workspace.melosToolPath, '.flutter-plugins').exists) {
-      await Future.forEach([
-        FlutterPluginsPubFile.fromWorkspacePackage(workspace, this),
-        FlutterDependenciesPubFile.fromWorkspacePackage(workspace, this),
-      ], (Future<PubFile> future) async {
-        PubFile pubFile = await future;
-        return pubFile.write();
-      });
-    }
+    List<String> pathsToUpdateAndCopy = [
+      'pubspec.lock',
+      '.packages',
+      '.flutter-plugins',
+      '.flutter-plugins-dependencies',
+      '.dart_tool${Platform.pathSeparator}package_config.json',
+      '.dart_tool${Platform.pathSeparator}package_config_subset',
+      '.dart_tool${Platform.pathSeparator}version',
+    ];
+
+    await Future.forEach(pathsToUpdateAndCopy, (String tempFilePath) async {
+      File fileToCopy = File(join(pluginTemporaryPath, tempFilePath));
+      if (!(await fileToCopy.exists())) {
+        return;
+      }
+      String temporaryFileContents = await fileToCopy.readAsString();
+      temporaryFileContents = temporaryFileContents.replaceAll(
+          RegExp('\.melos_tool${Platform.pathSeparator}'), '');
+      File fileToCreate = File(join(path, tempFilePath));
+      await fileToCreate.create(recursive: true);
+      await fileToCreate.writeAsString(temporaryFileContents);
+    });
   }
 
   /// Queries the pub.dev registry for published versions of this package.
@@ -374,7 +393,7 @@ class MelosPackage {
   /// Returns whether this package is for Flutter.
   /// This is determined by whether the package depends on the Flutter SDK.
   bool get isFlutterPackage {
-    final YamlMap dependencies = _yamlContents[_kDependencies] as YamlMap;
+    final YamlMap dependencies = yamlContents[_kDependencies] as YamlMap;
     if (dependencies == null) {
       return false;
     }
@@ -390,7 +409,7 @@ class MelosPackage {
     // Must directly depend on the Flutter SDK.
     if (!isFlutterPackage) return false;
     // Must not have a Flutter plugin definition in it's pubspec.yaml.
-    final YamlMap flutterSection = _yamlContents[_kFlutter] as YamlMap;
+    final YamlMap flutterSection = yamlContents[_kFlutter] as YamlMap;
     if (flutterSection != null) {
       final YamlMap pluginSection = flutterSection[_kPlugin] as YamlMap;
       if (pluginSection != null) {
@@ -439,7 +458,7 @@ class MelosPackage {
   /// Returns whether this package is a Flutter plugin.
   /// This is determined by whether the pubspec contains a flutter.plugin definition.
   bool get isFlutterPlugin {
-    final YamlMap flutterSection = _yamlContents[_kFlutter] as YamlMap;
+    final YamlMap flutterSection = yamlContents[_kFlutter] as YamlMap;
     if (flutterSection == null) {
       return false;
     }
@@ -489,12 +508,12 @@ class MelosPackage {
   /// Returns whether this package is private (publish_to set to 'none').
   bool get isPrivate {
     // Unversioned package, assuming private, e.g. example apps.
-    if (!_yamlContents.containsKey(_kVersion)) return true;
+    if (!yamlContents.containsKey(_kVersion)) return true;
 
     // Check if publish_to explicitly set to none.
-    if (!_yamlContents.containsKey(_kPublishTo)) return false;
-    if (_yamlContents[_kPublishTo].runtimeType != String) return false;
-    return _yamlContents[_kPublishTo] == 'none';
+    if (!yamlContents.containsKey(_kPublishTo)) return false;
+    if (yamlContents[_kPublishTo].runtimeType != String) return false;
+    return yamlContents[_kPublishTo] == 'none';
   }
 
   /// Returns whether this package contains a test directory.
@@ -520,7 +539,7 @@ class MelosPackage {
         platform == kWindows ||
         platform == kLinux);
 
-    final YamlMap flutterSection = _yamlContents[_kFlutter] as YamlMap;
+    final YamlMap flutterSection = yamlContents[_kFlutter] as YamlMap;
     if (flutterSection == null) {
       return false;
     }

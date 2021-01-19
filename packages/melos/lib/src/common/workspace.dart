@@ -368,7 +368,6 @@ class MelosWorkspace {
 
   /// Calls [linkPackages] on each [MelosPackage].
   Future<void> linkPackages() async {
-    await getDependencyGraph();
     await Future.forEach(packages, (MelosPackage package) {
       return package.linkPackages(this);
     });
