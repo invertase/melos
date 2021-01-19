@@ -1,3 +1,8 @@
+## 0.4.0-dev.0
+
+ - **BREAKING**: Potentially breaking experimental change to bootstrap behaviour.
+   - `pub get` is now ran individually in each package.
+
 ## 0.3.13
 
  - **FEAT**: add `flutter` package filter (#45).

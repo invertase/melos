@@ -1,6 +1,6 @@
 name: "melos"
 description: "A tool for managing Dart projects with multiple packages. Inspired by JavaScripts Lerna package."
-version: "0.3.13"
+version: "0.4.0-dev.0"
 homepage: "https://github.com/invertase/melos"
 executables:
   melos:
