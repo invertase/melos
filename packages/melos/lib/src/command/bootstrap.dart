@@ -224,7 +224,7 @@ class BootstrapCommand extends Command {
     });
 
     var failed = false;
-    var pool = Pool(5);
+    var pool = Pool(utils.isCI ? 1 : 5);
     await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
         (package) async {
       if (failed) {
