@@ -16,6 +16,7 @@
  */
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/command_runner.dart' show Command;
@@ -42,48 +43,32 @@ class BootstrapCommand extends Command {
   final String description =
       'Initialize the workspace, link local packages together and install remaining package dependencies.';
 
-  Future<int> _execInPackage(
-      List<String> execArgs, String workingDirectory) async {
-    final workingDirectoryPath = workingDirectory ?? Directory.current.path;
+  Future<bool> _runPubGetForPackage(MelosPackage package) async {
+    final pubGetArgs = ['pub', 'get'];
+    final execArgs = currentWorkspace.isFlutterWorkspace
+        ? ['flutter', ...pubGetArgs]
+        : [if (utils.isPubSubcommand()) 'dart', ...pubGetArgs];
     final executable = Platform.isWindows ? 'cmd' : '/bin/sh';
-    final filteredArgs = execArgs.map((arg) {
-      var _arg = arg;
-
-      // Remove empty args.
-      if (_arg.trim().isEmpty) {
-        return null;
-      }
-
-      // Attempt to make line continuations Windows & Linux compatible.
-      if (_arg.trim() == r'\') {
-        return Platform.isWindows ? _arg.replaceAll(r'\', '^') : _arg;
-      }
-      if (_arg.trim() == r'^') {
-        return Platform.isWindows ? _arg : _arg.replaceAll('^', r'\');
-      }
-
-      return _arg;
-    }).where((element) => element != null);
-
+    final pluginTemporaryPath =
+        join(currentWorkspace.melosToolPath, package.pathRelativeToWorkspace);
     final execProcess = await Process.start(
         executable, Platform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
-        workingDirectory: workingDirectoryPath,
+        workingDirectory: pluginTemporaryPath,
         includeParentEnvironment: true,
         environment: {
-          'MELOS_SCRIPT': filteredArgs.join(' '),
+          'MELOS_SCRIPT': execArgs.join(' '),
         },
         runInShell: true);
 
     if (!Platform.isWindows) {
       // Pipe in the arguments to trigger the script to run.
-      execProcess.stdin.writeln(filteredArgs.join(' '));
+      execProcess.stdin.writeln(execArgs.join(' '));
       // Exit the process with the same exit code as the previous command.
       execProcess.stdin.writeln('exit \$?');
     }
 
-    var stdoutStream = execProcess.stdout;
-    var stderrStream = execProcess.stderr;
-
+    final stdoutStream = execProcess.stdout;
+    final stderrStream = execProcess.stderr;
     final List<int> processStdout = <int>[];
     final List<int> processStderr = <int>[];
     final Completer<int> processStdoutCompleter = Completer();
@@ -101,12 +86,64 @@ class BootstrapCommand extends Command {
     var exitCode = await execProcess.exitCode;
 
     if (exitCode > 0) {
-      print('\n');
-      stdout.add(processStdout);
-      stderr.add(processStderr);
+      logger.stdout('');
+      logger.stdout(AnsiStyles.gray('-' * stdout.terminalColumns));
+      var processStdOutString = utf8.decoder.convert(processStdout);
+      var processStdErrString = utf8.decoder.convert(processStderr);
+
+      processStdOutString = processStdOutString
+          .split('\n')
+          // We filter these out as they can be quite spammy. This happens
+          // as we run multiple pub gets in parrallel.
+          .where((line) => !line.contains(
+              'Waiting for another flutter command to release the startup lock'))
+          // Remove empty lines to reduce logging.
+          .where((line) => line.trim().isNotEmpty)
+          // Highlight the current package name in any logs.
+          .map((line) => line.replaceAll(
+              '${package.name}.', '${AnsiStyles.cyan(package.name)}.'))
+          .toList()
+          .join('\n');
+
+      processStdErrString = processStdErrString
+          .split('\n')
+          // We filter these out as they can be quite spammy. This happens
+          // as we run multiple pub gets in parrallel.
+          .where((line) => !line.contains(
+              'Waiting for another flutter command to release the startup lock'))
+          // Remove empty lines to reduce logging.
+          .where((line) => line.trim().isNotEmpty)
+          // Highlight the current package name in any logs.
+          .map((line) => line.replaceAll(
+              '${package.name} ', '${AnsiStyles.cyan(package.name)} '))
+          // // Highlight other local workspace packages in the logs.
+          .map((line) {
+            var lineWithWorkspacePackagesHighlighted = line;
+            currentWorkspace.packages.forEach((workspacePackage) {
+              if (workspacePackage.name == package.name) return;
+              lineWithWorkspacePackagesHighlighted =
+                  lineWithWorkspacePackagesHighlighted.replaceAll(
+                      '${workspacePackage.name} ',
+                      '${AnsiStyles.yellowBright(workspacePackage.name)} ');
+            });
+            return lineWithWorkspacePackagesHighlighted;
+          })
+          .toList()
+          .join('\n');
+
+      logger.stdout(processStdOutString);
+      logger.stderr(processStdErrString);
+
+      logger
+          .stdout('${AnsiStyles.bullet} ${AnsiStyles.bold.cyan(package.name)}');
+      logger.stdout(
+          '    └> ${AnsiStyles.blue(package.path.replaceAll(currentWorkspace.path, "."))}');
+      logger.stdout(
+          '    └> ${AnsiStyles.red('Failed to run "${execArgs.join(' ')}" in this package.')}');
+      logger.stdout(AnsiStyles.gray('-' * stdout.terminalColumns));
     }
 
-    return exitCode;
+    return exitCode > 0;
   }
 
   @override
@@ -177,7 +214,7 @@ class BootstrapCommand extends Command {
         }
       });
 
-      var header = '# Generated file - do not modify or commit this file.';
+      var header = '# Generated file - do not commit this file.';
       var generatedPubspecYamlString =
           '$header\n${toYamlString(generatedYamlMap)}';
       await File(utils.pubspecPathForDirectory(Directory(pluginTemporaryPath)))
@@ -188,33 +225,20 @@ class BootstrapCommand extends Command {
 
     var failed = false;
     var pool = Pool(5);
-    List<String> pubGetArgs = ['pub', 'get'];
-    List<String> execArgs = currentWorkspace.isFlutterWorkspace
-        ? ['flutter', ...pubGetArgs]
-        : [if (utils.isPubSubcommand()) 'dart', ...pubGetArgs];
     await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
         (package) async {
       if (failed) {
         return;
       }
-
-      var pluginTemporaryPath =
-          join(currentWorkspace.melosToolPath, package.pathRelativeToWorkspace);
-      final result = await _execInPackage(execArgs, pluginTemporaryPath);
-      if (result > 0) {
+      final pubGetFailed = await _runPubGetForPackage(package);
+      if (pubGetFailed) {
         failed = true;
-        logger.stdout('${AnsiStyles.bullet} ${AnsiStyles.bold(package.name)}');
-        logger.stdout(
-            '    └> ${AnsiStyles.blue(package.path.replaceAll(currentWorkspace.path, "."))}');
-        logger.stdout(AnsiStyles.red(
-            '       └> Failed to run "${execArgs.join(' ')}" in this package, see log output above for more information'));
-        return;
       }
     }).drain();
 
     if (failed) {
-      logger
-          .stderr('Bootstrap failed, reason: pub get failed, see logs above.');
+      logger.stderr(
+          '\nBootstrap failed, reason: pub get failed, see logs above.');
       exitCode = 1;
       return;
     }

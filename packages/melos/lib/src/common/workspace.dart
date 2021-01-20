@@ -21,11 +21,10 @@ import 'dart:io';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart';
 import 'package:pool/pool.dart';
-import 'package:yamlicious/yamlicious.dart';
 
-import '../pub/pub_deps_list.dart';
 import 'git.dart';
 import 'package.dart';
+import 'pub_dependency_list.dart';
 import 'utils.dart' as utils;
 import 'workspace_config.dart';
 import 'workspace_state.dart';
@@ -251,9 +250,9 @@ class MelosWorkspace {
     // --flutter / --no-flutter
     if (hasFlutter != null) {
       if (hasFlutter) {
-        dependsOn.add("flutter");
+        dependsOn.add('flutter');
       } else {
-        noDependsOn.add("flutter");
+        noDependsOn.add('flutter');
       }
     }
 
@@ -300,7 +299,8 @@ class MelosWorkspace {
       workingDirectory: melosToolPath,
     );
 
-    final pubDepList = PubDepsList.parse(pubListCommandOutput.stdout as String);
+    final pubDepList =
+        PubDependencyList.parse(pubListCommandOutput.stdout as String);
     final allEntries = pubDepList.allEntries;
     final allEntriesMap = allEntries.map((entry, map) {
       return MapEntry(entry.name, map);
@@ -383,55 +383,5 @@ class MelosWorkspace {
         package.clean();
       });
     }
-  }
-
-  /// Builds a generated "pubspec.yaml" file that contains all the workspace
-  /// [packages] as paths to their packages relative to the root of the workspace
-  /// and additional "dependency_overrides" to ensure packages always point to their
-  /// local copy and not from pub hosted.
-  /// This file is written to the [melosToolPath] directory.
-  Future<void> generatePubspecFile() async {
-    var workspacePubspec = {};
-    var workspaceName = config.name ?? 'MelosWorkspace';
-
-    workspacePubspec['name'] = workspaceName;
-    workspacePubspec['version'] = config.version ?? '0.0.0';
-    workspacePubspec['publish_to'] = 'none';
-    workspacePubspec['dependencies'] = Map.from(config.dependencies);
-    workspacePubspec['dev_dependencies'] = Map.from(config.devDependencies);
-    workspacePubspec['dependency_overrides'] = {};
-    workspacePubspec['environment'] = Map.from(config.environment);
-
-    packages.forEach((MelosPackage plugin) {
-      var pluginRelativePath = utils.relativePath(plugin.path, melosToolPath);
-      workspacePubspec['dependencies'][plugin.name] = {
-        'path': pluginRelativePath,
-      };
-      workspacePubspec['dependency_overrides'][plugin.name] = {
-        'path': pluginRelativePath,
-      };
-
-      // TODO(salakar): this is a hacky work around for dev deps - look at using
-      //                `pub cache add` etc and manually generating file:// links
-      var devDependencies = plugin.devDependencies;
-      plugin.devDependencies.keys.toSet().forEach((name) {
-        var linkedPackageExists = packages.firstWhere((package) {
-          return package.name == name;
-        }, orElse: () {
-          return null;
-        });
-        if (linkedPackageExists == null) {
-          workspacePubspec['dev_dependencies'][name] = devDependencies[name];
-        }
-      });
-    });
-
-    var header = '# Generated file - do not modify or commit this file.';
-    var pubspecYaml = '$header\n${toYamlString(workspacePubspec)}';
-
-    await File(utils.pubspecPathForDirectory(Directory(melosToolPath)))
-        .create(recursive: true);
-    await File(utils.pubspecPathForDirectory(Directory(melosToolPath)))
-        .writeAsString(pubspecYaml);
   }
 }

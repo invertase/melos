@@ -19,7 +19,7 @@ import 'package:collection/collection.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:string_scanner/string_scanner.dart';
 
-class PubDepsList extends VersionedEntry {
+class PubDependencyList extends VersionedEntry {
   static final _sdkLine = RegExp(r'(\w+) SDK (.+)\n');
   static final _sourcePackageLine = RegExp('($_pkgName) (.+)\n');
   static final _emptyLine = RegExp(r'\n');
@@ -31,13 +31,13 @@ class PubDepsList extends VersionedEntry {
   Map<VersionedEntry, Map<String, VersionConstraint>> get allEntries =>
       CombinedMapView(sections.values);
 
-  PubDepsList._(
+  PubDependencyList._(
     VersionedEntry entry,
     this.sdks,
     this.sections,
   ) : super.copy(entry);
 
-  factory PubDepsList.parse(String input) {
+  factory PubDependencyList.parse(String input) {
     final _scanner = StringScanner(input);
 
     final sdks = <String, Version>{};
@@ -66,7 +66,7 @@ class PubDepsList extends VersionedEntry {
 
     assert(_scanner.isDone, '${_scanner.position} of ${input.length}');
 
-    return PubDepsList._(
+    return PubDependencyList._(
       sourcePackage,
       sdks,
       sections,

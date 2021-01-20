@@ -25,12 +25,6 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 import 'package:ansi_styles/ansi_styles.dart';
 
-import '../pub/pub_file.dart';
-import '../pub/pub_file_flutter_dependencies.dart';
-import '../pub/pub_file_flutter_plugins.dart';
-import '../pub/pub_file_package_config.dart';
-import '../pub/pub_file_packages.dart';
-import '../pub/pub_file_pubspec_lock.dart';
 import 'logger.dart';
 import 'utils.dart';
 import 'workspace.dart';
@@ -62,6 +56,16 @@ const String _kDevDependencies = 'dev_dependencies';
 const String _kDependencyOverrides = 'dependency_overrides';
 const String _kFlutter = 'flutter';
 const String _kPlugin = 'plugin';
+
+List<String> _generatedPubFilePaths = [
+  'pubspec.lock',
+  '.packages',
+  '.flutter-plugins',
+  '.flutter-plugins-dependencies',
+  '.dart_tool${Platform.pathSeparator}package_config.json',
+  '.dart_tool${Platform.pathSeparator}package_config_subset',
+  '.dart_tool${Platform.pathSeparator}version',
+];
 
 /// Enum representing what type of package this is.
 enum PackageType {
@@ -329,17 +333,7 @@ class MelosPackage {
     var pluginTemporaryPath =
         join(currentWorkspace.melosToolPath, pathRelativeToWorkspace);
 
-    List<String> pathsToUpdateAndCopy = [
-      'pubspec.lock',
-      '.packages',
-      '.flutter-plugins',
-      '.flutter-plugins-dependencies',
-      '.dart_tool${Platform.pathSeparator}package_config.json',
-      '.dart_tool${Platform.pathSeparator}package_config_subset',
-      '.dart_tool${Platform.pathSeparator}version',
-    ];
-
-    await Future.forEach(pathsToUpdateAndCopy, (String tempFilePath) async {
+    await Future.forEach(_generatedPubFilePaths, (String tempFilePath) async {
       File fileToCopy = File(join(pluginTemporaryPath, tempFilePath));
       if (!(await fileToCopy.exists())) {
         return;
@@ -381,13 +375,15 @@ class MelosPackage {
 
   /// Cleans up all Melos generated files for this package.
   void clean() {
-    PackagesPubFile.fromDirectory(path).delete();
-    PubspecLockPubFile.fromDirectory(path).delete();
-    PackageConfigPubFile.fromDirectory(path).delete();
-    if (isFlutterPackage) {
-      FlutterPluginsPubFile.fromDirectory(path).delete();
-      FlutterDependenciesPubFile.fromDirectory(path).delete();
-    }
+    [
+      ..._generatedPubFilePaths,
+      '.dart_tool',
+    ].forEach((String generatedPubFilePath) {
+      File file = File(join(path, generatedPubFilePath));
+      if (file.existsSync()) {
+        file.deleteSync(recursive: true);
+      }
+    });
   }
 
   /// Returns whether this package is for Flutter.
