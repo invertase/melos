@@ -1,3 +1,7 @@
+## 0.4.0-dev.2
+
+ - **FIX** Lower bootstrap 'pub get' concurrency to 1 in CI environments.
+
 ## 0.4.0-dev.1
 
  - **FIX**: don't recreate currentWorkspace if already created (fixes #39) (#40).
