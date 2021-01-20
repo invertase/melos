@@ -37,8 +37,8 @@ scripts:
 
   format: dart format -o write .
   version: dart run scripts/generate_version.dart
-  # An example script to confirm postboostrap runs on CI without erroring.
-  postbootstrap: echo "hello world"
+  # Workaround for 'pubspec.yaml file has changed' issue when using melos on itself.
+  postbootstrap: cd packages/melos && dart pub get
 
 environment:
   sdk: ">=2.2.2 <3.0.0"
