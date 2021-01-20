@@ -237,6 +237,7 @@ class BootstrapCommand extends Command {
     }).drain();
 
     if (failed) {
+      currentWorkspace.clean(cleanPackages: false);
       logger.stderr(
           '\nBootstrap failed, reason: pub get failed, see logs above.');
       exitCode = 1;
