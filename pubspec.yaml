@@ -2,7 +2,6 @@ name: "melos_monorepo"
 publish_to: none
 
 dev_dependencies:
-  pedantic: 1.8.0
   path: ^1.7.0
   yaml: ^2.2.1
 

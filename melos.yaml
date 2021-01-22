@@ -37,8 +37,7 @@ scripts:
 
   format: dart format -o write .
   version: dart run scripts/generate_version.dart
-  # Workaround for 'pubspec.yaml file has changed' issue when using melos on itself.
-  postbootstrap: cd packages/melos && dart pub get
 
-environment:
-  sdk: ">=2.2.2 <3.0.0"
+  # Workarounds for 'pubspec.yaml file has changed' issue when using melos on itself.
+  postclean: dart run scripts/pub_get_melos.dart
+  postbootstrap: dart run scripts/pub_get_melos.dart

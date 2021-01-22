@@ -24,8 +24,9 @@ import 'logger.dart';
 import 'pending_package_update.dart';
 
 class Changelog {
-  final MelosPendingPackageUpdate update;
   Changelog(this.update);
+
+  final MelosPendingPackageUpdate update;
 
   String get markdown {
     throw UnimplementedError();
@@ -41,7 +42,7 @@ class Changelog {
   }
 
   Future<String> read() async {
-    bool exists = await File(path).exists();
+    final exists = File(path).existsSync();
     if (exists) {
       return File(path).readAsString();
     }
@@ -49,7 +50,7 @@ class Changelog {
   }
 
   Future<void> write() async {
-    String contents = await read();
+    var contents = await read();
     if (contents.contains(markdown)) {
       logger.trace(
           'Identical changelog content for ${update.package.name} v${update.nextVersion.toString()} already exists, skipping.');
@@ -65,9 +66,9 @@ class MelosChangelog extends Changelog {
 
   @override
   String get markdown {
-    String body = '';
-    String header = '## ${update.nextVersion}';
-    List<String> entries = [];
+    var body = '';
+    var entries = [];
+    var header = '## ${update.nextVersion}';
 
     if (update.reason == PackageUpdateReason.dependency) {
       entries = ['Update a dependency to the latest release.'];
@@ -84,13 +85,13 @@ class MelosChangelog extends Changelog {
         header += '\n\n> Note: This release has breaking changes.';
       }
 
-      List<ConventionalCommit> commits = List.from(update.commits
+      final commits = List.from(update.commits
           .where((ConventionalCommit commit) => !commit.isMergeCommit)
           .toList());
 
       // Sort so that Breaking Changes appear at the top.
       commits.sort((a, b) {
-        var r = a.isBreakingChange
+        final r = a.isBreakingChange
             .toString()
             .compareTo(b.isBreakingChange.toString());
         if (r != 0) return r;
@@ -105,7 +106,7 @@ class MelosChangelog extends Changelog {
           entry = '**${commit.type.toUpperCase()}**: ${commit.subject}';
         }
 
-        bool shouldPunctuate = !entry.contains(RegExp(r'[\.\?\!]$'));
+        final shouldPunctuate = !entry.contains(RegExp(r'[\.\?\!]$'));
         if (shouldPunctuate) {
           entry = '$entry.';
         }

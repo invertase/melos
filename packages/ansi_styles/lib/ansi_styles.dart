@@ -19,8 +19,8 @@ import 'src/supports_ansi.dart'
     if (dart.library.io) 'src/supports_ansi_io.dart';
 
 final RegExp _stripRegex = RegExp([
-  '[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)',
-  '(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-ntqry=><~]))'
+  r'[\u001B\u009B][[\]()#;?]*(?:(?:(?:[a-zA-Z\d]*(?:;[-a-zA-Z\d\/#&.:=?%@~_]*)*)?\u0007)',
+  r'(?:(?:\d{1,4}(?:;\\d{0,4})*)?[\dA-PR-TZcf-ntqry=><~]))'
 ].join('|'));
 
 void _assertRGBValue(num value) {
@@ -40,17 +40,16 @@ num _getRGBColor({num r = 255, num g = 255, num b = 255}) {
 }
 
 class _AnsiStyles {
-  final List<List<String>> styles;
+  factory _AnsiStyles(List<List<String>> styles) {
+    return _AnsiStyles._(styles);
+  }
   const _AnsiStyles._(this.styles);
+  final List<List<String>> styles;
 
   /// Removes any ANSI styling from any input.
   String strip(String input) {
     assert(input != null);
     return input.replaceAll(_stripRegex, '');
-  }
-
-  factory _AnsiStyles(List<List<String>> styles) {
-    return _AnsiStyles._(styles);
   }
 
   _AnsiStyles _cloneWithStyles(int openCode, int closeCode) {
@@ -112,13 +111,13 @@ class _AnsiStyles {
   _AnsiStyles get bgGray => bgBlackBright;
 
   _AnsiStyles rgb(num r, num g, num b) {
-    final num color = _getRGBColor(r: r ?? 255, g: g ?? 255, b: b ?? 255);
+    final color = _getRGBColor(r: r ?? 255, g: g ?? 255, b: b ?? 255);
     return _AnsiStyles(
         List.from(styles)..add(['\x1B[38;5;${color}m', '\x1B[0m']));
   }
 
   _AnsiStyles bgRgb(num r, num g, num b) {
-    final num color = _getRGBColor(r: r ?? 255, g: g ?? 255, b: b ?? 255);
+    final color = _getRGBColor(r: r ?? 255, g: g ?? 255, b: b ?? 255);
     return _AnsiStyles(
         List.from(styles)..add(['\x1B[48;5;${color}m', '\x1B[0m']));
   }
@@ -127,10 +126,10 @@ class _AnsiStyles {
 
   String call(String input) {
     if (input != null && styles.isNotEmpty && !ansiStylesDisabled) {
-      String output = input;
-      styles.forEach((List<String> style) {
+      var output = input;
+      for (final style in styles) {
         output = '${style[0]}$output${style[1]}';
-      });
+      }
       return output;
     }
 

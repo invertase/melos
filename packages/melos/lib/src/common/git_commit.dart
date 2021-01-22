@@ -16,6 +16,8 @@
  */
 
 class GitCommit {
+  GitCommit({this.message, this.author, this.id, this.date});
+
   final String message;
 
   final String author;
@@ -24,11 +26,10 @@ class GitCommit {
 
   final DateTime date;
 
-  GitCommit({this.message, this.author, this.id, this.date});
-
   @override
   String toString() {
-    return '''GitCommit[
+    return '''
+GitCommit[
   author="$author",
   id="$id",
   date=${date.toIso8601String()},

@@ -64,30 +64,28 @@ class BootstrapCommand extends Command {
       // Pipe in the arguments to trigger the script to run.
       execProcess.stdin.writeln(execArgs.join(' '));
       // Exit the process with the same exit code as the previous command.
-      execProcess.stdin.writeln('exit \$?');
+      execProcess.stdin.writeln(r'exit $?');
     }
 
     final stdoutStream = execProcess.stdout;
     final stderrStream = execProcess.stderr;
-    final List<int> processStdout = <int>[];
-    final List<int> processStderr = <int>[];
-    final Completer<int> processStdoutCompleter = Completer();
-    final Completer<int> processStderrCompleter = Completer();
+    final processStdout = <int>[];
+    final processStderr = <int>[];
+    final processStdoutCompleter = Completer();
+    final processStderrCompleter = Completer();
 
-    stdoutStream.listen((List<int> event) {
-      processStdout.addAll(event);
-    }, onDone: () => processStdoutCompleter.complete());
-    stderrStream.listen((List<int> event) {
-      processStderr.addAll(event);
-    }, onDone: () => processStderrCompleter.complete());
+    stdoutStream.listen(processStdout.addAll,
+        onDone: processStdoutCompleter.complete);
+    stderrStream.listen(processStderr.addAll,
+        onDone: processStderrCompleter.complete);
 
     await processStdoutCompleter.future;
     await processStderrCompleter.future;
-    var exitCode = await execProcess.exitCode;
 
+    final exitCode = await execProcess.exitCode;
     if (exitCode > 0) {
       logger.stdout('');
-      logger.stdout(AnsiStyles.gray('-' * stdout.terminalColumns));
+      logger.stdout(AnsiStyles.gray('-' * utils.terminalColumnsSize));
       var processStdOutString = utf8.decoder.convert(processStdout);
       var processStdErrString = utf8.decoder.convert(processStderr);
 
@@ -119,13 +117,13 @@ class BootstrapCommand extends Command {
           // // Highlight other local workspace packages in the logs.
           .map((line) {
             var lineWithWorkspacePackagesHighlighted = line;
-            currentWorkspace.packages.forEach((workspacePackage) {
-              if (workspacePackage.name == package.name) return;
+            for (final workspacePackage in currentWorkspace.packages) {
+              if (workspacePackage.name == package.name) continue;
               lineWithWorkspacePackagesHighlighted =
                   lineWithWorkspacePackagesHighlighted.replaceAll(
                       '${workspacePackage.name} ',
                       '${AnsiStyles.yellowBright(workspacePackage.name)} ');
-            });
+            }
             return lineWithWorkspacePackagesHighlighted;
           })
           .toList()
@@ -140,28 +138,31 @@ class BootstrapCommand extends Command {
           '    └> ${AnsiStyles.blue(package.path.replaceAll(currentWorkspace.path, "."))}');
       logger.stdout(
           '    └> ${AnsiStyles.red('Failed to run "${execArgs.join(' ')}" in this package.')}');
-      logger.stdout(AnsiStyles.gray('-' * stdout.terminalColumns));
+      logger.stdout(AnsiStyles.gray('-' * utils.terminalColumnsSize));
     }
 
     return exitCode > 0;
   }
 
   @override
-  void run() async {
+  Future<void> run() async {
     logger.stdout(AnsiStyles.yellow.bold('melos bootstrap'));
     logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
-    var successMessage = AnsiStyles.green('SUCCESS');
-    logger.stdout('Bootstrapping project...');
+
+    logger.stdout(
+        'Running "${currentWorkspace.isFlutterWorkspace ? "flutter " : ""}pub get" in packages...');
+
+    final successMessage = AnsiStyles.green('SUCCESS');
 
     await Future.forEach(currentWorkspace.packages,
         (MelosPackage package) async {
-      var pluginTemporaryPath =
+      final pluginTemporaryPath =
           join(currentWorkspace.melosToolPath, package.pathRelativeToWorkspace);
 
-      var generatedYamlMap = Map.from(package.yamlContents);
+      final generatedYamlMap = Map.from(package.yamlContents);
 
-      currentWorkspace.packages.forEach((MelosPackage plugin) {
-        var pluginPath = utils.relativePath(
+      for (final plugin in currentWorkspace.packages) {
+        final pluginPath = utils.relativePath(
           join(currentWorkspace.melosToolPath, plugin.pathRelativeToWorkspace),
           pluginTemporaryPath,
         );
@@ -212,11 +213,12 @@ class BootstrapCommand extends Command {
             'path': pluginPath,
           };
         }
-      });
+      }
 
-      var header = '# Generated file - do not commit this file.';
-      var generatedPubspecYamlString =
+      const header = '# Generated file - do not commit this file.';
+      final generatedPubspecYamlString =
           '$header\n${toYamlString(generatedYamlMap)}';
+
       await File(utils.pubspecPathForDirectory(Directory(pluginTemporaryPath)))
           .create(recursive: true);
       await File(utils.pubspecPathForDirectory(Directory(pluginTemporaryPath)))
@@ -224,7 +226,7 @@ class BootstrapCommand extends Command {
     });
 
     var failed = false;
-    var pool = Pool(utils.isCI ? 1 : 5);
+    final pool = Pool(utils.isCI ? 1 : 5);
     await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
         (package) async {
       if (failed) {
@@ -233,6 +235,11 @@ class BootstrapCommand extends Command {
       final pubGetFailed = await _runPubGetForPackage(package);
       if (pubGetFailed) {
         failed = true;
+      } else {
+        logger.stdout(
+            '  ${AnsiStyles.greenBright('✓')} ${AnsiStyles.bold(package.name)}');
+        logger.stdout(
+            '     └> ${AnsiStyles.blue(package.path.replaceAll(currentWorkspace.path, "."))}');
       }
     }).drain();
 
@@ -244,36 +251,27 @@ class BootstrapCommand extends Command {
       return;
     }
 
-    print('  > $successMessage');
-
-    logger.stdout('Linking project packages');
-    var intellijProject = IntellijProject.fromWorkspace(currentWorkspace);
-
+    logger.stdout('');
+    logger.stdout('Linking project packages...');
     await currentWorkspace.linkPackages();
     currentWorkspace.clean(cleanPackages: false);
+    logger.stdout('  > $successMessage');
 
     if (currentWorkspace.config.generateIntellijIdeFiles) {
-      await intellijProject.cleanFiles();
+      logger.stdout('');
+      logger.stdout('Generating IntelliJ IDE files...');
+      final intellijProject = IntellijProject.fromWorkspace(currentWorkspace);
+      await intellijProject.clean();
+      await intellijProject.generate();
+      logger.stdout('  > $successMessage');
     }
-
-    print('  > $successMessage');
 
     if (currentWorkspace.config.scripts.exists('postbootstrap')) {
       logger.stdout('Running postbootstrap script...\n');
       await MelosCommandRunner.instance.run(['run', 'postbootstrap']);
     }
 
-    logger.stdout('\nPackages:');
-    currentWorkspace.packages.forEach((package) {
-      logger.stdout('${AnsiStyles.bullet} ${AnsiStyles.bold(package.name)}');
-      logger.stdout(
-          '    └> ${AnsiStyles.blue(package.path.replaceAll(currentWorkspace.path, "."))}');
-    });
     logger.stdout(
         '\n -> ${currentWorkspace.packages.length} plugins bootstrapped');
-
-    if (currentWorkspace.config.generateIntellijIdeFiles) {
-      await IntellijProject.fromWorkspace(currentWorkspace).writeFiles();
-    }
   }
 }

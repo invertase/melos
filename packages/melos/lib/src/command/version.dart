@@ -31,39 +31,25 @@ import '../common/utils.dart';
 import '../common/workspace.dart';
 
 class VersionCommand extends Command {
-  @override
-  final String name = 'version';
-
-  @override
-  final String description =
-      'Automatically version and generate changelogs for all packages. Supports all Melos filtering flags.';
-
   VersionCommand() {
     argParser.addFlag('prerelease',
         abbr: 'p',
-        defaultsTo: false,
         negatable: false,
         help:
             'Version any packages with changes as a prerelease. Cannot be combined with graduate flag.');
     argParser.addFlag('graduate',
         abbr: 'g',
-        defaultsTo: false,
         negatable: false,
         help:
             'Graduate current prerelease versioned packages to stable versions, e.g. "0.10.0-dev.1" would become "0.10.0". Cannot be combined with prerelease flag.');
     argParser.addFlag('changelog',
-        abbr: 'c',
-        defaultsTo: true,
-        negatable: true,
-        help: 'Update CHANGELOG.md files.');
+        abbr: 'c', defaultsTo: true, help: 'Update CHANGELOG.md files.');
     argParser.addFlag('git-tag-version',
         abbr: 't',
         defaultsTo: true,
-        negatable: true,
         help:
             'By default, melos version will commit changes to pubspec.yaml files and tag the release. Pass --no-git-tag-version to disable the behavior.');
     argParser.addFlag('yes',
-        defaultsTo: false,
         negatable: false,
         help: 'Skip the Y/n prompt at the beginning of the command.');
     argParser.addOption('preid',
@@ -73,22 +59,29 @@ class VersionCommand extends Command {
   }
 
   @override
-  void run() async {
+  final String name = 'version';
+
+  @override
+  final String description =
+      'Automatically version and generate changelogs for all packages. Supports all Melos filtering flags.';
+
+  @override
+  Future<void> run() async {
     logger.stdout(AnsiStyles.yellow.bold('melos version'));
     logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
 
-    bool changelog = argResults['changelog'] as bool;
-    bool graduate = argResults['graduate'] as bool;
-    bool tag = argResults['git-tag-version'] as bool;
-    bool prerelease = argResults['prerelease'] as bool;
-    bool skipPrompt = argResults['yes'] as bool;
-    String preid = argResults['preid'] as String;
+    final changelog = argResults['changelog'] as bool;
+    var graduate = argResults['graduate'] as bool;
+    final tag = argResults['git-tag-version'] as bool;
+    final prerelease = argResults['prerelease'] as bool;
+    final skipPrompt = argResults['yes'] as bool;
+    final preid = argResults['preid'] as String;
 
-    Set<MelosPackage> packagesToVersion = <MelosPackage>{};
-    Map<String, List<ConventionalCommit>> packageCommits = {};
-    Set<MelosPackage> dependentPackagesToVersion = <MelosPackage>{};
-    Map<String, List<ConventionalCommit>> packagesWithVersionableCommits = {};
-    List<MelosPendingPackageUpdate> pendingPackageUpdates = [];
+    final packagesToVersion = <MelosPackage>{};
+    final packageCommits = <String, List<ConventionalCommit>>{};
+    final dependentPackagesToVersion = <MelosPackage>{};
+    final packagesWithVersionableCommits = {};
+    var pendingPackageUpdates = <MelosPendingPackageUpdate>[];
 
     if (graduate && prerelease) {
       logger.stdout(
@@ -97,24 +90,26 @@ class VersionCommand extends Command {
     }
 
     if (graduate) {
-      currentWorkspace.packages.forEach((package) {
-        if (package.version.isPreRelease) {
-          pendingPackageUpdates.add(MelosPendingPackageUpdate(
-            package,
-            [],
-            PackageUpdateReason.graduate,
-            graduate: graduate,
-            prerelease: prerelease,
-            preid: preid,
-          ));
-          MelosPackage packageUnscoped = currentWorkspace.packagesNoScope
-              .firstWhere((element) => element.name == package.name);
-          packageUnscoped.dependentsInWorkspace.forEach((package) {
-            if (graduate && package.version.isPreRelease) return;
-            dependentPackagesToVersion.add(package);
-          });
+      for (final package in currentWorkspace.packages) {
+        if (!package.version.isPreRelease) continue;
+
+        pendingPackageUpdates.add(MelosPendingPackageUpdate(
+          package,
+          [],
+          PackageUpdateReason.graduate,
+          graduate: graduate,
+          prerelease: prerelease,
+          preid: preid,
+        ));
+
+        final packageUnscoped = currentWorkspace.packagesNoScope
+            .firstWhere((element) => element.name == package.name);
+
+        for (final package in packageUnscoped.dependentsInWorkspace) {
+          if (graduate && package.version.isPreRelease) continue;
+          dependentPackagesToVersion.add(package);
         }
-      });
+      }
     }
 
     await Pool(10).forEach<MelosPackage, void>(currentWorkspace.packages,
@@ -133,26 +128,26 @@ class VersionCommand extends Command {
       });
     }).drain();
 
-    packageCommits.entries.forEach((entry) {
-      String packageName = entry.key;
-      List<ConventionalCommit> packageCommits = entry.value;
-      List<ConventionalCommit> versionableCommits =
+    for (final entry in packageCommits.entries) {
+      final packageName = entry.key;
+      final packageCommits = entry.value;
+      final versionableCommits =
           packageCommits.where((e) => e.isVersionableCommit).toList();
       if (versionableCommits.isNotEmpty) {
         packagesWithVersionableCommits[packageName] = versionableCommits;
       }
-    });
+    }
 
-    currentWorkspace.packages.forEach((package) {
+    for (final package in currentWorkspace.packages) {
       if (packagesWithVersionableCommits.containsKey(package.name)) {
-        if (graduate && package.version.isPreRelease) return;
+        if (graduate && package.version.isPreRelease) continue;
         packagesToVersion.add(package);
-        MelosPackage packageUnscoped = currentWorkspace.packagesNoScope
+        final packageUnscoped = currentWorkspace.packagesNoScope
             .firstWhere((element) => element.name == package.name);
         dependentPackagesToVersion
             .addAll(packageUnscoped.dependentsInWorkspace);
       }
-    });
+    }
 
     pendingPackageUpdates
         .addAll(packagesToVersion.map((package) => MelosPendingPackageUpdate(
@@ -164,8 +159,8 @@ class VersionCommand extends Command {
               preid: preid,
             )));
 
-    dependentPackagesToVersion.forEach((package) {
-      if (graduate && package.version.isFirstPreRelease) return;
+    for (final package in dependentPackagesToVersion) {
+      if (graduate && package.version.isFirstPreRelease) continue;
       if (!packagesToVersion.contains(package)) {
         pendingPackageUpdates.add(MelosPendingPackageUpdate(
           package,
@@ -178,7 +173,7 @@ class VersionCommand extends Command {
           // preid: preid,
         ));
       }
-    });
+    }
 
     // Filter out private packages.
     pendingPackageUpdates = pendingPackageUpdates
@@ -211,7 +206,7 @@ class VersionCommand extends Command {
           AnsiStyles.italic((() {
             switch (pendingUpdate.reason) {
               case PackageUpdateReason.commit:
-                var semverType = pendingUpdate.semverReleaseType
+                final semverType = pendingUpdate.semverReleaseType
                     .toString()
                     .substring(pendingUpdate.semverReleaseType
                             .toString()
@@ -230,7 +225,7 @@ class VersionCommand extends Command {
       }),
     ], paddingSize: 3));
 
-    bool shouldContinue = skipPrompt || promptBool();
+    final shouldContinue = skipPrompt || promptBool();
     if (!shouldContinue) {
       logger.stdout(AnsiStyles.red('Operation was canceled.'));
       exitCode = 1;
@@ -280,16 +275,16 @@ class VersionCommand extends Command {
           await gitAdd('pubspec.yaml', workingDirectory: dependentPackage.path);
         });
 
-        // TODO this is a temporary workaround for adding modified files by melos version script.
+        // TODO this is a temporary workaround for committing generated dart files.
         // TODO remove once options exposed for this in a later release.
         if (pendingPackageUpdate.package.name == 'melos') {
-          await gitAdd('**/version.g.dart',
+          await gitAdd('**/*.g.dart',
               workingDirectory: pendingPackageUpdate.package.path);
         }
       });
 
       // 2) Commit changes:
-      String publishedPackagesMessage = pendingPackageUpdates
+      final publishedPackagesMessage = pendingPackageUpdates
           .map((e) => ' - ${e.package.name}@${e.nextVersion.toString()}')
           .join('\n');
       // TODO commit message customization support would go here.
@@ -302,7 +297,7 @@ class VersionCommand extends Command {
       await Future.forEach(pendingPackageUpdates,
           (MelosPendingPackageUpdate pendingPackageUpdate) async {
         // TODO '--tag-version-prefix' support (if we decide to support it later) would pass prefix named arg to gitTagForPackageVersion:
-        String tag = gitTagForPackageVersion(pendingPackageUpdate.package.name,
+        final tag = gitTagForPackageVersion(pendingPackageUpdate.package.name,
             pendingPackageUpdate.nextVersion.toString());
         await gitTagCreate(tag, pendingPackageUpdate.changelog.markdown,
             workingDirectory: pendingPackageUpdate.package.path);

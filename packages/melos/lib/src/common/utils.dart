@@ -28,24 +28,23 @@ import 'package:prompts/prompts.dart' as prompts;
 import '../../version.g.dart';
 import 'logger.dart';
 
-var _didLogRmWarning = false;
-
-var filterOptionScope = 'scope';
-var filterOptionIgnore = 'ignore';
-var filterOptionDirExists = 'dir-exists';
-var filterOptionFileExists = 'file-exists';
-var filterOptionSince = 'since';
-var filterOptionNoPrivate = 'no-private';
-var filterOptionPublished = 'published';
-var filterOptionFlutter = 'flutter';
-var filterOptionDependsOn = 'depends-on';
-var filterOptionNoDependsOn = 'no-depends-on';
-var scriptOptionSelectPackage = 'select-package';
+const filterOptionScope = 'scope';
+const filterOptionIgnore = 'ignore';
+const filterOptionDirExists = 'dir-exists';
+const filterOptionFileExists = 'file-exists';
+const filterOptionSince = 'since';
+const filterOptionNoPrivate = 'no-private';
+const filterOptionPublished = 'published';
+const filterOptionFlutter = 'flutter';
+const filterOptionDependsOn = 'depends-on';
+const filterOptionNoDependsOn = 'no-depends-on';
 
 // MELOS_PACKAGES environment variable is a comma delimited list of
 // package names - used instead of filters if it is present.
 // This can be user defined or can come from package selection in `melos run`.
-var envKeyMelosPackages = 'MELOS_PACKAGES';
+const envKeyMelosPackages = 'MELOS_PACKAGES';
+
+final terminalColumnsSize = stdout.hasTerminal ? stdout.terminalColumns : 80;
 
 String get currentDartVersion {
   return Version.parse(Platform.version.split(' ')[0]).toString();
@@ -57,12 +56,11 @@ String get nextDartMajorVersion {
 
 bool promptBool() {
   logger.stdout('');
-  return prompts.getBool('Continue?',
-      appendYesNo: true, chevron: true, defaultsTo: false, color: true);
+  return prompts.getBool('Continue?');
 }
 
 bool get isCI {
-  var keys = Platform.environment.keys;
+  final keys = Platform.environment.keys;
   return keys.contains('CI') ||
       keys.contains('CONTINUOUS_INTEGRATION') ||
       keys.contains('BUILD_NUMBER') ||
@@ -81,38 +79,17 @@ String getMelosRoot() {
   return File.fromUri(Platform.script).parent.parent.path;
 }
 
-String getAndroidSdkRoot() {
-  var possibleSdkRoot = Platform.environment['ANDROID_SDK_ROOT'];
-  if (possibleSdkRoot == null) {
-    logger.stderr(
-        "Android SDK root could not be found, ensure you've set the ANDROID_SDK_ROOT environment variable.");
-    return '';
-  }
-  return possibleSdkRoot;
-}
-
-// TODO not Windows compatible
-String getFlutterSdkRoot() {
-  var result = Process.runSync('which', ['flutter']);
-  var possiblePath = result.stdout.toString();
-  if (!possiblePath.contains('bin/flutter')) {
-    logger.stderr('Flutter SDK could not be found.');
-    return null;
-  }
-  return File(result.stdout as String).parent.parent.path;
-}
-
 Map loadYamlFileSync(String path) {
-  var file = File(path);
-  if (file?.existsSync() == true) {
+  final file = File(path);
+  if (file.existsSync() == true) {
     return loadYaml(file.readAsStringSync()) as Map;
   }
   return null;
 }
 
 Future<Map> loadYamlFile(String path) async {
-  var file = File(path);
-  if (await file?.exists() == true) {
+  final file = File(path);
+  if (file.existsSync()) {
     return loadYaml(await file.readAsString()) as Map;
   }
   return null;
@@ -138,42 +115,44 @@ String relativePath(String path, String from) {
 }
 
 String listAsPaddedTable(List<List<String>> list, {int paddingSize = 1}) {
-  Map<int, int> maxColumnSizes = {};
-  List<String> output = [];
-  list.forEach((cells) {
+  final output = [];
+  final maxColumnSizes = <int, int>{};
+  for (final cells in list) {
     var i = 0;
-    cells.forEach((cell) {
+    for (final cell in cells) {
       if (maxColumnSizes[i] == null ||
           maxColumnSizes[i] < AnsiStyles.strip(cell).length) {
         maxColumnSizes[i] = AnsiStyles.strip(cell).length;
       }
       i++;
-    });
-  });
-  list.forEach((cells) {
+    }
+  }
+
+  for (final cells in list) {
     var i = 0;
-    var row = '';
-    cells.forEach((cell) {
-      var colWidth = maxColumnSizes[i] + paddingSize;
-      var cellWidth = AnsiStyles.strip(cell).length;
+    final rowBuffer = StringBuffer();
+    for (final cell in cells) {
+      final colWidth = maxColumnSizes[i] + paddingSize;
+      final cellWidth = AnsiStyles.strip(cell).length;
       var padding = colWidth - cellWidth;
       if (padding < paddingSize) padding = paddingSize;
-      row += '$cell${List.filled(padding, ' ').join()}';
+      rowBuffer.write('$cell${List.filled(padding, ' ').join()}');
       i++;
-    });
-    output.add(row);
-  });
+    }
+    output.add(rowBuffer.toString());
+  }
+
   return output.join('\n');
 }
 
 /// Simple check to see if the [Directory] qualifies as a plugin repository.
 bool isWorkspaceDirectory(Directory directory) {
-  var melosYamlPath = melosYamlPathForDirectory(directory);
+  final melosYamlPath = melosYamlPathForDirectory(directory);
   return FileSystemEntity.isFileSync(melosYamlPath);
 }
 
 bool isPackageDirectory(Directory directory) {
-  var pluginYamlPath = pubspecPathForDirectory(directory);
+  final pluginYamlPath = pubspecPathForDirectory(directory);
   return FileSystemEntity.isFileSync(pluginYamlPath);
 }
 
@@ -197,7 +176,7 @@ Future<int> startProcess(List<String> execArgs,
     if (_arg.trim() == r'\') {
       return Platform.isWindows ? _arg.replaceAll(r'\', '^') : _arg;
     }
-    if (_arg.trim() == r'^') {
+    if (_arg.trim() == '^') {
       return Platform.isWindows ? _arg : _arg.replaceAll('^', r'\');
     }
 
@@ -209,25 +188,6 @@ Future<int> startProcess(List<String> execArgs,
 
     return _arg;
   }).where((element) => element != null);
-
-  // TODO This is just a temporary workaround to keep FlutterFire working on Windows
-  // TODO until all the run scripts have been updated in its melos.yaml file.
-  if (filteredArgs.toList()[0] == 'rm' && Platform.isWindows) {
-    if (!_didLogRmWarning) {
-      print(
-          '> Warning: skipped executing a script as "rm" is not supported on Windows.');
-      _didLogRmWarning = true;
-    }
-    return 0;
-  }
-  if (filteredArgs.toList()[0] == 'cp' && Platform.isWindows) {
-    if (!_didLogRmWarning) {
-      print(
-          '> Warning: skipped executing a script as "cp" is not supported on Windows.');
-      _didLogRmWarning = true;
-    }
-    return 0;
-  }
 
   final execProcess = await Process.start(
       executable, Platform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
@@ -243,7 +203,7 @@ Future<int> startProcess(List<String> execArgs,
     // Pipe in the arguments to trigger the script to run.
     execProcess.stdin.writeln(filteredArgs.join(' '));
     // Exit the process with the same exit code as the previous command.
-    execProcess.stdin.writeln('exit \$?');
+    execProcess.stdin.writeln(r'exit $?');
   }
 
   var stdoutStream = execProcess.stdout;
@@ -253,7 +213,7 @@ Future<int> startProcess(List<String> execArgs,
     final pluginPrefixTransformer =
         StreamTransformer<String, String>.fromHandlers(
             handleData: (String data, EventSink sink) {
-      final lineSplitter = LineSplitter();
+      const lineSplitter = LineSplitter();
       var lines = lineSplitter.convert(data);
       lines = lines
           .map((line) => '$prefix$line${line.contains('\n') ? '' : '\n'}')
@@ -272,27 +232,27 @@ Future<int> startProcess(List<String> execArgs,
         .transform<List<int>>(utf8.encoder);
   }
 
-  final List<int> processStdout = <int>[];
-  final List<int> processStderr = <int>[];
-  final Completer<int> processStdoutCompleter = Completer();
-  final Completer<int> processStderrCompleter = Completer();
+  final processStdout = <int>[];
+  final processStderr = <int>[];
+  final processStdoutCompleter = Completer<int>();
+  final processStderrCompleter = Completer<int>();
 
   stdoutStream.listen((List<int> event) {
     processStdout.addAll(event);
     if (!onlyOutputOnError) {
       stdout.add(event);
     }
-  }, onDone: () => processStdoutCompleter.complete());
+  }, onDone: processStdoutCompleter.complete);
   stderrStream.listen((List<int> event) {
     processStderr.addAll(event);
     if (!onlyOutputOnError) {
       stderr.add(event);
     }
-  }, onDone: () => processStderrCompleter.complete());
+  }, onDone: processStderrCompleter.complete);
 
   await processStdoutCompleter.future;
   await processStderrCompleter.future;
-  var exitCode = await execProcess.exitCode;
+  final exitCode = await execProcess.exitCode;
 
   if (onlyOutputOnError && exitCode > 0) {
     stdout.add(processStdout);

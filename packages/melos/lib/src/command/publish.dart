@@ -29,6 +29,18 @@ import '../common/workspace.dart';
 import 'exec.dart';
 
 class PublishCommand extends Command {
+  PublishCommand() {
+    argParser.addFlag('dry-run',
+        abbr: 'n',
+        defaultsTo: true,
+        help: 'Validate but do not publish the package.');
+    argParser.addFlag('git-tag-version',
+        abbr: 't',
+        negatable: false,
+        help:
+            'Add any missing git tags for release. Note tags are only created if --no-dry-run is also set.');
+  }
+
   @override
   final String name = 'publish';
 
@@ -36,33 +48,21 @@ class PublishCommand extends Command {
   final String description =
       'Publish any unpublished packages or package versions in your repository to pub.dev. Dry run is on by default.';
 
-  PublishCommand() {
-    argParser.addFlag('dry-run',
-        abbr: 'n',
-        defaultsTo: true,
-        negatable: true,
-        help: 'Validate but do not publish the package.');
-    argParser.addFlag('git-tag-version',
-        abbr: 't',
-        defaultsTo: false,
-        negatable: false,
-        help:
-            'Add any missing git tags for release. Note tags are only created if --no-dry-run is also set.');
-  }
-
   @override
-  void run() async {
-    bool dryRun = argResults['dry-run'] as bool;
-    bool gitTagVersion = argResults['git-tag-version'] as bool;
+  Future<void> run() async {
+    final dryRun = argResults['dry-run'] as bool;
+    final gitTagVersion = argResults['git-tag-version'] as bool;
+
     logger.stdout(
         AnsiStyles.yellow.bold('melos publish${dryRun ? " --dry-run" : ''}'));
     logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
-    var readRegistryProgress =
+
+    final readRegistryProgress =
         logger.progress('Reading pub registry for package information');
 
-    var pool = Pool(10);
-    var unpublishedPackages = <MelosPackage>[];
-    var latestPackageVersion = <String, String>{};
+    final pool = Pool(10);
+    final unpublishedPackages = <MelosPackage>[];
+    final latestPackageVersion = <String, String>{};
 
     await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
         (package) {
@@ -115,7 +115,7 @@ class PublishCommand extends Command {
       }).toList()
     ], paddingSize: 4));
 
-    bool shouldContinue = promptBool();
+    final shouldContinue = promptBool();
     if (!shouldContinue) {
       logger.stdout(AnsiStyles.red('Operation was canceled.'));
       exitCode = 1;
@@ -123,34 +123,35 @@ class PublishCommand extends Command {
     }
 
     logger.stdout('');
-    var updateRegistryProgress = logger.progress(
+    final updateRegistryProgress = logger.progress(
         'Publishing ${unpublishedPackages.length} packages to registry:');
-
-    List<String> execArgs = [
+    final execArgs = [
       if (isPubSubcommand()) 'dart',
       'pub',
       'publish',
     ];
+
     if (dryRun) {
       execArgs.add('--dry-run');
     } else {
       execArgs.add('--force');
     }
+
     await ExecCommand.execInPackages(unpublishedPackages, execArgs,
         concurrency: 1, failFast: true);
-
     if (exitCode != 1) {
       if (!dryRun && gitTagVersion) {
         logger.stdout('');
         logger.stdout(
             'Creating git tags for any versions not already created... ');
         await Future.forEach(unpublishedPackages, (MelosPackage package) async {
-          String tag =
+          final tag =
               gitTagForPackageVersion(package.name, package.version.toString());
           await gitTagCreate(tag, 'Publish $tag.',
               workingDirectory: package.path);
         });
       }
+
       updateRegistryProgress.finish(
           message: AnsiStyles.green('SUCCESS'), showTiming: true);
 

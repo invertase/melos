@@ -27,13 +27,14 @@ import 'package.dart';
 import 'pub_dependency_list.dart';
 import 'utils.dart' as utils;
 import 'workspace_config.dart';
-import 'workspace_state.dart';
 
 MelosWorkspace currentWorkspace;
 
 /// A representation of a workspace. This includes it's packages, configuration
 /// such as scripts and more.
 class MelosWorkspace {
+  MelosWorkspace._(this.name, this.path, this.config);
+
   /// An optional name as defined in "melos.yaml". This name is used for logging
   /// purposes and also used when generating certain IDE files.
   final String name;
@@ -43,10 +44,6 @@ class MelosWorkspace {
 
   /// Configuration as defined in the "melos.yaml" file if it exists.
   final MelosWorkspaceConfig config;
-
-  /// Persisted state that's commited to git as part of the workspaces repository.
-  /// Currently not in use, a future release for shared versioning will use this.
-  final MelosWorkspaceState state;
 
   /// A list of all the packages detected in this workspace, after being filtered.
   List<MelosPackage> packages;
@@ -59,8 +56,6 @@ class MelosWorkspace {
   // Cached dependency graph for perf reasons.
   Map<String, Set<String>> _cacheDependencyGraph;
 
-  MelosWorkspace._(this.name, this.path, this.config, this.state);
-
   /// Build a [MelosWorkspace] from a Directory.
   /// If the directory is not a valid Melos workspace (e.g. no "melos.yaml" file)
   /// then null is returned.
@@ -70,9 +65,8 @@ class MelosWorkspace {
       return null;
     }
 
-    final workspaceState = await MelosWorkspaceState.fromDirectory(directory);
-    return MelosWorkspace._(workspaceConfig.name, workspaceConfig.path,
-        workspaceConfig, workspaceState);
+    return MelosWorkspace._(
+        workspaceConfig.name, workspaceConfig.path, workspaceConfig);
   }
 
   /// Returns true if this workspace contains ANY Flutter package.
@@ -117,9 +111,7 @@ class MelosWorkspace {
       return packageNames.contains(package.name);
     });
 
-    packages = await filterResult.toList();
-
-    return packages;
+    return packages = await filterResult.toList();
   }
 
   /// Detect packages in the workspace with the provided filters.
@@ -179,8 +171,8 @@ class MelosWorkspace {
       // File exists packages filter.
       filterResult = filterResult.where((package) {
         final fileExistsMatched = fileExists.firstWhere((fileExistsPath) {
-          var _fileExistsPath =
-              fileExistsPath.replaceAll('\$MELOS_PACKAGE_NAME', package.name);
+          final _fileExistsPath =
+              fileExistsPath.replaceAll(r'$MELOS_PACKAGE_NAME', package.name);
           return File(join(package.path, _fileExistsPath)).existsSync();
         }, orElse: () => null);
         return fileExistsMatched != null;
@@ -198,11 +190,11 @@ class MelosWorkspace {
 
     // --published / --no-published
     if (published != null) {
-      var pool = Pool(10);
-      var packagesFilteredWithPublishStatus = <MelosPackage>[];
+      final pool = Pool(10);
+      final packagesFilteredWithPublishStatus = <MelosPackage>[];
       await pool.forEach<MelosPackage, void>(packages, (package) {
         return package.getPublishedVersions().then((versions) async {
-          var isOnPubRegistry = versions.contains(package.version);
+          final isOnPubRegistry = versions.contains(package.version);
           if (published == false && !isOnPubRegistry) {
             return packagesFilteredWithPublishStatus.add(package);
           }
@@ -215,8 +207,8 @@ class MelosWorkspace {
     }
     // --since
     if (since != null) {
-      var pool = Pool(10);
-      var packagesFilteredWithGitCommitsSince = <MelosPackage>[];
+      final pool = Pool(10);
+      final packagesFilteredWithGitCommitsSince = <MelosPackage>[];
       await pool.forEach<MelosPackage, void>(packages, (package) {
         return gitCommitsForPackage(package, since: since)
             .then((commits) async {
@@ -285,7 +277,7 @@ class MelosWorkspace {
       return _cacheDependencyGraph;
     }
 
-    List<String> pubDepsExecArgs = ['--style=list', '--dev'];
+    final pubDepsExecArgs = ['--style=list', '--dev'];
     final pubListCommandOutput = await Process.run(
       isFlutterWorkspace
           ? 'flutter'
@@ -307,27 +299,27 @@ class MelosWorkspace {
     });
 
     void addNestedEntries(Set entriesSet) {
-      var countBefore = entriesSet.length;
-      var entriesSetClone = Set.from(entriesSet);
-
-      entriesSetClone.forEach((entryName) {
-        var depsForEntry = allEntriesMap[entryName];
+      final countBefore = entriesSet.length;
+      final entriesSetClone = Set.from(entriesSet);
+      for (final entryName in entriesSetClone) {
+        final depsForEntry = allEntriesMap[entryName];
         if (depsForEntry != null && depsForEntry.isNotEmpty) {
           depsForEntry.forEach((dependentName, _) {
             entriesSet.add(dependentName);
           });
         }
-      });
-
+      }
+      // We check if the set has grown since we may need gather nested entries
+      // from newly discovered dependencies.
       if (countBefore != entriesSet.length) {
         addNestedEntries(entriesSet);
       }
     }
 
-    Map<String, Set<String>> dependencyGraphFlat = {};
+    final dependencyGraphFlat = <String, Set<String>>{};
 
     allEntries.forEach((entry, dependencies) {
-      var entriesSet = <String>{};
+      final entriesSet = <String>{};
       if (dependencies.isNotEmpty) {
         dependencies.forEach((dependentName, _) {
           entriesSet.add(dependentName);
@@ -337,8 +329,7 @@ class MelosWorkspace {
       dependencyGraphFlat[entry.name] = entriesSet;
     });
 
-    _cacheDependencyGraph = dependencyGraphFlat;
-    return dependencyGraphFlat;
+    return _cacheDependencyGraph = dependencyGraphFlat;
   }
 
   /// Execute a command in the root of this workspace.
@@ -379,9 +370,9 @@ class MelosWorkspace {
       Directory(melosToolPath).deleteSync(recursive: true);
     }
     if (cleanPackages) {
-      packages.forEach((MelosPackage package) {
+      for (final package in packages) {
         package.clean();
-      });
+      }
     }
   }
 }

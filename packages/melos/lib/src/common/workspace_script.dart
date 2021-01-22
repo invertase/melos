@@ -21,11 +21,13 @@ import 'package:ansi_styles/ansi_styles.dart';
 import 'logger.dart';
 import 'utils.dart';
 
+const _scriptOptionSelectPackage = 'select-package';
+
 Map<String, dynamic> _validateSelectPackageOptions(
   String scriptName,
   Map<String, dynamic> selectPackageOptions,
 ) {
-  Map<String, dynamic> result = {};
+  final result = <String, dynamic>{};
 
   List<String> _asStringList(String optionName, dynamic value) {
     if (value == null) return [];
@@ -112,6 +114,15 @@ Map<String, dynamic> _validateSelectPackageOptions(
 
 /// A representation of a single script definition inside a "melos.yaml" configuration file.
 class MelosScript {
+  MelosScript._(
+    this.name,
+    this.run, {
+    this.description,
+    this.env,
+    this.selectPackageOptions,
+    this.shouldPromptForPackageSelection = false,
+  });
+
   /// The script name.
   final String name;
 
@@ -135,17 +146,9 @@ class MelosScript {
   /// See [selectPackageOptions].
   final bool shouldPromptForPackageSelection;
 
-  MelosScript._(
-    this.name,
-    this.run, {
-    this.description,
-    this.env,
-    this.selectPackageOptions,
-    this.shouldPromptForPackageSelection = false,
-  });
-
-  /// Constructs a new [MelosScript] from a raw yamlmap script definition in a
+  /// Build a new [MelosScript] from a raw yamlmap script definition in a
   /// "melos.yaml" file.
+  // ignore: prefer_constructors_over_static_methods
   static MelosScript fromDefinition(String name, dynamic definition) {
     if (definition is String) {
       return MelosScript._(
@@ -159,27 +162,27 @@ class MelosScript {
       );
     }
 
-    if (!(definition is Map)) {
+    if (definition is! Map) {
       throw Error();
     }
 
-    Map definitionMap = definition as Map;
-    String runCommand = definitionMap['run'] as String;
+    final definitionMap = definition as Map;
+    final runCommand = definitionMap['run'] as String;
     if (runCommand == null) {
       logger.stderr(AnsiStyles.red(
           'The script "$name" defined in "melos.yaml" is missing the required "run" property.'));
       exit(1);
     }
 
-    String description = definitionMap['description'] as String;
-    Map<String, String> env = Map<String, String>.from(
+    final description = definitionMap['description'] as String;
+    final env = Map<String, String>.from(
       definitionMap['env'] as Map ?? {},
     );
 
-    Map<String, dynamic> selectPackageOptions = _validateSelectPackageOptions(
+    final selectPackageOptions = _validateSelectPackageOptions(
       name,
       Map<String, dynamic>.from(
-        definitionMap[scriptOptionSelectPackage] as Map ?? {},
+        definitionMap[_scriptOptionSelectPackage] as Map ?? {},
       ),
     );
 
@@ -188,11 +191,12 @@ class MelosScript {
       definitionMap['run'] as String,
       description: description,
       env: env,
-      selectPackageOptions: definitionMap.containsKey(scriptOptionSelectPackage)
-          ? selectPackageOptions
-          : null,
+      selectPackageOptions:
+          definitionMap.containsKey(_scriptOptionSelectPackage)
+              ? selectPackageOptions
+              : null,
       shouldPromptForPackageSelection:
-          definitionMap.containsKey(scriptOptionSelectPackage),
+          definitionMap.containsKey(_scriptOptionSelectPackage),
     );
   }
 }

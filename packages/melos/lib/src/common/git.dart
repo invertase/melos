@@ -46,7 +46,7 @@ String gitTagForPackageVersion(String packageName, String packageVersion,
 Future<List<String>> gitTagsForPackage(MelosPackage package,
     {TagReleaseType tagReleaseType = TagReleaseType.all,
     String preid = 'dev'}) async {
-  final String filterPattern =
+  final filterPattern =
       gitTagFilterPattern(package.name, tagReleaseType, preid: preid);
   final processResult = await Process.run(
       'git', ['tag', '-l', '--sort=-creatordate', filterPattern],
@@ -55,10 +55,14 @@ Future<List<String>> gitTagsForPackage(MelosPackage package,
       .split('\n')
       .map((e) => e.trim())
       .where((e) => e.isNotEmpty)
-      .where((tag) => tagReleaseType == TagReleaseType.stable
-          ? !tag.contains('-$preid.')
-          : true)
-      .toList();
+      .where((tag) {
+    if (tagReleaseType == TagReleaseType.stable) {
+      // TODO(Salakar) This is probably not the best way to determine if a tag is pre-release or not.
+      //   should we parse it, extract the version and pass it through to pub_semver?
+      return !tag.contains('-$preid.');
+    }
+    return true;
+  }).toList();
 }
 
 /// Check a tag exists.
@@ -71,12 +75,11 @@ Future<bool> gitTagExists(String tag, {String workingDirectory}) async {
 /// Create a tag, if it does not already exist. Returns true if tag was successfully created.
 Future<bool> gitTagCreate(String tag, String message,
     {String workingDirectory, String commitId}) async {
-  bool tagExists = await gitTagExists(tag, workingDirectory: workingDirectory);
-  if (tagExists) {
+  if (await gitTagExists(tag, workingDirectory: workingDirectory)) {
     return false;
   }
 
-  List<String> gitArgs = commitId != null && commitId.isNotEmpty
+  final gitArgs = commitId != null && commitId.isNotEmpty
       ? ['tag', '-a', tag, commitId, '-m', message]
       : ['tag', '-a', tag, '-m', message];
 
@@ -90,7 +93,6 @@ Future<bool> gitTagCreate(String tag, String message,
 ///     1) The current package version exists as a tag?
 ///  OR 2) The latest tag sorted by listing tags in created date descending order.
 ///        Note: If the current version is a prerelease then only prerelease tags are requested.
-/// Optionally specify [tagReleaseType] to specify [TagReleaseType].
 Future<String> gitLatestTagForPackage(MelosPackage package,
     {String preid = 'dev'}) async {
   // Package doesn't have a version, skip.
@@ -98,20 +100,19 @@ Future<String> gitLatestTagForPackage(MelosPackage package,
     return null;
   }
 
-  String currentVersionTag =
+  final currentVersionTag =
       gitTagForPackageVersion(package.name, package.version.toString());
-  bool currentTagExists = await gitTagExists(currentVersionTag);
-  if (currentTagExists) {
+  if (await gitTagExists(currentVersionTag)) {
     logger.trace(
         '[GIT]: Found a git tag for the latest ${package.name} version (${package.version.toString()}).');
     return currentVersionTag;
   }
 
   // If the current version is a prerelease then only prerelease tags are requested.
-  TagReleaseType tagReleaseType = package.version.isPreRelease
+  final tagReleaseType = package.version.isPreRelease
       ? TagReleaseType.prerelease
       : TagReleaseType.all;
-  List<String> tags = await gitTagsForPackage(package,
+  final tags = await gitTagsForPackage(package,
       tagReleaseType: tagReleaseType, preid: preid);
   if (tags.isEmpty) {
     return null;
@@ -121,18 +122,16 @@ Future<String> gitLatestTagForPackage(MelosPackage package,
 }
 
 Future<void> gitAdd(String filePattern, {String workingDirectory}) async {
-  List<String> gitArgs = ['add', filePattern];
+  final gitArgs = ['add', filePattern];
   await Process.run('git', gitArgs,
       workingDirectory: workingDirectory ?? Directory.current.path);
-  // TODO validate added?
 }
 
 Future<void> gitCommit(String message, {String workingDirectory}) async {
-  // TODO validate has staged changes?
-  List<String> gitArgs = ['commit', '-m', message];
+  // TODO should we validate that there are staged changes?
+  final gitArgs = ['commit', '-m', message];
   await Process.run('git', gitArgs,
       workingDirectory: workingDirectory ?? Directory.current.path);
-  // TODO validate committed?
 }
 
 /// Returns a list of [GitCommit]s for a Melos package.
@@ -143,7 +142,7 @@ Future<List<GitCommit>> gitCommitsForPackage(MelosPackage package,
   if (package.isPrivate) {
     return [];
   }
-  String sinceOrLatestTag = since;
+  var sinceOrLatestTag = since;
   if (sinceOrLatestTag != null && sinceOrLatestTag.isEmpty) {
     sinceOrLatestTag = null;
   }
@@ -157,20 +156,20 @@ Future<List<GitCommit>> gitCommitsForPackage(MelosPackage package,
       [
         '--no-pager',
         'log',
-        sinceOrLatestTag != null ? '$sinceOrLatestTag...@' : '@',
+        if (sinceOrLatestTag != null) '$sinceOrLatestTag...@' else '@',
         '--pretty=format:%H|||%aN <%aE>|||%ai|||%B||||',
         '--',
         '.',
       ],
       workingDirectory: package.path);
 
-  List<String> rawCommits = (processResult.stdout as String)
+  final rawCommits = (processResult.stdout as String)
       .split('||||\n')
       .where((element) => element.trim().isNotEmpty)
       .toList();
 
   return rawCommits.map((String rawCommit) {
-    var parts = rawCommit.split('|||');
+    final parts = rawCommit.split('|||');
     return GitCommit(
       id: parts[0].trim(),
       author: parts[1].trim(),

@@ -36,6 +36,15 @@ enum PackageUpdateReason {
 }
 
 class MelosPendingPackageUpdate {
+  MelosPendingPackageUpdate(
+    this.package,
+    this.commits,
+    this.reason, {
+    this.prerelease = false,
+    this.graduate = false,
+    this.preid,
+  });
+
   /// Commits that triggered this pending update. Can be empty if
   /// [PackageUpdateReason] is [PackageUpdateReason.dependency].
   final List<ConventionalCommit> commits;
@@ -55,15 +64,6 @@ class MelosPendingPackageUpdate {
 
   /// The prerelease id that will be used for prereleases, e.g. "0.1.0-[preid].1".
   final String preid;
-
-  MelosPendingPackageUpdate(
-    this.package,
-    this.commits,
-    this.reason, {
-    this.prerelease = false,
-    this.graduate = false,
-    this.preid,
-  });
 
   Changelog get changelog {
     // TODO change log styles can be changed here if supported in future.
@@ -103,7 +103,7 @@ class MelosPendingPackageUpdate {
         case SemverReleaseType.patch:
         default:
           // Bump the build number, or set it if it does not exist.
-          int currentBuild = currentVersion.build.length == 1
+          final currentBuild = currentVersion.build.length == 1
               ? currentVersion.build[0] as int
               : 0;
           return Version(
@@ -118,13 +118,13 @@ class MelosPendingPackageUpdate {
 
   Version get nextPreRelease {
     if (currentVersion.isPreRelease) {
-      int currentPre = currentVersion.preRelease.length == 2
+      final currentPre = currentVersion.preRelease.length == 2
           ? currentVersion.preRelease[1] as int
           : -1;
       // Note we preserve the current prereleases preid if no preid option specified.
       // So 1.0.0-nullsafety.0 would become ...-nullsafety.X rather than use the default preid "dev".
-      int nextPreidInt = currentPre + 1;
-      String nextPreidName = preid ?? currentVersion.preRelease[0] as String;
+      var nextPreidInt = currentPre + 1;
+      final nextPreidName = preid ?? currentVersion.preRelease[0] as String;
 
       // Reset the preid int if preid name has changed,
       // e.g. was "...dev.3" and is now a "nullsafety" preid so the next
@@ -141,7 +141,7 @@ class MelosPendingPackageUpdate {
       );
     }
 
-    var nextVersion = nextStableRelease;
+    final nextVersion = nextStableRelease;
     return Version(
       nextVersion.major,
       nextVersion.minor,

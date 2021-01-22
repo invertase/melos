@@ -25,6 +25,24 @@ import '../common/utils.dart';
 import '../common/workspace.dart';
 
 class ListCommand extends Command {
+  ListCommand() {
+    argParser.addFlag('long',
+        abbr: 'l', negatable: false, help: 'Show extended information.');
+    argParser.addFlag('all',
+        abbr: 'a',
+        negatable: false,
+        help: 'Show private packages that are hidden by default.');
+    argParser.addFlag('parsable',
+        abbr: 'p',
+        negatable: false,
+        help: 'Show parsable output instead of columnified view.');
+    argParser.addFlag('json',
+        negatable: false, help: 'Show information as a JSON array.');
+    argParser.addFlag('graph',
+        negatable: false,
+        help: 'Show dependency graph as a JSON-formatted adjacency list.');
+  }
+
   @override
   final String name = 'list';
 
@@ -37,55 +55,34 @@ class ListCommand extends Command {
   @override
   final String invocation = 'melos list';
 
-  ListCommand() {
-    argParser.addFlag('long',
-        abbr: 'l',
-        defaultsTo: false,
-        negatable: false,
-        help: 'Show extended information.');
-    argParser.addFlag('all',
-        abbr: 'a',
-        defaultsTo: false,
-        negatable: false,
-        help: 'Show private packages that are hidden by default.');
-    argParser.addFlag('parsable',
-        abbr: 'p',
-        defaultsTo: false,
-        negatable: false,
-        help: 'Show parsable output instead of columnified view.');
-    argParser.addFlag('json',
-        defaultsTo: false,
-        negatable: false,
-        help: 'Show information as a JSON array.');
-    argParser.addFlag('graph',
-        defaultsTo: false,
-        negatable: false,
-        help: 'Show dependency graph as a JSON-formatted adjacency list.');
-  }
-
   void printGraphFormat({bool all = false}) {
-    Map<String, List<String>> jsonGraph = {};
-    currentWorkspace.packages.forEach((package) {
-      if (!all && package.isPrivate) return;
+    final jsonGraph = <String, List<String>>{};
+    for (final package in currentWorkspace.packages) {
+      if (!all && package.isPrivate) {
+        continue;
+      }
       jsonGraph[package.name] =
           package.dependenciesInWorkspace.map((_) => _.name).toList();
-    });
+    }
 
-    JsonEncoder encoder = JsonEncoder.withIndent('  ');
-    print(encoder.convert(jsonGraph));
+    const encoder = JsonEncoder.withIndent('  ');
+    logger.stdout(encoder.convert(jsonGraph));
   }
 
   void printJsonFormat({bool all = false, bool long = false}) {
-    List<Map<String, dynamic>> jsonArrayItems = [];
-    currentWorkspace.packages.forEach((package) {
-      if (!all && package.isPrivate) return;
-      Map<String, dynamic> jsonObject = {
+    final jsonArrayItems = [];
+
+    for (final package in currentWorkspace.packages) {
+      if (!all && package.isPrivate) continue;
+
+      final jsonObject = {
         'name': package.name,
         'version': package.version.toString(),
         'private': package.isPrivate,
         'location': package.path,
         'type': package.type.index
       };
+
       if (long) {
         jsonObject.addAll({
           'flutter_package': package.isFlutterPackage,
@@ -96,6 +93,7 @@ class ListCommand extends Command {
           'dependents':
               package.dependentsInWorkspace.map((_) => _.name).toList(),
         });
+
         if (package.isFlutterApp) {
           jsonObject.addAll({
             'flutter_app_supports_android': package.flutterAppSupportsAndroid,
@@ -106,6 +104,7 @@ class ListCommand extends Command {
             'flutter_app_supports_windows': package.flutterAppSupportsWindows,
           });
         }
+
         if (package.isFlutterPlugin) {
           jsonObject.addAll({
             'flutter_plugin_supports_android':
@@ -119,61 +118,62 @@ class ListCommand extends Command {
           });
         }
       }
-      jsonArrayItems.add(jsonObject);
-    });
 
-    JsonEncoder encoder = JsonEncoder.withIndent('  ');
-    print(encoder.convert(jsonArrayItems));
+      jsonArrayItems.add(jsonObject);
+    }
+
+    const encoder = JsonEncoder.withIndent('  ');
+    logger.stdout(encoder.convert(jsonArrayItems));
   }
 
   void printDefaultFormat({bool all = false, bool long = false}) {
     if (long) {
-      String table = listAsPaddedTable(currentWorkspace.packages
+      final table = listAsPaddedTable(currentWorkspace.packages
           .map((package) => package.isPrivate && !all
               ? null
               : [
                   package.name,
                   AnsiStyles.green(package.version.toString()),
                   AnsiStyles.gray(package.pathRelativeToWorkspace),
-                  all && package.isPrivate ? AnsiStyles.red('PRIVATE') : ''
+                  if (all && package.isPrivate)
+                    AnsiStyles.red('PRIVATE')
+                  else
+                    ''
                 ])
           .where((element) => element != null)
           .toList());
-      print(table);
+      logger.stdout(table);
     } else {
-      currentWorkspace.packages.forEach((package) {
-        if (!all && package.isPrivate) return;
-        print('${package.name}');
-      });
+      for (final package in currentWorkspace.packages) {
+        if (!all && package.isPrivate) continue;
+        logger.stdout(package.name);
+      }
     }
   }
 
   void printParsableFormat({bool all = false, bool long = false}) {
-    if (long) {
-      currentWorkspace.packages.forEach((package) {
-        if (package.isPrivate && !all) return;
-        print([
+    for (final package in currentWorkspace.packages) {
+      if (package.isPrivate && !all) continue;
+      if (long) {
+        logger.stdout([
           package.path,
           package.name,
           package.version ?? '',
-          all && package.isPrivate ? 'PRIVATE' : null
+          if (all && package.isPrivate) 'PRIVATE' else null
         ].where((element) => element != null).join(':'));
-      });
-    } else {
-      currentWorkspace.packages.forEach((package) {
-        if (!all && package.isPrivate) return;
-        print('${package.path}');
-      });
+      } else {
+        logger.stdout(package.path);
+      }
     }
   }
 
   @override
-  void run() async {
-    bool long = argResults['long'] as bool;
-    bool all = argResults['all'] as bool;
-    bool parsable = argResults['parsable'] as bool;
-    bool json = argResults['json'] as bool;
-    bool graph = argResults['graph'] as bool;
+  Future<void> run() async {
+    final long = argResults['long'] as bool;
+    final all = argResults['all'] as bool;
+    final parsable = argResults['parsable'] as bool;
+    final json = argResults['json'] as bool;
+    final graph = argResults['graph'] as bool;
 
     if (graph) {
       printGraphFormat(all: all);

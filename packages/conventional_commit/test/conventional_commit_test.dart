@@ -129,7 +129,7 @@ void main() {
           isFalse);
       expect(
           ConventionalCommit.fromCommitMessage(
-                  'Merge branch \'master\' of invertase/melos')
+                  "Merge branch 'master' of invertase/melos")
               .isMergeCommit,
           isTrue);
       expect(

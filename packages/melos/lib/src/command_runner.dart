@@ -33,14 +33,10 @@ import 'common/logger.dart';
 import 'common/utils.dart';
 import 'common/workspace.dart';
 
-final lineLength = stdout.hasTerminal ? stdout.terminalColumns : 80;
-
 class MelosCommandRunner extends CommandRunner {
-  static MelosCommandRunner instance = MelosCommandRunner();
-
-  MelosCommandRunner()
+  MelosCommandRunner._()
       : super('melos', 'A CLI for Dart package development in monorepos.',
-            usageLineLength: lineLength) {
+            usageLineLength: terminalColumnsSize) {
     argParser.addFlag(
       'verbose',
       callback: (bool enabled) {
@@ -61,7 +57,6 @@ class MelosCommandRunner extends CommandRunner {
 
     argParser.addFlag(
       filterOptionPublished,
-      negatable: true,
       defaultsTo: null,
       help:
           'Filter packages where the current local package version exists on pub.dev. Or "-no-published" to filter packages that have not had their current version published yet.',
@@ -69,7 +64,6 @@ class MelosCommandRunner extends CommandRunner {
 
     argParser.addFlag(
       filterOptionFlutter,
-      negatable: true,
       defaultsTo: null,
       help:
           'Filter packages where the package depends on the Flutter SDK. Or "-no-flutter" to filter packages that do not depend on the Flutter SDK.',
@@ -131,8 +125,12 @@ class MelosCommandRunner extends CommandRunner {
     addCommand(VersionCommand());
   }
 
+  /// A shared singleton instance of [MelosCommandRunner]. This can be used to
+  /// run other commands from within commands themselves.
+  static MelosCommandRunner instance = MelosCommandRunner._();
+
   @override
-  Future runCommand(ArgResults argResults) async {
+  Future runCommand(ArgResults topLevelResults) async {
     currentWorkspace ??= await MelosWorkspace.fromDirectory(Directory.current);
 
     if (currentWorkspace == null) {
@@ -147,23 +145,23 @@ class MelosCommandRunner extends CommandRunner {
       return;
     }
 
-    String since = argResults[filterOptionSince] as String;
+    var since = topLevelResults[filterOptionSince];
     // We ignore since package list filtering on the 'version' command as it
     // already filters it itself, filtering here would map dependant version fail
     // as it won't be aware of any packages that have been filtered out here
     // because of the 'since' filter.
-    if (argResults != null &&
-        argResults.command != null &&
-        argResults.command.name == 'version') {
+    if (topLevelResults != null &&
+        topLevelResults.command != null &&
+        topLevelResults.command.name == 'version') {
       since = null;
     }
 
     // Run command does not need to load workspace packages.
     // It can optionally self load with filters.
-    if (argResults != null &&
-        argResults.command != null &&
-        argResults.command.name == 'run') {
-      await super.runCommand(argResults);
+    if (topLevelResults != null &&
+        topLevelResults.command != null &&
+        topLevelResults.command.name == 'run') {
+      await super.runCommand(topLevelResults);
       return;
     }
 
@@ -176,20 +174,20 @@ class MelosCommandRunner extends CommandRunner {
       );
     } else {
       await currentWorkspace.loadPackagesWithFilters(
-        scope: argResults[filterOptionScope] as List<String>,
+        scope: topLevelResults[filterOptionScope] as List<String>,
         since: since,
-        skipPrivate: argResults[filterOptionNoPrivate] as bool,
-        published: argResults[filterOptionPublished] as bool,
-        ignore: (argResults[filterOptionIgnore] as List<String>)
+        skipPrivate: topLevelResults[filterOptionNoPrivate] as bool,
+        published: topLevelResults[filterOptionPublished] as bool,
+        ignore: (topLevelResults[filterOptionIgnore] as List<String>)
           ..addAll(currentWorkspace.config.ignore),
-        dirExists: argResults[filterOptionDirExists] as List<String>,
-        fileExists: argResults[filterOptionFileExists] as List<String>,
-        hasFlutter: argResults[filterOptionFlutter] as bool,
-        dependsOn: argResults[filterOptionDependsOn] as List<String>,
-        noDependsOn: argResults[filterOptionNoDependsOn] as List<String>,
+        dirExists: topLevelResults[filterOptionDirExists] as List<String>,
+        fileExists: topLevelResults[filterOptionFileExists] as List<String>,
+        hasFlutter: topLevelResults[filterOptionFlutter] as bool,
+        dependsOn: topLevelResults[filterOptionDependsOn] as List<String>,
+        noDependsOn: topLevelResults[filterOptionNoDependsOn] as List<String>,
       );
     }
 
-    await super.runCommand(argResults);
+    await super.runCommand(topLevelResults);
   }
 }

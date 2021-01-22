@@ -20,17 +20,6 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:string_scanner/string_scanner.dart';
 
 class PubDependencyList extends VersionedEntry {
-  static final _sdkLine = RegExp(r'(\w+) SDK (.+)\n');
-  static final _sourcePackageLine = RegExp('($_pkgName) (.+)\n');
-  static final _emptyLine = RegExp(r'\n');
-
-  final Map<String, Version> sdks;
-  final Map<String, Map<VersionedEntry, Map<String, VersionConstraint>>>
-      sections;
-
-  Map<VersionedEntry, Map<String, VersionConstraint>> get allEntries =>
-      CombinedMapView(sections.values);
-
   PubDependencyList._(
     VersionedEntry entry,
     this.sdks,
@@ -72,6 +61,17 @@ class PubDependencyList extends VersionedEntry {
       sections,
     );
   }
+
+  static final _sdkLine = RegExp(r'(\w+) SDK (.+)\n');
+  static final _sourcePackageLine = RegExp('($_pkgName) (.+)\n');
+  static final _emptyLine = RegExp(r'\n');
+
+  final Map<String, Version> sdks;
+  final Map<String, Map<VersionedEntry, Map<String, VersionConstraint>>>
+      sections;
+
+  Map<VersionedEntry, Map<String, VersionConstraint>> get allEntries =>
+      CombinedMapView(sections.values);
 }
 
 const _identifierRegExp = r'[a-zA-Z_]\w*';
@@ -108,9 +108,6 @@ MapEntry<String, Map<VersionedEntry, Map<String, VersionConstraint>>>
 }
 
 class VersionedEntry {
-  final String name;
-  final Version version;
-
   VersionedEntry(this.name, this.version);
 
   VersionedEntry.copy(VersionedEntry other)
@@ -121,6 +118,9 @@ class VersionedEntry {
         match[1],
         Version.parse(match[2]),
       );
+
+  final String name;
+  final Version version;
 
   @override
   String toString() => '$name @ $version';
