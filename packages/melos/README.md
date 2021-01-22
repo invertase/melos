@@ -97,9 +97,6 @@ scripts:
   analyze: melos exec -- pub global run tuneup check
   postbootstrap: tuneup --version || pub global activate tuneup
   postclean: melos exec -- rm -rf ./build ./android/.gradle ./ios/.symlinks ./ios/Pods ./android/.idea ./.idea
-
-dev_dependencies:
-  pedantic: ^1.8.0
 ```
 
 ### Commands
