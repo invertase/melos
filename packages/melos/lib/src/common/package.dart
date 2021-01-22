@@ -20,7 +20,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
-import 'package:path/path.dart' show join, joinAll, normalize, relative;
+import 'package:path/path.dart' show join, joinAll;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 import 'package:ansi_styles/ansi_styles.dart';
@@ -293,7 +293,7 @@ class MelosPackage {
   }
 
   /// Execute a shell command inside this package.
-  Future<int> exec(List<String> execArgs) async {
+  Future<int> exec(List<String> execArgs, {bool prefixLogs = true}) async {
     final packagePrefix = '[${AnsiStyles.blue.bold(_name)}]: ';
 
     final environment = {
@@ -321,7 +321,7 @@ class MelosPackage {
     return startProcess(execArgs,
         environment: environment,
         workingDirectory: path,
-        prefix: packagePrefix);
+        prefix: prefixLogs ? packagePrefix : null);
   }
 
   /// Generates Pub/Flutter related temporary files such as .packages or pubspec.lock.

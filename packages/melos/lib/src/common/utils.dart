@@ -44,7 +44,23 @@ const filterOptionNoDependsOn = 'no-depends-on';
 // This can be user defined or can come from package selection in `melos run`.
 const envKeyMelosPackages = 'MELOS_PACKAGES';
 
-final terminalColumnsSize = stdout.hasTerminal ? stdout.terminalColumns : 80;
+const envKeyMelosTerminalWidth = 'MELOS_TERMINAL_WIDTH';
+
+int get terminalWidth {
+  if (Platform.environment.containsKey(envKeyMelosTerminalWidth)) {
+    return int.tryParse(
+          Platform.environment[envKeyMelosTerminalWidth],
+          radix: 10,
+        ) ??
+        80;
+  }
+
+  if (stdout.hasTerminal) {
+    return stdout.terminalColumns;
+  }
+
+  return 80;
+}
 
 String get currentDartVersion {
   return Version.parse(Platform.version.split(' ')[0]).toString();
@@ -195,6 +211,7 @@ Future<int> startProcess(List<String> execArgs,
       includeParentEnvironment: true,
       environment: {
         ...environmentVariables,
+        envKeyMelosTerminalWidth: terminalWidth.toString(),
         'MELOS_SCRIPT': filteredArgs.join(' '),
       },
       runInShell: true);

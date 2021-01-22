@@ -23,6 +23,7 @@ import 'package:ansi_styles/ansi_styles.dart';
 
 import '../common/logger.dart';
 import '../common/package.dart';
+import '../common/utils.dart';
 import '../common/workspace.dart';
 
 class ExecCommand extends Command {
@@ -50,35 +51,45 @@ class ExecCommand extends Command {
     final failures = <String, int>{};
     final pool = Pool(concurrency);
     final execArgsString = execArgs.join(' ');
+    final prefixLogs = concurrency != 1 && packages.length != 1;
 
     logger
         .stdout('${AnsiStyles.yellow(r'$')} ${AnsiStyles.bold("melos exec")}');
     logger.stdout('   └> ${AnsiStyles.cyan.bold(execArgsString)}');
     logger.stdout(
-        '       └> ${AnsiStyles.yellow.bold('RUNNING')} (in ${packages.length} packages)\n');
+        '       └> ${AnsiStyles.yellow.bold('RUNNING')} (in ${packages.length} packages)');
+
+    if (prefixLogs) {
+      logger.stdout('');
+      logger.stdout('-' * terminalWidth);
+    }
 
     await pool.forEach<MelosPackage, void>(packages, (package) {
       if (failFast && failures.isNotEmpty) {
         return Future.value();
       }
-      if (concurrency == 1) {
+
+      if (!prefixLogs) {
+        logger.stdout('');
+        logger.stdout('-' * terminalWidth);
         logger.stdout(AnsiStyles.bgBlack.bold.italic('${package.name}:'));
       }
-      return package.exec(execArgs).then((result) async {
+
+      return package
+          .exec(execArgs, prefixLogs: prefixLogs)
+          .then((result) async {
         if (result > 0) {
           failures[package.name] = result;
-        } else if (concurrency == 1) {
+        } else if (!prefixLogs) {
           logger.stdout(AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
               AnsiStyles.bold.green.bgBlack('SUCCESS'));
-        }
-
-        if (concurrency == 1) {
-          logger.stdout('\n');
         }
       });
     }).drain();
 
+    logger.stdout('-' * terminalWidth);
     logger.stdout('');
+
     logger
         .stdout('${AnsiStyles.yellow(r'$')} ${AnsiStyles.bold("melos exec")}');
     logger.stdout('   └> ${AnsiStyles.cyan.bold(execArgsString)}');

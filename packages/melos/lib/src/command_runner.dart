@@ -36,7 +36,7 @@ import 'common/workspace.dart';
 class MelosCommandRunner extends CommandRunner {
   MelosCommandRunner._()
       : super('melos', 'A CLI for Dart package development in monorepos.',
-            usageLineLength: terminalColumnsSize) {
+            usageLineLength: terminalWidth) {
     argParser.addFlag(
       'verbose',
       callback: (bool enabled) {

@@ -43,6 +43,10 @@ class BootstrapCommand extends Command {
   final String description =
       'Initialize the workspace, link local packages together and install remaining package dependencies.';
 
+  bool _pubGetFailed = false;
+
+  final List<Process> _runningProcesses = [];
+
   Future<bool> _runPubGetForPackage(MelosPackage package) async {
     final pubGetArgs = ['pub', 'get'];
     final execArgs = currentWorkspace.isFlutterWorkspace
@@ -56,9 +60,11 @@ class BootstrapCommand extends Command {
         workingDirectory: pluginTemporaryPath,
         includeParentEnvironment: true,
         environment: {
+          utils.envKeyMelosTerminalWidth: utils.terminalWidth.toString(),
           'MELOS_SCRIPT': execArgs.join(' '),
         },
         runInShell: true);
+    _runningProcesses.add(execProcess);
 
     if (!Platform.isWindows) {
       // Pipe in the arguments to trigger the script to run.
@@ -83,9 +89,15 @@ class BootstrapCommand extends Command {
     await processStderrCompleter.future;
 
     final exitCode = await execProcess.exitCode;
+    _runningProcesses.remove(execProcess);
+
+    if (_pubGetFailed) {
+      return true;
+    }
+
     if (exitCode > 0) {
       logger.stdout('');
-      logger.stdout(AnsiStyles.gray('-' * utils.terminalColumnsSize));
+      logger.stdout(AnsiStyles.gray('-' * utils.terminalWidth));
       var processStdOutString = utf8.decoder.convert(processStdout);
       var processStdErrString = utf8.decoder.convert(processStderr);
 
@@ -138,7 +150,7 @@ class BootstrapCommand extends Command {
           '    └> ${AnsiStyles.blue(package.path.replaceAll(currentWorkspace.path, "."))}');
       logger.stdout(
           '    └> ${AnsiStyles.red('Failed to run "${execArgs.join(' ')}" in this package.')}');
-      logger.stdout(AnsiStyles.gray('-' * utils.terminalColumnsSize));
+      logger.stdout(AnsiStyles.gray('-' * utils.terminalWidth));
     }
 
     return exitCode > 0;
@@ -146,14 +158,19 @@ class BootstrapCommand extends Command {
 
   @override
   Future<void> run() async {
+    final pubCommandForLogging =
+        "${currentWorkspace.isFlutterWorkspace ? "flutter " : ""}pub get";
     logger.stdout(AnsiStyles.yellow.bold('melos bootstrap'));
     logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
 
-    logger.stdout(
-        'Running "${currentWorkspace.isFlutterWorkspace ? "flutter " : ""}pub get" in packages...');
+    logger.stdout('Running "$pubCommandForLogging" in packages...');
 
     final successMessage = AnsiStyles.green('SUCCESS');
 
+    // As melos boostrap builds a 1-1 mirror of the packages tree in the
+    // .melos_tool directory we need to use unscoped packages here so as to
+    // preserve any local 'dependencies' or 'depedency_overrides' that packages
+    // in `currentWorkspace.packages` may be referencing by relative paths.
     await Future.forEach(currentWorkspace.packagesNoScope,
         (MelosPackage package) async {
       final pluginTemporaryPath =
@@ -161,6 +178,10 @@ class BootstrapCommand extends Command {
 
       final generatedYamlMap = Map.from(package.yamlContents);
 
+      // As melos boostrap builds a 1-1 mirror of the packages tree in the
+      // .melos_tool directory we need to use unscoped packages here so as to
+      // preserve any local 'dependencies' or 'depedency_overrides' that packages
+      // in `currentWorkspace.packages` may be referencing by relative paths.
       for (final plugin in currentWorkspace.packagesNoScope) {
         final pluginPath = utils.relativePath(
           join(currentWorkspace.melosToolPath, plugin.pathRelativeToWorkspace),
@@ -225,31 +246,41 @@ class BootstrapCommand extends Command {
           .writeAsString(generatedPubspecYamlString);
     });
 
-    var failed = false;
     final pool = Pool(utils.isCI ? 1 : 5);
+
+    // As noted in previous `packages` loops/forEach blocks above re using
+    // packagesNoScope, however in this instance we explictly want only run
+    // pub get in the packages the user has specified (currentWorkspace.packages).
+    // Previous loops/forEach blocks above will have preserved pubspec.yaml
+    // files for packages the user has excluded from this boostrap/workspace,
+    // which will allow non-excluded packages to still reference to them by path,
+    // e.g. using 'depedency_overrides'.
     await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
         (package) async {
-      if (failed) {
+      if (_pubGetFailed) {
         return;
       }
-      final pubGetFailed = await _runPubGetForPackage(package);
-      if (pubGetFailed) {
-        failed = true;
-      } else {
+
+      final packagePubGetFailed = await _runPubGetForPackage(package);
+      if (packagePubGetFailed && !_pubGetFailed) {
+        _pubGetFailed = true;
+        for (final process in _runningProcesses) {
+          process.kill(ProcessSignal.sigterm);
+        }
+        currentWorkspace.clean(cleanPackages: false);
+        logger.stderr(AnsiStyles.red(
+            '\nBootstrap failed: "$pubCommandForLogging" failed in one of your workspace packages.'));
+        exitCode = 1;
+        exit(exitCode);
+      }
+
+      if (!_pubGetFailed) {
         logger.stdout(
             '  ${AnsiStyles.greenBright('✓')} ${AnsiStyles.bold(package.name)}');
         logger.stdout(
             '     └> ${AnsiStyles.blue(package.path.replaceAll(currentWorkspace.path, "."))}');
       }
     }).drain();
-
-    if (failed) {
-      currentWorkspace.clean(cleanPackages: false);
-      logger.stderr(
-          '\nBootstrap failed, reason: pub get failed, see logs above.');
-      exitCode = 1;
-      return;
-    }
 
     logger.stdout('');
     logger.stdout('Linking project packages...');
