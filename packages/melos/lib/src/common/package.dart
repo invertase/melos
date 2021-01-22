@@ -337,7 +337,9 @@ class MelosPackage {
       }
       var temporaryFileContents = await fileToCopy.readAsString();
       temporaryFileContents = temporaryFileContents.replaceAll(
-          RegExp('\\.melos_tool${Platform.pathSeparator}'), '');
+          RegExp(
+              '\\.melos_tool${Platform.isWindows ? r'\' : ''}${Platform.pathSeparator}'),
+          '');
       final fileToCreate = File(join(path, tempFilePath));
       await fileToCreate.create(recursive: true);
       await fileToCreate.writeAsString(temporaryFileContents);
