@@ -158,14 +158,17 @@ class BootstrapCommand extends Command {
 
   @override
   Future<void> run() async {
+    final successMessage = AnsiStyles.green('SUCCESS');
     final pubCommandForLogging =
         "${currentWorkspace.isFlutterWorkspace ? "flutter " : ""}pub get";
     logger.stdout(AnsiStyles.yellow.bold('melos bootstrap'));
     logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
 
-    logger.stdout('Running "$pubCommandForLogging" in packages...');
-
-    final successMessage = AnsiStyles.green('SUCCESS');
+    logger.stdout('Running "$pubCommandForLogging" in workspace packages...');
+    if (!utils.isCI && currentWorkspace.packages.length > 20) {
+      logger.stdout(AnsiStyles.yellow(
+          'Note: this may take a while in large workspaces such as this one.'));
+    }
 
     // As melos boostrap builds a 1-1 mirror of the packages tree in the
     // .melos_tool directory we need to use unscoped packages here so as to
@@ -247,7 +250,6 @@ class BootstrapCommand extends Command {
     });
 
     final pool = Pool(utils.isCI ? 1 : 5);
-
     // As noted in previous `packages` loops/forEach blocks above re using
     // packagesNoScope, however in this instance we explictly want only run
     // pub get in the packages the user has specified (currentWorkspace.packages).
@@ -283,7 +285,7 @@ class BootstrapCommand extends Command {
     }).drain();
 
     logger.stdout('');
-    logger.stdout('Linking project packages...');
+    logger.stdout('Linking workspace packages...');
     await currentWorkspace.linkPackages();
     currentWorkspace.clean(cleanPackages: false);
     logger.stdout('  > $successMessage');
