@@ -34,6 +34,64 @@ enum SemverReleaseType {
 
 /// A representation of a parsed conventional commit message.
 class ConventionalCommit {
+  /// Create a new [ConventionalCommit] from a commit message [String].
+  ///
+  /// ```dart
+  /// var message = 'type(scope)!: commit message subject';
+  /// var commit = ConventionalCommit.fromCommitMessage(message);
+  /// print(commit);
+  /// ```
+  factory ConventionalCommit.fromCommitMessage(String commitMessage) {
+    assert(commitMessage != null);
+    final header = commitMessage.split('\n')[0];
+    final match = _conventionalCommitRegex.firstMatch(header);
+    if (match == null) {
+      return null;
+    }
+
+    final isMergeCommit = match.namedGroup('merge') != null;
+    if (isMergeCommit) {
+      return ConventionalCommit._(
+          header: header,
+          isMergeCommit: isMergeCommit,
+          isBreakingChange: false,
+          scopes: []);
+    }
+
+    final type = match.namedGroup('type');
+    var subject = (match.namedGroup('subject') ?? '').trim();
+    subject = subject.replaceAll(RegExp(r'^:\s'), '').trim();
+    if (subject.isEmpty) {
+      return null;
+    }
+
+    final isBreakingChange = match.namedGroup('breaking') != null ||
+        commitMessage.contains('BREAKING:');
+    final scopes = (match.namedGroup('scope') ?? '')
+        .replaceAll(RegExp(r'^\('), '')
+        .replaceAll(RegExp(r'\)$'), '')
+        .split(',')
+        .map((e) => e.trim())
+        .where((element) => element.isNotEmpty)
+        .toList();
+
+    return ConventionalCommit._(
+        header: header,
+        scopes: scopes,
+        type: type,
+        subject: subject,
+        isBreakingChange: isBreakingChange,
+        isMergeCommit: isMergeCommit);
+  }
+
+  ConventionalCommit._(
+      {this.header,
+      this.scopes,
+      this.type,
+      this.isBreakingChange,
+      this.subject,
+      this.isMergeCommit});
+
   /// A [List] of scopes in the commit, returns empty [List] if no scopes found.
   final List<String> scopes;
 
@@ -52,63 +110,8 @@ class ConventionalCommit {
   /// The original commit message header.
   final String header;
 
-  ConventionalCommit._(
-      {this.header,
-      this.scopes,
-      this.type,
-      this.isBreakingChange,
-      this.subject,
-      this.isMergeCommit});
-
-  /// Create a new [ConventionalCommit] from a commit message [String].
-  ///
-  /// ```dart
-  /// var message = 'type(scope)!: commit message subject';
-  /// var commit = ConventionalCommit.fromCommitMessage(message);
-  /// print(commit);
-  /// ```
-  factory ConventionalCommit.fromCommitMessage(String commitMessage) {
-    assert(commitMessage != null);
-    var header = commitMessage.split('\n')[0];
-    var match = _conventionalCommitRegex.firstMatch(header);
-    if (match == null) return null;
-
-    bool isMergeCommit = match.namedGroup('merge') != null;
-    if (isMergeCommit) {
-      return ConventionalCommit._(
-          header: header,
-          isMergeCommit: isMergeCommit,
-          isBreakingChange: false,
-          scopes: []);
-    }
-
-    String type = match.namedGroup('type');
-    String subject = (match.namedGroup('subject') ?? '').trim();
-    subject = subject.replaceAll(RegExp(r'^:\s'), '').trim();
-    if (subject.isEmpty) {
-      return null;
-    }
-
-    bool isBreakingChange = match.namedGroup('breaking') != null ||
-        commitMessage.contains('BREAKING:');
-    List<String> scopes = (match.namedGroup('scope') ?? '')
-        .replaceAll(RegExp(r'^\('), '')
-        .replaceAll(RegExp(r'\)$'), '')
-        .split(',')
-        .map((e) => e.trim())
-        .where((element) => element.isNotEmpty)
-        .toList();
-
-    return ConventionalCommit._(
-        header: header,
-        scopes: scopes,
-        type: type,
-        subject: subject,
-        isBreakingChange: isBreakingChange,
-        isMergeCommit: isMergeCommit);
-  }
-
   // TODO(Salakar): allow workspace customization
+  /// Whether this commit should trigger a version bump in it's residing package.
   bool get isVersionableCommit {
     if (isMergeCommit) return false;
     return isBreakingChange ||
@@ -124,6 +127,7 @@ class ConventionalCommit {
   }
 
   // TODO(Salakar): allow workspace customization
+  /// Returns the [SemverReleaseType] for this commit, e.g. [SemverReleaseType.major].
   SemverReleaseType get semverReleaseType {
     if (isBreakingChange) {
       return SemverReleaseType.major;
@@ -138,7 +142,8 @@ class ConventionalCommit {
 
   @override
   String toString() {
-    return '''ConventionalCommit[
+    return '''
+ConventionalCommit[
   type="$type",
   subject="$subject",
   scopes=$scopes,

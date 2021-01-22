@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 import 'package:ansi_styles/ansi_styles.dart';
 
 void main() {

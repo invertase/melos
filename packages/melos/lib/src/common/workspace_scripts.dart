@@ -27,9 +27,9 @@ List<String> _lifecycleScriptNames = [
 
 /// A representation of a "scripts" configuration in a "melos.yaml" file.
 class MelosWorkspaceScripts {
-  final Map _scriptsMapDefinition;
-
   MelosWorkspaceScripts(this._scriptsMapDefinition);
+
+  final Map _scriptsMapDefinition;
 
   /// Returns whether a script exists by name.
   bool exists(String name) {

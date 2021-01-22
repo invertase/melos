@@ -24,9 +24,17 @@ import 'package:ansi_styles/ansi_styles.dart';
 import '../common/logger.dart';
 import '../common/utils.dart';
 import '../common/workspace.dart';
-import '../common/workspace_script.dart';
 
 class RunCommand extends Command {
+  RunCommand() {
+    argParser.addFlag(
+      'no-select',
+      negatable: false,
+      help:
+          'Skips the prompt to select a package (if defined in the script configuration). Filters defined in the scripts "select-package" options will however still be applied.',
+    );
+  }
+
   @override
   final String name = 'run';
 
@@ -37,18 +45,8 @@ class RunCommand extends Command {
   @override
   final String invocation = 'melos run <name>';
 
-  RunCommand() {
-    argParser.addFlag(
-      'no-select',
-      defaultsTo: false,
-      negatable: false,
-      help:
-          'Skips the prompt to select a package (if defined in the script configuration). Filters defined in the scripts "select-package" options will however still be applied.',
-    );
-  }
-
   @override
-  void run() async {
+  Future<void> run() async {
     if (currentWorkspace.config.scripts.namesExcludingLifecycles.isEmpty) {
       logger.stderr(
         AnsiStyles.yellow(
@@ -63,25 +61,29 @@ class RunCommand extends Command {
 
     if (argResults.rest.isEmpty) {
       if (currentWorkspace.config.scripts.namesExcludingLifecycles.isNotEmpty) {
-        var scriptChoices = currentWorkspace
+        final scriptChoices = currentWorkspace
             .config.scripts.namesExcludingLifecycles
             .map((name) {
-          var script = currentWorkspace.config.scripts.script(name);
-          var styledName = AnsiStyles.cyan(script.name);
-          var styledDescription = script.description != null
+          final script = currentWorkspace.config.scripts.script(name);
+          final styledName = AnsiStyles.cyan(script.name);
+          final styledDescription = script.description != null
               ? '\n    └> ${AnsiStyles.gray(script.description.trim().split('\n').join('\n       '))}'
               : '';
 
           return '$styledName$styledDescription';
         }).toList();
-        var selectedScript = prompts.choose(
+
+        final selectedScript = prompts.choose(
           AnsiStyles.white('Select a script to run in this workspace'),
           scriptChoices,
           interactive: false,
         );
-        var selectedScriptIndex = scriptChoices.indexOf(selectedScript);
+
+        final selectedScriptIndex = scriptChoices.indexOf(selectedScript);
+
         scriptName = currentWorkspace
             .config.scripts.namesExcludingLifecycles[selectedScriptIndex];
+
         logger.stdout('');
       } else {
         logger.stderr('You have no scripts defined in your melos.yaml file.\n');
@@ -97,9 +99,9 @@ class RunCommand extends Command {
       logger.stderr('Invalid run script name specified.\n');
       if (currentWorkspace.config.scripts.names.isNotEmpty) {
         logger.stdout('Available scripts:');
-        currentWorkspace.config.scripts.names.forEach((key) {
+        for (final key in currentWorkspace.config.scripts.names) {
           logger.stdout(' - ${AnsiStyles.blue(key)}');
-        });
+        }
         logger.stdout('');
       }
       logger.stdout(usage);
@@ -107,9 +109,9 @@ class RunCommand extends Command {
       return;
     }
 
-    MelosScript script = currentWorkspace.config.scripts.script(scriptName);
+    final script = currentWorkspace.config.scripts.script(scriptName);
 
-    var environment = {
+    final environment = {
       'MELOS_ROOT_PATH': currentWorkspace.path,
       ...script.env,
     };
@@ -173,28 +175,28 @@ class RunCommand extends Command {
         );
       }
 
-      var selectedPackageIndex =
+      final selectedPackageIndex =
           choices.length > 1 ? choices.indexOf(selectedPackage) : 1;
       // Comma delimited string of packages selected (all or a single package).
-      var packagesEnv = selectedPackageIndex == 0 && choices.length > 1
+      final packagesEnv = selectedPackageIndex == 0 && choices.length > 1
           ? currentWorkspace.packages.map((e) => e.name).toList().join(',')
           : currentWorkspace.packages[selectedPackageIndex - 1].name;
       // MELOS_PACKAGES environment is detected by melos itself when through
       // a defined script, this comma delimited list of package names is used
       // instead of any filters if detected.
       environment[envKeyMelosPackages] = packagesEnv;
-      print('\n');
+      logger.stdout('\n');
     }
 
-    var scriptSource = currentWorkspace.config.scripts.script(scriptName).run;
-    var scriptParts = scriptSource.split(' ');
+    final scriptSource = currentWorkspace.config.scripts.script(scriptName).run;
+    final scriptParts = scriptSource.split(' ');
 
     logger.stdout(AnsiStyles.yellow.bold('melos run $scriptName'));
     logger.stdout(
         '   └> ${AnsiStyles.cyan.bold(scriptSource.replaceAll('\n', ''))}');
     logger.stdout('       └> ${AnsiStyles.yellow.bold('RUNNING')}\n');
 
-    int processExitCode = await startProcess(scriptParts,
+    final processExitCode = await startProcess(scriptParts,
         environment: environment, workingDirectory: currentWorkspace.path);
 
     logger.stdout('');
