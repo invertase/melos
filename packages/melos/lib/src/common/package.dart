@@ -114,8 +114,7 @@ class MelosPackage {
 
   /// Package path as a normalized sting relative to the root of the workspace.
   /// e.g. "packages/firebase_database".
-  String get pathRelativeToWorkspace =>
-      normalize(relative(_path, from: _workspace.path));
+  String get pathRelativeToWorkspace => relativePath(_path, workspace.path);
 
   /// Type of this package, e.g. [PackageType.flutterApp].
   PackageType get type {
