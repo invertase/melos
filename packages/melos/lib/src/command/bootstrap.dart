@@ -154,14 +154,14 @@ class BootstrapCommand extends Command {
 
     final successMessage = AnsiStyles.green('SUCCESS');
 
-    await Future.forEach(currentWorkspace.packages,
+    await Future.forEach(currentWorkspace.packagesNoScope,
         (MelosPackage package) async {
       final pluginTemporaryPath =
           join(currentWorkspace.melosToolPath, package.pathRelativeToWorkspace);
 
       final generatedYamlMap = Map.from(package.yamlContents);
 
-      for (final plugin in currentWorkspace.packages) {
+      for (final plugin in currentWorkspace.packagesNoScope) {
         final pluginPath = utils.relativePath(
           join(currentWorkspace.melosToolPath, plugin.pathRelativeToWorkspace),
           pluginTemporaryPath,
