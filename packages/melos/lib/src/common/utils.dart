@@ -92,6 +92,16 @@ String getMelosRoot() {
       'melos-$melosVersion'
     ]);
   }
+
+  // This allows us to use melos on itself during development.
+  if (Platform.script.path.contains('melos_dev.dart')) {
+    return joinAll([
+      File.fromUri(Platform.script).parent.parent.path,
+      'packages',
+      'melos'
+    ]);
+  }
+
   return File.fromUri(Platform.script).parent.parent.path;
 }
 

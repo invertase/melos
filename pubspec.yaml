@@ -1,9 +1,26 @@
 name: "melos_monorepo"
 publish_to: none
 
+# This allows us to use melos on itself during development.
+executables:
+  melos: melos_dev
+
 dev_dependencies:
+  melos: ^0.4.0+1
   path: ^1.7.0
   yaml: ^2.2.1
+
+# These allows us to use melos on itself during development.
+# If you make a new local package in this repo that the melos package
+# will depend on, then make sure to add it here otherwise you'll face
+# "'pubspec.yaml' has been modfied since".. issues.
+dependency_overrides:
+  ansi_styles:
+    path: ./packages/ansi_styles
+  conventional_commit:
+    path: ./packages/conventional_commit
+  melos:
+    path: ./packages/melos
 
 environment:
   sdk: ">=2.2.2 <3.0.0"

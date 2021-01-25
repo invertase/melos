@@ -22,6 +22,25 @@
 dart pub global activate melos
 ```
 
+## Local development setup
+
+To setup and use this melos mono repo locally for the purposes of contributing, clone it and run the following commands from the root of the repository:
+
+```bash
+# Remove previous instances of melos:
+dart pub global deactivate melos
+
+# Activate 'melos' from path:
+dart pub global activate --source="path" . --executable="melos"
+
+# Confirm you now using a local development version:
+melos --help
+# You should now see a banner printed at the top of the help output similar to:
+# ---------------------------------------------------------
+# | You are running a local development version of melos. |
+# ---------------------------------------------------------
+```
+
 ## README Badge
 
 Using Melos? Add a README badge to show it off:
