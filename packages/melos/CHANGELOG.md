@@ -1,3 +1,9 @@
+## 0.4.0
+
+> Note: This release has breaking changes.
+
+ - **BREAKING** **REFACTOR**: rework bootstrap behaviour (see #51 for more info).
+
 ## 0.3.13
 
  - **FEAT**: add `flutter` package filter (#45).

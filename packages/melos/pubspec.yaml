@@ -1,15 +1,15 @@
 name: melos
 description: "A tool for managing Dart projects with multiple packages. Inspired by JavaScripts Lerna package."
-version: 0.3.13
+version: 0.4.0
 homepage: "https://github.com/invertase/melos"
 executables:
   melos:
 dependencies:
-  ansi_styles: ^0.1.1+1
+  ansi_styles: ^0.2.0
   args: ^1.6.0
   cli_util: ^0.2.0
   collection: ^1.14.12
-  conventional_commit: ^0.1.0+2
+  conventional_commit: ^0.2.0
   glob: ^1.2.0
   http: ^0.12.2
   meta: ^1.1.8
