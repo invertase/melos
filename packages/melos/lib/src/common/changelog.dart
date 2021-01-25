@@ -85,7 +85,7 @@ class MelosChangelog extends Changelog {
         header += '\n\n> Note: This release has breaking changes.';
       }
 
-      final commits = List.from(update.commits
+      final commits = List<ConventionalCommit>.from(update.commits
           .where((ConventionalCommit commit) => !commit.isMergeCommit)
           .toList());
 

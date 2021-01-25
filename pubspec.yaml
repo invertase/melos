@@ -6,7 +6,8 @@ executables:
   melos: melos_dev
 
 dev_dependencies:
-  melos: ^0.4.0+1
+  melos:
+    path: ./packages/melos
   path: ^1.7.0
   yaml: ^2.2.1
 

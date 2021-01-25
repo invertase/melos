@@ -175,7 +175,7 @@ class MelosPendingPackageUpdate {
   SemverReleaseType get semverReleaseType {
     if (reason == PackageUpdateReason.dependency) {
       // Version bumps for dependencies should be patches.
-      // If the dependencies had breaking changes then this package would have had commits to update it separately.
+      // If the dependencies had breaking changes then this package should have had commits to update it separately.
       return SemverReleaseType.patch;
     }
 

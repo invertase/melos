@@ -20,6 +20,7 @@ dependencies:
   string_scanner: ^1.0.5
   yaml: ^2.2.1
   yamlicious: ^0.1.0
-
+dev_dependencies:
+  test: any
 environment:
   sdk: ">=2.2.2 <3.0.0"
