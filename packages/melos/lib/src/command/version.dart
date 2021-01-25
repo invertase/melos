@@ -121,8 +121,7 @@ class VersionCommand extends Command {
               since: globalResults['since'] as String)
           .then((commits) {
         packageCommits[package.name] = commits
-            .map((commit) =>
-                ConventionalCommit.fromCommitMessage(commit.message))
+            .map((commit) => ConventionalCommit.parse(commit.message))
             .where((element) => element != null)
             .toList();
       });

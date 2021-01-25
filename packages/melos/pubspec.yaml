@@ -21,9 +21,5 @@ dependencies:
   yaml: ^2.2.1
   yamlicious: ^0.1.0
 
-dependency_overrides:
-  conventional_commit:
-    path: ../conventional_commit
-
 environment:
   sdk: ">=2.2.2 <3.0.0"

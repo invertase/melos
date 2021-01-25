@@ -103,7 +103,7 @@ class MelosChangelog extends Changelog {
         if (commit.isMergeCommit) {
           entry = commit.header;
         } else {
-          entry = '**${commit.type.toUpperCase()}**: ${commit.subject}';
+          entry = '**${commit.type.toUpperCase()}**: ${commit.description}';
         }
 
         final shouldPunctuate = !entry.contains(RegExp(r'[\.\?\!]$'));
