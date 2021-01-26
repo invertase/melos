@@ -22,6 +22,7 @@ import 'package:pub_semver/pub_semver.dart';
 
 import 'changelog.dart';
 import 'package.dart';
+import 'versioning.dart' as versioning;
 
 /// Enum representing why the version has been changed when running 'version' command.
 enum PackageUpdateReason {
@@ -75,107 +76,17 @@ class MelosPendingPackageUpdate {
     return package.version;
   }
 
-  /// Returns the next stable version based on the commits in this
-  Version get nextStableRelease {
-    // For simplicity's sake, we avoid using + after the version reaches 1.0.0.
-    if (currentVersion.major > 0) {
-      switch (semverReleaseType) {
-        case SemverReleaseType.major:
-          return currentVersion.nextBreaking;
-        case SemverReleaseType.minor:
-          return currentVersion.nextMinor;
-        case SemverReleaseType.patch:
-        default:
-          return currentVersion.nextPatch;
-      }
-    } else {
-      // Although semantic versioning doesn't promise any compatibility between versions prior to 1.0.0,
-      // the Dart community convention is to treat those versions semantically as well. The interpretation
-      // of each number is just shifted down one slot:
-      //   - going from 0.1.2 to 0.2.0 indicates a breaking change
-      //   - going to 0.1.3 indicates a new feature
-      //   - going to 0.1.2+1 indicates a change that doesn't affect the public API
-      switch (semverReleaseType) {
-        case SemverReleaseType.major:
-          return currentVersion.nextMinor;
-        case SemverReleaseType.minor:
-          return currentVersion.nextPatch;
-        case SemverReleaseType.patch:
-        default:
-          // Bump the build number, or set it if it does not exist.
-          final currentBuild = currentVersion.build.length == 1
-              ? currentVersion.build[0] as int
-              : 0;
-          return Version(
-            currentVersion.major,
-            currentVersion.minor,
-            currentVersion.patch,
-            build: (currentBuild + 1).toString(),
-          );
-      }
-    }
-  }
-
-  Version get nextPreRelease {
-    if (currentVersion.isPreRelease) {
-      final currentPre = currentVersion.preRelease.length == 2
-          ? currentVersion.preRelease[1] as int
-          : -1;
-      // Note we preserve the current prereleases preid if no preid option specified.
-      // So 1.0.0-nullsafety.0 would become ...-nullsafety.X rather than use the default preid "dev".
-      var nextPreidInt = currentPre + 1;
-      final nextPreidName = preid ?? currentVersion.preRelease[0] as String;
-
-      // Reset the preid int if preid name has changed,
-      // e.g. was "...dev.3" and is now a "nullsafety" preid so the next
-      // prerelease version becomes "...nullsafety.0" instead of "...nullsafety.4".
-      if (nextPreidName != currentVersion.preRelease[0]) {
-        nextPreidInt = 0;
-      }
-
-      return Version(
-        currentVersion.major,
-        currentVersion.minor,
-        currentVersion.patch,
-        pre: '$nextPreidName.$nextPreidInt',
-      );
-    }
-
-    final nextVersion = nextStableRelease;
-    return Version(
-      nextVersion.major,
-      nextVersion.minor,
-      nextVersion.patch,
-      pre: '${preid ?? 'dev'}.0',
-    );
-  }
-
   /// Next pub version that will occur as part of this package update.
   Version get nextVersion {
-    if (reason == PackageUpdateReason.graduate) {
-      return Version(
-        currentVersion.major,
-        currentVersion.minor,
-        currentVersion.patch,
-      );
-    }
-
-    if (currentVersion.isPreRelease && graduate) {
-      return nextStableRelease;
-    } else if (currentVersion.isPreRelease) {
-      return nextPreRelease;
-    } else if (prerelease) {
-      return nextPreRelease;
-    }
-
-    return nextStableRelease;
+    return versioning.nextVersion(currentVersion, semverReleaseType,
+        graduate: graduate, preid: preid, prerelease: prerelease);
   }
 
   /// Taking into account all the commits in this update, what is the highest [SemverReleaseType].
   SemverReleaseType get semverReleaseType {
     if (reason == PackageUpdateReason.dependency) {
       // Version bumps for dependencies should be patches.
-      // If the dependencies had breaking changes then this package would have had commits to update it separately.
+      // If the dependencies had breaking changes then this package should have had commits to update it separately.
       return SemverReleaseType.patch;
     }
 

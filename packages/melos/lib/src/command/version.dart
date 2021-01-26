@@ -28,6 +28,7 @@ import '../common/logger.dart';
 import '../common/package.dart';
 import '../common/pending_package_update.dart';
 import '../common/utils.dart';
+import '../common/versioning.dart' as versioning;
 import '../common/workspace.dart';
 
 class VersionCommand extends Command {
@@ -53,9 +54,8 @@ class VersionCommand extends Command {
         negatable: false,
         help: 'Skip the Y/n prompt at the beginning of the command.');
     argParser.addOption('preid',
-        defaultsTo: 'dev',
         help:
-            'When run with this option, melos version will increment prerelease versions using the specified prerelease identifier, e.g. using a "nullsafety" preid along with the --prerelease flag would result in a version in the format "1.0.0-nullsafety.0".');
+            'When run with this option, melos version will increment prerelease versions using the specified prerelease identifier, e.g. using a "nullsafety" preid along with the --prerelease flag would result in a version in the format "1.0.0-1.0.nullsafety.0".');
   }
 
   @override
@@ -239,15 +239,33 @@ class VersionCommand extends Command {
           .setPubspecVersion(pendingPackageUpdate.nextVersion.toString());
 
       // Update dependents.
-      // TODO: This isn't updating the dev_dependencies yet but it probably should.
-      await Future.forEach(
-          pendingPackageUpdate.package.dependentsInWorkspace,
-          (MelosPackage package) => package.setDependencyVersion(
-              pendingPackageUpdate.package.name,
-              // Dependency range using caret syntax to ensure the range allows
-              // all versions guaranteed to be backwards compatible with the specified version.
-              // For example, ^1.2.3 is equivalent to '>=1.2.3 <2.0.0', and ^0.1.2 is equivalent to '>=0.1.2 <0.2.0'.
-              '^${pendingPackageUpdate.nextVersion.toString()}'));
+      await Future.forEach([
+        ...pendingPackageUpdate.package.dependentsInWorkspace,
+        ...pendingPackageUpdate.package.devDependentsInWorkspace
+      ], (MelosPackage package) {
+        final nextVersion = pendingPackageUpdate.nextVersion.toString();
+        // By default dependency constraint using caret syntax to ensure the range allows
+        // all versions guaranteed to be backwards compatible with the specified version.
+        // For example, ^1.2.3 is equivalent to '>=1.2.3 <2.0.0', and ^0.1.2 is equivalent to '>=0.1.2 <0.2.0'.
+        var versionConstraint = '^$nextVersion';
+
+        // For nulsafety releases we use a >=currentVersion <nextMajorVersion contraint
+        // to allow nullsafety prerelease id versions to function similar to semver without
+        // the actual major, minor & patch versions changing.
+        // e.g. >=1.2.0-1.0.nullsafety.0 <1.2.0-2.0.nullsafety.0
+        if (pendingPackageUpdate.nextVersion
+            .toString()
+            .contains('nullsafety')) {
+          final nextMajorFromCurrentVersion = versioning
+              .nextVersion(
+                  pendingPackageUpdate.nextVersion, SemverReleaseType.major)
+              .toString();
+          versionConstraint = '">=$nextVersion <$nextMajorFromCurrentVersion"';
+        }
+
+        return package.setDependencyVersion(
+            pendingPackageUpdate.package.name, versionConstraint);
+      });
 
       // Update changelogs if requested.
       if (changelog) {

@@ -1,7 +1,4 @@
 #!/bin/bash
 
-cd packages/melos
-dart pub get
-dart pub global activate --source=path .
-cd ../..
+dart pub global activate --source="path" . --executable="melos"
 melos bootstrap
