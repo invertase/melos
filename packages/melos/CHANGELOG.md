@@ -1,3 +1,9 @@
+## 0.4.1
+
+ - **FEAT**: rework versioning with tests to support nullsafety prerelease versioning (#52).
+ - **CHORE**: improve local development setup + add small guide to readme.
+ - **CHORE**: use latest conventional_commit package.
+
 ## 0.4.0+1
 
  - Update a dependency to the latest release.
