@@ -16,6 +16,7 @@
  */
 
 import 'package:conventional_commit/conventional_commit.dart';
+import 'package:melos/src/common/versioning.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 
@@ -46,7 +47,7 @@ class TestCase {
     return 'TestCase[$currentVersion => $expectedVersion ($requestedReleaseType)]\n  { '
         'shouldMakePrereleaseVersion:$shouldMakePrereleaseVersion, '
         'shouldMakeGraduateVersion:$shouldMakeGraduateVersion, '
-        'requestedPreId:$requestedPreId, '
+        'requestedPreId:$requestedPreId '
         '};';
   }
 }
@@ -63,7 +64,7 @@ class NullSafetyTestCase extends TestCase {
         );
 }
 
-const testCases = [
+const _versioningTestCases = [
   // Semantic versioning compatible.
   TestCase('1.0.0', '2.0.0', SemverReleaseType.major),
   TestCase('1.0.0', '1.1.0', SemverReleaseType.minor),
@@ -71,6 +72,12 @@ const testCases = [
   TestCase('1.1.1', '2.0.0', SemverReleaseType.major),
   TestCase('1.1.1', '1.2.0', SemverReleaseType.minor),
   TestCase('1.1.1', '1.1.2', SemverReleaseType.patch),
+  TestCase('1.0.0', '2.0.0-dev.0', SemverReleaseType.major,
+      shouldMakePrereleaseVersion: true),
+  TestCase('1.0.0', '1.1.0-dev.0', SemverReleaseType.minor,
+      shouldMakePrereleaseVersion: true),
+  TestCase('1.0.0', '1.0.1-dev.0', SemverReleaseType.patch,
+      shouldMakePrereleaseVersion: true),
 
   // Although semantic versioning doesn't promise any compatibility between versions prior to 1.0.0,
   // the Dart community convention is to treat those versions semantically as well. The interpretation
@@ -81,6 +88,12 @@ const testCases = [
   TestCase('0.1.1+1', '0.2.0', SemverReleaseType.major),
   TestCase('0.1.1+1', '0.1.2', SemverReleaseType.minor),
   TestCase('0.1.1+1', '0.1.1+2', SemverReleaseType.patch),
+  TestCase('0.1.0', '0.2.0-dev.0', SemverReleaseType.major,
+      shouldMakePrereleaseVersion: true),
+  TestCase('0.1.0', '0.1.1-dev.0', SemverReleaseType.minor,
+      shouldMakePrereleaseVersion: true),
+  TestCase('0.1.0', '0.1.0-dev.0+1', SemverReleaseType.patch,
+      shouldMakePrereleaseVersion: true),
 
   // Ensure that we reset the preid int if preid name has changed,
   // e.g. was "...dev.3" and is now a "beta" preid so the next
@@ -93,6 +106,8 @@ const testCases = [
   TestCase('1.0.0-dev.1', '1.0.0-dev.2', SemverReleaseType.patch),
   // It should however graduate if it was specifically requested.
   TestCase('1.0.0-dev.1', '1.0.0', SemverReleaseType.patch,
+      shouldMakeGraduateVersion: true),
+  TestCase('0.1.0-dev.0+1', '0.1.0+1', SemverReleaseType.patch,
       shouldMakeGraduateVersion: true),
 
   // Check that we preserve any current prerelease preid if no preid option specified.
@@ -118,7 +133,7 @@ const testCases = [
       '0.1.0+1', '0.2.0-1.0.nullsafety.0', SemverReleaseType.patch),
 
   // Nullsafety
-  // - Here we're going from an already nullsafe version to another one.
+  // - Here we're going from a already nullsafety version to another one.
   NullSafetyTestCase('2.0.0-1.2.nullsafety.0', '2.0.0-2.0.nullsafety.0',
       SemverReleaseType.major),
   NullSafetyTestCase('2.0.0-1.2.nullsafety.3', '2.0.0-1.3.nullsafety.0',
@@ -132,38 +147,33 @@ const testCases = [
       SemverReleaseType.minor),
   NullSafetyTestCase('0.2.0-1.2.nullsafety.3', '0.2.0-1.2.nullsafety.4',
       SemverReleaseType.patch),
+
+  // Any nullsafety versions using the previous versioning style should get switched over.
+  NullSafetyTestCase(
+      '0.8.0-nullsafety.1', '0.8.0-1.0.nullsafety.0', SemverReleaseType.major),
+  NullSafetyTestCase(
+      '1.2.0-nullsafety.0', '1.2.0-1.0.nullsafety.0', SemverReleaseType.major),
+
+  // Non-nullsafety prerelease to a nullsafety prerelease.
+  NullSafetyTestCase(
+      '1.0.0-dev.3', '2.0.0-1.0.nullsafety.0', SemverReleaseType.patch),
 ];
 
 void main() {
-  test('TODO', () {
-    final constraintGteLt = VersionConstraint.parse(
-        '>=2.0.0-2.0.nullsafety.0 <2.0.0-3.0.nullsafety.0');
-    print(constraintGteLt
-        .allows(Version.parse('2.0.0-3.0.nullsafety.0'))); // false
-    print(constraintGteLt
-        .allows(Version.parse('2.0.0-2.1.nullsafety.0'))); // true
-    print(constraintGteLt
-        .allows(Version.parse('2.0.0-2.0.nullsafety.2'))); // true
-    print(constraintGteLt
-        .allows(Version.parse('2.0.0-1.0.nullsafety.0'))); // false
-    print(constraintGteLt
-        .allows(Version.parse('2.1.0-2.0.nullsafety.0'))); // false
-
-    final constraintCarret = VersionConstraint.parse('^2.0.0-2.0.nullsafety.0');
-    print(constraintCarret
-        .allows(Version.parse('2.0.0-3.0.nullsafety.0'))); // true
-    print(constraintCarret
-        .allows(Version.parse('2.0.0-2.1.nullsafety.0'))); // true
-    print(constraintCarret
-        .allows(Version.parse('2.0.0-2.0.nullsafety.2'))); // true
-    print(constraintCarret
-        .allows(Version.parse('2.0.0-1.0.nullsafety.0'))); // false
-    print(constraintCarret
-        .allows(Version.parse('2.1.0-2.0.nullsafety.0'))); // true
-
-    // for (final testCase in testCases) {
-    //   // ignore: avoid_print
-    //   print(testCase);
-    // }
+  group('Semantic Versioning', () {
+    for (final testCase in _versioningTestCases) {
+      test(
+          '#${_versioningTestCases.indexOf(testCase)}: the version ${testCase.currentVersion} should increment to ${testCase.expectedVersion}',
+          () {
+        final newVersion = nextVersion(Version.parse(testCase.currentVersion),
+            testCase.requestedReleaseType,
+            graduate: testCase.shouldMakeGraduateVersion,
+            preid: testCase.requestedPreId,
+            prerelease: testCase.shouldMakePrereleaseVersion);
+        expect(newVersion.toString(), equals(testCase.expectedVersion),
+            reason:
+                'The version created did not match the version expected by this test case: $testCase.');
+      });
+    }
   });
 }
