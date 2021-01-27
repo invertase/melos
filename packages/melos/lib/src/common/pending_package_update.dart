@@ -34,9 +34,6 @@ enum PackageUpdateReason {
 
   /// Package is being graduated to a stable version from a prerelease.
   graduate,
-
-  /// Manual version bump was requested.
-  manual,
 }
 
 class MelosPendingPackageUpdate {
