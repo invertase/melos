@@ -16,6 +16,8 @@ sometimes called [monorepos](https://en.wikipedia.org/wiki/Monorepo))
 
 **Melos is a tool that optimizes the workflow around managing multi-package repositories with git and Pub.**
 
+---
+
 ### What does a Melos repo look like?
 
 A default file structure looks something like this:
@@ -31,6 +33,8 @@ my-melos-repo/
 ```
 
 The location of your packages can be configured via the `melos.yaml` configuration file if the default is unsuitable.
+
+---
 
 ### What can Melos do?
 
@@ -76,6 +80,8 @@ The location of your packages can be configured via the `melos.yaml` configurati
   workspace boostrap.
     - Vscode code doesn't require advanced integration to work.
 
+---
+
 ### Who is using Melos?
 
 The following projects are using Melos:
@@ -100,9 +106,13 @@ pub global activate melos
 # pub global activate melos 0.4.1
 ```
 
+---
+
 ### Documentation
 
 Documentation is available at [https://docs.page/invertase/melos](https://docs.page/invertase/melos).
+
+---
 
 ### Commands
 
