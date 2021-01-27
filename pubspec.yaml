@@ -14,7 +14,7 @@ dev_dependencies:
 # These allows us to use melos on itself during development.
 # If you make a new local package in this repo that the melos package
 # will depend on, then make sure to add it here otherwise you'll face
-# "'pubspec.yaml' has been modfied since".. issues.
+# "'pubspec.yaml' has been modified since".. issues.
 dependency_overrides:
   ansi_styles:
     path: ./packages/ansi_styles

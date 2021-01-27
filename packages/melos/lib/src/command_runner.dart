@@ -35,7 +35,8 @@ import 'common/workspace.dart';
 
 class MelosCommandRunner extends CommandRunner {
   MelosCommandRunner._()
-      : super('melos', 'A CLI for Dart package development in monorepos.',
+      : super('melos',
+            'A CLI tool for managing Dart & Flutter projects with multiple packages.',
             usageLineLength: terminalWidth) {
     argParser.addFlag(
       'verbose',
@@ -107,13 +108,15 @@ class MelosCommandRunner extends CommandRunner {
     argParser.addMultiOption(
       filterOptionDependsOn,
       valueHelp: 'dependantPackageName',
-      help: 'Include only packages that depend on specific packages.',
+      help:
+          'Include only packages that depend on a specific package. This option can be repeated.',
     );
 
     argParser.addMultiOption(
       filterOptionNoDependsOn,
       valueHelp: 'noDependantPackageName',
-      help: 'Include only packages that *dont* depend on specific packages.',
+      help:
+          "Include only packages that *don't* depend on a specific package. This option can be repeated.",
     );
 
     addCommand(ExecCommand());

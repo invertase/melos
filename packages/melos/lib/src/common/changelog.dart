@@ -17,23 +17,26 @@
 
 import 'dart:io';
 
-import 'package:path/path.dart';
 import 'package:conventional_commit/conventional_commit.dart';
+import 'package:path/path.dart';
 
 import 'logger.dart';
+import 'package.dart';
 import 'pending_package_update.dart';
 
 class Changelog {
-  Changelog(this.update);
+  Changelog(this.package, this.version);
 
-  final MelosPendingPackageUpdate update;
+  final MelosPackage package;
+
+  final String version;
 
   String get markdown {
     throw UnimplementedError();
   }
 
   String get path {
-    return joinAll([update.package.path, 'CHANGELOG.md']);
+    return joinAll([package.path, 'CHANGELOG.md']);
   }
 
   @override
@@ -53,7 +56,7 @@ class Changelog {
     var contents = await read();
     if (contents.contains(markdown)) {
       logger.trace(
-          'Identical changelog content for ${update.package.name} v${update.nextVersion.toString()} already exists, skipping.');
+          'Identical changelog content for ${package.name} v$version already exists, skipping.');
       return;
     }
     contents = '$markdown$contents';
@@ -61,8 +64,24 @@ class Changelog {
   }
 }
 
+class SingleEntryChangelog extends Changelog {
+  SingleEntryChangelog(MelosPackage package, String version, this.entry)
+      : super(package, version);
+
+  final String entry;
+
+  @override
+  String get markdown {
+    final changelogHeader = '## $version';
+    return '$changelogHeader\n\n - $entry\n\n';
+  }
+}
+
 class MelosChangelog extends Changelog {
-  MelosChangelog(MelosPendingPackageUpdate update) : super(update);
+  MelosChangelog(this.update)
+      : super(update.package, update.nextVersion.toString());
+
+  final MelosPendingPackageUpdate update;
 
   @override
   String get markdown {

@@ -5,36 +5,22 @@
 
 ---
 
-> ⚠️ Note: this project is still in active development.
-
----
-
-- [About](#about)
-- [Getting Started](#getting-started)
-- [Commands](#commands)
-
----
-
 ## About
 
-Splitting up large code bases into separate independently versioned packages
-is extremely useful for code sharing. However, making changes across many
-repositories is _messy_ and difficult to track, and testing across repositories
-gets complicated really fast.
+Splitting up large code bases into separate independently versioned packages is extremely useful for code sharing.
+However, making changes across many repositories is _messy_ and difficult to track, and testing across repositories gets
+complicated really fast.
 
-To solve these (and many other) problems, some projects will organize their
-code bases into multi-package repositories (sometimes called [monorepos](https://en.wikipedia.org/wiki/Monorepo))
+To solve these (and many other) problems, some projects will organize their code bases into multi-package repositories (
+sometimes called [monorepos](https://en.wikipedia.org/wiki/Monorepo))
 
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/5347038/82810703-0c28de80-9e87-11ea-888b-4b0b14c8e658.png" />
-</p>
+**Melos is a tool that optimizes the workflow around managing multi-package repositories with git and Pub.**
 
-**Melos is a tool that optimizes the workflow around managing multi-package
-repositories with git and Pub.**
+---
 
-### What does a Melos repo look like?
+### What does a Melos workspace look like?
 
-There's actually very little to it. You have a file structure that looks like this:
+A default file structure looks something like this:
 
 ```
 my-melos-repo/
@@ -46,182 +32,123 @@ my-melos-repo/
       pubspec.yaml
 ```
 
+The location of your packages can be configured via the `melos.yaml` configuration file if the default is unsuitable.
+
+---
+
 ### What can Melos do?
 
-The three primary commands in Melos are `melos bootstrap`, `melos version` & `melos publish`.
+- 🔗 Link local packages in your workspace together without adding dependency overrides.
+- 📦 Automatically version, create changelogs and publish your packages
+  using [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+- 📜 Pre-define advanced custom scripts for your workspace in your `melos.yaml` configuration to use
+  via `melos run [scriptName]`. Anyone contributing to your workspace can just run `melos run` to be prompted to select
+  a script from a list with descriptions of each script.
+    - Scripts can even [prompt to select a package](https://github.com/invertase/melos/pull/34) to run against with
+      pre-defined filters.
+- ⚡ Execute commands across your packages easily with `melos exec -- command here` with additional concurrency and
+  fail-fast options.
+    - [Environment variables](https://github.com/invertase/melos/issues/3) containing various information about the
+      current package and the workspace are available in each execution.
+    - Can be combined with all package filters.
+- 🎯 Many advanced package filtering options allowing you to target specific packages or groups of packages in your
+  workspace.
+    - `--no-private`
+        - Exclude private packages (`publish_to: none`).
+    - `--[no-]published`
+        - Filter packages where the current local package version exists on pub.dev. Or "-no-published" to filter
+          packages that have not had their current version published yet.
+    - `--[no-]flutter`
+        - Filter packages where the package depends on the Flutter SDK. Or "-no-flutter" to filter packages that do not
+          depend on the Flutter SDK.
+    - `--scope=<glob>`
+        - Include only packages with names matching the given glob.
+    - `--ignore=<glob>`
+        - Exclude packages with names matching the given glob.
+    - `--since=<ref>`
+        - Only include packages that have been changed since the specified `ref`, e.g. a commit sha or git tag.
+    - `--dir-exists=<dirRelativeToPackageRoot>`
+        - Include only packages where a specific directory exists inside the package.
+    - `--file-exists=<fileRelativeToPackageRoot>`
+        - Include only packages where a specific file exists in the package.
+    - `--depends-on=<dependantPackageName>`
+        - Include only packages that depend on a specific package.
+    - `--no-depends-on=<noDependantPackageName>`
+        - Include only packages that *don't* depend on a specific package.
+- ♨️ Advanced support for IntelliJ IDEs with automatic creation
+  of [run configurations for workspace defined scripts and more](https://github.com/invertase/melos/issues/9) on
+  workspace boostrap.
+    - Vscode code doesn't require advanced integration to work.
 
-- `bootstrap` will link local packages in the repo together and install any remaining package dependencies.
-- `version` bump packages versions (and their dependents) and generate changelogs using the conventional commits specification.
-- `publish` will help publish any locally updated packages that are not yet on the Pub registry.
+---
+
+### Who is using Melos?
+
+The following projects are using Melos:
+
+- [FirebaseExtended/flutterfire](https://github.com/FirebaseExtended/flutterfire)
+- [aws-amplify/amplify-flutter](https://github.com/aws-amplify/amplify-flutter)
+- [fluttercommunity/plus_plugins](https://github.com/fluttercommunity/plus_plugins)
+
+> [Submit a PR](https://github.com/invertase/melos/edit/master/packages/melos/README.md) if you'd like to add your project to the list.
+> You can also add a [readme badge](#readme-badge) to your projects readme to let others know about Melos 💙.
+
+---
 
 ## Getting Started
 
-Let's start by installing Melos as a global package via [Pub](https://pub.dev/).
+Install the latest Melos version as a global package via [Pub](https://pub.dev/).
 
-```
+```bash
 pub global activate melos
+
+# Or alternatively to specify a specific version:
+# pub global activate melos 0.4.1
 ```
 
-### New Projects
+---
 
-> ⚠️ `init` support is still a work in progress
+### Documentation
 
-To initialize a new Melos project run the following:
+Documentation is available at [https://docs.page/invertase/melos](https://docs.page/invertase/melos).
 
-```
-mkdir my-melos-repo && cd $_
-melos init
-```
-
-This will create a `melos.yaml` configuration file as well as a `packages` folder, so your folder should now look like this:
-
-```
-my-melos-repo/
-  packages/
-  melos.yaml
-```
-
-### Existing Projects
-
-To use Melos in an existing monorepo create a `melos.yaml` file in the root ofr your project.
-
-**Sample file**:
-
-```yaml
-name: flutterfire
-
-packages:
-  - packages/**
-
-scripts:
-  analyze: melos exec -- pub global run tuneup check
-  postbootstrap: tuneup --version || pub global activate tuneup
-  postclean: melos exec -- rm -rf ./build ./android/.gradle ./ios/.symlinks ./ios/Pods ./android/.idea ./.idea
-```
+---
 
 ### Commands
 
 Full commands list and args can be viewed by running `melos --help`.
 
----
-
-#### `bootstrap`
-
-> Initialize the workspace, link local packages together and install remaining package dependencies.
-
-Supports all package filtering options.
-
-**Example:**
-
 ```
-melos bootstrap --ignore="*example*"
-```
+> melos --help
 
-**Output:**
+A CLI tool for managing Dart & Flutter projects with multiple packages.
 
-```
-$ melos bootstrap
-   └> /Users/mike/Documents/Projects/Flutter/ff_internal
+Usage: melos <command> [arguments]
 
-Bootstrapping project...               SUCCESS
-Linking project packages...            SUCCESS
+Global options:
+-h, --help                                       Print this usage information.
+    --verbose                                    Enable verbose logging.
+    --no-private                                 Exclude private packages (`publish_to: none`). They are included by default.
+    --[no-]published                             Filter packages where the current local package version exists on pub.dev. Or "-no-published" to filter packages that have not had their current version published yet.
+    --[no-]flutter                               Filter packages where the package depends on the Flutter SDK. Or "-no-flutter" to filter packages that do not depend on the Flutter SDK.
+    --scope=<glob>                               Include only packages with names matching the given glob. This option can be repeated.
+    --ignore=<glob>                              Exclude packages with names matching the given glob. This option can be repeated.
+    --since=<ref>                                Only include packages that have been changed since the specified `ref`, e.g. a commit sha or git tag.
+    --dir-exists=<dirRelativeToPackageRoot>      Include only packages where a specific directory exists inside the package.
+    --file-exists=<fileRelativeToPackageRoot>    Include only packages where a specific file exists in the package.
+    --depends-on=<dependantPackageName>          Include only packages that depend on a specific package. This option can be repeated.
+    --no-depends-on=<noDependantPackageName>     Include only packages that *don't* depend on a specific package. This option can be repeated.
 
-Packages:
-  • cloud_firestore
-    └> ./packages/cloud_firestore/cloud_firestore
-  • cloud_firestore_platform_interface
-    └> ./packages/cloud_firestore/cloud_firestore_platform_interface
-  • cloud_firestore_web
-    └> ./packages/cloud_firestore/cloud_firestore_web
-  • cloud_functions
-    └> ./packages/cloud_functions/cloud_functions
-  • cloud_functions_example
+Available commands:
+  bootstrap   Initialize the workspace, link local packages together and install remaining package dependencies. Supports all package filtering options.
+  clean       Clean this workspace and all packages. This deletes the temporary pub & ide files such as ".packages" & ".flutter-plugins". Supports all package filtering options.
+  exec        Execute an arbitrary command in each package. Supports all package filtering options.
+  list        List local packages in various output formats. Supports all package filtering options.
+  publish     Publish any unpublished packages or package versions in your repository to pub.dev. Dry run is on by default.
+  run         Run a script by name defined in the workspace melos.yaml config file.
+  version     Automatically version and generate changelogs based on the Conventional Commits specification. Supports all package filtering options.
 
-...
-
- -> 39 plugins bootstrapped
-```
-
----
-
-#### `clean`
-
-> Clean this workspace and all packages. This deletes the temporary pub files such as ".packages" & ".flutter-plugins"
-
-**Example:**
-
-```
-melos clean
-```
-
----
-
-#### `exec`
-
-> Run a script by name defined in the workspace `melos.yaml` config file.
-
-**Example:** Running `tuneup` analyzer in all packages
-
-```
-melos exec -- pub global run tuneup check
-```
-
-**Output:**
-
-```
-$ melos exec --
-   └> pub global run tuneup check
-       └> RUNNING (in 39 packages)
-
-[cloud_firestore]: Checking project cloud_firestore...
-[cloud_firestore_platform_interface]: Checking project cloud_firestore_platform_interface...
-[cloud_functions_example]: Checking project cloud_functions_example...
-[cloud_firestore_web]: Checking project cloud_firestore_web...
-[cloud_functions]: Checking project cloud_functions...
-...
-```
-
----
-
-#### `run`
-
-> Execute an arbitrary command in each package.
-
-**Example:** Running a script named `analyze` that is defined in `melos.yaml`
-
-```
-melos run analyze
-```
-
-**`melos.yaml`**:
-
-```yaml
-name: flutterfire
-packages:
-  - packages/**
-scripts:
-  analyze: melos exec -- pub global run tuneup check
-  # ...
-```
-
-**Output:**
-
-```
-$ melos run analyze
-   └> melos exec -- pub global run tuneup check
-       └> RUNNING
-
-$ melos exec --
-   └> pub global run tuneup check
-       └> RUNNING (in 39 packages)
-
-[cloud_firestore]: Checking project cloud_firestore...
-[cloud_functions_example]: Checking project cloud_functions_example...
-[cloud_firestore_platform_interface]: Checking project cloud_firestore_platform_interface...
-[cloud_firestore_web]: Checking project cloud_firestore_web...
-[cloud_functions]: Checking project cloud_functions...
-
-...
+Run "melos help <command>" for more information about a command.
 ```
 
 ---
@@ -229,6 +156,8 @@ $ melos exec --
 ## Lerna
 
 This project is heavily inspired by [Lerna](https://lerna.js.org/).
+
+---
 
 ## README Badge
 
@@ -240,6 +169,8 @@ Using Melos? Add a README badge to show it off:
 [![melos](https://img.shields.io/badge/maintained%20with-melos-f700ff.svg?style=flat-square)](https://github.com/invertase/melos)
 ```
 
+---
+
 ## License
 
 - See [LICENSE](/LICENSE)
@@ -249,11 +180,10 @@ Using Melos? Add a README badge to show it off:
 <p>
   <img align="left" width="75px" src="https://static.invertase.io/assets/invertase-logo-small.png">
   <p align="left">
-    Built and maintained with 💛 by <a href="https://invertase.io">Invertase</a>.
+    &nbsp;&nbsp;Built and maintained with 💛 by <a href="https://invertase.io">Invertase</a>.
   </p>
   <p align="left">
-    <a href="https://invertase.link/discord"><img src="https://img.shields.io/discord/295953187817521152.svg?style=flat-square&colorA=7289da&label=Chat%20on%20Discord" alt="Chat on Discord"></a>
-    <a href="https://twitter.com/invertaseio"><img src="https://img.shields.io/twitter/follow/invertaseio.svg?style=flat-square&colorA=1da1f2&colorB=&label=Follow%20on%20Twitter" alt="Follow on Twitter"></a>
+    &nbsp;&nbsp;<a href="https://twitter.com/invertaseio"><img src="https://img.shields.io/twitter/follow/invertaseio.svg?style=flat-square&colorA=1da1f2&colorB=&label=Follow%20on%20Twitter" alt="Follow on Twitter"></a>
   </p>
 </p>
 

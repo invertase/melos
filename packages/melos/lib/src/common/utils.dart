@@ -19,14 +19,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:ansi_styles/ansi_styles.dart';
 import 'package:path/path.dart' show relative, normalize, windows, joinAll;
+import 'package:prompts/prompts.dart' as prompts;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
-import 'package:ansi_styles/ansi_styles.dart';
-import 'package:prompts/prompts.dart' as prompts;
 
 import '../../version.g.dart';
-import 'logger.dart';
 
 const filterOptionScope = 'scope';
 const filterOptionIgnore = 'ignore';
@@ -70,9 +69,12 @@ String get nextDartMajorVersion {
   return Version.parse(currentDartVersion).nextMajor.toString();
 }
 
-bool promptBool() {
-  logger.stdout('');
-  return prompts.getBool('Continue?');
+String promptInput(String message, {String defaultsTo}) {
+  return prompts.get(message, defaultsTo: defaultsTo);
+}
+
+bool promptBool({String message = 'Continue?', bool defaultsTo = false}) {
+  return prompts.getBool(message, defaultsTo: defaultsTo);
 }
 
 bool get isCI {

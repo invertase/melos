@@ -19,8 +19,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:args/command_runner.dart' show Command;
 import 'package:ansi_styles/ansi_styles.dart';
+import 'package:args/command_runner.dart' show Command;
 import 'package:path/path.dart';
 import 'package:pool/pool.dart';
 import 'package:yamlicious/yamlicious.dart';
@@ -41,7 +41,7 @@ class BootstrapCommand extends Command {
 
   @override
   final String description =
-      'Initialize the workspace, link local packages together and install remaining package dependencies.';
+      'Initialize the workspace, link local packages together and install remaining package dependencies. Supports all package filtering options.';
 
   bool _pubGetFailed = false;
 
@@ -104,7 +104,7 @@ class BootstrapCommand extends Command {
       processStdOutString = processStdOutString
           .split('\n')
           // We filter these out as they can be quite spammy. This happens
-          // as we run multiple pub gets in parrallel.
+          // as we run multiple pub gets in parallel.
           .where((line) => !line.contains(
               'Waiting for another flutter command to release the startup lock'))
           // Remove empty lines to reduce logging.
@@ -118,7 +118,7 @@ class BootstrapCommand extends Command {
       processStdErrString = processStdErrString
           .split('\n')
           // We filter these out as they can be quite spammy. This happens
-          // as we run multiple pub gets in parrallel.
+          // as we run multiple pub gets in parallel.
           .where((line) => !line.contains(
               'Waiting for another flutter command to release the startup lock'))
           // Remove empty lines to reduce logging.
@@ -172,7 +172,7 @@ class BootstrapCommand extends Command {
 
     // As melos boostrap builds a 1-1 mirror of the packages tree in the
     // .melos_tool directory we need to use unscoped packages here so as to
-    // preserve any local 'dependencies' or 'depedency_overrides' that packages
+    // preserve any local 'dependencies' or 'dependency_overrides' that packages
     // in `currentWorkspace.packages` may be referencing by relative paths.
     await Future.forEach(currentWorkspace.packagesNoScope,
         (MelosPackage package) async {
@@ -183,7 +183,7 @@ class BootstrapCommand extends Command {
 
       // As melos boostrap builds a 1-1 mirror of the packages tree in the
       // .melos_tool directory we need to use unscoped packages here so as to
-      // preserve any local 'dependencies' or 'depedency_overrides' that packages
+      // preserve any local 'dependencies' or 'dependency_overrides' that packages
       // in `currentWorkspace.packages` may be referencing by relative paths.
       for (final plugin in currentWorkspace.packagesNoScope) {
         final pluginPath = utils.relativePath(
@@ -249,14 +249,14 @@ class BootstrapCommand extends Command {
           .writeAsString(generatedPubspecYamlString);
     });
 
-    final pool = Pool(utils.isCI ? 1 : 5);
+    final pool = Pool(utils.isCI ? 1 : 3);
     // As noted in previous `packages` loops/forEach blocks above re using
-    // packagesNoScope, however in this instance we explictly want only run
+    // packagesNoScope, however in this instance we explicitly want only run
     // pub get in the packages the user has specified (currentWorkspace.packages).
     // Previous loops/forEach blocks above will have preserved pubspec.yaml
     // files for packages the user has excluded from this boostrap/workspace,
     // which will allow non-excluded packages to still reference to them by path,
-    // e.g. using 'depedency_overrides'.
+    // e.g. using 'dependency_overrides'.
     await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
         (package) async {
       if (_pubGetFailed) {
