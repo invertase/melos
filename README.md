@@ -9,10 +9,6 @@
 
 ---
 
-> ⚠️ Note: this project is still in active development.
-
----
-
 - [Documentation](https://docs.page/invertase/melos)
 - [License](/LICENSE)
 
