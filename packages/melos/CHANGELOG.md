@@ -1,3 +1,7 @@
+## 0.4.2
+
+ - **FEAT**: allow manually versioning a specific package via `melos version` (#53).
+
 ## 0.4.1
 
  - **FEAT**: rework versioning with tests to support nullsafety prerelease versioning (#52).
