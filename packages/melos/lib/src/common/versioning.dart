@@ -184,7 +184,7 @@ Version nextVersion(
     // requested release type.
     var baseVersion =
         nextStableVersion(currentVersion, SemverReleaseType.major);
-    // Otherwise if it's already an old format nullsafety preprelease version
+    // Otherwise if it's already an old format nullsafety prerelease version
     // then use the current version and don't major version bump it.
     if (currentVersion.preRelease[0] == 'nullsafety') {
       baseVersion = currentVersion;
