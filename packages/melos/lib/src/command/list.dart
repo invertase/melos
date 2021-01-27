@@ -17,8 +17,8 @@
 
 import 'dart:convert';
 
-import 'package:args/command_runner.dart' show Command;
 import 'package:ansi_styles/ansi_styles.dart';
+import 'package:args/command_runner.dart' show Command;
 
 import '../common/logger.dart';
 import '../common/utils.dart';
@@ -50,7 +50,8 @@ class ListCommand extends Command {
   final List<String> aliases = ['ls'];
 
   @override
-  final String description = 'List local packages.';
+  final String description =
+      'List local packages in various output formats. Supports all package filtering options.';
 
   @override
   final String invocation = 'melos list';

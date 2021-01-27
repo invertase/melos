@@ -21,8 +21,10 @@ import 'package:ansi_styles/ansi_styles.dart';
 import 'package:args/command_runner.dart' show Command;
 import 'package:conventional_commit/conventional_commit.dart';
 import 'package:pool/pool.dart' show Pool;
+import 'package:pub_semver/pub_semver.dart';
 
 import '../command_runner.dart';
+import '../common/changelog.dart';
 import '../common/git.dart';
 import '../common/logger.dart';
 import '../common/package.dart';
@@ -63,10 +65,140 @@ class VersionCommand extends Command {
 
   @override
   final String description =
-      'Automatically version and generate changelogs for all packages. Supports all Melos filtering flags.';
+      'Automatically version and generate changelogs based on the Conventional Commits specification. Supports all package filtering options.';
 
   @override
-  Future<void> run() async {
+  final String invocation = ''
+      'melos version\n'
+      '         - version packages automatically using the Conventional Commits specification.\n'
+      '       melos version <packageName> <newVersion>\n'
+      '         - manually set a specific packages version and update all packages that depend on it.';
+
+  Future<void> applyUserSpecifiedVersion() async {
+    logger.stdout(
+        AnsiStyles.yellow.bold('melos version <packageName> <newVersion>'));
+    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
+    if (argResults.rest.length != 2) {
+      exitCode = 1;
+      logger.stdout(
+        '${AnsiStyles.redBright('ERROR:')} when manually setting a version to '
+        'apply to a package you must specify both <packageName> and <newVersion> '
+        'arguments when calling "melos version".',
+      );
+      return;
+    }
+
+    final packageName = argResults.rest[0];
+    final newVersion = argResults.rest[1];
+    final workspacePackage = currentWorkspace.packages.firstWhere(
+        (package) => package.name == packageName,
+        orElse: () => null);
+
+    // Validate package actually exists in workspace.
+    if (workspacePackage == null) {
+      exitCode = 1;
+      logger.stdout(
+        '${AnsiStyles.redBright('ERROR:')} package "$packageName" does not exist in this workspace.',
+      );
+      return;
+    }
+
+    // Validate version is valid.
+    if (!versioning.isValidVersion(newVersion)) {
+      exitCode = 1;
+      logger.stdout(
+        '${AnsiStyles.redBright('ERROR:')} version "$newVersion" is not a valid package version.',
+      );
+      return;
+    }
+
+    logger.stdout(
+        AnsiStyles.magentaBright('The following package will be updated:\n'));
+    logger.stdout(listAsPaddedTable([
+      [
+        AnsiStyles.underline.bold('Package Name'),
+        AnsiStyles.underline.bold('Current Version'),
+        AnsiStyles.underline.bold('Updated Version'),
+      ],
+      [
+        AnsiStyles.italic(packageName),
+        AnsiStyles.dim(workspacePackage.version.toString()),
+        AnsiStyles.green(newVersion),
+      ],
+    ], paddingSize: 3));
+    logger.stdout('');
+    final shouldContinue = promptBool();
+    if (!shouldContinue) {
+      logger.stdout(AnsiStyles.red('Operation was canceled.'));
+      exitCode = 1;
+      return;
+    }
+
+    logger.stdout(AnsiStyles.magentaBright(
+        '\nUpdate dependency version constraints of all packages in this workspace that depend on "$packageName"?'));
+    final shouldUpdateDependents =
+        promptBool(message: 'Update dependency constraints?', defaultsTo: true);
+
+    var changelogEntry = '';
+    final shouldGenerateChangelogEntry = argResults['changelog'] as bool;
+    if (shouldGenerateChangelogEntry) {
+      changelogEntry = promptInput(
+          'Describe your change for the changelog entry',
+          defaultsTo: 'Bump "$packageName" to `$newVersion`.');
+    }
+
+    // Update package pubspec version.
+    final newVersionParsed = Version.parse(newVersion);
+    await workspacePackage.setPubspecVersion(newVersionParsed.toString());
+
+    // Update changelog, if requested.
+    if (shouldGenerateChangelogEntry) {
+      logger.stdout(
+          'Adding changelog entry in package "$packageName" for version "$newVersion"...');
+      final singleEntryChangelog =
+          SingleEntryChangelog(workspacePackage, newVersion, changelogEntry);
+      await singleEntryChangelog.write();
+    }
+
+    if (shouldUpdateDependents) {
+      logger.stdout(
+          'Updating version constraints for packages that depend on "$packageName"...');
+      // Update dependents.
+      await Future.forEach([
+        ...workspacePackage.dependentsInWorkspace,
+        ...workspacePackage.devDependentsInWorkspace
+      ], (MelosPackage package) {
+        return setDependentPackageVersionConstraint(
+            package, workspacePackage.name, newVersionParsed.toString());
+      });
+    }
+
+    logger.stdout(AnsiStyles.greenBright.bold(
+        'Versioning successful. Ensure you commit and push your changes (if applicable).'));
+  }
+
+  Future<void> setDependentPackageVersionConstraint(
+      MelosPackage package, String dependencyName, String version) {
+    // By default dependency constraint using caret syntax to ensure the range allows
+    // all versions guaranteed to be backwards compatible with the specified version.
+    // For example, ^1.2.3 is equivalent to '>=1.2.3 <2.0.0', and ^0.1.2 is equivalent to '>=0.1.2 <0.2.0'.
+    var versionConstraint = '^$version';
+
+    // For nullsafety releases we use a >=currentVersion <nextMajorVersion constraint
+    // to allow nullsafety prerelease id versions to function similar to semver without
+    // the actual major, minor & patch versions changing.
+    // e.g. >=1.2.0-1.0.nullsafety.0 <1.2.0-2.0.nullsafety.0
+    if (version.toString().contains('.nullsafety.')) {
+      final nextMajorFromCurrentVersion = versioning
+          .nextVersion(Version.parse(version), SemverReleaseType.major)
+          .toString();
+      versionConstraint = '">=$version <$nextMajorFromCurrentVersion"';
+    }
+
+    return package.setDependencyVersion(dependencyName, versionConstraint);
+  }
+
+  Future<void> applyVersionsFromConventionalCommits() async {
     logger.stdout(AnsiStyles.yellow.bold('melos version'));
     logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
 
@@ -243,28 +375,10 @@ class VersionCommand extends Command {
         ...pendingPackageUpdate.package.dependentsInWorkspace,
         ...pendingPackageUpdate.package.devDependentsInWorkspace
       ], (MelosPackage package) {
-        final nextVersion = pendingPackageUpdate.nextVersion.toString();
-        // By default dependency constraint using caret syntax to ensure the range allows
-        // all versions guaranteed to be backwards compatible with the specified version.
-        // For example, ^1.2.3 is equivalent to '>=1.2.3 <2.0.0', and ^0.1.2 is equivalent to '>=0.1.2 <0.2.0'.
-        var versionConstraint = '^$nextVersion';
-
-        // For nulsafety releases we use a >=currentVersion <nextMajorVersion contraint
-        // to allow nullsafety prerelease id versions to function similar to semver without
-        // the actual major, minor & patch versions changing.
-        // e.g. >=1.2.0-1.0.nullsafety.0 <1.2.0-2.0.nullsafety.0
-        if (pendingPackageUpdate.nextVersion
-            .toString()
-            .contains('nullsafety')) {
-          final nextMajorFromCurrentVersion = versioning
-              .nextVersion(
-                  pendingPackageUpdate.nextVersion, SemverReleaseType.major)
-              .toString();
-          versionConstraint = '">=$nextVersion <$nextMajorFromCurrentVersion"';
-        }
-
-        return package.setDependencyVersion(
-            pendingPackageUpdate.package.name, versionConstraint);
+        return setDependentPackageVersionConstraint(
+            package,
+            pendingPackageUpdate.package.name,
+            pendingPackageUpdate.nextVersion.toString());
       });
 
       // Update changelogs if requested.
@@ -330,5 +444,14 @@ class VersionCommand extends Command {
     // TODO automatic push support
     logger.stdout(AnsiStyles.greenBright.bold(
         'Versioning successful. Ensure you push your git changes and tags (if applicable) via ${AnsiStyles.bgBlack.gray('git push --follow-tags')}'));
+  }
+
+  @override
+  Future<void> run() async {
+    if (argResults.rest.isNotEmpty) {
+      await applyUserSpecifiedVersion();
+    } else {
+      await applyVersionsFromConventionalCommits();
+    }
   }
 }

@@ -18,6 +18,15 @@
 import 'package:conventional_commit/conventional_commit.dart';
 import 'package:pub_semver/pub_semver.dart';
 
+bool isValidVersion(String version) {
+  try {
+    Version.parse(version);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 Version nextStableVersion(
     Version currentVersion, SemverReleaseType releaseType) {
   // For simplicity's sake, we avoid using + after the version reaches 1.0.0.

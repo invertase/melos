@@ -1,5 +1,5 @@
 name: melos
-description: "A tool for managing Dart projects with multiple packages. Inspired by JavaScripts Lerna package."
+description: "A tool for managing Dart & Flutter repositories with multiple packages. Supports automated versioning via Conventional Commits. Inspired by JavaScripts Lerna package."
 version: 0.4.1
 homepage: "https://github.com/invertase/melos"
 executables:

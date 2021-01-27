@@ -19,8 +19,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:args/command_runner.dart' show Command;
 import 'package:ansi_styles/ansi_styles.dart';
+import 'package:args/command_runner.dart' show Command;
 import 'package:path/path.dart';
 import 'package:pool/pool.dart';
 import 'package:yamlicious/yamlicious.dart';
@@ -41,7 +41,7 @@ class BootstrapCommand extends Command {
 
   @override
   final String description =
-      'Initialize the workspace, link local packages together and install remaining package dependencies.';
+      'Initialize the workspace, link local packages together and install remaining package dependencies. Supports all package filtering options.';
 
   bool _pubGetFailed = false;
 
