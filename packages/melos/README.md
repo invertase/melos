@@ -18,7 +18,7 @@ sometimes called [monorepos](https://en.wikipedia.org/wiki/Monorepo))
 
 ---
 
-### What does a Melos repo look like?
+### What does a Melos workspace look like?
 
 A default file structure looks something like this:
 
