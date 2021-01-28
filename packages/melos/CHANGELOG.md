@@ -1,3 +1,8 @@
+## 0.4.4
+
+ - **FEAT**: show latest registry prerelease version of the same preid in `publish` command if the local version is also a prerelease.
+ - **CHORE**: format changelog.
+
 ## 0.4.3
 
 - **FEAT**: add new `--[no-]nullsafety` package filtering option
