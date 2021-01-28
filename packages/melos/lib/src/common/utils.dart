@@ -32,6 +32,7 @@ const filterOptionIgnore = 'ignore';
 const filterOptionDirExists = 'dir-exists';
 const filterOptionFileExists = 'file-exists';
 const filterOptionSince = 'since';
+const filterOptionNullsafety = 'nullsafety';
 const filterOptionNoPrivate = 'no-private';
 const filterOptionPublished = 'published';
 const filterOptionFlutter = 'flutter';

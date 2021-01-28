@@ -64,6 +64,13 @@ class MelosCommandRunner extends CommandRunner {
     );
 
     argParser.addFlag(
+      filterOptionNullsafety,
+      defaultsTo: null,
+      help:
+          'Filter packages where the current local version uses a "nullsafety" prerelease preid. Or "-no-nullsafety" to filter packages where their current version does not have a "nullsafety" preid.',
+    );
+
+    argParser.addFlag(
       filterOptionFlutter,
       defaultsTo: null,
       help:
@@ -181,6 +188,7 @@ class MelosCommandRunner extends CommandRunner {
         since: since,
         skipPrivate: topLevelResults[filterOptionNoPrivate] as bool,
         published: topLevelResults[filterOptionPublished] as bool,
+        nullsafety: topLevelResults[filterOptionNullsafety] as bool,
         ignore: (topLevelResults[filterOptionIgnore] as List<String>)
           ..addAll(currentWorkspace.config.ignore),
         dirExists: topLevelResults[filterOptionDirExists] as List<String>,

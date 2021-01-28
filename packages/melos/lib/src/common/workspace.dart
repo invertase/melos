@@ -124,6 +124,7 @@ class MelosWorkspace {
     List<String> fileExists,
     bool skipPrivate,
     bool published,
+    bool nullsafety,
     bool hasFlutter,
     List<String> dependsOn,
     List<String> noDependsOn,
@@ -205,6 +206,7 @@ class MelosWorkspace {
       }).drain();
       packages = packagesFilteredWithPublishStatus;
     }
+
     // --since
     if (since != null) {
       final pool = Pool(10);
@@ -224,8 +226,8 @@ class MelosWorkspace {
       return a.name.compareTo(b.name);
     });
 
-    // We filter scopes last so we can keep a track of packages prior to scope filter,
-    // this is used for melos version to bump dependant package versions without scope filtering them out.
+    // We filter scopes and nullsafety last so we can keep a track of packages prior to these filters,
+    // this is used for melos version to bump dependant package versions without filtering them out.
     if (scope.isNotEmpty) {
       packagesNoScope = List.from(packages);
       // Scoped packages filter.
@@ -237,6 +239,21 @@ class MelosWorkspace {
       }).toList();
     } else {
       packagesNoScope = packages;
+    }
+
+    // --nullsafety / --no-nullsafety
+    if (nullsafety != null) {
+      packages = packages.where((package) {
+        final isNullsafetyVersion = package.version.isPreRelease &&
+            package.version.preRelease.contains('nullsafety');
+        if (nullsafety == false && !isNullsafetyVersion) {
+          return true;
+        }
+        if (nullsafety == true && isNullsafetyVersion) {
+          return true;
+        }
+        return false;
+      }).toList();
     }
 
     // --flutter / --no-flutter
