@@ -35,29 +35,71 @@ import '../common/workspace.dart';
 
 class VersionCommand extends Command {
   VersionCommand() {
-    argParser.addFlag('prerelease',
-        abbr: 'p',
-        negatable: false,
-        help:
-            'Version any packages with changes as a prerelease. Cannot be combined with graduate flag.');
-    argParser.addFlag('graduate',
-        abbr: 'g',
-        negatable: false,
-        help:
-            'Graduate current prerelease versioned packages to stable versions, e.g. "0.10.0-dev.1" would become "0.10.0". Cannot be combined with prerelease flag.');
-    argParser.addFlag('changelog',
-        abbr: 'c', defaultsTo: true, help: 'Update CHANGELOG.md files.');
-    argParser.addFlag('git-tag-version',
-        abbr: 't',
-        defaultsTo: true,
-        help:
-            'By default, melos version will commit changes to pubspec.yaml files and tag the release. Pass --no-git-tag-version to disable the behavior.');
-    argParser.addFlag('yes',
-        negatable: false,
-        help: 'Skip the Y/n prompt at the beginning of the command.');
-    argParser.addOption('preid',
-        help:
-            'When run with this option, melos version will increment prerelease versions using the specified prerelease identifier, e.g. using a "nullsafety" preid along with the --prerelease flag would result in a version in the format "1.0.0-1.0.nullsafety.0".');
+    argParser.addFlag(
+      'prerelease',
+      abbr: 'p',
+      negatable: false,
+      help: 'Version any packages with changes as a prerelease. Cannot be '
+          'combined with graduate flag. Applies only to Conventional '
+          'Commits based versioning.',
+    );
+    argParser.addFlag(
+      'graduate',
+      abbr: 'g',
+      negatable: false,
+      help:
+          'Graduate current prerelease versioned packages to stable versions, e.g. '
+          '"0.10.0-dev.1" would become "0.10.0". Cannot be combined with prerelease '
+          'flag. Applies only to Conventional Commits based versioning.',
+    );
+    argParser.addFlag(
+      'changelog',
+      abbr: 'c',
+      defaultsTo: true,
+      help: 'Update CHANGELOG.md files.',
+    );
+    argParser.addFlag(
+      'dependent-constraints',
+      abbr: 'd',
+      defaultsTo: true,
+      help:
+          'Update dependency version constraints of packages in this workspace '
+          'that depend on any of the packages that will be updated with this '
+          'versioning run.',
+    );
+    argParser.addFlag(
+      'dependent-versions',
+      abbr: 'D',
+      defaultsTo: true,
+      help: 'Make a new patch version and changelog entry in packages that are '
+          'updated due to "--dependent-constraints" changes. Only usable '
+          'with "--dependent-constraints" enabled and Conventional Commits '
+          'based versioning.',
+    );
+    argParser.addFlag(
+      'git-tag-version',
+      abbr: 't',
+      defaultsTo: true,
+      help:
+          'By default, melos version will commit changes to pubspec.yaml files '
+          'and tag the release. Pass --no-git-tag-version to disable the behavior. '
+          'Applies only to Conventional Commits based versioning.',
+    );
+    argParser.addFlag(
+      'yes',
+      negatable: false,
+      help: 'Skip the Y/n prompt at the beginning of the command. Applies only '
+          'to Conventional Commits based versioning.',
+    );
+    argParser.addOption(
+      'preid',
+      help:
+          'When run with this option, melos version will increment prerelease '
+          'versions using the specified prerelease identifier, e.g. using a '
+          '"nullsafety" preid along with the --prerelease flag would '
+          'result in a version in the format "1.0.0-1.0.nullsafety.0". '
+          'Applies only to Conventional Commits based versioning.',
+    );
   }
 
   @override
@@ -134,12 +176,8 @@ class VersionCommand extends Command {
       return;
     }
 
-    logger.stdout(AnsiStyles.magentaBright(
-        '\nUpdate dependency version constraints of all packages in this workspace that depend on "$packageName"?'));
-    final shouldUpdateDependents =
-        promptBool(message: 'Update dependency constraints?', defaultsTo: true);
-
     var changelogEntry = '';
+    final shouldUpdateDependents = argResults['dependent-constraints'] as bool;
     final shouldGenerateChangelogEntry = argResults['changelog'] as bool;
     if (shouldGenerateChangelogEntry) {
       changelogEntry = promptInput(
@@ -206,6 +244,9 @@ class VersionCommand extends Command {
     var graduate = argResults['graduate'] as bool;
     final tag = argResults['git-tag-version'] as bool;
     final prerelease = argResults['prerelease'] as bool;
+    final updateDependentConstraints =
+        argResults['dependent-constraints'] as bool;
+    var updateDependentVersions = argResults['dependent-versions'] as bool;
     final skipPrompt = argResults['yes'] as bool;
     final preid = argResults['preid'] as String;
 
@@ -217,8 +258,19 @@ class VersionCommand extends Command {
 
     if (graduate && prerelease) {
       logger.stdout(
-          '${AnsiStyles.yellow('WARNING:')} graduate & prerelease flags cannot be combined. Versioning will continue with graduate off.');
+        '${AnsiStyles.yellow('WARNING:')} graduate & prerelease flags cannot '
+        'be combined. Versioning will continue with graduate off.',
+      );
       graduate = false;
+    }
+
+    if (updateDependentVersions && !updateDependentConstraints) {
+      logger.stdout(
+        '${AnsiStyles.yellow('WARNING:')} the setting --dependent-versions is '
+        'turned on but --dependent-constraints is turned off. Versioning '
+        'will continue with this setting turned off.',
+      );
+      updateDependentVersions = false;
     }
 
     if (graduate) {
@@ -329,11 +381,22 @@ class VersionCommand extends Command {
         AnsiStyles.underline.bold('Updated Version'),
         AnsiStyles.underline.bold('Update Reason'),
       ],
-      ...pendingPackageUpdates.map((pendingUpdate) {
+      ...pendingPackageUpdates.where((pendingUpdate) {
+        if (pendingUpdate.reason == PackageUpdateReason.dependency &&
+            !updateDependentVersions &&
+            !updateDependentConstraints) {
+          return false;
+        }
+        return true;
+      }).map((pendingUpdate) {
         return [
           AnsiStyles.italic(pendingUpdate.package.name),
           AnsiStyles.dim(pendingUpdate.currentVersion.toString()),
-          AnsiStyles.green(pendingUpdate.nextVersion.toString()),
+          if (pendingUpdate.reason == PackageUpdateReason.dependency &&
+              !updateDependentVersions)
+            '-'
+          else
+            AnsiStyles.green(pendingUpdate.nextVersion.toString()),
           AnsiStyles.italic((() {
             switch (pendingUpdate.reason) {
               case PackageUpdateReason.commit:
@@ -345,6 +408,10 @@ class VersionCommand extends Command {
                         1);
                 return 'updated with ${AnsiStyles.underline(semverType)} changes';
               case PackageUpdateReason.dependency:
+                if (pendingUpdate.reason == PackageUpdateReason.dependency &&
+                    !updateDependentVersions) {
+                  return 'dependency constraints changed';
+                }
                 return 'dependency was updated';
               case PackageUpdateReason.graduate:
                 return 'graduate to stable';
@@ -367,23 +434,40 @@ class VersionCommand extends Command {
     await Future.forEach(pendingPackageUpdates,
         (MelosPendingPackageUpdate pendingPackageUpdate) async {
       // Update package pubspec version.
-      await pendingPackageUpdate.package
-          .setPubspecVersion(pendingPackageUpdate.nextVersion.toString());
+      if ((pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
+              updateDependentVersions) ||
+          pendingPackageUpdate.reason != PackageUpdateReason.dependency) {
+        await pendingPackageUpdate.package
+            .setPubspecVersion(pendingPackageUpdate.nextVersion.toString());
+      }
 
       // Update dependents.
-      await Future.forEach([
-        ...pendingPackageUpdate.package.dependentsInWorkspace,
-        ...pendingPackageUpdate.package.devDependentsInWorkspace
-      ], (MelosPackage package) {
-        return setDependentPackageVersionConstraint(
+      if (updateDependentConstraints) {
+        await Future.forEach([
+          ...pendingPackageUpdate.package.dependentsInWorkspace,
+          ...pendingPackageUpdate.package.devDependentsInWorkspace
+        ], (MelosPackage package) {
+          return setDependentPackageVersionConstraint(
             package,
             pendingPackageUpdate.package.name,
-            pendingPackageUpdate.nextVersion.toString());
-      });
+            // Note if we're not updating dependent versions then we use the current
+            // version rather than the next version as the next version would never
+            // have been applied.
+            (pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
+                    !updateDependentVersions)
+                ? pendingPackageUpdate.package.version.toString()
+                : pendingPackageUpdate.nextVersion.toString(),
+          );
+        });
+      }
 
       // Update changelogs if requested.
       if (changelog) {
-        await pendingPackageUpdate.changelog.write();
+        if ((pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
+                updateDependentVersions) ||
+            pendingPackageUpdate.reason != PackageUpdateReason.dependency) {
+          await pendingPackageUpdate.changelog.write();
+        }
       }
     });
 
@@ -401,8 +485,10 @@ class VersionCommand extends Command {
             workingDirectory: pendingPackageUpdate.package.path);
         await gitAdd('CHANGELOG.md',
             workingDirectory: pendingPackageUpdate.package.path);
-        await Future.forEach(pendingPackageUpdate.package.dependentsInWorkspace,
-            (MelosPackage dependentPackage) async {
+        await Future.forEach([
+          ...pendingPackageUpdate.package.dependentsInWorkspace,
+          ...pendingPackageUpdate.package.devDependentsInWorkspace,
+        ], (MelosPackage dependentPackage) async {
           await gitAdd('pubspec.yaml', workingDirectory: dependentPackage.path);
         });
 
@@ -416,6 +502,13 @@ class VersionCommand extends Command {
 
       // 2) Commit changes:
       final publishedPackagesMessage = pendingPackageUpdates
+          .where((pendingUpdate) {
+            if (pendingUpdate.reason == PackageUpdateReason.dependency &&
+                !updateDependentVersions) {
+              return false;
+            }
+            return true;
+          })
           .map((e) => ' - ${e.package.name}@${e.nextVersion.toString()}')
           .join('\n');
       // TODO commit message customization support would go here.
@@ -427,6 +520,10 @@ class VersionCommand extends Command {
       // // 3) Tag changes:
       await Future.forEach(pendingPackageUpdates,
           (MelosPendingPackageUpdate pendingPackageUpdate) async {
+        if (pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
+            !updateDependentVersions) {
+          return;
+        }
         // TODO '--tag-version-prefix' support (if we decide to support it later) would pass prefix named arg to gitTagForPackageVersion:
         final tag = gitTagForPackageVersion(pendingPackageUpdate.package.name,
             pendingPackageUpdate.nextVersion.toString());

@@ -102,6 +102,12 @@ Map<String, dynamic> _validateSelectPackageOptions(
       selectPackageOptions[filterOptionPublished],
     );
   }
+  if (selectPackageOptions.containsKey(filterOptionNullsafety)) {
+    result[filterOptionNullsafety] = _asBool(
+      filterOptionNullsafety,
+      selectPackageOptions[filterOptionNullsafety],
+    );
+  }
   if (selectPackageOptions.containsKey(filterOptionFlutter)) {
     result[filterOptionFlutter] = _asBool(
       filterOptionFlutter,
