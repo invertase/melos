@@ -1,3 +1,7 @@
+## 0.4.3
+
+ - **FEAT**: add various new flags (#54).
+
 ## 0.4.2
 
  - **FEAT**: allow manually versioning a specific package via `melos version` (#53).
