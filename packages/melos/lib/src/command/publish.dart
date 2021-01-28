@@ -17,9 +17,9 @@
 
 import 'dart:io';
 
+import 'package:ansi_styles/ansi_styles.dart';
 import 'package:args/command_runner.dart' show Command;
 import 'package:pool/pool.dart' show Pool;
-import 'package:ansi_styles/ansi_styles.dart';
 
 import '../common/git.dart';
 import '../common/logger.dart';
@@ -76,8 +76,20 @@ class PublishCommand extends Command {
           if (versions.isEmpty) {
             latestPackageVersion[package.name] = 'none';
           } else {
-            // TODO if current version is a prerelease version then get the latest prerelease version instead
-            latestPackageVersion[package.name] = versions[0];
+            // If current version is a prerelease version then get the latest
+            // prerelease version with a matching preid instead if any.
+            if (package.version.isPreRelease) {
+              final preid = package.version.preRelease.length == 4
+                  ? package.version.preRelease[2]
+                  : package.version.preRelease[0];
+              final versionsWithPreid =
+                  versions.where((version) => version.contains(preid)).toList();
+              latestPackageVersion[package.name] = versionsWithPreid.isEmpty
+                  ? versions[0]
+                  : versionsWithPreid[0];
+            } else {
+              latestPackageVersion[package.name] = versions[0];
+            }
           }
         }
       });
