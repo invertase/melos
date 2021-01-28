@@ -1,3 +1,7 @@
+## 0.4.4+1
+
+ - **DOCS**: add monorepo to pub description.
+
 ## 0.4.4
 
  - **FEAT**: show latest registry prerelease version of the same preid in `publish` command if the local version is also a prerelease.
