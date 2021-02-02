@@ -157,6 +157,8 @@ const _versioningTestCases = [
   // Non-nullsafety prerelease to a nullsafety prerelease.
   NullSafetyTestCase(
       '1.0.0-dev.3', '2.0.0-1.0.nullsafety.0', SemverReleaseType.patch),
+  NullSafetyTestCase(
+      '0.1.0-dev.5', '0.2.0-1.0.nullsafety.0', SemverReleaseType.patch),
 ];
 
 void main() {
