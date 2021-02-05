@@ -27,7 +27,7 @@ The following projects are using Melos:
 - [fluttercommunity/plus_plugins](https://github.com/fluttercommunity/plus_plugins)
 - [GetStream/stream-chat-flutter](https://github.com/GetStream/stream-chat-flutter)
 
-> [Submit a PR](https://github.com/invertase/melos/edit/master/docs/README.md) to add your project to the list.
+> [Submit a PR](https://github.com/invertase/melos/edit/master/docs/index.md) to add your project to the list.
 
 ## License
 
