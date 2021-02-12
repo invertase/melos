@@ -16,11 +16,14 @@
  */
 
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:args/command_runner.dart' show Command;
+import 'package:path/path.dart' show dirname;
 
 import '../common/logger.dart';
+import '../common/package.dart';
 import '../common/utils.dart';
 import '../common/workspace.dart';
 
@@ -41,6 +44,9 @@ class ListCommand extends Command {
     argParser.addFlag('graph',
         negatable: false,
         help: 'Show dependency graph as a JSON-formatted adjacency list.');
+    argParser.addFlag('gviz',
+        negatable: false,
+        help: 'Show dependency graph in Graphviz DOT language.');
   }
 
   @override
@@ -68,6 +74,82 @@ class ListCommand extends Command {
 
     const encoder = JsonEncoder.withIndent('  ');
     logger.stdout(encoder.convert(jsonGraph));
+  }
+
+  void printGvizFormat() {
+    String toHex(int color) {
+      final colorString = color.toRadixString(16);
+
+      return [if (colorString.length == 1) '0', colorString].join();
+    }
+
+    String getColor(String name) {
+      final random = Random(name.hashCode);
+
+      final r = random.nextInt(256);
+      final g = random.nextInt(256);
+      final b = random.nextInt(256);
+
+      return [
+        '#',
+        toHex(r),
+        toHex(g),
+        toHex(b),
+      ].join();
+    }
+
+    final buffer = <String>[];
+
+    buffer.add('digraph packages {');
+    buffer.add('  size="10"; ratio=fill;');
+
+    for (final package in currentWorkspace.packages) {
+      buffer.add(
+          '  ${package.name} [shape="box"; color="${getColor(package.name)}"];');
+    }
+
+    for (final package in currentWorkspace.packages) {
+      for (final dep in package.dependenciesInWorkspace) {
+        buffer.add(
+          '  ${package.name} -> ${dep.name} [style="filled"; color="${getColor(dep.name)}"];',
+        );
+      }
+
+      for (final dep in package.devDependenciesInWorkspace) {
+        buffer.add(
+          '  ${package.name} -> ${dep.name} [style="dashed"; color="${getColor(dep.name)}"];',
+        );
+      }
+    }
+
+    final groupedPackages = currentWorkspace.packages
+        .fold<Map<String, List<MelosPackage>>>({}, (grouped, package) {
+      final namespace = dirname(package.pathRelativeToWorkspace);
+
+      if (!grouped.containsKey(namespace)) {
+        grouped[namespace] = [];
+      }
+
+      grouped[namespace].add(package);
+
+      return grouped;
+    });
+
+    groupedPackages.forEach((namespace, packagesInGroup) {
+      buffer.add('  subgraph "cluster $namespace" {');
+      buffer.add('    label="$namespace";');
+      buffer.add('    color="${getColor(namespace)}";');
+
+      for (final package in packagesInGroup) {
+        buffer.add('    ${package.name};');
+      }
+
+      buffer.add('  }');
+    });
+
+    buffer.add('}');
+
+    logger.stdout(buffer.join('\n'));
   }
 
   void printJsonFormat({bool all = false, bool long = false}) {
@@ -175,9 +257,12 @@ class ListCommand extends Command {
     final parsable = argResults['parsable'] as bool;
     final json = argResults['json'] as bool;
     final graph = argResults['graph'] as bool;
+    final gviz = argResults['gviz'] as bool;
 
     if (graph) {
       printGraphFormat(all: all);
+    } else if (gviz) {
+      printGvizFormat();
     } else if (json) {
       printJsonFormat(long: long, all: all);
     } else if (parsable) {
