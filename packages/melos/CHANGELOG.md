@@ -1,3 +1,8 @@
+## 0.4.4+2
+
+ - **FIX**: hook scripts not working.
+ - **FIX**: non-nullsafety pre-major prerelease should also bump it's minor version (#55).
+
 ## 0.4.4+1
 
  - **DOCS**: add monorepo to pub description.
