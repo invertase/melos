@@ -47,7 +47,7 @@ class RunCommand extends Command {
 
   @override
   Future<void> run() async {
-    if (currentWorkspace.config.scripts.namesExcludingLifecycles.isEmpty) {
+    if (currentWorkspace.config.scripts.names.isEmpty) {
       logger.stderr(
         AnsiStyles.yellow(
             "Warning: This workspace has no scripts defined in it's 'melos.yaml' file.\n"),
@@ -60,10 +60,8 @@ class RunCommand extends Command {
     String scriptName;
 
     if (argResults.rest.isEmpty) {
-      if (currentWorkspace.config.scripts.namesExcludingLifecycles.isNotEmpty) {
-        final scriptChoices = currentWorkspace
-            .config.scripts.namesExcludingLifecycles
-            .map((name) {
+      if (currentWorkspace.config.scripts.names.isNotEmpty) {
+        final scriptChoices = currentWorkspace.config.scripts.names.map((name) {
           final script = currentWorkspace.config.scripts.script(name);
           final styledName = AnsiStyles.cyan(script.name);
           final styledDescription = script.description != null
@@ -81,8 +79,7 @@ class RunCommand extends Command {
 
         final selectedScriptIndex = scriptChoices.indexOf(selectedScript);
 
-        scriptName = currentWorkspace
-            .config.scripts.namesExcludingLifecycles[selectedScriptIndex];
+        scriptName = currentWorkspace.config.scripts.names[selectedScriptIndex];
 
         logger.stdout('');
       } else {
