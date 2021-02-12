@@ -1,3 +1,7 @@
+## 0.4.5
+
+ - **FEAT**: allow listing packages in Graphviz DOT language (#58).
+
 ## 0.4.4+2
 
  - **FIX**: hook scripts not working.
