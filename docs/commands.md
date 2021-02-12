@@ -106,6 +106,10 @@ melos list --json
 
 Show dependency graph as a JSON-formatted adjacency list. Defaults to `false`.
 
+### --gviz
+
+Show dependency graph in Graphviz DOT language. Defaults to `false`.
+
 ```bash
 melos list --graph
 ```
