@@ -116,7 +116,9 @@ class RunCommand extends Command {
     if (script.shouldPromptForPackageSelection) {
       await currentWorkspace.loadPackagesWithFilters(
         scope: script.selectPackageOptions[filterOptionScope] as List<String>,
-        ignore: script.selectPackageOptions[filterOptionIgnore] as List<String>,
+        ignore:
+            (script.selectPackageOptions[filterOptionIgnore] as List<String>)
+              ..addAll(currentWorkspace.config.ignore),
         dirExists:
             script.selectPackageOptions[filterOptionDirExists] as List<String>,
         fileExists:
