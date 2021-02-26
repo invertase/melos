@@ -92,6 +92,7 @@ The following projects are using Melos:
 - [FirebaseExtended/flutterfire](https://github.com/FirebaseExtended/flutterfire)
 - [aws-amplify/amplify-flutter](https://github.com/aws-amplify/amplify-flutter)
 - [fluttercommunity/plus_plugins](https://github.com/fluttercommunity/plus_plugins)
+- [GetStream/stream-chat-flutter](https://github.com/GetStream/stream-chat-flutter)
 
 > [Submit a PR](https://github.com/invertase/melos/edit/master/packages/melos/README.md) if you'd like to add your project to the list.
 > You can also add a [readme badge](#readme-badge) to your projects readme to let others know about Melos 💙.
