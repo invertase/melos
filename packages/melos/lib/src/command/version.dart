@@ -288,11 +288,8 @@ class VersionCommand extends Command {
 
         final packageUnscoped = currentWorkspace.packagesNoScope
             .firstWhere((element) => element.name == package.name);
-
-        for (final package in packageUnscoped.dependentsInWorkspace) {
-          if (graduate && package.version.isPreRelease) continue;
-          dependentPackagesToVersion.add(package);
-        }
+        dependentPackagesToVersion
+            .addAll(packageUnscoped.dependentsInWorkspace);
       }
     }
 
@@ -343,13 +340,22 @@ class VersionCommand extends Command {
             )));
 
     for (final package in dependentPackagesToVersion) {
-      if (graduate && package.version.isFirstPreRelease) continue;
-      if (!packagesToVersion.contains(package)) {
+      if (!packagesToVersion.contains(package) &&
+          pendingPackageUpdates.firstWhere(
+                (packageToVersion) =>
+                    packageToVersion.package.name == package.name,
+                orElse: () => null,
+              ) ==
+              null) {
         pendingPackageUpdates.add(MelosPendingPackageUpdate(
           package,
           [],
           PackageUpdateReason.dependency,
-          graduate: graduate,
+          // Dependent packages that should have graduated would have already
+          // gone through graduation logic above. So graduate should use the default
+          // of 'false' here so as not to graduate anything that was specifically
+          // excluded.
+          // graduate: false,
           prerelease: prerelease,
           // TODO Should dependent packages also get the same preid, can we expose this as an option?
           // TODO In the case of "nullsafety" it doesn't make sense for dependent packages to also become nullsafety preid versions.

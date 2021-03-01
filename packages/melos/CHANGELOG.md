@@ -1,3 +1,7 @@
+## 0.4.5+1
+
+ - **FIX**: script select-package ignore filter was not including ignores also defined in melos.yaml.
+
 ## 0.4.5
 
  - **FEAT**: allow listing packages in Graphviz DOT language (#58).
