@@ -195,17 +195,17 @@ class BootstrapCommand extends Command {
           generatedYamlMap['dependency_overrides'] = {};
         } else {
           generatedYamlMap['dependency_overrides'] =
-              Map.from(generatedYamlMap['dependency_overrides'] as Map);
+              Map.from((generatedYamlMap['dependency_overrides'] ?? {}) as Map);
         }
 
         if (generatedYamlMap.containsKey('dependencies')) {
           generatedYamlMap['dependencies'] =
-              Map.from(generatedYamlMap['dependencies'] as Map);
+              Map.from((generatedYamlMap['dependencies'] ?? {}) as Map);
         }
 
         if (generatedYamlMap.containsKey('dev_dependencies')) {
           generatedYamlMap['dev_dependencies'] =
-              Map.from(generatedYamlMap['dev_dependencies'] as Map);
+              Map.from((generatedYamlMap['dev_dependencies'] ?? {}) as Map);
         }
 
         if (package.dependencyOverrides.containsKey(plugin.name)) {
