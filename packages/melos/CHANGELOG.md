@@ -1,3 +1,9 @@
+## 0.4.5+2
+
+ - **FIX**: certain generated yaml file keys can be null.
+ - **FIX**: some dependent packages were not visible when graduating with a filter.
+ - **DOCS**: Add GetStream/stream-chat-flutter as a user of melos (#63).
+
 ## 0.4.5+1
 
  - **FIX**: script select-package ignore filter was not including ignores also defined in melos.yaml.
