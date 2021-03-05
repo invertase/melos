@@ -93,6 +93,7 @@ The following projects are using Melos:
 - [aws-amplify/amplify-flutter](https://github.com/aws-amplify/amplify-flutter)
 - [fluttercommunity/plus_plugins](https://github.com/fluttercommunity/plus_plugins)
 - [GetStream/stream-chat-flutter](https://github.com/GetStream/stream-chat-flutter)
+- [4itworks/opensource_qwkin_dart](https://github.com/4itworks/opensource_qwkin_dart)
 
 > [Submit a PR](https://github.com/invertase/melos/edit/master/packages/melos/README.md) if you'd like to add your project to the list.
 > You can also add a [readme badge](#readme-badge) to your projects readme to let others know about Melos 💙.
