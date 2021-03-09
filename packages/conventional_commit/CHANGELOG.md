@@ -1,3 +1,7 @@
+## 0.3.0+1
+
+ - **FIX**: scope list can support spaces.
+
 ## 0.3.0
 
 > Note: This release has breaking changes.
