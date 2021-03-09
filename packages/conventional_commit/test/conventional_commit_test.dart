@@ -84,6 +84,9 @@ void main() {
           equals(['scope', 'dope']));
       expect(ConventionalCommit.parse('docs(scope,dope)!: foo bar').scopes,
           equals(['scope', 'dope']));
+      // Should support spaces in comma delimited scope list.
+      expect(ConventionalCommit.parse('docs(scope, dope)!: foo bar').scopes,
+          equals(['scope', 'dope']));
     });
 
     test('type', () {
