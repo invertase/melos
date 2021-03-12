@@ -15,10 +15,6 @@ The name of this project, using for display purposes within IO environments and 
 name: My Awesome Project
 ```
 
-## `versioning`
-
-The versioning configuration used by Melos for some commands (such as `version`).
-
 ## `packages`
 
 A list of local packages Melos will use to execute commands against.  The list can be
@@ -31,14 +27,5 @@ packages:
 ```
 
 ## `scripts`
-
-TODO
-
-
-## `dev_dependencies`
-
-TODO
-
-## `environment`
 
 TODO
