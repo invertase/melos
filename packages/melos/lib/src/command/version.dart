@@ -88,8 +88,8 @@ class VersionCommand extends Command {
     argParser.addFlag(
       'yes',
       negatable: false,
-      help: 'Skip the Y/n prompt at the beginning of the command. Applies only '
-          'to Conventional Commits based versioning.',
+      help: 'Skip the Y/n confirmation prompt. Note that for manual versioning '
+          '--no-changelog must also be passed to avoid prompts.',
     );
     argParser.addOption(
       'preid',
@@ -169,7 +169,8 @@ class VersionCommand extends Command {
       ],
     ], paddingSize: 3));
     logger.stdout('');
-    final shouldContinue = promptBool();
+    final skipPrompt = argResults['yes'] as bool;
+    final shouldContinue = skipPrompt || promptBool();
     if (!shouldContinue) {
       logger.stdout(AnsiStyles.red('Operation was canceled.'));
       exitCode = 1;
