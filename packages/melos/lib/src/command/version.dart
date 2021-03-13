@@ -307,7 +307,6 @@ class VersionCommand extends Command {
       return gitCommitsForPackage(
         package,
         since: globalResults['since'] as String,
-        versionAll: versionAll,
       ).then((commits) {
         packageCommits[package.name] = commits
             .map((commit) => ConventionalCommit.parse(commit.message))
@@ -385,7 +384,7 @@ class VersionCommand extends Command {
       logger.stdout(AnsiStyles.gray(
           'Hint: try running "melos list" with the same filtering options to see a list of packages that were included.'));
       logger.stdout(AnsiStyles.gray(
-          'Hint: try running "melos version --all" to include private packages'));
+          'Hint: try running "melos version --all" to include private packages.'));
       return;
     }
 

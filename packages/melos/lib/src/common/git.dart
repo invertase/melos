@@ -137,15 +137,8 @@ Future<void> gitCommit(String message, {String workingDirectory}) async {
 /// Returns a list of [GitCommit]s for a Melos package.
 /// Optionally specify [since] to start after a specified commit or tag. Defaults
 /// to the latest release tag.
-Future<List<GitCommit>> gitCommitsForPackage(
-  MelosPackage package, {
-  String since,
-  String preid = 'dev',
-  bool versionAll,
-}) async {
-  if (!versionAll && package.isPrivate) {
-    return [];
-  }
+Future<List<GitCommit>> gitCommitsForPackage(MelosPackage package,
+    {String since, String preid = 'dev'}) async {
   var sinceOrLatestTag = since;
   if (sinceOrLatestTag != null && sinceOrLatestTag.isEmpty) {
     sinceOrLatestTag = null;
