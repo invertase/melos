@@ -1,3 +1,7 @@
+## 0.4.6
+
+ - **FEAT**: allow --yes to also skip prompts when manually versioning (closes #66).
+
 ## 0.4.5+3
 
  - Update a dependency to the latest release.
