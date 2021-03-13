@@ -1,2 +1,2 @@
 // This file is generated. Do not manually edit.
-String melosVersion = '0.4.6';
+String melosVersion = '0.4.7';

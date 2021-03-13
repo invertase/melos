@@ -1,3 +1,7 @@
+## 0.4.7
+
+ - **FEAT**: allow private packages to be versioned (#67).
+
 ## 0.4.6
 
  - **FEAT**: allow --yes to also skip prompts when manually versioning (closes #66).
