@@ -2,6 +2,7 @@
 title: Commands
 description: Descriptions and examples of the available Melos CLI commands
 ---
+
 # Commands
 
 Commands can be run from the root of a project using Melos.
@@ -33,7 +34,7 @@ executed, you'll need to rerun the `bootstrap` command again for Melos to work.
 
 ## exec
 
-Execute an arbitrary command in each package. 
+Execute an arbitrary command in each package.
 
 ```bash
 melos exec
@@ -204,6 +205,15 @@ melos version -t
 
 Use `--no-git-tag-version` to disable.
 
+### --all (-a)
+
+Version private packages that are skipped by default.
+
+```bash
+melos version --all
+melos version -a
+```
+
 ## Global options
 
 Each Melos command can be used alongside the following global commands:
@@ -305,4 +315,5 @@ Include only packages that depend on specific dependencies.
 ```bash
 melos exec --depends-on="flutter" --depends-on="firebase_core" -- flutter test
 ```
+
 Use `--no-depends-on` to filter packages that do not depend on the given dependencies.

@@ -91,6 +91,12 @@ class VersionCommand extends Command {
       help: 'Skip the Y/n confirmation prompt. Note that for manual versioning '
           '--no-changelog must also be passed to avoid prompts.',
     );
+    argParser.addFlag(
+      'all',
+      abbr: 'a',
+      negatable: false,
+      help: 'Verion private packages that are skipped by default.',
+    );
     argParser.addOption(
       'preid',
       help:
@@ -249,6 +255,7 @@ class VersionCommand extends Command {
         argResults['dependent-constraints'] as bool;
     var updateDependentVersions = argResults['dependent-versions'] as bool;
     final skipPrompt = argResults['yes'] as bool;
+    final versionAll = argResults['all'] as bool;
     final preid = argResults['preid'] as String;
 
     final packagesToVersion = <MelosPackage>{};
@@ -293,15 +300,15 @@ class VersionCommand extends Command {
             .addAll(packageUnscoped.dependentsInWorkspace);
       }
     }
-
     await Pool(10).forEach<MelosPackage, void>(currentWorkspace.packages,
         (package) {
-      if (package.isPrivate) {
+      if (!versionAll && package.isPrivate) {
         return Future.value();
       }
-      return gitCommitsForPackage(package,
-              since: globalResults['since'] as String)
-          .then((commits) {
+      return gitCommitsForPackage(
+        package,
+        since: globalResults['since'] as String,
+      ).then((commits) {
         packageCommits[package.name] = commits
             .map((commit) => ConventionalCommit.parse(commit.message))
             .where((element) => element != null)
@@ -366,15 +373,19 @@ class VersionCommand extends Command {
     }
 
     // Filter out private packages.
-    pendingPackageUpdates = pendingPackageUpdates
-        .where((update) => !update.package.isPrivate)
-        .toList();
+    if (!versionAll) {
+      pendingPackageUpdates = pendingPackageUpdates
+          .where((update) => !update.package.isPrivate)
+          .toList();
+    }
 
     if (pendingPackageUpdates.isEmpty) {
       logger.stdout(AnsiStyles.yellow(
           'No packages were found that required versioning.'));
       logger.stdout(AnsiStyles.gray(
           'Hint: try running "melos list" with the same filtering options to see a list of packages that were included.'));
+      logger.stdout(AnsiStyles.gray(
+          'Hint: try running "melos version --all" to include private packages.'));
       return;
     }
 

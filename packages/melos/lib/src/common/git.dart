@@ -139,9 +139,6 @@ Future<void> gitCommit(String message, {String workingDirectory}) async {
 /// to the latest release tag.
 Future<List<GitCommit>> gitCommitsForPackage(MelosPackage package,
     {String since, String preid = 'dev'}) async {
-  if (package.isPrivate) {
-    return [];
-  }
   var sinceOrLatestTag = since;
   if (sinceOrLatestTag != null && sinceOrLatestTag.isEmpty) {
     sinceOrLatestTag = null;
