@@ -13,6 +13,7 @@ dependencies:
   glob: ^1.2.0
   http: ^0.12.2
   meta: ^1.1.8
+  mustache_template: ^2.0.0
   path: ^1.7.0
   pool: ^1.4.0
   prompts: ^1.3.1

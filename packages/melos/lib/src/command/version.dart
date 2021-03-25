@@ -20,6 +20,7 @@ import 'dart:io';
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:args/command_runner.dart' show Command;
 import 'package:conventional_commit/conventional_commit.dart';
+import 'package:mustache_template/mustache.dart';
 import 'package:pool/pool.dart' show Pool;
 import 'package:pub_semver/pub_semver.dart';
 
@@ -33,8 +34,13 @@ import '../common/utils.dart';
 import '../common/versioning.dart' as versioning;
 import '../common/workspace.dart';
 
-/// The default commit message subject used when versioning.
-const defaultCommitMessageSubject = 'chore(release): publish packages';
+/// Template variable that is replaced with versioned package info in commit
+/// messages.
+const packageVersionsTemplateVar = 'new_package_versions';
+
+/// The default commit message used when versioning.
+const defaultCommitMessage =
+    'chore(release): publish packages\n\n{$packageVersionsTemplateVar}';
 
 class VersionCommand extends Command {
   VersionCommand() {
@@ -91,9 +97,14 @@ class VersionCommand extends Command {
     argParser.addOption('message',
         abbr: 'm',
         valueHelp: 'msg',
-        help: "Use the given <msg> as the release's commit message subject.\n"
-            'If not provided, this will default to a subject of '
-            '"$defaultCommitMessageSubject".');
+        help: "Use the given <msg> as the release's commit message. If the "
+            'message contains {$packageVersionsTemplateVar}, it will be '
+            'replaced by the list of newly versioned package names.\n'
+            'If --message is not provided, the message will default to '
+            '"$defaultCommitMessage".',
+        // Unescape newlines, to convenience the shell (long options can't
+        // contain them)
+        callback: (String val) => val?.replaceAll(r'\n', '\n'));
     argParser.addFlag(
       'yes',
       negatable: false,
@@ -259,7 +270,6 @@ class VersionCommand extends Command {
     final changelog = argResults['changelog'] as bool;
     var graduate = argResults['graduate'] as bool;
     final tag = argResults['git-tag-version'] as bool;
-    final commitMessageSubject = argResults['message'] as String;
     final prerelease = argResults['prerelease'] as bool;
     final updateDependentConstraints =
         argResults['dependent-constraints'] as bool;
@@ -267,6 +277,10 @@ class VersionCommand extends Command {
     final skipPrompt = argResults['yes'] as bool;
     final versionAll = argResults['all'] as bool;
     final preid = argResults['preid'] as String;
+
+    final commitMessage =
+        argResults['message'] as String ?? defaultCommitMessage;
+    final commitMessageTemplate = Template(commitMessage, delimiters: '{ }');
 
     final packagesToVersion = <MelosPackage>{};
     final packageCommits = <String, List<ConventionalCommit>>{};
@@ -540,11 +554,17 @@ class VersionCommand extends Command {
           .map((e) => ' - ${e.package.name}@${e.nextVersion.toString()}')
           .join('\n');
 
+      // Render our commit message template into the final string
+      final resolvedCommitMessage = commitMessageTemplate.renderString({
+        packageVersionsTemplateVar: publishedPackagesMessage,
+      });
+
       // TODO this is currently blocking git submodules support (if we decide to
       // support it later) for packages as commit is only ran at the root.
-      final commitSubject = commitMessageSubject ?? defaultCommitMessageSubject;
-      await gitCommit('$commitSubject\n\n$publishedPackagesMessage',
-          workingDirectory: currentWorkspace.path);
+      await gitCommit(
+        resolvedCommitMessage,
+        workingDirectory: currentWorkspace.path,
+      );
 
       // // 3) Tag changes:
       await Future.forEach(pendingPackageUpdates,
