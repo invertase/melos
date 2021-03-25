@@ -1,3 +1,7 @@
+## 0.4.8+1
+
+ - **FIX**: Newline handling for version's message option (#73).
+
 ## 0.4.8
 
  - **REFACTOR**: Improve styling of command usage (#71).
