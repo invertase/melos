@@ -1,3 +1,8 @@
+## 0.4.8
+
+ - **REFACTOR**: Improve styling of command usage (#71).
+ - **FEAT**: Support configurable commit messages in version command (#72).
+
 ## 0.4.7
 
  - **FEAT**: allow private packages to be versioned (#67).
