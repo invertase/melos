@@ -33,6 +33,9 @@ import '../common/utils.dart';
 import '../common/versioning.dart' as versioning;
 import '../common/workspace.dart';
 
+/// The default commit message subject used when versioning.
+const defaultCommitMessageSubject = 'chore(release): publish packages';
+
 class VersionCommand extends Command {
   VersionCommand() {
     argParser.addFlag(
@@ -85,6 +88,12 @@ class VersionCommand extends Command {
           'and tag the release. Pass --no-git-tag-version to disable the behavior. '
           'Applies only to Conventional Commits based versioning.',
     );
+    argParser.addOption('message',
+        abbr: 'm',
+        valueHelp: 'msg',
+        help: "Use the given <msg> as the release's commit message subject.\n"
+            'If not provided, this will default to a subject of '
+            '"$defaultCommitMessageSubject".');
     argParser.addFlag(
       'yes',
       negatable: false,
@@ -250,6 +259,7 @@ class VersionCommand extends Command {
     final changelog = argResults['changelog'] as bool;
     var graduate = argResults['graduate'] as bool;
     final tag = argResults['git-tag-version'] as bool;
+    final commitMessageSubject = argResults['message'] as String;
     final prerelease = argResults['prerelease'] as bool;
     final updateDependentConstraints =
         argResults['dependent-constraints'] as bool;
@@ -529,10 +539,11 @@ class VersionCommand extends Command {
           })
           .map((e) => ' - ${e.package.name}@${e.nextVersion.toString()}')
           .join('\n');
-      // TODO commit message customization support would go here.
-      // TODO this is currently blocking git submodules support (if we decide to support it later) for packages as commit is only ran at the root.
-      await gitCommit(
-          'chore(release): publish packages\n\n$publishedPackagesMessage',
+
+      // TODO this is currently blocking git submodules support (if we decide to
+      // support it later) for packages as commit is only ran at the root.
+      final commitSubject = commitMessageSubject ?? defaultCommitMessageSubject;
+      await gitCommit('$commitSubject\n\n$publishedPackagesMessage',
           workingDirectory: currentWorkspace.path);
 
       // // 3) Tag changes:
