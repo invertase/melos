@@ -18,7 +18,6 @@
 import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
-import 'package:args/command_runner.dart' show Command;
 import 'package:conventional_commit/conventional_commit.dart';
 import 'package:pool/pool.dart' show Pool;
 import 'package:pub_semver/pub_semver.dart';
@@ -32,8 +31,9 @@ import '../common/pending_package_update.dart';
 import '../common/utils.dart';
 import '../common/versioning.dart' as versioning;
 import '../common/workspace.dart';
+import 'base.dart';
 
-class VersionCommand extends Command {
+class VersionCommand extends MelosCommand {
   VersionCommand() {
     argParser.addFlag(
       'prerelease',

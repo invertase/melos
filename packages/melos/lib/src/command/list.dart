@@ -19,15 +19,15 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:ansi_styles/ansi_styles.dart';
-import 'package:args/command_runner.dart' show Command;
 import 'package:path/path.dart' show dirname;
 
 import '../common/logger.dart';
 import '../common/package.dart';
 import '../common/utils.dart';
 import '../common/workspace.dart';
+import 'base.dart';
 
-class ListCommand extends Command {
+class ListCommand extends MelosCommand {
   ListCommand() {
     argParser.addFlag('long',
         abbr: 'l', negatable: false, help: 'Show extended information.');

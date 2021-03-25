@@ -20,7 +20,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
-import 'package:args/command_runner.dart' show Command;
 import 'package:path/path.dart';
 import 'package:pool/pool.dart';
 import 'package:yamlicious/yamlicious.dart';
@@ -31,8 +30,9 @@ import '../common/logger.dart';
 import '../common/package.dart';
 import '../common/utils.dart' as utils;
 import '../common/workspace.dart';
+import 'base.dart';
 
-class BootstrapCommand extends Command {
+class BootstrapCommand extends MelosCommand {
   @override
   final String name = 'bootstrap';
 

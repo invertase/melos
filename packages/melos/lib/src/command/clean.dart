@@ -15,14 +15,13 @@
  *
  */
 
-import 'package:args/command_runner.dart' show Command;
-
 import '../command_runner.dart';
 import '../common/intellij_project.dart';
 import '../common/logger.dart';
 import '../common/workspace.dart';
+import 'base.dart';
 
-class CleanCommand extends Command {
+class CleanCommand extends MelosCommand {
   @override
   final String name = 'clean';
 
