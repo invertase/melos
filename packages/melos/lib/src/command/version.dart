@@ -116,11 +116,11 @@ class VersionCommand extends MelosCommand {
       'Automatically version and generate changelogs based on the Conventional Commits specification. Supports all package filtering options.';
 
   @override
-  final String invocation = ''
-      'melos version\n'
-      '         - version packages automatically using the Conventional Commits specification.\n'
-      '       melos version <packageName> <newVersion>\n'
-      '         - manually set a specific packages version and update all packages that depend on it.';
+  // ignore: leading_newlines_in_multiline_strings
+  final String invocation = ' ${AnsiStyles.bold('melos version')}\n'
+      '          Version packages automatically using the Conventional Commits specification.\n\n'
+      '        ${AnsiStyles.bold('melos version')} <package name> <new version>\n'
+      '          Manually set a package to a specific version, and update all packages that depend on it.\n';
 
   Future<void> applyUserSpecifiedVersion() async {
     logger.stdout(
