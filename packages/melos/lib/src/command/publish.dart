@@ -18,7 +18,6 @@
 import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
-import 'package:args/command_runner.dart' show Command;
 import 'package:pool/pool.dart' show Pool;
 
 import '../common/git.dart';
@@ -26,9 +25,10 @@ import '../common/logger.dart';
 import '../common/package.dart';
 import '../common/utils.dart';
 import '../common/workspace.dart';
+import 'base.dart';
 import 'exec.dart';
 
-class PublishCommand extends Command {
+class PublishCommand extends MelosCommand {
   PublishCommand() {
     argParser.addFlag('dry-run',
         abbr: 'n',

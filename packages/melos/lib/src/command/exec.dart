@@ -17,16 +17,16 @@
 
 import 'dart:io';
 
-import 'package:args/command_runner.dart' show Command;
-import 'package:pool/pool.dart' show Pool;
 import 'package:ansi_styles/ansi_styles.dart';
+import 'package:pool/pool.dart' show Pool;
 
 import '../common/logger.dart';
 import '../common/package.dart';
 import '../common/utils.dart';
 import '../common/workspace.dart';
+import 'base.dart';
 
-class ExecCommand extends Command {
+class ExecCommand extends MelosCommand {
   ExecCommand() {
     argParser.addOption('concurrency', defaultsTo: '5', abbr: 'c');
     argParser.addFlag('fail-fast',
