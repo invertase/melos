@@ -36,6 +36,19 @@ packages:
 class MelosWorkspaceConfig {
   MelosWorkspaceConfig._(this._name, this._path, this._yamlContents);
 
+  /// Constructs a workspace config from a [YamlMap] representation of
+  /// `melos.yaml`.
+  factory MelosWorkspaceConfig.fromYaml(YamlMap yamlMap) {
+    final melosYamlPath = yamlMap.span?.sourceUrl?.toFilePath();
+    assert(
+      melosYamlPath != null,
+      'Config yaml does not have an associated path. Was it loaded from disk?',
+    );
+
+    return MelosWorkspaceConfig._(
+        yamlMap['name'] as String, dirname(melosYamlPath), yamlMap);
+  }
+
   final Map _yamlContents;
 
   /// The name of the workspace.
@@ -97,7 +110,6 @@ class MelosWorkspaceConfig {
       return null;
     }
 
-    return MelosWorkspaceConfig._(
-        yamlContents['name'] as String, directory.path, yamlContents);
+    return MelosWorkspaceConfig.fromYaml(yamlContents);
   }
 }

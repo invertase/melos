@@ -119,7 +119,10 @@ Map loadYamlFileSync(String path) {
 Future<Map> loadYamlFile(String path) async {
   final file = File(path);
   if (file.existsSync()) {
-    return loadYaml(await file.readAsString()) as Map;
+    return loadYaml(
+      await file.readAsString(),
+      sourceUrl: file.uri,
+    ) as Map;
   }
   return null;
 }
