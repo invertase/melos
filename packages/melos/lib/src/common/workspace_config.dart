@@ -46,8 +46,6 @@ class MelosWorkspaceConfig {
   String get path => _path;
   final String _path;
 
-  String get version => _yamlContents['version'] as String;
-
   /// `true` if this workspace is configured to generate an IntelliJ IDE
   /// project via `melos bootstrap`.
   bool get generateIntellijIdeFiles {
