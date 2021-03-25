@@ -19,6 +19,7 @@ import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:conventional_commit/conventional_commit.dart';
+import 'package:mustache_template/mustache.dart';
 import 'package:pool/pool.dart' show Pool;
 import 'package:pub_semver/pub_semver.dart';
 
@@ -32,6 +33,14 @@ import '../common/utils.dart';
 import '../common/versioning.dart' as versioning;
 import '../common/workspace.dart';
 import 'base.dart';
+
+/// Template variable that is replaced with versioned package info in commit
+/// messages.
+const packageVersionsTemplateVar = 'new_package_versions';
+
+/// The default commit message used when versioning.
+const defaultCommitMessage =
+    'chore(release): publish packages\n\n{$packageVersionsTemplateVar}';
 
 class VersionCommand extends MelosCommand {
   VersionCommand() {
@@ -85,6 +94,17 @@ class VersionCommand extends MelosCommand {
           'and tag the release. Pass --no-git-tag-version to disable the behavior. '
           'Applies only to Conventional Commits based versioning.',
     );
+    argParser.addOption('message',
+        abbr: 'm',
+        valueHelp: 'msg',
+        help: "Use the given <msg> as the release's commit message. If the "
+            'message contains {$packageVersionsTemplateVar}, it will be '
+            'replaced by the list of newly versioned package names.\n'
+            'If --message is not provided, the message will default to '
+            '"$defaultCommitMessage".',
+        // Unescape newlines, to convenience the shell (long options can't
+        // contain them)
+        callback: (String val) => val?.replaceAll(r'\n', '\n'));
     argParser.addFlag(
       'yes',
       negatable: false,
@@ -95,7 +115,7 @@ class VersionCommand extends MelosCommand {
       'all',
       abbr: 'a',
       negatable: false,
-      help: 'Verion private packages that are skipped by default.',
+      help: 'Version private packages that are skipped by default.',
     );
     argParser.addOption(
       'preid',
@@ -257,6 +277,10 @@ class VersionCommand extends MelosCommand {
     final skipPrompt = argResults['yes'] as bool;
     final versionAll = argResults['all'] as bool;
     final preid = argResults['preid'] as String;
+
+    final commitMessage =
+        argResults['message'] as String ?? defaultCommitMessage;
+    final commitMessageTemplate = Template(commitMessage, delimiters: '{ }');
 
     final packagesToVersion = <MelosPackage>{};
     final packageCommits = <String, List<ConventionalCommit>>{};
@@ -529,11 +553,18 @@ class VersionCommand extends MelosCommand {
           })
           .map((e) => ' - ${e.package.name}@${e.nextVersion.toString()}')
           .join('\n');
-      // TODO commit message customization support would go here.
-      // TODO this is currently blocking git submodules support (if we decide to support it later) for packages as commit is only ran at the root.
+
+      // Render our commit message template into the final string
+      final resolvedCommitMessage = commitMessageTemplate.renderString({
+        packageVersionsTemplateVar: publishedPackagesMessage,
+      });
+
+      // TODO this is currently blocking git submodules support (if we decide to
+      // support it later) for packages as commit is only ran at the root.
       await gitCommit(
-          'chore(release): publish packages\n\n$publishedPackagesMessage',
-          workingDirectory: currentWorkspace.path);
+        resolvedCommitMessage,
+        workingDirectory: currentWorkspace.path,
+      );
 
       // // 3) Tag changes:
       await Future.forEach(pendingPackageUpdates,
