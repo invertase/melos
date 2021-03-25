@@ -94,17 +94,16 @@ class VersionCommand extends MelosCommand {
           'and tag the release. Pass --no-git-tag-version to disable the behavior. '
           'Applies only to Conventional Commits based versioning.',
     );
-    argParser.addOption('message',
-        abbr: 'm',
-        valueHelp: 'msg',
-        help: "Use the given <msg> as the release's commit message. If the "
-            'message contains {$packageVersionsTemplateVar}, it will be '
-            'replaced by the list of newly versioned package names.\n'
-            'If --message is not provided, the message will default to '
-            '"$defaultCommitMessage".',
-        // Unescape newlines, to convenience the shell (long options can't
-        // contain them)
-        callback: (String val) => val?.replaceAll(r'\n', '\n'));
+    argParser.addOption(
+      'message',
+      abbr: 'm',
+      valueHelp: 'msg',
+      help: "Use the given <msg> as the release's commit message. If the "
+          'message contains {$packageVersionsTemplateVar}, it will be '
+          'replaced by the list of newly versioned package names.\n'
+          'If --message is not provided, the message will default to '
+          '"$defaultCommitMessage".',
+    );
     argParser.addFlag(
       'yes',
       negatable: false,
@@ -141,6 +140,14 @@ class VersionCommand extends MelosCommand {
       '          Version packages automatically using the Conventional Commits specification.\n\n'
       '        ${AnsiStyles.bold('melos version')} <package name> <new version>\n'
       '          Manually set a package to a specific version, and update all packages that depend on it.\n';
+
+  /// The template used to produce the git commit message.
+  ///
+  // If the commit message was provided via an option, we will unescape newlines
+  // as a convenience.
+  String get _commitMessage =>
+      argResults['message']?.replaceAll(r'\n', '\n') as String ??
+      defaultCommitMessage;
 
   Future<void> applyUserSpecifiedVersion() async {
     logger.stdout(
@@ -277,10 +284,7 @@ class VersionCommand extends MelosCommand {
     final skipPrompt = argResults['yes'] as bool;
     final versionAll = argResults['all'] as bool;
     final preid = argResults['preid'] as String;
-
-    final commitMessage =
-        argResults['message'] as String ?? defaultCommitMessage;
-    final commitMessageTemplate = Template(commitMessage, delimiters: '{ }');
+    final commitMessageTemplate = Template(_commitMessage, delimiters: '{ }');
 
     final packagesToVersion = <MelosPackage>{};
     final packageCommits = <String, List<ConventionalCommit>>{};
