@@ -17,15 +17,15 @@
 
 import 'dart:io';
 
-import 'package:args/command_runner.dart' show Command;
-import 'package:prompts/prompts.dart' as prompts;
 import 'package:ansi_styles/ansi_styles.dart';
+import 'package:prompts/prompts.dart' as prompts;
 
 import '../common/logger.dart';
 import '../common/utils.dart';
 import '../common/workspace.dart';
+import 'base.dart';
 
-class RunCommand extends Command {
+class RunCommand extends MelosCommand {
   RunCommand() {
     argParser.addFlag(
       'no-select',

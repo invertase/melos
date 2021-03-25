@@ -18,7 +18,6 @@
 import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
-import 'package:args/command_runner.dart' show Command;
 import 'package:conventional_commit/conventional_commit.dart';
 import 'package:pool/pool.dart' show Pool;
 import 'package:pub_semver/pub_semver.dart';
@@ -32,8 +31,9 @@ import '../common/pending_package_update.dart';
 import '../common/utils.dart';
 import '../common/versioning.dart' as versioning;
 import '../common/workspace.dart';
+import 'base.dart';
 
-class VersionCommand extends Command {
+class VersionCommand extends MelosCommand {
   VersionCommand() {
     argParser.addFlag(
       'prerelease',
@@ -116,11 +116,11 @@ class VersionCommand extends Command {
       'Automatically version and generate changelogs based on the Conventional Commits specification. Supports all package filtering options.';
 
   @override
-  final String invocation = ''
-      'melos version\n'
-      '         - version packages automatically using the Conventional Commits specification.\n'
-      '       melos version <packageName> <newVersion>\n'
-      '         - manually set a specific packages version and update all packages that depend on it.';
+  // ignore: leading_newlines_in_multiline_strings
+  final String invocation = ' ${AnsiStyles.bold('melos version')}\n'
+      '          Version packages automatically using the Conventional Commits specification.\n\n'
+      '        ${AnsiStyles.bold('melos version')} <package name> <new version>\n'
+      '          Manually set a package to a specific version, and update all packages that depend on it.\n';
 
   Future<void> applyUserSpecifiedVersion() async {
     logger.stdout(
