@@ -95,7 +95,7 @@ class VersionCommand extends Command {
       'all',
       abbr: 'a',
       negatable: false,
-      help: 'Verion private packages that are skipped by default.',
+      help: 'Version private packages that are skipped by default.',
     );
     argParser.addOption(
       'preid',
