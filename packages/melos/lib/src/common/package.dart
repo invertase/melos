@@ -353,7 +353,7 @@ class MelosPackage {
     }
 
     final url = 'https://pub.dev/packages/$name.json';
-    final response = await http.get(url);
+    final response = await http.get(Uri.parse(url));
     if (response.statusCode == 404) {
       return [];
     } else if (response.statusCode != 200) {
