@@ -147,6 +147,7 @@ class VersionCommand extends MelosCommand {
   // as a convenience.
   String get _commitMessage =>
       argResults['message']?.replaceAll(r'\n', '\n') as String ??
+      commandConfig.getString('message') ??
       defaultCommitMessage;
 
   Future<void> applyUserSpecifiedVersion() async {
