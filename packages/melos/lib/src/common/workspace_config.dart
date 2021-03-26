@@ -21,6 +21,7 @@ import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
 
 import 'utils.dart';
+import 'workspace_command_config.dart';
 import 'workspace_scripts.dart';
 
 String get _yamlConfigDefault {
@@ -86,10 +87,16 @@ class MelosWorkspaceConfig {
   MelosWorkspaceScripts get scripts =>
       MelosWorkspaceScripts(_yamlContents['scripts'] as Map ?? {});
 
+  /// Command-specific configurations defined by the workspace.
+  MelosWorkspaceCommandConfigs get commands =>
+      _commands ??= MelosWorkspaceCommandConfigs.fromYaml(
+          _yamlContents['command'] as YamlMap);
+  MelosWorkspaceCommandConfigs _commands;
+
   /// Creates a new configuration from a [directory].
   ///
   /// If no `melos.yaml` is found, but [directory] contains a `packages/`
-  /// sub-directory, a configuration for those packages will be returned.
+  /// sub-directory, a configuration for those packages will be created.
   static Future<MelosWorkspaceConfig> fromDirectory(Directory directory) async {
     if (!isWorkspaceDirectory(directory)) {
       // Allow melos to use a project without a `melos.yaml` file if a `packages`
@@ -112,4 +119,13 @@ class MelosWorkspaceConfig {
 
     return MelosWorkspaceConfig.fromYaml(yamlContents);
   }
+}
+
+/// Thrown when `melos.yaml` configuration is malformed.
+class MelosConfigException implements Exception {
+  MelosConfigException(this.message);
+  final String message;
+
+  @override
+  String toString() => 'melos.yaml: $message';
 }
