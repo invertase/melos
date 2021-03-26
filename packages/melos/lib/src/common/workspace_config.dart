@@ -31,47 +31,65 @@ packages:
 ''';
 }
 
-// TODO document & cleanup class members.
 // TODO validation of config e.g. name should be alphanumeric dasherized/underscored
+/// Represents the contents of `melos.yaml`.
 class MelosWorkspaceConfig {
   MelosWorkspaceConfig._(this._name, this._path, this._yamlContents);
 
-  final String _name;
+  /// Constructs a workspace config from a [YamlMap] representation of
+  /// `melos.yaml`.
+  factory MelosWorkspaceConfig.fromYaml(YamlMap yamlMap) {
+    final melosYamlPath = yamlMap.span?.sourceUrl?.toFilePath();
+    assert(
+      melosYamlPath != null,
+      'Config yaml does not have an associated path. Was it loaded from disk?',
+    );
 
-  String get name => _name;
-
-  final String _path;
-
-  String get path => _path;
-
-  MelosWorkspaceScripts get scripts =>
-      MelosWorkspaceScripts(_yamlContents['scripts'] as Map ?? {});
-
-  String get version => _yamlContents['version'] as String;
-
-  bool get generateIntellijIdeFiles {
-    final ide = _yamlContents['ide'] as Map ?? {};
-    if (ide['intellij'] == false) return false;
-    if (ide['intellij'] == true) return true;
-    return true;
+    return MelosWorkspaceConfig._(
+        yamlMap['name'] as String, dirname(melosYamlPath), yamlMap);
   }
 
   final Map _yamlContents;
 
+  /// The name of the workspace.
+  String get name => _name;
+  final String _name;
+
+  /// The path to the root of this workspace.
+  String get path => _path;
+  final String _path;
+
+  /// `true` if this workspace is configured to generate an IntelliJ IDE
+  /// project via `melos bootstrap`.
+  bool get generateIntellijIdeFiles {
+    final ide = _yamlContents['ide'] as Map ?? {};
+    return ide['intellij'] is bool ? ide['intellij'] : true;
+  }
+
+  /// A list of glob patterns indicating the locations of this workspace's
+  /// packages.
   List<String> get packages {
     final patterns = _yamlContents['packages'] as YamlList;
     if (patterns == null) return <String>[];
     return List<String>.from(patterns);
   }
 
-  /// Glob patterns defined in "melos.yaml" ignore of packages to always exclude
-  /// regardless of any custom CLI filter options.
+  /// A list of glob patterns that should be ignored when determining the
+  /// workspace's packages.
   List<String> get ignore {
     final patterns = _yamlContents['ignore'] as YamlList;
     if (patterns == null) return <String>[];
     return List<String>.from(patterns);
   }
 
+  /// Scripts defined by the workspace.
+  MelosWorkspaceScripts get scripts =>
+      MelosWorkspaceScripts(_yamlContents['scripts'] as Map ?? {});
+
+  /// Creates a new configuration from a [directory].
+  ///
+  /// If no `melos.yaml` is found, but [directory] contains a `packages/`
+  /// sub-directory, a configuration for those packages will be returned.
   static Future<MelosWorkspaceConfig> fromDirectory(Directory directory) async {
     if (!isWorkspaceDirectory(directory)) {
       // Allow melos to use a project without a `melos.yaml` file if a `packages`
@@ -92,7 +110,6 @@ class MelosWorkspaceConfig {
       return null;
     }
 
-    return MelosWorkspaceConfig._(
-        yamlContents['name'] as String, directory.path, yamlContents);
+    return MelosWorkspaceConfig.fromYaml(yamlContents);
   }
 }
