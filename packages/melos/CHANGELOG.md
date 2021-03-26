@@ -1,3 +1,9 @@
+## 0.4.9
+
+ - **REFACTOR**: Clean up workspace code in preparation for command config implementation (#77).
+ - **FEAT**: Add melos.yaml support for the version command's message default.
+ - **FEAT**: Add melos.yaml command configuration.
+
 ## 0.4.8+1
 
  - **FIX**: Newline handling for version's message option (#73).
