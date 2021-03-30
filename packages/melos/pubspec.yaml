@@ -10,6 +10,7 @@ dependencies:
   cli_util: ^0.3.0
   collection: ^1.14.12
   conventional_commit: ^0.3.0+1
+  file: ^6.1.0
   glob: ^2.0.1
   http: ^0.13.1
   meta: ^1.1.8
