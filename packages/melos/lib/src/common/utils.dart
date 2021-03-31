@@ -38,6 +38,8 @@ const filterOptionPublished = 'published';
 const filterOptionFlutter = 'flutter';
 const filterOptionDependsOn = 'depends-on';
 const filterOptionNoDependsOn = 'no-depends-on';
+const filterOptionIncludeDependents = 'include-dependents';
+const filterOptionIncludeDependencies = 'include-dependencies';
 
 // MELOS_PACKAGES environment variable is a comma delimited list of
 // package names - used instead of filters if it is present.
