@@ -132,6 +132,10 @@ class RunCommand extends MelosCommand {
             script.selectPackageOptions[filterOptionDependsOn] as List<String>,
         noDependsOn: script.selectPackageOptions[filterOptionNoDependsOn]
             as List<String>,
+        includeDependents:
+            script.selectPackageOptions[filterOptionIncludeDependents],
+        includeDependencies:
+            script.selectPackageOptions[filterOptionIncludeDependencies],
       );
 
       var choices = currentWorkspace.packages

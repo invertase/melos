@@ -209,6 +209,28 @@ class MelosPackage {
     return out;
   }
 
+  /// A list of dependendencies and dev dependendencies whose packages exist in
+  /// this workspace.
+  ///
+  /// Not subject to filtering.
+  List<MelosPackage> get allDependenciesInWorkspace {
+    final out = <MelosPackage>[];
+    for (final package in _workspace.allPackages) {
+      if (dependencies.containsKey(package.name) ||
+          devDependencies.containsKey(package.name)) {
+        out.add(package);
+      }
+    }
+    return out;
+  }
+
+  /// Transitive dependencies of this package that are also packages in the
+  /// current workspace.
+  ///
+  /// Not subject to filtering.
+  List<MelosPackage> get transitiveDependenciesInWorkspace =>
+      workspace.packageGraph.transitiveDependenciesForPackage(this).toList();
+
   /// Packages in current workspace that directly depend on this package.
   List<MelosPackage> get dependentsInWorkspace {
     final out = <MelosPackage>[];
@@ -219,6 +241,12 @@ class MelosPackage {
     }
     return out;
   }
+
+  /// Packages in current workspace that transitively depend on this package.
+  ///
+  /// Not subject to filtering.
+  List<MelosPackage> get transitiveDependentsInWorkspace =>
+      workspace.packageGraph.transitiveDependentsForPackage(this).toList();
 
   /// Packages in current workspace that list this package as a dev dependency.
   List<MelosPackage> get devDependentsInWorkspace {

@@ -128,6 +128,16 @@ class MelosCommandRunner extends CommandRunner {
           'This option can be repeated.',
     );
 
+    argParser.addFlag(filterOptionIncludeDependents,
+        help: 'Include all transitive dependents for each package that matches '
+            'the other filters. The included packages skip --ignore and '
+            '--since checks.');
+
+    argParser.addFlag(filterOptionIncludeDependencies,
+        help: 'Include all transitive dependencies for each package that '
+            'matches the other filters. The included packages skip --ignore '
+            'and --since checks.');
+
     addCommand(ExecCommand());
     addCommand(BootstrapCommand());
     addCommand(CleanCommand());
@@ -198,6 +208,8 @@ class MelosCommandRunner extends CommandRunner {
         hasFlutter: topLevelResults[filterOptionFlutter] as bool,
         dependsOn: topLevelResults[filterOptionDependsOn] as List<String>,
         noDependsOn: topLevelResults[filterOptionNoDependsOn] as List<String>,
+        includeDependents: topLevelResults[filterOptionIncludeDependents],
+        includeDependencies: topLevelResults[filterOptionIncludeDependencies],
       );
     }
 

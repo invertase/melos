@@ -24,6 +24,7 @@ import 'package:pool/pool.dart';
 import 'git.dart';
 import 'glob.dart';
 import 'package.dart';
+import 'package_graph.dart';
 import 'pub_dependency_list.dart';
 import 'utils.dart' as utils;
 import 'workspace_config.dart';
@@ -136,6 +137,8 @@ class MelosWorkspace {
     bool hasFlutter,
     List<String> dependsOn,
     List<String> noDependsOn,
+    bool includeDependents,
+    bool includeDependencies,
   }) async {
     if (packages != null) return Future.value(packages);
 
@@ -284,6 +287,21 @@ class MelosWorkspace {
           return !package.dependencies.containsKey(element) &&
               !package.devDependencies.containsKey(element);
         });
+      }).toList();
+    }
+
+    // --include-dependents / --include-dependencies
+    if (includeDependents || includeDependencies) {
+      final seen = <MelosPackage>{};
+      packages = packages.expand((package) {
+        final connectedPackages = [
+          package,
+          if (includeDependents) ...package.transitiveDependentsInWorkspace,
+          if (includeDependencies) ...package.transitiveDependenciesInWorkspace,
+        ].where((pkg) => !seen.contains(pkg)).toList();
+
+        seen.addAll(connectedPackages);
+        return connectedPackages;
       }).toList();
     }
 
