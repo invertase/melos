@@ -18,11 +18,11 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:glob/glob.dart';
 import 'package:path/path.dart';
 import 'package:pool/pool.dart';
 
 import 'git.dart';
+import 'glob.dart';
 import 'package.dart';
 import 'pub_dependency_list.dart';
 import 'utils.dart' as utils;
@@ -45,7 +45,11 @@ class MelosWorkspace {
   /// Configuration as defined in the "melos.yaml" file if it exists.
   final MelosWorkspaceConfig config;
 
-  /// A list of all the packages detected in this workspace, after being filtered.
+  /// All packages referenced by this workspace.
+  List<MelosPackage> allPackages;
+
+  /// A list of all the packages detected in this workspace, after being
+  /// filtered.
   List<MelosPackage> packages;
 
   /// The same as [packages] but excludes the "scope" filter. This is useful
@@ -83,35 +87,39 @@ class MelosWorkspace {
     return joinAll([path, '.melos_tool']);
   }
 
+  /// Stores transitive relations between this workspace's packages.
+  PackageGraph get packageGraph => _packageGraph ??= PackageGraph(this);
+  PackageGraph _packageGraph;
+
+  /// Loads all packages as defined by this workspace's
+  /// [MelosWorkspaceConfig.packages] patterns.
+  ///
+  /// Calling this method sets the [allPackages] field upon completion.
+  Future<List<MelosPackage>> _loadPackages() async {
+    final includeGlobs = config.packages.map(createGlob).toList();
+    return allPackages = await Directory(path)
+        .list(recursive: true, followLinks: false)
+        .where((file) =>
+            file.path.endsWith('pubspec.yaml') &&
+            includeGlobs.any((glob) => glob.matches(file.path)))
+        .asyncMap((entity) {
+      // Convert into Package for further filtering
+      return MelosPackage.fromPubspecPathAndWorkspace(entity, this);
+    }).toList();
+  }
+
   /// Detect specific packages by name in the current workspace.
   /// This behaviour is used in conjunction with the `MELOS_PACKAGES`
   /// environment variable.
   Future<List<MelosPackage>> loadPackagesWithNames(
       List<String> packageNames) async {
     if (packages != null) return Future.value(packages);
-    final packagePatterns = config.packages;
 
-    var filterResult =
-        Directory(path).list(recursive: true, followLinks: false).where((file) {
-      return file.path.endsWith('pubspec.yaml');
-    }).where((file) {
-      // Filter matching 'packages' config from melos.yaml
-      // No 'package' glob patterns in 'melos.yaml' so skip all packages.
-      if (packagePatterns.isEmpty) return false;
-      final matchedPattern = packagePatterns.firstWhere((pattern) {
-        return Glob(pattern).matches(file.path);
-      }, orElse: () => null);
-      return matchedPattern != null;
-    }).asyncMap((entity) {
-      // Convert into Package for further filtering
-      return MelosPackage.fromPubspecPathAndWorkspace(entity, this);
-    });
-
+    Iterable<MelosPackage> filterResult = await _loadPackages();
     filterResult = filterResult.where((package) {
       return packageNames.contains(package.name);
     });
-
-    return packages = await filterResult.toList();
+    return packages = filterResult.toList();
   }
 
   /// Detect packages in the workspace with the provided filters.
@@ -130,46 +138,42 @@ class MelosWorkspace {
     List<String> noDependsOn,
   }) async {
     if (packages != null) return Future.value(packages);
-    final packagePatterns = config.packages;
 
-    var filterResult =
-        Directory(path).list(recursive: true, followLinks: false).where((file) {
-      return file.path.endsWith('pubspec.yaml');
-    }).where((file) {
-      // Filter matching 'packages' config from melos.yaml
-      // No 'package' glob patterns in 'melos.yaml' so skip all packages.
-      if (packagePatterns.isEmpty) return false;
-      final matchedPattern = packagePatterns.firstWhere((pattern) {
-        return Glob(pattern).matches(file.path);
-      }, orElse: () => null);
-      return matchedPattern != null;
-    }).asyncMap((entity) {
-      // Convert into Package for further filtering
-      return MelosPackage.fromPubspecPathAndWorkspace(entity, this);
-    });
+    // Set defaults
+    scope ??= const [];
+    ignore ??= const [];
+    dirExists ??= const [];
+    fileExists ??= const [];
+    skipPrivate ??= false;
+    dependsOn ??= const [];
+    noDependsOn ??= const [];
+    includeDependents ??= false;
+    includeDependencies ??= false;
+    // published, nullsafety, and hasFlutter use `null` as a meaningful value
 
+    // Determine initial set of packages
+    Iterable<MelosPackage> filterResult = await _loadPackages();
+
+    // --ignore
     if (ignore.isNotEmpty) {
-      // Ignore packages filter.
+      final ignoreGlobs = ignore.map(createGlob).toList();
       filterResult = filterResult.where((package) {
-        final matchedPattern = ignore.firstWhere((pattern) {
-          return Glob(pattern).matches(package.name);
-        }, orElse: () => null);
-        return matchedPattern == null;
+        return ignoreGlobs.every((glob) => !glob.matches(package.name));
       });
     }
 
+    // --dir-exists
     if (dirExists.isNotEmpty) {
       // Directory exists packages filter, multiple filters behaviour is 'AND'.
       filterResult = filterResult.where((package) {
-        final dirExistsMatched = dirExists.where((dirExistsPath) {
+        return dirExists.every((dirExistsPath) {
           return Directory(join(package.path, dirExistsPath)).existsSync();
         });
-        return dirExistsMatched.length == dirExists.length;
       });
     }
 
+    // --file-exists
     if (fileExists.isNotEmpty) {
-      // File exists packages filter.
       filterResult = filterResult.where((package) {
         final fileExistsMatched = fileExists.firstWhere((fileExistsPath) {
           final _fileExistsPath =
@@ -180,27 +184,24 @@ class MelosWorkspace {
       });
     }
 
-    if (skipPrivate == true) {
-      // Whether we should skip packages with 'publish_to: none' set.
+    // --no-private: Whether we should skip packages with `publish_to: none`.
+    if (skipPrivate) {
       filterResult = filterResult.where((package) {
         return !package.isPrivate;
       });
     }
 
-    packages = await filterResult.toList();
+    packages = filterResult.toList();
 
     // --published / --no-published
     if (published != null) {
       final pool = Pool(10);
       final packagesFilteredWithPublishStatus = <MelosPackage>[];
       await pool.forEach<MelosPackage, void>(packages, (package) {
-        return package.getPublishedVersions().then((versions) async {
+        return package.getPublishedVersions().then((versions) {
           final isOnPubRegistry = versions.contains(package.version);
-          if (published == false && !isOnPubRegistry) {
-            return packagesFilteredWithPublishStatus.add(package);
-          }
-          if (published == true && isOnPubRegistry) {
-            return packagesFilteredWithPublishStatus.add(package);
+          if (published == isOnPubRegistry) {
+            packagesFilteredWithPublishStatus.add(package);
           }
         });
       }).drain();
@@ -226,14 +227,15 @@ class MelosWorkspace {
       return a.name.compareTo(b.name);
     });
 
-    // We filter scopes and nullsafety last so we can keep a track of packages prior to these filters,
-    // this is used for melos version to bump dependant package versions without filtering them out.
+    // We filter scopes and nullsafety last so we can keep a track of packages
+    // prior to these filters, this is used for melos version to bump dependant
+    // package versions without filtering them out.
     if (scope.isNotEmpty) {
       packagesNoScope = List.from(packages);
       // Scoped packages filter.
       packages = packages.where((package) {
         final matchedPattern = scope.firstWhere((pattern) {
-          return Glob(pattern).matches(package.name);
+          return createGlob(pattern).matches(package.name);
         }, orElse: () => null);
         return matchedPattern != null;
       }).toList();
