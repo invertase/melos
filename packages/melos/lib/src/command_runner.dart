@@ -52,57 +52,61 @@ class MelosCommandRunner extends CommandRunner {
     argParser.addFlag(
       filterOptionNoPrivate,
       negatable: false,
-      help:
-          'Exclude private packages (`publish_to: none`). They are included by default.',
+      help: 'Exclude private packages (`publish_to: none`). They are included '
+          'by default.',
     );
 
     argParser.addFlag(
       filterOptionPublished,
       defaultsTo: null,
-      help:
-          'Filter packages where the current local package version exists on pub.dev. Or "-no-published" to filter packages that have not had their current version published yet.',
+      help: 'Filter packages where the current local package version exists on '
+          'pub.dev. Or "-no-published" to filter packages that have not had '
+          'their current version published yet.',
     );
 
     argParser.addFlag(
       filterOptionNullsafety,
       defaultsTo: null,
       help:
-          'Filter packages where the current local version uses a "nullsafety" prerelease preid. Or "-no-nullsafety" to filter packages where their current version does not have a "nullsafety" preid.',
+          'Filter packages where the current local version uses a "nullsafety" '
+          'prerelease preid. Or "-no-nullsafety" to filter packages where '
+          'their current version does not have a "nullsafety" preid.',
     );
 
     argParser.addFlag(
       filterOptionFlutter,
       defaultsTo: null,
-      help:
-          'Filter packages where the package depends on the Flutter SDK. Or "-no-flutter" to filter packages that do not depend on the Flutter SDK.',
+      help: 'Filter packages where the package depends on the Flutter SDK. Or '
+          '"-no-flutter" to filter packages that do not depend on the Flutter '
+          'SDK.',
     );
 
     argParser.addMultiOption(
       filterOptionScope,
       valueHelp: 'glob',
-      help:
-          'Include only packages with names matching the given glob. This option can be repeated.',
+      help: 'Include only packages with names matching the given glob. This '
+          'option can be repeated.',
     );
 
     argParser.addMultiOption(
       filterOptionIgnore,
       valueHelp: 'glob',
-      help:
-          'Exclude packages with names matching the given glob. This option can be repeated.',
+      help: 'Exclude packages with names matching the given glob. This option '
+          'can be repeated.',
     );
 
     argParser.addOption(
       filterOptionSince,
       valueHelp: 'ref',
-      help:
-          'Only include packages that have been changed since the specified `ref`, e.g. a commit sha or git tag.',
+      help: 'Only include packages that have been changed since the specified '
+          '`ref`, e.g. a commit sha or git tag.',
     );
 
     argParser.addMultiOption(
       filterOptionDirExists,
       valueHelp: 'dirRelativeToPackageRoot',
-      help:
-          'Include only packages where a specific directory exists inside the package.',
+      help: 'Include only packages where a specific directory exists inside '
+          'the package.',
     );
 
     argParser.addMultiOption(
@@ -112,18 +116,16 @@ class MelosCommandRunner extends CommandRunner {
           'Include only packages where a specific file exists in the package.',
     );
 
-    argParser.addMultiOption(
-      filterOptionDependsOn,
-      valueHelp: 'dependantPackageName',
-      help:
-          'Include only packages that depend on a specific package. This option can be repeated.',
-    );
+    argParser.addMultiOption(filterOptionDependsOn,
+        valueHelp: 'dependentPackageName',
+        help: 'Include only packages that depend on a specific package. This '
+            'option can be repeated, to further filter the list of packages.');
 
     argParser.addMultiOption(
       filterOptionNoDependsOn,
       valueHelp: 'noDependantPackageName',
-      help:
-          "Include only packages that *don't* depend on a specific package. This option can be repeated.",
+      help: "Include only packages that *don't* depend on a specific package. "
+          'This option can be repeated.',
     );
 
     addCommand(ExecCommand());
