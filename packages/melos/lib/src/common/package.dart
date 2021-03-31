@@ -19,11 +19,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:ansi_styles/ansi_styles.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' show join, joinAll;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
-import 'package:ansi_styles/ansi_styles.dart';
 
 import 'logger.dart';
 import 'utils.dart';
@@ -124,30 +124,6 @@ class MelosPackage {
     return PackageType.dartPackage;
   }
 
-  /// Dependencies of this package.
-  /// Sourced from pubspec.yaml.
-  Map<String, dynamic> get dependencies {
-    if (yamlContents[_kDependencies] != null) {
-      final deps = <String, dynamic>{};
-      yamlContents[_kDependencies].keys.forEach((key) {
-        deps[key as String] = yamlContents[_kDependencies][key];
-      });
-      return deps;
-    }
-    return {};
-  }
-
-  /// Dependencies of this package that are also packages in the current workspace.
-  List<MelosPackage> get dependenciesInWorkspace {
-    final out = <MelosPackage>[];
-    for (final package in _workspace.packages) {
-      if (dependencies[package.name] != null) {
-        out.add(package);
-      }
-    }
-    return out;
-  }
-
   Future<void> setPubspecVersion(String newVersion) async {
     final pubspec = File(pubspecPathForDirectory(Directory(path)));
     final contents = await pubspec.readAsString();
@@ -195,6 +171,31 @@ class MelosPackage {
     }
 
     return pubspec.writeAsString(updatedContents);
+  }
+
+  /// Dependencies of this package.
+  /// Sourced from pubspec.yaml.
+  Map<String, dynamic> get dependencies {
+    if (yamlContents[_kDependencies] != null) {
+      final deps = <String, dynamic>{};
+      yamlContents[_kDependencies].keys.forEach((key) {
+        deps[key as String] = yamlContents[_kDependencies][key];
+      });
+      return deps;
+    }
+    return {};
+  }
+
+  /// Dependencies of this package that are also packages in the current
+  /// workspace.
+  List<MelosPackage> get dependenciesInWorkspace {
+    final out = <MelosPackage>[];
+    for (final package in _workspace.packages) {
+      if (dependencies[package.name] != null) {
+        out.add(package);
+      }
+    }
+    return out;
   }
 
   /// Dev dependencies of this package that are also packages in the current workspace.
