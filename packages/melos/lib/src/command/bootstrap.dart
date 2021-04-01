@@ -28,6 +28,7 @@ import '../command_runner.dart';
 import '../common/intellij_project.dart';
 import '../common/logger.dart';
 import '../common/package.dart';
+import '../common/platform.dart';
 import '../common/utils.dart' as utils;
 import '../common/workspace.dart';
 import 'base.dart';
@@ -52,11 +53,11 @@ class BootstrapCommand extends MelosCommand {
     final execArgs = currentWorkspace.isFlutterWorkspace
         ? ['flutter', ...pubGetArgs]
         : [if (utils.isPubSubcommand()) 'dart', ...pubGetArgs];
-    final executable = Platform.isWindows ? 'cmd' : '/bin/sh';
+    final executable = currentPlatform.isWindows ? 'cmd' : '/bin/sh';
     final pluginTemporaryPath =
         join(currentWorkspace.melosToolPath, package.pathRelativeToWorkspace);
     final execProcess = await Process.start(
-        executable, Platform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
+        executable, currentPlatform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
         workingDirectory: pluginTemporaryPath,
         includeParentEnvironment: true,
         environment: {
@@ -66,7 +67,7 @@ class BootstrapCommand extends MelosCommand {
         runInShell: true);
     _runningProcesses.add(execProcess);
 
-    if (!Platform.isWindows) {
+    if (!currentPlatform.isWindows) {
       // Pipe in the arguments to trigger the script to run.
       execProcess.stdin.writeln(execArgs.join(' '));
       // Exit the process with the same exit code as the previous command.

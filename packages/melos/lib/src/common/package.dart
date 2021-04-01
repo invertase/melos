@@ -26,6 +26,7 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 
 import 'logger.dart';
+import 'platform.dart';
 import 'utils.dart';
 import 'workspace.dart';
 
@@ -62,9 +63,9 @@ List<String> _generatedPubFilePaths = [
   '.packages',
   '.flutter-plugins',
   '.flutter-plugins-dependencies',
-  '.dart_tool${Platform.pathSeparator}package_config.json',
-  '.dart_tool${Platform.pathSeparator}package_config_subset',
-  '.dart_tool${Platform.pathSeparator}version',
+  '.dart_tool${currentPlatform.pathSeparator}package_config.json',
+  '.dart_tool${currentPlatform.pathSeparator}package_config_subset',
+  '.dart_tool${currentPlatform.pathSeparator}version',
 ];
 
 /// The URL where we can find a package server.
@@ -72,8 +73,8 @@ List<String> _generatedPubFilePaths = [
 /// The default is `pub.dev`, but it can be overridden using the
 /// `PUB_HOSTED_URL` environment variable.
 /// https://dart.dev/tools/pub/environment-variables
-Uri get pubUrl =>
-    Uri.parse(Platform.environment['PUB_HOSTED_URL'] ?? 'https://pub.dev');
+Uri get pubUrl => Uri.parse(
+    currentPlatform.environment['PUB_HOSTED_URL'] ?? 'https://pub.dev');
 
 /// Enum representing what type of package this is.
 enum PackageType {
@@ -345,7 +346,7 @@ class MelosPackage {
       final exampleParentPackagePath = Directory(path).parent.path;
       final exampleParentPackage = await fromPubspecPathAndWorkspace(
           File(
-              '$exampleParentPackagePath${Platform.pathSeparator}pubspec.yaml'),
+              '$exampleParentPackagePath${currentPlatform.pathSeparator}pubspec.yaml'),
           _workspace);
       if (exampleParentPackage != null) {
         environment['MELOS_PARENT_PACKAGE_NAME'] = exampleParentPackage.name;
@@ -374,7 +375,7 @@ class MelosPackage {
       var temporaryFileContents = await fileToCopy.readAsString();
       temporaryFileContents = temporaryFileContents.replaceAll(
           RegExp(
-              '\\.melos_tool${Platform.isWindows ? r'\' : ''}${Platform.pathSeparator}'),
+              '\\.melos_tool${currentPlatform.isWindows ? r'\' : ''}${currentPlatform.pathSeparator}'),
           '');
       final fileToCreate = File(join(path, tempFilePath));
       await fileToCreate.create(recursive: true);
@@ -561,7 +562,8 @@ class MelosPackage {
         platform == kMacos ||
         platform == kWindows ||
         platform == kLinux);
-    return Directory('$path${Platform.pathSeparator}$platform').existsSync();
+    return Directory('$path${currentPlatform.pathSeparator}$platform')
+        .existsSync();
   }
 
   bool _flutterPluginSupportsPlatform(String platform) {
