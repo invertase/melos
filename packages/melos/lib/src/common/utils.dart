@@ -18,14 +18,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:path/path.dart' show relative, normalize, windows, joinAll;
 import 'package:prompts/prompts.dart' as prompts;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
-
-import '../../version.g.dart';
 
 const filterOptionScope = 'scope';
 const filterOptionIgnore = 'ignore';
@@ -47,6 +46,8 @@ const filterOptionIncludeDependencies = 'include-dependencies';
 const envKeyMelosPackages = 'MELOS_PACKAGES';
 
 const envKeyMelosTerminalWidth = 'MELOS_TERMINAL_WIDTH';
+
+final melosPackageUri = Uri.parse('package:melos/melos.dart');
 
 int get terminalWidth {
   if (Platform.environment.containsKey(envKeyMelosTerminalWidth)) {
@@ -88,26 +89,13 @@ bool get isCI {
       keys.contains('RUN_ID');
 }
 
-String getMelosRoot() {
-  if (Platform.script.path.contains('global_packages')) {
-    return joinAll([
-      File.fromUri(Platform.script).parent.parent.parent.parent.path,
-      'hosted',
-      'pub.dartlang.org',
-      'melos-$melosVersion'
-    ]);
-  }
-
-  // This allows us to use melos on itself during development.
-  if (Platform.script.path.contains('melos_dev.dart')) {
-    return joinAll([
-      File.fromUri(Platform.script).parent.parent.path,
-      'packages',
-      'melos'
-    ]);
-  }
-
-  return File.fromUri(Platform.script).parent.parent.path;
+/// Returns the path to the Melos package's root directory.
+///
+/// Useful for finding resources shipped with the package, like templates.
+Future<String> getMelosRoot() async {
+  final melosPackageFileUri = await Isolate.resolvePackageUri(melosPackageUri);
+  // Get from lib/melos.dart to the package root
+  return File(melosPackageFileUri.toFilePath()).parent.parent.path;
 }
 
 Map loadYamlFileSync(String path) {
