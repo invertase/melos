@@ -67,6 +67,14 @@ List<String> _generatedPubFilePaths = [
   '.dart_tool${Platform.pathSeparator}version',
 ];
 
+/// The URL where we can find a package server.
+///
+/// The default is `pub.dev`, but it can be overridden using the
+/// `PUB_HOSTED_URL` environment variable.
+/// https://dart.dev/tools/pub/environment-variables
+Uri get pubUrl =>
+    Uri.parse(Platform.environment['PUB_HOSTED_URL'] ?? 'https://pub.dev');
+
 /// Enum representing what type of package this is.
 enum PackageType {
   dartPackage,
@@ -381,8 +389,8 @@ class MelosPackage {
       return _registryVersions;
     }
 
-    final url = 'https://pub.dev/packages/$name.json';
-    final response = await http.get(Uri.parse(url));
+    final url = pubUrl.replace(path: '/packages/$name.json');
+    final response = await http.get(url);
     if (response.statusCode == 404) {
       return [];
     } else if (response.statusCode != 200) {
