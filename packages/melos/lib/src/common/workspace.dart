@@ -201,8 +201,9 @@ class MelosWorkspace {
       final pool = Pool(10);
       final packagesFilteredWithPublishStatus = <MelosPackage>[];
       await pool.forEach<MelosPackage, void>(packages, (package) {
+        final packageVersion = package.version.toString();
         return package.getPublishedVersions().then((versions) {
-          final isOnPubRegistry = versions.contains(package.version);
+          final isOnPubRegistry = versions.contains(packageVersion);
           if (published == isOnPubRegistry) {
             packagesFilteredWithPublishStatus.add(package);
           }
