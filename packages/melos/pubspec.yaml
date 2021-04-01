@@ -24,6 +24,7 @@ dependencies:
   yaml: ^3.1.0
   yamlicious: ^0.1.0
 dev_dependencies:
+  nock: ^1.2.0
   test: any
 environment:
   sdk: ">=2.2.2 <3.0.0"
