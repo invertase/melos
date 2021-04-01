@@ -1,3 +1,15 @@
+## 0.4.10-dev.0
+
+ - **TEST**: Add a couple of useful matchers.
+ - **TEST**: Add mock filesystem facilities to aid in testing.
+ - **STYLE**: Rearrange some methods in MelosPackage.
+ - **STYLE**: Wrap option description strings.
+ - **REFACTOR**: Clean up the MelosWorkspace, and ensure a package catch-all.
+ - **FEAT**: Add filtering flags for including dependendies and dependents.
+ - **DOCS**: Rewrapped melos README to avoid an unfortunate space.
+ - **CHORE**: Add missing copyright.
+ - **BUILD**: Upgrade package dependencies.
+
 ## 0.4.9
 
  - **REFACTOR**: Clean up workspace code in preparation for command config implementation (#77).
