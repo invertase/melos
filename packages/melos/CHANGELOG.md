@@ -1,3 +1,8 @@
+## 0.4.10+1
+
+ - **REFACTOR**: add missing license headers.
+ - **FIX**: use original pubspec.lock files when running pub get inside mirrored workspace (fixes #68).
+
 ## 0.4.10
 
  - Graduate package to a stable release. See pre-releases prior to this version for changelog entries.
