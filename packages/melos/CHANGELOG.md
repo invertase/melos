@@ -1,3 +1,11 @@
+## 0.4.10-dev.1
+
+> Note: This release has breaking changes.
+
+ - **FIX**: Fix --published/--no-published filters.
+ - **FIX**: Find templates using a resolved package URI.
+ - **BREAKING** **FEAT**: Use PUB_HOSTED_URL as pub.dev alternative if defined.
+
 ## 0.4.10-dev.0
 
  - **TEST**: Add a couple of useful matchers.
