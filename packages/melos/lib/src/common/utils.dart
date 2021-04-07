@@ -92,26 +92,10 @@ bool get isCI {
       keys.contains('RUN_ID');
 }
 
-String getMelosRoot() {
-  if (currentPlatform.script.path.contains('global_packages')) {
-    return joinAll([
-      File.fromUri(currentPlatform.script).parent.parent.parent.parent.path,
-      'hosted',
-      'pub.dartlang.org',
-      'melos-$melosVersion'
-    ]);
-  }
-
-  // This allows us to use melos on itself during development.
-  if (currentPlatform.script.path.contains('melos_dev.dart')) {
-    return joinAll([
-      File.fromUri(currentPlatform.script).parent.parent.path,
-      'packages',
-      'melos'
-    ]);
-  }
-
-  return File.fromUri(currentPlatform.script).parent.parent.path;
+Future<String> getMelosRoot() async {
+  final melosPackageFileUri = await Isolate.resolvePackageUri(melosPackageUri);
+  // Get from lib/melos.dart to the package root
+  return File(melosPackageFileUri.toFilePath()).parent.parent.path;
 }
 
 Map loadYamlFileSync(String path) {
