@@ -26,7 +26,6 @@ import 'package:prompts/prompts.dart' as prompts;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 
-import '../../version.g.dart';
 import 'platform.dart';
 
 const filterOptionScope = 'scope';
