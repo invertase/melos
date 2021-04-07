@@ -26,6 +26,8 @@ import 'package:prompts/prompts.dart' as prompts;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 
+import 'platform.dart';
+
 const filterOptionScope = 'scope';
 const filterOptionIgnore = 'ignore';
 const filterOptionDirExists = 'dir-exists';
@@ -50,9 +52,9 @@ const envKeyMelosTerminalWidth = 'MELOS_TERMINAL_WIDTH';
 final melosPackageUri = Uri.parse('package:melos/melos.dart');
 
 int get terminalWidth {
-  if (Platform.environment.containsKey(envKeyMelosTerminalWidth)) {
+  if (currentPlatform.environment.containsKey(envKeyMelosTerminalWidth)) {
     return int.tryParse(
-          Platform.environment[envKeyMelosTerminalWidth],
+          currentPlatform.environment[envKeyMelosTerminalWidth],
           radix: 10,
         ) ??
         80;
@@ -66,7 +68,7 @@ int get terminalWidth {
 }
 
 String get currentDartVersion {
-  return Version.parse(Platform.version.split(' ')[0]).toString();
+  return Version.parse(currentPlatform.version.split(' ')[0]).toString();
 }
 
 String get nextDartMajorVersion {
@@ -82,16 +84,13 @@ bool promptBool({String message = 'Continue?', bool defaultsTo = false}) {
 }
 
 bool get isCI {
-  final keys = Platform.environment.keys;
+  final keys = currentPlatform.environment.keys;
   return keys.contains('CI') ||
       keys.contains('CONTINUOUS_INTEGRATION') ||
       keys.contains('BUILD_NUMBER') ||
       keys.contains('RUN_ID');
 }
 
-/// Returns the path to the Melos package's root directory.
-///
-/// Useful for finding resources shipped with the package, like templates.
 Future<String> getMelosRoot() async {
   final melosPackageFileUri = await Isolate.resolvePackageUri(melosPackageUri);
   // Get from lib/melos.dart to the package root
@@ -130,7 +129,7 @@ String pubspecPathForDirectory(Directory directory) {
 }
 
 String relativePath(String path, String from) {
-  if (Platform.isWindows) {
+  if (currentPlatform.isWindows) {
     return windows.normalize(path).replaceAll(r'\', r'\\');
   }
   return normalize(relative(path, from: from));
@@ -185,7 +184,7 @@ Future<int> startProcess(List<String> execArgs,
     bool onlyOutputOnError = false}) async {
   final environmentVariables = environment ?? {};
   final workingDirectoryPath = workingDirectory ?? Directory.current.path;
-  final executable = Platform.isWindows ? 'cmd' : '/bin/sh';
+  final executable = currentPlatform.isWindows ? 'cmd' : '/bin/sh';
   final filteredArgs = execArgs.map((arg) {
     var _arg = arg;
 
@@ -196,10 +195,10 @@ Future<int> startProcess(List<String> execArgs,
 
     // Attempt to make line continuations Windows & Linux compatible.
     if (_arg.trim() == r'\') {
-      return Platform.isWindows ? _arg.replaceAll(r'\', '^') : _arg;
+      return currentPlatform.isWindows ? _arg.replaceAll(r'\', '^') : _arg;
     }
     if (_arg.trim() == '^') {
-      return Platform.isWindows ? _arg : _arg.replaceAll('^', r'\');
+      return currentPlatform.isWindows ? _arg : _arg.replaceAll('^', r'\');
     }
 
     // Inject Melos variables if any.
@@ -212,7 +211,7 @@ Future<int> startProcess(List<String> execArgs,
   }).where((element) => element != null);
 
   final execProcess = await Process.start(
-      executable, Platform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
+      executable, currentPlatform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
       workingDirectory: workingDirectoryPath,
       includeParentEnvironment: true,
       environment: {
@@ -222,7 +221,7 @@ Future<int> startProcess(List<String> execArgs,
       },
       runInShell: true);
 
-  if (!Platform.isWindows) {
+  if (!currentPlatform.isWindows) {
     // Pipe in the arguments to trigger the script to run.
     execProcess.stdin.writeln(filteredArgs.join(' '));
     // Exit the process with the same exit code as the previous command.

@@ -23,6 +23,7 @@ import 'package:path/path.dart' show joinAll;
 import '../common/package.dart';
 import '../common/utils.dart' as utils;
 import '../common/workspace.dart';
+import 'platform.dart';
 
 const String _kTemplatesDirName = 'templates';
 const String _kIntellijDirName = 'intellij';
@@ -187,8 +188,8 @@ class IntellijProject {
   }
 
   String getMelosBinForIde() {
-    if (Platform.isWindows) {
-      if (Platform.script.path.contains('Roaming')) {
+    if (currentPlatform.isWindows) {
+      if (currentPlatform.script.path.contains('Roaming')) {
         return r'$USER_HOME$/AppData/Roaming/Pub/Cache/bin/melos.bat';
       }
       return r'$USER_HOME$/AppData/Local/Pub/Cache/bin/melos.bat';

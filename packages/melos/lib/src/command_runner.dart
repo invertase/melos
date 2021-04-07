@@ -30,6 +30,7 @@ import 'command/publish.dart';
 import 'command/run.dart';
 import 'command/version.dart';
 import 'common/logger.dart';
+import 'common/platform.dart';
 import 'common/utils.dart';
 import 'common/workspace.dart';
 
@@ -187,12 +188,12 @@ class MelosCommandRunner extends CommandRunner {
       return;
     }
 
-    if (Platform.environment.containsKey(envKeyMelosPackages)) {
+    if (currentPlatform.environment.containsKey(envKeyMelosPackages)) {
       // MELOS_PACKAGES environment variable is a comma delimited list of
       // package names - used instead of filters if it is present.
       // This can be user defined or can come from package selection in `melos run`.
       await currentWorkspace.loadPackagesWithNames(
-        Platform.environment[envKeyMelosPackages].split(','),
+        currentPlatform.environment[envKeyMelosPackages].split(','),
       );
     } else {
       await currentWorkspace.loadPackagesWithFilters(

@@ -20,6 +20,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:file/memory.dart';
+import 'package:melos/src/common/platform.dart';
 
 /// Overrides the body of a test so that I/O is run against an in-memory
 /// file system, not the host's disk.
@@ -48,7 +49,9 @@ class MockFs extends IOOverrides {
   /// would create infinite loops IOOverride -> FS -> IOOverride -> FS...
   final MemoryFileSystem fs = MemoryFileSystem(
     // Match the platform pathing style
-    style: Platform.isWindows ? FileSystemStyle.windows : FileSystemStyle.posix,
+    style: currentPlatform.isWindows
+        ? FileSystemStyle.windows
+        : FileSystemStyle.posix,
   );
 
   @override
