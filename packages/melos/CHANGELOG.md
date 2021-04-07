@@ -1,3 +1,20 @@
+## 0.4.10+1
+
+ - **REFACTOR**: add missing license headers.
+ - **FIX**: use original pubspec.lock files when running pub get inside mirrored workspace (fixes #68).
+
+## 0.4.10
+
+ - Graduate package to a stable release. See pre-releases prior to this version for changelog entries.
+
+## 0.4.10-dev.1
+
+> Note: This release has breaking changes.
+
+ - **FIX**: Fix --published/--no-published filters.
+ - **FIX**: Find templates using a resolved package URI.
+ - **BREAKING** **FEAT**: Use PUB_HOSTED_URL as pub.dev alternative if defined.
+
 ## 0.4.10-dev.0
 
  - **TEST**: Add a couple of useful matchers.

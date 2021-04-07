@@ -41,9 +41,9 @@ class IntellijProject {
   final Map<String, String> _cacheTemplates = <String, String>{};
 
   /// Fully qualified path to the intellij templates shipped as part of Melos.
-  String get pathTemplates {
+  Future<String> get pathTemplates async {
     return joinAll([
-      utils.getMelosRoot(),
+      await utils.getMelosRoot(),
       _kTemplatesDirName,
       _kIntellijDirName,
     ]);
@@ -68,8 +68,8 @@ class IntellijProject {
     return joinAll([pathDotIdea, 'modules.xml']);
   }
 
-  String pathTemplatesForDirectory(String directory) {
-    return joinAll([pathTemplates, directory]);
+  Future<String> pathTemplatesForDirectory(String directory) async {
+    return joinAll([await pathTemplates, directory]);
   }
 
   String pathPackageModuleIml(MelosPackage package) {
@@ -115,9 +115,9 @@ class IntellijProject {
     }
     String templatesRootPath;
     if (templateCategory != null) {
-      templatesRootPath = pathTemplatesForDirectory(templateCategory);
+      templatesRootPath = await pathTemplatesForDirectory(templateCategory);
     } else {
-      templatesRootPath = pathTemplates;
+      templatesRootPath = await pathTemplates;
     }
 
     final templateFile =

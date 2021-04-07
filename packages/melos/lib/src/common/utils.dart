@@ -18,6 +18,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:path/path.dart' show relative, normalize, windows, joinAll;
@@ -48,6 +49,8 @@ const filterOptionIncludeDependencies = 'include-dependencies';
 const envKeyMelosPackages = 'MELOS_PACKAGES';
 
 const envKeyMelosTerminalWidth = 'MELOS_TERMINAL_WIDTH';
+
+final melosPackageUri = Uri.parse('package:melos/melos.dart');
 
 int get terminalWidth {
   if (currentPlatform.environment.containsKey(envKeyMelosTerminalWidth)) {

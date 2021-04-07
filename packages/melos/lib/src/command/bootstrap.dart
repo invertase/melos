@@ -175,11 +175,9 @@ class BootstrapCommand extends MelosCommand {
     // .melos_tool directory we need to use unscoped packages here so as to
     // preserve any local 'dependencies' or 'dependency_overrides' that packages
     // in `currentWorkspace.packages` may be referencing by relative paths.
-    await Future.forEach(currentWorkspace.packagesNoScope,
-        (MelosPackage package) async {
+    for (final package in currentWorkspace.packagesNoScope) {
       final pluginTemporaryPath =
           join(currentWorkspace.melosToolPath, package.pathRelativeToWorkspace);
-
       final generatedYamlMap = Map.from(package.yamlContents);
 
       // As melos boostrap builds a 1-1 mirror of the packages tree in the
@@ -244,11 +242,23 @@ class BootstrapCommand extends MelosCommand {
       final generatedPubspecYamlString =
           '$header\n${toYamlString(generatedYamlMap)}';
 
-      await File(utils.pubspecPathForDirectory(Directory(pluginTemporaryPath)))
-          .create(recursive: true);
-      await File(utils.pubspecPathForDirectory(Directory(pluginTemporaryPath)))
-          .writeAsString(generatedPubspecYamlString);
-    });
+      File(utils.pubspecPathForDirectory(Directory(pluginTemporaryPath)))
+          .createSync(recursive: true);
+      File(utils.pubspecPathForDirectory(Directory(pluginTemporaryPath)))
+          .writeAsStringSync(generatedPubspecYamlString);
+
+      // Original pubspec.lock files should also be preserved in our packages
+      // mirror, if we don't then this makes melos bootstrap function the same
+      // as `dart pub upgrade` every time - which we don't want.
+      // See https://github.com/invertase/melos/issues/68
+      final originalPubspecLock = join(package.path, 'pubspec.lock');
+      if (File(originalPubspecLock).existsSync()) {
+        final pubspecLockContents =
+            File(originalPubspecLock).readAsStringSync();
+        final copiedPubspecLock = join(pluginTemporaryPath, 'pubspec.lock');
+        File(copiedPubspecLock).writeAsStringSync(pubspecLockContents);
+      }
+    }
 
     final pool = Pool(utils.isCI ? 1 : 3);
     // As noted in previous `packages` loops/forEach blocks above re using
