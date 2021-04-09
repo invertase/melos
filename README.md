@@ -7,10 +7,10 @@
   <a href="https://github.com/invertase/melos#readme-badge"><img src="https://img.shields.io/badge/maintained%20with-melos-f700ff.svg?style=flat-square" alt="Melos" /></a>
 </p>
 
----
-
-- [Documentation](https://docs.page/invertase/melos)
-- [License](/LICENSE)
+<p align="center">
+  <a href="https://docs.page/invertase/melos">📚 Documentation</a> | 
+  <a href="https://github.com/invertase/melos/blob/master/LICENSE">License</a>
+</p>
 
 ## Install
 
@@ -18,6 +18,26 @@
 dart pub global activate melos
 ```
 
+### About 
+
+Splitting up large code bases into separate independently versioned packages is extremely useful for code sharing. However, making changes across many repositories is messy and difficult to track, and testing across repositories gets complicated really fast.
+
+To solve these (and many other) problems, some projects will organize their code bases into multi-package repositories (sometimes called [monorepos](https://en.wikipedia.org/wiki/Monorepohttps://en.wikipedia.org/wiki/Monorepo)).
+
+**Melos is a tool that optimizes the workflow around managing multi-package repositories with git and Pub.**
+
+### What can Melos do? 
+
+- 🔗 Link local packages in your workspace together without adding dependency overrides.
+- 📦 Automatically version, create changelogs and publish your packages using [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+- 📜 Pre-define advanced custom scripts for your workspace in your melos.yaml configuration to use via `melos run [scriptName]`. Anyone contributing to your workspace can just run melos run to be prompted to select a script from a list with descriptions of each script.
+  - Scripts can even [prompt to select a package](https://github.com/invertase/melos/pull/34) to run against with pre-defined filters.
+- ⚡ Execute commands across your packages easily with melos exec -- command here with additional concurrency and fail-fast options.
+  - [Environment variables](https://github.com/invertase/melos/issues/3) containing various information about the current package and the workspace are available in each execution.
+  - Can be combined with all package filters.
+- 🎯 Many advanced package filtering options allowing you to target specific packages or groups of packages in your workspace.
+- ♨️ Advanced support for IntelliJ IDEs with automatic creation of [run configurations for workspace defined scripts and more](https://github.com/invertase/melos/issues/9) on workspace boostrap.
+  - Vscode code doesn't require advanced integration to work.
 ## Local development setup
 
 To setup and use this melos mono repo locally for the purposes of contributing, clone it and run the following commands from the root of the repository:
