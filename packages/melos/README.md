@@ -96,6 +96,7 @@ The following projects are using Melos:
 - [GetStream/stream-chat-flutter](https://github.com/GetStream/stream-chat-flutter)
 - [4itworks/opensource_qwkin_dart](https://github.com/4itworks/opensource_qwkin_dart)
 - [gql-dart/ferry](https://github.com/gql-dart/ferry)
+- [cofu-app/cbl-dart](https://github.com/cofu-app/cbl-dart)
 
 > [Submit a PR](https://github.com/invertase/melos/edit/master/packages/melos/README.md) if you'd like to add your project to the list.
 > You can also add a [readme badge](#readme-badge) to your projects readme to let others know about Melos 💙.
