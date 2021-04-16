@@ -17,12 +17,14 @@
 
 import 'dart:io';
 
+import 'package:file/local.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' show joinAll;
 
 import '../common/package.dart';
 import '../common/utils.dart' as utils;
 import '../common/workspace.dart';
+import 'glob.dart';
 import 'platform.dart';
 
 const String _kTemplatesDirName = 'templates';
@@ -227,11 +229,14 @@ class IntellijProject {
   }
 
   Future<void> clean() async {
-    final runConfigurationsDirectory =
-        Directory(joinAll([pathDotIdea, 'runConfigurations']));
-    if (runConfigurationsDirectory.existsSync()) {
-      await Directory(joinAll([pathDotIdea, 'runConfigurations']))
-          .delete(recursive: true);
+    final melosConfigurationsPath = joinAll([pathDotIdea, 'runConfigurations']);
+    if (Directory(melosConfigurationsPath).existsSync()) {
+      final melosConfigurations =
+          createGlob('$melosConfigurationsPath/melos_*.xml')
+              .listFileSystem(const LocalFileSystem());
+      await for (final file in melosConfigurations) {
+        await file.delete();
+      }
     }
   }
 
