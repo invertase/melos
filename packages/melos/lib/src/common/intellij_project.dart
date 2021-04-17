@@ -229,10 +229,9 @@ class IntellijProject {
   }
 
   Future<void> clean() async {
-    final melosConfigurationsPath = joinAll([pathDotIdea, 'runConfigurations']);
-    if (Directory(melosConfigurationsPath).existsSync()) {
+    if (Directory(joinAll([pathDotIdea, 'runConfigurations'])).existsSync()) {
       final melosConfigurations =
-          createGlob('$melosConfigurationsPath/melos_*.xml')
+          createGlob('$pathDotIdea/runConfigurations/melos_*.xml')
               .listFileSystem(const LocalFileSystem());
       await for (final file in melosConfigurations) {
         await file.delete();
