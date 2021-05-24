@@ -98,10 +98,13 @@ class MelosWorkspace {
   /// Calling this method sets the [allPackages] field upon completion.
   Future<List<MelosPackage>> _loadPackages() async {
     final includeGlobs = config.packages.map(createGlob).toList();
+    final dartToolGlob = createGlob('**/.dart_tool/**');
+
     return allPackages = await Directory(path)
         .list(recursive: true, followLinks: false)
         .where((file) =>
             file.path.endsWith('pubspec.yaml') &&
+            !dartToolGlob.matches(file.path) &&
             includeGlobs.any((glob) => glob.matches(file.path)))
         .asyncMap((entity) {
       // Convert into Package for further filtering
