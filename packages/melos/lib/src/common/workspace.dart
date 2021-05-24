@@ -36,6 +36,29 @@ MelosWorkspace currentWorkspace;
 class MelosWorkspace {
   MelosWorkspace._(this.name, this.path, this.config);
 
+  /// Build a [MelosWorkspace] from a Directory.
+  /// If the directory is not a valid Melos workspace (e.g. no "melos.yaml" file)
+  /// then null is returned.
+  static Future<MelosWorkspace> fromDirectory(Directory directory) async {
+    var testedDirectory = directory;
+    do {
+      final workspaceConfig =
+          await MelosWorkspaceConfig.fromDirectory(testedDirectory);
+      if (workspaceConfig == null) {
+        testedDirectory = testedDirectory.parent;
+        continue;
+      }
+
+      return MelosWorkspace._(
+        workspaceConfig.name,
+        workspaceConfig.path,
+        workspaceConfig,
+      );
+    } while (testedDirectory.path != testedDirectory.parent.path);
+
+    return null;
+  }
+
   /// An optional name as defined in "melos.yaml". This name is used for logging
   /// purposes and also used when generating certain IDE files.
   final String name;
@@ -60,19 +83,6 @@ class MelosWorkspace {
 
   // Cached dependency graph for perf reasons.
   Map<String, Set<String>> _cacheDependencyGraph;
-
-  /// Build a [MelosWorkspace] from a Directory.
-  /// If the directory is not a valid Melos workspace (e.g. no "melos.yaml" file)
-  /// then null is returned.
-  static Future<MelosWorkspace> fromDirectory(Directory directory) async {
-    final workspaceConfig = await MelosWorkspaceConfig.fromDirectory(directory);
-    if (workspaceConfig == null) {
-      return null;
-    }
-
-    return MelosWorkspace._(
-        workspaceConfig.name, workspaceConfig.path, workspaceConfig);
-  }
 
   /// Returns true if this workspace contains ANY Flutter package.
   bool get isFlutterWorkspace {

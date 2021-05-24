@@ -177,11 +177,13 @@ bool isPackageDirectory(Directory directory) {
   return FileSystemEntity.isFileSync(pluginYamlPath);
 }
 
-Future<int> startProcess(List<String> execArgs,
-    {String prefix,
-    Map<String, String> environment,
-    String workingDirectory,
-    bool onlyOutputOnError = false}) async {
+Future<int> startProcess(
+  List<String> execArgs, {
+  String prefix,
+  Map<String, String> environment,
+  String workingDirectory,
+  bool onlyOutputOnError = false,
+}) async {
   final environmentVariables = environment ?? {};
   final workingDirectoryPath = workingDirectory ?? Directory.current.path;
   final executable = currentPlatform.isWindows ? 'cmd' : '/bin/sh';

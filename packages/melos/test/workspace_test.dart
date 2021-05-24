@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import 'dart:io';
+
 import 'package:melos/src/common/workspace.dart';
 import 'package:test/test.dart';
 
@@ -23,6 +25,22 @@ import 'mock_workspace_fs.dart';
 
 void main() {
   group('Workspace', () {
+    test('can be accessed from anywhere within a workspace',
+        withMockFs(() async {
+      final mockWorkspaceRootDir = createMockWorkspaceFs(
+        packages: [
+          MockPackageFs(name: 'a'),
+        ],
+      );
+
+      final aDir = Directory('${mockWorkspaceRootDir.path}/a');
+
+      final workspace = await MelosWorkspace.fromDirectory(aDir);
+      final filteredPackages = await workspace.loadPackagesWithFilters();
+
+      expect(filteredPackages, [packageNamed('a')]);
+    }));
+
     group('package filtering', () {
       group('--include-dependencies', () {
         test('includes the scoped package', withMockFs(() async {
