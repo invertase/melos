@@ -27,4 +27,3 @@ flutter_export_environment.sh
 .env.development.local
 .env.test.local
 .env.production.local
-.melos_tool
