@@ -30,15 +30,25 @@ import 'exec.dart';
 
 class PublishCommand extends MelosCommand {
   PublishCommand() {
-    argParser.addFlag('dry-run',
-        abbr: 'n',
-        defaultsTo: true,
-        help: 'Validate but do not publish the package.');
-    argParser.addFlag('git-tag-version',
-        abbr: 't',
-        negatable: false,
-        help:
-            'Add any missing git tags for release. Note tags are only created if --no-dry-run is also set.');
+    argParser.addFlag(
+      'dry-run',
+      abbr: 'n',
+      defaultsTo: true,
+      help: 'Validate but do not publish the package.',
+    );
+    argParser.addFlag(
+      'git-tag-version',
+      abbr: 't',
+      negatable: false,
+      help: 'Add any missing git tags for release. '
+          'Note tags are only created if --no-dry-run is also set.',
+    );
+    argParser.addFlag(
+      'yes',
+      abbr: 'y',
+      negatable: false,
+      help: 'Skip the Y/n confirmation prompt when using --no-dry-run.',
+    );
   }
 
   @override
@@ -46,12 +56,14 @@ class PublishCommand extends MelosCommand {
 
   @override
   final String description =
-      'Publish any unpublished packages or package versions in your repository to pub.dev. Dry run is on by default.';
+      'Publish any unpublished packages or package versions in your repository to pub.dev. '
+      'Dry run is on by default.';
 
   @override
   Future<void> run() async {
     final dryRun = argResults['dry-run'] as bool;
     final gitTagVersion = argResults['git-tag-version'] as bool;
+    final yes = argResults['yes'] as bool || false;
 
     logger.stdout(
         AnsiStyles.yellow.bold('melos publish${dryRun ? " --dry-run" : ''}'));
@@ -96,20 +108,28 @@ class PublishCommand extends MelosCommand {
     }).drain();
 
     readRegistryProgress.finish(
-        message: AnsiStyles.green('SUCCESS'), showTiming: true);
+      message: AnsiStyles.green('SUCCESS'),
+      showTiming: true,
+    );
 
     if (unpublishedPackages.isEmpty) {
-      logger.stdout(AnsiStyles.green.bold(
-          '\nNo unpublished packages found - all local packages are already up to date.'));
+      logger.stdout(
+        AnsiStyles.green.bold(
+            '\nNo unpublished packages found - all local packages are already up to date.'),
+      );
       return;
     }
 
     if (dryRun) {
-      logger.stdout(AnsiStyles.magentaBright.bold(
-          '\nThe following packages will be validated only (dry run):\n'));
+      logger.stdout(
+        AnsiStyles.magentaBright.bold(
+            '\nThe following packages will be validated only (dry run):\n'),
+      );
     } else {
-      logger.stdout(AnsiStyles.yellowBright.bold(
-          '\nThe following packages WILL be published to the registry:\n'));
+      logger.stdout(
+        AnsiStyles.yellowBright.bold(
+            '\nThe following packages WILL be published to the registry:\n'),
+      );
     }
 
     logger.stdout(listAsPaddedTable([
@@ -127,16 +147,19 @@ class PublishCommand extends MelosCommand {
       }).toList()
     ], paddingSize: 4));
 
-    final shouldContinue = promptBool();
-    if (!shouldContinue) {
-      logger.stdout(AnsiStyles.red('Operation was canceled.'));
-      exitCode = 1;
-      return;
+    if (!yes) {
+      final shouldContinue = promptBool();
+      if (!shouldContinue) {
+        logger.stdout(AnsiStyles.red('Operation was canceled.'));
+        exitCode = 1;
+        return;
+      }
+      logger.stdout('');
     }
 
-    logger.stdout('');
     final updateRegistryProgress = logger.progress(
-        'Publishing ${unpublishedPackages.length} packages to registry:');
+      'Publishing ${unpublishedPackages.length} packages to registry:',
+    );
     final execArgs = [
       if (isPubSubcommand()) 'dart',
       'pub',
@@ -149,30 +172,44 @@ class PublishCommand extends MelosCommand {
       execArgs.add('--force');
     }
 
-    await ExecCommand.execInPackages(unpublishedPackages, execArgs,
-        concurrency: 1, failFast: true);
+    await ExecCommand.execInPackages(
+      unpublishedPackages,
+      execArgs,
+      concurrency: 1,
+      failFast: true,
+    );
+
     if (exitCode != 1) {
       if (!dryRun && gitTagVersion) {
         logger.stdout('');
         logger.stdout(
-            'Creating git tags for any versions not already created... ');
+          'Creating git tags for any versions not already created... ',
+        );
         await Future.forEach(unpublishedPackages, (MelosPackage package) async {
           final tag =
               gitTagForPackageVersion(package.name, package.version.toString());
-          await gitTagCreate(tag, 'Publish $tag.',
-              workingDirectory: package.path);
+          await gitTagCreate(
+            tag,
+            'Publish $tag.',
+            workingDirectory: package.path,
+          );
         });
       }
 
       updateRegistryProgress.finish(
-          message: AnsiStyles.green('SUCCESS'), showTiming: true);
+        message: AnsiStyles.green('SUCCESS'),
+        showTiming: true,
+      );
 
       if (!dryRun) {
-        logger.stdout(AnsiStyles.green
-            .bold('\nAll packages have successfully been published.'));
+        logger.stdout(
+          AnsiStyles.green
+              .bold('\nAll packages have successfully been published.'),
+        );
       } else {
-        logger.stdout(AnsiStyles.green
-            .bold('\nAll packages were validated successfully.'));
+        logger.stdout(
+          AnsiStyles.green.bold('\nAll packages were validated successfully.'),
+        );
       }
     }
   }
