@@ -50,6 +50,36 @@ class MelosWorkspaceConfig {
         yamlMap['name'] as String, dirname(melosYamlPath), yamlMap);
   }
 
+  /// Creates a new configuration from a [directory].
+  ///
+  /// If no `melos.yaml` is found, but [directory] contains a `packages/`
+  /// sub-directory, a configuration for those packages will be created.
+  static Future<MelosWorkspaceConfig> fromDirectory(Directory directory) async {
+    if (!isWorkspaceDirectory(directory)) {
+      // Allow melos to use a project without a `melos.yaml` file if a `packages`
+      // directory exists.
+      final packagesDirectory =
+          Directory(joinAll([directory.path, 'packages']));
+      if (packagesDirectory.existsSync()) {
+        return MelosWorkspaceConfig._(
+          'Melos',
+          directory.path,
+          loadYaml(_yamlConfigDefault) as Map,
+        );
+      }
+
+      return null;
+    }
+
+    final melosYamlPath = melosYamlPathForDirectory(directory);
+    final yamlContents = await loadYamlFile(melosYamlPath);
+    if (yamlContents == null) {
+      return null;
+    }
+
+    return MelosWorkspaceConfig.fromYaml(yamlContents);
+  }
+
   final Map _yamlContents;
 
   /// The name of the workspace.
@@ -92,33 +122,6 @@ class MelosWorkspaceConfig {
       _commands ??= MelosWorkspaceCommandConfigs.fromYaml(
           _yamlContents['command'] as YamlMap);
   MelosWorkspaceCommandConfigs _commands;
-
-  /// Creates a new configuration from a [directory].
-  ///
-  /// If no `melos.yaml` is found, but [directory] contains a `packages/`
-  /// sub-directory, a configuration for those packages will be created.
-  static Future<MelosWorkspaceConfig> fromDirectory(Directory directory) async {
-    if (!isWorkspaceDirectory(directory)) {
-      // Allow melos to use a project without a `melos.yaml` file if a `packages`
-      // directory exists.
-      final packagesDirectory =
-          Directory(joinAll([directory.path, 'packages']));
-      if (packagesDirectory.existsSync()) {
-        return MelosWorkspaceConfig._(
-            'Melos', directory.path, loadYaml(_yamlConfigDefault) as Map);
-      }
-
-      return null;
-    }
-
-    final melosYamlPath = melosYamlPathForDirectory(directory);
-    final yamlContents = await loadYamlFile(melosYamlPath);
-    if (yamlContents == null) {
-      return null;
-    }
-
-    return MelosWorkspaceConfig.fromYaml(yamlContents);
-  }
 }
 
 /// Thrown when `melos.yaml` configuration is malformed.
