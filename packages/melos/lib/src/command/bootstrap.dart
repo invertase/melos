@@ -172,7 +172,7 @@ class BootstrapCommand extends MelosCommand {
     }
 
     // As melos boostrap builds a 1-1 mirror of the packages tree in the
-    // .melos_tool directory we need to use unscoped packages here so as to
+    // melos_tool directory we need to use unscoped packages here so as to
     // preserve any local 'dependencies' or 'dependency_overrides' that packages
     // in `currentWorkspace.packages` may be referencing by relative paths.
     for (final package in currentWorkspace.packagesNoScope) {
@@ -181,7 +181,7 @@ class BootstrapCommand extends MelosCommand {
       final generatedYamlMap = Map.from(package.yamlContents);
 
       // As melos boostrap builds a 1-1 mirror of the packages tree in the
-      // .melos_tool directory we need to use unscoped packages here so as to
+      // melos_tool directory we need to use unscoped packages here so as to
       // preserve any local 'dependencies' or 'dependency_overrides' that packages
       // in `currentWorkspace.packages` may be referencing by relative paths.
       for (final plugin in currentWorkspace.packagesNoScope) {

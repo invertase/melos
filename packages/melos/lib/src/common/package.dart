@@ -375,7 +375,7 @@ class MelosPackage {
       var temporaryFileContents = await fileToCopy.readAsString();
       temporaryFileContents = temporaryFileContents.replaceAll(
           RegExp(
-              '\\.melos_tool${currentPlatform.isWindows ? r'\' : ''}${currentPlatform.pathSeparator}'),
+              '\\.dart_tool\\melos_tool${currentPlatform.isWindows ? r'\' : ''}${currentPlatform.pathSeparator}'),
           '');
       final fileToCreate = File(join(path, tempFilePath));
       await fileToCreate.create(recursive: true);
