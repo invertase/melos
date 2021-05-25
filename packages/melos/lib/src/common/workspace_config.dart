@@ -47,7 +47,21 @@ class MelosWorkspaceConfig {
     );
 
     return MelosWorkspaceConfig._(
-        yamlMap['name'] as String, dirname(melosYamlPath), yamlMap);
+      yamlMap['name'] as String,
+      dirname(melosYamlPath),
+      yamlMap,
+    );
+  }
+
+  static Directory _searchForAncestorDirectoryWithMelosYaml(Directory from) {
+    for (var testedDirectory = from;
+        testedDirectory.path != testedDirectory.parent.path;
+        testedDirectory = testedDirectory.parent) {
+      if (isWorkspaceDirectory(testedDirectory)) {
+        return testedDirectory;
+      }
+    }
+    return null;
   }
 
   /// Creates a new configuration from a [directory].
@@ -55,7 +69,10 @@ class MelosWorkspaceConfig {
   /// If no `melos.yaml` is found, but [directory] contains a `packages/`
   /// sub-directory, a configuration for those packages will be created.
   static Future<MelosWorkspaceConfig> fromDirectory(Directory directory) async {
-    if (!isWorkspaceDirectory(directory)) {
+    final melosWorkspaceDirectory =
+        _searchForAncestorDirectoryWithMelosYaml(directory);
+
+    if (melosWorkspaceDirectory == null) {
       // Allow melos to use a project without a `melos.yaml` file if a `packages`
       // directory exists.
       final packagesDirectory =
@@ -71,7 +88,7 @@ class MelosWorkspaceConfig {
       return null;
     }
 
-    final melosYamlPath = melosYamlPathForDirectory(directory);
+    final melosYamlPath = melosYamlPathForDirectory(melosWorkspaceDirectory);
     final yamlContents = await loadYamlFile(melosYamlPath);
     if (yamlContents == null) {
       return null;

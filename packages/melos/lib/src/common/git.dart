@@ -17,6 +17,8 @@
 
 import 'dart:io';
 
+import 'package:meta/meta.dart';
+
 import 'git_commit.dart';
 import 'logger.dart';
 import 'package.dart';
@@ -66,15 +68,25 @@ Future<List<String>> gitTagsForPackage(MelosPackage package,
 }
 
 /// Check a tag exists.
-Future<bool> gitTagExists(String tag, {String workingDirectory}) async {
-  final processResult = await Process.run('git', ['tag', '-l', tag],
-      workingDirectory: workingDirectory ?? Directory.current.path);
+Future<bool> gitTagExists(
+  String tag, {
+  @required String workingDirectory,
+}) async {
+  final processResult = await Process.run(
+    'git',
+    ['tag', '-l', tag],
+    workingDirectory: workingDirectory,
+  );
   return (processResult.stdout as String).contains(tag);
 }
 
 /// Create a tag, if it does not already exist. Returns true if tag was successfully created.
-Future<bool> gitTagCreate(String tag, String message,
-    {String workingDirectory, String commitId}) async {
+Future<bool> gitTagCreate(
+  String tag,
+  String message, {
+  @required String workingDirectory,
+  String commitId,
+}) async {
   if (await gitTagExists(tag, workingDirectory: workingDirectory)) {
     return false;
   }
@@ -83,8 +95,11 @@ Future<bool> gitTagCreate(String tag, String message,
       ? ['tag', '-a', tag, commitId, '-m', message]
       : ['tag', '-a', tag, '-m', message];
 
-  await Process.run('git', gitArgs,
-      workingDirectory: workingDirectory ?? Directory.current.path);
+  await Process.run(
+    'git',
+    gitArgs,
+    workingDirectory: workingDirectory,
+  );
 
   return gitTagExists(tag, workingDirectory: workingDirectory);
 }
@@ -93,8 +108,10 @@ Future<bool> gitTagCreate(String tag, String message,
 ///     1) The current package version exists as a tag?
 ///  OR 2) The latest tag sorted by listing tags in created date descending order.
 ///        Note: If the current version is a prerelease then only prerelease tags are requested.
-Future<String> gitLatestTagForPackage(MelosPackage package,
-    {String preid = 'dev'}) async {
+Future<String> gitLatestTagForPackage(
+  MelosPackage package, {
+  String preid = 'dev',
+}) async {
   // Package doesn't have a version, skip.
   if (package.version.toString() == '0.0.0') {
     return null;
@@ -102,9 +119,10 @@ Future<String> gitLatestTagForPackage(MelosPackage package,
 
   final currentVersionTag =
       gitTagForPackageVersion(package.name, package.version.toString());
-  if (await gitTagExists(currentVersionTag)) {
+  if (await gitTagExists(currentVersionTag, workingDirectory: package.path)) {
     logger.trace(
-        '[GIT]: Found a git tag for the latest ${package.name} version (${package.version.toString()}).');
+      '[GIT]: Found a git tag for the latest ${package.name} version (${package.version.toString()}).',
+    );
     return currentVersionTag;
   }
 
@@ -121,24 +139,41 @@ Future<String> gitLatestTagForPackage(MelosPackage package,
   return tags.first;
 }
 
-Future<void> gitAdd(String filePattern, {String workingDirectory}) async {
+Future<void> gitAdd(
+  String filePattern, {
+  @required String workingDirectory,
+}) async {
   final gitArgs = ['add', filePattern];
-  await Process.run('git', gitArgs,
-      workingDirectory: workingDirectory ?? Directory.current.path);
+
+  await Process.run(
+    'git',
+    gitArgs,
+    workingDirectory: workingDirectory,
+  );
 }
 
-Future<void> gitCommit(String message, {String workingDirectory}) async {
+Future<void> gitCommit(
+  String message, {
+  @required String workingDirectory,
+}) async {
   // TODO should we validate that there are staged changes?
   final gitArgs = ['commit', '-m', message];
-  await Process.run('git', gitArgs,
-      workingDirectory: workingDirectory ?? Directory.current.path);
+
+  await Process.run(
+    'git',
+    gitArgs,
+    workingDirectory: workingDirectory,
+  );
 }
 
 /// Returns a list of [GitCommit]s for a Melos package.
 /// Optionally specify [since] to start after a specified commit or tag. Defaults
 /// to the latest release tag.
-Future<List<GitCommit>> gitCommitsForPackage(MelosPackage package,
-    {String since, String preid = 'dev'}) async {
+Future<List<GitCommit>> gitCommitsForPackage(
+  MelosPackage package, {
+  String since,
+  String preid = 'dev',
+}) async {
   var sinceOrLatestTag = since;
   if (sinceOrLatestTag != null && sinceOrLatestTag.isEmpty) {
     sinceOrLatestTag = null;

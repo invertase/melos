@@ -168,8 +168,9 @@ String listAsPaddedTable(List<List<String>> list, {int paddingSize = 1}) {
 
 /// Simple check to see if the [Directory] qualifies as a plugin repository.
 bool isWorkspaceDirectory(Directory directory) {
-  final melosYamlPath = melosYamlPathForDirectory(directory);
-  return FileSystemEntity.isFileSync(melosYamlPath);
+  final melosYamlFile = File(melosYamlPathForDirectory(directory));
+
+  return melosYamlFile.existsSync();
 }
 
 bool isPackageDirectory(Directory directory) {

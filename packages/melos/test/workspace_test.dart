@@ -30,16 +30,20 @@ void main() {
       final mockWorkspaceRootDir = createMockWorkspaceFs(
         packages: [
           MockPackageFs(name: 'a'),
+          MockPackageFs(name: 'b'),
         ],
       );
 
-      final aDir = Directory('${mockWorkspaceRootDir.path}/a');
+      final aDir = Directory('${mockWorkspaceRootDir.path}/packages/a');
       final workspace = await MelosWorkspace.fromDirectory(aDir);
       final filteredPackages = await workspace.loadPackagesWithFilters();
 
       expect(
         filteredPackages,
-        [packageNamed('a')],
+        [
+          packageNamed('a'),
+          packageNamed('b'),
+        ],
       );
     }));
 
