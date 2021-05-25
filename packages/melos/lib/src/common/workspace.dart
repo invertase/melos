@@ -91,11 +91,11 @@ class MelosWorkspace {
         null;
   }
 
-  /// Returns a string path to the '.melos_tool' directory in this workspace.
+  /// Returns a string path to the 'melos_tool' directory in this workspace.
   /// This directory should be git ignored and is used by Melos for temporary tasks
   /// such as pub install.
   String get melosToolPath {
-    return joinAll([path, '.melos_tool']);
+    return joinAll([path, '.dart_tool', 'melos_tool']);
   }
 
   /// Stores transitive relations between this workspace's packages.
@@ -108,10 +108,13 @@ class MelosWorkspace {
   /// Calling this method sets the [allPackages] field upon completion.
   Future<List<MelosPackage>> _loadPackages() async {
     final includeGlobs = config.packages.map(createGlob).toList();
+    final dartToolGlob = createGlob('**/.dart_tool/**');
+
     return allPackages = await Directory(path)
         .list(recursive: true, followLinks: false)
         .where((file) =>
             file.path.endsWith('pubspec.yaml') &&
+            !dartToolGlob.matches(file.path) &&
             includeGlobs.any((glob) => glob.matches(file.path)))
         .asyncMap((entity) {
       // Convert into Package for further filtering
@@ -392,17 +395,21 @@ class MelosWorkspace {
         onlyOutputOnError: onlyOutputOnError);
   }
 
-  /// Execute a command in the .melos_tool directory of this workspace.
-  Future<int> execInMelosToolPath(List<String> execArgs,
-      {bool onlyOutputOnError = false}) {
+  /// Execute a command in the melos_tool directory of this workspace.
+  Future<int> execInMelosToolPath(
+    List<String> execArgs, {
+    bool onlyOutputOnError = false,
+  }) {
     final environment = {
       'MELOS_ROOT_PATH': path,
     };
 
-    return utils.startProcess(execArgs,
-        environment: environment,
-        workingDirectory: melosToolPath,
-        onlyOutputOnError: onlyOutputOnError);
+    return utils.startProcess(
+      execArgs,
+      environment: environment,
+      workingDirectory: melosToolPath,
+      onlyOutputOnError: onlyOutputOnError,
+    );
   }
 
   /// Calls [linkPackages] on each [MelosPackage].

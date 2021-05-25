@@ -34,11 +34,36 @@ void main() {
       );
 
       final aDir = Directory('${mockWorkspaceRootDir.path}/a');
-
       final workspace = await MelosWorkspace.fromDirectory(aDir);
       final filteredPackages = await workspace.loadPackagesWithFilters();
 
-      expect(filteredPackages, [packageNamed('a')]);
+      expect(
+        filteredPackages,
+        [packageNamed('a')],
+      );
+    }));
+
+    test(
+        'does not include projects inside packages/whatever/.dart_tool when no melos.yaml is specified',
+        withMockFs(() async {
+      // regression test for https://github.com/invertase/melos/issues/101
+
+      final mockWorkspaceRootDir = createMockWorkspaceFs(
+        workspaceRoot: '/root',
+        packages: [
+          MockPackageFs(name: 'a'),
+          MockPackageFs(name: 'b', path: '/root/packages/a/.dart_tool/b'),
+        ],
+      );
+
+      final workspace =
+          await MelosWorkspace.fromDirectory(mockWorkspaceRootDir);
+      final filteredPackages = await workspace.loadPackagesWithFilters();
+
+      expect(
+        filteredPackages,
+        [packageNamed('a')],
+      );
     }));
 
     group('package filtering', () {
