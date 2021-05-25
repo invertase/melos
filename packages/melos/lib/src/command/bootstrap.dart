@@ -24,7 +24,6 @@ import 'package:path/path.dart';
 import 'package:pool/pool.dart';
 import 'package:yamlicious/yamlicious.dart';
 
-import '../command_runner.dart';
 import '../common/intellij_project.dart';
 import '../common/logger.dart';
 import '../common/package.dart';
@@ -312,7 +311,8 @@ class BootstrapCommand extends MelosCommand {
 
     if (currentWorkspace.config.scripts.exists('postbootstrap')) {
       logger.stdout('Running postbootstrap script...\n');
-      await MelosCommandRunner.instance.run(['run', 'postbootstrap']);
+
+      await runner.run(['run', 'postbootstrap']);
     }
 
     logger.stdout(

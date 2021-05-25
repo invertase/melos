@@ -10,5 +10,5 @@ void main(List<String> arguments) {
     print('---------------------------------------------------------');
     print('');
   }
-  MelosCommandRunner.instance.run(arguments);
+  MelosCommandRunner().run(arguments);
 }

@@ -34,11 +34,22 @@ import 'common/platform.dart';
 import 'common/utils.dart';
 import 'common/workspace.dart';
 
+/// A class that can run Melos commands.
+///
+/// To run a command, do:
+///
+/// ```dart
+/// final melos = MelosCommandRunner();
+///
+/// await melos.run(['boostrap']);
+/// ```
 class MelosCommandRunner extends CommandRunner {
-  MelosCommandRunner._()
-      : super('melos',
-            'A CLI tool for managing Dart & Flutter projects with multiple packages.',
-            usageLineLength: terminalWidth) {
+  MelosCommandRunner()
+      : super(
+          'melos',
+          'A CLI tool for managing Dart & Flutter projects with multiple packages.',
+          usageLineLength: terminalWidth,
+        ) {
     argParser.addFlag(
       'verbose',
       callback: (bool enabled) {
@@ -148,22 +159,25 @@ class MelosCommandRunner extends CommandRunner {
     addCommand(VersionCommand());
   }
 
-  /// A shared singleton instance of [MelosCommandRunner]. This can be used to
-  /// run other commands from within commands themselves.
-  static MelosCommandRunner instance = MelosCommandRunner._();
-
   @override
   Future runCommand(ArgResults topLevelResults) async {
     currentWorkspace ??= await MelosWorkspace.fromDirectory(Directory.current);
 
     if (currentWorkspace == null) {
-      logger.stderr(AnsiStyles.red(
-          'Your current directory does not appear to be a valid Melos workspace.'));
       logger.stderr(
-          '\nYou must have one of the following to be a valid Melos workspace:');
+        AnsiStyles.red(
+          'Your current directory does not appear to be a valid Melos workspace.',
+        ),
+      );
       logger.stderr(
-          '   - a "melos.yaml" file in the root with a "packages" option defined');
-      logger.stderr('   - a "packages" directory');
+        '''
+
+You must have one of the following to be a valid Melos workspace:
+  - a "melos.yaml" file in the root with a "packages" option defined
+  - a "packages" directory
+''',
+      );
+      logger.stderr('');
       exitCode = 1;
       return;
     }

@@ -23,7 +23,6 @@ import 'package:mustache_template/mustache.dart';
 import 'package:pool/pool.dart' show Pool;
 import 'package:pub_semver/pub_semver.dart';
 
-import '../command_runner.dart';
 import '../common/changelog.dart';
 import '../common/git.dart';
 import '../common/logger.dart';
@@ -521,7 +520,7 @@ class VersionCommand extends MelosCommand {
     // TODO allow support for individual package lifecycle version scripts
     if (currentWorkspace.config.scripts.exists('version')) {
       logger.stdout('Running "version" lifecycle script...\n');
-      await MelosCommandRunner.instance.run(['run', 'version']);
+      await runner.run(['run', 'version']);
     }
 
     if (tag) {
@@ -589,7 +588,7 @@ class VersionCommand extends MelosCommand {
     // TODO allow support for individual package lifecycle postversion scripts
     if (currentWorkspace.config.scripts.exists('postversion')) {
       logger.stdout('Running "postversion" lifecycle script...\n');
-      await MelosCommandRunner.instance.run(['run', 'postversion']);
+      await runner.run(['run', 'postversion']);
     }
 
     // TODO automatic push support
