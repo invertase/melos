@@ -229,12 +229,19 @@ class IntellijProject {
   }
 
   Future<void> clean() async {
-    if (Directory(joinAll([pathDotIdea, 'runConfigurations'])).existsSync()) {
-      final melosConfigurations =
-          createGlob('$pathDotIdea/runConfigurations/melos_*.xml')
-              .listFileSystem(const LocalFileSystem());
-      await for (final file in melosConfigurations) {
-        await file.delete();
+    final runConfigurationsDir = Directory(
+      joinAll([pathDotIdea, 'runConfigurations']),
+    );
+
+    if (runConfigurationsDir.existsSync()) {
+      final melosXmlGlob = createGlob(
+        '$pathDotIdea/runConfigurations/melos_*.xml',
+        currentDirectoryPath: _workspace.path,
+      );
+
+      await for (final melosYmlFile
+          in melosXmlGlob.listFileSystem(const LocalFileSystem())) {
+        await melosYmlFile.delete();
       }
     }
   }
@@ -296,6 +303,7 @@ class IntellijProject {
     await writeNameFile();
 
     // <WORKSPACE_ROOT>/<PACKAGE_DIR>/<PACKAGE_NAME>.iml
+
     await Future.forEach(_workspace.packages, (MelosPackage package) async {
       await writePackageModule(package);
     });

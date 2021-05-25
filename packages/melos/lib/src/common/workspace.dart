@@ -40,23 +40,16 @@ class MelosWorkspace {
   /// If the directory is not a valid Melos workspace (e.g. no "melos.yaml" file)
   /// then null is returned.
   static Future<MelosWorkspace> fromDirectory(Directory directory) async {
-    var testedDirectory = directory;
-    do {
-      final workspaceConfig =
-          await MelosWorkspaceConfig.fromDirectory(testedDirectory);
-      if (workspaceConfig == null) {
-        testedDirectory = testedDirectory.parent;
-        continue;
-      }
+    final workspaceConfig = await MelosWorkspaceConfig.fromDirectory(directory);
+    if (workspaceConfig == null) {
+      return null;
+    }
 
-      return MelosWorkspace._(
-        workspaceConfig.name,
-        workspaceConfig.path,
-        workspaceConfig,
-      );
-    } while (testedDirectory.path != testedDirectory.parent.path);
-
-    return null;
+    return MelosWorkspace._(
+      workspaceConfig.name,
+      workspaceConfig.path,
+      workspaceConfig,
+    );
   }
 
   /// An optional name as defined in "melos.yaml". This name is used for logging
@@ -107,8 +100,11 @@ class MelosWorkspace {
   ///
   /// Calling this method sets the [allPackages] field upon completion.
   Future<List<MelosPackage>> _loadPackages() async {
-    final includeGlobs = config.packages.map(createGlob).toList();
-    final dartToolGlob = createGlob('**/.dart_tool/**');
+    final includeGlobs = config.packages
+        .map((package) => createGlob(package, currentDirectoryPath: path))
+        .toList();
+    final dartToolGlob =
+        createGlob('**/.dart_tool/**', currentDirectoryPath: path);
 
     return allPackages = await Directory(path)
         .list(recursive: true, followLinks: false)
@@ -126,14 +122,15 @@ class MelosWorkspace {
   /// This behaviour is used in conjunction with the `MELOS_PACKAGES`
   /// environment variable.
   Future<List<MelosPackage>> loadPackagesWithNames(
-      List<String> packageNames) async {
+    List<String> packageNames,
+  ) async {
     if (packages != null) return Future.value(packages);
 
-    Iterable<MelosPackage> filterResult = await _loadPackages();
-    filterResult = filterResult.where((package) {
-      return packageNames.contains(package.name);
-    });
-    return packages = filterResult.toList();
+    final allPackages = await _loadPackages();
+
+    return allPackages
+        .where((package) => packageNames.contains(package.name))
+        .toList();
   }
 
   /// Detect packages in the workspace with the provided filters.
@@ -168,7 +165,7 @@ class MelosWorkspace {
     // published, nullsafety, and hasFlutter use `null` as a meaningful value
 
     // Determine initial set of packages
-    Iterable<MelosPackage> filterResult = await _loadPackages();
+    var filterResult = await _loadPackages();
 
     // --ignore
     if (ignore.isNotEmpty) {
@@ -249,12 +246,15 @@ class MelosWorkspace {
     // package versions without filtering them out.
     if (scope.isNotEmpty) {
       packagesNoScope = List.from(packages);
+
       // Scoped packages filter.
       packages = packages.where((package) {
-        final matchedPattern = scope.firstWhere((pattern) {
-          return createGlob(pattern).matches(package.name);
-        }, orElse: () => null);
-        return matchedPattern != null;
+        return scope.any(
+          (pattern) {
+            return createGlob(pattern, currentDirectoryPath: path)
+                .matches(package.name);
+          },
+        );
       }).toList();
     } else {
       packagesNoScope = packages;
