@@ -128,7 +128,7 @@ class MelosWorkspace {
 
     final allPackages = await _loadPackages();
 
-    return allPackages
+    return packages = allPackages
         .where((package) => packageNames.contains(package.name))
         .toList();
   }
@@ -165,7 +165,7 @@ class MelosWorkspace {
     // published, nullsafety, and hasFlutter use `null` as a meaningful value
 
     // Determine initial set of packages
-    var filterResult = await _loadPackages();
+    Iterable<MelosPackage> filterResult = await _loadPackages();
 
     // --ignore
     if (ignore.isNotEmpty) {
