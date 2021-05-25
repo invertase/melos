@@ -85,7 +85,7 @@ class MelosWorkspace {
   /// This directory should be git ignored and is used by Melos for temporary tasks
   /// such as pub install.
   String get melosToolPath {
-    return joinAll([path, '.dart_tool/melos_tool']);
+    return joinAll([path, '.dart_tool', 'melos_tool']);
   }
 
   /// Stores transitive relations between this workspace's packages.
