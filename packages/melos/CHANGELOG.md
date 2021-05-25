@@ -1,3 +1,15 @@
+## 0.4.11
+
+ - **REFACTOR**: Move to a stubbable Platform abstraction (#86).
+ - **FIX**: The default workspace no-longer searches for projects inside the .dart_tool folder of packages (#104).
+ - **FIX**: incorrect intellij project clean glob pattern in windows (#97).
+ - **FEAT**: Added support for calling melos commands from anywhere inside a melos workspace (#103).
+ - **FEAT**: `melos bootstrap` now executes generates its temporary project inside the .dart_tool folder (#106).
+ - **FEAT**: add --yes flag to `melos publish` (#105).
+ - **FEAT**: make intellij project clean only delete melos run configurations (#96).
+ - **DOCS**: Add cofu-app/cbl-dart to users of Melos (#95).
+ - **DOCS**: add gql-dart/ferry as melos user.
+
 ## 0.4.10+1
 
  - **REFACTOR**: add missing license headers.
