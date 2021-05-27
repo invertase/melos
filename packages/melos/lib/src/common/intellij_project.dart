@@ -235,10 +235,9 @@ class IntellijProject {
 
     if (runConfigurationsDir.existsSync()) {
       final melosXmlGlob = createGlob(
-        '$pathDotIdea/runConfigurations/melos_*.xml',
+        joinAll([pathDotIdea, 'runConfigurations', 'melos_*.xml']),
         currentDirectoryPath: _workspace.path,
       );
-
       await for (final melosYmlFile
           in melosXmlGlob.listFileSystem(const LocalFileSystem())) {
         await melosYmlFile.delete();

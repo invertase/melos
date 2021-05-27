@@ -130,7 +130,9 @@ String pubspecPathForDirectory(Directory directory) {
 
 String relativePath(String path, String from) {
   if (currentPlatform.isWindows) {
-    return windows.normalize(path).replaceAll(r'\', r'\\');
+    return windows
+        .normalize(relative(path, from: from))
+        .replaceAll(r'\', r'\\');
   }
   return normalize(relative(path, from: from));
 }
