@@ -1,3 +1,7 @@
+## 0.4.11+2
+
+ - **FIX**: pubspecs incorrectly being overwritten (fixes #60) (#110).
+
 ## 0.4.11+1
 
  - **REFACTOR**: remove MelosCommandRunner.instance (#107).
