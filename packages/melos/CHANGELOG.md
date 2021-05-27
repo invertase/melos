@@ -1,3 +1,8 @@
+## 0.4.11+1
+
+ - **REFACTOR**: remove MelosCommandRunner.instance (#107).
+ - **FIX**: when executing a command inside a package, melos now properly executes it on all packages of the workspace. (#108).
+
 ## 0.4.11
 
  - **REFACTOR**: Move to a stubbable Platform abstraction (#86).
