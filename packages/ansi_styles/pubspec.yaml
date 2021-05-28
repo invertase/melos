@@ -1,6 +1,6 @@
 name: ansi_styles
 description: ANSI escape codes for styling strings in the terminal.
-version: 0.2.0
+version: 0.3.0
 homepage: https://github.com/invertase/melos/tree/master/packages/ansi_styles
 
 environment:
