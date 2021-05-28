@@ -1,3 +1,9 @@
+## 0.4.0
+
+> Note: This release has breaking changes.
+
+ - **BREAKING** **FEAT**: migrate conventional_commit to null-safety (#114).
+
 ## 0.3.0+1
 
  - **FIX**: scope list can support spaces.
