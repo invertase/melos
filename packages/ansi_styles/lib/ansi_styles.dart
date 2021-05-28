@@ -48,7 +48,6 @@ class _AnsiStyles {
 
   /// Removes any ANSI styling from any input.
   String strip(String input) {
-    assert(input != null);
     return input.replaceAll(_stripRegex, '');
   }
 
@@ -110,13 +109,13 @@ class _AnsiStyles {
   _AnsiStyles get gray => blackBright;
   _AnsiStyles get bgGray => bgBlackBright;
 
-  _AnsiStyles rgb(num r, num g, num b) {
+  _AnsiStyles rgb(num? r, num? g, num? b) {
     final color = _getRGBColor(r: r ?? 255, g: g ?? 255, b: b ?? 255);
     return _AnsiStyles(
         List.from(styles)..add(['\x1B[38;5;${color}m', '\x1B[0m']));
   }
 
-  _AnsiStyles bgRgb(num r, num g, num b) {
+  _AnsiStyles bgRgb(num? r, num? g, num? b) {
     final color = _getRGBColor(r: r ?? 255, g: g ?? 255, b: b ?? 255);
     return _AnsiStyles(
         List.from(styles)..add(['\x1B[48;5;${color}m', '\x1B[0m']));
@@ -124,7 +123,7 @@ class _AnsiStyles {
 
   String get bullet => call(!ansiStylesDisabled ? '•' : '-');
 
-  String call(String input) {
+  String call(String? input) {
     if (input != null && styles.isNotEmpty && !ansiStylesDisabled) {
       var output = input;
       for (final style in styles) {
