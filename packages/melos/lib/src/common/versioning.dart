@@ -68,7 +68,10 @@ Version nextStableVersion(
 }
 
 Version nextPrereleaseVersion(
-    Version currentVersion, SemverReleaseType releaseType, String preid) {
+  Version currentVersion,
+  SemverReleaseType releaseType, {
+  String? preid,
+}) {
   if (currentVersion.isPreRelease) {
     final currentPre = currentVersion.preRelease.length == 2
         ? currentVersion.preRelease[1] as int
@@ -104,11 +107,11 @@ Version nextVersion(
   SemverReleaseType releaseType, {
   bool graduate = false,
   bool prerelease = false,
-  String preid,
+  String? preid,
 }) {
   var requestedPreidOrDefault = preid ?? 'dev';
-  final shouldGraduate = graduate ?? false;
-  var shouldMakePreRelease = prerelease ?? false;
+  final shouldGraduate = graduate;
+  var shouldMakePreRelease = prerelease;
   if (currentVersion.preRelease.isNotEmpty) {
     // If the current version then we should make a prerelease, unless graduating
     // the version is explicitly requested.
@@ -144,7 +147,10 @@ Version nextVersion(
       shouldMakePreRelease &&
       requestedPreidOrDefault != 'nullsafety') {
     return nextPrereleaseVersion(
-        currentVersion, releaseType, requestedPreidOrDefault);
+      currentVersion,
+      releaseType,
+      preid: requestedPreidOrDefault,
+    );
   }
 
   // Prerelease to prerelease versioning (excluding nullsafety).
@@ -152,7 +158,10 @@ Version nextVersion(
       shouldMakePreRelease &&
       requestedPreidOrDefault != 'nullsafety') {
     return nextPrereleaseVersion(
-        currentVersion, releaseType, requestedPreidOrDefault);
+      currentVersion,
+      releaseType,
+      preid: requestedPreidOrDefault,
+    );
   }
 
   // Nullsafety
@@ -164,12 +173,16 @@ Version nextVersion(
     // is that a major version is created regardless of the requested release type.
     final nextMajorStable =
         nextStableVersion(currentVersion, SemverReleaseType.major);
+
     return Version(
-        nextMajorStable.major, nextMajorStable.minor, nextMajorStable.patch,
-        pre: '1.0.nullsafety.0',
-        build: nextMajorStable.build.isNotEmpty
-            ? nextMajorStable.build.join('.')
-            : null);
+      nextMajorStable.major,
+      nextMajorStable.minor,
+      nextMajorStable.patch,
+      pre: '1.0.nullsafety.0',
+      build: nextMajorStable.build.isNotEmpty
+          ? nextMajorStable.build.join('.')
+          : null,
+    );
   }
 
   // Non-nullsafety prerelease (or a nullsafety prerelease in the format
@@ -197,10 +210,13 @@ Version nextVersion(
       baseVersion = nextStableVersion(baseVersion, SemverReleaseType.major);
     }
 
-    return Version(baseVersion.major, baseVersion.minor, baseVersion.patch,
-        pre: '1.0.nullsafety.0',
-        build:
-            baseVersion.build.isNotEmpty ? baseVersion.build.join('.') : null);
+    return Version(
+      baseVersion.major,
+      baseVersion.minor,
+      baseVersion.patch,
+      pre: '1.0.nullsafety.0',
+      build: baseVersion.build.isNotEmpty ? baseVersion.build.join('.') : null,
+    );
   }
 
   // Nullsafety prerelease to another nullsafety prerelease.
@@ -241,7 +257,8 @@ Version nextVersion(
 
   // Unhandled versioning behaviour.
   throw UnsupportedError(
-      'Incrementing the version $currentVersion with the following options '
-      '(graduate: $graduate, preid: $preid, prerelease: $prerelease, releaseType: $releaseType) '
-      'is not supported by Melos, please raise an issue on GitHub if this is unexpected behaviour.');
+    'Incrementing the version $currentVersion with the following options '
+    '(graduate: $graduate, preid: $preid, prerelease: $prerelease, releaseType: $releaseType) '
+    'is not supported by Melos, please raise an issue on GitHub if this is unexpected behaviour.',
+  );
 }

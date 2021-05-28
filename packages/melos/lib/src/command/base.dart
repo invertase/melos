@@ -11,11 +11,9 @@ abstract class MelosCommand extends Command {
   /// This is the configuration under the `melos.yaml`'s `command.{name}` field.
   /// If none exists, a configuration object with no contents is returned.
   MelosCommandConfig get commandConfig =>
-      currentWorkspace.config.commands.configForCommandNamed(name);
+      currentWorkspace!.config.commands.configForCommandNamed(name);
 
   /// Overridden to support line wrapping when printing usage.
   @override
-  ArgParser get argParser =>
-      _argParser ??= ArgParser(usageLineLength: terminalWidth);
-  ArgParser _argParser;
+  late final ArgParser argParser = ArgParser(usageLineLength: terminalWidth);
 }

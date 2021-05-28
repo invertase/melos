@@ -24,10 +24,12 @@ import 'workspace_config.dart';
 class MelosWorkspaceCommandConfigs {
   /// Constructs a new command config map from a mapping of command names to
   /// their associated config maps.
-  MelosWorkspaceCommandConfigs([
-    Map<String, Map<String, dynamic>> configsByCommandName,
-  ]) : _configsByCommandName = (configsByCommandName ?? const {})
-            .map((key, value) => MapEntry(key, MelosCommandConfig(key, value)));
+  MelosWorkspaceCommandConfigs({
+    required Map<String, Map<String, Object?>> configsByCommandName,
+  }) : _configsByCommandName = {
+          for (final entry in configsByCommandName.entries)
+            entry.key: MelosCommandConfig(entry.key, entry.value),
+        };
 
   /// Constructs a new command config map from a [YamlMap] representation of the
   /// `melos.yaml` `command` section.
@@ -35,27 +37,31 @@ class MelosWorkspaceCommandConfigs {
   /// [yamlConfigsByCommandName] is expected to be a YamlMap of YamlMaps, or
   /// `null`.
   factory MelosWorkspaceCommandConfigs.fromYaml(
-    YamlMap yamlConfigsByCommandName,
+    YamlMap? yamlConfigsByCommandName,
   ) {
     if (yamlConfigsByCommandName == null) {
-      return MelosWorkspaceCommandConfigs({});
+      return MelosWorkspaceCommandConfigs(configsByCommandName: {});
     }
 
     // Validate the YAML's shape, and massage it into the typing we want.
     final configsByCommandName = yamlConfigsByCommandName.map(
-      (commandName, commandConfig) {
+      (Object? commandName, Object? commandConfig) {
         if (commandConfig is! YamlMap) {
           throw MelosConfigException(
-              'command.$commandName section must contain a map');
+            'command.$commandName section must contain a map',
+          );
         }
 
         return MapEntry(
           commandName.toString(),
-          (commandConfig as Map).cast<String, dynamic>(),
+          commandConfig.cast<String, dynamic>(),
         );
       },
     );
-    return MelosWorkspaceCommandConfigs(configsByCommandName);
+
+    return MelosWorkspaceCommandConfigs(
+      configsByCommandName: configsByCommandName,
+    );
   }
 
   final Map<String, MelosCommandConfig> _configsByCommandName;
@@ -70,16 +76,18 @@ class MelosWorkspaceCommandConfigs {
 
 /// The `melos.yaml` configuration information for a single command.
 class MelosCommandConfig {
-  MelosCommandConfig(this.commandName, Map<String, dynamic> configEntries)
-      : _configEntries = configEntries ?? const {};
+  MelosCommandConfig(
+    this.commandName,
+    Map<String, dynamic> configEntries,
+  ) : _configEntries = configEntries;
 
   /// Name of this configuration's associated command.
   final String commandName;
-  final Map<String, dynamic> _configEntries;
+  final Map<String, Object?> _configEntries;
 
   /// The keys of this configuration's entries.
   Iterable<String> get keys => _configEntries.keys;
 
   /// Returns the config entry named [name], or `null` if none exists.
-  String getString(String name) => _configEntries[name];
+  String? getString(String name) => _configEntries[name] as String?;
 }

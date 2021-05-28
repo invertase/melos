@@ -61,13 +61,13 @@ class PublishCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    final dryRun = argResults['dry-run'] as bool;
-    final gitTagVersion = argResults['git-tag-version'] as bool;
-    final yes = argResults['yes'] as bool || false;
+    final dryRun = argResults!['dry-run'] as bool;
+    final gitTagVersion = argResults!['git-tag-version'] as bool;
+    final yes = argResults!['yes'] as bool || false;
 
     logger.stdout(
         AnsiStyles.yellow.bold('melos publish${dryRun ? " --dry-run" : ''}'));
-    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
+    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace!.path)}\n');
 
     final readRegistryProgress =
         logger.progress('Reading pub registry for package information');
@@ -76,7 +76,7 @@ class PublishCommand extends MelosCommand {
     final unpublishedPackages = <MelosPackage>[];
     final latestPackageVersion = <String, String>{};
 
-    await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
+    await pool.forEach<MelosPackage, void>(currentWorkspace!.packages!,
         (package) {
       if (package.isPrivate) {
         return Future.value();

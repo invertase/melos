@@ -16,7 +16,6 @@
 
 import 'dart:io';
 
-import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 
 import 'mock_fs.dart';
@@ -43,7 +42,7 @@ Directory createMockWorkspaceFs({
   for (final package in packages) {
     _createPackage(package, workspaceRoot);
     if (package.createExamplePackage) {
-      _createPackage(package.examplePackage, workspaceRoot);
+      _createPackage(package.examplePackage!, workspaceRoot);
     }
   }
 
@@ -88,7 +87,7 @@ String _yamlStringList(Iterable<String> elements) {
   return elements.map((element) => '- $element').join('\n');
 }
 
-String _yamlMap(Map<String, String> map, {int indent}) {
+String _yamlMap(Map<String, String> map, {required int indent}) {
   final indentString = ' ' * indent;
   return map.entries.map((e) => '$indentString${e.key}: ${e.value}').join('\n');
 }
@@ -96,22 +95,21 @@ String _yamlMap(Map<String, String> map, {int indent}) {
 /// Used to generate a package's on-disk representation via [createMockWorkspaceFs].
 class MockPackageFs {
   MockPackageFs({
-    @required this.name,
-    String path,
-    List<String> dependencies,
-    bool publishToNone,
-    bool generateExample,
+    required this.name,
+    String? path,
+    List<String>? dependencies,
+    this.publishToNone = false,
+    bool generateExample = false,
   })  : _path = path,
-        publishToNone = publishToNone ?? false,
         dependencies = dependencies ?? const [],
-        createExamplePackage = generateExample ?? false;
+        createExamplePackage = generateExample;
 
   /// Name of the package (must be a valid Dart package name)
   final String name;
 
   /// Workspace-root relative path
   String get path => _path ?? 'packages/$name';
-  final String _path;
+  final String? _path;
 
   /// `true` if this package's yaml has a `publish_to: none` setting.
   final bool publishToNone;
@@ -128,7 +126,7 @@ class MockPackageFs {
   final bool createExamplePackage;
 
   /// Returns a file system description for this package's example
-  MockPackageFs get examplePackage {
+  MockPackageFs? get examplePackage {
     return createExamplePackage
         ? MockPackageFs(
             name: '${name}_example',

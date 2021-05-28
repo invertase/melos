@@ -16,7 +16,6 @@
  */
 
 import 'package:glob/glob.dart';
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 /// Returns a [Glob] configured to work in both production and test
@@ -25,10 +24,10 @@ import 'package:path/path.dart' as p;
 /// Workaround for https://github.com/dart-lang/glob/issues/52
 Glob createGlob(
   String pattern, {
-  p.Context context,
+  p.Context? context,
   bool recursive = false,
-  bool caseSensitive,
-  @required String currentDirectoryPath,
+  bool? caseSensitive,
+  required String currentDirectoryPath,
 }) {
   context ??= p.Context(
     style: p.context.style,

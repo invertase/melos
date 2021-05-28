@@ -43,7 +43,7 @@ import 'common/workspace.dart';
 ///
 /// await melos.run(['boostrap']);
 /// ```
-class MelosCommandRunner extends CommandRunner {
+class MelosCommandRunner extends CommandRunner<void> {
   MelosCommandRunner()
       : super(
           'melos',
@@ -187,17 +187,13 @@ You must have one of the following to be a valid Melos workspace:
     // already filters it itself, filtering here would map dependant version fail
     // as it won't be aware of any packages that have been filtered out here
     // because of the 'since' filter.
-    if (topLevelResults != null &&
-        topLevelResults.command != null &&
-        topLevelResults.command.name == 'version') {
+    if (topLevelResults.command?.name == 'version') {
       since = null;
     }
 
     // Run command does not need to load workspace packages.
     // It can optionally self load with filters.
-    if (topLevelResults != null &&
-        topLevelResults.command != null &&
-        topLevelResults.command.name == 'run') {
+    if (topLevelResults.command?.name == 'run') {
       await super.runCommand(topLevelResults);
       return;
     }
@@ -206,18 +202,18 @@ You must have one of the following to be a valid Melos workspace:
       // MELOS_PACKAGES environment variable is a comma delimited list of
       // package names - used instead of filters if it is present.
       // This can be user defined or can come from package selection in `melos run`.
-      await currentWorkspace.loadPackagesWithNames(
-        currentPlatform.environment[envKeyMelosPackages].split(','),
+      await currentWorkspace!.loadPackagesWithNames(
+        currentPlatform.environment[envKeyMelosPackages]!.split(','),
       );
     } else {
-      await currentWorkspace.loadPackagesWithFilters(
+      await currentWorkspace!.loadPackagesWithFilters(
         scope: topLevelResults[filterOptionScope] as List<String>,
         since: since,
         skipPrivate: topLevelResults[filterOptionNoPrivate] as bool,
         published: topLevelResults[filterOptionPublished] as bool,
         nullsafety: topLevelResults[filterOptionNullsafety] as bool,
         ignore: (topLevelResults[filterOptionIgnore] as List<String>)
-          ..addAll(currentWorkspace.config.ignore),
+          ..addAll(currentWorkspace!.config.ignore),
         dirExists: topLevelResults[filterOptionDirExists] as List<String>,
         fileExists: topLevelResults[filterOptionFileExists] as List<String>,
         hasFlutter: topLevelResults[filterOptionFlutter] as bool,

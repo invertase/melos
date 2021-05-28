@@ -72,11 +72,11 @@ class MockFs extends IOOverrides {
 
   @override
   Future<FileSystemEntityType> fseGetType(String path, bool followLinks) =>
-      fs.type(path, followLinks: followLinks ?? true);
+      fs.type(path, followLinks: followLinks);
 
   @override
   FileSystemEntityType fseGetTypeSync(String path, bool followLinks) =>
-      fs.typeSync(path, followLinks: followLinks ?? true);
+      fs.typeSync(path, followLinks: followLinks);
 
   @override
   Future<bool> fseIdentical(String path1, String path2) =>

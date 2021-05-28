@@ -54,7 +54,7 @@ final melosPackageUri = Uri.parse('package:melos/melos.dart');
 int get terminalWidth {
   if (currentPlatform.environment.containsKey(envKeyMelosTerminalWidth)) {
     return int.tryParse(
-          currentPlatform.environment[envKeyMelosTerminalWidth],
+          currentPlatform.environment[envKeyMelosTerminalWidth]!,
           radix: 10,
         ) ??
         80;
@@ -75,7 +75,7 @@ String get nextDartMajorVersion {
   return Version.parse(currentDartVersion).nextMajor.toString();
 }
 
-String promptInput(String message, {String defaultsTo}) {
+String promptInput(String message, {String? defaultsTo}) {
   return prompts.get(message, defaultsTo: defaultsTo);
 }
 
@@ -93,27 +93,26 @@ bool get isCI {
 
 Future<String> getMelosRoot() async {
   final melosPackageFileUri = await Isolate.resolvePackageUri(melosPackageUri);
+
   // Get from lib/melos.dart to the package root
-  return File(melosPackageFileUri.toFilePath()).parent.parent.path;
+  return File(melosPackageFileUri!.toFilePath()).parent.parent.path;
 }
 
-Map loadYamlFileSync(String path) {
+YamlMap? loadYamlFileSync(String path) {
   final file = File(path);
-  if (file.existsSync() == true) {
-    return loadYaml(file.readAsStringSync()) as Map;
-  }
-  return null;
+  if (!file.existsSync()) return null;
+
+  return loadYaml(file.readAsStringSync());
 }
 
-Future<Map> loadYamlFile(String path) async {
+Future<YamlMap?> loadYamlFile(String path) async {
   final file = File(path);
-  if (file.existsSync()) {
-    return loadYaml(
-      await file.readAsString(),
-      sourceUrl: file.uri,
-    ) as Map;
-  }
-  return null;
+  if (!file.existsSync()) return null;
+
+  return loadYaml(
+    await file.readAsString(),
+    sourceUrl: file.uri,
+  );
 }
 
 String melosYamlPathForDirectory(Directory directory) {
@@ -144,7 +143,7 @@ String listAsPaddedTable(List<List<String>> list, {int paddingSize = 1}) {
     var i = 0;
     for (final cell in cells) {
       if (maxColumnSizes[i] == null ||
-          maxColumnSizes[i] < AnsiStyles.strip(cell).length) {
+          maxColumnSizes[i]! < AnsiStyles.strip(cell).length) {
         maxColumnSizes[i] = AnsiStyles.strip(cell).length;
       }
       i++;
@@ -155,7 +154,7 @@ String listAsPaddedTable(List<List<String>> list, {int paddingSize = 1}) {
     var i = 0;
     final rowBuffer = StringBuffer();
     for (final cell in cells) {
-      final colWidth = maxColumnSizes[i] + paddingSize;
+      final colWidth = maxColumnSizes[i]! + paddingSize;
       final cellWidth = AnsiStyles.strip(cell).length;
       var padding = colWidth - cellWidth;
       if (padding < paddingSize) padding = paddingSize;
@@ -182,12 +181,11 @@ bool isPackageDirectory(Directory directory) {
 
 Future<int> startProcess(
   List<String> execArgs, {
-  String prefix,
-  Map<String, String> environment,
-  String workingDirectory,
+  String? prefix,
+  Map<String, String> environment = const {},
+  String? workingDirectory,
   bool onlyOutputOnError = false,
 }) async {
-  final environmentVariables = environment ?? {};
   final workingDirectoryPath = workingDirectory ?? Directory.current.path;
   final executable = currentPlatform.isWindows ? 'cmd' : '/bin/sh';
   final filteredArgs = execArgs.map((arg) {
@@ -218,9 +216,8 @@ Future<int> startProcess(
   final execProcess = await Process.start(
       executable, currentPlatform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
       workingDirectory: workingDirectoryPath,
-      includeParentEnvironment: true,
       environment: {
-        ...environmentVariables,
+        ...environment,
         envKeyMelosTerminalWidth: terminalWidth.toString(),
         'MELOS_SCRIPT': filteredArgs.join(' '),
       },
@@ -245,7 +242,7 @@ Future<int> startProcess(
       lines = lines
           .map((line) => '$prefix$line${line.contains('\n') ? '' : '\n'}')
           .toList();
-      sink.add(lines.join(''));
+      sink.add(lines.join());
     });
 
     stdoutStream = execProcess.stdout

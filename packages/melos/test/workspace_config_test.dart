@@ -23,13 +23,14 @@ void main() {
   group('MelosWorkspaceConfig', () {
     group('command section', () {
       test('does not fail when missing from file', () {
-        expect(() {
-          final config = createTestWorkspaceConfig({
-            'name': 'mono-root',
-            'packages': ['packages/*'],
-          });
-          return config.commands;
-        }, returnsNormally);
+        final config = createTestWorkspaceConfig({
+          'name': 'mono-root',
+          'packages': ['packages/*'],
+        });
+
+        // reading the commands, which implicitly deserialize the YAML
+        // ignore: unnecessary_statements
+        config.commands;
       });
 
       test('produces a commands map when provided', () {
@@ -52,7 +53,7 @@ void main() {
     test('vends command-specific config objects', () {
       const expectedMessage = 'Version message';
       const expectedTagPrefix = 'v';
-      final commandConfig = MelosWorkspaceCommandConfigs({
+      final commandConfig = MelosWorkspaceCommandConfigs(configsByCommandName: {
         'version': {
           'message': expectedMessage,
         },
@@ -73,16 +74,11 @@ void main() {
     test(
         'vends (empty) command configs even when not provided in the '
         'backing map', () {
-      final commandConfig = MelosWorkspaceCommandConfigs({});
+      final commandConfig =
+          MelosWorkspaceCommandConfigs(configsByCommandName: {});
       final versionConfig = commandConfig.configForCommandNamed('version');
       expect(versionConfig, isNotNull);
       expect(versionConfig.keys, isEmpty);
-    });
-
-    test('can be constructed without a backing map', () {
-      final commandConfig = MelosWorkspaceCommandConfigs();
-      final versionConfig = commandConfig.configForCommandNamed('version');
-      expect(versionConfig, isNotNull);
     });
 
     group('fromYaml', () {
@@ -143,7 +139,8 @@ MelosWorkspaceConfig createTestWorkspaceConfig([
   Map<String, dynamic> configMap = const {},
 ]) {
   return MelosWorkspaceConfig.fromYaml(
-      createYamlMap(configMap, defaults: configMapDefaults));
+    createYamlMap(configMap, defaults: configMapDefaults),
+  );
 }
 
 YamlMap createYamlMap(Map<String, dynamic> configMap,

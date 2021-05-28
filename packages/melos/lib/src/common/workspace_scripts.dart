@@ -29,7 +29,7 @@ List<String> _lifecycleScriptNames = [
 class MelosWorkspaceScripts {
   MelosWorkspaceScripts(this._scriptsMapDefinition);
 
-  final Map _scriptsMapDefinition;
+  final Map<String, Object?> _scriptsMapDefinition;
 
   /// Returns whether a script exists by name.
   bool exists(String name) {
@@ -48,7 +48,7 @@ class MelosWorkspaceScripts {
             ..sort();
 
   /// Get a MelosScript for a script by name.
-  MelosScript script(String name) {
+  MelosScript? script(String name) {
     if (_scriptsMapDefinition[name] == null) {
       return null;
     }

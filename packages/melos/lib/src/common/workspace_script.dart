@@ -137,16 +137,16 @@ class MelosScript {
 
   /// An optional description of what the script does. Useful for `melos run`
   /// 'choose a script to run' behaviour.
-  final String description;
+  final String? description;
 
   /// Any additional environment variables that are defined when [run] is
   /// executed.
-  final Map<String, String> env;
+  final Map<String, String>? env;
 
   /// An optional configuration of package filters for user package selection.
   /// If this is defined for the script in the "melos.yaml" file (even if empty)
   /// then [shouldPromptForPackageSelection] is true.
-  final Map<String, dynamic> selectPackageOptions;
+  final Map<String, Object?>? selectPackageOptions;
 
   /// Whether this script should prompt the user to select a package.
   /// See [selectPackageOptions].
@@ -155,7 +155,10 @@ class MelosScript {
   /// Build a new [MelosScript] from a raw yamlmap script definition in a
   /// "melos.yaml" file.
   // ignore: prefer_constructors_over_static_methods
-  static MelosScript fromDefinition(String name, dynamic definition) {
+  static MelosScript fromDefinition(
+    String name,
+    Object? definition,
+  ) {
     if (definition is String) {
       return MelosScript._(
         name,
@@ -172,37 +175,39 @@ class MelosScript {
       throw Error();
     }
 
-    final definitionMap = definition as Map;
-    final runCommand = definitionMap['run'] as String;
+    final runCommand = definition['run'] as String?;
     if (runCommand == null) {
-      logger.stderr(AnsiStyles.red(
-          'The script "$name" defined in "melos.yaml" is missing the required "run" property.'));
+      logger.stderr(
+        AnsiStyles.red(
+          'The script "$name" defined in "melos.yaml" '
+          'is missing the required "run" property.',
+        ),
+      );
       exit(1);
     }
 
-    final description = definitionMap['description'] as String;
+    final description = definition['description'] as String;
     final env = Map<String, String>.from(
-      definitionMap['env'] as Map ?? {},
+      definition['env'] as Map? ?? {},
     );
 
     final selectPackageOptions = _validateSelectPackageOptions(
       name,
       Map<String, dynamic>.from(
-        definitionMap[_scriptOptionSelectPackage] as Map ?? {},
+        definition[_scriptOptionSelectPackage] as Map? ?? {},
       ),
     );
 
     return MelosScript._(
       name,
-      definitionMap['run'] as String,
+      definition['run'] as String,
       description: description,
       env: env,
-      selectPackageOptions:
-          definitionMap.containsKey(_scriptOptionSelectPackage)
-              ? selectPackageOptions
-              : null,
+      selectPackageOptions: definition.containsKey(_scriptOptionSelectPackage)
+          ? selectPackageOptions
+          : null,
       shouldPromptForPackageSelection:
-          definitionMap.containsKey(_scriptOptionSelectPackage),
+          definition.containsKey(_scriptOptionSelectPackage),
     );
   }
 }

@@ -33,13 +33,13 @@ class CleanCommand extends MelosCommand {
   Future<void> run() async {
     logger.stdout('Cleaning workspace...');
 
-    currentWorkspace.clean();
-    await IntellijProject.fromWorkspace(currentWorkspace).clean();
+    currentWorkspace!.clean();
+    await IntellijProject.fromWorkspace(currentWorkspace!).clean();
 
-    if (currentWorkspace.config.scripts.exists('postclean')) {
+    if (currentWorkspace!.config.scripts.exists('postclean')) {
       logger.stdout('Running postclean script...\n');
 
-      await runner.run(['run', 'postclean']);
+      await runner!.run(['run', 'postclean']);
     }
 
     logger.stdout(
