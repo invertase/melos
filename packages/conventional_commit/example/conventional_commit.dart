@@ -15,7 +15,7 @@ Refs #123 #456
 ''';
 
 void main() {
-  final parsedCommit = ConventionalCommit.parse(commitMessageExample);
+  final parsedCommit = ConventionalCommit.tryParse(commitMessageExample)!;
 
   print(parsedCommit.description);
   // : An exciting new feature.

@@ -41,6 +41,18 @@ enum SemverReleaseType {
 /// Parsing is based upon the Conventional Commits 1.0.0 specification available
 /// at https://www.conventionalcommits.org/en/v1.0.0/
 class ConventionalCommit {
+  ConventionalCommit._({
+    required this.header,
+    required this.isBreakingChange,
+    required this.isMergeCommit,
+    required this.scopes,
+    this.description,
+    this.body,
+    this.breakingChangeDescription,
+    this.footers = const <String>[],
+    this.type,
+  });
+
   /// Create a new [ConventionalCommit] from a commit message [String].
   ///
   /// ```dart
@@ -58,10 +70,10 @@ class ConventionalCommit {
   /// var commit = ConventionalCommit.fromCommitMessage(message);
   /// print(commit);
   /// ```
-  factory ConventionalCommit.parse(String commitMessage) {
-    assert(commitMessage != null);
+  static ConventionalCommit? tryParse(String commitMessage) {
     final header = commitMessage.split('\n')[0];
     final match = _conventionalCommitRegex.firstMatch(header);
+
     if (match == null) {
       return null;
     }
@@ -69,10 +81,11 @@ class ConventionalCommit {
     final isMergeCommit = match.namedGroup('merge') != null;
     if (isMergeCommit) {
       return ConventionalCommit._(
-          header: header,
-          isMergeCommit: isMergeCommit,
-          isBreakingChange: false,
-          scopes: []);
+        header: header,
+        isMergeCommit: isMergeCommit,
+        isBreakingChange: false,
+        scopes: [],
+      );
     }
 
     final type = match.namedGroup('type');
@@ -86,7 +99,7 @@ class ConventionalCommit {
         commitMessage.contains('BREAKING: ') ||
         commitMessage.contains('BREAKING CHANGE: ');
 
-    String breakingChangeDescription;
+    String? breakingChangeDescription;
     if (isBreakingChange) {
       // If included as a footer, a breaking change MUST consist of the
       // uppercase text BREAKING CHANGE, followed by a colon, space, and
@@ -123,11 +136,11 @@ class ConventionalCommit {
     // We assume that anything left over in the commit message after removing
     // the header and footers is the body. This is a quick way to support
     // multi-paragraph multi-line bodies.
-    var body = commitWithoutHeader;
+    String? body = commitWithoutHeader;
     for (final footer in footers) {
-      body = body.replaceAll(footer, '');
+      body = body!.replaceAll(footer, '');
     }
-    body = body.trim();
+    body = body!.trim();
     if (body.isEmpty) {
       // Should be null if no body specified, or empty in this case.
       body = null;
@@ -162,23 +175,11 @@ class ConventionalCommit {
     );
   }
 
-  ConventionalCommit._({
-    this.body,
-    this.breakingChangeDescription,
-    this.description,
-    this.footers = const <String>[],
-    this.header,
-    this.isBreakingChange,
-    this.isMergeCommit,
-    this.scopes,
-    this.type,
-  });
-
   /// A [List] of scopes in the commit, returns empty [List] if no scopes found.
   final List<String> scopes;
 
   /// The type specified in this commit, e.g. `feat`.
-  final String type;
+  final String? type;
 
   /// Whether this commit was a breaking change, e.g. `!` was specified after the scopes in the commit message.
   final bool isBreakingChange;
@@ -187,20 +188,20 @@ class ConventionalCommit {
   /// Will be null if [isBreakingChange] is false. Defaults to [description] if
   /// the `BREAKING CHANGE:` footer format was not used, e.g. only `!` after the
   /// commit type was specified..
-  final String breakingChangeDescription;
+  final String? breakingChangeDescription;
 
   /// Whether this commit was a merge commit, e.g. `Merge #24 into master`
   final bool isMergeCommit;
 
   /// Commit message description (text after the scopes).
-  final String description;
+  final String? description;
 
   /// The original commit message header (this is normally the first line of the commit message.)
   final String header;
 
   /// An optional body describing the change in more detail.
   /// Note this can contain multiple paragraphs separated by new lines.
-  final String body;
+  final String? body;
 
   /// Footers other than BREAKING CHANGE: <description> may be provided and
   /// follow a convention similar to git trailer format.

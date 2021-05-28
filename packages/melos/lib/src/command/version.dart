@@ -338,7 +338,7 @@ class VersionCommand extends MelosCommand {
         since: globalResults['since'] as String,
       ).then((commits) {
         packageCommits[package.name] = commits
-            .map((commit) => ConventionalCommit.parse(commit.message))
+            .map((commit) => ConventionalCommit.tryParse(commit.message))
             .where((element) => element != null)
             .toList();
       });
