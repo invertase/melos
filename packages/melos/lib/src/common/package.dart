@@ -132,7 +132,8 @@ class MelosPackage {
 
   /// Package version.
   /// As defined in pubspec.yaml.
-  Version get version => Version.parse(yamlContents[_kVersion] as String);
+  Version get version =>
+      Version.parse(yamlContents[_kVersion] as String? ?? '0.0.0');
 
   /// Package path.
   /// Fully qualified path to this package location.
