@@ -214,14 +214,16 @@ Future<int> startProcess(
   }).where((element) => element != null);
 
   final execProcess = await Process.start(
-      executable, currentPlatform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
-      workingDirectory: workingDirectoryPath,
-      environment: {
-        ...environment,
-        envKeyMelosTerminalWidth: terminalWidth.toString(),
-        'MELOS_SCRIPT': filteredArgs.join(' '),
-      },
-      runInShell: true);
+    executable,
+    currentPlatform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
+    workingDirectory: workingDirectoryPath,
+    environment: {
+      ...environment,
+      envKeyMelosTerminalWidth: terminalWidth.toString(),
+      'MELOS_SCRIPT': filteredArgs.join(' '),
+    },
+    runInShell: true,
+  );
 
   if (!currentPlatform.isWindows) {
     // Pipe in the arguments to trigger the script to run.
@@ -258,8 +260,8 @@ Future<int> startProcess(
 
   final processStdout = <int>[];
   final processStderr = <int>[];
-  final processStdoutCompleter = Completer<int>();
-  final processStderrCompleter = Completer<int>();
+  final processStdoutCompleter = Completer<void>();
+  final processStderrCompleter = Completer<void>();
 
   stdoutStream.listen((List<int> event) {
     processStdout.addAll(event);

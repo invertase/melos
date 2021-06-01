@@ -206,8 +206,11 @@ class RunCommand extends MelosCommand {
         '   └> ${AnsiStyles.cyan.bold(scriptSource.replaceAll('\n', ''))}');
     logger.stdout('       └> ${AnsiStyles.yellow.bold('RUNNING')}\n');
 
-    final processExitCode = await startProcess(scriptParts,
-        environment: environment, workingDirectory: currentWorkspace!.path);
+    final processExitCode = await startProcess(
+      scriptParts,
+      environment: environment,
+      workingDirectory: currentWorkspace!.path,
+    );
 
     logger.stdout('');
     logger.stdout(AnsiStyles.yellow.bold('melos run $scriptName'));
