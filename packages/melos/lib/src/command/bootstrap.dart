@@ -22,7 +22,6 @@ import 'dart:io';
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:path/path.dart';
 import 'package:pool/pool.dart';
-import 'package:yamlicious/yamlicious.dart';
 
 import '../common/intellij_project.dart';
 import '../common/logger.dart';
@@ -30,6 +29,7 @@ import '../common/package.dart';
 import '../common/platform.dart';
 import '../common/utils.dart' as utils;
 import '../common/workspace.dart';
+import '../yamlicious/yaml_writer.dart';
 import 'base.dart';
 
 class BootstrapCommand extends MelosCommand {

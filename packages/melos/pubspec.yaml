@@ -20,17 +20,9 @@ dependencies:
   path: ^1.7.0
   platform: ^3.0.0
   pool: ^1.4.0
-  prompts:
-    git:
-      url: https://github.com/productiveme/prompts
-      ref: 519150134892f4b03b2fb391c254cc208ccc99f7
   pub_semver: ^2.0.0
   string_scanner: ^1.0.5
   yaml: ^3.1.0
-  yamlicious:
-    git:
-      url: https://github.com/rrousselGit/yamlicious
-      ref: 11539065e7b9ebc710309e2ae84a6a589d9db1ae
 
 dev_dependencies:
   nock: ^1.2.0

@@ -18,11 +18,11 @@
 import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
-import 'package:prompts/prompts.dart' as prompts;
 
 import '../common/logger.dart';
 import '../common/utils.dart';
 import '../common/workspace.dart';
+import '../prompts/prompt.dart' as prompts;
 import 'base.dart';
 
 class RunCommand extends MelosCommand {

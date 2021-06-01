@@ -22,10 +22,10 @@ import 'dart:isolate';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:path/path.dart' show relative, normalize, windows, joinAll;
-import 'package:prompts/prompts.dart' as prompts;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 
+import '../prompts/prompt.dart' as prompts;
 import 'platform.dart';
 
 const filterOptionScope = 'scope';
