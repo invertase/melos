@@ -29,7 +29,7 @@ import 'pub_dependency_list.dart';
 import 'utils.dart' as utils;
 import 'workspace_config.dart';
 
-MelosWorkspace currentWorkspace;
+MelosWorkspace? currentWorkspace;
 
 /// A representation of a workspace. This includes it's packages, configuration
 /// such as scripts and more.
@@ -39,7 +39,7 @@ class MelosWorkspace {
   /// Build a [MelosWorkspace] from a Directory.
   /// If the directory is not a valid Melos workspace (e.g. no "melos.yaml" file)
   /// then null is returned.
-  static Future<MelosWorkspace> fromDirectory(Directory directory) async {
+  static Future<MelosWorkspace?> fromDirectory(Directory directory) async {
     final workspaceConfig = await MelosWorkspaceConfig.fromDirectory(directory);
     if (workspaceConfig == null) {
       return null;
@@ -63,25 +63,26 @@ class MelosWorkspace {
   final MelosWorkspaceConfig config;
 
   /// All packages referenced by this workspace.
-  List<MelosPackage> allPackages;
+  List<MelosPackage>? allPackages;
 
   /// A list of all the packages detected in this workspace, after being
   /// filtered.
-  List<MelosPackage> packages;
+  List<MelosPackage>? packages;
 
   /// The same as [packages] but excludes the "scope" filter. This is useful
   /// for commands such as "version" to know about other dependent packages that
   /// may need updating.
-  List<MelosPackage> packagesNoScope;
+  List<MelosPackage>? packagesNoScope;
+
+  /// Stores transitive relations between this workspace's packages.
+  late final PackageGraph packageGraph = PackageGraph(this);
 
   // Cached dependency graph for perf reasons.
-  Map<String, Set<String>> _cacheDependencyGraph;
+  Map<String, Set<String>>? _cacheDependencyGraph;
 
   /// Returns true if this workspace contains ANY Flutter package.
   bool get isFlutterWorkspace {
-    return packages.firstWhere((package) => package.isFlutterPackage,
-            orElse: () => null) !=
-        null;
+    return packages!.any((package) => package.isFlutterPackage);
   }
 
   /// Returns a string path to the 'melos_tool' directory in this workspace.
@@ -90,10 +91,6 @@ class MelosWorkspace {
   String get melosToolPath {
     return joinAll([path, '.dart_tool', 'melos_tool']);
   }
-
-  /// Stores transitive relations between this workspace's packages.
-  PackageGraph get packageGraph => _packageGraph ??= PackageGraph(this);
-  PackageGraph _packageGraph;
 
   /// Loads all packages as defined by this workspace's
   /// [MelosWorkspaceConfig.packages] patterns.
@@ -113,9 +110,12 @@ class MelosWorkspace {
             !dartToolGlob.matches(file.path) &&
             includeGlobs.any((glob) => glob.matches(file.path)))
         .asyncMap((entity) {
-      // Convert into Package for further filtering
-      return MelosPackage.fromPubspecPathAndWorkspace(entity, this);
-    }).toList();
+          // Convert into Package for further filtering
+          return MelosPackage.fromPubspecPathAndWorkspace(entity, this);
+        })
+        .where((event) => event != null)
+        .cast<MelosPackage>()
+        .toList();
   }
 
   /// Detect specific packages by name in the current workspace.
@@ -136,19 +136,19 @@ class MelosWorkspace {
   /// Detect packages in the workspace with the provided filters.
   /// This is the default packages behaviour when a workspace is loaded.
   Future<List<MelosPackage>> loadPackagesWithFilters({
-    List<String> scope,
-    List<String> ignore,
-    String since,
-    List<String> dirExists,
-    List<String> fileExists,
-    bool skipPrivate,
-    bool published,
-    bool nullsafety,
-    bool hasFlutter,
-    List<String> dependsOn,
-    List<String> noDependsOn,
-    bool includeDependents,
-    bool includeDependencies,
+    List<String>? scope,
+    List<String>? ignore,
+    String? since,
+    List<String>? dirExists,
+    List<String>? fileExists,
+    bool? skipPrivate,
+    bool? published,
+    bool? nullsafety,
+    bool? hasFlutter,
+    List<String>? dependsOn,
+    List<String>? noDependsOn,
+    bool? includeDependents,
+    bool? includeDependencies,
   }) async {
     if (packages != null) return Future.value(packages);
 
@@ -169,7 +169,11 @@ class MelosWorkspace {
 
     // --ignore
     if (ignore.isNotEmpty) {
-      final ignoreGlobs = ignore.map(createGlob).toList();
+      final ignoreGlobs = ignore
+          .map(
+            (ignore) => createGlob(ignore, currentDirectoryPath: config.path),
+          )
+          .toList();
       filterResult = filterResult.where((package) {
         return ignoreGlobs.every((glob) => !glob.matches(package.name));
       });
@@ -179,7 +183,7 @@ class MelosWorkspace {
     if (dirExists.isNotEmpty) {
       // Directory exists packages filter, multiple filters behaviour is 'AND'.
       filterResult = filterResult.where((package) {
-        return dirExists.every((dirExistsPath) {
+        return dirExists!.every((dirExistsPath) {
           return Directory(join(package.path, dirExistsPath)).existsSync();
         });
       });
@@ -188,12 +192,12 @@ class MelosWorkspace {
     // --file-exists
     if (fileExists.isNotEmpty) {
       filterResult = filterResult.where((package) {
-        final fileExistsMatched = fileExists.firstWhere((fileExistsPath) {
+        final fileExistsMatched = fileExists!.any((fileExistsPath) {
           final _fileExistsPath =
               fileExistsPath.replaceAll(r'$MELOS_PACKAGE_NAME', package.name);
           return File(join(package.path, _fileExistsPath)).existsSync();
-        }, orElse: () => null);
-        return fileExistsMatched != null;
+        });
+        return fileExistsMatched;
       });
     }
 
@@ -210,7 +214,7 @@ class MelosWorkspace {
     if (published != null) {
       final pool = Pool(10);
       final packagesFilteredWithPublishStatus = <MelosPackage>[];
-      await pool.forEach<MelosPackage, void>(packages, (package) {
+      await pool.forEach<MelosPackage, void>(packages!, (package) {
         final packageVersion = package.version.toString();
         return package.getPublishedVersions().then((versions) {
           final isOnPubRegistry = versions.contains(packageVersion);
@@ -218,7 +222,7 @@ class MelosWorkspace {
             packagesFilteredWithPublishStatus.add(package);
           }
         });
-      }).drain();
+      }).drain<void>();
       packages = packagesFilteredWithPublishStatus;
     }
 
@@ -226,18 +230,18 @@ class MelosWorkspace {
     if (since != null) {
       final pool = Pool(10);
       final packagesFilteredWithGitCommitsSince = <MelosPackage>[];
-      await pool.forEach<MelosPackage, void>(packages, (package) {
+      await pool.forEach<MelosPackage, void>(packages!, (package) {
         return gitCommitsForPackage(package, since: since)
             .then((commits) async {
           if (commits.isNotEmpty) {
             packagesFilteredWithGitCommitsSince.add(package);
           }
         });
-      }).drain();
+      }).drain<void>();
       packages = packagesFilteredWithGitCommitsSince;
     }
 
-    packages.sort((a, b) {
+    packages!.sort((a, b) {
       return a.name.compareTo(b.name);
     });
 
@@ -245,11 +249,11 @@ class MelosWorkspace {
     // prior to these filters, this is used for melos version to bump dependant
     // package versions without filtering them out.
     if (scope.isNotEmpty) {
-      packagesNoScope = List.from(packages);
+      packagesNoScope = List.from(packages!);
 
       // Scoped packages filter.
-      packages = packages.where((package) {
-        return scope.any(
+      packages = packages!.where((package) {
+        return scope!.any(
           (pattern) {
             return createGlob(pattern, currentDirectoryPath: path)
                 .matches(package.name);
@@ -262,7 +266,7 @@ class MelosWorkspace {
 
     // --nullsafety / --no-nullsafety
     if (nullsafety != null) {
-      packages = packages.where((package) {
+      packages = packages!.where((package) {
         final isNullsafetyVersion = package.version.isPreRelease &&
             package.version.preRelease.contains('nullsafety');
         if (nullsafety == false && !isNullsafetyVersion) {
@@ -286,8 +290,8 @@ class MelosWorkspace {
 
     // --depends-on
     if (dependsOn.isNotEmpty) {
-      packages = packages.where((package) {
-        return dependsOn.every((element) {
+      packages = packages!.where((package) {
+        return dependsOn!.every((element) {
           return package.dependencies.containsKey(element) ||
               package.devDependencies.containsKey(element);
         });
@@ -296,8 +300,8 @@ class MelosWorkspace {
 
     // --no-depends-on
     if (noDependsOn.isNotEmpty) {
-      packages = packages.where((package) {
-        return noDependsOn.every((element) {
+      packages = packages!.where((package) {
+        return noDependsOn!.every((element) {
           return !package.dependencies.containsKey(element) &&
               !package.devDependencies.containsKey(element);
         });
@@ -307,11 +311,12 @@ class MelosWorkspace {
     // --include-dependents / --include-dependencies
     if (includeDependents || includeDependencies) {
       final seen = <MelosPackage>{};
-      packages = packages.expand((package) {
+      packages = packages!.expand((package) {
         final connectedPackages = [
           package,
-          if (includeDependents) ...package.transitiveDependentsInWorkspace,
-          if (includeDependencies) ...package.transitiveDependenciesInWorkspace,
+          if (includeDependents!) ...package.transitiveDependentsInWorkspace,
+          if (includeDependencies!)
+            ...package.transitiveDependenciesInWorkspace,
         ].where((pkg) => !seen.contains(pkg)).toList();
 
         seen.addAll(connectedPackages);
@@ -319,13 +324,13 @@ class MelosWorkspace {
       }).toList();
     }
 
-    return packages;
+    return packages!;
   }
 
   /// Builds a dependency graph of dependencies and their dependents in this workspace.
   Future<Map<String, Set<String>>> getDependencyGraph() async {
     if (_cacheDependencyGraph != null) {
-      return _cacheDependencyGraph;
+      return _cacheDependencyGraph!;
     }
 
     final pubDepsExecArgs = ['--style=list', '--dev'];
@@ -349,9 +354,9 @@ class MelosWorkspace {
       return MapEntry(entry.name, map);
     });
 
-    void addNestedEntries(Set entriesSet) {
+    void addNestedEntries(Set<String> entriesSet) {
       final countBefore = entriesSet.length;
-      final entriesSetClone = Set.from(entriesSet);
+      final entriesSetClone = Set<String>.from(entriesSet);
       for (final entryName in entriesSetClone) {
         final depsForEntry = allEntriesMap[entryName];
         if (depsForEntry != null && depsForEntry.isNotEmpty) {
@@ -414,7 +419,7 @@ class MelosWorkspace {
 
   /// Calls [linkPackages] on each [MelosPackage].
   Future<void> linkPackages() async {
-    await Future.forEach(packages, (MelosPackage package) {
+    await Future.forEach(packages!, (MelosPackage package) {
       return package.linkPackages(this);
     });
   }
@@ -425,7 +430,7 @@ class MelosWorkspace {
       Directory(melosToolPath).deleteSync(recursive: true);
     }
     if (cleanPackages) {
-      for (final package in packages) {
+      for (final package in packages!) {
         package.clean();
       }
     }

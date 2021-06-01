@@ -18,6 +18,7 @@
 import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
+import 'package:collection/collection.dart';
 import 'package:conventional_commit/conventional_commit.dart';
 import 'package:mustache_template/mustache.dart';
 import 'package:pool/pool.dart' show Pool;
@@ -145,15 +146,15 @@ class VersionCommand extends MelosCommand {
   // If the commit message was provided via an option, we will unescape newlines
   // as a convenience.
   String get _commitMessage =>
-      argResults['message']?.replaceAll(r'\n', '\n') as String ??
+      (argResults!['message'] as String?)?.replaceAll(r'\n', '\n') ??
       commandConfig.getString('message') ??
       defaultCommitMessage;
 
   Future<void> applyUserSpecifiedVersion() async {
     logger.stdout(
         AnsiStyles.yellow.bold('melos version <packageName> <newVersion>'));
-    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
-    if (argResults.rest.length != 2) {
+    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace!.path)}\n');
+    if (argResults!.rest.length != 2) {
       exitCode = 1;
       logger.stdout(
         '${AnsiStyles.redBright('ERROR:')} when manually setting a version to '
@@ -163,11 +164,11 @@ class VersionCommand extends MelosCommand {
       return;
     }
 
-    final packageName = argResults.rest[0];
-    final newVersion = argResults.rest[1];
-    final workspacePackage = currentWorkspace.packages.firstWhere(
-        (package) => package.name == packageName,
-        orElse: () => null);
+    final packageName = argResults!.rest[0];
+    final newVersion = argResults!.rest[1];
+    final workspacePackage = currentWorkspace!.packages!.firstWhereOrNull(
+      (package) => package.name == packageName,
+    );
 
     // Validate package actually exists in workspace.
     if (workspacePackage == null) {
@@ -202,7 +203,7 @@ class VersionCommand extends MelosCommand {
       ],
     ], paddingSize: 3));
     logger.stdout('');
-    final skipPrompt = argResults['yes'] as bool;
+    final skipPrompt = argResults!['yes'] as bool;
     final shouldContinue = skipPrompt || promptBool();
     if (!shouldContinue) {
       logger.stdout(AnsiStyles.red('Operation was canceled.'));
@@ -211,8 +212,8 @@ class VersionCommand extends MelosCommand {
     }
 
     var changelogEntry = '';
-    final shouldUpdateDependents = argResults['dependent-constraints'] as bool;
-    final shouldGenerateChangelogEntry = argResults['changelog'] as bool;
+    final shouldUpdateDependents = argResults!['dependent-constraints'] as bool;
+    final shouldGenerateChangelogEntry = argResults!['changelog'] as bool;
     if (shouldGenerateChangelogEntry) {
       changelogEntry = promptInput(
           'Describe your change for the changelog entry',
@@ -272,24 +273,24 @@ class VersionCommand extends MelosCommand {
 
   Future<void> applyVersionsFromConventionalCommits() async {
     logger.stdout(AnsiStyles.yellow.bold('melos version'));
-    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
+    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace!.path)}\n');
 
-    final changelog = argResults['changelog'] as bool;
-    var graduate = argResults['graduate'] as bool;
-    final tag = argResults['git-tag-version'] as bool;
-    final prerelease = argResults['prerelease'] as bool;
+    final changelog = argResults!['changelog'] as bool;
+    var graduate = argResults!['graduate'] as bool;
+    final tag = argResults!['git-tag-version'] as bool;
+    final prerelease = argResults!['prerelease'] as bool;
     final updateDependentConstraints =
-        argResults['dependent-constraints'] as bool;
-    var updateDependentVersions = argResults['dependent-versions'] as bool;
-    final skipPrompt = argResults['yes'] as bool;
-    final versionAll = argResults['all'] as bool;
-    final preid = argResults['preid'] as String;
+        argResults!['dependent-constraints'] as bool;
+    var updateDependentVersions = argResults!['dependent-versions'] as bool;
+    final skipPrompt = argResults!['yes'] as bool;
+    final versionAll = argResults!['all'] as bool;
+    final preid = argResults!['preid'] as String;
     final commitMessageTemplate = Template(_commitMessage, delimiters: '{ }');
 
     final packagesToVersion = <MelosPackage>{};
     final packageCommits = <String, List<ConventionalCommit>>{};
     final dependentPackagesToVersion = <MelosPackage>{};
-    final packagesWithVersionableCommits = {};
+    final packagesWithVersionableCommits = <String, Object?>{};
     var pendingPackageUpdates = <MelosPendingPackageUpdate>[];
 
     if (graduate && prerelease) {
@@ -310,7 +311,7 @@ class VersionCommand extends MelosCommand {
     }
 
     if (graduate) {
-      for (final package in currentWorkspace.packages) {
+      for (final package in currentWorkspace!.packages!) {
         if (!package.version.isPreRelease) continue;
 
         pendingPackageUpdates.add(MelosPendingPackageUpdate(
@@ -322,27 +323,27 @@ class VersionCommand extends MelosCommand {
           preid: preid,
         ));
 
-        final packageUnscoped = currentWorkspace.packagesNoScope
+        final packageUnscoped = currentWorkspace!.packagesNoScope!
             .firstWhere((element) => element.name == package.name);
         dependentPackagesToVersion
             .addAll(packageUnscoped.dependentsInWorkspace);
       }
     }
-    await Pool(10).forEach<MelosPackage, void>(currentWorkspace.packages,
-        (package) {
-      if (!versionAll && package.isPrivate) {
-        return Future.value();
-      }
-      return gitCommitsForPackage(
+    await Pool(10).forEach<MelosPackage, void>(currentWorkspace!.packages!,
+        (package) async {
+      if (!versionAll && package.isPrivate) return;
+
+      final commits = await gitCommitsForPackage(
         package,
-        since: globalResults['since'] as String,
-      ).then((commits) {
-        packageCommits[package.name] = commits
-            .map((commit) => ConventionalCommit.tryParse(commit.message))
-            .where((element) => element != null)
-            .toList();
-      });
-    }).drain();
+        since: globalResults!['since'] as String,
+      );
+
+      packageCommits[package.name] = commits
+          .map((commit) => ConventionalCommit.tryParse(commit.message))
+          .where((element) => element != null)
+          .cast<ConventionalCommit>()
+          .toList();
+    }).drain<void>();
 
     for (final entry in packageCommits.entries) {
       final packageName = entry.key;
@@ -354,35 +355,36 @@ class VersionCommand extends MelosCommand {
       }
     }
 
-    for (final package in currentWorkspace.packages) {
+    for (final package in currentWorkspace!.packages!) {
       if (packagesWithVersionableCommits.containsKey(package.name)) {
         if (graduate && package.version.isPreRelease) continue;
         packagesToVersion.add(package);
-        final packageUnscoped = currentWorkspace.packagesNoScope
+        final packageUnscoped = currentWorkspace!.packagesNoScope!
             .firstWhere((element) => element.name == package.name);
         dependentPackagesToVersion
             .addAll(packageUnscoped.dependentsInWorkspace);
       }
     }
 
-    pendingPackageUpdates
-        .addAll(packagesToVersion.map((package) => MelosPendingPackageUpdate(
-              package,
-              packageCommits[package.name],
-              PackageUpdateReason.commit,
-              graduate: graduate,
-              prerelease: prerelease,
-              preid: preid,
-            )));
+    pendingPackageUpdates.addAll(
+      packagesToVersion.map(
+        (package) => MelosPendingPackageUpdate(
+          package,
+          packageCommits[package.name]!,
+          PackageUpdateReason.commit,
+          graduate: graduate,
+          prerelease: prerelease,
+          preid: preid,
+        ),
+      ),
+    );
 
     for (final package in dependentPackagesToVersion) {
-      if (!packagesToVersion.contains(package) &&
-          pendingPackageUpdates.firstWhere(
-                (packageToVersion) =>
-                    packageToVersion.package.name == package.name,
-                orElse: () => null,
-              ) ==
-              null) {
+      final packageHasPendingUpdate = pendingPackageUpdates.any(
+        (packageToVersion) => packageToVersion.package.name == package.name,
+      );
+
+      if (!packagesToVersion.contains(package) && packageHasPendingUpdate) {
         pendingPackageUpdates.add(MelosPendingPackageUpdate(
           package,
           [],
@@ -518,9 +520,9 @@ class VersionCommand extends MelosCommand {
     });
 
     // TODO allow support for individual package lifecycle version scripts
-    if (currentWorkspace.config.scripts.exists('version')) {
+    if (currentWorkspace!.config.scripts.exists('version')) {
       logger.stdout('Running "version" lifecycle script...\n');
-      await runner.run(['run', 'version']);
+      await runner!.run(['run', 'version']);
     }
 
     if (tag) {
@@ -567,7 +569,7 @@ class VersionCommand extends MelosCommand {
       // support it later) for packages as commit is only ran at the root.
       await gitCommit(
         resolvedCommitMessage,
-        workingDirectory: currentWorkspace.path,
+        workingDirectory: currentWorkspace!.path,
       );
 
       // // 3) Tag changes:
@@ -586,9 +588,9 @@ class VersionCommand extends MelosCommand {
     }
 
     // TODO allow support for individual package lifecycle postversion scripts
-    if (currentWorkspace.config.scripts.exists('postversion')) {
+    if (currentWorkspace!.config.scripts.exists('postversion')) {
       logger.stdout('Running "postversion" lifecycle script...\n');
-      await runner.run(['run', 'postversion']);
+      await runner!.run(['run', 'postversion']);
     }
 
     // TODO automatic push support
@@ -598,7 +600,7 @@ class VersionCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    if (argResults.rest.isNotEmpty) {
+    if (argResults!.rest.isNotEmpty) {
       await applyUserSpecifiedVersion();
     } else {
       await applyVersionsFromConventionalCommits();

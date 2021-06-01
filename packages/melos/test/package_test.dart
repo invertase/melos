@@ -21,7 +21,7 @@ void main() {
   group('MelosPackage', () {
     setUpAll(nock.init);
 
-    MelosWorkspace workspace;
+    late MelosWorkspace workspace;
     setUp(() async {
       nock.cleanAll();
       IOOverrides.global = MockFs();
@@ -30,7 +30,7 @@ void main() {
         createMockWorkspaceFs(
           packages: [MockPackageFs(name: 'melos')],
         ),
-      );
+      ).then((w) => w!);
       await workspace.loadPackagesWithFilters();
     });
 
@@ -42,7 +42,7 @@ void main() {
       final interceptor = nock('https://pub.dev').get('/packages/melos.json')
         ..reply(200, pubPackageJson);
 
-      final package = workspace.packages.first;
+      final package = workspace.packages!.first;
       await package.getPublishedVersions();
 
       expect(interceptor.isDone, isTrue);
@@ -56,7 +56,7 @@ void main() {
               .get('/packages/melos.json')
                 ..reply(200, pubPackageJson);
 
-          final package = workspace.packages.first;
+          final package = workspace.packages!.first;
           await package.getPublishedVersions();
 
           expect(interceptor.isDone, isTrue);

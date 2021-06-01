@@ -36,7 +36,7 @@ void main() {
 
       final aDir = Directory('${mockWorkspaceRootDir.path}/packages/a');
       final workspace = await MelosWorkspace.fromDirectory(aDir);
-      final filteredPackages = await workspace.loadPackagesWithFilters();
+      final filteredPackages = await workspace!.loadPackagesWithFilters();
 
       expect(
         filteredPackages,
@@ -62,7 +62,7 @@ void main() {
 
       final workspace =
           await MelosWorkspace.fromDirectory(mockWorkspaceRootDir);
-      final filteredPackages = await workspace.loadPackagesWithFilters();
+      final filteredPackages = await workspace!.loadPackagesWithFilters();
 
       expect(
         filteredPackages,
@@ -81,7 +81,7 @@ void main() {
               ],
             ),
           );
-          final filteredPackages = await workspace.loadPackagesWithFilters(
+          final filteredPackages = await workspace!.loadPackagesWithFilters(
             scope: ['b'],
             includeDependencies: true,
           );
@@ -98,7 +98,7 @@ void main() {
               ],
             ),
           );
-          final filteredPackages = await workspace.loadPackagesWithFilters(
+          final filteredPackages = await workspace!.loadPackagesWithFilters(
             scope: ['a'],
             includeDependencies: true,
           );
@@ -106,7 +106,7 @@ void main() {
           expect(filteredPackages, hasLength(2));
           expect(
             filteredPackages,
-            containsAll([packageNamed('a'), packageNamed('b')]),
+            containsAll(<Matcher>[packageNamed('a'), packageNamed('b')]),
           );
         }));
 
@@ -120,14 +120,14 @@ void main() {
               ],
             ),
           );
-          final filteredPackages = await workspace.loadPackagesWithFilters(
+          final filteredPackages = await workspace!.loadPackagesWithFilters(
             scope: ['a'],
             includeDependencies: true,
           );
 
           expect(
             filteredPackages,
-            containsAll([
+            containsAll(<Matcher>[
               packageNamed('a'),
               packageNamed('b'),
               packageNamed('c'), // This dep is transitive
@@ -146,7 +146,7 @@ void main() {
               ],
             ),
           );
-          final filteredPackages = await workspace.loadPackagesWithFilters(
+          final filteredPackages = await workspace!.loadPackagesWithFilters(
             scope: ['a'],
             includeDependencies: true,
           );
@@ -166,7 +166,7 @@ void main() {
               ],
             ),
           );
-          final filteredPackages = await workspace.loadPackagesWithFilters(
+          final filteredPackages = await workspace!.loadPackagesWithFilters(
             scope: ['a'],
             includeDependents: true,
           );
@@ -183,7 +183,7 @@ void main() {
               ],
             ),
           );
-          final filteredPackages = await workspace.loadPackagesWithFilters(
+          final filteredPackages = await workspace!.loadPackagesWithFilters(
             scope: ['b'],
             includeDependents: true,
           );
@@ -191,7 +191,7 @@ void main() {
           expect(filteredPackages, hasLength(2));
           expect(
             filteredPackages,
-            containsAll([packageNamed('a'), packageNamed('b')]),
+            containsAll(<Matcher>[packageNamed('a'), packageNamed('b')]),
           );
         }));
 
@@ -205,14 +205,14 @@ void main() {
               ],
             ),
           );
-          final filteredPackages = await workspace.loadPackagesWithFilters(
+          final filteredPackages = await workspace!.loadPackagesWithFilters(
             scope: ['c'],
             includeDependents: true,
           );
 
           expect(
             filteredPackages,
-            containsAll([
+            containsAll(<Matcher>[
               packageNamed('a'),
               packageNamed('b'),
               packageNamed('c'), // This dep is transitive
@@ -231,7 +231,7 @@ void main() {
               ],
             ),
           );
-          final filteredPackages = await workspace.loadPackagesWithFilters(
+          final filteredPackages = await workspace!.loadPackagesWithFilters(
             scope: ['d'],
             includeDependents: true,
           );

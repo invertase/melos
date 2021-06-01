@@ -86,11 +86,11 @@ void main() {
     test('scopes', () {
       expect(
         ConventionalCommit.tryParse('docs: foo bar')!.scopes,
-        equals([]),
+        equals(<String>[]),
       );
       expect(
         ConventionalCommit.tryParse('docs!: foo bar')!.scopes,
-        equals([]),
+        equals(<String>[]),
       );
       expect(
         ConventionalCommit.tryParse('docs(scope): foo bar')!.scopes,

@@ -20,9 +20,11 @@ import 'package:test/test.dart';
 Matcher packageNamed(dynamic matcher) => _PackageNameMatcher(matcher);
 
 class _PackageNameMatcher extends CustomMatcher {
-  _PackageNameMatcher(matcher) : super('package named', 'name', matcher);
+  _PackageNameMatcher(dynamic matcher)
+      : super('package named', 'name', matcher);
+
   @override
-  Object featureValueOf(Object actual) => (actual as MelosPackage).name;
+  Object? featureValueOf(Object? actual) => (actual! as MelosPackage).name;
 }
 
 const containsDuplicates = _ContainsDuplicatesMatcher();

@@ -64,7 +64,7 @@ class ListCommand extends MelosCommand {
 
   void printGraphFormat({bool all = false}) {
     final jsonGraph = <String, List<String>>{};
-    for (final package in currentWorkspace.packages) {
+    for (final package in currentWorkspace!.packages!) {
       if (!all && package.isPrivate) {
         continue;
       }
@@ -103,12 +103,12 @@ class ListCommand extends MelosCommand {
     buffer.add('digraph packages {');
     buffer.add('  size="10"; ratio=fill;');
 
-    for (final package in currentWorkspace.packages) {
+    for (final package in currentWorkspace!.packages!) {
       buffer.add(
           '  ${package.name} [shape="box"; color="${getColor(package.name)}"];');
     }
 
-    for (final package in currentWorkspace.packages) {
+    for (final package in currentWorkspace!.packages!) {
       for (final dep in package.dependenciesInWorkspace) {
         buffer.add(
           '  ${package.name} -> ${dep.name} [style="filled"; color="${getColor(dep.name)}"];',
@@ -122,15 +122,12 @@ class ListCommand extends MelosCommand {
       }
     }
 
-    final groupedPackages = currentWorkspace.packages
+    final groupedPackages = currentWorkspace!.packages!
         .fold<Map<String, List<MelosPackage>>>({}, (grouped, package) {
       final namespace = dirname(package.pathRelativeToWorkspace);
 
-      if (!grouped.containsKey(namespace)) {
-        grouped[namespace] = [];
-      }
-
-      grouped[namespace].add(package);
+      grouped.putIfAbsent(namespace, () => []);
+      grouped[namespace]!.add(package);
 
       return grouped;
     });
@@ -153,9 +150,9 @@ class ListCommand extends MelosCommand {
   }
 
   void printJsonFormat({bool all = false, bool long = false}) {
-    final jsonArrayItems = [];
+    final jsonArrayItems = <Map<String, Object?>>[];
 
-    for (final package in currentWorkspace.packages) {
+    for (final package in currentWorkspace!.packages!) {
       if (!all && package.isPrivate) continue;
 
       final jsonObject = {
@@ -211,23 +208,26 @@ class ListCommand extends MelosCommand {
 
   void printDefaultFormat({bool all = false, bool long = false}) {
     if (long) {
-      final table = listAsPaddedTable(currentWorkspace.packages
-          .map((package) => package.isPrivate && !all
-              ? null
-              : [
-                  package.name,
-                  AnsiStyles.green(package.version.toString()),
-                  AnsiStyles.gray(package.pathRelativeToWorkspace),
-                  if (all && package.isPrivate)
-                    AnsiStyles.red('PRIVATE')
-                  else
-                    ''
-                ])
-          .where((element) => element != null)
-          .toList());
+      final table = listAsPaddedTable(
+        currentWorkspace!.packages!
+            .map((package) => package.isPrivate && !all
+                ? null
+                : [
+                    package.name,
+                    AnsiStyles.green(package.version.toString()),
+                    AnsiStyles.gray(package.pathRelativeToWorkspace),
+                    if (all && package.isPrivate)
+                      AnsiStyles.red('PRIVATE')
+                    else
+                      ''
+                  ])
+            .where((element) => element != null)
+            .cast<List<String>>()
+            .toList(),
+      );
       logger.stdout(table);
     } else {
-      for (final package in currentWorkspace.packages) {
+      for (final package in currentWorkspace!.packages!) {
         if (!all && package.isPrivate) continue;
         logger.stdout(package.name);
       }
@@ -235,13 +235,13 @@ class ListCommand extends MelosCommand {
   }
 
   void printParsableFormat({bool all = false, bool long = false}) {
-    for (final package in currentWorkspace.packages) {
+    for (final package in currentWorkspace!.packages!) {
       if (package.isPrivate && !all) continue;
       if (long) {
         logger.stdout([
           package.path,
           package.name,
-          package.version ?? '',
+          package.version,
           if (all && package.isPrivate) 'PRIVATE' else null
         ].where((element) => element != null).join(':'));
       } else {
@@ -252,12 +252,12 @@ class ListCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    final long = argResults['long'] as bool;
-    final all = argResults['all'] as bool;
-    final parsable = argResults['parsable'] as bool;
-    final json = argResults['json'] as bool;
-    final graph = argResults['graph'] as bool;
-    final gviz = argResults['gviz'] as bool;
+    final long = argResults!['long'] as bool;
+    final all = argResults!['all'] as bool;
+    final parsable = argResults!['parsable'] as bool;
+    final json = argResults!['json'] as bool;
+    final graph = argResults!['graph'] as bool;
+    final gviz = argResults!['gviz'] as bool;
 
     if (graph) {
       printGraphFormat(all: all);
@@ -268,7 +268,7 @@ class ListCommand extends MelosCommand {
     } else if (parsable) {
       printParsableFormat(long: long, all: all);
     } else {
-      if (currentWorkspace.packages.isEmpty) {
+      if (currentWorkspace!.packages!.isEmpty) {
         logger.stdout(AnsiStyles.yellow(
             'No packages were found with the current filters.'));
         logger.stdout(AnsiStyles.gray(

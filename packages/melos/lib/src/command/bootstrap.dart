@@ -22,7 +22,6 @@ import 'dart:io';
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:path/path.dart';
 import 'package:pool/pool.dart';
-import 'package:yamlicious/yamlicious.dart';
 
 import '../common/intellij_project.dart';
 import '../common/logger.dart';
@@ -30,6 +29,7 @@ import '../common/package.dart';
 import '../common/platform.dart';
 import '../common/utils.dart' as utils;
 import '../common/workspace.dart';
+import '../yamlicious/yaml_writer.dart';
 import 'base.dart';
 
 class BootstrapCommand extends MelosCommand {
@@ -49,21 +49,22 @@ class BootstrapCommand extends MelosCommand {
 
   Future<bool> _runPubGetForPackage(MelosPackage package) async {
     final pubGetArgs = ['pub', 'get'];
-    final execArgs = currentWorkspace.isFlutterWorkspace
+    final execArgs = currentWorkspace!.isFlutterWorkspace
         ? ['flutter', ...pubGetArgs]
         : [if (utils.isPubSubcommand()) 'dart', ...pubGetArgs];
     final executable = currentPlatform.isWindows ? 'cmd' : '/bin/sh';
     final pluginTemporaryPath =
-        join(currentWorkspace.melosToolPath, package.pathRelativeToWorkspace);
+        join(currentWorkspace!.melosToolPath, package.pathRelativeToWorkspace);
     final execProcess = await Process.start(
-        executable, currentPlatform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
-        workingDirectory: pluginTemporaryPath,
-        includeParentEnvironment: true,
-        environment: {
-          utils.envKeyMelosTerminalWidth: utils.terminalWidth.toString(),
-          'MELOS_SCRIPT': execArgs.join(' '),
-        },
-        runInShell: true);
+      executable,
+      currentPlatform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
+      workingDirectory: pluginTemporaryPath,
+      environment: {
+        utils.envKeyMelosTerminalWidth: utils.terminalWidth.toString(),
+        'MELOS_SCRIPT': execArgs.join(' '),
+      },
+      runInShell: true,
+    );
     _runningProcesses.add(execProcess);
 
     if (!currentPlatform.isWindows) {
@@ -77,8 +78,8 @@ class BootstrapCommand extends MelosCommand {
     final stderrStream = execProcess.stderr;
     final processStdout = <int>[];
     final processStderr = <int>[];
-    final processStdoutCompleter = Completer();
-    final processStderrCompleter = Completer();
+    final processStdoutCompleter = Completer<void>();
+    final processStderrCompleter = Completer<void>();
 
     stdoutStream.listen(processStdout.addAll,
         onDone: processStdoutCompleter.complete);
@@ -129,7 +130,7 @@ class BootstrapCommand extends MelosCommand {
           // // Highlight other local workspace packages in the logs.
           .map((line) {
             var lineWithWorkspacePackagesHighlighted = line;
-            for (final workspacePackage in currentWorkspace.packages) {
+            for (final workspacePackage in currentWorkspace!.packages!) {
               if (workspacePackage.name == package.name) continue;
               lineWithWorkspacePackagesHighlighted =
                   lineWithWorkspacePackagesHighlighted.replaceAll(
@@ -147,7 +148,7 @@ class BootstrapCommand extends MelosCommand {
       logger
           .stdout('${AnsiStyles.bullet} ${AnsiStyles.bold.cyan(package.name)}');
       logger.stdout(
-          '    └> ${AnsiStyles.blue(package.path.replaceAll(currentWorkspace.path, "."))}');
+          '    └> ${AnsiStyles.blue(package.path.replaceAll(currentWorkspace!.path, "."))}');
       logger.stdout(
           '    └> ${AnsiStyles.red('Failed to run "${execArgs.join(' ')}" in this package.')}');
       logger.stdout(AnsiStyles.gray('-' * utils.terminalWidth));
@@ -160,12 +161,12 @@ class BootstrapCommand extends MelosCommand {
   Future<void> run() async {
     final successMessage = AnsiStyles.green('SUCCESS');
     final pubCommandForLogging =
-        "${currentWorkspace.isFlutterWorkspace ? "flutter " : ""}pub get";
+        "${currentWorkspace!.isFlutterWorkspace ? "flutter " : ""}pub get";
     logger.stdout(AnsiStyles.yellow.bold('melos bootstrap'));
-    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
+    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace!.path)}\n');
 
     logger.stdout('Running "$pubCommandForLogging" in workspace packages...');
-    if (!utils.isCI && currentWorkspace.packages.length > 20) {
+    if (!utils.isCI && currentWorkspace!.packages!.length > 20) {
       logger.stdout(AnsiStyles.yellow(
           'Note: this may take a while in large workspaces such as this one.'));
     }
@@ -174,64 +175,74 @@ class BootstrapCommand extends MelosCommand {
     // melos_tool directory we need to use unscoped packages here so as to
     // preserve any local 'dependencies' or 'dependency_overrides' that packages
     // in `currentWorkspace.packages` may be referencing by relative paths.
-    for (final package in currentWorkspace.packagesNoScope) {
-      final pluginTemporaryPath =
-          join(currentWorkspace.melosToolPath, package.pathRelativeToWorkspace);
-      final generatedYamlMap = Map.from(package.yamlContents);
+    for (final package in currentWorkspace!.packagesNoScope!) {
+      final pluginTemporaryPath = join(
+          currentWorkspace!.melosToolPath, package.pathRelativeToWorkspace);
+      final generatedYamlMap = Map<String, Object?>.from(package.yamlContents);
 
       // As melos boostrap builds a 1-1 mirror of the packages tree in the
       // melos_tool directory we need to use unscoped packages here so as to
       // preserve any local 'dependencies' or 'dependency_overrides' that packages
-      // in `currentWorkspace.packages` may be referencing by relative paths.
-      for (final plugin in currentWorkspace.packagesNoScope) {
+      // in `currentWorkspace!.packages` may be referencing by relative paths.
+      for (final plugin in currentWorkspace!.packagesNoScope!) {
         final pluginPath = utils.relativePath(
-          join(currentWorkspace.melosToolPath, plugin.pathRelativeToWorkspace),
+          join(currentWorkspace!.melosToolPath, plugin.pathRelativeToWorkspace),
           pluginTemporaryPath,
         );
 
         if (!generatedYamlMap.containsKey('dependency_overrides')) {
-          generatedYamlMap['dependency_overrides'] = {};
+          generatedYamlMap['dependency_overrides'] = <String, Object?>{};
         } else {
-          generatedYamlMap['dependency_overrides'] =
-              Map.from((generatedYamlMap['dependency_overrides'] ?? {}) as Map);
+          generatedYamlMap['dependency_overrides'] = Map<String, Object?>.from(
+            (generatedYamlMap['dependency_overrides'] ?? <String, Object?>{})
+                as Map,
+          );
         }
 
         if (generatedYamlMap.containsKey('dependencies')) {
-          generatedYamlMap['dependencies'] =
-              Map.from((generatedYamlMap['dependencies'] ?? {}) as Map);
+          generatedYamlMap['dependencies'] = Map<String, Object?>.from(
+              (generatedYamlMap['dependencies'] ?? <String, Object?>{}) as Map);
         }
 
         if (generatedYamlMap.containsKey('dev_dependencies')) {
-          generatedYamlMap['dev_dependencies'] =
-              Map.from((generatedYamlMap['dev_dependencies'] ?? {}) as Map);
+          generatedYamlMap['dev_dependencies'] = Map<String, Object?>.from(
+              (generatedYamlMap['dev_dependencies'] ?? <String, Object?>{})
+                  as Map);
         }
 
+        final devDependencies =
+            generatedYamlMap['dev_dependencies'] as Map<String, Object?>?;
+        final dependencyOverrides =
+            generatedYamlMap['dependency_overrides'] as Map<String, Object?>?;
+        final dependencies =
+            generatedYamlMap['dependencies'] as Map<String, Object?>?;
+
         if (package.dependencyOverrides.containsKey(plugin.name)) {
-          generatedYamlMap['dependency_overrides'][plugin.name] = {
+          dependencyOverrides![plugin.name] = {
             'path': pluginPath,
           };
         }
 
         if (package.dependencies.containsKey(plugin.name)) {
-          generatedYamlMap['dependencies'][plugin.name] = {
+          dependencies![plugin.name] = {
             'path': pluginPath,
           };
-          generatedYamlMap['dependency_overrides'][plugin.name] = {
+          dependencyOverrides![plugin.name] = {
             'path': pluginPath,
           };
         }
 
         if (package.devDependencies.containsKey(plugin.name)) {
-          generatedYamlMap['dev_dependencies'][plugin.name] = {
+          devDependencies![plugin.name] = {
             'path': pluginPath,
           };
-          generatedYamlMap['dependency_overrides'][plugin.name] = {
+          dependencyOverrides![plugin.name] = {
             'path': pluginPath,
           };
         }
 
         if (package.dependencyOverrides.containsKey(plugin.name)) {
-          generatedYamlMap['dependency_overrides'][plugin.name] = {
+          dependencyOverrides![plugin.name] = {
             'path': pluginPath,
           };
         }
@@ -262,26 +273,27 @@ class BootstrapCommand extends MelosCommand {
     final pool = Pool(utils.isCI ? 1 : 3);
     // As noted in previous `packages` loops/forEach blocks above re using
     // packagesNoScope, however in this instance we explicitly want only run
-    // pub get in the packages the user has specified (currentWorkspace.packages).
+    // pub get in the packages the user has specified (currentWorkspace!.packages).
     // Previous loops/forEach blocks above will have preserved pubspec.yaml
     // files for packages the user has excluded from this boostrap/workspace,
     // which will allow non-excluded packages to still reference to them by path,
     // e.g. using 'dependency_overrides'.
-    await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
+    await pool.forEach<MelosPackage, void>(currentWorkspace!.packages!,
         (package) async {
-      if (_pubGetFailed) {
-        return;
-      }
+      if (_pubGetFailed) return;
 
       final packagePubGetFailed = await _runPubGetForPackage(package);
       if (packagePubGetFailed && !_pubGetFailed) {
         _pubGetFailed = true;
         for (final process in _runningProcesses) {
-          process.kill(ProcessSignal.sigterm);
+          process.kill();
         }
-        currentWorkspace.clean(cleanPackages: false);
-        logger.stderr(AnsiStyles.red(
-            '\nBootstrap failed: "$pubCommandForLogging" failed in one of your workspace packages.'));
+        currentWorkspace!.clean(cleanPackages: false);
+        logger.stderr(
+          AnsiStyles.red(
+            '\nBootstrap failed: "$pubCommandForLogging" failed in one of your workspace packages.',
+          ),
+        );
         exitCode = 1;
         exit(exitCode);
       }
@@ -290,32 +302,32 @@ class BootstrapCommand extends MelosCommand {
         logger.stdout(
             '  ${AnsiStyles.greenBright('✓')} ${AnsiStyles.bold(package.name)}');
         logger.stdout(
-            '     └> ${AnsiStyles.blue(package.path.replaceAll(currentWorkspace.path, "."))}');
+            '     └> ${AnsiStyles.blue(package.path.replaceAll(currentWorkspace!.path, "."))}');
       }
-    }).drain();
+    }).drain<void>();
 
     logger.stdout('');
     logger.stdout('Linking workspace packages...');
-    await currentWorkspace.linkPackages();
-    currentWorkspace.clean(cleanPackages: false);
+    await currentWorkspace!.linkPackages();
+    currentWorkspace!.clean(cleanPackages: false);
     logger.stdout('  > $successMessage');
 
-    if (currentWorkspace.config.generateIntellijIdeFiles) {
+    if (currentWorkspace!.config.generateIntellijIdeFiles) {
       logger.stdout('');
       logger.stdout('Generating IntelliJ IDE files...');
-      final intellijProject = IntellijProject.fromWorkspace(currentWorkspace);
+      final intellijProject = IntellijProject.fromWorkspace(currentWorkspace!);
       await intellijProject.clean();
       await intellijProject.generate();
       logger.stdout('  > $successMessage');
     }
 
-    if (currentWorkspace.config.scripts.exists('postbootstrap')) {
+    if (currentWorkspace!.config.scripts.exists('postbootstrap')) {
       logger.stdout('Running postbootstrap script...\n');
 
-      await runner.run(['run', 'postbootstrap']);
+      await runner!.run(['run', 'postbootstrap']);
     }
 
     logger.stdout(
-        '\n -> ${currentWorkspace.packages.length} plugins bootstrapped');
+        '\n -> ${currentWorkspace!.packages!.length} plugins bootstrapped');
   }
 }

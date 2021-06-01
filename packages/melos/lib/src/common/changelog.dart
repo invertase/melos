@@ -56,11 +56,13 @@ class Changelog {
     var contents = await read();
     if (contents.contains(markdown)) {
       logger.trace(
-          'Identical changelog content for ${package.name} v$version already exists, skipping.');
+        'Identical changelog content for ${package.name} v$version already exists, skipping.',
+      );
       return;
     }
     contents = '$markdown$contents';
-    return File(path).writeAsString(contents);
+
+    await File(path).writeAsString(contents);
   }
 }
 
@@ -86,7 +88,7 @@ class MelosChangelog extends Changelog {
   @override
   String get markdown {
     var body = '';
-    var entries = [];
+    var entries = <String>[];
     var header = '## ${update.nextVersion}';
 
     if (update.reason == PackageUpdateReason.dependency) {
@@ -114,7 +116,7 @@ class MelosChangelog extends Changelog {
             .toString()
             .compareTo(b.isBreakingChange.toString());
         if (r != 0) return r;
-        return b.type.compareTo(a.type);
+        return b.type!.compareTo(a.type!);
       });
 
       entries = commits.map((commit) {
@@ -122,7 +124,7 @@ class MelosChangelog extends Changelog {
         if (commit.isMergeCommit) {
           entry = commit.header;
         } else {
-          entry = '**${commit.type.toUpperCase()}**: ${commit.description}';
+          entry = '**${commit.type!.toUpperCase()}**: ${commit.description}';
         }
 
         final shouldPunctuate = !entry.contains(RegExp(r'[\.\?\!]$'));

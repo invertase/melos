@@ -40,7 +40,7 @@ class MelosWorkspaceConfig {
   /// Constructs a workspace config from a [YamlMap] representation of
   /// `melos.yaml`.
   factory MelosWorkspaceConfig.fromYaml(YamlMap yamlMap) {
-    final melosYamlPath = yamlMap.span?.sourceUrl?.toFilePath();
+    final melosYamlPath = yamlMap.span.sourceUrl?.toFilePath();
     assert(
       melosYamlPath != null,
       'Config yaml does not have an associated path. Was it loaded from disk?',
@@ -48,12 +48,12 @@ class MelosWorkspaceConfig {
 
     return MelosWorkspaceConfig._(
       yamlMap['name'] as String,
-      dirname(melosYamlPath),
+      dirname(melosYamlPath!),
       yamlMap,
     );
   }
 
-  static Directory _searchForAncestorDirectoryWithMelosYaml(Directory from) {
+  static Directory? _searchForAncestorDirectoryWithMelosYaml(Directory from) {
     for (var testedDirectory = from;
         testedDirectory.path != testedDirectory.parent.path;
         testedDirectory = testedDirectory.parent) {
@@ -68,7 +68,9 @@ class MelosWorkspaceConfig {
   ///
   /// If no `melos.yaml` is found, but [directory] contains a `packages/`
   /// sub-directory, a configuration for those packages will be created.
-  static Future<MelosWorkspaceConfig> fromDirectory(Directory directory) async {
+  static Future<MelosWorkspaceConfig?> fromDirectory(
+    Directory directory,
+  ) async {
     final melosWorkspaceDirectory =
         _searchForAncestorDirectoryWithMelosYaml(directory);
 
@@ -110,14 +112,18 @@ class MelosWorkspaceConfig {
   /// `true` if this workspace is configured to generate an IntelliJ IDE
   /// project via `melos bootstrap`.
   bool get generateIntellijIdeFiles {
-    final ide = _yamlContents['ide'] as Map ?? {};
-    return ide['intellij'] is bool ? ide['intellij'] : true;
+    final ide = Map<String, Object?>.from(
+      _yamlContents['ide'] as Map? ?? <Object?, Object?>{},
+    );
+
+    return ide['intellij'] as bool? ?? true;
   }
 
   /// A list of glob patterns indicating the locations of this workspace's
   /// packages.
   List<String> get packages {
-    final patterns = _yamlContents['packages'] as YamlList;
+    final patterns = _yamlContents['packages'] as YamlList?;
+
     if (patterns == null) return <String>[];
     return List<String>.from(patterns);
   }
@@ -125,25 +131,28 @@ class MelosWorkspaceConfig {
   /// A list of glob patterns that should be ignored when determining the
   /// workspace's packages.
   List<String> get ignore {
-    final patterns = _yamlContents['ignore'] as YamlList;
+    final patterns = _yamlContents['ignore'] as YamlList?;
+
     if (patterns == null) return <String>[];
     return List<String>.from(patterns);
   }
 
   /// Scripts defined by the workspace.
-  MelosWorkspaceScripts get scripts =>
-      MelosWorkspaceScripts(_yamlContents['scripts'] as Map ?? {});
+  MelosWorkspaceScripts get scripts => MelosWorkspaceScripts(
+        Map.from(_yamlContents['scripts'] as YamlMap? ?? <Object?, Object?>{}),
+      );
 
   /// Command-specific configurations defined by the workspace.
-  MelosWorkspaceCommandConfigs get commands =>
-      _commands ??= MelosWorkspaceCommandConfigs.fromYaml(
-          _yamlContents['command'] as YamlMap);
-  MelosWorkspaceCommandConfigs _commands;
+  late final MelosWorkspaceCommandConfigs commands =
+      MelosWorkspaceCommandConfigs.fromYaml(
+    _yamlContents['command'] as YamlMap?,
+  );
 }
 
 /// Thrown when `melos.yaml` configuration is malformed.
 class MelosConfigException implements Exception {
   MelosConfigException(this.message);
+
   final String message;
 
   @override

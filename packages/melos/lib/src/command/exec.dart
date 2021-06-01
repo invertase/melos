@@ -85,7 +85,7 @@ class ExecCommand extends MelosCommand {
               AnsiStyles.bold.green.bgBlack('SUCCESS'));
         }
       });
-    }).drain();
+    }).drain<void>();
 
     logger.stdout('-' * terminalWidth);
     logger.stdout('');
@@ -109,7 +109,7 @@ class ExecCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    final execArgs = argResults.rest;
+    final execArgs = argResults!.rest;
 
     if (execArgs.isEmpty) {
       logger.stdout(description);
@@ -118,8 +118,11 @@ class ExecCommand extends MelosCommand {
       return;
     }
 
-    await execInPackages(currentWorkspace.packages, execArgs,
-        concurrency: int.parse(argResults['concurrency'] as String),
-        failFast: argResults['fail-fast'] as bool);
+    await execInPackages(
+      currentWorkspace!.packages!,
+      execArgs,
+      concurrency: int.parse(argResults!['concurrency'] as String),
+      failFast: argResults!['fail-fast'] as bool,
+    );
   }
 }

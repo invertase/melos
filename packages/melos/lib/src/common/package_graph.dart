@@ -35,7 +35,7 @@ class PackageGraph {
     MelosPackage root,
   ) {
     if (_transitiveDependenciesByPackage.containsKey(root)) {
-      return _transitiveDependenciesByPackage[root];
+      return _transitiveDependenciesByPackage[root]!;
     }
 
     final visited = _transitiveDependenciesByPackage[root] = <MelosPackage>{};
@@ -50,7 +50,7 @@ class PackageGraph {
   /// Calculates the set of packages that are transitive dependents of [root].
   Set<MelosPackage> transitiveDependentsForPackage(MelosPackage root) {
     _computeTransitiveDependents();
-    return _transitiveDependentsByPackage[root];
+    return _transitiveDependentsByPackage[root]!;
   }
 
   /// Computes transitive dependents for each package in the workspace.
@@ -58,17 +58,15 @@ class PackageGraph {
     if (_graphComputed) return;
 
     // First we need the transitive dependencies
-    _workspace.allPackages.forEach(transitiveDependenciesForPackage);
+    _workspace.allPackages!.forEach(transitiveDependenciesForPackage);
 
     // Invert the dependendencies to create the dependents graph
-    for (final package in _workspace.allPackages) {
+    for (final package in _workspace.allPackages!) {
       _transitiveDependentsByPackage[package] ??= {};
 
-      for (final dependency in _transitiveDependenciesByPackage[package]) {
-        if (!_transitiveDependentsByPackage.containsKey(dependency)) {
-          _transitiveDependentsByPackage[dependency] = {};
-        }
-        _transitiveDependentsByPackage[dependency].add(package);
+      for (final dependency in _transitiveDependenciesByPackage[package]!) {
+        _transitiveDependentsByPackage.putIfAbsent(dependency, () => {});
+        _transitiveDependentsByPackage[dependency]!.add(package);
       }
     }
 

@@ -100,9 +100,27 @@ RegExp _dependencyVersionReplaceRegex(String dependencyName) {
 class MelosPackage {
   MelosPackage._(this._name, this._path, this.yamlContents, this._workspace);
 
+  /// Build a Melos representation of a package from a pubspec file.
+  static Future<MelosPackage?> fromPubspecPathAndWorkspace(
+    FileSystemEntity pubspecPath,
+    MelosWorkspace workspace,
+  ) async {
+    final yamlFileContents = await loadYamlFile(pubspecPath.path);
+    if (yamlFileContents == null) return null;
+
+    final pluginName = yamlFileContents[_kName] as String;
+
+    return MelosPackage._(
+      pluginName,
+      pubspecPath.parent.path,
+      yamlFileContents,
+      workspace,
+    );
+  }
+
   final MelosWorkspace _workspace;
-  final Map yamlContents;
-  List<String> _registryVersions;
+  final Map<Object?, Object?> yamlContents;
+  List<String>? _registryVersions;
   final String _name;
   final String _path;
 
@@ -115,7 +133,7 @@ class MelosPackage {
   /// Package version.
   /// As defined in pubspec.yaml.
   Version get version =>
-      Version.parse((yamlContents[_kVersion] as String) ?? '0.0.0');
+      Version.parse(yamlContents[_kVersion] as String? ?? '0.0.0');
 
   /// Package path.
   /// Fully qualified path to this package location.
@@ -137,18 +155,20 @@ class MelosPackage {
     final pubspec = File(pubspecPathForDirectory(Directory(path)));
     final contents = await pubspec.readAsString();
     final updatedContents =
-        contents.replaceAllMapped(_versionReplaceRegex, (Match match) {
+        contents.replaceAllMapped(_versionReplaceRegex, (match) {
       return '${match.group(1)}$newVersion${match.group(3)}';
     });
 
     // Sanity check that contents actually changed.
     if (contents == updatedContents) {
       logger.trace(
-          'Failed to update a pubspec.yaml version to $newVersion for package $name, you should probably report this issue with a copy of your pubspec.yaml file.');
+        'Failed to update a pubspec.yaml version to $newVersion for package $name. '
+        'You should probably report this issue with a copy of your pubspec.yaml file.',
+      );
       return;
     }
 
-    return pubspec.writeAsString(updatedContents);
+    await pubspec.writeAsString(updatedContents);
   }
 
   Future<void> setDependencyVersion(
@@ -179,27 +199,30 @@ class MelosPackage {
       return;
     }
 
-    return pubspec.writeAsString(updatedContents);
+    await pubspec.writeAsString(updatedContents);
   }
 
   /// Dependencies of this package.
   /// Sourced from pubspec.yaml.
-  Map<String, dynamic> get dependencies {
+  Map<String, Object?> get dependencies {
     if (yamlContents[_kDependencies] != null) {
-      final deps = <String, dynamic>{};
-      yamlContents[_kDependencies].keys.forEach((key) {
-        deps[key as String] = yamlContents[_kDependencies][key];
-      });
+      final deps = <String, Object?>{};
+      final dependencies =
+          Map<String, Object?>.from(yamlContents[_kDependencies]! as Map);
+
+      for (final entry in dependencies.entries) {
+        deps[entry.key] = dependencies[entry.key];
+      }
       return deps;
     }
-    return {};
+    return <String, Object?>{};
   }
 
   /// Dependencies of this package that are also packages in the current
   /// workspace.
   List<MelosPackage> get dependenciesInWorkspace {
     final out = <MelosPackage>[];
-    for (final package in _workspace.packages) {
+    for (final package in _workspace.packages!) {
       if (dependencies[package.name] != null) {
         out.add(package);
       }
@@ -210,7 +233,7 @@ class MelosPackage {
   /// Dev dependencies of this package that are also packages in the current workspace.
   List<MelosPackage> get devDependenciesInWorkspace {
     final out = <MelosPackage>[];
-    for (final package in _workspace.packagesNoScope) {
+    for (final package in _workspace.packagesNoScope!) {
       if (devDependencies[package.name] != null) {
         out.add(package);
       }
@@ -224,7 +247,7 @@ class MelosPackage {
   /// Not subject to filtering.
   List<MelosPackage> get allDependenciesInWorkspace {
     final out = <MelosPackage>[];
-    for (final package in _workspace.allPackages) {
+    for (final package in _workspace.allPackages!) {
       if (dependencies.containsKey(package.name) ||
           devDependencies.containsKey(package.name)) {
         out.add(package);
@@ -243,7 +266,7 @@ class MelosPackage {
   /// Packages in current workspace that directly depend on this package.
   List<MelosPackage> get dependentsInWorkspace {
     final out = <MelosPackage>[];
-    for (final package in _workspace.packagesNoScope) {
+    for (final package in _workspace.packagesNoScope!) {
       if (package.dependencies[name] != null) {
         out.add(package);
       }
@@ -260,7 +283,7 @@ class MelosPackage {
   /// Packages in current workspace that list this package as a dev dependency.
   List<MelosPackage> get devDependentsInWorkspace {
     final out = <MelosPackage>[];
-    for (final package in _workspace.packagesNoScope) {
+    for (final package in _workspace.packagesNoScope!) {
       if (package.devDependencies[name] != null) {
         out.add(package);
       }
@@ -270,38 +293,37 @@ class MelosPackage {
 
   /// Dependency overrides of this package.
   /// Sourced from pubspec.yaml.
-  Map<String, dynamic> get dependencyOverrides {
+  Map<String, Object?> get dependencyOverrides {
     if (yamlContents[_kDependencyOverrides] != null) {
-      final overrides = <String, dynamic>{};
-      yamlContents[_kDependencyOverrides].keys.forEach((key) {
-        overrides[key as String] = yamlContents[_kDependencyOverrides][key];
-      });
+      final overrides = <String, Object?>{};
+      final dependencyOverrides = Map<String, Object?>.from(
+          yamlContents[_kDependencyOverrides]! as Map);
+
+      for (final entry in dependencyOverrides.entries) {
+        overrides[entry.key] = dependencyOverrides[entry.key];
+      }
+
       return overrides;
     }
-    return {};
+    return <String, Object?>{};
   }
 
   /// Dev dependencies of this package.
   /// Sourced from pubspec.yaml.
-  Map<String, dynamic> get devDependencies {
+  Map<String, Object?> get devDependencies {
     if (yamlContents[_kDevDependencies] != null) {
-      final devDeps = <String, dynamic>{};
-      yamlContents[_kDevDependencies].keys.forEach((key) {
-        devDeps[key as String] = yamlContents[_kDevDependencies][key];
-      });
+      final devDeps = <String, Object?>{};
+
+      final devDependencies =
+          Map<String, Object?>.from(yamlContents[_kDevDependencies]! as Map);
+
+      for (final entry in devDependencies.entries) {
+        devDeps[entry.key] = devDependencies[entry.key];
+      }
+
       return devDeps;
     }
-    return {};
-  }
-
-  /// Build a Melos representation of a package from a pubspec file.
-  static Future<MelosPackage> fromPubspecPathAndWorkspace(
-      FileSystemEntity pubspecPath, MelosWorkspace workspace) async {
-    final yamlFileContents = await loadYamlFile(pubspecPath.path);
-    if (yamlFileContents == null) return null;
-    final pluginName = yamlFileContents[_kName] as String;
-    return MelosPackage._(
-        pluginName, pubspecPath.parent.path, yamlFileContents, workspace);
+    return <String, Object?>{};
   }
 
   /// Builds a dependency graph of this packages dependencies and their dependents.
@@ -345,9 +367,11 @@ class MelosPackage {
     if (path.endsWith('example')) {
       final exampleParentPackagePath = Directory(path).parent.path;
       final exampleParentPackage = await fromPubspecPathAndWorkspace(
-          File(
-              '$exampleParentPackagePath${currentPlatform.pathSeparator}pubspec.yaml'),
-          _workspace);
+        File(
+          '$exampleParentPackagePath${currentPlatform.pathSeparator}pubspec.yaml',
+        ),
+        _workspace,
+      );
       if (exampleParentPackage != null) {
         environment['MELOS_PARENT_PACKAGE_NAME'] = exampleParentPackage.name;
         environment['MELOS_PARENT_PACKAGE_VERSION'] =
@@ -365,7 +389,7 @@ class MelosPackage {
   /// Generates Pub/Flutter related temporary files such as .packages or pubspec.lock.
   Future<void> linkPackages(MelosWorkspace workspace) async {
     final pluginTemporaryPath =
-        join(currentWorkspace.melosToolPath, pathRelativeToWorkspace);
+        join(currentWorkspace!.melosToolPath, pathRelativeToWorkspace);
 
     await Future.forEach(_generatedPubFilePaths, (String tempFilePath) async {
       final fileToCopy = File(join(pluginTemporaryPath, tempFilePath));
@@ -386,9 +410,7 @@ class MelosPackage {
   /// Queries the pub.dev registry for published versions of this package.
   /// Primarily used for publish filters and versioning.
   Future<List<String>> getPublishedVersions() async {
-    if (_registryVersions != null) {
-      return _registryVersions;
-    }
+    if (_registryVersions != null) return _registryVersions!;
 
     final url = pubUrl.replace(path: '/packages/$name.json');
     final response = await http.get(url);
@@ -396,12 +418,15 @@ class MelosPackage {
       return [];
     } else if (response.statusCode != 200) {
       throw Exception(
-          'Error reading pub.dev registry for package "$name" (HTTP Status ${response.statusCode}), response: ${response.body}');
+        'Error reading pub.dev registry for package "$name" '
+        '(HTTP Status ${response.statusCode}), response: ${response.body}',
+      );
     }
     final versions = <String>[];
-    final versionsRaw = json.decode(response.body)['versions'] as List<dynamic>;
+    final versionsRaw =
+        (json.decode(response.body) as Map)['versions'] as List<Object?>;
     for (final versionElement in versionsRaw) {
-      versions.add(versionElement as String);
+      versions.add(versionElement! as String);
     }
     versions.sort((String a, String b) {
       return Version.prioritize(Version.parse(a), Version.parse(b));
@@ -427,7 +452,7 @@ class MelosPackage {
   /// Returns whether this package is for Flutter.
   /// This is determined by whether the package depends on the Flutter SDK.
   bool get isFlutterPackage {
-    final dependencies = yamlContents[_kDependencies] as YamlMap;
+    final dependencies = yamlContents[_kDependencies] as YamlMap?;
     if (dependencies == null) {
       return false;
     }
@@ -443,9 +468,9 @@ class MelosPackage {
     // Must directly depend on the Flutter SDK.
     if (!isFlutterPackage) return false;
     // Must not have a Flutter plugin definition in it's pubspec.yaml.
-    final flutterSection = yamlContents[_kFlutter] as YamlMap;
+    final flutterSection = yamlContents[_kFlutter] as YamlMap?;
     if (flutterSection != null) {
-      final pluginSection = flutterSection[_kPlugin] as YamlMap;
+      final pluginSection = flutterSection[_kPlugin] as YamlMap?;
       if (pluginSection != null) {
         return false;
       }
@@ -492,11 +517,11 @@ class MelosPackage {
   /// Returns whether this package is a Flutter plugin.
   /// This is determined by whether the pubspec contains a flutter.plugin definition.
   bool get isFlutterPlugin {
-    final flutterSection = yamlContents[_kFlutter] as YamlMap;
+    final flutterSection = yamlContents[_kFlutter] as YamlMap?;
     if (flutterSection == null) {
       return false;
     }
-    final pluginSection = flutterSection[_kPlugin] as YamlMap;
+    final pluginSection = flutterSection[_kPlugin] as YamlMap?;
     if (pluginSection == null) {
       return false;
     }
@@ -546,7 +571,7 @@ class MelosPackage {
 
     // Check if publish_to explicitly set to none.
     if (!yamlContents.containsKey(_kPublishTo)) return false;
-    if (yamlContents[_kPublishTo].runtimeType != String) return false;
+    if (yamlContents[_kPublishTo] is! String) return false;
     return yamlContents[_kPublishTo] == 'none';
   }
 
@@ -574,17 +599,17 @@ class MelosPackage {
         platform == kWindows ||
         platform == kLinux);
 
-    final flutterSection = yamlContents[_kFlutter] as YamlMap;
+    final flutterSection = yamlContents[_kFlutter] as YamlMap?;
     if (flutterSection == null) {
       return false;
     }
 
-    final pluginSection = flutterSection[_kPlugin] as YamlMap;
+    final pluginSection = flutterSection[_kPlugin] as YamlMap?;
     if (pluginSection == null) {
       return false;
     }
 
-    final platforms = pluginSection['platforms'] as YamlMap;
+    final platforms = pluginSection['platforms'] as YamlMap?;
     if (platforms == null) {
       return false;
     }

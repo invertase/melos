@@ -26,7 +26,7 @@ import 'package:melos/src/common/platform.dart';
 /// file system, not the host's disk.
 ///
 /// The I/O override is applied only to the code running within [testBody].
-FutureOr<R> Function() withMockFs<R>(FutureOr<R> Function() testBody) {
+FutureOr<void> Function() withMockFs(FutureOr<void> Function() testBody) {
   return () {
     return IOOverrides.runWithIOOverrides(testBody, MockFs());
   };
@@ -72,11 +72,11 @@ class MockFs extends IOOverrides {
 
   @override
   Future<FileSystemEntityType> fseGetType(String path, bool followLinks) =>
-      fs.type(path, followLinks: followLinks ?? true);
+      fs.type(path, followLinks: followLinks);
 
   @override
   FileSystemEntityType fseGetTypeSync(String path, bool followLinks) =>
-      fs.typeSync(path, followLinks: followLinks ?? true);
+      fs.typeSync(path, followLinks: followLinks);
 
   @override
   Future<bool> fseIdentical(String path1, String path2) =>

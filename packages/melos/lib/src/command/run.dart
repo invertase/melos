@@ -18,11 +18,11 @@
 import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
-import 'package:prompts/prompts.dart' as prompts;
 
 import '../common/logger.dart';
 import '../common/utils.dart';
 import '../common/workspace.dart';
+import '../prompts/prompt.dart' as prompts;
 import 'base.dart';
 
 class RunCommand extends MelosCommand {
@@ -47,25 +47,27 @@ class RunCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    if (currentWorkspace.config.scripts.names.isEmpty) {
+    if (currentWorkspace!.config.scripts.names.isEmpty) {
       logger.stderr(
         AnsiStyles.yellow(
-            "Warning: This workspace has no scripts defined in it's 'melos.yaml' file.\n"),
+          "Warning: This workspace has no scripts defined in it's 'melos.yaml' file.\n",
+        ),
       );
       logger.stdout(usage);
       exitCode = 1;
       return;
     }
 
-    String scriptName;
+    String? scriptName;
 
-    if (argResults.rest.isEmpty) {
-      if (currentWorkspace.config.scripts.names.isNotEmpty) {
-        final scriptChoices = currentWorkspace.config.scripts.names.map((name) {
-          final script = currentWorkspace.config.scripts.script(name);
+    if (argResults!.rest.isEmpty) {
+      if (currentWorkspace!.config.scripts.names.isNotEmpty) {
+        final scriptChoices =
+            currentWorkspace!.config.scripts.names.map((name) {
+          final script = currentWorkspace!.config.scripts.script(name)!;
           final styledName = AnsiStyles.cyan(script.name);
           final styledDescription = script.description != null
-              ? '\n    └> ${AnsiStyles.gray(script.description.trim().split('\n').join('\n       '))}'
+              ? '\n    └> ${AnsiStyles.gray(script.description!.trim().split('\n').join('\n       '))}'
               : '';
 
           return '$styledName$styledDescription';
@@ -77,9 +79,10 @@ class RunCommand extends MelosCommand {
           interactive: false,
         );
 
-        final selectedScriptIndex = scriptChoices.indexOf(selectedScript);
+        final selectedScriptIndex = scriptChoices.indexOf(selectedScript!);
 
-        scriptName = currentWorkspace.config.scripts.names[selectedScriptIndex];
+        scriptName =
+            currentWorkspace!.config.scripts.names[selectedScriptIndex];
 
         logger.stdout('');
       } else {
@@ -90,13 +93,13 @@ class RunCommand extends MelosCommand {
       }
     }
 
-    scriptName ??= argResults.rest[0];
+    scriptName ??= argResults!.rest[0];
 
-    if (!currentWorkspace.config.scripts.exists(scriptName)) {
+    if (!currentWorkspace!.config.scripts.exists(scriptName)) {
       logger.stderr('Invalid run script name specified.\n');
-      if (currentWorkspace.config.scripts.names.isNotEmpty) {
+      if (currentWorkspace!.config.scripts.names.isNotEmpty) {
         logger.stdout('Available scripts:');
-        for (final key in currentWorkspace.config.scripts.names) {
+        for (final key in currentWorkspace!.config.scripts.names) {
           logger.stdout(' - ${AnsiStyles.blue(key)}');
         }
         logger.stdout('');
@@ -106,39 +109,41 @@ class RunCommand extends MelosCommand {
       return;
     }
 
-    final script = currentWorkspace.config.scripts.script(scriptName);
+    final script = currentWorkspace!.config.scripts.script(scriptName);
 
     final environment = {
-      'MELOS_ROOT_PATH': currentWorkspace.path,
-      ...script.env,
+      'MELOS_ROOT_PATH': currentWorkspace!.path,
+      ...script!.env!,
     };
 
     if (script.shouldPromptForPackageSelection) {
-      await currentWorkspace.loadPackagesWithFilters(
-        scope: script.selectPackageOptions[filterOptionScope] as List<String>,
+      await currentWorkspace!.loadPackagesWithFilters(
+        scope: script.selectPackageOptions![filterOptionScope] as List<String>?,
         ignore:
-            (script.selectPackageOptions[filterOptionIgnore] as List<String>)
-              ..addAll(currentWorkspace.config.ignore),
-        dirExists:
-            script.selectPackageOptions[filterOptionDirExists] as List<String>,
-        fileExists:
-            script.selectPackageOptions[filterOptionFileExists] as List<String>,
-        since: script.selectPackageOptions[filterOptionSince] as String,
-        skipPrivate: script.selectPackageOptions[filterOptionNoPrivate] as bool,
-        published: script.selectPackageOptions[filterOptionPublished] as bool,
-        nullsafety: script.selectPackageOptions[filterOptionNullsafety] as bool,
-        hasFlutter: script.selectPackageOptions[filterOptionFlutter] as bool,
-        dependsOn:
-            script.selectPackageOptions[filterOptionDependsOn] as List<String>,
-        noDependsOn: script.selectPackageOptions[filterOptionNoDependsOn]
-            as List<String>,
-        includeDependents:
-            script.selectPackageOptions[filterOptionIncludeDependents],
-        includeDependencies:
-            script.selectPackageOptions[filterOptionIncludeDependencies],
+            (script.selectPackageOptions![filterOptionIgnore] as List<String>?)
+              ?..addAll(currentWorkspace!.config.ignore),
+        dirExists: script.selectPackageOptions![filterOptionDirExists]
+            as List<String>?,
+        fileExists: script.selectPackageOptions![filterOptionFileExists]
+            as List<String>?,
+        since: script.selectPackageOptions![filterOptionSince] as String?,
+        skipPrivate:
+            script.selectPackageOptions![filterOptionNoPrivate] as bool?,
+        published: script.selectPackageOptions![filterOptionPublished] as bool?,
+        nullsafety:
+            script.selectPackageOptions![filterOptionNullsafety] as bool?,
+        hasFlutter: script.selectPackageOptions![filterOptionFlutter] as bool?,
+        dependsOn: script.selectPackageOptions![filterOptionDependsOn]
+            as List<String>?,
+        noDependsOn: script.selectPackageOptions![filterOptionNoDependsOn]
+            as List<String>?,
+        includeDependents: script
+            .selectPackageOptions![filterOptionIncludeDependents] as bool?,
+        includeDependencies: script
+            .selectPackageOptions![filterOptionIncludeDependencies] as bool?,
       );
 
-      var choices = currentWorkspace.packages
+      var choices = currentWorkspace!.packages!
           .map((e) => AnsiStyles.cyan(e.name))
           .toList();
 
@@ -160,8 +165,8 @@ class RunCommand extends MelosCommand {
       String selectedPackage;
       if (choices.length == 1) {
         // Only 1 package - no need to prompt the user for a selection.
-        selectedPackage = currentWorkspace.packages[0].name;
-      } else if (argResults['no-select'] == true) {
+        selectedPackage = currentWorkspace!.packages![0].name;
+      } else if (argResults!['no-select'] == true) {
         // Skipping selection if flag present.
         selectedPackage = choices[0];
       } else {
@@ -176,15 +181,15 @@ class RunCommand extends MelosCommand {
           choices,
           interactive: false,
           defaultsTo: choices[0],
-        );
+        )!;
       }
 
       final selectedPackageIndex =
           choices.length > 1 ? choices.indexOf(selectedPackage) : 1;
       // Comma delimited string of packages selected (all or a single package).
       final packagesEnv = selectedPackageIndex == 0 && choices.length > 1
-          ? currentWorkspace.packages.map((e) => e.name).toList().join(',')
-          : currentWorkspace.packages[selectedPackageIndex - 1].name;
+          ? currentWorkspace!.packages!.map((e) => e.name).toList().join(',')
+          : currentWorkspace!.packages![selectedPackageIndex - 1].name;
       // MELOS_PACKAGES environment is detected by melos itself when through
       // a defined script, this comma delimited list of package names is used
       // instead of any filters if detected.
@@ -192,7 +197,8 @@ class RunCommand extends MelosCommand {
       logger.stdout('\n');
     }
 
-    final scriptSource = currentWorkspace.config.scripts.script(scriptName).run;
+    final scriptSource =
+        currentWorkspace!.config.scripts.script(scriptName)!.run;
     final scriptParts = scriptSource.split(' ');
 
     logger.stdout(AnsiStyles.yellow.bold('melos run $scriptName'));
@@ -200,8 +206,11 @@ class RunCommand extends MelosCommand {
         '   └> ${AnsiStyles.cyan.bold(scriptSource.replaceAll('\n', ''))}');
     logger.stdout('       └> ${AnsiStyles.yellow.bold('RUNNING')}\n');
 
-    final processExitCode = await startProcess(scriptParts,
-        environment: environment, workingDirectory: currentWorkspace.path);
+    final processExitCode = await startProcess(
+      scriptParts,
+      environment: environment,
+      workingDirectory: currentWorkspace!.path,
+    );
 
     logger.stdout('');
     logger.stdout(AnsiStyles.yellow.bold('melos run $scriptName'));

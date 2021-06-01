@@ -61,13 +61,13 @@ class PublishCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    final dryRun = argResults['dry-run'] as bool;
-    final gitTagVersion = argResults['git-tag-version'] as bool;
-    final yes = argResults['yes'] as bool || false;
+    final dryRun = argResults!['dry-run'] as bool;
+    final gitTagVersion = argResults!['git-tag-version'] as bool;
+    final yes = argResults!['yes'] as bool || false;
 
     logger.stdout(
         AnsiStyles.yellow.bold('melos publish${dryRun ? " --dry-run" : ''}'));
-    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace.path)}\n');
+    logger.stdout('   └> ${AnsiStyles.cyan.bold(currentWorkspace!.path)}\n');
 
     final readRegistryProgress =
         logger.progress('Reading pub registry for package information');
@@ -76,7 +76,7 @@ class PublishCommand extends MelosCommand {
     final unpublishedPackages = <MelosPackage>[];
     final latestPackageVersion = <String, String>{};
 
-    await pool.forEach<MelosPackage, void>(currentWorkspace.packages,
+    await pool.forEach<MelosPackage, void>(currentWorkspace!.packages!,
         (package) {
       if (package.isPrivate) {
         return Future.value();
@@ -92,8 +92,8 @@ class PublishCommand extends MelosCommand {
             // prerelease version with a matching preid instead if any.
             if (package.version.isPreRelease) {
               final preid = package.version.preRelease.length == 4
-                  ? package.version.preRelease[2]
-                  : package.version.preRelease[0];
+                  ? package.version.preRelease[2] as String
+                  : package.version.preRelease[0] as String;
               final versionsWithPreid =
                   versions.where((version) => version.contains(preid)).toList();
               latestPackageVersion[package.name] = versionsWithPreid.isEmpty
@@ -105,7 +105,7 @@ class PublishCommand extends MelosCommand {
           }
         }
       });
-    }).drain();
+    }).drain<void>();
 
     readRegistryProgress.finish(
       message: AnsiStyles.green('SUCCESS'),

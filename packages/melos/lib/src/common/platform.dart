@@ -27,4 +27,4 @@ const currentPlatformZoneKey = #currentPlatform;
 /// Can be stubbed during tests by setting a the [currentPlatformZoneKey] zone value
 /// a [Platform] instance.
 Platform get currentPlatform =>
-    Zone.current[currentPlatformZoneKey] ?? const LocalPlatform();
+    Zone.current[currentPlatformZoneKey] as Platform? ?? const LocalPlatform();

@@ -16,7 +16,12 @@
  */
 
 class GitCommit {
-  GitCommit({this.message, this.author, this.id, this.date});
+  GitCommit({
+    required this.message,
+    required this.author,
+    required this.id,
+    required this.date,
+  });
 
   final String message;
 
