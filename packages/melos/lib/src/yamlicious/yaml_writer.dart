@@ -18,7 +18,7 @@ void writeYamlString(dynamic node, StringSink sink) {
 void _writeYamlString(
     dynamic node, int indent, StringSink ss, bool isTopLevel) {
   if (node is Map) {
-    _mapToYamlString(node as Map<String, dynamic>, indent, ss, isTopLevel);
+    _mapToYamlString(Map<String, dynamic>.from(node), indent, ss, isTopLevel);
   } else if (node is Iterable) {
     _listToYamlString(node, indent, ss, isTopLevel);
   } else if (node is String) {
