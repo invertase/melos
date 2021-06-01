@@ -18,7 +18,7 @@ void writeYamlString(dynamic node, StringSink sink) {
 void _writeYamlString(
     dynamic node, int indent, StringSink ss, bool isTopLevel) {
   if (node is Map) {
-    _mapToYamlString(Map<String, dynamic>.from(node), indent, ss, isTopLevel);
+    _mapToYamlString(Map<String, Object?>.from(node), indent, ss, isTopLevel);
   } else if (node is Iterable) {
     _listToYamlString(node, indent, ss, isTopLevel);
   } else if (node is String) {
@@ -34,7 +34,7 @@ String _escapeString(String s) =>
     s.replaceAll('"', r'\"').replaceAll('\n', r'\n');
 
 void _mapToYamlString(
-    Map<String, dynamic> node, int indent, StringSink ss, bool isTopLevel) {
+    Map<String, Object?> node, int indent, StringSink ss, bool isTopLevel) {
   if (!isTopLevel) {
     ss.writeln();
     // ignore: parameter_assignments
@@ -52,7 +52,7 @@ void _mapToYamlString(
   });
 }
 
-Iterable<String> _sortKeys(Map<String, dynamic> m) {
+Iterable<String> _sortKeys(Map<String, Object?> m) {
   final simple = <String>[];
   final maps = <String>[];
   final other = <String>[];

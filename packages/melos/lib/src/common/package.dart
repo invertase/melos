@@ -119,7 +119,7 @@ class MelosPackage {
   }
 
   final MelosWorkspace _workspace;
-  final Map yamlContents;
+  final Map<Object?, Object?> yamlContents;
   List<String>? _registryVersions;
   final String _name;
   final String _path;
@@ -204,18 +204,18 @@ class MelosPackage {
 
   /// Dependencies of this package.
   /// Sourced from pubspec.yaml.
-  Map<String, dynamic> get dependencies {
+  Map<String, Object?> get dependencies {
     if (yamlContents[_kDependencies] != null) {
-      final deps = <String, dynamic>{};
+      final deps = <String, Object?>{};
       final dependencies =
-          Map<String, dynamic>.from(yamlContents[_kDependencies] as Map);
+          Map<String, Object?>.from(yamlContents[_kDependencies]! as Map);
 
       for (final entry in dependencies.entries) {
         deps[entry.key] = dependencies[entry.key];
       }
       return deps;
     }
-    return <String, dynamic>{};
+    return <String, Object?>{};
   }
 
   /// Dependencies of this package that are also packages in the current
@@ -293,11 +293,11 @@ class MelosPackage {
 
   /// Dependency overrides of this package.
   /// Sourced from pubspec.yaml.
-  Map<String, dynamic> get dependencyOverrides {
+  Map<String, Object?> get dependencyOverrides {
     if (yamlContents[_kDependencyOverrides] != null) {
-      final overrides = <String, dynamic>{};
-      final dependencyOverrides =
-          Map<String, dynamic>.from(yamlContents[_kDependencyOverrides] as Map);
+      final overrides = <String, Object?>{};
+      final dependencyOverrides = Map<String, Object?>.from(
+          yamlContents[_kDependencyOverrides]! as Map);
 
       for (final entry in dependencyOverrides.entries) {
         overrides[entry.key] = dependencyOverrides[entry.key];
@@ -305,17 +305,17 @@ class MelosPackage {
 
       return overrides;
     }
-    return <String, dynamic>{};
+    return <String, Object?>{};
   }
 
   /// Dev dependencies of this package.
   /// Sourced from pubspec.yaml.
-  Map<String, dynamic> get devDependencies {
+  Map<String, Object?> get devDependencies {
     if (yamlContents[_kDevDependencies] != null) {
-      final devDeps = <String, dynamic>{};
+      final devDeps = <String, Object?>{};
 
       final devDependencies =
-          Map<String, dynamic>.from(yamlContents[_kDevDependencies] as Map);
+          Map<String, Object?>.from(yamlContents[_kDevDependencies]! as Map);
 
       for (final entry in devDependencies.entries) {
         devDeps[entry.key] = devDependencies[entry.key];
@@ -323,7 +323,7 @@ class MelosPackage {
 
       return devDeps;
     }
-    return <String, dynamic>{};
+    return <String, Object?>{};
   }
 
   /// Builds a dependency graph of this packages dependencies and their dependents.
@@ -424,9 +424,9 @@ class MelosPackage {
     }
     final versions = <String>[];
     final versionsRaw =
-        (json.decode(response.body) as Map)['versions'] as List<dynamic>;
+        (json.decode(response.body) as Map)['versions'] as List<Object?>;
     for (final versionElement in versionsRaw) {
-      versions.add(versionElement as String);
+      versions.add(versionElement! as String);
     }
     versions.sort((String a, String b) {
       return Version.prioritize(Version.parse(a), Version.parse(b));

@@ -113,7 +113,7 @@ class MelosWorkspaceConfig {
   /// project via `melos bootstrap`.
   bool get generateIntellijIdeFiles {
     final ide = Map<String, Object?>.from(
-      _yamlContents['ide'] as Map? ?? <dynamic, dynamic>{},
+      _yamlContents['ide'] as Map? ?? <Object?, Object?>{},
     );
 
     return ide['intellij'] as bool? ?? true;
@@ -139,7 +139,7 @@ class MelosWorkspaceConfig {
 
   /// Scripts defined by the workspace.
   MelosWorkspaceScripts get scripts => MelosWorkspaceScripts(
-        Map.from(_yamlContents['scripts'] as YamlMap? ?? <dynamic, dynamic>{}),
+        Map.from(_yamlContents['scripts'] as YamlMap? ?? <Object?, Object?>{}),
       );
 
   /// Command-specific configurations defined by the workspace.

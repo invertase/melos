@@ -54,7 +54,7 @@ class MelosWorkspaceCommandConfigs {
 
         return MapEntry(
           commandName.toString(),
-          commandConfig.cast<String, dynamic>(),
+          commandConfig.cast<String, Object?>(),
         );
       },
     );
@@ -72,7 +72,7 @@ class MelosWorkspaceCommandConfigs {
   MelosCommandConfig configForCommandNamed(String name) {
     return _configsByCommandName[name] ??= MelosCommandConfig(
       name,
-      const <String, dynamic>{},
+      const <String, Object?>{},
     );
   }
 }
@@ -81,7 +81,7 @@ class MelosWorkspaceCommandConfigs {
 class MelosCommandConfig {
   MelosCommandConfig(
     this.commandName,
-    Map<String, dynamic> configEntries,
+    Map<String, Object?> configEntries,
   ) : _configEntries = configEntries;
 
   /// Name of this configuration's associated command.

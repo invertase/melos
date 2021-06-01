@@ -23,7 +23,7 @@ void main() {
   group('MelosWorkspaceConfig', () {
     group('command section', () {
       test('does not fail when missing from file', () {
-        final config = createTestWorkspaceConfig(<String, dynamic>{
+        final config = createTestWorkspaceConfig(<String, Object?>{
           'name': 'mono-root',
           'packages': ['packages/*'],
         });
@@ -34,9 +34,9 @@ void main() {
       });
 
       test('produces a commands map when provided', () {
-        final config = createTestWorkspaceConfig(<String, dynamic>{
+        final config = createTestWorkspaceConfig(<String, Object?>{
           'command': {
-            'version': <String, dynamic>{},
+            'version': <String, Object?>{},
           },
         });
         expect(config.commands, isA<MelosWorkspaceCommandConfigs>());
@@ -90,7 +90,7 @@ void main() {
       });
 
       test('fails if command configs are not maps', () {
-        final commandSection = createYamlMap(<String, dynamic>{
+        final commandSection = createYamlMap(<String, Object?>{
           'version': ['should', 'be', 'a', 'map'],
         });
 
@@ -104,7 +104,7 @@ void main() {
         const expectedMessage = 'This is my message';
         const expectedPrefix = 'v';
 
-        final commandSection = createYamlMap(<String, dynamic>{
+        final commandSection = createYamlMap(<String, Object?>{
           'version': {
             'message': expectedMessage,
           },
@@ -136,16 +136,16 @@ const configMapDefaults = {
 
 /// [configMap] is a map representation of `melos.yaml` contents
 MelosWorkspaceConfig createTestWorkspaceConfig([
-  Map<String, dynamic> configMap = const <String, dynamic>{},
+  Map<String, Object?> configMap = const <String, Object?>{},
 ]) {
   return MelosWorkspaceConfig.fromYaml(
     createYamlMap(configMap, defaults: configMapDefaults),
   );
 }
 
-YamlMap createYamlMap(Map<String, dynamic> configMap,
-    {Map<String, dynamic> defaults = const <String, dynamic>{}}) {
-  return YamlMap.wrap(<String, dynamic>{
+YamlMap createYamlMap(Map<String, Object?> configMap,
+    {Map<String, Object?> defaults = const <String, Object?>{}}) {
+  return YamlMap.wrap(<String, Object?>{
     ...defaults,
     ...configMap,
   }, sourceUrl: '/mono-root/melos.yaml');

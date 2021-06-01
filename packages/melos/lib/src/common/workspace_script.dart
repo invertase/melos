@@ -23,13 +23,13 @@ import 'utils.dart';
 
 const _scriptOptionSelectPackage = 'select-package';
 
-Map<String, dynamic> _validateSelectPackageOptions(
+Map<String, Object?> _validateSelectPackageOptions(
   String scriptName,
-  Map<String, dynamic> selectPackageOptions,
+  Map<String, Object?> selectPackageOptions,
 ) {
-  final result = <String, dynamic>{};
+  final result = <String, Object?>{};
 
-  List<String> _asStringList(String optionName, dynamic value) {
+  List<String> _asStringList(String optionName, Object? value) {
     if (value == null) return [];
     if (value is String) return [value];
     if (value is List) return List<String>.from(value);
@@ -39,7 +39,7 @@ Map<String, dynamic> _validateSelectPackageOptions(
     exit(1);
   }
 
-  String _asString(String optionName, dynamic value) {
+  String _asString(String optionName, Object? value) {
     if (value is String) return value;
     logger.stderr(AnsiStyles.red(
       'Select package option "$optionName" in script "$scriptName" is invalid, option should be a string value.',
@@ -47,7 +47,7 @@ Map<String, dynamic> _validateSelectPackageOptions(
     exit(1);
   }
 
-  bool _asBool(String optionName, dynamic value) {
+  bool _asBool(String optionName, Object? value) {
     if (value is bool) return value;
     logger.stderr(AnsiStyles.red(
       'Select package option "$optionName" in script "$scriptName" is invalid, option should be a bool value.',
@@ -166,7 +166,7 @@ class MelosScript {
         env: {},
         selectPackageOptions: _validateSelectPackageOptions(
           name,
-          <String, dynamic>{},
+          <String, Object?>{},
         ),
       );
     }
@@ -188,13 +188,13 @@ class MelosScript {
 
     final description = definition['description'] as String;
     final env = Map<String, String>.from(
-      definition['env'] as Map? ?? <String, dynamic>{},
+      definition['env'] as Map? ?? <String, Object?>{},
     );
 
     final selectPackageOptions = _validateSelectPackageOptions(
       name,
-      Map<String, dynamic>.from(
-        definition[_scriptOptionSelectPackage] as Map? ?? <String, dynamic>{},
+      Map<String, Object?>.from(
+        definition[_scriptOptionSelectPackage] as Map? ?? <String, Object?>{},
       ),
     );
 
