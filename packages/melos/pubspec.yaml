@@ -9,12 +9,16 @@ environment:
 dependencies:
   ansi_styles: ^0.3.0
   args: ^2.0.0
+  # peer-dependencies of the local `prompts` fork. To remove once prompts null-safety is published
+  charcode: ^1.0.0
   cli_util: ^0.3.0
   collection: ^1.14.12
   conventional_commit: ^0.4.0
   file: ^6.1.0
   glob: ^2.0.1
   http: ^0.13.1
+  # peer-dependencies of the local `prompts` fork. To remove once prompts null-safety is published
+  io: ^1.0.0
   meta: ^1.1.8
   mustache_template: ^2.0.0
   path: ^1.7.0
