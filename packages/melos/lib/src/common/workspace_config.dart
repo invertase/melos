@@ -112,7 +112,9 @@ class MelosWorkspaceConfig {
   /// `true` if this workspace is configured to generate an IntelliJ IDE
   /// project via `melos bootstrap`.
   bool get generateIntellijIdeFiles {
-    final ide = _yamlContents['ide'] as Map<String, Object?>? ?? {};
+    final ide = Map<String, Object?>.from(
+      _yamlContents['ide'] as Map? ?? <dynamic, dynamic>{},
+    );
 
     return ide['intellij'] as bool? ?? true;
   }

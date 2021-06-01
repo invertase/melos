@@ -211,38 +211,38 @@ class BootstrapCommand extends MelosCommand {
         }
 
         final devDependencies =
-            generatedYamlMap['dev_dependencies']! as Map<String, Object?>;
+            generatedYamlMap['dev_dependencies'] as Map<String, Object?>?;
         final dependencyOverrides =
-            generatedYamlMap['dependency_overrides']! as Map<String, Object?>;
+            generatedYamlMap['dependency_overrides'] as Map<String, Object?>?;
         final dependencies =
-            generatedYamlMap['dependencies']! as Map<String, Object?>;
+            generatedYamlMap['dependencies'] as Map<String, Object?>?;
 
         if (package.dependencyOverrides.containsKey(plugin.name)) {
-          dependencyOverrides[plugin.name] = {
+          dependencyOverrides![plugin.name] = {
             'path': pluginPath,
           };
         }
 
         if (package.dependencies.containsKey(plugin.name)) {
-          dependencies[plugin.name] = {
+          dependencies![plugin.name] = {
             'path': pluginPath,
           };
-          dependencyOverrides[plugin.name] = {
+          dependencyOverrides![plugin.name] = {
             'path': pluginPath,
           };
         }
 
         if (package.devDependencies.containsKey(plugin.name)) {
-          devDependencies[plugin.name] = {
+          devDependencies![plugin.name] = {
             'path': pluginPath,
           };
-          dependencyOverrides[plugin.name] = {
+          dependencyOverrides![plugin.name] = {
             'path': pluginPath,
           };
         }
 
         if (package.dependencyOverrides.containsKey(plugin.name)) {
-          dependencyOverrides[plugin.name] = {
+          dependencyOverrides![plugin.name] = {
             'path': pluginPath,
           };
         }
