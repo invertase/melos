@@ -146,7 +146,7 @@ class VersionCommand extends MelosCommand {
   // If the commit message was provided via an option, we will unescape newlines
   // as a convenience.
   String get _commitMessage =>
-      argResults!['message']?.replaceAll(r'\n', '\n') as String? ??
+      (argResults!['message'] as String?)?.replaceAll(r'\n', '\n') ??
       commandConfig.getString('message') ??
       defaultCommitMessage;
 
@@ -290,7 +290,7 @@ class VersionCommand extends MelosCommand {
     final packagesToVersion = <MelosPackage>{};
     final packageCommits = <String, List<ConventionalCommit>>{};
     final dependentPackagesToVersion = <MelosPackage>{};
-    final packagesWithVersionableCommits = {};
+    final packagesWithVersionableCommits = <String, Object?>{};
     var pendingPackageUpdates = <MelosPendingPackageUpdate>[];
 
     if (graduate && prerelease) {
@@ -343,7 +343,7 @@ class VersionCommand extends MelosCommand {
           .where((element) => element != null)
           .cast<ConventionalCommit>()
           .toList();
-    }).drain();
+    }).drain<void>();
 
     for (final entry in packageCommits.entries) {
       final packageName = entry.key;

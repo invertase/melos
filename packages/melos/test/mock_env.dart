@@ -5,8 +5,8 @@ import 'package:platform/platform.dart';
 
 /// Overrides the current platform in [testBody] with [platform] for the
 /// duration of [testBody].
-FutureOr<R> Function() withMockPlatform<R>(
-  FutureOr<R> Function() testBody, {
+FutureOr<void> Function() withMockPlatform(
+  FutureOr<void> Function() testBody, {
   required Platform platform,
 }) {
   return () async {

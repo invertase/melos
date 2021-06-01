@@ -26,7 +26,7 @@ import 'package:melos/src/common/platform.dart';
 /// file system, not the host's disk.
 ///
 /// The I/O override is applied only to the code running within [testBody].
-FutureOr<R> Function() withMockFs<R>(FutureOr<R> Function() testBody) {
+FutureOr<void> Function() withMockFs(FutureOr<void> Function() testBody) {
   return () {
     return IOOverrides.runWithIOOverrides(testBody, MockFs());
   };

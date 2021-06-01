@@ -137,7 +137,7 @@ class MelosWorkspaceConfig {
 
   /// Scripts defined by the workspace.
   MelosWorkspaceScripts get scripts => MelosWorkspaceScripts(
-        Map.from(_yamlContents['scripts'] as YamlMap? ?? {}),
+        Map.from(_yamlContents['scripts'] as YamlMap? ?? <dynamic, dynamic>{}),
       );
 
   /// Command-specific configurations defined by the workspace.

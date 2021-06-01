@@ -88,7 +88,7 @@ class MelosChangelog extends Changelog {
   @override
   String get markdown {
     var body = '';
-    var entries = [];
+    var entries = <String>[];
     var header = '## ${update.nextVersion}';
 
     if (update.reason == PackageUpdateReason.dependency) {

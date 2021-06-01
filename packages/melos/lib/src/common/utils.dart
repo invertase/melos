@@ -102,7 +102,7 @@ YamlMap? loadYamlFileSync(String path) {
   final file = File(path);
   if (!file.existsSync()) return null;
 
-  return loadYaml(file.readAsStringSync());
+  return loadYaml(file.readAsStringSync()) as YamlMap;
 }
 
 Future<YamlMap?> loadYamlFile(String path) async {
@@ -112,7 +112,7 @@ Future<YamlMap?> loadYamlFile(String path) async {
   return loadYaml(
     await file.readAsString(),
     sourceUrl: file.uri,
-  );
+  ) as YamlMap;
 }
 
 String melosYamlPathForDirectory(Directory directory) {
@@ -137,7 +137,7 @@ String relativePath(String path, String from) {
 }
 
 String listAsPaddedTable(List<List<String>> list, {int paddingSize = 1}) {
-  final output = [];
+  final output = <String>[];
   final maxColumnSizes = <int, int>{};
   for (final cells in list) {
     var i = 0;

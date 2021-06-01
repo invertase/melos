@@ -222,7 +222,7 @@ class MelosWorkspace {
             packagesFilteredWithPublishStatus.add(package);
           }
         });
-      }).drain();
+      }).drain<void>();
       packages = packagesFilteredWithPublishStatus;
     }
 
@@ -237,7 +237,7 @@ class MelosWorkspace {
             packagesFilteredWithGitCommitsSince.add(package);
           }
         });
-      }).drain();
+      }).drain<void>();
       packages = packagesFilteredWithGitCommitsSince;
     }
 
@@ -354,9 +354,9 @@ class MelosWorkspace {
       return MapEntry(entry.name, map);
     });
 
-    void addNestedEntries(Set entriesSet) {
+    void addNestedEntries(Set<String> entriesSet) {
       final countBefore = entriesSet.length;
-      final entriesSetClone = Set.from(entriesSet);
+      final entriesSetClone = Set<String>.from(entriesSet);
       for (final entryName in entriesSetClone) {
         final depsForEntry = allEntriesMap[entryName];
         if (depsForEntry != null && depsForEntry.isNotEmpty) {

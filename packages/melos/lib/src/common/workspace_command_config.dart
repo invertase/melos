@@ -70,7 +70,10 @@ class MelosWorkspaceCommandConfigs {
   ///
   /// If no config exists, an empty config will be returned.
   MelosCommandConfig configForCommandNamed(String name) {
-    return _configsByCommandName[name] ??= MelosCommandConfig(name, const {});
+    return _configsByCommandName[name] ??= MelosCommandConfig(
+      name,
+      const <String, dynamic>{},
+    );
   }
 }
 

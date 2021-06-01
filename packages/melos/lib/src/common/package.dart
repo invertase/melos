@@ -206,12 +206,15 @@ class MelosPackage {
   Map<String, dynamic> get dependencies {
     if (yamlContents[_kDependencies] != null) {
       final deps = <String, dynamic>{};
-      yamlContents[_kDependencies].keys.forEach((key) {
-        deps[key as String] = yamlContents[_kDependencies][key];
-      });
+      final dependencies =
+          Map<String, dynamic>.from(yamlContents[_kDependencies] as Map);
+
+      for (final entry in dependencies.entries) {
+        deps[entry.key] = dependencies[entry.key];
+      }
       return deps;
     }
-    return {};
+    return <String, dynamic>{};
   }
 
   /// Dependencies of this package that are also packages in the current
@@ -292,12 +295,16 @@ class MelosPackage {
   Map<String, dynamic> get dependencyOverrides {
     if (yamlContents[_kDependencyOverrides] != null) {
       final overrides = <String, dynamic>{};
-      yamlContents[_kDependencyOverrides].keys.forEach((key) {
-        overrides[key as String] = yamlContents[_kDependencyOverrides][key];
-      });
+      final dependencyOverrides =
+          Map<String, dynamic>.from(yamlContents[_kDependencyOverrides] as Map);
+
+      for (final entry in dependencyOverrides.entries) {
+        overrides[entry.key] = dependencyOverrides[entry.key];
+      }
+
       return overrides;
     }
-    return {};
+    return <String, dynamic>{};
   }
 
   /// Dev dependencies of this package.
@@ -305,12 +312,17 @@ class MelosPackage {
   Map<String, dynamic> get devDependencies {
     if (yamlContents[_kDevDependencies] != null) {
       final devDeps = <String, dynamic>{};
-      yamlContents[_kDevDependencies].keys.forEach((key) {
-        devDeps[key as String] = yamlContents[_kDevDependencies][key];
-      });
+
+      final devDependencies =
+          Map<String, dynamic>.from(yamlContents[_kDevDependencies] as Map);
+
+      for (final entry in devDependencies.entries) {
+        devDeps[entry.key] = devDependencies[entry.key];
+      }
+
       return devDeps;
     }
-    return {};
+    return <String, dynamic>{};
   }
 
   /// Builds a dependency graph of this packages dependencies and their dependents.
@@ -410,7 +422,8 @@ class MelosPackage {
       );
     }
     final versions = <String>[];
-    final versionsRaw = json.decode(response.body)['versions'] as List<dynamic>;
+    final versionsRaw =
+        (json.decode(response.body) as Map)['versions'] as List<dynamic>;
     for (final versionElement in versionsRaw) {
       versions.add(versionElement as String);
     }
@@ -557,7 +570,7 @@ class MelosPackage {
 
     // Check if publish_to explicitly set to none.
     if (!yamlContents.containsKey(_kPublishTo)) return false;
-    if (yamlContents[_kPublishTo].runtimeType != String) return false;
+    if (yamlContents[_kPublishTo] is! String) return false;
     return yamlContents[_kPublishTo] == 'none';
   }
 

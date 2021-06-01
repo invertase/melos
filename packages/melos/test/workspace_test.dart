@@ -106,7 +106,7 @@ void main() {
           expect(filteredPackages, hasLength(2));
           expect(
             filteredPackages,
-            containsAll([packageNamed('a'), packageNamed('b')]),
+            containsAll(<Matcher>[packageNamed('a'), packageNamed('b')]),
           );
         }));
 
@@ -127,7 +127,7 @@ void main() {
 
           expect(
             filteredPackages,
-            containsAll([
+            containsAll(<Matcher>[
               packageNamed('a'),
               packageNamed('b'),
               packageNamed('c'), // This dep is transitive
@@ -191,7 +191,7 @@ void main() {
           expect(filteredPackages, hasLength(2));
           expect(
             filteredPackages,
-            containsAll([packageNamed('a'), packageNamed('b')]),
+            containsAll(<Matcher>[packageNamed('a'), packageNamed('b')]),
           );
         }));
 
@@ -212,7 +212,7 @@ void main() {
 
           expect(
             filteredPackages,
-            containsAll([
+            containsAll(<Matcher>[
               packageNamed('a'),
               packageNamed('b'),
               packageNamed('c'), // This dep is transitive

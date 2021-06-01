@@ -85,7 +85,7 @@ class ExecCommand extends MelosCommand {
               AnsiStyles.bold.green.bgBlack('SUCCESS'));
         }
       });
-    }).drain();
+    }).drain<void>();
 
     logger.stdout('-' * terminalWidth);
     logger.stdout('');

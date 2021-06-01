@@ -78,8 +78,8 @@ class BootstrapCommand extends MelosCommand {
     final stderrStream = execProcess.stderr;
     final processStdout = <int>[];
     final processStderr = <int>[];
-    final processStdoutCompleter = Completer();
-    final processStderrCompleter = Completer();
+    final processStdoutCompleter = Completer<void>();
+    final processStderrCompleter = Completer<void>();
 
     stdoutStream.listen(processStdout.addAll,
         onDone: processStdoutCompleter.complete);
@@ -178,7 +178,7 @@ class BootstrapCommand extends MelosCommand {
     for (final package in currentWorkspace!.packagesNoScope!) {
       final pluginTemporaryPath = join(
           currentWorkspace!.melosToolPath, package.pathRelativeToWorkspace);
-      final generatedYamlMap = Map.from(package.yamlContents);
+      final generatedYamlMap = Map<String, Object?>.from(package.yamlContents);
 
       // As melos boostrap builds a 1-1 mirror of the packages tree in the
       // melos_tool directory we need to use unscoped packages here so as to
@@ -191,48 +191,58 @@ class BootstrapCommand extends MelosCommand {
         );
 
         if (!generatedYamlMap.containsKey('dependency_overrides')) {
-          generatedYamlMap['dependency_overrides'] = {};
+          generatedYamlMap['dependency_overrides'] = <String, Object?>{};
         } else {
-          generatedYamlMap['dependency_overrides'] =
-              Map.from((generatedYamlMap['dependency_overrides'] ?? {}) as Map);
+          generatedYamlMap['dependency_overrides'] = Map<String, Object?>.from(
+            (generatedYamlMap['dependency_overrides'] ?? <String, Object?>{})
+                as Map,
+          );
         }
 
         if (generatedYamlMap.containsKey('dependencies')) {
-          generatedYamlMap['dependencies'] =
-              Map.from((generatedYamlMap['dependencies'] ?? {}) as Map);
+          generatedYamlMap['dependencies'] = Map<String, Object?>.from(
+              (generatedYamlMap['dependencies'] ?? <String, Object?>{}) as Map);
         }
 
         if (generatedYamlMap.containsKey('dev_dependencies')) {
-          generatedYamlMap['dev_dependencies'] =
-              Map.from((generatedYamlMap['dev_dependencies'] ?? {}) as Map);
+          generatedYamlMap['dev_dependencies'] = Map<String, Object?>.from(
+              (generatedYamlMap['dev_dependencies'] ?? <String, Object?>{})
+                  as Map);
         }
 
+        final devDependencies =
+            generatedYamlMap['dev_dependencies']! as Map<String, Object?>;
+        final dependencyOverrides =
+            generatedYamlMap['dependency_overrides']! as Map<String, Object?>;
+        final dependencies =
+            generatedYamlMap['dependencies']! as Map<String, Object?>;
+
         if (package.dependencyOverrides.containsKey(plugin.name)) {
-          generatedYamlMap['dependency_overrides'][plugin.name] = {
+          dependencyOverrides[plugin.name] = {
             'path': pluginPath,
           };
         }
 
         if (package.dependencies.containsKey(plugin.name)) {
-          generatedYamlMap['dependencies'][plugin.name] = {
+          dependencies[plugin.name] = {
             'path': pluginPath,
           };
-          generatedYamlMap['dependency_overrides'][plugin.name] = {
+          dependencyOverrides[plugin.name] = {
             'path': pluginPath,
           };
         }
 
         if (package.devDependencies.containsKey(plugin.name)) {
-          generatedYamlMap['dev_dependencies'][plugin.name] = {
+          devDependencies[plugin.name] = {
             'path': pluginPath,
           };
-          generatedYamlMap['dependency_overrides'][plugin.name] = {
+          dependencyOverrides[plugin.name] = {
             'path': pluginPath,
           };
         }
 
         if (package.dependencyOverrides.containsKey(plugin.name)) {
-          generatedYamlMap['dependency_overrides'][plugin.name] = {
+          dependencyOverrides[plugin.name] = {
             'path': pluginPath,
           };
         }
@@ -294,7 +304,7 @@ class BootstrapCommand extends MelosCommand {
         logger.stdout(
             '     └> ${AnsiStyles.blue(package.path.replaceAll(currentWorkspace!.path, "."))}');
       }
-    }).drain();
+    }).drain<void>();
 
     logger.stdout('');
     logger.stdout('Linking workspace packages...');

@@ -166,7 +166,7 @@ class MelosScript {
         env: {},
         selectPackageOptions: _validateSelectPackageOptions(
           name,
-          Map<String, dynamic>.from({}),
+          <String, dynamic>{},
         ),
       );
     }
@@ -188,13 +188,13 @@ class MelosScript {
 
     final description = definition['description'] as String;
     final env = Map<String, String>.from(
-      definition['env'] as Map? ?? {},
+      definition['env'] as Map? ?? <String, dynamic>{},
     );
 
     final selectPackageOptions = _validateSelectPackageOptions(
       name,
       Map<String, dynamic>.from(
-        definition[_scriptOptionSelectPackage] as Map? ?? {},
+        definition[_scriptOptionSelectPackage] as Map? ?? <String, dynamic>{},
       ),
     );
 

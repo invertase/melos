@@ -92,8 +92,8 @@ class PublishCommand extends MelosCommand {
             // prerelease version with a matching preid instead if any.
             if (package.version.isPreRelease) {
               final preid = package.version.preRelease.length == 4
-                  ? package.version.preRelease[2]
-                  : package.version.preRelease[0];
+                  ? package.version.preRelease[2] as String
+                  : package.version.preRelease[0] as String;
               final versionsWithPreid =
                   versions.where((version) => version.contains(preid)).toList();
               latestPackageVersion[package.name] = versionsWithPreid.isEmpty
@@ -105,7 +105,7 @@ class PublishCommand extends MelosCommand {
           }
         }
       });
-    }).drain();
+    }).drain<void>();
 
     readRegistryProgress.finish(
       message: AnsiStyles.green('SUCCESS'),

@@ -5,7 +5,7 @@ import '../common/utils.dart';
 import '../common/workspace.dart';
 import '../common/workspace_command_config.dart';
 
-abstract class MelosCommand extends Command {
+abstract class MelosCommand extends Command<void> {
   /// The `melos.yaml` configuration for this command.
   ///
   /// This is the configuration under the `melos.yaml`'s `command.{name}` field.

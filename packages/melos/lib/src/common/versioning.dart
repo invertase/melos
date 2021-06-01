@@ -123,8 +123,8 @@ Version nextVersion(
       //  - Versions in the format `0.8.0-nullsafety.1` have 2 pre release items, so we extract 'nullsafety' preid.
       //  - Versions in the format `0.2.0-1.2.nullsafety.4` have 2 pre release items, so we extract 'nullsafety' preid.
       requestedPreidOrDefault = currentVersion.preRelease.length == 2
-          ? currentVersion.preRelease[0]
-          : currentVersion.preRelease[2];
+          ? currentVersion.preRelease[0] as String
+          : currentVersion.preRelease[2] as String;
     }
   }
 

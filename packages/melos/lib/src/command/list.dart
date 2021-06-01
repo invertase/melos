@@ -150,7 +150,7 @@ class ListCommand extends MelosCommand {
   }
 
   void printJsonFormat({bool all = false, bool long = false}) {
-    final jsonArrayItems = [];
+    final jsonArrayItems = <Map<String, Object?>>[];
 
     for (final package in currentWorkspace!.packages!) {
       if (!all && package.isPrivate) continue;

@@ -175,7 +175,7 @@ class IntellijProject {
   }
 
   Future<void> writeModulesXml() async {
-    final ideaModules = [];
+    final ideaModules = <String>[];
     final workspaceModuleName = _workspace.config.name.toLowerCase();
     for (final package in _workspace.packages!) {
       ideaModules.add(ideaModuleStringForName(package.name,
