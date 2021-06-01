@@ -207,18 +207,18 @@ You must have one of the following to be a valid Melos workspace:
       );
     } else {
       await currentWorkspace!.loadPackagesWithFilters(
-        scope: topLevelResults[filterOptionScope] as List<String>,
+        scope: topLevelResults[filterOptionScope] as List<String>?,
         since: since,
-        skipPrivate: topLevelResults[filterOptionNoPrivate] as bool,
-        published: topLevelResults[filterOptionPublished] as bool,
-        nullsafety: topLevelResults[filterOptionNullsafety] as bool,
-        ignore: (topLevelResults[filterOptionIgnore] as List<String>)
-          ..addAll(currentWorkspace!.config.ignore),
-        dirExists: topLevelResults[filterOptionDirExists] as List<String>,
-        fileExists: topLevelResults[filterOptionFileExists] as List<String>,
-        hasFlutter: topLevelResults[filterOptionFlutter] as bool,
-        dependsOn: topLevelResults[filterOptionDependsOn] as List<String>,
-        noDependsOn: topLevelResults[filterOptionNoDependsOn] as List<String>,
+        skipPrivate: topLevelResults[filterOptionNoPrivate] as bool?,
+        published: topLevelResults[filterOptionPublished] as bool?,
+        nullsafety: topLevelResults[filterOptionNullsafety] as bool?,
+        ignore: (topLevelResults[filterOptionIgnore] as List<String>?)
+          ?..addAll(currentWorkspace!.config.ignore),
+        dirExists: topLevelResults[filterOptionDirExists] as List<String>?,
+        fileExists: topLevelResults[filterOptionFileExists] as List<String>?,
+        hasFlutter: topLevelResults[filterOptionFlutter] as bool?,
+        dependsOn: topLevelResults[filterOptionDependsOn] as List<String>?,
+        noDependsOn: topLevelResults[filterOptionNoDependsOn] as List<String>?,
         includeDependents: topLevelResults[filterOptionIncludeDependents],
         includeDependencies: topLevelResults[filterOptionIncludeDependencies],
       );
