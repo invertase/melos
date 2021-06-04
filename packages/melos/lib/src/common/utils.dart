@@ -213,16 +213,17 @@ Future<int> startProcess(
     return _arg;
   }).where((element) => element != null);
 
+  final scriptSource = filteredArgs.join(' ');
   final execProcess = await Process.start(
     executable,
     currentPlatform.isWindows
         ? ['/C', '%MELOS_SCRIPT%']
-        : ['-c', filteredArgs.join(' ')],
+        : ['-c', scriptSource],
     workingDirectory: workingDirectoryPath,
     environment: {
       ...environment,
       envKeyMelosTerminalWidth: terminalWidth.toString(),
-      'MELOS_SCRIPT': filteredArgs.join(' '),
+      'MELOS_SCRIPT': scriptSource,
     },
     runInShell: true,
   );
