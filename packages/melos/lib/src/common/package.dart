@@ -25,6 +25,7 @@ import 'package:path/path.dart' show join, joinAll;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 
+import '../../version.g.dart';
 import 'logger.dart';
 import 'platform.dart';
 import 'utils.dart';
@@ -397,6 +398,20 @@ class MelosPackage {
         return;
       }
       var temporaryFileContents = await fileToCopy.readAsString();
+
+      // Ensure the file generator tool name and version is for 'melos'.
+      if (tempFilePath.endsWith('package_config.json')) {
+        temporaryFileContents = const JsonEncoder.withIndent('  ')
+            .convert((jsonDecode(temporaryFileContents) as Map)
+              ..addAll(<String, String>{
+                'generator': 'melos',
+                'generatorVersion': melosVersion,
+              }));
+      }
+
+      // Remove the `.dart_tool\melos_tool` path from any relative file paths
+      // in any of the generated files as since we mirrored the pub files to the
+      // melos_tool directory for mutations they now contain this path.
       temporaryFileContents = temporaryFileContents.replaceAll(
           RegExp(
               '\\.dart_tool\\melos_tool${currentPlatform.isWindows ? r'\' : ''}${currentPlatform.pathSeparator}'),
