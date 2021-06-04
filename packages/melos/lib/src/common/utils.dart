@@ -216,9 +216,7 @@ Future<int> startProcess(
   final scriptSource = filteredArgs.join(' ');
   final execProcess = await Process.start(
     executable,
-    currentPlatform.isWindows
-        ? ['/C', '%MELOS_SCRIPT%']
-        : ['-c', scriptSource],
+    currentPlatform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : ['-c', scriptSource],
     workingDirectory: workingDirectoryPath,
     environment: {
       ...environment,
