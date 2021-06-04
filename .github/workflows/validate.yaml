@@ -36,6 +36,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: "Install Flutter"
         run: ./.github/workflows/scripts/install-flutter.sh stable
       - name: "Install Tools"
@@ -49,6 +51,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: "Install Flutter"
         run: ./.github/workflows/scripts/install-flutter.sh stable
       - name: "Install Tools"
@@ -61,6 +65,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: "Install Flutter"
         run: .\.github\workflows\scripts\install-flutter.bat stable
       - name: "Install Tools"
