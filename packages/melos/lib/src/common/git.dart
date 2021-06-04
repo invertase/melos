@@ -28,17 +28,55 @@ enum TagReleaseType {
 }
 
 /// Generate a filter pattern for a package name, useful for listing tags for a package.
-String gitTagFilterPattern(String packageName, TagReleaseType tagReleaseType,
-    {String preid = 'dev', String prefix = 'v'}) {
+String gitTagFilterPattern(
+  String packageName,
+  TagReleaseType tagReleaseType, {
+  String preid = 'dev',
+  String prefix = 'v',
+}) {
   return tagReleaseType == TagReleaseType.prerelease
       ? '$packageName-$prefix*-$preid.*'
       : '$packageName-$prefix*';
 }
 
 /// Generate a git tag string for the specified package name and version.
-String gitTagForPackageVersion(String packageName, String packageVersion,
-    {String prefix = 'v'}) {
+String gitTagForPackageVersion(
+  String packageName,
+  String packageVersion, {
+  String prefix = 'v',
+}) {
   return '$packageName-$prefix$packageVersion';
+}
+
+/// Execute a `git` CLI command with arguments.
+Future<ProcessResult> gitExecuteCommand({
+  required List<String> arguments,
+  required String workingDirectory,
+  bool throwOnExitCodeError = true,
+}) async {
+  const executable = 'git';
+
+  logger.trace(
+    '[GIT] Executing command `$executable ${arguments.join(' ')}` '
+    'in directory `$workingDirectory`.',
+  );
+
+  final processResult = await Process.run(
+    executable,
+    arguments,
+    workingDirectory: workingDirectory,
+  );
+
+  if (throwOnExitCodeError && processResult.exitCode != 0) {
+    throw ProcessException(
+      executable,
+      arguments,
+      'Melos: Failed executing a git command: '
+      '${processResult.stdout} ${processResult.stderr}',
+    );
+  }
+
+  return processResult;
 }
 
 /// Return a list of git tags for a Melos package, in date created descending order.
@@ -48,9 +86,10 @@ Future<List<String>> gitTagsForPackage(MelosPackage package,
     String preid = 'dev'}) async {
   final filterPattern =
       gitTagFilterPattern(package.name, tagReleaseType, preid: preid);
-  final processResult = await Process.run(
-      'git', ['tag', '-l', '--sort=-creatordate', filterPattern],
-      workingDirectory: package.path);
+  final processResult = await gitExecuteCommand(
+    arguments: ['tag', '-l', '--sort=-creatordate', filterPattern],
+    workingDirectory: package.path,
+  );
   return (processResult.stdout as String)
       .split('\n')
       .map((e) => e.trim())
@@ -70,15 +109,15 @@ Future<bool> gitTagExists(
   String tag, {
   required String workingDirectory,
 }) async {
-  final processResult = await Process.run(
-    'git',
-    ['tag', '-l', tag],
+  final processResult = await gitExecuteCommand(
+    arguments: ['tag', '-l', tag],
     workingDirectory: workingDirectory,
   );
   return (processResult.stdout as String).contains(tag);
 }
 
-/// Create a tag, if it does not already exist. Returns true if tag was successfully created.
+/// Create a tag, if it does not already exist.
+/// Returns true if tag was successfully created.
 Future<bool> gitTagCreate(
   String tag,
   String message, {
@@ -89,14 +128,14 @@ Future<bool> gitTagCreate(
     return false;
   }
 
-  final gitArgs = commitId != null && commitId.isNotEmpty
+  final arguments = commitId != null && commitId.isNotEmpty
       ? ['tag', '-a', tag, commitId, '-m', message]
       : ['tag', '-a', tag, '-m', message];
 
-  await Process.run(
-    'git',
-    gitArgs,
+  await gitExecuteCommand(
+    arguments: arguments,
     workingDirectory: workingDirectory,
+    throwOnExitCodeError: false,
   );
 
   return gitTagExists(tag, workingDirectory: workingDirectory);
@@ -117,7 +156,7 @@ Future<String?> gitLatestTagForPackage(
       gitTagForPackageVersion(package.name, package.version.toString());
   if (await gitTagExists(currentVersionTag, workingDirectory: package.path)) {
     logger.trace(
-      '[GIT]: Found a git tag for the latest ${package.name} version (${package.version.toString()}).',
+      '[GIT] Found a git tag for the latest ${package.name} version (${package.version.toString()}).',
     );
     return currentVersionTag;
   }
@@ -133,29 +172,26 @@ Future<String?> gitLatestTagForPackage(
   return tags.first;
 }
 
+/// Stage files matching the specified file pattern for committing.
 Future<void> gitAdd(
   String filePattern, {
   required String workingDirectory,
 }) async {
-  final gitArgs = ['add', filePattern];
-
-  await Process.run(
-    'git',
-    gitArgs,
+  final arguments = ['add', filePattern];
+  await gitExecuteCommand(
+    arguments: arguments,
     workingDirectory: workingDirectory,
   );
 }
 
+/// Commit any staged changes with a specific git message.
 Future<void> gitCommit(
   String message, {
   required String workingDirectory,
 }) async {
-  // TODO should we validate that there are staged changes?
-  final gitArgs = ['commit', '-m', message];
-
-  await Process.run(
-    'git',
-    gitArgs,
+  final arguments = ['commit', '-m', message];
+  await gitExecuteCommand(
+    arguments: arguments,
     workingDirectory: workingDirectory,
   );
 }
@@ -175,20 +211,20 @@ Future<List<GitCommit>> gitCommitsForPackage(
   sinceOrLatestTag ??= await gitLatestTagForPackage(package);
 
   logger.trace(
-    '[GIT]: Getting commits for package ${package.name} since "${sinceOrLatestTag ?? '@'}".',
+    '[GIT] Getting commits for package ${package.name} since "${sinceOrLatestTag ?? '@'}".',
   );
 
-  final processResult = await Process.run(
-      'git',
-      [
-        '--no-pager',
-        'log',
-        if (sinceOrLatestTag != null) '$sinceOrLatestTag...@' else '@',
-        '--pretty=format:%H|||%aN <%aE>|||%ai|||%B||||',
-        '--',
-        '.',
-      ],
-      workingDirectory: package.path);
+  final processResult = await gitExecuteCommand(
+    arguments: [
+      '--no-pager',
+      'log',
+      if (sinceOrLatestTag != null) '$sinceOrLatestTag...@' else '@',
+      '--pretty=format:%H|||%aN <%aE>|||%ai|||%B||||',
+      '--',
+      '.',
+    ],
+    workingDirectory: package.path,
+  );
 
   final rawCommits = (processResult.stdout as String)
       .split('||||\n')
@@ -204,4 +240,64 @@ Future<List<GitCommit>> gitCommitsForPackage(
       message: parts[3].trim(),
     );
   }).toList();
+}
+
+/// Returns the current branch name of the local git repository.
+Future<String> gitGetCurrentBranchName({
+  required String workingDirectory,
+}) async {
+  final arguments = ['rev-parse', '--abbrev-ref', 'HEAD'];
+  final processResult = await gitExecuteCommand(
+    arguments: arguments,
+    workingDirectory: workingDirectory,
+  );
+  return (processResult.stdout as String).trim();
+}
+
+/// Fetches updates for the default remote in the repository.
+Future<void> gitRemoteUpdate({
+  required String workingDirectory,
+}) async {
+  final arguments = ['remote', 'update'];
+  await gitExecuteCommand(
+    arguments: arguments,
+    workingDirectory: workingDirectory,
+  );
+}
+
+/// Determine if the local git repository is behind on commits from it's
+/// remote branch.
+Future<bool> gitIsBehindUpstream({
+  required String workingDirectory,
+  String remote = 'origin',
+  String? branch,
+}) async {
+  await gitRemoteUpdate(workingDirectory: workingDirectory);
+
+  final localBranch = branch ??
+      await gitGetCurrentBranchName(workingDirectory: workingDirectory);
+  final remoteBranch = '$remote/$localBranch';
+  final arguments = [
+    'rev-list',
+    '--left-right',
+    '--count',
+    '$remoteBranch...$localBranch',
+  ];
+
+  final processResult = await gitExecuteCommand(
+    arguments: arguments,
+    workingDirectory: workingDirectory,
+  );
+  final leftRightCounts =
+      (processResult.stdout as String).split('\t').map<int>(int.parse).toList();
+  final behindCount = leftRightCounts[0];
+  final aheadCount = leftRightCounts[1];
+  final isBehind = behindCount > 0;
+
+  logger.trace(
+    '[GIT] Local branch `$localBranch` is behind remote branch `$remoteBranch` '
+    'by $behindCount commit(s) and ahead by $aheadCount.',
+  );
+
+  return isBehind;
 }
