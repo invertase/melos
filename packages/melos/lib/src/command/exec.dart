@@ -36,6 +36,9 @@ class ExecCommand extends MelosCommand {
   }
 
   @override
+  bool get allowTrailingOptions => false;
+
+  @override
   final String name = 'exec';
 
   @override

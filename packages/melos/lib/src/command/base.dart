@@ -13,7 +13,13 @@ abstract class MelosCommand extends Command<void> {
   MelosCommandConfig get commandConfig =>
       currentWorkspace!.config.commands.configForCommandNamed(name);
 
+  /// see [ArgParser.allowTrailingOptions]
+  bool get allowTrailingOptions => true;
+
   /// Overridden to support line wrapping when printing usage.
   @override
-  late final ArgParser argParser = ArgParser(usageLineLength: terminalWidth);
+  late final ArgParser argParser = ArgParser(
+    usageLineLength: terminalWidth,
+    allowTrailingOptions: allowTrailingOptions,
+  );
 }
