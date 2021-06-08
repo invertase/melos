@@ -18,8 +18,6 @@ dart pub global activate melos
 
 To setup your project to use Melos, create a `melos.yaml` file in the root of the project.
 
-> New project? Use `melos init` to initialize the file and an empty `packages` directory.
-
 Within the `melos.yaml` file, add `name` and `packages` fields:
 
 ```yaml
