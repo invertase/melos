@@ -19,6 +19,8 @@ import 'package:melos/src/common/workspace_config.dart';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 
+import 'matchers.dart';
+
 void main() {
   group('MelosWorkspaceConfig', () {
     group('command section', () {
@@ -82,6 +84,145 @@ void main() {
     });
 
     group('fromYaml', () {
+      test('throws if name is missing', () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap({
+              'packages': <Object?>['*']
+            }),
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('throws if name is not a String', () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap({'name': <Object?>[]}, defaults: configMapDefaults),
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('throws if name is not a valid dart package name', () {
+        void testName(String name) {
+          expect(
+            () => MelosWorkspaceConfig.fromYaml(
+              createYamlMap({'name': name}, defaults: configMapDefaults),
+            ),
+            throwsMelosConfigException(),
+          );
+        }
+
+        testName('42');
+        testName('hello/world');
+        testName(r'hello$world');
+        testName('hello"world');
+        testName("hello'world");
+        testName('hello#world');
+        testName('hello`world');
+        testName('hello!world');
+        testName('hello?world');
+        testName('hello~world');
+        testName('hello,world');
+        testName('hello.world');
+        testName(r'hello\world');
+        testName('hello|world');
+        testName('hello world');
+        testName('hello*world');
+        testName('hello(world');
+        testName('hello)world');
+        testName('hello=world');
+      });
+
+      test('accepts valid dart package name', () {
+        MelosWorkspaceConfig.fromYaml(
+          createYamlMap({'name': 'hello_world'}, defaults: configMapDefaults),
+        );
+        MelosWorkspaceConfig.fromYaml(
+          createYamlMap({'name': 'hello2'}, defaults: configMapDefaults),
+        );
+        MelosWorkspaceConfig.fromYaml(
+          createYamlMap({'name': 'HELLO'}, defaults: configMapDefaults),
+        );
+        MelosWorkspaceConfig.fromYaml(
+          createYamlMap({'name': 'hello-world'}, defaults: configMapDefaults),
+        );
+      });
+
+      test('throws if packages is missing', () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap({'name': 'package_name'}),
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('throws if packages is not a collection', () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {'packages': <Object?, Object?>{}},
+              defaults: configMapDefaults,
+            ),
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('throws if packages value is not a String', () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {
+                'packages': [42]
+              },
+              defaults: configMapDefaults,
+            ),
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('throws if packages is empty', () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {'packages': <Object?>[]},
+              defaults: configMapDefaults,
+            ),
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('throws if ignore is not a List', () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {'ignore': <Object?, Object?>{}},
+              defaults: configMapDefaults,
+            ),
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('throws if ignore value is not a String', () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {
+                'ignore': [42]
+              },
+              defaults: configMapDefaults,
+            ),
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
       test('can be constructed with a null yaml map', () {
         expect(
           () => MelosWorkspaceCommandConfigs.fromYaml(null),
@@ -96,7 +237,7 @@ void main() {
 
         expect(
           () => MelosWorkspaceCommandConfigs.fromYaml(commandSection),
-          throwsA(isA<MelosConfigException>()),
+          throwsMelosConfigException(),
         );
       });
 
@@ -133,20 +274,3 @@ const configMapDefaults = {
   'name': 'mono-root',
   'packages': ['packages/*'],
 };
-
-/// [configMap] is a map representation of `melos.yaml` contents
-MelosWorkspaceConfig createTestWorkspaceConfig([
-  Map<String, Object?> configMap = const <String, Object?>{},
-]) {
-  return MelosWorkspaceConfig.fromYaml(
-    createYamlMap(configMap, defaults: configMapDefaults),
-  );
-}
-
-YamlMap createYamlMap(Map<String, Object?> configMap,
-    {Map<String, Object?> defaults = const <String, Object?>{}}) {
-  return YamlMap.wrap(<String, Object?>{
-    ...defaults,
-    ...configMap,
-  }, sourceUrl: '/mono-root/melos.yaml');
-}

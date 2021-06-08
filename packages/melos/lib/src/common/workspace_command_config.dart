@@ -17,6 +17,7 @@
 
 import 'package:yaml/yaml.dart';
 
+import 'validation.dart';
 import 'workspace_config.dart';
 
 /// Command-specific configuration information, as represented in the

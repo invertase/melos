@@ -47,7 +47,7 @@ class RunCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    if (currentWorkspace!.config.scripts.names.isEmpty) {
+    if (currentWorkspace!.config.scripts.keys.isEmpty) {
       logger.stderr(
         AnsiStyles.yellow(
           "Warning: This workspace has no scripts defined in it's 'melos.yaml' file.\n",
@@ -61,45 +61,31 @@ class RunCommand extends MelosCommand {
     String? scriptName;
 
     if (argResults!.rest.isEmpty) {
-      if (currentWorkspace!.config.scripts.names.isNotEmpty) {
-        final scriptChoices =
-            currentWorkspace!.config.scripts.names.map((name) {
-          final script = currentWorkspace!.config.scripts.script(name)!;
-          final styledName = AnsiStyles.cyan(script.name);
-          final styledDescription = script.description != null
-              ? '\n    └> ${AnsiStyles.gray(script.description!.trim().split('\n').join('\n       '))}'
-              : '';
+      // No script name is specified, promting the user to know what script they
+      // want to execute.
 
-          return '$styledName$styledDescription';
-        }).toList();
-
-        final selectedScript = prompts.choose(
-          AnsiStyles.white('Select a script to run in this workspace'),
-          scriptChoices,
-          interactive: false,
-        );
-
-        final selectedScriptIndex = scriptChoices.indexOf(selectedScript!);
-
-        scriptName =
-            currentWorkspace!.config.scripts.names[selectedScriptIndex];
-
-        logger.stdout('');
-      } else {
+      if (currentWorkspace!.config.scripts.isNotEmpty) {
         logger.stderr('You have no scripts defined in your melos.yaml file.\n');
         logger.stdout(usage);
         exitCode = 1;
         return;
       }
+
+      scriptName = _askForScriptName();
+
+      logger.stdout('');
+    } else {
+      // A script name was passed to the command
+      scriptName = argResults!.rest[0];
     }
 
-    scriptName ??= argResults!.rest[0];
+    final script = currentWorkspace!.config.scripts[scriptName];
 
-    if (!currentWorkspace!.config.scripts.exists(scriptName)) {
+    if (script == null) {
       logger.stderr('Invalid run script name specified.\n');
-      if (currentWorkspace!.config.scripts.names.isNotEmpty) {
+      if (currentWorkspace!.config.scripts.isNotEmpty) {
         logger.stdout('Available scripts:');
-        for (final key in currentWorkspace!.config.scripts.names) {
+        for (final key in currentWorkspace!.config.scripts.keys) {
           logger.stdout(' - ${AnsiStyles.blue(key)}');
         }
         logger.stdout('');
@@ -109,14 +95,13 @@ class RunCommand extends MelosCommand {
       return;
     }
 
-    final script = currentWorkspace!.config.scripts.script(scriptName);
-
     final environment = {
       'MELOS_ROOT_PATH': currentWorkspace!.path,
-      ...script!.env!,
+      ...script.env,
     };
 
-    if (script.shouldPromptForPackageSelection) {
+    final packageFilter = script.packageFilter;
+    if (packageFilter != null) {
       await currentWorkspace!.loadPackagesWithFilters(
         scope: script.selectPackageOptions![filterOptionScope] as List<String>?,
         ignore:
@@ -223,5 +208,31 @@ class RunCommand extends MelosCommand {
     } else {
       logger.stdout('       └> ${AnsiStyles.green.bold('SUCCESS')}');
     }
+  }
+
+  String? _askForScriptName() {
+    // using toList as Maps may be unordered
+    final scripts = currentWorkspace!.config.scripts.values.toList();
+
+    final scriptChoices = scripts.map((script) {
+      final styledName = AnsiStyles.cyan(script.name);
+      final styledDescription = script.description != null
+          ? '\n    └> ${AnsiStyles.gray(script.description!.trim().split('\n').join('\n       '))}'
+          : '';
+
+      return '$styledName$styledDescription';
+    }).toList();
+
+    final selectedScript = prompts.choose(
+      AnsiStyles.white('Select a script to run in this workspace'),
+      scriptChoices,
+      interactive: false,
+    );
+
+    final selectedScriptIndex = scriptChoices.indexOf(selectedScript!);
+
+    if (selectedScriptIndex == -1) return null;
+
+    return scripts[selectedScriptIndex].name;
   }
 }

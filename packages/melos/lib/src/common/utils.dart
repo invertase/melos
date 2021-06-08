@@ -42,6 +42,14 @@ const filterOptionNoDependsOn = 'no-depends-on';
 const filterOptionIncludeDependents = 'include-dependents';
 const filterOptionIncludeDependencies = 'include-dependencies';
 
+extension Let<T> on T? {
+  R? let<R>(R Function(T value) cb) {
+    if (this == null) return null;
+
+    return cb(this as T);
+  }
+}
+
 // MELOS_PACKAGES environment variable is a comma delimited list of
 // package names - used instead of filters if it is present.
 // This can be user defined or can come from package selection in `melos run`.

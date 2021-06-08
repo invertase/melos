@@ -21,20 +21,28 @@ ide:
     # use_recommended_settings: true
 
 scripts:
-  analyze:
-    run: melos exec -c 1 -- "dart analyze . --fatal-infos"
-    description: Run dart analyzer in a specific package.
-    select-package:
-      ignore:
-        - "*monorepo*"
+  # Defines a `melos run analyze` with no description
+  analyze: dart analyze .
+  # Defines a `melos run format` with a description
+  format:
+    run: dart format .
+    description: "Formats dart files"
 
-  test:
-    description: Run tests in a specific package.
-    # TODO(Salakar) 'dart pub get' is necessary for the 'melos' package as we're using it on itself
-    run: melos exec --concurrency=1 -- "dart pub get && dart pub run test --reporter expanded"
-    select-package:
-      dir-exists:
-        - "test/"
+# scripts:
+#   analyze:
+#     run: melos exec -c 1 -- "dart analyze . --fatal-infos"
+#     description: Run dart analyzer in a specific package.
+#     select-package:
+#       ignore:
+#         - "*monorepo*"
 
-  format: dart format -o write .
-  version: dart run scripts/generate_version.dart
+#   test:
+#     description: Run tests in a specific package.
+#     # TODO(Salakar) 'dart pub get' is necessary for the 'melos' package as we're using it on itself
+#     run: melos exec --concurrency=1 -- "dart pub get && dart pub run test --reporter expanded"
+#     select-package:
+#       dir-exists:
+#         - "test/"
+
+  # format: dart format -o write .
+  # version: dart run scripts/generate_version.dart
