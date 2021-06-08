@@ -8,8 +8,20 @@
   "sidebar": [
     ["Overview", "/"],
     ["Getting Started", "/getting-started"],
-    ["Commands", "/commands"],
-    ["melos.yaml", "/melos-yaml"],
-    ["Automated Releases", "/automated-releases"]
+    ["Filters", "/filters"],
+    ["Configuration", "/configuration"],
+    [
+      "Commands",
+      [
+        ["bootstrap", "/commands/bootstrap"],
+        ["clean", "/commands/clean"],
+        ["exec", "/commands/exec"],
+        ["list", "/commands/list"],
+        ["publish", "/commands/publish"],
+        ["run", "/commands/run"],
+        ["version", "/commands/version"]
+      ]
+    ],
+    ["Guides", [["Automated Releases", "/guides/automated-releases"]]]
   ]
 }
