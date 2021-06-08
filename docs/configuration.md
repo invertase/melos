@@ -1,6 +1,6 @@
 ---
 title: Configuration
-description: Configure Melos using the `melos.yaml` file
+description: Configure Melos using the `melos.yaml` file.
 ---
 # melos.yaml
 

@@ -1,6 +1,6 @@
 ---
 title: Automated Releases
-description: Automate your workflow by versioning and publishing packages with Melos
+description: Automate your workflow by versioning and publishing packages with Melos and Conventional Commits.
 ---
 
 # Automated Releases
@@ -21,6 +21,7 @@ possible to adopt the convention and use Melos for future releases.
 ## Versioning
 
 TODO:
+
 - Scoping
 - Major/minor/patches
 - build versions
