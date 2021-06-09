@@ -42,7 +42,7 @@ regardless of whether a version has been specified.
 
 ## Combining with filters
 
-Bootstrap supports all package filtering options therefore if you wanted to you could bootstrap only a specific subset of your packages, for example:
+Bootstrap supports [all package filtering options](/filters), therefore if you wanted to you could bootstrap only a specific subset of your packages, for example:
 
 ```bash
 # Only bootstrap packages that have
@@ -50,7 +50,7 @@ Bootstrap supports all package filtering options therefore if you wanted to you 
 melos bootstrap --since="main"
 ```
 
-## Adding a post-boostrap lifecycle script
+## Adding a postboostrap lifecycle script
 
 Melos supports various command lifecycle hooks that can be defined in your `melos.yaml`.
 
@@ -62,6 +62,7 @@ For example, if you needed to run something such as a build runner automatically
 # ...
 scripts:
   postbootstrap: dart pub run build_runner build
+# ...
 ```
 
 This is useful to ensure any local project requirements, such as generated files being built, are met when anyone is working on
