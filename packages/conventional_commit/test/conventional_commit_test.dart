@@ -49,6 +49,12 @@ Co-authored-by: @Salakar
 Refs #123 #1234
 ''';
 
+const commitMessageStarScope = '''
+feat(*): a new something (#1234)
+
+This also fixes an issue something else.
+''';
+
 void main() {
   group('$ConventionalCommit', () {
     test('invalid commit messages', () {
@@ -58,6 +64,17 @@ void main() {
       expect(ConventionalCommit.tryParse(' (): new feature'), isNull);
       expect(ConventionalCommit.tryParse('feat()'), isNull);
       expect(ConventionalCommit.tryParse('custom: new feature'), isNull);
+    });
+
+    test('correctly handles messages with a `*` scope', () {
+      final commit = ConventionalCommit.tryParse(commitMessageStarScope);
+      expect(commit, isNotNull);
+      expect(commit!.description, equals('a new something (#1234)'));
+      expect(commit.body, equals('This also fixes an issue something else.'));
+      expect(commit.type, equals('feat'));
+      expect(commit.scopes, equals(['*']));
+      expect(commit.isVersionableCommit, isTrue);
+      expect(commit.semverReleaseType, SemverReleaseType.minor);
     });
 
     test('header', () {
