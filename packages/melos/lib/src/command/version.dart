@@ -384,7 +384,7 @@ class VersionCommand extends MelosCommand {
         (packageToVersion) => packageToVersion.package.name == package.name,
       );
 
-      if (!packagesToVersion.contains(package) && packageHasPendingUpdate) {
+      if (!packagesToVersion.contains(package) && !packageHasPendingUpdate) {
         pendingPackageUpdates.add(MelosPendingPackageUpdate(
           package,
           [],
