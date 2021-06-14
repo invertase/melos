@@ -3,7 +3,7 @@ title: Clean Command
 description: "Learn more about the `clean` command in Melos."
 ---
 
-# Clean
+# Clean Command
 
 This command cleans the current workspace and all its packages of temporary pub & generated Melos IDE files.
 

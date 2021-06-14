@@ -3,7 +3,7 @@ title: Bootstrap Command
 description: "Learn more about the `bootstrap` command in Melos."
 ---
 
-# Bootstrap
+# Bootstrap Command
 
 This command initializes the workspace, links local packages together and installs remaining package dependencies.
 

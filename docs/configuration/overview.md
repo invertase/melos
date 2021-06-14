@@ -2,7 +2,7 @@
 title: Configuration overview
 description: Configure Melos using the `melos.yaml` file.
 ---
-# melos.yaml
+# Configuration Overview
 
 Every project requires a `melos.yaml` project in the root. The below outlines
 all of the specific fields and their purpose.
