@@ -9,7 +9,13 @@
     ["Overview", "/"],
     ["Getting Started", "/getting-started"],
     ["Filters", "/filters"],
-    ["Configuration", "/configuration"],
+    [
+      "Configuration",
+      [
+        ["Overview", "/configuration"],
+        ["Scripts", "/configuration/scripts"]
+      ]
+    ],
     [
       "Commands",
       [
@@ -22,6 +28,8 @@
         ["version", "/commands/version"]
       ]
     ],
+    ["Environment Variables", "/environment-variables"],
+    ["IDE Support", "/ide-support"],
     [
       "Guides",
       [
