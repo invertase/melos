@@ -12,7 +12,7 @@
     [
       "Configuration",
       [
-        ["Overview", "/configuration"],
+        ["Overview", "/configuration/overview"],
         ["Scripts", "/configuration/scripts"]
       ]
     ],
