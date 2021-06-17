@@ -8,8 +8,37 @@
   "sidebar": [
     ["Overview", "/"],
     ["Getting Started", "/getting-started"],
-    ["Commands", "/commands"],
-    ["melos.yaml", "/melos-yaml"],
-    ["Automated Releases", "/automated-releases"]
+    ["Filters", "/filters"],
+    [
+      "Configuration",
+      [
+        ["Overview", "/configuration/overview"],
+        ["Scripts", "/configuration/scripts"]
+      ]
+    ],
+    [
+      "Commands",
+      [
+        ["bootstrap", "/commands/bootstrap"],
+        ["clean", "/commands/clean"],
+        ["exec", "/commands/exec"],
+        ["list", "/commands/list"],
+        ["publish", "/commands/publish"],
+        ["run", "/commands/run"],
+        ["version", "/commands/version"]
+      ]
+    ],
+    ["Environment Variables", "/environment-variables"],
+    ["IDE Support", "/ide-support"],
+    [
+      "Guides",
+      [
+        [
+          "Manage multi-package Flutter projects",
+          "https://sagarsuri56.medium.com/managing-multi-package-flutter-projects-with-melos-c8ce96fa7c82"
+        ],
+        ["Automated Releases", "/guides/automated-releases"]
+      ]
+    ]
   ]
 }
