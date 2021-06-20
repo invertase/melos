@@ -16,7 +16,9 @@
 
 import 'dart:io';
 
-import 'package:melos/src/common/workspace.dart';
+import 'package:melos/src/common/glob.dart';
+import 'package:melos/src/package.dart';
+import 'package:melos/src/workspace.dart';
 import 'package:test/test.dart';
 
 import 'matchers.dart';
@@ -25,220 +27,277 @@ import 'mock_workspace_fs.dart';
 
 void main() {
   group('Workspace', () {
-    test('can be accessed from anywhere within a workspace',
-        withMockFs(() async {
-      final mockWorkspaceRootDir = createMockWorkspaceFs(
-        packages: [
-          MockPackageFs(name: 'a'),
-          MockPackageFs(name: 'b'),
-        ],
-      );
+    test(
+      'can be accessed from anywhere within a workspace',
+      withMockFs(() async {
+        final mockWorkspaceRootDir = createMockWorkspaceFs(
+          packages: [
+            MockPackageFs(name: 'a'),
+            MockPackageFs(name: 'b'),
+          ],
+        );
 
-      final aDir = Directory('${mockWorkspaceRootDir.path}/packages/a');
-      final workspace = await MelosWorkspace.fromDirectory(aDir);
-      final filteredPackages = await workspace!.loadPackagesWithFilters();
+        final aDir = Directory('${mockWorkspaceRootDir.path}/packages/a');
+        final workspace = await MelosWorkspace.fromDirectory(aDir);
 
-      expect(
-        filteredPackages,
-        [
-          packageNamed('a'),
-          packageNamed('b'),
-        ],
-      );
-    }));
+        expect(
+          workspace.filteredPackages.values,
+          unorderedEquals(<Object>[
+            packageNamed('a'),
+            packageNamed('b'),
+          ]),
+        );
+      }),
+    );
 
     test(
-        'does not include projects inside packages/whatever/.dart_tool when no melos.yaml is specified',
-        withMockFs(() async {
-      // regression test for https://github.com/invertase/melos/issues/101
+      'does not include projects inside packages/whatever/.dart_tool when no melos.yaml is specified',
+      withMockFs(() async {
+        // regression test for https://github.com/invertase/melos/issues/101
 
-      final mockWorkspaceRootDir = createMockWorkspaceFs(
-        workspaceRoot: '/root',
-        packages: [
-          MockPackageFs(name: 'a'),
-          MockPackageFs(name: 'b', path: '/root/packages/a/.dart_tool/b'),
-        ],
-      );
+        final mockWorkspaceRootDir = createMockWorkspaceFs(
+          workspaceRoot: '/root',
+          packages: [
+            MockPackageFs(name: 'a'),
+            MockPackageFs(name: 'b', path: '/root/packages/a/.dart_tool/b'),
+          ],
+        );
 
-      final workspace =
-          await MelosWorkspace.fromDirectory(mockWorkspaceRootDir);
-      final filteredPackages = await workspace!.loadPackagesWithFilters();
+        final workspace =
+            await MelosWorkspace.fromDirectory(mockWorkspaceRootDir);
 
-      expect(
-        filteredPackages,
-        [packageNamed('a')],
-      );
-    }));
+        expect(
+          workspace.filteredPackages.values,
+          [packageNamed('a')],
+        );
+      }),
+    );
 
     group('package filtering', () {
       group('--include-dependencies', () {
-        test('includes the scoped package', withMockFs(() async {
-          final workspace = await MelosWorkspace.fromDirectory(
-            createMockWorkspaceFs(
+        test(
+          'includes the scoped package',
+          withMockFs(() async {
+            final workspaceDir = createMockWorkspaceFs(
               packages: [
                 MockPackageFs(name: 'a', dependencies: ['b']),
                 MockPackageFs(name: 'b'),
               ],
-            ),
-          );
-          final filteredPackages = await workspace!.loadPackagesWithFilters(
-            scope: ['b'],
-            includeDependencies: true,
-          );
+            );
+            final workspace = await MelosWorkspace.fromDirectory(
+              workspaceDir,
+              filter: PackageFilter(
+                scope: [
+                  createGlob('b', currentDirectoryPath: workspaceDir.path)
+                ],
+                includeDependencies: true,
+              ),
+            );
 
-          expect(filteredPackages, [packageNamed('b')]);
-        }));
+            expect(workspace.filteredPackages.values, [packageNamed('b')]);
+          }),
+        );
 
-        test('includes direct dependencies', withMockFs(() async {
-          final workspace = await MelosWorkspace.fromDirectory(
-            createMockWorkspaceFs(
+        test(
+          'includes direct dependencies',
+          withMockFs(() async {
+            final workspaceDir = createMockWorkspaceFs(
               packages: [
                 MockPackageFs(name: 'a', dependencies: ['b']),
                 MockPackageFs(name: 'b'),
               ],
-            ),
-          );
-          final filteredPackages = await workspace!.loadPackagesWithFilters(
-            scope: ['a'],
-            includeDependencies: true,
-          );
+            );
+            final workspace = await MelosWorkspace.fromDirectory(
+              workspaceDir,
+              filter: PackageFilter(
+                scope: [
+                  createGlob('a', currentDirectoryPath: workspaceDir.path),
+                ],
+                includeDependencies: true,
+              ),
+            );
 
-          expect(filteredPackages, hasLength(2));
-          expect(
-            filteredPackages,
-            containsAll(<Matcher>[packageNamed('a'), packageNamed('b')]),
-          );
-        }));
+            expect(
+              workspace.filteredPackages.values,
+              unorderedEquals(<Matcher>[
+                packageNamed('a'),
+                packageNamed('b'),
+              ]),
+            );
+          }),
+        );
 
-        test('includes transient dependencies', withMockFs(() async {
-          final workspace = await MelosWorkspace.fromDirectory(
-            createMockWorkspaceFs(
+        test(
+          'includes transient dependencies',
+          withMockFs(() async {
+            final workspaceDir = createMockWorkspaceFs(
               packages: [
                 MockPackageFs(name: 'a', dependencies: ['b']),
                 MockPackageFs(name: 'b', dependencies: ['c']),
                 MockPackageFs(name: 'c'),
               ],
-            ),
-          );
-          final filteredPackages = await workspace!.loadPackagesWithFilters(
-            scope: ['a'],
-            includeDependencies: true,
-          );
+            );
+            final workspace = await MelosWorkspace.fromDirectory(
+              workspaceDir,
+              filter: PackageFilter(
+                scope: [
+                  createGlob('a', currentDirectoryPath: workspaceDir.path),
+                ],
+                includeDependencies: true,
+              ),
+            );
 
-          expect(
-            filteredPackages,
-            containsAll(<Matcher>[
-              packageNamed('a'),
-              packageNamed('b'),
-              packageNamed('c'), // This dep is transitive
-            ]),
-          );
-        }));
+            expect(
+              workspace.filteredPackages.values,
+              containsAll(<Matcher>[
+                packageNamed('a'),
+                packageNamed('b'),
+                packageNamed('c'), // This dep is transitive
+              ]),
+            );
+          }),
+        );
 
-        test('does not include duplicates', withMockFs(() async {
-          final workspace = await MelosWorkspace.fromDirectory(
-            createMockWorkspaceFs(
+        test(
+          'does not include duplicates',
+          withMockFs(() async {
+            final workspaceDir = createMockWorkspaceFs(
               packages: [
                 MockPackageFs(name: 'a', dependencies: ['b', 'c']),
                 MockPackageFs(name: 'b', dependencies: ['d']),
                 MockPackageFs(name: 'c', dependencies: ['d']),
                 MockPackageFs(name: 'd'),
               ],
-            ),
-          );
-          final filteredPackages = await workspace!.loadPackagesWithFilters(
-            scope: ['a'],
-            includeDependencies: true,
-          );
+            );
+            final workspace = await MelosWorkspace.fromDirectory(
+              workspaceDir,
+              filter: PackageFilter(
+                scope: [
+                  createGlob('a', currentDirectoryPath: workspaceDir.path),
+                ],
+                includeDependencies: true,
+              ),
+            );
 
-          expect(filteredPackages, hasLength(4));
-          expect(filteredPackages, isNot(containsDuplicates));
-        }));
+            expect(workspace.filteredPackages.values, hasLength(4));
+            expect(
+              workspace.filteredPackages.values,
+              isNot(containsDuplicates),
+            );
+          }),
+        );
       });
 
       group('--include-dependents', () {
-        test('includes the scoped package', withMockFs(() async {
-          final workspace = await MelosWorkspace.fromDirectory(
-            createMockWorkspaceFs(
+        test(
+          'includes the scoped package',
+          withMockFs(() async {
+            final workspaceDir = createMockWorkspaceFs(
               packages: [
                 MockPackageFs(name: 'a', dependencies: ['b']),
                 MockPackageFs(name: 'b'),
               ],
-            ),
-          );
-          final filteredPackages = await workspace!.loadPackagesWithFilters(
-            scope: ['a'],
-            includeDependents: true,
-          );
+            );
+            final workspace = await MelosWorkspace.fromDirectory(
+              workspaceDir,
+              filter: PackageFilter(
+                scope: [
+                  createGlob('a', currentDirectoryPath: workspaceDir.path),
+                ],
+                includeDependents: true,
+              ),
+            );
 
-          expect(filteredPackages, [packageNamed('a')]);
-        }));
+            expect(workspace.filteredPackages.values, [packageNamed('a')]);
+          }),
+        );
 
-        test('includes direct dependents', withMockFs(() async {
-          final workspace = await MelosWorkspace.fromDirectory(
-            createMockWorkspaceFs(
+        test(
+          'includes direct dependents',
+          withMockFs(() async {
+            final workspaceDir = createMockWorkspaceFs(
               packages: [
                 MockPackageFs(name: 'a', dependencies: ['b']),
                 MockPackageFs(name: 'b'),
               ],
-            ),
-          );
-          final filteredPackages = await workspace!.loadPackagesWithFilters(
-            scope: ['b'],
-            includeDependents: true,
-          );
+            );
+            final workspace = await MelosWorkspace.fromDirectory(
+              workspaceDir,
+              filter: PackageFilter(
+                scope: [
+                  createGlob('b', currentDirectoryPath: workspaceDir.path),
+                ],
+                includeDependents: true,
+              ),
+            );
 
-          expect(filteredPackages, hasLength(2));
-          expect(
-            filteredPackages,
-            containsAll(<Matcher>[packageNamed('a'), packageNamed('b')]),
-          );
-        }));
+            expect(workspace.filteredPackages.values, hasLength(2));
+            expect(
+              workspace.filteredPackages.values,
+              containsAll(<Matcher>[packageNamed('a'), packageNamed('b')]),
+            );
+          }),
+        );
 
-        test('includes transient dependents', withMockFs(() async {
-          final workspace = await MelosWorkspace.fromDirectory(
-            createMockWorkspaceFs(
+        test(
+          'includes transient dependents',
+          withMockFs(() async {
+            final workspaceDir = createMockWorkspaceFs(
               packages: [
                 MockPackageFs(name: 'a', dependencies: ['b']),
                 MockPackageFs(name: 'b', dependencies: ['c']),
                 MockPackageFs(name: 'c'),
               ],
-            ),
-          );
-          final filteredPackages = await workspace!.loadPackagesWithFilters(
-            scope: ['c'],
-            includeDependents: true,
-          );
+            );
+            final workspace = await MelosWorkspace.fromDirectory(
+              workspaceDir,
+              filter: PackageFilter(
+                scope: [
+                  createGlob('c', currentDirectoryPath: workspaceDir.path),
+                ],
+                includeDependents: true,
+              ),
+            );
 
-          expect(
-            filteredPackages,
-            containsAll(<Matcher>[
-              packageNamed('a'),
-              packageNamed('b'),
-              packageNamed('c'), // This dep is transitive
-            ]),
-          );
-        }));
+            expect(
+              workspace.filteredPackages.values,
+              containsAll(<Matcher>[
+                packageNamed('a'),
+                packageNamed('b'),
+                packageNamed('c'), // This dep is transitive
+              ]),
+            );
+          }),
+        );
 
-        test('does not include duplicates', withMockFs(() async {
-          final workspace = await MelosWorkspace.fromDirectory(
-            createMockWorkspaceFs(
+        test(
+          'does not include duplicates',
+          withMockFs(() async {
+            final workspaceDir = createMockWorkspaceFs(
               packages: [
                 MockPackageFs(name: 'a', dependencies: ['b', 'c']),
                 MockPackageFs(name: 'b', dependencies: ['d']),
                 MockPackageFs(name: 'c', dependencies: ['d']),
                 MockPackageFs(name: 'd'),
               ],
-            ),
-          );
-          final filteredPackages = await workspace!.loadPackagesWithFilters(
-            scope: ['d'],
-            includeDependents: true,
-          );
+            );
+            final workspace = await MelosWorkspace.fromDirectory(
+              workspaceDir,
+              filter: PackageFilter(
+                scope: [
+                  createGlob('d', currentDirectoryPath: workspaceDir.path),
+                ],
+                includeDependents: true,
+              ),
+            );
 
-          expect(filteredPackages, hasLength(4));
-          expect(filteredPackages, isNot(containsDuplicates));
-        }));
+            expect(workspace.filteredPackages.values, hasLength(4));
+            expect(
+              workspace.filteredPackages.values,
+              isNot(containsDuplicates),
+            );
+          }),
+        );
       });
     });
   });

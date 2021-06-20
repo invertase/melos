@@ -28,7 +28,9 @@ bool isValidVersion(String version) {
 }
 
 Version nextStableVersion(
-    Version currentVersion, SemverReleaseType releaseType) {
+  Version currentVersion,
+  SemverReleaseType releaseType,
+) {
   // For simplicity's sake, we avoid using + after the version reaches 1.0.0.
   if (currentVersion.major > 0) {
     switch (releaseType) {
@@ -97,9 +99,13 @@ Version nextPrereleaseVersion(
   }
 
   final nextVersion = nextStableVersion(currentVersion, releaseType);
-  return Version(nextVersion.major, nextVersion.minor, nextVersion.patch,
-      pre: '$preid.0',
-      build: nextVersion.build.isNotEmpty ? nextVersion.build.join('.') : null);
+  return Version(
+    nextVersion.major,
+    nextVersion.minor,
+    nextVersion.patch,
+    pre: '$preid.0',
+    build: nextVersion.build.isNotEmpty ? nextVersion.build.join('.') : null,
+  );
 }
 
 Version nextVersion(
@@ -131,10 +137,13 @@ Version nextVersion(
   // Prerelease graduating to stable. Includes nullsafety graduation.
   if (currentVersion.isPreRelease && shouldGraduate) {
     return Version(
-        currentVersion.major, currentVersion.minor, currentVersion.patch,
-        build: currentVersion.build.isNotEmpty
-            ? currentVersion.build.join('.')
-            : null);
+      currentVersion.major,
+      currentVersion.minor,
+      currentVersion.patch,
+      build: currentVersion.build.isNotEmpty
+          ? currentVersion.build.join('.')
+          : null,
+    );
   }
 
   // Non-prerelease to non-prerelease versioning.
@@ -247,12 +256,14 @@ Version nextVersion(
         break;
     }
     return Version(
-        currentVersion.major, currentVersion.minor, currentVersion.patch,
-        pre:
-            '$nextPreMajor.$nextPreMinor.$requestedPreidOrDefault.$nextPrePatch',
-        build: currentVersion.build.isNotEmpty
-            ? currentVersion.build.join('.')
-            : null);
+      currentVersion.major,
+      currentVersion.minor,
+      currentVersion.patch,
+      pre: '$nextPreMajor.$nextPreMinor.$requestedPreidOrDefault.$nextPrePatch',
+      build: currentVersion.build.isNotEmpty
+          ? currentVersion.build.join('.')
+          : null,
+    );
   }
 
   // Unhandled versioning behaviour.

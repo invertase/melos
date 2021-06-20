@@ -20,8 +20,8 @@ import 'dart:math' as math;
 import 'package:conventional_commit/conventional_commit.dart';
 import 'package:pub_semver/pub_semver.dart';
 
+import '../package.dart';
 import 'changelog.dart';
-import 'package.dart';
 import 'versioning.dart' as versioning;
 
 /// Enum representing why the version has been changed when running 'version' command.
@@ -51,7 +51,7 @@ class MelosPendingPackageUpdate {
   final List<ConventionalCommit> commits;
 
   /// The package that this update will apply to when committed.
-  final MelosPackage package;
+  final Package package;
 
   /// A reason why this package needs updating.
   final PackageUpdateReason reason;
@@ -78,8 +78,13 @@ class MelosPendingPackageUpdate {
 
   /// Next pub version that will occur as part of this package update.
   Version get nextVersion {
-    return versioning.nextVersion(currentVersion, semverReleaseType,
-        graduate: graduate, preid: preid, prerelease: prerelease);
+    return versioning.nextVersion(
+      currentVersion,
+      semverReleaseType,
+      graduate: graduate,
+      preid: preid,
+      prerelease: prerelease,
+    );
   }
 
   /// Taking into account all the commits in this update, what is the highest [SemverReleaseType].

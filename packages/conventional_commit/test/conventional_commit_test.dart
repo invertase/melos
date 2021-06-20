@@ -15,9 +15,9 @@
  *
  */
 
+import 'package:collection/collection.dart';
 import 'package:conventional_commit/conventional_commit.dart';
 import 'package:test/test.dart';
-import 'package:collection/collection.dart';
 
 const bodyExample = '''
 A body describing this commit in more detail.
@@ -191,7 +191,8 @@ void main() {
       // Confirm exact matching of `BREAKING: ` (with space after colon).
       expect(
         ConventionalCommit.tryParse(
-                'docs(scope): foo bar \n\nBREAKING:I broke something.')!
+          'docs(scope): foo bar \n\nBREAKING:I broke something.',
+        )!
             .isBreakingChange,
         isFalse,
       );
@@ -215,17 +216,19 @@ void main() {
     test('breakingChangeDescription', () {
       // Should be null if isBreakingChange is false.
       expect(
-          ConventionalCommit.tryParse('docs: foo bar')!
-              .breakingChangeDescription,
-          isNull);
+        ConventionalCommit.tryParse('docs: foo bar')!.breakingChangeDescription,
+        isNull,
+      );
       expect(
-          ConventionalCommit.tryParse('docs(scope): foo bar')!
-              .breakingChangeDescription,
-          isNull);
+        ConventionalCommit.tryParse('docs(scope): foo bar')!
+            .breakingChangeDescription,
+        isNull,
+      );
       expect(
-          ConventionalCommit.tryParse('docs(scope,dope): foo bar')!
-              .breakingChangeDescription,
-          isNull);
+        ConventionalCommit.tryParse('docs(scope,dope): foo bar')!
+            .breakingChangeDescription,
+        isNull,
+      );
 
       // Should be identical to commit description if BREAKING footer with the
       // description is not used.
@@ -245,7 +248,8 @@ void main() {
       // Should be equal to the BREAKING footer message if specified.
       expect(
         ConventionalCommit.tryParse(
-                'docs(scope): foo bar \n\nBREAKING: I broke something.')!
+          'docs(scope): foo bar \n\nBREAKING: I broke something.',
+        )!
             .breakingChangeDescription,
         equals('I broke something.'),
       );

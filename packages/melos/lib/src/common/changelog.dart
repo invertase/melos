@@ -19,17 +19,18 @@ import 'dart:io';
 
 import 'package:conventional_commit/conventional_commit.dart';
 import 'package:path/path.dart';
+import 'package:pub_semver/pub_semver.dart';
 
+import '../package.dart';
 import 'logger.dart';
-import 'package.dart';
 import 'pending_package_update.dart';
 
 class Changelog {
   Changelog(this.package, this.version);
 
-  final MelosPackage package;
+  final Package package;
 
-  final String version;
+  final Version version;
 
   String get markdown {
     throw UnimplementedError();
@@ -67,7 +68,7 @@ class Changelog {
 }
 
 class SingleEntryChangelog extends Changelog {
-  SingleEntryChangelog(MelosPackage package, String version, this.entry)
+  SingleEntryChangelog(Package package, Version version, this.entry)
       : super(package, version);
 
   final String entry;
@@ -80,8 +81,7 @@ class SingleEntryChangelog extends Changelog {
 }
 
 class MelosChangelog extends Changelog {
-  MelosChangelog(this.update)
-      : super(update.package, update.nextVersion.toString());
+  MelosChangelog(this.update) : super(update.package, update.nextVersion);
 
   final MelosPendingPackageUpdate update;
 
@@ -106,9 +106,11 @@ class MelosChangelog extends Changelog {
         header += '\n\n> Note: This release has breaking changes.';
       }
 
-      final commits = List<ConventionalCommit>.from(update.commits
-          .where((ConventionalCommit commit) => !commit.isMergeCommit)
-          .toList());
+      final commits = List<ConventionalCommit>.from(
+        update.commits
+            .where((ConventionalCommit commit) => !commit.isMergeCommit)
+            .toList(),
+      );
 
       // Sort so that Breaking Changes appear at the top.
       commits.sort((a, b) {

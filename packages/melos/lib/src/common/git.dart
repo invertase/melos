@@ -17,9 +17,9 @@
 
 import 'dart:io';
 
+import '../package.dart';
 import 'git_commit.dart';
 import 'logger.dart';
-import 'package.dart';
 
 enum TagReleaseType {
   all,
@@ -81,9 +81,11 @@ Future<ProcessResult> gitExecuteCommand({
 
 /// Return a list of git tags for a Melos package, in date created descending order.
 /// Optionally specify [tagReleaseType] to specify [TagReleaseType].
-Future<List<String>> gitTagsForPackage(MelosPackage package,
-    {TagReleaseType tagReleaseType = TagReleaseType.all,
-    String preid = 'dev'}) async {
+Future<List<String>> gitTagsForPackage(
+  Package package, {
+  TagReleaseType tagReleaseType = TagReleaseType.all,
+  String preid = 'dev',
+}) async {
   final filterPattern =
       gitTagFilterPattern(package.name, tagReleaseType, preid: preid);
   final processResult = await gitExecuteCommand(
@@ -146,7 +148,7 @@ Future<bool> gitTagCreate(
 ///  OR 2) The latest tag sorted by listing tags in created date descending order.
 ///        Note: If the current version is a prerelease then only prerelease tags are requested.
 Future<String?> gitLatestTagForPackage(
-  MelosPackage package, {
+  Package package, {
   String preid = 'dev',
 }) async {
   // Package doesn't have a version, skip.
@@ -165,8 +167,11 @@ Future<String?> gitLatestTagForPackage(
   final tagReleaseType = package.version.isPreRelease
       ? TagReleaseType.prerelease
       : TagReleaseType.all;
-  final tags = await gitTagsForPackage(package,
-      tagReleaseType: tagReleaseType, preid: preid);
+  final tags = await gitTagsForPackage(
+    package,
+    tagReleaseType: tagReleaseType,
+    preid: preid,
+  );
   if (tags.isEmpty) return null;
 
   return tags.first;
@@ -200,7 +205,7 @@ Future<void> gitCommit(
 /// Optionally specify [since] to start after a specified commit or tag. Defaults
 /// to the latest release tag.
 Future<List<GitCommit>> gitCommitsForPackage(
-  MelosPackage package, {
+  Package package, {
   String? since,
   String preid = 'dev',
 }) async {

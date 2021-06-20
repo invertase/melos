@@ -1,6 +1,8 @@
 /// Utilities for decoding JSON/YAML and converting them into type-safe objects.
 library validation;
 
+import 'exception.dart';
+
 T assertIsA<T>({
   int? index,
   Object? key,
@@ -89,7 +91,7 @@ List<T> assertListIsA<T>({
 }
 
 /// Thrown when `melos.yaml` configuration is malformed.
-class MelosConfigException implements Exception {
+class MelosConfigException implements MelosException {
   MelosConfigException(this.message);
 
   MelosConfigException.missingKey({

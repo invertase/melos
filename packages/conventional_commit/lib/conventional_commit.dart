@@ -16,14 +16,16 @@
  */
 
 final _conventionalCommitRegex = RegExp(
-    r'^(?<type>build|chore|ci|docs|feat|fix|bug|perf|refactor|revert|style|test)(?<scope>\([a-zA-Z0-9_,\s]+\)?((?=:\s)|(?=!:\s)))?(?<breaking>!)?(?<description>:\s.*)?|^(?<merge>Merge \w+)');
+  r'^(?<type>build|chore|ci|docs|feat|fix|bug|perf|refactor|revert|style|test)(?<scope>\([a-zA-Z0-9_,\s]+\)?((?=:\s)|(?=!:\s)))?(?<breaking>!)?(?<description>:\s.*)?|^(?<merge>Merge \w+)',
+);
 
 final _breakingChangeRegex =
     RegExp(r'^BREAKING(\sCHANGE)?:\s(?<description>.*$)', multiLine: true);
 
 final _footerRegex = RegExp(
-    r'^(?<footer>(?:[a-z-A-Z0-9\-]+|BREAKING\sCHANGE)(?::\s|\s#).*$)',
-    multiLine: true);
+  r'^(?<footer>(?:[a-z-A-Z0-9\-]+|BREAKING\sCHANGE)(?::\s|\s#).*$)',
+  multiLine: true,
+);
 
 /// Indicates the semver release type this commit message creates.
 enum SemverReleaseType {
@@ -149,9 +151,11 @@ class ConventionalCommit {
     // Footers should exclude breaking change footers as they are extracted
     // separately. We remove them after body so it gets removed from body also.
     footers = footers
-        .where((footer) =>
-            !footer.startsWith('BREAKING: ') &&
-            !footer.startsWith('BREAKING CHANGE: '))
+        .where(
+          (footer) =>
+              !footer.startsWith('BREAKING: ') &&
+              !footer.startsWith('BREAKING CHANGE: '),
+        )
         .toList();
 
     final scopes = (match.namedGroup('scope') ?? '')

@@ -35,6 +35,7 @@ const filterOptionFileExists = 'file-exists';
 const filterOptionSince = 'since';
 const filterOptionNullsafety = 'nullsafety';
 const filterOptionNoPrivate = 'no-private';
+const filterOptionPrivate = 'private';
 const filterOptionPublished = 'published';
 const filterOptionFlutter = 'flutter';
 const filterOptionDependsOn = 'depends-on';
@@ -58,6 +59,28 @@ const envKeyMelosPackages = 'MELOS_PACKAGES';
 const envKeyMelosTerminalWidth = 'MELOS_TERMINAL_WIDTH';
 
 final melosPackageUri = Uri.parse('package:melos/melos.dart');
+
+extension Indent on String {
+  String indent(String indent) {
+    final split = this.split('\n');
+
+    final buffer = StringBuffer();
+
+    buffer.writeln(split.first);
+
+    for (var i = 1; i < split.length; i++) {
+      buffer.write(indent);
+      if (i + 1 == split.length) {
+        // last line
+        buffer.write(split[i]);
+      } else {
+        buffer.writeln(split[i]);
+      }
+    }
+
+    return buffer.toString();
+  }
+}
 
 int get terminalWidth {
   if (currentPlatform.environment.containsKey(envKeyMelosTerminalWidth)) {
@@ -241,14 +264,15 @@ Future<int> startProcess(
   if (prefix != null && prefix.isNotEmpty) {
     final pluginPrefixTransformer =
         StreamTransformer<String, String>.fromHandlers(
-            handleData: (String data, EventSink sink) {
-      const lineSplitter = LineSplitter();
-      var lines = lineSplitter.convert(data);
-      lines = lines
-          .map((line) => '$prefix$line${line.contains('\n') ? '' : '\n'}')
-          .toList();
-      sink.add(lines.join());
-    });
+      handleData: (String data, EventSink sink) {
+        const lineSplitter = LineSplitter();
+        var lines = lineSplitter.convert(data);
+        lines = lines
+            .map((line) => '$prefix$line${line.contains('\n') ? '' : '\n'}')
+            .toList();
+        sink.add(lines.join());
+      },
+    );
 
     stdoutStream = execProcess.stdout
         .transform<String>(utf8.decoder)
@@ -266,18 +290,24 @@ Future<int> startProcess(
   final processStdoutCompleter = Completer<void>();
   final processStderrCompleter = Completer<void>();
 
-  stdoutStream.listen((List<int> event) {
-    processStdout.addAll(event);
-    if (!onlyOutputOnError) {
-      stdout.add(event);
-    }
-  }, onDone: processStdoutCompleter.complete);
-  stderrStream.listen((List<int> event) {
-    processStderr.addAll(event);
-    if (!onlyOutputOnError) {
-      stderr.add(event);
-    }
-  }, onDone: processStderrCompleter.complete);
+  stdoutStream.listen(
+    (List<int> event) {
+      processStdout.addAll(event);
+      if (!onlyOutputOnError) {
+        stdout.add(event);
+      }
+    },
+    onDone: processStdoutCompleter.complete,
+  );
+  stderrStream.listen(
+    (List<int> event) {
+      processStderr.addAll(event);
+      if (!onlyOutputOnError) {
+        stderr.add(event);
+      }
+    },
+    onDone: processStderrCompleter.complete,
+  );
 
   await processStdoutCompleter.future;
   await processStderrCompleter.future;
