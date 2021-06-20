@@ -18,6 +18,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:cli_util/cli_logging.dart';
 import 'package:path/path.dart';
 
 import 'common/intellij_project.dart';
@@ -52,6 +53,7 @@ class MelosWorkspace {
   static Future<MelosWorkspace> fromDirectory(
     Directory directory, {
     PackageFilter? filter,
+    required Logger logger,
   }) async {
     final workspaceConfig = await MelosWorkspaceConfig.fromDirectory(directory);
 
@@ -59,6 +61,7 @@ class MelosWorkspace {
       workspacePath: workspaceConfig.path,
       packages: workspaceConfig.packages,
       ignore: workspaceConfig.ignore,
+      logger: logger,
     );
 
     final filteredPackages = await allPackages.applyFilter(filter);

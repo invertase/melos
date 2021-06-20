@@ -12,6 +12,8 @@ mixin _ListMixin on _Melos {
   }) async {
     final workspace = await createWorkspace(filter: filter);
 
+    print('hey ${workspace.allPackages.values}');
+
     switch (kind) {
       case ListOutputKind.graph:
         return _listGraph(workspace, showPrivatePackages: showPrivatePackages);

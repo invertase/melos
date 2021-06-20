@@ -66,7 +66,11 @@ abstract class _Melos {
   Directory? get workingDirectory;
 
   Future<MelosWorkspace> createWorkspace({PackageFilter? filter}) async {
-    return MelosWorkspace.fromDirectory(workingDirectory!, filter: filter);
+    return MelosWorkspace.fromDirectory(
+      workingDirectory!,
+      filter: filter,
+      logger: logger,
+    );
   }
 
   Future<void> runLifecycle(

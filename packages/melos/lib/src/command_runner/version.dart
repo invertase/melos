@@ -21,7 +21,6 @@ import 'package:ansi_styles/ansi_styles.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 import '../commands/runner.dart';
-import '../common/logger.dart';
 import 'base.dart';
 
 /// Template variable that is replaced with versioned package info in commit

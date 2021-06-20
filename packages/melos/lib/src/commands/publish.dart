@@ -172,6 +172,7 @@ mixin _PublishMixin on _ExecMixin {
             tag,
             'Publish $tag.',
             workingDirectory: package.path,
+            logger: logger,
           );
         });
       }

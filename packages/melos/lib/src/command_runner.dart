@@ -16,8 +16,6 @@
  */
 
 import 'package:args/command_runner.dart';
-import 'package:cli_util/cli_logging.dart';
-
 import 'command_runner/bootstrap.dart';
 import 'command_runner/clean.dart';
 import 'command_runner/exec.dart';
@@ -25,7 +23,6 @@ import 'command_runner/list.dart';
 import 'command_runner/publish.dart';
 import 'command_runner/run.dart';
 import 'command_runner/version.dart';
-import 'common/logger.dart';
 import 'common/utils.dart';
 
 /// A class that can run Melos commands.
@@ -46,11 +43,6 @@ class MelosCommandRunner extends CommandRunner<void> {
         ) {
     argParser.addFlag(
       'verbose',
-      callback: (bool enabled) {
-        if (enabled) {
-          logger = Logger.verbose();
-        }
-      },
       negatable: false,
       help: 'Enable verbose logging.',
     );

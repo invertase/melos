@@ -17,20 +17,20 @@
 
 import 'dart:io';
 
+import 'package:cli_util/cli_logging.dart';
 import 'package:conventional_commit/conventional_commit.dart';
 import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 import '../package.dart';
-import 'logger.dart';
 import 'pending_package_update.dart';
 
 class Changelog {
-  Changelog(this.package, this.version);
+  Changelog(this.package, this.version, this.logger);
 
   final Package package;
-
   final Version version;
+  final Logger logger;
 
   String get markdown {
     throw UnimplementedError();
@@ -68,8 +68,12 @@ class Changelog {
 }
 
 class SingleEntryChangelog extends Changelog {
-  SingleEntryChangelog(Package package, Version version, this.entry)
-      : super(package, version);
+  SingleEntryChangelog(
+    Package package,
+    Version version,
+    this.entry,
+    Logger logger,
+  ) : super(package, version, logger);
 
   final String entry;
 
@@ -81,7 +85,8 @@ class SingleEntryChangelog extends Changelog {
 }
 
 class MelosChangelog extends Changelog {
-  MelosChangelog(this.update) : super(update.package, update.nextVersion);
+  MelosChangelog(this.update, Logger logger)
+      : super(update.package, update.nextVersion, logger);
 
   final MelosPendingPackageUpdate update;
 

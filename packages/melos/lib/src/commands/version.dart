@@ -73,6 +73,7 @@ mixin _VersionMixin on _RunMixin {
             graduate: asStableRelease,
             prerelease: asPrerelease,
             preid: preid,
+            logger: logger,
           ),
         );
 
@@ -103,6 +104,7 @@ mixin _VersionMixin on _RunMixin {
           graduate: asStableRelease,
           prerelease: asPrerelease,
           preid: preid,
+          logger: logger,
         ),
       ),
     );
@@ -127,6 +129,7 @@ mixin _VersionMixin on _RunMixin {
             // TODO Should dependent packages also get the same preid, can we expose this as an option?
             // TODO In the case of "nullsafety" it doesn't make sense for dependent packages to also become nullsafety preid versions.
             // preid: preid,
+            logger: logger,
           ),
         );
       }
@@ -286,8 +289,12 @@ Hint: try running "melos version --all" to include private packages.
       logger.stdout(
         'Adding changelog entry in package "$packageName" for version "$newVersion"...',
       );
-      final singleEntryChangelog =
-          SingleEntryChangelog(workspacePackage, newVersion, changelogEntry);
+      final singleEntryChangelog = SingleEntryChangelog(
+        workspacePackage,
+        newVersion,
+        changelogEntry,
+        logger,
+      );
       await singleEntryChangelog.write();
     }
 
@@ -529,130 +536,143 @@ Hint: try running "melos version --all" to include private packages.
       }
     });
   }
-}
 
-Set<String> _getPackagesWithVersionableCommits(
-  Map<String, List<ConventionalCommit>> packageCommits,
-) {
-  final packagesWithVersionableCommits = <String>{};
-  for (final entry in packageCommits.entries) {
-    final packageName = entry.key;
-    final packageCommits = entry.value;
-    final versionableCommits =
-        packageCommits.where((e) => e.isVersionableCommit).toList();
-    if (versionableCommits.isNotEmpty) {
-      packagesWithVersionableCommits.add(packageName);
+  Set<String> _getPackagesWithVersionableCommits(
+    Map<String, List<ConventionalCommit>> packageCommits,
+  ) {
+    final packagesWithVersionableCommits = <String>{};
+    for (final entry in packageCommits.entries) {
+      final packageName = entry.key;
+      final packageCommits = entry.value;
+      final versionableCommits =
+          packageCommits.where((e) => e.isVersionableCommit).toList();
+      if (versionableCommits.isNotEmpty) {
+        packagesWithVersionableCommits.add(packageName);
+      }
     }
+
+    return packagesWithVersionableCommits;
   }
 
-  return packagesWithVersionableCommits;
-}
+  Future<Map<String, List<ConventionalCommit>>> _getPackageCommits(
+    MelosWorkspace workspace, {
+    required bool versionPrivatePackages,
+    required String? since,
+  }) async {
+    final packageCommits = <String, List<ConventionalCommit>>{};
+    await Pool(10).forEach<Package, void>(workspace.filteredPackages.values,
+        (package) async {
+      if (!versionPrivatePackages && package.isPrivate) return;
 
-Future<Map<String, List<ConventionalCommit>>> _getPackageCommits(
-  MelosWorkspace workspace, {
-  required bool versionPrivatePackages,
-  required String? since,
-}) async {
-  final packageCommits = <String, List<ConventionalCommit>>{};
-  await Pool(10).forEach<Package, void>(workspace.filteredPackages.values,
-      (package) async {
-    if (!versionPrivatePackages && package.isPrivate) return;
+      final commits = await gitCommitsForPackage(
+        package,
+        since: since,
+        logger: logger,
+      );
 
-    final commits = await gitCommitsForPackage(package, since: since);
+      packageCommits[package.name] = commits
+          .map((commit) => ConventionalCommit.tryParse(commit.message))
+          .where((element) => element != null)
+          .cast<ConventionalCommit>()
+          .toList();
+    }).drain<void>();
+    return packageCommits;
+  }
 
-    packageCommits[package.name] = commits
-        .map((commit) => ConventionalCommit.tryParse(commit.message))
-        .where((element) => element != null)
-        .cast<ConventionalCommit>()
-        .toList();
-  }).drain<void>();
-  return packageCommits;
-}
+  Future<void> _gitTagChanges(
+    List<MelosPendingPackageUpdate> pendingPackageUpdates,
+    bool updateDependentsVersions,
+  ) async {
+    await Future.forEach(pendingPackageUpdates,
+        (MelosPendingPackageUpdate pendingPackageUpdate) async {
+      if (pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
+          !updateDependentsVersions) {
+        return;
+      }
 
-Future<void> _gitTagChanges(
-  List<MelosPendingPackageUpdate> pendingPackageUpdates,
-  bool updateDependentsVersions,
-) async {
-  await Future.forEach(pendingPackageUpdates,
-      (MelosPendingPackageUpdate pendingPackageUpdate) async {
-    if (pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
-        !updateDependentsVersions) {
-      return;
-    }
+      // TODO '--tag-version-prefix' support (if we decide to support it later) would pass prefix named arg to gitTagForPackageVersion:
+      final tag = gitTagForPackageVersion(
+        pendingPackageUpdate.package.name,
+        pendingPackageUpdate.nextVersion.toString(),
+      );
 
-    // TODO '--tag-version-prefix' support (if we decide to support it later) would pass prefix named arg to gitTagForPackageVersion:
-    final tag = gitTagForPackageVersion(
-      pendingPackageUpdate.package.name,
-      pendingPackageUpdate.nextVersion.toString(),
-    );
+      await gitTagCreate(
+        tag,
+        pendingPackageUpdate.changelog.markdown,
+        workingDirectory: pendingPackageUpdate.package.path,
+        logger: logger,
+      );
+    });
+  }
 
-    await gitTagCreate(
-      tag,
-      pendingPackageUpdate.changelog.markdown,
-      workingDirectory: pendingPackageUpdate.package.path,
-    );
-  });
-}
+  Future<void> _gitCommitChanges(
+    MelosWorkspace workspace,
+    List<MelosPendingPackageUpdate> pendingPackageUpdates,
+    Template commitMessageTemplate, {
+    required bool updateDependentsVersions,
+  }) async {
+    final publishedPackagesMessage = pendingPackageUpdates
+        .where((pendingUpdate) {
+          if (pendingUpdate.reason == PackageUpdateReason.dependency &&
+              !updateDependentsVersions) {
+            return false;
+          }
+          return true;
+        })
+        .map((e) => ' - ${e.package.name}@${e.nextVersion.toString()}')
+        .join('\n');
 
-Future<void> _gitCommitChanges(
-  MelosWorkspace workspace,
-  List<MelosPendingPackageUpdate> pendingPackageUpdates,
-  Template commitMessageTemplate, {
-  required bool updateDependentsVersions,
-}) async {
-  final publishedPackagesMessage = pendingPackageUpdates
-      .where((pendingUpdate) {
-        if (pendingUpdate.reason == PackageUpdateReason.dependency &&
-            !updateDependentsVersions) {
-          return false;
-        }
-        return true;
-      })
-      .map((e) => ' - ${e.package.name}@${e.nextVersion.toString()}')
-      .join('\n');
-
-  // Render our commit message template into the final string
-  final resolvedCommitMessage = commitMessageTemplate.renderString({
-    packageVersionsTemplateVar: publishedPackagesMessage,
-  });
-
-  // TODO this is currently blocking git submodules support (if we decide to
-  // support it later) for packages as commit is only ran at the root.
-  await gitCommit(
-    resolvedCommitMessage,
-    workingDirectory: workspace.path,
-  );
-}
-
-Future<void> _gitStageChanges(
-  List<MelosPendingPackageUpdate> pendingPackageUpdates,
-) async {
-  await Future.forEach(pendingPackageUpdates,
-      (MelosPendingPackageUpdate pendingPackageUpdate) async {
-    await gitAdd(
-      'pubspec.yaml',
-      workingDirectory: pendingPackageUpdate.package.path,
-    );
-    await gitAdd(
-      'CHANGELOG.md',
-      workingDirectory: pendingPackageUpdate.package.path,
-    );
-    await Future.forEach([
-      ...pendingPackageUpdate.package.dependentsInWorkspace.values,
-      ...pendingPackageUpdate.package.devDependentsInWorkspace.values,
-    ], (Package dependentPackage) async {
-      await gitAdd('pubspec.yaml', workingDirectory: dependentPackage.path);
+    // Render our commit message template into the final string
+    final resolvedCommitMessage = commitMessageTemplate.renderString({
+      packageVersionsTemplateVar: publishedPackagesMessage,
     });
 
-    // TODO this is a temporary workaround for committing generated dart files.
-    // TODO remove once options exposed for this in a later release.
-    if (pendingPackageUpdate.package.name == 'melos') {
+    // TODO this is currently blocking git submodules support (if we decide to
+    // support it later) for packages as commit is only ran at the root.
+    await gitCommit(
+      resolvedCommitMessage,
+      workingDirectory: workspace.path,
+      logger: logger,
+    );
+  }
+
+  Future<void> _gitStageChanges(
+    List<MelosPendingPackageUpdate> pendingPackageUpdates,
+  ) async {
+    await Future.forEach(pendingPackageUpdates,
+        (MelosPendingPackageUpdate pendingPackageUpdate) async {
       await gitAdd(
-        '**/*.g.dart',
+        'pubspec.yaml',
         workingDirectory: pendingPackageUpdate.package.path,
+        logger: logger,
       );
-    }
-  });
+      await gitAdd(
+        'CHANGELOG.md',
+        workingDirectory: pendingPackageUpdate.package.path,
+        logger: logger,
+      );
+      await Future.forEach([
+        ...pendingPackageUpdate.package.dependentsInWorkspace.values,
+        ...pendingPackageUpdate.package.devDependentsInWorkspace.values,
+      ], (Package dependentPackage) async {
+        await gitAdd(
+          'pubspec.yaml',
+          workingDirectory: dependentPackage.path,
+          logger: logger,
+        );
+      });
+
+      // TODO this is a temporary workaround for committing generated dart files.
+      // TODO remove once options exposed for this in a later release.
+      if (pendingPackageUpdate.package.name == 'melos') {
+        await gitAdd(
+          '**/*.g.dart',
+          workingDirectory: pendingPackageUpdate.package.path,
+          logger: logger,
+        );
+      }
+    });
+  }
 }
 
 class PackageNotFoundException extends MelosException {

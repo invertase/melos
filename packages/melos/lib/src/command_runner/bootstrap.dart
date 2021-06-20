@@ -19,7 +19,6 @@ import 'dart:async';
 import 'dart:io';
 
 import '../commands/runner.dart';
-import '../common/logger.dart';
 
 import 'base.dart';
 

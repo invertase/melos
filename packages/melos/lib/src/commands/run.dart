@@ -84,6 +84,7 @@ mixin _RunMixin on _Melos {
       final workspace = await MelosWorkspace.fromDirectory(
         Directory(config.path),
         filter: script.packageFilter,
+        logger: logger,
       );
 
       final packages = workspace.filteredPackages.values.toList();

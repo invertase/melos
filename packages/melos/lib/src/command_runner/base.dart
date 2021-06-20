@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
+import 'package:cli_util/cli_logging.dart';
 
 import '../common/glob.dart';
 import '../common/platform.dart';
@@ -9,6 +10,9 @@ import '../common/utils.dart';
 import '../package.dart';
 
 abstract class MelosCommand extends Command<void> {
+  Logger get logger =>
+      argResults!['verbose'] as bool ? Logger.verbose() : Logger.standard();
+
   /// The `melos.yaml` configuration for this command.
   /// see [ArgParser.allowTrailingOptions]
   bool get allowTrailingOptions => true;

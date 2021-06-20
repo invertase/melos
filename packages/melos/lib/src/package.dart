@@ -19,6 +19,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cli_util/cli_logging.dart';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:http/http.dart' as http;
@@ -247,12 +248,13 @@ PackageFilter(
 
 // Not using MapView to prevent map mutation
 class PackageMap {
-  PackageMap._(this._map);
+  PackageMap._(this._map, this._logger);
 
   static Future<PackageMap> resolvePackages({
     required String workspacePath,
     required List<Glob> packages,
     required List<Glob> ignore,
+    required Logger logger,
   }) async {
     final packageMap = <String, Package>{};
 
@@ -292,10 +294,11 @@ class PackageMap {
       }),
     );
 
-    return PackageMap._(packageMap);
+    return PackageMap._(packageMap, logger);
   }
 
   final Map<String, Package> _map;
+  final Logger _logger;
 
   Iterable<String> get keys => _map.keys;
   Iterable<Package> get values => _map.values;
@@ -320,7 +323,7 @@ class PackageMap {
         .applyNoDependsOn(filter.noDependsOn)
         .filterNullSafe(nullSafe: filter.nullSafe)
         .filterPublishedPackages(published: filter.published)
-        .then((packages) => packages.applySince(filter.updatedSince));
+        .then((packages) => packages.applySince(filter.updatedSince, _logger));
 
     // TODO implement includeDependents/includeDependencies
 
@@ -329,9 +332,12 @@ class PackageMap {
       includeDependencies: filter.includeDependencies,
     );
 
-    return PackageMap._({
-      for (final package in packageList) package.name: package,
-    });
+    return PackageMap._(
+      {
+        for (final package in packageList) package.name: package,
+      },
+      _logger,
+    );
   }
 }
 
@@ -414,14 +420,15 @@ extension on Iterable<Package> {
     return packagesFilteredWithPublishStatus;
   }
 
-  Future<Iterable<Package>> applySince(String? since) async {
+  Future<Iterable<Package>> applySince(String? since, Logger logger) async {
     if (since == null) return this;
 
     final pool = Pool(10);
     final packagesFilteredWithGitCommitsSince = <Package>[];
 
     await pool.forEach<Package, void>(this, (package) {
-      return gitCommitsForPackage(package, since: since).then((commits) async {
+      return gitCommitsForPackage(package, since: since, logger: logger)
+          .then((commits) async {
         if (commits.isNotEmpty) {
           packagesFilteredWithGitCommitsSince.add(package);
         }

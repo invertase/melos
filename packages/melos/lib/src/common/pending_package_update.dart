@@ -17,6 +17,7 @@
 
 import 'dart:math' as math;
 
+import 'package:cli_util/cli_logging.dart';
 import 'package:conventional_commit/conventional_commit.dart';
 import 'package:pub_semver/pub_semver.dart';
 
@@ -44,6 +45,7 @@ class MelosPendingPackageUpdate {
     this.prerelease = false,
     this.graduate = false,
     this.preid,
+    required this.logger,
   });
 
   /// Commits that triggered this pending update. Can be empty if
@@ -66,9 +68,11 @@ class MelosPendingPackageUpdate {
   /// The prerelease id that will be used for prereleases, e.g. "0.1.0-[preid].1".
   final String? preid;
 
+  final Logger logger;
+
   Changelog get changelog {
     // TODO change log styles can be changed here if supported in future.
-    return MelosChangelog(this);
+    return MelosChangelog(this, logger);
   }
 
   /// Current version specified in the packages pubspec.yaml.

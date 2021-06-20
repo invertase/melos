@@ -20,7 +20,6 @@ import 'dart:io';
 import 'package:ansi_styles/ansi_styles.dart';
 
 import '../commands/runner.dart';
-import '../common/logger.dart';
 import 'base.dart';
 
 class RunCommand extends MelosCommand {
