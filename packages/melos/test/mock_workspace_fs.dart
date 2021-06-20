@@ -17,6 +17,7 @@
 import 'dart:io';
 
 import 'package:path/path.dart';
+import 'package:pub_semver/pub_semver.dart';
 
 import 'mock_fs.dart';
 
@@ -31,8 +32,10 @@ Directory createMockWorkspaceFs({
   Iterable<MockPackageFs> packages = const [],
   bool setCwdToWorkspace = true,
 }) {
-  assert(IOOverrides.current is MockFs,
-      'Mock workspaces can only be created inside a mock filesystem');
+  assert(
+    IOOverrides.current is MockFs,
+    'Mock workspaces can only be created inside a mock filesystem',
+  );
 
   // Create a `melos.yaml`
   _createMelosConfig(workspaceRoot, workspaceName, workspacePackagesGlobs);
@@ -60,11 +63,13 @@ void _createMelosConfig(
 ) {
   File(join(workspaceRoot, 'melos.yaml'))
     ..createSync(recursive: true)
-    ..writeAsStringSync('''
+    ..writeAsStringSync(
+      '''
 name: $workspaceName
 packages:
 ${_yamlStringList(workspacePackagesGlobs)}
-''');
+''',
+    );
 }
 
 void _createPackage(MockPackageFs package, String workspaceRoot) {
@@ -73,10 +78,17 @@ void _createPackage(MockPackageFs package, String workspaceRoot) {
   if (package.publishToNone) {
     pubspec.writeln('publish_to: none');
   }
-  pubspec.writeln('''
+
+  if (package.version != null) {
+    pubspec.writeln('version: ${package.version}');
+  }
+
+  pubspec.writeln(
+    '''
 dependencies:
 ${_yamlMap(package.dependencyMap, indent: 2)}
-''');
+''',
+  );
 
   File(join(workspaceRoot, package.path, 'pubspec.yaml'))
     ..createSync(recursive: true)
@@ -98,6 +110,7 @@ class MockPackageFs {
     required this.name,
     String? path,
     List<String>? dependencies,
+    this.version,
     this.publishToNone = false,
     bool generateExample = false,
   })  : _path = path,
@@ -106,6 +119,8 @@ class MockPackageFs {
 
   /// Name of the package (must be a valid Dart package name)
   final String name;
+
+  final Version? version;
 
   /// Workspace-root relative path
   String get path => _path ?? 'packages/$name';

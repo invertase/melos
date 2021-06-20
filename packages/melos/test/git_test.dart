@@ -20,11 +20,14 @@ import 'dart:io';
 import 'package:melos/src/common/git.dart';
 import 'package:test/test.dart';
 
+import 'utils.dart';
+
 void main() {
   group('Git', () {
     test('gitGetCurrentBranchName', () async {
       final branchName = await gitGetCurrentBranchName(
         workingDirectory: Directory.current.path,
+        logger: TestLogger(),
       );
       expect(branchName, isA<String>());
       expect(branchName, isNotEmpty);
@@ -39,6 +42,7 @@ void main() {
         await gitTagExists(
           aTagThatExists,
           workingDirectory: workingDirectory,
+          logger: TestLogger(),
         ),
         isTrue,
       );
@@ -46,6 +50,7 @@ void main() {
         await gitTagExists(
           aTagThatDoesNotExist,
           workingDirectory: workingDirectory,
+          logger: TestLogger(),
         ),
         isFalse,
       );
@@ -56,6 +61,7 @@ void main() {
         () => gitExecuteCommand(
           arguments: ['foo', 'bar'],
           workingDirectory: Directory.current.path,
+          logger: TestLogger(),
         ),
         throwsA(isA<ProcessException>()),
       );

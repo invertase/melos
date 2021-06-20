@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import 'package:melos/src/common/package.dart';
+import 'package:melos/src/common/validation.dart';
+import 'package:melos/src/package.dart';
 import 'package:test/test.dart';
 
 Matcher packageNamed(dynamic matcher) => _PackageNameMatcher(matcher);
@@ -24,7 +25,7 @@ class _PackageNameMatcher extends CustomMatcher {
       : super('package named', 'name', matcher);
 
   @override
-  Object? featureValueOf(Object? actual) => (actual! as MelosPackage).name;
+  Object? featureValueOf(Object? actual) => (actual! as Package).name;
 }
 
 const containsDuplicates = _ContainsDuplicatesMatcher();
@@ -51,4 +52,20 @@ class _ContainsDuplicatesMatcher extends Matcher {
     }
     return false;
   }
+}
+
+TypeMatcher<MelosConfigException> isMelosConfigException({
+  String? message,
+}) {
+  var matcher = isA<MelosConfigException>();
+
+  if (message != null) {
+    matcher = matcher.having((e) => e.message, 'message', equals(message));
+  }
+
+  return matcher;
+}
+
+Matcher throwsMelosConfigException({String? message}) {
+  return throwsA(isMelosConfigException(message: message));
 }

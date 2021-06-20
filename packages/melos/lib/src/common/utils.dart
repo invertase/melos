@@ -35,12 +35,21 @@ const filterOptionFileExists = 'file-exists';
 const filterOptionSince = 'since';
 const filterOptionNullsafety = 'nullsafety';
 const filterOptionNoPrivate = 'no-private';
+const filterOptionPrivate = 'private';
 const filterOptionPublished = 'published';
 const filterOptionFlutter = 'flutter';
 const filterOptionDependsOn = 'depends-on';
 const filterOptionNoDependsOn = 'no-depends-on';
 const filterOptionIncludeDependents = 'include-dependents';
 const filterOptionIncludeDependencies = 'include-dependencies';
+
+extension Let<T> on T? {
+  R? let<R>(R Function(T value) cb) {
+    if (this == null) return null;
+
+    return cb(this as T);
+  }
+}
 
 // MELOS_PACKAGES environment variable is a comma delimited list of
 // package names - used instead of filters if it is present.
@@ -50,6 +59,28 @@ const envKeyMelosPackages = 'MELOS_PACKAGES';
 const envKeyMelosTerminalWidth = 'MELOS_TERMINAL_WIDTH';
 
 final melosPackageUri = Uri.parse('package:melos/melos.dart');
+
+extension Indent on String {
+  String indent(String indent) {
+    final split = this.split('\n');
+
+    final buffer = StringBuffer();
+
+    buffer.writeln(split.first);
+
+    for (var i = 1; i < split.length; i++) {
+      buffer.write(indent);
+      if (i + 1 == split.length) {
+        // last line
+        buffer.write(split[i]);
+      } else {
+        buffer.writeln(split[i]);
+      }
+    }
+
+    return buffer.toString();
+  }
+}
 
 int get terminalWidth {
   if (currentPlatform.environment.containsKey(envKeyMelosTerminalWidth)) {
@@ -136,29 +167,33 @@ String relativePath(String path, String from) {
   return normalize(relative(path, from: from));
 }
 
-String listAsPaddedTable(List<List<String>> list, {int paddingSize = 1}) {
+String listAsPaddedTable(List<List<String>> table, {int paddingSize = 1}) {
   final output = <String>[];
   final maxColumnSizes = <int, int>{};
-  for (final cells in list) {
+  for (final row in table) {
     var i = 0;
-    for (final cell in cells) {
+    for (final column in row) {
       if (maxColumnSizes[i] == null ||
-          maxColumnSizes[i]! < AnsiStyles.strip(cell).length) {
-        maxColumnSizes[i] = AnsiStyles.strip(cell).length;
+          maxColumnSizes[i]! < AnsiStyles.strip(column).length) {
+        maxColumnSizes[i] = AnsiStyles.strip(column).length;
       }
       i++;
     }
   }
 
-  for (final cells in list) {
+  for (final row in table) {
     var i = 0;
     final rowBuffer = StringBuffer();
-    for (final cell in cells) {
+    for (final column in row) {
       final colWidth = maxColumnSizes[i]! + paddingSize;
-      final cellWidth = AnsiStyles.strip(cell).length;
+      final cellWidth = AnsiStyles.strip(column).length;
       var padding = colWidth - cellWidth;
       if (padding < paddingSize) padding = paddingSize;
-      rowBuffer.write('$cell${List.filled(padding, ' ').join()}');
+
+      // last cell of the list, no need for padding
+      if (i + 1 >= row.length) padding = 0;
+
+      rowBuffer.write('$column${List.filled(padding, ' ').join()}');
       i++;
     }
     output.add(rowBuffer.toString());
@@ -233,14 +268,15 @@ Future<int> startProcess(
   if (prefix != null && prefix.isNotEmpty) {
     final pluginPrefixTransformer =
         StreamTransformer<String, String>.fromHandlers(
-            handleData: (String data, EventSink sink) {
-      const lineSplitter = LineSplitter();
-      var lines = lineSplitter.convert(data);
-      lines = lines
-          .map((line) => '$prefix$line${line.contains('\n') ? '' : '\n'}')
-          .toList();
-      sink.add(lines.join());
-    });
+      handleData: (String data, EventSink sink) {
+        const lineSplitter = LineSplitter();
+        var lines = lineSplitter.convert(data);
+        lines = lines
+            .map((line) => '$prefix$line${line.contains('\n') ? '' : '\n'}')
+            .toList();
+        sink.add(lines.join());
+      },
+    );
 
     stdoutStream = execProcess.stdout
         .transform<String>(utf8.decoder)
@@ -258,18 +294,24 @@ Future<int> startProcess(
   final processStdoutCompleter = Completer<void>();
   final processStderrCompleter = Completer<void>();
 
-  stdoutStream.listen((List<int> event) {
-    processStdout.addAll(event);
-    if (!onlyOutputOnError) {
-      stdout.add(event);
-    }
-  }, onDone: processStdoutCompleter.complete);
-  stderrStream.listen((List<int> event) {
-    processStderr.addAll(event);
-    if (!onlyOutputOnError) {
-      stderr.add(event);
-    }
-  }, onDone: processStderrCompleter.complete);
+  stdoutStream.listen(
+    (List<int> event) {
+      processStdout.addAll(event);
+      if (!onlyOutputOnError) {
+        stdout.add(event);
+      }
+    },
+    onDone: processStdoutCompleter.complete,
+  );
+  stderrStream.listen(
+    (List<int> event) {
+      processStderr.addAll(event);
+      if (!onlyOutputOnError) {
+        stderr.add(event);
+      }
+    },
+    onDone: processStderrCompleter.complete,
+  );
 
   await processStdoutCompleter.future;
   await processStderrCompleter.future;
