@@ -24,6 +24,7 @@ import 'package:test/test.dart';
 import 'matchers.dart';
 import 'mock_fs.dart';
 import 'mock_workspace_fs.dart';
+import 'utils.dart';
 
 void main() {
   group('Workspace', () {
@@ -38,7 +39,10 @@ void main() {
         );
 
         final aDir = Directory('${mockWorkspaceRootDir.path}/packages/a');
-        final workspace = await MelosWorkspace.fromDirectory(aDir);
+        final workspace = await MelosWorkspace.fromDirectory(
+          aDir,
+          logger: TestLogger(),
+        );
 
         expect(
           workspace.filteredPackages.values,
@@ -63,8 +67,10 @@ void main() {
           ],
         );
 
-        final workspace =
-            await MelosWorkspace.fromDirectory(mockWorkspaceRootDir);
+        final workspace = await MelosWorkspace.fromDirectory(
+          mockWorkspaceRootDir,
+          logger: TestLogger(),
+        );
 
         expect(
           workspace.filteredPackages.values,
@@ -92,6 +98,7 @@ void main() {
                 ],
                 includeDependencies: true,
               ),
+              logger: TestLogger(),
             );
 
             expect(workspace.filteredPackages.values, [packageNamed('b')]);
@@ -115,6 +122,7 @@ void main() {
                 ],
                 includeDependencies: true,
               ),
+              logger: TestLogger(),
             );
 
             expect(
@@ -145,6 +153,7 @@ void main() {
                 ],
                 includeDependencies: true,
               ),
+              logger: TestLogger(),
             );
 
             expect(
@@ -177,6 +186,7 @@ void main() {
                 ],
                 includeDependencies: true,
               ),
+              logger: TestLogger(),
             );
 
             expect(workspace.filteredPackages.values, hasLength(4));
@@ -206,6 +216,7 @@ void main() {
                 ],
                 includeDependents: true,
               ),
+              logger: TestLogger(),
             );
 
             expect(workspace.filteredPackages.values, [packageNamed('a')]);
@@ -229,6 +240,7 @@ void main() {
                 ],
                 includeDependents: true,
               ),
+              logger: TestLogger(),
             );
 
             expect(workspace.filteredPackages.values, hasLength(2));
@@ -257,6 +269,7 @@ void main() {
                 ],
                 includeDependents: true,
               ),
+              logger: TestLogger(),
             );
 
             expect(
@@ -289,6 +302,7 @@ void main() {
                 ],
                 includeDependents: true,
               ),
+              logger: TestLogger(),
             );
 
             expect(workspace.filteredPackages.values, hasLength(4));

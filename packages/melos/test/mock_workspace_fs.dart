@@ -17,6 +17,7 @@
 import 'dart:io';
 
 import 'package:path/path.dart';
+import 'package:pub_semver/pub_semver.dart';
 
 import 'mock_fs.dart';
 
@@ -77,6 +78,11 @@ void _createPackage(MockPackageFs package, String workspaceRoot) {
   if (package.publishToNone) {
     pubspec.writeln('publish_to: none');
   }
+
+  if (package.version != null) {
+    pubspec.writeln('version: ${package.version}');
+  }
+
   pubspec.writeln(
     '''
 dependencies:
@@ -104,6 +110,7 @@ class MockPackageFs {
     required this.name,
     String? path,
     List<String>? dependencies,
+    this.version,
     this.publishToNone = false,
     bool generateExample = false,
   })  : _path = path,
@@ -112,6 +119,8 @@ class MockPackageFs {
 
   /// Name of the package (must be a valid Dart package name)
   final String name;
+
+  final Version? version;
 
   /// Workspace-root relative path
   String get path => _path ?? 'packages/$name';

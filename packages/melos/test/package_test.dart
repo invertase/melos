@@ -10,6 +10,7 @@ import 'package:test/test.dart';
 import 'mock_env.dart';
 import 'mock_fs.dart';
 import 'mock_workspace_fs.dart';
+import 'utils.dart';
 
 const pubPackageJson = '''
   {
@@ -32,6 +33,7 @@ void main() {
         createMockWorkspaceFs(
           packages: [MockPackageFs(name: 'melos')],
         ),
+        logger: TestLogger(),
       );
     });
 

@@ -11,7 +11,7 @@ import '../package.dart';
 
 abstract class MelosCommand extends Command<void> {
   Logger get logger =>
-      argResults!['verbose'] as bool ? Logger.verbose() : Logger.standard();
+      globalResults!['verbose'] as bool ? Logger.verbose() : Logger.standard();
 
   /// The `melos.yaml` configuration for this command.
   /// see [ArgParser.allowTrailingOptions]

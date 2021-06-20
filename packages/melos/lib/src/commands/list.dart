@@ -12,8 +12,6 @@ mixin _ListMixin on _Melos {
   }) async {
     final workspace = await createWorkspace(filter: filter);
 
-    print('hey ${workspace.allPackages.values}');
-
     switch (kind) {
       case ListOutputKind.graph:
         return _listGraph(workspace, showPrivatePackages: showPrivatePackages);
@@ -93,11 +91,11 @@ mixin _ListMixin on _Melos {
       );
       logger.stdout(table);
       return;
-    } else {
-      for (final package in workspace.filteredPackages.values) {
-        if (!showPrivatePackages && package.isPrivate) continue;
-        logger.stdout(package.name);
-      }
+    }
+
+    for (final package in workspace.filteredPackages.values) {
+      if (!showPrivatePackages && package.isPrivate) continue;
+      logger.stdout(package.name);
     }
   }
 

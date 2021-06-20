@@ -248,7 +248,22 @@ PackageFilter(
 
 // Not using MapView to prevent map mutation
 class PackageMap {
-  PackageMap._(this._map, this._logger);
+  PackageMap._(Map<String, Package> packages, this._logger)
+      : _map = _packagesSortedByName(packages);
+
+  static Map<String, Package> _packagesSortedByName(
+    Map<String, Package> packages,
+  ) {
+    final sortedNames = packages.keys.sorted((a, b) {
+      return a.toLowerCase().compareTo(b.toLowerCase());
+    });
+
+    // Map litterals creates an HashMap which preserves key order.
+    // So map.keys/map.values will be sorted by name.
+    return {
+      for (final name in sortedNames) name: packages[name]!,
+    };
+  }
 
   static Future<PackageMap> resolvePackages({
     required String workspacePath,
