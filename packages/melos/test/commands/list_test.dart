@@ -1,4 +1,3 @@
-import 'package:glob/glob.dart';
 import 'package:melos/src/commands/runner.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/package.dart';
@@ -138,6 +137,64 @@ c
             '''
 a
 c
+''',
+          );
+        }),
+      );
+
+      test(
+        'supports long flag for extra informations',
+        withMockFs(() async {
+          final workspaceDir = createMockWorkspaceFs(
+            packages: [
+              MockPackageFs(name: 'a', version: Version(1, 2, 3)),
+              MockPackageFs(name: 'b', dependencies: ['a']),
+              MockPackageFs(name: 'long_name'),
+            ],
+          );
+
+          final melos = Melos(logger: logger, workingDirectory: workspaceDir);
+
+          await melos.list(
+            showPrivatePackages: true,
+            long: true,
+          );
+
+          expect(logger.errs, isEmpty);
+          expect(logger.traces, isEmpty);
+          expect(
+            logger.logs.join(),
+            '''
+a         1.2.3 packages/a
+b         0.0.0 packages/b         PRIVATE
+long_name 0.0.0 packages/long_name PRIVATE
+''',
+          );
+        }),
+      );
+
+      test(
+        'long flag hides private packages by default',
+        withMockFs(() async {
+          final workspaceDir = createMockWorkspaceFs(
+            packages: [
+              MockPackageFs(name: 'a', version: Version(1, 2, 3)),
+              MockPackageFs(name: 'b'),
+              MockPackageFs(name: 'c', version: Version.none),
+            ],
+          );
+
+          final melos = Melos(logger: logger, workingDirectory: workspaceDir);
+
+          await melos.list(long: true);
+
+          expect(logger.errs, isEmpty);
+          expect(logger.traces, isEmpty);
+          expect(
+            logger.logs.join(),
+            '''
+a 1.2.3 packages/a
+c 0.0.0 packages/c
 ''',
           );
         }),

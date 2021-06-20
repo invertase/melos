@@ -167,29 +167,33 @@ String relativePath(String path, String from) {
   return normalize(relative(path, from: from));
 }
 
-String listAsPaddedTable(List<List<String>> list, {int paddingSize = 1}) {
+String listAsPaddedTable(List<List<String>> table, {int paddingSize = 1}) {
   final output = <String>[];
   final maxColumnSizes = <int, int>{};
-  for (final cells in list) {
+  for (final row in table) {
     var i = 0;
-    for (final cell in cells) {
+    for (final column in row) {
       if (maxColumnSizes[i] == null ||
-          maxColumnSizes[i]! < AnsiStyles.strip(cell).length) {
-        maxColumnSizes[i] = AnsiStyles.strip(cell).length;
+          maxColumnSizes[i]! < AnsiStyles.strip(column).length) {
+        maxColumnSizes[i] = AnsiStyles.strip(column).length;
       }
       i++;
     }
   }
 
-  for (final cells in list) {
+  for (final row in table) {
     var i = 0;
     final rowBuffer = StringBuffer();
-    for (final cell in cells) {
+    for (final column in row) {
       final colWidth = maxColumnSizes[i]! + paddingSize;
-      final cellWidth = AnsiStyles.strip(cell).length;
+      final cellWidth = AnsiStyles.strip(column).length;
       var padding = colWidth - cellWidth;
       if (padding < paddingSize) padding = paddingSize;
-      rowBuffer.write('$cell${List.filled(padding, ' ').join()}');
+
+      // last cell of the list, no need for padding
+      if (i + 1 >= row.length) padding = 0;
+
+      rowBuffer.write('$column${List.filled(padding, ' ').join()}');
       i++;
     }
     output.add(rowBuffer.toString());

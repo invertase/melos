@@ -83,7 +83,7 @@ mixin _ListMixin on _Melos {
                 package.name,
                 AnsiStyles.green((package.version).toString()),
                 AnsiStyles.gray(package.pathRelativeToWorkspace),
-                if (package.isPrivate) AnsiStyles.red('PRIVATE') else ''
+                if (package.isPrivate) AnsiStyles.red('PRIVATE')
               ],
             )
             .cast<List<String>>()
