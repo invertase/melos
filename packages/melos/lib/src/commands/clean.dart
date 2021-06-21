@@ -26,8 +26,8 @@ mixin _CleanMixin on _Melos {
   }
 
   void cleanWorkspace(MelosWorkspace workspace) {
-    if (Directory(workspace.path).existsSync()) {
-      Directory(workspace.path).deleteSync(recursive: true);
+    if (Directory(workspace.melosToolPath).existsSync()) {
+      Directory(workspace.melosToolPath).deleteSync(recursive: true);
     }
   }
 
