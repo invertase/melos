@@ -31,6 +31,7 @@ Directory createMockWorkspaceFs({
   Iterable<String> workspacePackagesGlobs = const ['packages/**'],
   Iterable<MockPackageFs> packages = const [],
   bool setCwdToWorkspace = true,
+  bool? intellij,
 }) {
   assert(
     IOOverrides.current is MockFs,
@@ -38,7 +39,12 @@ Directory createMockWorkspaceFs({
   );
 
   // Create a `melos.yaml`
-  _createMelosConfig(workspaceRoot, workspaceName, workspacePackagesGlobs);
+  _createMelosConfig(
+    workspaceRoot,
+    workspaceName,
+    workspacePackagesGlobs,
+    intellij: intellij,
+  );
 
   // Sythesize a "package" (enough to satisfy our test requirements) for each
   // entry in `packages`
@@ -59,17 +65,30 @@ Directory createMockWorkspaceFs({
 void _createMelosConfig(
   String workspaceRoot,
   String workspaceName,
-  Iterable<String> workspacePackagesGlobs,
-) {
-  File(join(workspaceRoot, 'melos.yaml'))
-    ..createSync(recursive: true)
-    ..writeAsStringSync(
-      '''
+  Iterable<String> workspacePackagesGlobs, {
+  required bool? intellij,
+}) {
+  final melosYaml = File(join(workspaceRoot, 'melos.yaml'));
+
+  melosYaml.createSync(recursive: true);
+
+  melosYaml.writeAsStringSync(
+    '''
 name: $workspaceName
 packages:
 ${_yamlStringList(workspacePackagesGlobs)}
 ''',
+  );
+
+  if (intellij != null) {
+    melosYaml.writeAsStringSync(
+      '''
+ide:
+  intellij: $intellij
+''',
+      mode: FileMode.append,
     );
+  }
 }
 
 void _createPackage(MockPackageFs package, String workspaceRoot) {

@@ -21,8 +21,8 @@ import '../common/git.dart';
 import '../common/glob.dart';
 import '../common/pending_package_update.dart';
 import '../common/platform.dart';
-import '../common/utils.dart';
 import '../common/utils.dart' as utils;
+import '../common/utils.dart';
 import '../common/versioning.dart' as versioning;
 import '../package.dart';
 import '../prompts/prompt.dart' as prompts;
@@ -53,7 +53,10 @@ class Melos extends _Melos
         _ExecMixin,
         _VersionMixin,
         _PublishMixin {
-  Melos({required this.logger, required this.workingDirectory});
+  Melos({
+    required this.workingDirectory,
+    Logger? logger,
+  }) : logger = logger ?? Logger.standard();
 
   @override
   final Logger logger;

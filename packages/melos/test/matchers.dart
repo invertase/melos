@@ -20,6 +20,20 @@ import 'package:test/test.dart';
 
 Matcher packageNamed(dynamic matcher) => _PackageNameMatcher(matcher);
 
+Matcher equalsIgnoringAnsii(String str) {
+  return _EqualsIgnoringAnsii(str);
+}
+
+class _EqualsIgnoringAnsii extends CustomMatcher {
+  _EqualsIgnoringAnsii(String str)
+      : super('String ignoring Ansii', 'String', str);
+
+  @override
+  Object? featureValueOf(covariant String actual) {
+    return actual.replaceAll(RegExp(r'\x1b\[[0-9;]*m'), '');
+  }
+}
+
 class _PackageNameMatcher extends CustomMatcher {
   _PackageNameMatcher(dynamic matcher)
       : super('package named', 'name', matcher);

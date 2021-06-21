@@ -28,8 +28,17 @@ mixin _BootstrapMixin on _CleanMixin {
         await _generateTemporaryProjects(workspace);
 
         try {
-          await _runPubGet(workspace);
-        } catch (_) {
+          await for (final package in _runPubGet(workspace)) {
+            logger.stdout(
+              '''
+  ${AnsiStyles.greenBright('✓')} ${AnsiStyles.bold(package.name)}
+    └> ${AnsiStyles.blue(package.pathRelativeToWorkspace)}''',
+            );
+          }
+        } catch (err) {
+          if (err is BootstrapException) {
+            await _logPubGetFailed(err.package, err.process, workspace);
+          }
           cleanWorkspace(workspace);
           rethrow;
         }
@@ -60,20 +69,83 @@ mixin _BootstrapMixin on _CleanMixin {
     );
   }
 
-  Future<void> _runPubGet(MelosWorkspace workspace) async {
+  Future<void> _logPubGetFailed(
+    Package package,
+    Process process,
+    MelosWorkspace workspace,
+  ) async {
+    var processStdOutString = utf8.decoder.convert(
+      await process.stdout
+          .reduce((previous, element) => [...previous, ...element]),
+    );
+    var processStdErrString = utf8.decoder.convert(
+      await process.stderr
+          .reduce((previous, element) => [...previous, ...element]),
+    );
+
+    processStdOutString = processStdOutString
+        .split('\n')
+        // We filter these out as they can be quite spammy. This happens
+        // as we run multiple pub gets in parallel.
+        .where(
+          (line) => !line.contains(
+            'Waiting for another flutter command to release the startup lock',
+          ),
+        )
+        // Remove empty lines to reduce logging.
+        .where((line) => line.trim().isNotEmpty)
+        .toList()
+        .join('\n');
+
+    processStdErrString = processStdErrString
+        .split('\n')
+        // We filter these out as they can be quite spammy. This happens
+        // as we run multiple pub gets in parallel.
+        .where(
+          (line) => !line.contains(
+            'Waiting for another flutter command to release the startup lock',
+          ),
+        )
+        // Remove empty lines to reduce logging.
+        .where((line) => line.trim().isNotEmpty)
+        .map((line) {
+          var lineWithWorkspacePackagesHighlighted = line;
+          for (final workspacePackage in workspace.allPackages.values) {
+            if (workspacePackage.name == package.name) continue;
+            lineWithWorkspacePackagesHighlighted =
+                lineWithWorkspacePackagesHighlighted.replaceAll(
+              '${workspacePackage.name} ',
+              '${AnsiStyles.yellowBright(workspacePackage.name)} ',
+            );
+          }
+          return lineWithWorkspacePackagesHighlighted;
+        })
+        .toList()
+        .join('\n');
+
+    logger.stderr(
+      '''
+  ${AnsiStyles.bullet} ${AnsiStyles.bold.cyan(package.name)}
+    └> ${AnsiStyles.blue(package.pathRelativeToWorkspace)}
+    └> ${AnsiStyles.red('Failed to install.')}
+''',
+    );
+
+    logger.stderr(processStdOutString);
+    logger.stderr(processStdErrString);
+  }
+
+  // Return a stream of package that completed.
+  Stream<Package> _runPubGet(MelosWorkspace workspace) async* {
     for (final package in workspace.filteredPackages.values) {
       final pubGet = await _runPubGetForPackage(workspace, package);
-
-      // ignore: unawaited_futures
-      stdout.addStream(pubGet.process.stdout);
-      // ignore: unawaited_futures
-      stderr.addStream(pubGet.process.stderr);
 
       final exitCode = await pubGet.process.exitCode;
 
       if (exitCode != 0) {
-        throw BootstrapException(package);
+        throw BootstrapException._(package, pubGet.process);
       }
+      yield package;
     }
   }
 
@@ -178,10 +250,11 @@ class _PubGet {
 
 /// An exception for when `pub get` for a package failed.
 class BootstrapException implements MelosException {
-  BootstrapException(this.package);
+  BootstrapException._(this.package, this.process);
 
   /// The package that failed
   final Package package;
+  final Process process;
 
   @override
   String toString() {
