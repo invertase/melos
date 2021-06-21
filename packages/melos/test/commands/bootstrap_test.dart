@@ -102,7 +102,7 @@ melos bootstrap
    └> ${workspaceDir.path}
 
 Running "pub get" in workspace packages...
-  • a
+  - a
     └> packages/a
 e-    └> Failed to install.
 

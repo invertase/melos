@@ -125,7 +125,7 @@ mixin _BootstrapMixin on _CleanMixin {
 
     logger.stdout(
       '''
-  ${AnsiStyles.bullet} ${AnsiStyles.bold.cyan(package.name)}
+  - ${AnsiStyles.bold.cyan(package.name)}
     └> ${AnsiStyles.blue(package.pathRelativeToWorkspace)}''',
     );
 
