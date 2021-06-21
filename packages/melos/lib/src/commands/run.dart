@@ -180,7 +180,7 @@ class ScriptNotFoundException implements MelosException {
   @override
   String toString() {
     final builder = StringBuffer(
-      'ScriptNotFoundException: The script $scriptName could not be found in the melos.yaml file.',
+      "ScriptNotFoundException: The script $scriptName could not be found in the 'melos.yaml' file.",
     );
 
     for (final scriptName in availableScriptNames) {
