@@ -123,15 +123,16 @@ mixin _BootstrapMixin on _CleanMixin {
         .toList()
         .join('\n');
 
-    logger.stderr(
+    logger.stdout(
       '''
   ${AnsiStyles.bullet} ${AnsiStyles.bold.cyan(package.name)}
-    └> ${AnsiStyles.blue(package.pathRelativeToWorkspace)}
-    └> ${AnsiStyles.red('Failed to install.')}
-''',
+    └> ${AnsiStyles.blue(package.pathRelativeToWorkspace)}''',
     );
 
-    logger.stderr(processStdOutString);
+    logger.stderr('    └> ${AnsiStyles.red('Failed to install.')}');
+
+    logger.stdout('');
+    logger.stdout(processStdOutString);
     logger.stderr(processStdErrString);
   }
 

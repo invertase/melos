@@ -5,6 +5,7 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:test/scaffolding.dart';
 import 'package:test/test.dart';
 
+import '../matchers.dart';
 import '../mock_fs.dart';
 import '../mock_workspace_fs.dart';
 import '../utils.dart';
@@ -30,14 +31,14 @@ void main() {
 
           await melos.list();
 
-          expect(logger.errs, isEmpty);
-          expect(logger.traces, isEmpty);
           expect(
-            logger.logs.join(),
-            '''
+            logger.output,
+            equalsIgnoringAnsii(
+              '''
 a
 b
 ''',
+            ),
           );
         }),
       );
@@ -63,13 +64,13 @@ b
 
           await melos.list();
 
-          expect(logger.errs, isEmpty);
-          expect(logger.traces, isEmpty);
           expect(
-            logger.logs.join(),
-            '''
+            logger.output,
+            equalsIgnoringAnsii(
+              '''
 a
 ''',
+            ),
           );
         }),
       );
@@ -95,15 +96,15 @@ a
 
           await melos.list(showPrivatePackages: true);
 
-          expect(logger.errs, isEmpty);
-          expect(logger.traces, isEmpty);
           expect(
-            logger.logs.join(),
-            '''
+            logger.output,
+            equalsIgnoringAnsii(
+              '''
 a
 b
 c
 ''',
+            ),
           );
         }),
       );
@@ -130,14 +131,14 @@ c
             ),
           );
 
-          expect(logger.errs, isEmpty);
-          expect(logger.traces, isEmpty);
           expect(
-            logger.logs.join(),
-            '''
+            logger.output,
+            equalsIgnoringAnsii(
+              '''
 a
 c
 ''',
+            ),
           );
         }),
       );
@@ -160,15 +161,15 @@ c
             long: true,
           );
 
-          expect(logger.errs, isEmpty);
-          expect(logger.traces, isEmpty);
           expect(
-            logger.logs.join(),
-            '''
+            logger.output,
+            equalsIgnoringAnsii(
+              '''
 a         1.2.3 packages/a
 b         0.0.0 packages/b         PRIVATE
 long_name 0.0.0 packages/long_name PRIVATE
 ''',
+            ),
           );
         }),
       );
@@ -188,14 +189,14 @@ long_name 0.0.0 packages/long_name PRIVATE
 
           await melos.list(long: true);
 
-          expect(logger.errs, isEmpty);
-          expect(logger.traces, isEmpty);
           expect(
-            logger.logs.join(),
-            '''
+            logger.output,
+            equalsIgnoringAnsii(
+              '''
 a 1.2.3 packages/a
 c 0.0.0 packages/c
 ''',
+            ),
           );
         }),
       );

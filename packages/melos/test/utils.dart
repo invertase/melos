@@ -7,33 +7,32 @@ import 'package:pubspec/pubspec.dart';
 import 'package:test/scaffolding.dart';
 
 class TestLogger extends StandardLogger {
-  final List<String> errs = [];
-  final List<String> logs = [];
-  final List<String> traces = [];
-  final List<String> allLogs = [];
+  final _buffer = StringBuffer();
+
+  String get output => _buffer.toString();
 
   @override
   void stderr(String message) {
-    errs.add('$message\n');
-    allLogs.add('$message\n');
+    _buffer.writeln(
+      message.replaceAll(RegExp('^', multiLine: true), 'e-'),
+    );
   }
 
   @override
   void stdout(String message) {
-    logs.add('$message\n');
-    allLogs.add('$message\n');
+    _buffer.writeln(message);
   }
 
   @override
   void trace(String message) {
-    traces.add('$message\n');
-    allLogs.add('$message\n');
+    _buffer.writeln(
+      message.replaceAll(RegExp('^', multiLine: true), 't-'),
+    );
   }
 
   @override
   void write(String message) {
-    logs.add(message);
-    allLogs.add(message);
+    _buffer.write(message);
   }
 
   @override

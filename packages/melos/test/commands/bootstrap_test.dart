@@ -33,7 +33,7 @@ void main() {
       await melos.bootstrap();
 
       expect(
-        logger.logs.join(),
+        logger.output,
         equalsIgnoringAnsii(
           '''
 melos bootstrap
@@ -55,8 +55,6 @@ Generating IntelliJ IDE files...
 ''',
         ),
       );
-      expect(logger.errs, isEmpty);
-      expect(logger.traces, isEmpty);
 
       final aConfig = packageConfigForPackageAt(aDir);
 
@@ -97,7 +95,7 @@ Generating IntelliJ IDE files...
       );
 
       expect(
-        logger.allLogs.join(),
+        logger.output,
         equalsIgnoringAnsii(
           '''
 melos bootstrap
@@ -106,10 +104,10 @@ melos bootstrap
 Running "pub get" in workspace packages...
   • a
     └> packages/a
-    └> Failed to install.
+e-    └> Failed to install.
 
 Resolving dependencies...
-Because a depends on package_that_does_not_exists any which doesn't exist (could not find package package_that_does_not_exists at https://pub.dartlang.org), version solving failed.
+e-Because a depends on package_that_does_not_exists any which doesn't exist (could not find package package_that_does_not_exists at https://pub.dartlang.org), version solving failed.
 ''',
         ),
       );
