@@ -56,6 +56,7 @@ mixin _ExecMixin on _Melos {
 
     return startProcess(
       execArgs,
+      logger: logger,
       environment: environment,
       workingDirectory: package.path,
       prefix: prefixLogs ? packagePrefix : null,

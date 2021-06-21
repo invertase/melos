@@ -152,6 +152,7 @@ mixin _RunMixin on _Melos {
 
     return startProcess(
       scriptParts,
+      logger: logger,
       environment: environment,
       workingDirectory: config.path,
     );

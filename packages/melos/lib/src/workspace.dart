@@ -45,6 +45,7 @@ class MelosWorkspace {
     required this.config,
     required this.allPackages,
     required this.filteredPackages,
+    required this.logger,
   });
 
   /// Build a [MelosWorkspace] from a Directory.
@@ -71,9 +72,12 @@ class MelosWorkspace {
       path: workspaceConfig.path,
       config: workspaceConfig,
       allPackages: allPackages,
+      logger: logger,
       filteredPackages: filteredPackages,
     );
   }
+
+  final Logger logger;
 
   /// An optional name as defined in "melos.yaml". This name is used for logging
   /// purposes and also used when generating certain IDE files.
@@ -111,6 +115,7 @@ class MelosWorkspace {
 
     return utils.startProcess(
       execArgs,
+      logger: logger,
       environment: environment,
       workingDirectory: path,
       onlyOutputOnError: onlyOutputOnError,
@@ -128,6 +133,7 @@ class MelosWorkspace {
 
     return utils.startProcess(
       execArgs,
+      logger: logger,
       environment: environment,
       workingDirectory: melosToolPath,
       onlyOutputOnError: onlyOutputOnError,
