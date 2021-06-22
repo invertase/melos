@@ -177,6 +177,7 @@ mixin _BootstrapMixin on _CleanMixin {
       command = ['pub', 'get'];
     }
 
+    print('start pub get process');
     final process = await Process.start(
       command[0],
       command.skip(1).toList(),
@@ -187,6 +188,7 @@ mixin _BootstrapMixin on _CleanMixin {
       },
       runInShell: true,
     );
+    print('got pub get process');
 
     return _PubGet(
       args: command,
