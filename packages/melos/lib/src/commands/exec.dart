@@ -82,8 +82,8 @@ mixin _ExecMixin on _Melos {
       '       └> ${AnsiStyles.yellow.bold('RUNNING')} (in ${packages.length} packages)',
     );
 
+    logger.stdout('');
     if (prefixLogs) {
-      logger.stdout('');
       logger.stdout('-' * terminalWidth);
     }
 
@@ -93,7 +93,6 @@ mixin _ExecMixin on _Melos {
       }
 
       if (!prefixLogs) {
-        logger.stdout('');
         logger.stdout('-' * terminalWidth);
         logger.stdout(AnsiStyles.bgBlack.bold.italic('${package.name}:'));
       }

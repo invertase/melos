@@ -176,6 +176,26 @@ class PackageFilter {
   /// This supersede other filters.
   final bool includeDependencies;
 
+  Map<String, Object?> toJson() {
+    return {
+      if (scope.isNotEmpty)
+        filterOptionScope: scope.map((e) => e.toString()).toList(),
+      if (ignore.isNotEmpty)
+        filterOptionIgnore: ignore.map((e) => e.toString()).toList(),
+      if (dirExists.isNotEmpty) filterOptionDirExists: dirExists,
+      if (fileExists.isNotEmpty) filterOptionFileExists: fileExists,
+      if (dependsOn.isNotEmpty) filterOptionDependsOn: dependsOn,
+      if (noDependsOn.isNotEmpty) filterOptionNoDependsOn: noDependsOn,
+      if (updatedSince != null) filterOptionSince: updatedSince,
+      if (includePrivatePackages != null)
+        filterOptionPrivate: includePrivatePackages,
+      if (published != null) filterOptionPublished: published,
+      if (nullSafe != null) filterOptionNullsafety: nullSafe,
+      if (includeDependents) filterOptionIncludeDependents: true,
+      if (includeDependencies) filterOptionIncludeDependencies: true,
+    };
+  }
+
   PackageFilter copyWithUpdatedSince(String? since) {
     return PackageFilter._(
       dependsOn: dependsOn,

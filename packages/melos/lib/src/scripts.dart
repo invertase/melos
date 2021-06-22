@@ -83,15 +83,21 @@ class Scripts extends MapView<String, Script> {
       post: this['post$name'],
     );
   }
+
+  Map<Object?, Object?> toJson() {
+    return {
+      for (final entry in entries) entry.key: entry.value.toJson(),
+    };
+  }
 }
 
 class Script {
   Script({
     required this.name,
     required this.run,
-    required this.description,
-    required this.env,
-    required this.packageFilter,
+    this.description,
+    this.env = const {},
+    this.filter,
   });
 
   factory Script.fromYaml(
@@ -160,11 +166,12 @@ class Script {
       run: run,
       description: description,
       env: env,
-      packageFilter: packageFilter,
+      filter: packageFilter,
     );
   }
 
   /// Do not use
+  // this method is not inside PackageFilter as it is specific to Scripts
   @visibleForTesting
   static PackageFilter packageFilterFromYaml(
     Map<Object?, Object?> yaml, {
@@ -284,7 +291,17 @@ class Script {
 
   /// If the [run] command is a melos command, allows filtering packages
   /// that will execute the command.
-  final PackageFilter? packageFilter;
+  final PackageFilter? filter;
+
+  Map<Object?, Object?> toJson() {
+    return {
+      'name': name,
+      'run': run,
+      if (description != null) 'description': description,
+      if (env.isNotEmpty) 'env': env,
+      if (filter != null) 'select-package': filter!.toJson(),
+    };
+  }
 
   @override
   bool operator ==(Object other) =>
@@ -294,7 +311,7 @@ class Script {
       other.run == run &&
       other.description == description &&
       const DeepCollectionEquality().equals(other.env, env) &&
-      other.packageFilter == packageFilter;
+      other.filter == filter;
 
   @override
   int get hashCode =>
@@ -303,7 +320,7 @@ class Script {
       run.hashCode ^
       description.hashCode ^
       const DeepCollectionEquality().hash(env) ^
-      packageFilter.hashCode;
+      filter.hashCode;
 
   @override
   String toString() {
@@ -313,7 +330,7 @@ Script(
   run: $run,
   description: $description,
   env: $env,
-  packageFilter: ${packageFilter.toString().indent('  ')},
+  packageFilter: ${filter.toString().indent('  ')},
 )''';
   }
 }

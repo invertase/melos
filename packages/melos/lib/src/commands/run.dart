@@ -8,11 +8,8 @@ mixin _RunMixin on _Melos {
     // Optional configs to avoid re-parsing the configs
     MelosWorkspaceConfig? configs,
   }) async {
-    if (workingDirectory == null) {
-      throw StateError('Called `run` but no workingDirectory specified');
-    }
     // We don't create a workspace yet, as we don't need to load the packages.
-    configs ??= await MelosWorkspaceConfig.fromDirectory(workingDirectory!);
+    configs ??= await MelosWorkspaceConfig.fromDirectory(workingDirectory);
 
     if (configs.scripts.keys.isEmpty) throw NoScriptException._();
 
@@ -43,6 +40,7 @@ mixin _RunMixin on _Melos {
 
   Future<String?> _pickScript(
     MelosWorkspaceConfig config, {
+    // TODO(rrousselGit) noSelect should be used
     required bool noSelect,
   }) async {
     // using toList as Maps may be unordered
@@ -80,10 +78,10 @@ mixin _RunMixin on _Melos {
       ...script.env,
     };
 
-    if (script.packageFilter != null) {
+    if (script.filter != null) {
       final workspace = await MelosWorkspace.fromDirectory(
         Directory(config.path),
-        filter: script.packageFilter,
+        filter: script.filter,
         logger: logger,
       );
 
@@ -93,7 +91,7 @@ mixin _RunMixin on _Melos {
 
       if (choices.isEmpty) {
         throw NoPackageFoundScriptException._(
-          script.packageFilter,
+          script.filter,
           script.name,
         );
       }
@@ -138,7 +136,6 @@ mixin _RunMixin on _Melos {
       // a defined script, this comma delimited list of package names is used
       // instead of any filters if detected.
       environment[envKeyMelosPackages] = packagesEnv;
-      logger.stdout('\n');
     }
 
     final scriptSource = script.run;

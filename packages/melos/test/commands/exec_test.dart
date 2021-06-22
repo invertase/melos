@@ -21,9 +21,15 @@ void main() {
       );
       File(join(aDir.path, 'log.txt')).createSync();
 
-      await createProject(
+      final bDir = await createProject(
         workspaceDir,
         const PubSpec(name: 'b'),
+      );
+      File(join(bDir.path, 'log.txt')).createSync();
+
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'c'),
       );
 
       final logger = TestLogger();
@@ -46,13 +52,17 @@ void main() {
           '''
 \$ melos exec
    └> echo hello world
-       └> RUNNING (in 1 packages)
+       └> RUNNING (in 2 packages)
 
-${List.generate(terminalWidth, (_) => '-').join()}
+${'-' * terminalWidth}
 a:
 hello world
 a: SUCCESS
-${List.generate(terminalWidth, (_) => '-').join()}
+${'-' * terminalWidth}
+b:
+hello world
+b: SUCCESS
+${'-' * terminalWidth}
 
 \$ melos exec
    └> echo hello world
@@ -61,5 +71,7 @@ ${List.generate(terminalWidth, (_) => '-').join()}
         ),
       );
     });
+
+    // TODO test that environemnt variables are injected
   });
 }

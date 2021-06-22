@@ -44,6 +44,12 @@ class IDEConfigs {
 
   final IntelliJConfig intelliJ;
 
+  Map<String, Object?> toJson() {
+    return {
+      'intellij': intelliJ.toJson(),
+    };
+  }
+
   @override
   bool operator ==(Object other) =>
       other is IDEConfigs &&
@@ -82,6 +88,10 @@ class IntelliJConfig {
   static const empty = IntelliJConfig();
 
   final bool enabled;
+
+  Object? toJson() {
+    return enabled;
+  }
 
   @override
   bool operator ==(Object other) =>
@@ -122,6 +132,12 @@ class CommandConfigs {
   static const CommandConfigs empty = CommandConfigs();
 
   final VersionCommandConfigs version;
+
+  Map<String, Object?> toJson() {
+    return {
+      'version': version.toJson(),
+    };
+  }
 
   @override
   bool operator ==(Object other) =>
@@ -173,6 +189,13 @@ class VersionCommandConfigs {
   /// If specified, prevents `melos version` from being used inside branches
   /// other than the one specified.
   final String? branch;
+
+  Map<String, Object?> toJson() {
+    return {
+      if (message != null) 'message': message,
+      if (branch != null) 'branch': branch,
+    };
+  }
 
   @override
   bool operator ==(Object other) =>
@@ -397,6 +420,18 @@ You must have one of the following to be a valid Melos workspace:
       scripts.hashCode ^
       ide.hashCode ^
       commands.hashCode;
+
+  Map<Object?, Object> toJson() {
+    return {
+      'name': name,
+      'path': path,
+      'packages': packages.map((p) => p.toString()).toList(),
+      if (ignore.isNotEmpty) 'ignore': ignore.map((p) => p.toString()).toList(),
+      if (scripts.isNotEmpty) 'scripts': scripts.toJson(),
+      'ide': ide.toJson(),
+      'commands': commands.toJson(),
+    };
+  }
 
   @override
   String toString() {

@@ -66,12 +66,28 @@ class Melos extends _Melos
 
 abstract class _Melos {
   Logger get logger;
-  Directory? get workingDirectory;
+  Directory get workingDirectory;
 
   Future<MelosWorkspace> createWorkspace({PackageFilter? filter}) async {
+    var filterWithEnv = filter;
+
+    if (currentPlatform.environment.containsKey(envKeyMelosPackages)) {
+      // MELOS_PACKAGES environment variable is a comma delimited list of
+      // package names - used instead of filters if it is present.
+      // This can be user defined or can come from package selection in `melos run`.
+      filterWithEnv = PackageFilter(
+        scope: currentPlatform.environment[envKeyMelosPackages]!
+            .split(',')
+            .map(
+              (e) => createGlob(e, currentDirectoryPath: workingDirectory.path),
+            )
+            .toList(),
+      );
+    }
+
     return MelosWorkspace.fromDirectory(
-      workingDirectory!,
-      filter: filter,
+      workingDirectory,
+      filter: filterWithEnv,
       logger: logger,
     );
   }

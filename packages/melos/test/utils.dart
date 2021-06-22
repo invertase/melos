@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:cli_util/cli_logging.dart';
+import 'package:melos/melos.dart';
+import 'package:melos/src/yamlicious/yaml_writer.dart';
 import 'package:path/path.dart';
 import 'package:pubspec/pubspec.dart';
 import 'package:test/scaffolding.dart';
@@ -63,17 +65,17 @@ class TestLogger extends StandardLogger {
   }
 }
 
-Directory createTemporaryWorkspaceDirectory() {
+Directory createTemporaryWorkspaceDirectory({
+  MelosWorkspaceConfig Function(String path)? configBuilder,
+}) {
+  configBuilder ??= (path) => MelosWorkspaceConfig.fallback(path: path);
+
   final dir = Directory.current.createTempSync();
   addTearDown(() => dir.delete(recursive: true));
 
-  File(join(dir.path, 'melos.yaml')).writeAsStringSync(
-    '''
-name: test_workspace
-packages:
-  - packages/**
-''',
-  );
+  final config = configBuilder(dir.path).toJson();
+
+  File(join(dir.path, 'melos.yaml')).writeAsStringSync(toYamlString(config));
 
   return dir;
 }

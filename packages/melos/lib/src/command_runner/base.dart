@@ -5,7 +5,6 @@ import 'package:args/command_runner.dart';
 import 'package:cli_util/cli_logging.dart';
 
 import '../common/glob.dart';
-import '../common/platform.dart';
 import '../common/utils.dart';
 import '../package.dart';
 
@@ -134,19 +133,6 @@ abstract class MelosCommand extends Command<void> {
     );
 
     final workingDirPath = workspaceDirectory.path;
-
-    if (currentPlatform.environment.containsKey(envKeyMelosPackages)) {
-      // MELOS_PACKAGES environment variable is a comma delimited list of
-      // package names - used instead of filters if it is present.
-      // This can be user defined or can come from package selection in `melos run`.
-      return PackageFilter(
-        scope: currentPlatform.environment[envKeyMelosPackages]!
-            .split(',')
-            .map((name) => '*$name*')
-            .map((e) => createGlob(e, currentDirectoryPath: workingDirPath))
-            .toList(),
-      );
-    }
 
     final since =
         sinceEnabled ? argResults![filterOptionSince] as String? : null;
