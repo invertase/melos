@@ -10,6 +10,7 @@ mixin _BootstrapMixin on _CleanMixin {
       workspace,
       ScriptLifecycle.bootstrap,
       () async {
+        print('bootstraping');
         final successMessage = AnsiStyles.green('SUCCESS');
 
         final pubCommandForLogging =
@@ -27,17 +28,24 @@ mixin _BootstrapMixin on _CleanMixin {
           );
         }
 
+        print('generate tmp project');
+
         await _generateTemporaryProjects(workspace);
 
+        print('did generate tmp project');
         try {
+          print('pub get for packages');
           await for (final package in _runPubGet(workspace)) {
+            print('did pub get $package');
             logger.stdout(
               '''
   ${AnsiStyles.greenBright('✓')} ${AnsiStyles.bold(package.name)}
     └> ${AnsiStyles.blue(package.pathRelativeToWorkspace)}''',
             );
           }
+          print('did pub get all');
         } catch (err) {
+          print('pub get failed');
           if (err is BootstrapException) {
             await _logPubGetFailed(err.package, err.process, workspace);
           }

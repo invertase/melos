@@ -106,22 +106,28 @@ abstract class _Melos {
         scriptName = 'clean';
         break;
     }
+    print('running $scriptName');
 
     if (workspace.config.scripts.containsKey(scriptName)) {
       logger.stdout('Running $scriptName script...\n');
 
       await run(scriptName: scriptName, configs: workspace.config);
     }
+    print('did run $scriptName');
 
     try {
+      print('calling CB');
       await cb();
     } finally {
+      print('did call CB');
+      print('running post$scriptName');
       final postScript = 'post$scriptName';
       if (workspace.config.scripts.containsKey(postScript)) {
         logger.stdout('Running $postScript script...\n');
 
         await run(scriptName: postScript, configs: workspace.config);
       }
+      print('did run post$scriptName');
     }
   }
 
