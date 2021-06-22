@@ -70,11 +70,8 @@ class MelosWorkspace {
     print('here all:');
     print(allPackages.values);
 
-    print('filter');
-    print('$filter');
-
     print('filtered list');
-    print('$filteredPackages');
+    print(filteredPackages.values);
 
     return MelosWorkspace._(
       name: workspaceConfig.name,
