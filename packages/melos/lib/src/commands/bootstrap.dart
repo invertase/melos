@@ -151,7 +151,9 @@ mixin _BootstrapMixin on _CleanMixin {
     for (final package in workspace.filteredPackages.values) {
       final pubGet = await _runPubGetForPackage(workspace, package);
 
+      print('waiting for exitCode');
       final exitCode = await pubGet.process.exitCode;
+      print('did get exitCode');
 
       if (exitCode != 0) {
         throw BootstrapException._(package, pubGet.process);
