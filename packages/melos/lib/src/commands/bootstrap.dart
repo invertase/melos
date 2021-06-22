@@ -166,45 +166,63 @@ mixin _BootstrapMixin on _CleanMixin {
     MelosWorkspace workspace,
     Package package,
   ) async {
+    final pubGetArgs = ['pub', 'get'];
+    final execArgs = workspace.isFlutterWorkspace
+        ? ['flutter', ...pubGetArgs]
+        : [if (utils.isPubSubcommand()) 'dart', ...pubGetArgs];
+    final executable = currentPlatform.isWindows ? 'cmd' : '/bin/sh';
     final pluginTemporaryPath =
         join(workspace.melosToolPath, package.pathRelativeToWorkspace);
-
-    List<String> command;
-    if (workspace.isFlutterWorkspace) {
-      command = ['flutter', 'pub', 'get'];
-    } else if (utils.isPubSubcommand()) {
-      // `pub` is not available do we have to use `dart pub`
-      command = ['dart', 'pub', 'get'];
-    } else {
-      command = ['pub', 'get'];
-    }
-
-    print('start pub get process');
-
     final process = await Process.start(
-      // running command in inside a shell command, to work around `pub get`
-      // never starting otherwise.
-      currentPlatform.isWindows ? 'cmd' : '/bin/sh',
+      executable,
       currentPlatform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
       workingDirectory: pluginTemporaryPath,
       environment: {
         utils.envKeyMelosTerminalWidth: utils.terminalWidth.toString(),
-        'MELOS_SCRIPT': command.join(' '),
+        'MELOS_SCRIPT': execArgs.join(' '),
       },
       runInShell: true,
     );
+
+    // final pluginTemporaryPath =
+    //     join(workspace.melosToolPath, package.pathRelativeToWorkspace);
+
+    // List<String> command;
+    // if (workspace.isFlutterWorkspace) {
+    //   command = ['flutter', 'pub', 'get'];
+    // } else if (utils.isPubSubcommand()) {
+    //   // `pub` is not available do we have to use `dart pub`
+    //   command = ['dart', 'pub', 'get'];
+    // } else {
+    //   command = ['pub', 'get'];
+    // }
+
+    // print('start pub get process');
+
+    // final process = await Process.start(
+    //   // running command in inside a shell command, to work around `pub get`
+    //   // never starting otherwise.
+    //   currentPlatform.isWindows ? 'cmd' : '/bin/sh',
+    //   currentPlatform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
+    //   workingDirectory: pluginTemporaryPath,
+    //   environment: {
+    //     utils.envKeyMelosTerminalWidth: utils.terminalWidth.toString(),
+    //     'MELOS_SCRIPT': command.join(' '),
+    //   },
+    //   runInShell: true,
+    // );
 
     print('got pub get process');
 
     if (!currentPlatform.isWindows) {
       // Pipe in the arguments to trigger the script to run.
-      process.stdin.writeln(command.join(' '));
+      process.stdin.writeln(execArgs.join(' '));
       // Exit the process with the same exit code as the previous command.
       process.stdin.writeln(r'exit $?');
     }
 
     return _PubGet(
-      args: command,
+      args: execArgs,
       package: package,
       process: process,
     );
