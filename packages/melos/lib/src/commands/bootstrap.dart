@@ -180,9 +180,12 @@ mixin _BootstrapMixin on _CleanMixin {
     }
 
     print('start pub get process');
+
     final process = await Process.start(
-      command[0],
-      command.skip(1).toList(),
+      // running command in inside a shell command, to work around `pub get`
+      // never starting otherwise.
+      currentPlatform.isWindows ? 'cmd' : '/bin/sh',
+      currentPlatform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
       workingDirectory: pluginTemporaryPath,
       environment: {
         utils.envKeyMelosTerminalWidth: utils.terminalWidth.toString(),
@@ -190,7 +193,15 @@ mixin _BootstrapMixin on _CleanMixin {
       },
       runInShell: true,
     );
+
     print('got pub get process');
+
+    if (!currentPlatform.isWindows) {
+      // Pipe in the arguments to trigger the script to run.
+      process.stdin.writeln(command.join(' '));
+      // Exit the process with the same exit code as the previous command.
+      process.stdin.writeln(r'exit $?');
+    }
 
     return _PubGet(
       args: command,
