@@ -67,15 +67,6 @@ class MelosWorkspace {
 
     final filteredPackages = await allPackages.applyFilter(filter);
 
-    print('here all:');
-    print(allPackages.values);
-
-    print('filter');
-    print('$filter');
-
-    print('filtered list');
-    print(filteredPackages.values);
-
     return MelosWorkspace._(
       name: workspaceConfig.name,
       path: workspaceConfig.path,

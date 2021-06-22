@@ -29,6 +29,7 @@ mixin _ExecMixin on _Melos {
     final packagePrefix = '[${AnsiStyles.blue.bold(package.name)}]: ';
 
     final environment = {
+      ...currentPlatform.environment,
       'MELOS_PACKAGE_NAME': package.name,
       'MELOS_PACKAGE_VERSION': (package.version).toString(),
       'MELOS_PACKAGE_PATH': package.path,
@@ -53,6 +54,21 @@ mixin _ExecMixin on _Melos {
             exampleParentPubspecFile.parent.path;
       }
     }
+    if (environment.containsKey('MELOS_TEST')) {
+      // TODO(rrousselGit) refactor this to not have to manually maitain the list
+      // of env variables to remove
+      environment.remove('MELOS_TEST');
+      environment.remove('MELOS_ROOT_PATH');
+      environment.remove('MELOS_SCRIPT');
+      environment.remove('MELOS_PACKAGE_NAME');
+      environment.remove('MELOS_PACKAGE_VERSION');
+      environment.remove('MELOS_PACKAGE_PATH');
+      environment.remove('MELOS_PARENT_PACKAGE_NAME');
+      environment.remove('MELOS_PARENT_PACKAGE_VERSION');
+      environment.remove('MELOS_PARENT_PACKAGE_PATH');
+      environment.remove('MELOS_PACKAGES');
+      environment.remove('MELOS_TERMINAL_WIDTH');
+    }
 
     return startProcess(
       execArgs,
@@ -60,6 +76,8 @@ mixin _ExecMixin on _Melos {
       environment: environment,
       workingDirectory: package.path,
       prefix: prefixLogs ? packagePrefix : null,
+      // The parent env is injected manually above
+      includeParentEnvironment: false,
     );
   }
 

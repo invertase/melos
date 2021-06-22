@@ -137,11 +137,7 @@ class Script {
               value: entry.key,
               key: 'env',
               path: scriptPath,
-            ): assertIsA<String>(
-              value: entry.value,
-              key: entry.key,
-              path: '$scriptPath/env',
-            ),
+            ): entry.value.toString(),
       };
 
       final packageFilterMap = assertKeyIsA<Map<Object?, Object?>?>(

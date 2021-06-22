@@ -221,6 +221,7 @@ Future<int> startProcess(
   Map<String, String> environment = const {},
   String? workingDirectory,
   bool onlyOutputOnError = false,
+  bool includeParentEnvironment = true,
   required Logger logger,
 }) async {
   final workingDirectoryPath = workingDirectory ?? Directory.current.path;
@@ -261,6 +262,7 @@ Future<int> startProcess(
       envKeyMelosTerminalWidth: terminalWidth.toString(),
       'MELOS_SCRIPT': filteredArgs.join(' '),
     },
+    includeParentEnvironment: includeParentEnvironment,
     runInShell: true,
   );
 
