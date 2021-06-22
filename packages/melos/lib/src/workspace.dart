@@ -56,8 +56,10 @@ class MelosWorkspace {
     PackageFilter? filter,
     required Logger logger,
   }) async {
+    print('searching for melos.yaml');
     final workspaceConfig = await MelosWorkspaceConfig.fromDirectory(directory);
-
+    print('got melos.yaml: $workspaceConfig');
+    print('resolving packages');
     final allPackages = await PackageMap.resolvePackages(
       workspacePath: workspaceConfig.path,
       packages: workspaceConfig.packages,
@@ -65,7 +67,10 @@ class MelosWorkspace {
       logger: logger,
     );
 
+    print('got packages ${allPackages.values}');
+    print('filtering packages $filter');
     final filteredPackages = await allPackages.applyFilter(filter);
+    print('filtered packages ${filteredPackages.values}');
 
     return MelosWorkspace._(
       name: workspaceConfig.name,
