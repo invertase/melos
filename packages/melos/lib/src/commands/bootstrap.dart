@@ -150,6 +150,10 @@ mixin _BootstrapMixin on _CleanMixin {
   Stream<Package> _runPubGet(MelosWorkspace workspace) async* {
     for (final package in workspace.filteredPackages.values) {
       final pubGet = await _runPubGetForPackage(workspace, package);
+      
+      pubGet.process.stdout.listen((testing) {
+        // Do nothing
+      });
 
       print('waiting for exitCode');
       final exitCode = await pubGet.process.exitCode;
