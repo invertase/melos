@@ -93,6 +93,7 @@ The following projects are using Melos:
 - [FirebaseExtended/flutterfire](https://github.com/FirebaseExtended/flutterfire)
 - [aws-amplify/amplify-flutter](https://github.com/aws-amplify/amplify-flutter)
 - [fluttercommunity/plus_plugins](https://github.com/fluttercommunity/plus_plugins)
+- [gql-dart/gql](https://github.com/gql-dart/gql)
 - [GetStream/stream-chat-flutter](https://github.com/GetStream/stream-chat-flutter)
 - [4itworks/opensource_qwkin_dart](https://github.com/4itworks/opensource_qwkin_dart)
 - [gql-dart/ferry](https://github.com/gql-dart/ferry)
