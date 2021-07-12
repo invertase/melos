@@ -412,9 +412,11 @@ class MelosPackage {
       // Remove the `.dart_tool\melos_tool` path from any relative file paths
       // in any of the generated files as since we mirrored the pub files to the
       // melos_tool directory for mutations they now contain this path.
+      final regexPathSeparator =
+          '${currentPlatform.isWindows ? r'\' : ''}${currentPlatform.pathSeparator}';
       temporaryFileContents = temporaryFileContents.replaceAll(
           RegExp(
-              '\\.dart_tool\\melos_tool${currentPlatform.isWindows ? r'\' : ''}${currentPlatform.pathSeparator}'),
+              '\\.dart_tool${regexPathSeparator}melos_tool$regexPathSeparator'),
           '');
       final fileToCreate = File(join(path, tempFilePath));
       await fileToCreate.create(recursive: true);
