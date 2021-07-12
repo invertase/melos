@@ -103,7 +103,9 @@ void main() {
     });
     test('bgBlackBright', () {
       expect(
-          AnsiStyles.bgBlackBright('foo'), equals(getOutput('foo', 100, 49)));
+        AnsiStyles.bgBlackBright('foo'),
+        equals(getOutput('foo', 100, 49)),
+      );
       expect(AnsiStyles.bgGrey('foo'), equals(getOutput('foo', 100, 49)));
       expect(AnsiStyles.bgGray('foo'), equals(getOutput('foo', 100, 49)));
     });
@@ -112,25 +114,33 @@ void main() {
     });
     test('bgGreenBright', () {
       expect(
-          AnsiStyles.bgGreenBright('foo'), equals(getOutput('foo', 102, 49)));
+        AnsiStyles.bgGreenBright('foo'),
+        equals(getOutput('foo', 102, 49)),
+      );
     });
     test('bgYellowBright', () {
       expect(
-          AnsiStyles.bgYellowBright('foo'), equals(getOutput('foo', 103, 49)));
+        AnsiStyles.bgYellowBright('foo'),
+        equals(getOutput('foo', 103, 49)),
+      );
     });
     test('bgBlueBright', () {
       expect(AnsiStyles.bgBlueBright('foo'), equals(getOutput('foo', 104, 49)));
     });
     test('bgMagentaBright', () {
       expect(
-          AnsiStyles.bgMagentaBright('foo'), equals(getOutput('foo', 105, 49)));
+        AnsiStyles.bgMagentaBright('foo'),
+        equals(getOutput('foo', 105, 49)),
+      );
     });
     test('bgCyanBright', () {
       expect(AnsiStyles.bgCyanBright('foo'), equals(getOutput('foo', 106, 49)));
     });
     test('bgWhiteBright', () {
       expect(
-          AnsiStyles.bgWhiteBright('foo'), equals(getOutput('foo', 107, 49)));
+        AnsiStyles.bgWhiteBright('foo'),
+        equals(getOutput('foo', 107, 49)),
+      );
     });
   });
 
@@ -162,15 +172,19 @@ void main() {
   });
 
   test('bullet', () {
-    expect(AnsiStyles.bgWhiteBright.bullet,
-        equals(getOutput(AnsiStyles.bullet, 107, 49)));
+    expect(
+      AnsiStyles.bgWhiteBright.bullet,
+      equals(getOutput(AnsiStyles.bullet, 107, 49)),
+    );
   });
   test('strip', () {
     expect(AnsiStyles.bgWhiteBright.underline.strip('foo'), equals('foo'));
   });
 
   test('chaining', () {
-    expect(AnsiStyles.red.underline('foo'),
-        equals(getOutput(getOutput('foo', 31, 39), 4, 24)));
+    expect(
+      AnsiStyles.red.underline('foo'),
+      equals(getOutput(getOutput('foo', 31, 39), 4, 24)),
+    );
   });
 }

@@ -40,15 +40,17 @@ void clearLine() {
 /// If [allowMultiline] is `true` (default: `false`), then lines ending in a
 /// backslash (`\`) will be interpreted as a signal that another line of
 /// input is to come. This is helpful for building REPL's.
-String get(String message,
-    {bool Function(String)? validate,
-    String? defaultsTo,
-    @deprecated bool colon = true,
-    bool chevron = true,
-    bool color = true,
-    bool allowMultiline = false,
-    bool conceal = false,
-    AnsiCode inputColor = cyan}) {
+String get(
+  String message, {
+  bool Function(String)? validate,
+  String? defaultsTo,
+  @deprecated bool colon = true,
+  bool chevron = true,
+  bool color = true,
+  bool allowMultiline = false,
+  bool conceal = false,
+  AnsiCode inputColor = cyan,
+}) {
   validate ??= (s) => s.trim().isNotEmpty;
 
   if (defaultsTo != null) {
@@ -69,7 +71,8 @@ String get(String message,
     if (defaultsTo != null) stdout.write(' ($defaultsTo)');
     if (chevron && colon) {
       stdout.write(
-          color ? lightGray.wrap(' $currentChevron') : ' $currentChevron');
+        color ? lightGray.wrap(' $currentChevron') : ' $currentChevron',
+      );
     }
 
     stdout.write(' ');
@@ -162,14 +165,16 @@ String get(String message,
 /// appended to the [message], depending on its value.
 ///
 /// [color], [inputColor], [conceal], and [chevron] are forwarded to [get].
-bool getBool(String message,
-    {bool defaultsTo = false,
-    bool appendYesNo = true,
-    bool color = true,
-    bool chevron = true,
-    bool conceal = false,
-    @deprecated bool colon = true,
-    AnsiCode inputColor = cyan}) {
+bool getBool(
+  String message, {
+  bool defaultsTo = false,
+  bool appendYesNo = true,
+  bool color = true,
+  bool chevron = true,
+  bool conceal = false,
+  @deprecated bool colon = true,
+  AnsiCode inputColor = cyan,
+}) {
   if (appendYesNo) {
     message +=
         // ignore: unnecessary_null_comparison
@@ -199,44 +204,52 @@ bool getBool(String message,
 /// An optional [radix] may be provided.
 ///
 /// [color], [defaultsTo], [inputColor], [conceal], and [chevron] are forwarded to [get].
-int getInt(String message,
-    {int? defaultsTo,
-    int radix = 10,
-    bool color = true,
-    bool chevron = true,
-    bool conceal = false,
-    @deprecated bool colon = true,
-    AnsiCode inputColor = cyan}) {
-  return int.parse(get(
-    message,
-    defaultsTo: defaultsTo?.toString(),
-    chevron: chevron && colon,
-    inputColor: inputColor,
-    color: color,
-    conceal: conceal,
-    validate: (s) => int.tryParse(s, radix: radix) != null,
-  ));
+int getInt(
+  String message, {
+  int? defaultsTo,
+  int radix = 10,
+  bool color = true,
+  bool chevron = true,
+  bool conceal = false,
+  @deprecated bool colon = true,
+  AnsiCode inputColor = cyan,
+}) {
+  return int.parse(
+    get(
+      message,
+      defaultsTo: defaultsTo?.toString(),
+      chevron: chevron && colon,
+      inputColor: inputColor,
+      color: color,
+      conceal: conceal,
+      validate: (s) => int.tryParse(s, radix: radix) != null,
+    ),
+  );
 }
 
 /// Prompts the user to enter a double.
 ///
 /// [color], [defaultsTo], [inputColor], [conceal], and [chevron] are forwarded to [get].
-double getDouble(String message,
-    {double? defaultsTo,
-    bool color = true,
-    bool chevron = true,
-    @deprecated bool colon = true,
-    bool conceal = false,
-    AnsiCode inputColor = cyan}) {
-  return double.parse(get(
-    message,
-    defaultsTo: defaultsTo?.toString(),
-    chevron: chevron && colon,
-    inputColor: inputColor,
-    color: color,
-    conceal: conceal,
-    validate: (s) => double.tryParse(s) != null,
-  ));
+double getDouble(
+  String message, {
+  double? defaultsTo,
+  bool color = true,
+  bool chevron = true,
+  @deprecated bool colon = true,
+  bool conceal = false,
+  AnsiCode inputColor = cyan,
+}) {
+  return double.parse(
+    get(
+      message,
+      defaultsTo: defaultsTo?.toString(),
+      chevron: chevron && colon,
+      inputColor: inputColor,
+      color: color,
+      conceal: conceal,
+      validate: (s) => double.tryParse(s) != null,
+    ),
+  );
 }
 
 /// Displays to the user a list of [options], and returns
@@ -263,34 +276,40 @@ double getDouble(String message,
 /// 2) Blue
 /// 3) Green
 /// ```
-T? choose<T>(String message, Iterable<T> options,
-    {T? defaultsTo,
-    String prompt = 'Enter your choice',
-    // int defaultIndex = 0,
-    bool chevron = true,
-    @deprecated bool colon = true,
-    AnsiCode inputColor = cyan,
-    bool color = true,
-    bool conceal = false,
-    bool interactive = true,
-    Iterable<String>? names}) {
+T? choose<T>(
+  String message,
+  Iterable<T> options, {
+  T? defaultsTo,
+  String prompt = 'Enter your choice',
+  // int defaultIndex = 0,
+  bool chevron = true,
+  @deprecated bool colon = true,
+  AnsiCode inputColor = cyan,
+  bool color = true,
+  bool conceal = false,
+  bool interactive = true,
+  Iterable<String>? names,
+}) {
   if (options.isEmpty) {
     throw ArgumentError.value('`options` may not be empty.');
   }
 
   if (defaultsTo != null && !options.contains(defaultsTo)) {
     throw ArgumentError(
-        '$defaultsTo is not contained in $options, and therefore cannot be the default value.');
+      '$defaultsTo is not contained in $options, and therefore cannot be the default value.',
+    );
   }
 
   if (names != null && names.length != options.length) {
     throw ArgumentError(
-        '$names must have length ${options.length}, not ${names.length}.');
+      '$names must have length ${options.length}, not ${names.length}.',
+    );
   }
 
   if (names != null && names.any((s) => s.length != 1)) {
     throw ArgumentError(
-        'Every member of $names must be a string with a length of 1.');
+      'Every member of $names must be a string with a length of 1.',
+    );
   }
 
   var map = <T, String>{};
@@ -447,13 +466,16 @@ T? choose<T>(String message, Iterable<T> options,
 /// A default option may be provided by means of [defaultsTo].
 ///
 /// [color], [defaultsTo], [inputColor], and [chevron] are forwarded to [get].
-T? chooseShorthand<T>(String message, Iterable<T> options,
-    {T? defaultsTo,
-    bool chevron = true,
-    @deprecated bool colon = true,
-    AnsiCode inputColor = cyan,
-    bool color = true,
-    bool conceal = false}) {
+T? chooseShorthand<T>(
+  String message,
+  Iterable<T> options, {
+  T? defaultsTo,
+  bool chevron = true,
+  @deprecated bool colon = true,
+  AnsiCode inputColor = cyan,
+  bool color = true,
+  bool conceal = false,
+}) {
   if (options.isEmpty) {
     throw ArgumentError.value('`options` may not be empty.');
   }

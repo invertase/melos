@@ -6,7 +6,8 @@ import 'package:yaml/yaml.dart' show YamlMap, loadYaml;
 
 Future<void> main() async {
   final outputPath = joinAll(
-      [Directory.current.path, 'packages', 'melos', 'lib', 'version.g.dart']);
+    [Directory.current.path, 'packages', 'melos', 'lib', 'version.g.dart'],
+  );
   // ignore: avoid_print
   print('Updating generated file $outputPath');
   final melosPubspecPath =

@@ -7,6 +7,8 @@ void main() {
   print(AnsiStyles.cyan('Cyan text'));
   print(AnsiStyles.bgYellowBright.bold('Bold text with a yellow background'));
   print(AnsiStyles.bold.rgb(255, 192, 203)('Bold pink text'));
-  print(AnsiStyles.strikethrough
-      .bgRgb(255, 165, 0)('Strikethrough text with an orange background'));
+  print(
+    AnsiStyles.strikethrough
+        .bgRgb(255, 165, 0)('Strikethrough text with an orange background'),
+  );
 }

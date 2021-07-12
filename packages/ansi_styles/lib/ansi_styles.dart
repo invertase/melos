@@ -18,10 +18,12 @@
 import 'src/supports_ansi.dart'
     if (dart.library.io) 'src/supports_ansi_io.dart';
 
-final RegExp _stripRegex = RegExp([
-  r'[\u001B\u009B][[\]()#;?]*(?:(?:(?:[a-zA-Z\d]*(?:;[-a-zA-Z\d\/#&.:=?%@~_]*)*)?\u0007)',
-  r'(?:(?:\d{1,4}(?:;\\d{0,4})*)?[\dA-PR-TZcf-ntqry=><~]))'
-].join('|'));
+final RegExp _stripRegex = RegExp(
+  [
+    r'[\u001B\u009B][[\]()#;?]*(?:(?:(?:[a-zA-Z\d]*(?:;[-a-zA-Z\d\/#&.:=?%@~_]*)*)?\u0007)',
+    r'(?:(?:\d{1,4}(?:;\\d{0,4})*)?[\dA-PR-TZcf-ntqry=><~]))'
+  ].join('|'),
+);
 
 void _assertRGBValue(num value) {
   assert(value >= 0);
@@ -52,8 +54,9 @@ class _AnsiStyles {
   }
 
   _AnsiStyles _cloneWithStyles(int openCode, int closeCode) {
-    return _AnsiStyles(List.from(styles)
-      ..add(['\u001B[${openCode}m', '\u001B[${closeCode}m']));
+    return _AnsiStyles(
+      List.from(styles)..add(['\u001B[${openCode}m', '\u001B[${closeCode}m']),
+    );
   }
 
   // Modifiers.
@@ -112,13 +115,15 @@ class _AnsiStyles {
   _AnsiStyles rgb(num? r, num? g, num? b) {
     final color = _getRGBColor(r: r ?? 255, g: g ?? 255, b: b ?? 255);
     return _AnsiStyles(
-        List.from(styles)..add(['\x1B[38;5;${color}m', '\x1B[0m']));
+      List.from(styles)..add(['\x1B[38;5;${color}m', '\x1B[0m']),
+    );
   }
 
   _AnsiStyles bgRgb(num? r, num? g, num? b) {
     final color = _getRGBColor(r: r ?? 255, g: g ?? 255, b: b ?? 255);
     return _AnsiStyles(
-        List.from(styles)..add(['\x1B[48;5;${color}m', '\x1B[0m']));
+      List.from(styles)..add(['\x1B[48;5;${color}m', '\x1B[0m']),
+    );
   }
 
   String get bullet => call(!ansiStylesDisabled ? '•' : '-');
