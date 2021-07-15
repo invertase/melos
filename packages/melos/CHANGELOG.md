@@ -1,3 +1,15 @@
+# [Unreleased]
+
+- added "preversion" script hook, to perform actions when using `melos version` _before_ pubspec files are modified.
+- added `melos.yaml` validation
+- it is now possible to programatically use melos commands by importing `package:melos/melos.dart`:
+  ```dart
+  final melos = Melos(workingDirectory: Directory.current);
+
+  await melos.bootstrap();
+  await melos.publish(dryRun: false);
+  ```
+
 ## 0.4.11+2
 
  - **FIX**: pubspecs incorrectly being overwritten (fixes #60) (#110).
