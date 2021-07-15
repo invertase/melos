@@ -141,6 +141,7 @@ mixin _BootstrapMixin on _CleanMixin {
     for (final package in workspace.filteredPackages.values) {
       final pubGet = await _runPubGetForPackage(workspace, package);
 
+      // TODO This is a hack. Windows will not exit unless we do this.
       pubGet.process.stdout.listen((testing) {
         // Do nothing
       });
