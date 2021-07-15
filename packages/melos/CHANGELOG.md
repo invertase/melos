@@ -1,3 +1,7 @@
+## 0.5.0-dev.2
+
+ - **FIX**: unable to publish packages (always dry-run).
+
 ## 0.5.0-dev.1
 
  - **REFACTOR**: use currentPlatform instead of Platform.
