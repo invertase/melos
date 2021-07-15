@@ -145,11 +145,11 @@ mixin _PublishMixin on _ExecMixin {
       'publish',
     ];
 
-    // if (dryRun) {
-    execArgs.add('--dry-run');
-    // } else {
-    // execArgs.add('--force');
-    // }
+    if (dryRun) {
+      execArgs.add('--dry-run');
+    } else {
+      execArgs.add('--force');
+    }
 
     await _execForAllPackages(
       workspace,
