@@ -1,3 +1,8 @@
+## 0.5.0-dev.1
+
+ - **REFACTOR**: use currentPlatform instead of Platform.
+ - **FIX**: melos_tools path incorrect on certain platforms (fixes #144).
+
 ## 0.5.0-dev.0
 
 > Note: This release has potentially breaking changes.
