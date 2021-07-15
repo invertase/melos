@@ -142,7 +142,7 @@ mixin _BootstrapMixin on _CleanMixin {
       final pubGet = await _runPubGetForPackage(workspace, package);
 
       // TODO This is a hack. Windows will not exit unless we do this.
-      if (Platform.isWindows) {
+      if (currentPlatform.isWindows) {
         pubGet.process.stdout.listen((testing) {
           // Do nothing
         });
