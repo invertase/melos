@@ -142,9 +142,11 @@ mixin _BootstrapMixin on _CleanMixin {
       final pubGet = await _runPubGetForPackage(workspace, package);
 
       // TODO This is a hack. Windows will not exit unless we do this.
-      pubGet.process.stdout.listen((testing) {
-        // Do nothing
-      });
+      if (Platform.isWindows) {
+        pubGet.process.stdout.listen((testing) {
+          // Do nothing
+        });
+      }
 
       final exitCode = await pubGet.process.exitCode;
 
@@ -176,34 +178,6 @@ mixin _BootstrapMixin on _CleanMixin {
       },
       runInShell: true,
     );
-
-    // final pluginTemporaryPath =
-    //     join(workspace.melosToolPath, package.pathRelativeToWorkspace);
-
-    // List<String> command;
-    // if (workspace.isFlutterWorkspace) {
-    //   command = ['flutter', 'pub', 'get'];
-    // } else if (utils.isPubSubcommand()) {
-    //   // `pub` is not available do we have to use `dart pub`
-    //   command = ['dart', 'pub', 'get'];
-    // } else {
-    //   command = ['pub', 'get'];
-    // }
-
-    //
-
-    // final process = await Process.start(
-    //   // running command in inside a shell command, to work around `pub get`
-    //   // never starting otherwise.
-    //   currentPlatform.isWindows ? 'cmd' : '/bin/sh',
-    //   currentPlatform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
-    //   workingDirectory: pluginTemporaryPath,
-    //   environment: {
-    //     utils.envKeyMelosTerminalWidth: utils.terminalWidth.toString(),
-    //     'MELOS_SCRIPT': command.join(' '),
-    //   },
-    //   runInShell: true,
-    // );
 
     if (!currentPlatform.isWindows) {
       // Pipe in the arguments to trigger the script to run.
