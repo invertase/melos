@@ -2,15 +2,12 @@ part of 'runner.dart';
 
 mixin _BootstrapMixin on _CleanMixin {
   Future<void> bootstrap({PackageFilter? filter}) async {
-    print('start bootstrap');
     final workspace = await createWorkspace(filter: filter);
-    print('got workspace');
 
     return _runLifecycle(
       workspace,
       ScriptLifecycle.bootstrap,
       () async {
-        print('bootstraping');
         final successMessage = AnsiStyles.green('SUCCESS');
 
         final pubCommandForLogging =
@@ -28,24 +25,17 @@ mixin _BootstrapMixin on _CleanMixin {
           );
         }
 
-        print('generate tmp project');
-
         await _generateTemporaryProjects(workspace);
 
-        print('did generate tmp project');
         try {
-          print('pub get for packages');
           await for (final package in _runPubGet(workspace)) {
-            print('did pub get $package');
             logger.stdout(
               '''
   ${AnsiStyles.greenBright('✓')} ${AnsiStyles.bold(package.name)}
     └> ${AnsiStyles.blue(package.pathRelativeToWorkspace)}''',
             );
           }
-          print('did pub get all');
         } catch (err) {
-          print('pub get failed');
           if (err is BootstrapException) {
             await _logPubGetFailed(err.package, err.process, workspace);
           }
@@ -150,14 +140,12 @@ mixin _BootstrapMixin on _CleanMixin {
   Stream<Package> _runPubGet(MelosWorkspace workspace) async* {
     for (final package in workspace.filteredPackages.values) {
       final pubGet = await _runPubGetForPackage(workspace, package);
-      
+
       pubGet.process.stdout.listen((testing) {
         // Do nothing
       });
 
-      print('waiting for exitCode');
       final exitCode = await pubGet.process.exitCode;
-      print('did get exitCode');
 
       if (exitCode != 0) {
         throw BootstrapException._(package, pubGet.process);
@@ -201,7 +189,7 @@ mixin _BootstrapMixin on _CleanMixin {
     //   command = ['pub', 'get'];
     // }
 
-    // print('start pub get process');
+    //
 
     // final process = await Process.start(
     //   // running command in inside a shell command, to work around `pub get`
@@ -215,8 +203,6 @@ mixin _BootstrapMixin on _CleanMixin {
     //   },
     //   runInShell: true,
     // );
-
-    print('got pub get process');
 
     if (!currentPlatform.isWindows) {
       // Pipe in the arguments to trigger the script to run.
