@@ -63,6 +63,16 @@ final List<String> generatedPubFilePaths = [
   '.dart_tool${currentPlatform.pathSeparator}version',
 ];
 
+/// Paths that are safe to delete when running `melos clean`.
+final List<String> cleanablePubFilePaths = [
+  '.packages',
+  '.flutter-plugins',
+  '.flutter-plugins-dependencies',
+  '.dart_tool${currentPlatform.pathSeparator}package_config.json',
+  '.dart_tool${currentPlatform.pathSeparator}package_config_subset',
+  '.dart_tool${currentPlatform.pathSeparator}version',
+];
+
 /// The URL where we can find a package server.
 ///
 /// The default is `pub.dev`, but it can be overridden using the

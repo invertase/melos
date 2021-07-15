@@ -33,7 +33,7 @@ mixin _CleanMixin on _Melos {
 
   void _cleanPackage(Package package) {
     final pathsToClean = [
-      ...generatedPubFilePaths,
+      ...cleanablePubFilePaths,
       '.dart_tool',
     ];
 
