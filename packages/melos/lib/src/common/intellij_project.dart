@@ -314,7 +314,6 @@ class IntellijProject {
 
     await Future.forEach(_workspace.filteredPackages.values,
         (Package package) async {
-      // TODO(rrousselGit) uncomment
       await writePackageModule(package);
     });
 

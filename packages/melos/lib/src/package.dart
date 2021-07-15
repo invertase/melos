@@ -370,8 +370,6 @@ class PackageMap {
         .filterPublishedPackages(published: filter.published)
         .then((packages) => packages.applySince(filter.updatedSince, _logger));
 
-    // TODO implement includeDependents/includeDependencies
-
     packageList = packageList.applyIncludeDependentsOrDependencies(
       includeDependents: filter.includeDependents,
       includeDependencies: filter.includeDependencies,

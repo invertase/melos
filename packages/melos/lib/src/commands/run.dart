@@ -13,7 +13,7 @@ mixin _RunMixin on _Melos {
 
     if (configs.scripts.keys.isEmpty) throw NoScriptException._();
 
-    scriptName ??= await _pickScript(configs, noSelect: noSelect);
+    scriptName ??= await _pickScript(configs);
     final script = configs.scripts[scriptName];
 
     if (script == null) {
@@ -38,11 +38,7 @@ mixin _RunMixin on _Melos {
     logger.stdout('       └> ${AnsiStyles.green.bold('SUCCESS')}');
   }
 
-  Future<String?> _pickScript(
-    MelosWorkspaceConfig config, {
-    // TODO(rrousselGit) noSelect should be used
-    required bool noSelect,
-  }) async {
+  Future<String?> _pickScript(MelosWorkspaceConfig config) async {
     // using toList as Maps may be unordered
     final scripts = config.scripts.values.toList();
 
@@ -51,7 +47,6 @@ mixin _RunMixin on _Melos {
       final styledDescription = script.description != null
           ? '\n    └> ${AnsiStyles.gray(script.description!.trim().split('\n').join('\n       '))}'
           : '';
-
       return '$styledName$styledDescription';
     }).toList();
 
