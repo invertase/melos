@@ -1,3 +1,17 @@
+## 0.5.0-dev.0
+
+> Note: This release has potentially breaking changes.
+
+ - **TEST**: add git tests.
+ - **REFACTOR**: cleanup git utilities and add new utils for upstream checks.
+ - **REFACTOR**: set Melos as the generator for generated pub files (#120).
+ - **FIX**: issue where dependent packages were not versioned (#131).
+ - **FIX**: enable Dart SDK for root IntelliJ project (#127).
+ - **FIX**: exec hang, exec trailing options (#123).
+ - **FEAT**: added config validation and type-safe Dart API (#139) (#140).
+ - **FEAT**: migrate Melos to null-safety (#115).
+ - **BREAKING** **FEAT**: migrate conventional_commit to null-safety (#114).
+
 # [Unreleased]
 
 - added "preversion" script hook, to perform actions when using `melos version` _before_ pubspec files are modified.

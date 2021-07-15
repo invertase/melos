@@ -1,3 +1,7 @@
+## 0.3.1-dev.0
+
+ - **FEAT**: added config validation and type-safe Dart API (#139) (#140).
+
 ## 0.3.0
 
 > Note: This release has breaking changes.
