@@ -703,8 +703,10 @@ class Package {
             const JsonEncoder.withIndent('  ').convert(packageConfig);
       }
 
+      final regexPathSeparator =
+          '${currentPlatform.isWindows ? r'\' : ''}${currentPlatform.pathSeparator}';
       final melosToolPathRegExp = RegExp(
-        '\\.dart_tool\\melos_tool${currentPlatform.isWindows ? r'\' : ''}${currentPlatform.pathSeparator}',
+        '\\.dart_tool${regexPathSeparator}melos_tool$regexPathSeparator',
       );
 
       // Remove the `.dart_tool\melos_tool` path from any relative file paths
