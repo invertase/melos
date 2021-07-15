@@ -229,9 +229,9 @@ Hint: try running "melos version --all" to include private packages.
   }) async {
     final workspace = await createWorkspace();
 
-    // logger.stdout(
-    //     AnsiStyles.yellow.bold('melos version <packageName> <newVersion>'));
-    // logger.stdout('   └> ${AnsiStyles.cyan.bold(workspace.path)}\n');
+    logger.stdout(
+        AnsiStyles.yellow.bold('melos version <packageName> <newVersion>'));
+    logger.stdout('   └> ${AnsiStyles.cyan.bold(workspace.path)}\n');
 
     final workspacePackage = workspace.filteredPackages.values.firstWhereOrNull(
       (package) => package.name == packageName,
@@ -281,6 +281,12 @@ Hint: try running "melos version --all" to include private packages.
       );
     }
 
+    // TODO allow support for individual package lifecycle version scripts
+    if (workspace.config.scripts.containsKey('preversion')) {
+      logger.stdout('Running "preversion" lifecycle script...\n');
+      await run(scriptName: 'preversion', configs: workspace.config);
+    }
+
     // Update package pubspec version.
     await _setPubspecVersionForPackage(workspacePackage, newVersion);
 
@@ -313,6 +319,12 @@ Hint: try running "melos version --all" to include private packages.
           newVersion,
         );
       });
+    }
+
+    // TODO allow support for individual package lifecycle version scripts
+    if (workspace.config.scripts.containsKey('version')) {
+      logger.stdout('Running "version" lifecycle script...\n');
+      await run(scriptName: 'version', configs: workspace.config);
     }
 
     logger.stdout(
