@@ -1,3 +1,11 @@
+## 1.0.0-dev.1
+
+ - **REFACTOR**: misc cleanup of todos.
+ - **FIX**: issue where all environment variables are injected into exec scripts instead of just `MELOS_*` ones (fixes #146).
+ - **FIX**: manual versioning should run lifecycle scripts.
+ - **FIX**: don't remove pubspec.lock when `clean` is ran (fixes #129).
+ - **CHORE**: bump "melos" to `1.0.0-dev.0`.
+
 ## 1.0.0-dev.0
 
  - Bump "melos" to `1.0.0-dev.0`.
