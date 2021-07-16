@@ -242,10 +242,12 @@ Future<int> startProcess(
       return currentPlatform.isWindows ? _arg : _arg.replaceAll('^', r'\');
     }
 
-    // Inject Melos variables if any.
+    // Inject MELOS_* variables if any.
     environment.forEach((key, value) {
-      _arg = _arg.replaceAll('\$$key', value);
-      _arg = _arg.replaceAll(key, value);
+      if (key.startsWith('MELOS_')) {
+        _arg = _arg.replaceAll('\$$key', value);
+        _arg = _arg.replaceAll(key, value);
+      }
     });
 
     return _arg;
