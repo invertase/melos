@@ -230,7 +230,8 @@ Hint: try running "melos version --all" to include private packages.
     final workspace = await createWorkspace();
 
     logger.stdout(
-        AnsiStyles.yellow.bold('melos version <packageName> <newVersion>'));
+      AnsiStyles.yellow.bold('melos version <packageName> <newVersion>'),
+    );
     logger.stdout('   └> ${AnsiStyles.cyan.bold(workspace.path)}\n');
 
     final workspacePackage = workspace.filteredPackages.values.firstWhereOrNull(
