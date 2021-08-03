@@ -186,7 +186,7 @@ class VersionCommand extends MelosCommand {
       var updateDependentsVersions = argResults!['dependent-versions'] as bool;
       final force = argResults!['yes'] as bool;
       final versionPrivatePackages = argResults!['all'] as bool;
-      final preid = argResults!['preid'] as String;
+      final preid = argResults!['preid'] as String?;
 
       if (asPrerelease && asStableRelease) {
         logger.stdout(
