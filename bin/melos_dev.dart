@@ -1,4 +1,4 @@
-import 'package:melos/src/command_runner.dart';
+import '../packages/melos/bin/melos.dart' as melos;
 
 // A copy of packages/melos/bin/melos.dart
 // This allows us to use melos on itself during development.
@@ -10,5 +10,5 @@ void main(List<String> arguments) {
     print('---------------------------------------------------------');
     print('');
   }
-  MelosCommandRunner().run(arguments);
+  melos.main(arguments);
 }
