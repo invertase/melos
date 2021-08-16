@@ -15,9 +15,9 @@
  *
  */
 
+import 'package:collection/collection.dart';
 import 'package:conventional_commit/conventional_commit.dart';
 import 'package:test/test.dart';
-import 'package:collection/collection.dart';
 
 const bodyExample = '''
 A body describing this commit in more detail.
@@ -49,6 +49,12 @@ Co-authored-by: @Salakar
 Refs #123 #1234
 ''';
 
+const commitMessageStarScope = '''
+feat(*): a new something (#1234)
+
+This also fixes an issue something else.
+''';
+
 void main() {
   group('$ConventionalCommit', () {
     test('invalid commit messages', () {
@@ -58,6 +64,17 @@ void main() {
       expect(ConventionalCommit.tryParse(' (): new feature'), isNull);
       expect(ConventionalCommit.tryParse('feat()'), isNull);
       expect(ConventionalCommit.tryParse('custom: new feature'), isNull);
+    });
+
+    test('correctly handles messages with a `*` scope', () {
+      final commit = ConventionalCommit.tryParse(commitMessageStarScope);
+      expect(commit, isNotNull);
+      expect(commit!.description, equals('a new something (#1234)'));
+      expect(commit.body, equals('This also fixes an issue something else.'));
+      expect(commit.type, equals('feat'));
+      expect(commit.scopes, equals(['*']));
+      expect(commit.isVersionableCommit, isTrue);
+      expect(commit.semverReleaseType, SemverReleaseType.minor);
     });
 
     test('header', () {
@@ -191,7 +208,8 @@ void main() {
       // Confirm exact matching of `BREAKING: ` (with space after colon).
       expect(
         ConventionalCommit.tryParse(
-                'docs(scope): foo bar \n\nBREAKING:I broke something.')!
+          'docs(scope): foo bar \n\nBREAKING:I broke something.',
+        )!
             .isBreakingChange,
         isFalse,
       );
@@ -215,17 +233,19 @@ void main() {
     test('breakingChangeDescription', () {
       // Should be null if isBreakingChange is false.
       expect(
-          ConventionalCommit.tryParse('docs: foo bar')!
-              .breakingChangeDescription,
-          isNull);
+        ConventionalCommit.tryParse('docs: foo bar')!.breakingChangeDescription,
+        isNull,
+      );
       expect(
-          ConventionalCommit.tryParse('docs(scope): foo bar')!
-              .breakingChangeDescription,
-          isNull);
+        ConventionalCommit.tryParse('docs(scope): foo bar')!
+            .breakingChangeDescription,
+        isNull,
+      );
       expect(
-          ConventionalCommit.tryParse('docs(scope,dope): foo bar')!
-              .breakingChangeDescription,
-          isNull);
+        ConventionalCommit.tryParse('docs(scope,dope): foo bar')!
+            .breakingChangeDescription,
+        isNull,
+      );
 
       // Should be identical to commit description if BREAKING footer with the
       // description is not used.
@@ -245,7 +265,8 @@ void main() {
       // Should be equal to the BREAKING footer message if specified.
       expect(
         ConventionalCommit.tryParse(
-                'docs(scope): foo bar \n\nBREAKING: I broke something.')!
+          'docs(scope): foo bar \n\nBREAKING: I broke something.',
+        )!
             .breakingChangeDescription,
         equals('I broke something.'),
       );

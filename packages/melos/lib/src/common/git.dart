@@ -17,9 +17,10 @@
 
 import 'dart:io';
 
+import 'package:cli_util/cli_logging.dart';
+
+import '../package.dart';
 import 'git_commit.dart';
-import 'logger.dart';
-import 'package.dart';
 
 enum TagReleaseType {
   all,
@@ -52,6 +53,7 @@ String gitTagForPackageVersion(
 Future<ProcessResult> gitExecuteCommand({
   required List<String> arguments,
   required String workingDirectory,
+  required Logger logger,
   bool throwOnExitCodeError = true,
 }) async {
   const executable = 'git';
@@ -81,14 +83,18 @@ Future<ProcessResult> gitExecuteCommand({
 
 /// Return a list of git tags for a Melos package, in date created descending order.
 /// Optionally specify [tagReleaseType] to specify [TagReleaseType].
-Future<List<String>> gitTagsForPackage(MelosPackage package,
-    {TagReleaseType tagReleaseType = TagReleaseType.all,
-    String preid = 'dev'}) async {
+Future<List<String>> gitTagsForPackage(
+  Package package, {
+  TagReleaseType tagReleaseType = TagReleaseType.all,
+  String preid = 'dev',
+  required Logger logger,
+}) async {
   final filterPattern =
       gitTagFilterPattern(package.name, tagReleaseType, preid: preid);
   final processResult = await gitExecuteCommand(
     arguments: ['tag', '-l', '--sort=-creatordate', filterPattern],
     workingDirectory: package.path,
+    logger: logger,
   );
   return (processResult.stdout as String)
       .split('\n')
@@ -108,10 +114,12 @@ Future<List<String>> gitTagsForPackage(MelosPackage package,
 Future<bool> gitTagExists(
   String tag, {
   required String workingDirectory,
+  required Logger logger,
 }) async {
   final processResult = await gitExecuteCommand(
     arguments: ['tag', '-l', tag],
     workingDirectory: workingDirectory,
+    logger: logger,
   );
   return (processResult.stdout as String).contains(tag);
 }
@@ -123,8 +131,13 @@ Future<bool> gitTagCreate(
   String message, {
   required String workingDirectory,
   String? commitId,
+  required Logger logger,
 }) async {
-  if (await gitTagExists(tag, workingDirectory: workingDirectory)) {
+  if (await gitTagExists(
+    tag,
+    workingDirectory: workingDirectory,
+    logger: logger,
+  )) {
     return false;
   }
 
@@ -136,9 +149,14 @@ Future<bool> gitTagCreate(
     arguments: arguments,
     workingDirectory: workingDirectory,
     throwOnExitCodeError: false,
+    logger: logger,
   );
 
-  return gitTagExists(tag, workingDirectory: workingDirectory);
+  return gitTagExists(
+    tag,
+    workingDirectory: workingDirectory,
+    logger: logger,
+  );
 }
 
 /// Return the latest git tag for a Melos package. Latest determined in the following order;
@@ -146,15 +164,20 @@ Future<bool> gitTagCreate(
 ///  OR 2) The latest tag sorted by listing tags in created date descending order.
 ///        Note: If the current version is a prerelease then only prerelease tags are requested.
 Future<String?> gitLatestTagForPackage(
-  MelosPackage package, {
+  Package package, {
   String preid = 'dev',
+  required Logger logger,
 }) async {
   // Package doesn't have a version, skip.
   if (package.version.toString() == '0.0.0') return null;
 
   final currentVersionTag =
       gitTagForPackageVersion(package.name, package.version.toString());
-  if (await gitTagExists(currentVersionTag, workingDirectory: package.path)) {
+  if (await gitTagExists(
+    currentVersionTag,
+    workingDirectory: package.path,
+    logger: logger,
+  )) {
     logger.trace(
       '[GIT] Found a git tag for the latest ${package.name} version (${package.version.toString()}).',
     );
@@ -165,8 +188,12 @@ Future<String?> gitLatestTagForPackage(
   final tagReleaseType = package.version.isPreRelease
       ? TagReleaseType.prerelease
       : TagReleaseType.all;
-  final tags = await gitTagsForPackage(package,
-      tagReleaseType: tagReleaseType, preid: preid);
+  final tags = await gitTagsForPackage(
+    package,
+    tagReleaseType: tagReleaseType,
+    preid: preid,
+    logger: logger,
+  );
   if (tags.isEmpty) return null;
 
   return tags.first;
@@ -176,11 +203,13 @@ Future<String?> gitLatestTagForPackage(
 Future<void> gitAdd(
   String filePattern, {
   required String workingDirectory,
+  required Logger logger,
 }) async {
   final arguments = ['add', filePattern];
   await gitExecuteCommand(
     arguments: arguments,
     workingDirectory: workingDirectory,
+    logger: logger,
   );
 }
 
@@ -188,11 +217,13 @@ Future<void> gitAdd(
 Future<void> gitCommit(
   String message, {
   required String workingDirectory,
+  required Logger logger,
 }) async {
   final arguments = ['commit', '-m', message];
   await gitExecuteCommand(
     arguments: arguments,
     workingDirectory: workingDirectory,
+    logger: logger,
   );
 }
 
@@ -200,15 +231,16 @@ Future<void> gitCommit(
 /// Optionally specify [since] to start after a specified commit or tag. Defaults
 /// to the latest release tag.
 Future<List<GitCommit>> gitCommitsForPackage(
-  MelosPackage package, {
+  Package package, {
   String? since,
   String preid = 'dev',
+  required Logger logger,
 }) async {
   var sinceOrLatestTag = since;
   if (sinceOrLatestTag != null && sinceOrLatestTag.isEmpty) {
     sinceOrLatestTag = null;
   }
-  sinceOrLatestTag ??= await gitLatestTagForPackage(package);
+  sinceOrLatestTag ??= await gitLatestTagForPackage(package, logger: logger);
 
   logger.trace(
     '[GIT] Getting commits for package ${package.name} since "${sinceOrLatestTag ?? '@'}".',
@@ -224,6 +256,7 @@ Future<List<GitCommit>> gitCommitsForPackage(
       '.',
     ],
     workingDirectory: package.path,
+    logger: logger,
   );
 
   final rawCommits = (processResult.stdout as String)
@@ -245,11 +278,13 @@ Future<List<GitCommit>> gitCommitsForPackage(
 /// Returns the current branch name of the local git repository.
 Future<String> gitGetCurrentBranchName({
   required String workingDirectory,
+  required Logger logger,
 }) async {
   final arguments = ['rev-parse', '--abbrev-ref', 'HEAD'];
   final processResult = await gitExecuteCommand(
     arguments: arguments,
     workingDirectory: workingDirectory,
+    logger: logger,
   );
   return (processResult.stdout as String).trim();
 }
@@ -257,11 +292,13 @@ Future<String> gitGetCurrentBranchName({
 /// Fetches updates for the default remote in the repository.
 Future<void> gitRemoteUpdate({
   required String workingDirectory,
+  required Logger logger,
 }) async {
   final arguments = ['remote', 'update'];
   await gitExecuteCommand(
     arguments: arguments,
     workingDirectory: workingDirectory,
+    logger: logger,
   );
 }
 
@@ -271,11 +308,15 @@ Future<bool> gitIsBehindUpstream({
   required String workingDirectory,
   String remote = 'origin',
   String? branch,
+  required Logger logger,
 }) async {
-  await gitRemoteUpdate(workingDirectory: workingDirectory);
+  await gitRemoteUpdate(workingDirectory: workingDirectory, logger: logger);
 
   final localBranch = branch ??
-      await gitGetCurrentBranchName(workingDirectory: workingDirectory);
+      await gitGetCurrentBranchName(
+        workingDirectory: workingDirectory,
+        logger: logger,
+      );
   final remoteBranch = '$remote/$localBranch';
   final arguments = [
     'rev-list',
@@ -287,6 +328,7 @@ Future<bool> gitIsBehindUpstream({
   final processResult = await gitExecuteCommand(
     arguments: arguments,
     workingDirectory: workingDirectory,
+    logger: logger,
   );
   final leftRightCounts =
       (processResult.stdout as String).split('\t').map<int>(int.parse).toList();

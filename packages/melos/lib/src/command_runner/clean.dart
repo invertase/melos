@@ -15,12 +15,17 @@
  *
  */
 
-import '../common/intellij_project.dart';
-import '../common/logger.dart';
-import '../common/workspace.dart';
+import 'dart:io';
+
+import '../commands/runner.dart';
+
 import 'base.dart';
 
 class CleanCommand extends MelosCommand {
+  CleanCommand() {
+    setupPackageFilterParser();
+  }
+
   @override
   final String name = 'clean';
 
@@ -31,20 +36,10 @@ class CleanCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    logger.stdout('Cleaning workspace...');
+    final melos = Melos(logger: logger, workingDirectory: Directory.current);
 
-    currentWorkspace!.clean();
-    await IntellijProject.fromWorkspace(currentWorkspace!).clean();
-
-    if (currentWorkspace!.config.scripts.exists('postclean')) {
-      logger.stdout('Running postclean script...\n');
-
-      await runner!.run(['run', 'postclean']);
-    }
-
-    logger.stdout(
-      '\nWorkspace cleaned. '
-      'You will need to run the bootstrap command again to use this workspace.',
+    await melos.clean(
+      filter: parsePackageFilter(Directory.current),
     );
   }
 }
