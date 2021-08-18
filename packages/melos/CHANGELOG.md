@@ -1,3 +1,9 @@
+## 1.0.0-dev.2
+
+ - **FIX**: fix cast error (#151).
+ - **FEAT**: add support for printing current melos version via `-v` or `--version` (#155).
+ - **CHORE**: fix lints on master channel (#147).
+
 ## 1.0.0-dev.1
 
  - **REFACTOR**: misc cleanup of todos.
