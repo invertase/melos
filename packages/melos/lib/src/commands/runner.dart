@@ -8,6 +8,7 @@ import 'package:cli_util/cli_logging.dart';
 import 'package:collection/collection.dart';
 import 'package:conventional_commit/conventional_commit.dart';
 import 'package:file/local.dart';
+import 'package:melos/src/common/workspace_changelog.dart';
 import 'package:mustache_template/mustache.dart';
 import 'package:path/path.dart';
 import 'package:pool/pool.dart';

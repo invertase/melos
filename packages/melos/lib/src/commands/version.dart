@@ -189,19 +189,19 @@ Hint: try running "melos version --all" to include private packages.
       await run(scriptName: 'version', configs: workspace.config);
     }
 
-    if (gitTag) {
-      await _gitStageChanges(pendingPackageUpdates);
-      await _gitCommitChanges(
-        workspace,
-        pendingPackageUpdates,
-        commitMessageTemplate,
-        updateDependentsVersions: updateDependentsVersions,
-      );
-      await _gitTagChanges(
-        pendingPackageUpdates,
-        updateDependentsVersions,
-      );
-    }
+    // if (gitTag) {
+    //   await _gitStageChanges(pendingPackageUpdates);
+    //   await _gitCommitChanges(
+    //     workspace,
+    //     pendingPackageUpdates,
+    //     commitMessageTemplate,
+    //     updateDependentsVersions: updateDependentsVersions,
+    //   );
+    //   await _gitTagChanges(
+    //     pendingPackageUpdates,
+    //     updateDependentsVersions,
+    //   );
+    // }
 
     // TODO allow support for individual package lifecycle postversion scripts
     if (workspace.config.scripts.containsKey('postversion')) {
@@ -507,47 +507,57 @@ Hint: try running "melos version --all" to include private packages.
     required bool updateChangelog,
   }) async {
     // Note: not pooling & parrellelzing rights to avoid possible file contention.
-    await Future.forEach(pendingPackageUpdates,
-        (MelosPendingPackageUpdate pendingPackageUpdate) async {
-      // Update package pubspec version.
-      if ((pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
-              updateDependentsVersions) ||
-          pendingPackageUpdate.reason != PackageUpdateReason.dependency) {
-        await _setPubspecVersionForPackage(
-          pendingPackageUpdate.package,
-          pendingPackageUpdate.nextVersion,
-        );
-      }
+    // await Future.forEach(pendingPackageUpdates,
+    //     (MelosPendingPackageUpdate pendingPackageUpdate) async {
+    //   // Update package pubspec version.
+    //   if ((pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
+    //           updateDependentsVersions) ||
+    //       pendingPackageUpdate.reason != PackageUpdateReason.dependency) {
+    //     await _setPubspecVersionForPackage(
+    //       pendingPackageUpdate.package,
+    //       pendingPackageUpdate.nextVersion,
+    //     );
+    //   }
+    //
+    //   // Update dependents.
+    //   if (updateDependentsConstraints) {
+    //     await Future.forEach([
+    //       ...pendingPackageUpdate.package.dependentsInWorkspace.values,
+    //       ...pendingPackageUpdate.package.devDependentsInWorkspace.values
+    //     ], (Package package) {
+    //       return _setDependentPackageVersionConstraint(
+    //         package,
+    //         pendingPackageUpdate.package.name,
+    //         // Note if we're not updating dependent versions then we use the current
+    //         // version rather than the next version as the next version would never
+    //         // have been applied.
+    //         (pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
+    //                 !updateDependentsVersions)
+    //             ? pendingPackageUpdate.package.version
+    //             : pendingPackageUpdate.nextVersion,
+    //       );
+    //     });
+    //   }
+    //
+    //   // Update changelogs if requested.
+    //   if (updateChangelog) {
+    //     if ((pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
+    //             updateDependentsVersions) ||
+    //         pendingPackageUpdate.reason != PackageUpdateReason.dependency) {
+    //       await pendingPackageUpdate.changelog.write();
+    //     }
+    //   }
+    // });
 
-      // Update dependents.
-      if (updateDependentsConstraints) {
-        await Future.forEach([
-          ...pendingPackageUpdate.package.dependentsInWorkspace.values,
-          ...pendingPackageUpdate.package.devDependentsInWorkspace.values
-        ], (Package package) {
-          return _setDependentPackageVersionConstraint(
-            package,
-            pendingPackageUpdate.package.name,
-            // Note if we're not updating dependent versions then we use the current
-            // version rather than the next version as the next version would never
-            // have been applied.
-            (pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
-                    !updateDependentsVersions)
-                ? pendingPackageUpdate.package.version
-                : pendingPackageUpdate.nextVersion,
-          );
-        });
-      }
+    if(updateChangelog){
+      final workspace = await createWorkspace();
+      DateTime today = new DateTime.now();
+      String dateSlug ="${today.year.toString()}-${today.month.toString().padLeft(2,'0')}-${today.day.toString().padLeft(2,'0')}";
+      WorkspaceChangelog workspaceChangelog = WorkspaceChangelog(workspace, dateSlug, pendingPackageUpdates, logger);
 
-      // Update changelogs if requested.
-      if (updateChangelog) {
-        if ((pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
-                updateDependentsVersions) ||
-            pendingPackageUpdate.reason != PackageUpdateReason.dependency) {
-          await pendingPackageUpdate.changelog.write();
-        }
-      }
-    });
+      await workspaceChangelog.write();
+
+    }
   }
 
   Set<String> _getPackagesWithVersionableCommits(
@@ -596,26 +606,26 @@ Hint: try running "melos version --all" to include private packages.
     List<MelosPendingPackageUpdate> pendingPackageUpdates,
     bool updateDependentsVersions,
   ) async {
-    await Future.forEach(pendingPackageUpdates,
-        (MelosPendingPackageUpdate pendingPackageUpdate) async {
-      if (pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
-          !updateDependentsVersions) {
-        return;
-      }
-
-      // TODO '--tag-version-prefix' support (if we decide to support it later) would pass prefix named arg to gitTagForPackageVersion:
-      final tag = gitTagForPackageVersion(
-        pendingPackageUpdate.package.name,
-        pendingPackageUpdate.nextVersion.toString(),
-      );
-
-      await gitTagCreate(
-        tag,
-        pendingPackageUpdate.changelog.markdown,
-        workingDirectory: pendingPackageUpdate.package.path,
-        logger: logger,
-      );
-    });
+    // await Future.forEach(pendingPackageUpdates,
+    //     (MelosPendingPackageUpdate pendingPackageUpdate) async {
+    //   if (pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
+    //       !updateDependentsVersions) {
+    //     return;
+    //   }
+    //
+    //   // TODO '--tag-version-prefix' support (if we decide to support it later) would pass prefix named arg to gitTagForPackageVersion:
+    //   final tag = gitTagForPackageVersion(
+    //     pendingPackageUpdate.package.name,
+    //     pendingPackageUpdate.nextVersion.toString(),
+    //   );
+    //
+    //   await gitTagCreate(
+    //     tag,
+    //     pendingPackageUpdate.changelog.markdown,
+    //     workingDirectory: pendingPackageUpdate.package.path,
+    //     logger: logger,
+    //   );
+    // });
   }
 
   Future<void> _gitCommitChanges(
