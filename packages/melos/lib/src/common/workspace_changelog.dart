@@ -34,7 +34,7 @@ class WorkspaceChangelog {
 
 
   String get markdown {
-    var body = 'CHANGELOG\n\n ## ${title}';
+    var body = '# CHANGELOG\n\n## ${title}';
     var entries = <String>[];
 
     pendingPackageUpdates.forEach((MelosPendingPackageUpdate update) {
