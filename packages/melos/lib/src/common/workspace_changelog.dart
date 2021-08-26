@@ -38,7 +38,7 @@ class WorkspaceChangelog {
     var entries = <String>[];
 
     pendingPackageUpdates.forEach((MelosPendingPackageUpdate update) {
-    var header = '### ${update.package.name}';
+    var header = '### ${update.package.name} version: ${update.nextVersion}';
 
     if (update.reason == PackageUpdateReason.dependency) {
       entries = ['Update a dependency to the latest release.'];
