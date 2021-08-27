@@ -219,6 +219,40 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
             plugin.name: PathReference(pluginPath),
           },
         );
+
+        // If this package is an an add-to-app module, all plugins that are
+        // dependencies of the package must have their android main classes copied
+        // to the temporary workspace, otherwise pub get fails.
+        if (package.isAddToApp &&
+            plugin.isFlutterPlugin &&
+            plugin.flutterPluginSupportsAndroid &&
+            plugin.androidPackage != null &&
+            (plugin.javaPluginClassPath != null ||
+                plugin.kotlinPluginClassPath != null)) {
+          // A plugin should only have one main class, written in java
+          // or kotlin. We want to copy that class to the temporary workspace
+          // at the same relative location, so pub get can find it
+          final hasJavaPluginClass = plugin.javaPluginClassPath != null;
+          final hasKotlinPluginClass = plugin.kotlinPluginClassPath != null;
+          final pathParts = plugin.androidPackage!.split('.');
+          final mainClassDirectoryName = hasJavaPluginClass ? 'java' : 'kotlin';
+          final mainClassFileSuffix = hasJavaPluginClass ? '.java' : '.kt';
+          final destinationMainClassPath = joinAll([
+            join(workspace.melosToolPath, plugin.pathRelativeToWorkspace),
+            'android/src/main/$mainClassDirectoryName',
+            pathParts.join('/'),
+            '${plugin.androidPluginClass!}$mainClassFileSuffix',
+          ]);
+          File(destinationMainClassPath).createSync(recursive: true);
+          if (hasJavaPluginClass) {
+            File(plugin.javaPluginClassPath!)
+                .copySync(destinationMainClassPath);
+          }
+          if (hasKotlinPluginClass) {
+            File(plugin.kotlinPluginClassPath!)
+                .copySync(destinationMainClassPath);
+          }
+        }
       }
     }
 
