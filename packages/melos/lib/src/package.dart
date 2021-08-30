@@ -821,7 +821,7 @@ class Package {
     final javaPluginClassPath = joinAll([
       path,
       'android/src/main/java',
-      androidPackage!.split('.').join('/'),
+      ...androidPackage!.split('.'),
       '${androidPluginClass!}.java',
     ]);
 
@@ -835,7 +835,7 @@ class Package {
     final kotlinPluginClassPath = joinAll([
       path,
       'android/src/main/kotlin',
-      androidPackage!.split('.').join('/'),
+      ...androidPackage!.split('.'),
       '${androidPluginClass!}.kt',
     ]);
 

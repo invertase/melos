@@ -240,18 +240,17 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
           final destinationMainClassPath = joinAll([
             join(workspace.melosToolPath, plugin.pathRelativeToWorkspace),
             'android/src/main/$mainClassDirectoryName',
-            pathParts.join('/'),
+            ...pathParts,
             '${plugin.androidPluginClass!}$mainClassFileSuffix',
           ]);
           File(destinationMainClassPath).createSync(recursive: true);
+          String? classPath;
           if (hasJavaPluginClass) {
-            File(plugin.javaPluginClassPath!)
-                .copySync(destinationMainClassPath);
+            classPath = plugin.javaPluginClassPath;
+          } else if (hasKotlinPluginClass) {
+            classPath = plugin.kotlinPluginClassPath;
           }
-          if (hasKotlinPluginClass) {
-            File(plugin.kotlinPluginClassPath!)
-                .copySync(destinationMainClassPath);
-          }
+          File(classPath!).copySync(destinationMainClassPath);
         }
       }
     }
