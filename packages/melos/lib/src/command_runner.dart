@@ -28,6 +28,7 @@ import 'command/exec.dart';
 import 'command/list.dart';
 import 'command/publish.dart';
 import 'command/run.dart';
+import 'command/script.dart';
 import 'command/version.dart';
 import 'common/logger.dart';
 import 'common/platform.dart';
@@ -153,9 +154,23 @@ class MelosCommandRunner extends CommandRunner {
   static MelosCommandRunner instance = MelosCommandRunner._();
 
   @override
-  Future runCommand(ArgResults topLevelResults) async {
-    currentWorkspace ??= await MelosWorkspace.fromDirectory(Directory.current);
+  Future run(Iterable<String> args) async {
+    if (currentWorkspace == null) {
+      currentWorkspace = await MelosWorkspace.fromDirectory(Directory.current);
 
+      // Inject scripts as hidden commands before parsing the args.
+      for (final script in currentWorkspace.config.scripts.names) {
+        // Ignore scripts that conflict with built-in commands
+        if (!commands.containsKey(script)) {
+          addCommand(ScriptCommand(script));
+        }
+      }
+    }
+    return super.run(args);
+  }
+
+  @override
+  Future runCommand(ArgResults topLevelResults) async {
     if (currentWorkspace == null) {
       logger.stderr(AnsiStyles.red(
           'Your current directory does not appear to be a valid Melos workspace.'));

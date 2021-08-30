@@ -36,27 +36,16 @@ class RunCommand extends MelosCommand {
   }
 
   @override
-  final String name = 'run';
+  String get name => 'run';
 
   @override
-  final String description =
+  String get description =>
       'Run a script by name defined in the workspace melos.yaml config file.';
 
   @override
-  final String invocation = 'melos run <name>';
+  String get invocation => 'melos run <name>';
 
-  @override
-  Future<void> run() async {
-    if (currentWorkspace.config.scripts.names.isEmpty) {
-      logger.stderr(
-        AnsiStyles.yellow(
-            "Warning: This workspace has no scripts defined in it's 'melos.yaml' file.\n"),
-      );
-      logger.stdout(usage);
-      exitCode = 1;
-      return;
-    }
-
+  String getScriptName() {
     String scriptName;
 
     if (argResults.rest.isEmpty) {
@@ -83,14 +72,32 @@ class RunCommand extends MelosCommand {
 
         logger.stdout('');
       } else {
-        logger.stderr('You have no scripts defined in your melos.yaml file.\n');
-        logger.stdout(usage);
-        exitCode = 1;
-        return;
+        return null;
       }
     }
 
-    scriptName ??= argResults.rest[0];
+    return scriptName ?? argResults.rest[0];
+  }
+
+  @override
+  Future<void> run() async {
+    if (currentWorkspace.config.scripts.names.isEmpty) {
+      logger.stderr(
+        AnsiStyles.yellow(
+            "Warning: This workspace has no scripts defined in it's 'melos.yaml' file.\n"),
+      );
+      logger.stdout(usage);
+      exitCode = 1;
+      return;
+    }
+
+    final scriptName = getScriptName();
+    if (scriptName == null) {
+      logger.stderr('You have no scripts defined in your melos.yaml file.\n');
+      logger.stdout(usage);
+      exitCode = 1;
+      return;
+    }
 
     if (!currentWorkspace.config.scripts.exists(scriptName)) {
       logger.stderr('Invalid run script name specified.\n');
