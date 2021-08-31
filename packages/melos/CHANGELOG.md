@@ -1,3 +1,7 @@
+## 1.0.0-dev.3
+
+ - **FIX**: Allow add-to-app packages to bootstrap (#162).
+
 ## 1.0.0-dev.2
 
  - **FIX**: fix cast error (#151).
