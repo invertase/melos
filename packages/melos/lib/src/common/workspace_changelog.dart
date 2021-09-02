@@ -19,82 +19,82 @@ import 'dart:io';
 
 import 'package:cli_util/cli_logging.dart';
 import 'package:conventional_commit/conventional_commit.dart';
-import 'package:melos/melos.dart';
 import 'package:path/path.dart';
 
+import '../../melos.dart';
 import 'pending_package_update.dart';
 
 class WorkspaceChangelog {
-  WorkspaceChangelog(this.workspace, this.title, this.pendingPackageUpdates, this.logger);
+  WorkspaceChangelog(
+      this.workspace, this.title, this.pendingPackageUpdates, this.logger);
 
   final MelosWorkspace workspace;
   final String title;
   final Logger logger;
   final List<MelosPendingPackageUpdate> pendingPackageUpdates;
 
-
   String get markdown {
-    var body = '# CHANGELOG\n\n## ${title}';
+    var body = '# CHANGELOG\n\n## $title';
     var entries = <String>[];
 
-    pendingPackageUpdates.forEach((MelosPendingPackageUpdate update) {
-    var header = '### ${update.package.name} version: ${update.nextVersion}';
+    for (final update in pendingPackageUpdates) {
+      var header = '### ${update.package.name} version: ${update.nextVersion}';
 
-    if (update.reason == PackageUpdateReason.dependency) {
-      entries = ['Update a dependency to the latest release.'];
-    }
-
-    if (update.reason == PackageUpdateReason.graduate) {
-      entries = [
-        'Graduate package to a stable release. See pre-releases prior to this version for changelog entries.'
-      ];
-    }
-
-    if (update.reason == PackageUpdateReason.commit) {
-      if (update.semverReleaseType == SemverReleaseType.major) {
-        header += '\n\n> Note: This release has breaking changes.';
+      if (update.reason == PackageUpdateReason.dependency) {
+        entries = ['Update a dependency to the latest release.'];
       }
 
-      final commits = List<ConventionalCommit>.from(
-        update.commits
-            .where((ConventionalCommit commit) => !commit.isMergeCommit)
-            .toList(),
-      );
+      if (update.reason == PackageUpdateReason.graduate) {
+        entries = [
+          'Graduate package to a stable release. See pre-releases prior to this version for changelog entries.'
+        ];
+      }
 
-      // Sort so that Breaking Changes appear at the top.
-      commits.sort((a, b) {
-        final r = a.isBreakingChange
-            .toString()
-            .compareTo(b.isBreakingChange.toString());
-        if (r != 0) return r;
-        return b.type!.compareTo(a.type!);
-      });
-
-      entries = commits.map((commit) {
-        String entry;
-        if (commit.isMergeCommit) {
-          entry = commit.header;
-        } else {
-          entry = '**${commit.type!.toUpperCase()}**: ${commit.description}';
+      if (update.reason == PackageUpdateReason.commit) {
+        if (update.semverReleaseType == SemverReleaseType.major) {
+          header += '\n\n> Note: This release has breaking changes.';
         }
 
-        final shouldPunctuate = !entry.contains(RegExp(r'[\.\?\!]$'));
-        if (shouldPunctuate) {
-          entry = '$entry.';
-        }
+        final commits = List<ConventionalCommit>.from(
+          update.commits
+              .where((ConventionalCommit commit) => !commit.isMergeCommit)
+              .toList(),
+        );
 
-        if (commit.isBreakingChange) {
-          entry = '**BREAKING** $entry';
-        }
+        // Sort so that Breaking Changes appear at the top.
+        commits.sort((a, b) {
+          final r = a.isBreakingChange
+              .toString()
+              .compareTo(b.isBreakingChange.toString());
+          if (r != 0) return r;
+          return b.type!.compareTo(a.type!);
+        });
 
-        return entry;
-      }).toList();
+        entries = commits.map((commit) {
+          String entry;
+          if (commit.isMergeCommit) {
+            entry = commit.header;
+          } else {
+            entry = '**${commit.type!.toUpperCase()}**: ${commit.description}';
+          }
+
+          final shouldPunctuate = !entry.contains(RegExp(r'[\.\?\!]$'));
+          if (shouldPunctuate) {
+            entry = '$entry.';
+          }
+
+          if (commit.isBreakingChange) {
+            entry = '**BREAKING** $entry';
+          }
+
+          return entry;
+        }).toList();
+      }
+
+      final updateSection = entries.join('\n - ');
+
+      body = '$body\n\n' '$header\n\n - $updateSection';
     }
-
-    String updateSection = entries.join('\n - ');
-
-    body = '$body\n\n' + '$header\n\n - $updateSection';
-    });
 
     return '$body\n\n';
   }
@@ -112,7 +112,7 @@ class WorkspaceChangelog {
     final file = File(path);
     final exists = file.existsSync();
     if (exists) {
-      List<String> lines = await file.readAsLines();
+      final lines = await file.readAsLines();
       lines.removeAt(0);
 
       return lines.join('\n');
