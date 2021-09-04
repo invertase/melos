@@ -19,6 +19,7 @@ import 'dart:io';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/package.dart';
 import 'package:melos/src/workspace.dart';
+import 'package:melos/src/workspace_configs.dart';
 import 'package:test/test.dart';
 
 import 'matchers.dart';
@@ -39,8 +40,9 @@ void main() {
         );
 
         final aDir = Directory('${mockWorkspaceRootDir.path}/packages/a');
-        final workspace = await MelosWorkspace.fromDirectory(
-          aDir,
+        final config = await MelosWorkspaceConfig.fromDirectory(aDir);
+        final workspace = await MelosWorkspace.fromConfig(
+          config,
           logger: TestLogger(),
         );
 
@@ -67,8 +69,11 @@ void main() {
           ],
         );
 
-        final workspace = await MelosWorkspace.fromDirectory(
+        final config = await MelosWorkspaceConfig.fromDirectory(
           mockWorkspaceRootDir,
+        );
+        final workspace = await MelosWorkspace.fromConfig(
+          config,
           logger: TestLogger(),
         );
 
@@ -90,8 +95,11 @@ void main() {
                 MockPackageFs(name: 'b'),
               ],
             );
-            final workspace = await MelosWorkspace.fromDirectory(
+            final config = await MelosWorkspaceConfig.fromDirectory(
               workspaceDir,
+            );
+            final workspace = await MelosWorkspace.fromConfig(
+              config,
               filter: PackageFilter(
                 scope: [
                   createGlob('b', currentDirectoryPath: workspaceDir.path)
@@ -114,8 +122,11 @@ void main() {
                 MockPackageFs(name: 'b'),
               ],
             );
-            final workspace = await MelosWorkspace.fromDirectory(
+            final config = await MelosWorkspaceConfig.fromDirectory(
               workspaceDir,
+            );
+            final workspace = await MelosWorkspace.fromConfig(
+              config,
               filter: PackageFilter(
                 scope: [
                   createGlob('a', currentDirectoryPath: workspaceDir.path),
@@ -145,8 +156,11 @@ void main() {
                 MockPackageFs(name: 'c'),
               ],
             );
-            final workspace = await MelosWorkspace.fromDirectory(
+            final config = await MelosWorkspaceConfig.fromDirectory(
               workspaceDir,
+            );
+            final workspace = await MelosWorkspace.fromConfig(
+              config,
               filter: PackageFilter(
                 scope: [
                   createGlob('a', currentDirectoryPath: workspaceDir.path),
@@ -178,8 +192,11 @@ void main() {
                 MockPackageFs(name: 'd'),
               ],
             );
-            final workspace = await MelosWorkspace.fromDirectory(
+            final config = await MelosWorkspaceConfig.fromDirectory(
               workspaceDir,
+            );
+            final workspace = await MelosWorkspace.fromConfig(
+              config,
               filter: PackageFilter(
                 scope: [
                   createGlob('a', currentDirectoryPath: workspaceDir.path),
@@ -208,8 +225,11 @@ void main() {
                 MockPackageFs(name: 'b'),
               ],
             );
-            final workspace = await MelosWorkspace.fromDirectory(
+            final config = await MelosWorkspaceConfig.fromDirectory(
               workspaceDir,
+            );
+            final workspace = await MelosWorkspace.fromConfig(
+              config,
               filter: PackageFilter(
                 scope: [
                   createGlob('a', currentDirectoryPath: workspaceDir.path),
@@ -232,8 +252,11 @@ void main() {
                 MockPackageFs(name: 'b'),
               ],
             );
-            final workspace = await MelosWorkspace.fromDirectory(
+            final config = await MelosWorkspaceConfig.fromDirectory(
               workspaceDir,
+            );
+            final workspace = await MelosWorkspace.fromConfig(
+              config,
               filter: PackageFilter(
                 scope: [
                   createGlob('b', currentDirectoryPath: workspaceDir.path),
@@ -261,8 +284,11 @@ void main() {
                 MockPackageFs(name: 'c'),
               ],
             );
-            final workspace = await MelosWorkspace.fromDirectory(
+            final config = await MelosWorkspaceConfig.fromDirectory(
               workspaceDir,
+            );
+            final workspace = await MelosWorkspace.fromConfig(
+              config,
               filter: PackageFilter(
                 scope: [
                   createGlob('c', currentDirectoryPath: workspaceDir.path),
@@ -294,8 +320,11 @@ void main() {
                 MockPackageFs(name: 'd'),
               ],
             );
-            final workspace = await MelosWorkspace.fromDirectory(
+            final config = await MelosWorkspaceConfig.fromDirectory(
               workspaceDir,
+            );
+            final workspace = await MelosWorkspace.fromConfig(
+              config,
               filter: PackageFilter(
                 scope: [
                   createGlob('d', currentDirectoryPath: workspaceDir.path),

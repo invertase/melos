@@ -23,8 +23,9 @@ void main() {
         const PubSpec(name: 'b'),
       );
 
-      final workspace = await MelosWorkspace.fromDirectory(
-        workspaceDir,
+      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final workspace = await MelosWorkspace.fromConfig(
+        config,
         logger: TestLogger(),
         filter: PackageFilter(
           dirExists: ['test'],
@@ -58,8 +59,9 @@ void main() {
         const PubSpec(name: 'b'),
       );
 
-      final workspace = await MelosWorkspace.fromDirectory(
-        workspaceDir,
+      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final workspace = await MelosWorkspace.fromConfig(
+        config,
         logger: TestLogger(),
         filter: PackageFilter(
           fileExists: ['log.txt'],
