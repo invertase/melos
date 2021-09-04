@@ -1,0 +1,50 @@
+---
+title: Environment Variables
+description: Learn more about all the environment variables Melos supports and also pre-populates.
+---
+
+# Environment Variables
+
+These variables are available as environment variables in scripts run by `melos exec`. They can also automatically replaced/injected on `melos exec` commands e.g. `melos exec --file-exists="./test_driver/MELOS_PARENT_PACKAGE_NAME_e2e.dart" --scope="*example*" -- echo hello`
+
+## Defined by Melos
+
+### `MELOS_ROOT_PATH`
+
+The path to the mono-repo root
+
+### `MELOS_PACKAGE_NAME`
+
+The name of the package that's currently executing a script (when using `melos exec`)
+
+### `MELOS_PACKAGE_VERSION`
+
+The version of the package that's currently executing a script (when using `melos exec`)
+
+### `MELOS_PACKAGE_PATH`
+
+The path of the package that's currently executing a script (when using `melos exec`).
+
+### `MELOS_PARENT_PACKAGE_NAME`
+
+The name of the parent package of the current package that's currently executing a script (when using `melos exec`).
+
+### `MELOS_PARENT_PACKAGE_VERSION`
+
+The version of the parent package of the current package that's currently executing a script (when using `melos exec`).
+
+### `MELOS_PARENT_PACKAGE_PATH`
+
+The path of the parent package of the current package that's currently executing a script (when using `melos exec`).
+
+#### What is a 'parent package'
+
+If a package exists in a directory that is also a child of another package, then its parent is the 'parent package'. For example; the package `firebase_auth` has an `example` directory that is also a package, when running a `melos exec` script in the `example` package then the parent package would be `firebase_auth`.
+
+Note, this 'parent package' functionality only currently works when the 'child package' name ends with `example`
+
+## User Defined
+
+### `MELOS_PACKAGES`
+
+Define a comma delimited list of package names that Melos should focus on. This bypasses all filtering flags if defined.
