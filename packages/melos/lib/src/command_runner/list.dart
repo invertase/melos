@@ -15,13 +15,12 @@
  *
  */
 
-import 'dart:io';
-
 import '../commands/runner.dart';
+import '../workspace_configs.dart';
 import 'base.dart';
 
 class ListCommand extends MelosCommand {
-  ListCommand() {
+  ListCommand(MelosWorkspaceConfig config) : super(config) {
     setupPackageFilterParser();
     argParser.addFlag(
       'long',
@@ -80,7 +79,7 @@ class ListCommand extends MelosCommand {
     final graph = argResults!['graph'] as bool;
     final gviz = argResults!['gviz'] as bool;
 
-    final melos = Melos(logger: logger, workingDirectory: Directory.current);
+    final melos = Melos(logger: logger, config: config);
 
     var kind = ListOutputKind.column;
 
@@ -92,7 +91,7 @@ class ListCommand extends MelosCommand {
     return melos.list(
       showPrivatePackages: all,
       long: long,
-      filter: parsePackageFilter(Directory.current),
+      filter: parsePackageFilter(config.path),
       kind: kind,
     );
   }

@@ -15,13 +15,12 @@
  *
  */
 
-import 'dart:io';
-
 import '../commands/runner.dart';
+import '../workspace_configs.dart';
 import 'base.dart';
 
 class PublishCommand extends MelosCommand {
-  PublishCommand() {
+  PublishCommand(MelosWorkspaceConfig config) : super(config) {
     setupPackageFilterParser();
     argParser.addFlag(
       'dry-run',
@@ -58,8 +57,8 @@ class PublishCommand extends MelosCommand {
     final gitTagVersion = argResults!['git-tag-version'] as bool;
     final yes = argResults!['yes'] as bool || false;
 
-    final melos = Melos(logger: logger, workingDirectory: Directory.current);
-    final filter = parsePackageFilter(Directory.current);
+    final melos = Melos(logger: logger, config: config);
+    final filter = parsePackageFilter(config.path);
 
     return melos.publish(
       filter: filter,
