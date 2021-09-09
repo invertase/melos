@@ -6,10 +6,29 @@
   "theme": "#FFA03F",
   "googleAnalytics": "G-Q7ME6WLFEJ",
   "sidebar": [
-    ["Overview", "/"],
-    ["Getting Started", "/getting-started"],
-    ["Commands", "/commands"],
-    ["melos.yaml", "/melos-yaml"],
-    ["Automated Releases", "/automated-releases"]
+    [
+      "Overview",
+      "/"
+    ],
+    [
+      "Getting Started",
+      "/getting-started"
+    ],
+    [
+      "Commands",
+      "/commands"
+    ],
+    [
+      "Environment Variables",
+      "/environment-variables"
+    ],
+    [
+      "melos.yaml",
+      "/melos-yaml"
+    ],
+    [
+      "Automated Releases",
+      "/automated-releases"
+    ]
   ]
 }
