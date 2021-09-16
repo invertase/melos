@@ -85,8 +85,9 @@ abstract class _Melos {
       );
     }
 
-    return MelosWorkspace.fromDirectory(
-      workingDirectory,
+    final config = await MelosWorkspaceConfig.fromDirectory(workingDirectory);
+    return MelosWorkspace.fromConfig(
+      config,
       filter: filterWithEnv,
       logger: logger,
     );
