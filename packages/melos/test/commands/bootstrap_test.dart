@@ -24,6 +24,16 @@ void main() {
         const PubSpec(name: 'b'),
       );
 
+      await createProject(
+        workspaceDir,
+        pubSpecFromJsonFile(fileName: 'add_to_app_json.json'),
+      );
+
+      await createProject(
+        workspaceDir,
+        pubSpecFromJsonFile(fileName: 'plugin_json.json'),
+      );
+
       final logger = TestLogger();
       final melos = Melos(
         logger: logger,
@@ -39,11 +49,15 @@ void main() {
 melos bootstrap
    └> ${workspaceDir.path}
 
-Running "pub get" in workspace packages...
+Running "flutter pub get" in workspace packages...
   ✓ a
     └> packages/a
   ✓ b
     └> packages/b
+  ✓ c
+    └> packages/c
+  ✓ d
+    └> packages/d
 
 Linking workspace packages...
   > SUCCESS
@@ -51,7 +65,7 @@ Linking workspace packages...
 Generating IntelliJ IDE files...
   > SUCCESS
 
- -> 2 plugins bootstrapped
+ -> 4 plugins bootstrapped
 ''',
         ),
       );

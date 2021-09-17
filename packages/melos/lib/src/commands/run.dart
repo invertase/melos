@@ -74,8 +74,8 @@ mixin _RunMixin on _Melos {
     };
 
     if (script.filter != null) {
-      final workspace = await MelosWorkspace.fromDirectory(
-        Directory(config.path),
+      final workspace = await MelosWorkspace.fromConfig(
+        config,
         filter: script.filter,
         logger: logger,
       );

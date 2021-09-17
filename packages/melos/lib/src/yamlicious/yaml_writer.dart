@@ -55,7 +55,9 @@ void _mapToYamlString(
   keys.forEach((k) {
     final dynamic v = node[k];
     _writeIndent(indent, ss);
-    ss..write(k)..write(': ');
+    ss
+      ..write(k)
+      ..write(': ');
     _writeYamlString(v, indent, ss, false);
   });
 }

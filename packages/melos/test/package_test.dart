@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:glob/glob.dart';
 import 'package:melos/src/package.dart';
 import 'package:melos/src/workspace.dart';
+import 'package:melos/src/workspace_configs.dart';
 import 'package:nock/nock.dart';
 import 'package:platform/platform.dart';
 import 'package:test/test.dart';
@@ -29,10 +30,13 @@ void main() {
       nock.cleanAll();
       IOOverrides.global = MockFs();
 
-      workspace = await MelosWorkspace.fromDirectory(
+      final config = await MelosWorkspaceConfig.fromDirectory(
         createMockWorkspaceFs(
           packages: [MockPackageFs(name: 'melos')],
         ),
+      );
+      workspace = await MelosWorkspace.fromConfig(
+        config,
         logger: TestLogger(),
       );
     });
@@ -57,7 +61,7 @@ void main() {
         () async {
           final interceptor = nock('http://localhost:8080')
               .get('/packages/melos.json')
-                ..reply(200, pubPackageJson);
+            ..reply(200, pubPackageJson);
 
           final package = workspace.allPackages.values.first;
           await package.getPublishedVersions();
