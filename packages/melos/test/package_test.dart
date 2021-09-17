@@ -61,7 +61,7 @@ void main() {
         () async {
           final interceptor = nock('http://localhost:8080')
               .get('/packages/melos.json')
-                ..reply(200, pubPackageJson);
+            ..reply(200, pubPackageJson);
 
           final package = workspace.allPackages.values.first;
           await package.getPublishedVersions();
