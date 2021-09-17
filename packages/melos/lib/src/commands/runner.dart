@@ -54,19 +54,19 @@ class Melos extends _Melos
         _VersionMixin,
         _PublishMixin {
   Melos({
-    required this.workingDirectory,
+    required this.config,
     Logger? logger,
   }) : logger = logger ?? Logger.standard();
 
   @override
   final Logger logger;
   @override
-  final Directory workingDirectory;
+  final MelosWorkspaceConfig config;
 }
 
 abstract class _Melos {
   Logger get logger;
-  Directory get workingDirectory;
+  MelosWorkspaceConfig get config;
 
   Future<MelosWorkspace> createWorkspace({PackageFilter? filter}) async {
     var filterWithEnv = filter;
@@ -79,13 +79,12 @@ abstract class _Melos {
         scope: currentPlatform.environment[envKeyMelosPackages]!
             .split(',')
             .map(
-              (e) => createGlob(e, currentDirectoryPath: workingDirectory.path),
+              (e) => createGlob(e, currentDirectoryPath: config.path),
             )
             .toList(),
       );
     }
 
-    final config = await MelosWorkspaceConfig.fromDirectory(workingDirectory);
     return MelosWorkspace.fromConfig(
       config,
       filter: filterWithEnv,
@@ -111,7 +110,7 @@ abstract class _Melos {
     if (workspace.config.scripts.containsKey(scriptName)) {
       logger.stdout('Running $scriptName script...\n');
 
-      await run(scriptName: scriptName, configs: workspace.config);
+      await run(scriptName: scriptName);
     }
 
     try {
@@ -121,7 +120,7 @@ abstract class _Melos {
       if (workspace.config.scripts.containsKey(postScript)) {
         logger.stdout('Running $postScript script...\n');
 
-        await run(scriptName: postScript, configs: workspace.config);
+        await run(scriptName: postScript);
       }
     }
   }
@@ -129,6 +128,5 @@ abstract class _Melos {
   Future<void> run({
     String? scriptName,
     bool noSelect = false,
-    MelosWorkspaceConfig? configs,
   });
 }

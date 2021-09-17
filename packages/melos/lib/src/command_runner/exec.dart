@@ -18,10 +18,11 @@
 import 'dart:io';
 
 import '../commands/runner.dart';
+import '../workspace_configs.dart';
 import 'base.dart';
 
 class ExecCommand extends MelosCommand {
-  ExecCommand() {
+  ExecCommand(MelosWorkspaceConfig config) : super(config) {
     setupPackageFilterParser();
     argParser.addOption('concurrency', defaultsTo: '5', abbr: 'c');
     argParser.addFlag(
@@ -52,9 +53,9 @@ class ExecCommand extends MelosCommand {
       exit(1);
     }
 
-    final melos = Melos(logger: logger, workingDirectory: Directory.current);
+    final melos = Melos(logger: logger, config: config);
 
-    final packageFilter = parsePackageFilter(Directory.current);
+    final packageFilter = parsePackageFilter(config.path);
     final concurrency = int.parse(argResults!['concurrency'] as String);
     final failFast = argResults!['fail-fast'] as bool;
 

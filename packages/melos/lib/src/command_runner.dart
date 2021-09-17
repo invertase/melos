@@ -26,6 +26,7 @@ import 'command_runner/publish.dart';
 import 'command_runner/run.dart';
 import 'command_runner/version.dart';
 import 'common/utils.dart';
+import 'workspace_configs.dart';
 
 /// A class that can run Melos commands.
 ///
@@ -37,7 +38,7 @@ import 'common/utils.dart';
 /// await melos.run(['boostrap']);
 /// ```
 class MelosCommandRunner extends CommandRunner<void> {
-  MelosCommandRunner()
+  MelosCommandRunner(MelosWorkspaceConfig config)
       : super(
           'melos',
           'A CLI tool for managing Dart & Flutter projects with multiple packages.',
@@ -55,13 +56,13 @@ class MelosCommandRunner extends CommandRunner<void> {
       help: 'Print the current Melos version.',
     );
 
-    addCommand(ExecCommand());
-    addCommand(BootstrapCommand());
-    addCommand(CleanCommand());
-    addCommand(RunCommand());
-    addCommand(ListCommand());
-    addCommand(PublishCommand());
-    addCommand(VersionCommand());
+    addCommand(ExecCommand(config));
+    addCommand(BootstrapCommand(config));
+    addCommand(CleanCommand(config));
+    addCommand(RunCommand(config));
+    addCommand(ListCommand(config));
+    addCommand(PublishCommand(config));
+    addCommand(VersionCommand(config));
   }
 
   @override

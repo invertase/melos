@@ -47,9 +47,10 @@ void main() {
       );
 
       final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
       final melos = Melos(
         logger: logger,
-        workingDirectory: workspaceDir,
+        config: config,
       );
 
       await melos.run(scriptName: 'test_script', noSelect: true);

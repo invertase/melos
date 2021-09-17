@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:cli_util/cli_logging.dart';
@@ -7,8 +5,13 @@ import 'package:cli_util/cli_logging.dart';
 import '../common/glob.dart';
 import '../common/utils.dart';
 import '../package.dart';
+import '../workspace_configs.dart';
 
 abstract class MelosCommand extends Command<void> {
+  MelosCommand(this.config);
+
+  final MelosWorkspaceConfig config;
+
   Logger get logger =>
       globalResults!['verbose'] as bool ? Logger.verbose() : Logger.standard();
 
@@ -123,7 +126,7 @@ abstract class MelosCommand extends Command<void> {
   }
 
   PackageFilter parsePackageFilter(
-    Directory workspaceDirectory, {
+    String workingDirPath, {
     bool sinceEnabled = true,
   }) {
     assert(
@@ -131,8 +134,6 @@ abstract class MelosCommand extends Command<void> {
           argResults?.command?.name != 'run',
       'unimplemented',
     );
-
-    final workingDirPath = workspaceDirectory.path;
 
     final since =
         sinceEnabled ? argResults![filterOptionSince] as String? : null;

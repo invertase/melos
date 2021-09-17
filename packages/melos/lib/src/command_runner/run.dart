@@ -15,15 +15,14 @@
  *
  */
 
-import 'dart:io';
-
 import 'package:ansi_styles/ansi_styles.dart';
 
 import '../commands/runner.dart';
+import '../workspace_configs.dart';
 import 'base.dart';
 
 class RunCommand extends MelosCommand {
-  RunCommand() {
+  RunCommand(MelosWorkspaceConfig config) : super(config) {
     argParser.addFlag(
       'no-select',
       negatable: false,
@@ -44,7 +43,7 @@ class RunCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    final melos = Melos(logger: logger, workingDirectory: Directory.current);
+    final melos = Melos(logger: logger, config: config);
 
     final noSelect = argResults!['no-select'] as bool;
     final scriptName = argResults!.rest.isEmpty ? null : argResults!.rest.first;
