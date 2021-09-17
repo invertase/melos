@@ -195,7 +195,9 @@ bool getBool(
 
   if (result.isEmpty) {
     return defaultsTo;
-  } else if (result == 'y') return true;
+  } else if (result == 'y') {
+    return true;
+  }
   return false;
 }
 
