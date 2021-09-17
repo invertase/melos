@@ -20,6 +20,7 @@ import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/package.dart';
 import 'package:melos/src/workspace.dart';
 import 'package:melos/src/workspace_configs.dart';
+import 'package:pubspec/pubspec.dart';
 import 'package:test/test.dart';
 
 import 'matchers.dart';
@@ -29,6 +30,46 @@ import 'utils.dart';
 
 void main() {
   group('Workspace', () {
+    test('throws if multiple packages have the same name', () async {
+      final workspaceDir = createTemporaryWorkspaceDirectory();
+
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'a'),
+      );
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'example'),
+        path: 'packages/a/example',
+      );
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'b'),
+      );
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'example'),
+        path: 'packages/b/example',
+      );
+
+      await expectLater(
+        () async => MelosWorkspace.fromConfig(
+          await MelosWorkspaceConfig.fromDirectory(workspaceDir),
+          logger: TestLogger(),
+        ),
+        throwsMelosConfigException(
+          message: '''
+Multiple packages with the name `example` found in the workspace, which is unsupported.
+To fix this problem, consider renaming your packages to have a unique name.
+
+The packages that caused problem are:
+- example at packages/b/example
+- example at packages/a/example
+''',
+        ),
+      );
+    });
+
     test(
       'can be accessed from anywhere within a workspace',
       withMockFs(() async {

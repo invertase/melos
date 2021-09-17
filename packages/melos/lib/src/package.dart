@@ -23,6 +23,7 @@ import 'package:cli_util/cli_logging.dart';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:http/http.dart' as http;
+import 'package:melos/src/common/validation.dart';
 import 'package:path/path.dart';
 import 'package:pool/pool.dart';
 import 'package:pub_semver/pub_semver.dart';
@@ -323,6 +324,19 @@ class PackageMap {
         final pubSpec = await PubSpec.load(pubspecFile.parent);
 
         final name = pubSpec.name!;
+
+        if (packageMap.containsKey(name)) {
+          throw MelosConfigException(
+            '''
+Multiple packages with the name `$name` found in the workspace, which is unsupported.
+To fix this problem, consider renaming your packages to have a unique name.
+
+The packages that caused problem are:
+- $name at ${relative(pubspecDirPath, from: workspacePath)}
+- $name at ${relative(packageMap[name]!.path, from: workspacePath)}
+''',
+          );
+        }
 
         packageMap[name] = Package._(
           name: name,

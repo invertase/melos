@@ -82,8 +82,9 @@ Directory createTemporaryWorkspaceDirectory({
 
 Future<Directory> createProject(
   Directory workspace,
-  PubSpec partialPubSpec,
-) async {
+  PubSpec partialPubSpec, {
+  String? path,
+}) async {
   final pubSpec = partialPubSpec.environment != null
       ? partialPubSpec
       : partialPubSpec.copy(
@@ -98,11 +99,15 @@ Future<Directory> createProject(
   );
 
   final projectDirectory = Directory(
-    join(
+    joinAll([
       workspace.path,
-      'packages',
-      pubSpec.name,
-    ),
+      if (path != null)
+        path
+      else ...[
+        'packages',
+        pubSpec.name!,
+      ]
+    ]),
   );
 
   projectDirectory.createSync(recursive: true);
