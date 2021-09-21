@@ -63,8 +63,8 @@ Multiple packages with the name `example` found in the workspace, which is unsup
 To fix this problem, consider renaming your packages to have a unique name.
 
 The packages that caused the problem are:
-- example at packages/b/example
 - example at packages/a/example
+- example at packages/b/example
 ''',
         ),
       );
