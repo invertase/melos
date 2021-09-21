@@ -23,7 +23,7 @@ import 'package:cli_util/cli_logging.dart';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:http/http.dart' as http;
-import 'package:melos/src/common/validation.dart';
+import 'common/validation.dart';
 import 'package:path/path.dart';
 import 'package:pool/pool.dart';
 import 'package:pub_semver/pub_semver.dart';
