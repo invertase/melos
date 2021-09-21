@@ -331,7 +331,7 @@ class PackageMap {
 Multiple packages with the name `$name` found in the workspace, which is unsupported.
 To fix this problem, consider renaming your packages to have a unique name.
 
-The packages that caused problem are:
+The packages that caused the problem are:
 - $name at ${relative(pubspecDirPath, from: workspacePath)}
 - $name at ${relative(packageMap[name]!.path, from: workspacePath)}
 ''',
