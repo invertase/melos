@@ -23,7 +23,6 @@ import 'package:cli_util/cli_logging.dart';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:http/http.dart' as http;
-import 'common/validation.dart';
 import 'package:path/path.dart';
 import 'package:pool/pool.dart';
 import 'package:pub_semver/pub_semver.dart';
@@ -34,6 +33,7 @@ import 'common/git.dart';
 import 'common/glob.dart';
 import 'common/platform.dart';
 import 'common/utils.dart';
+import 'common/validation.dart';
 import 'workspace.dart';
 
 /// Key for windows platform.
