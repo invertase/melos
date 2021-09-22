@@ -33,6 +33,7 @@ import 'common/git.dart';
 import 'common/glob.dart';
 import 'common/platform.dart';
 import 'common/utils.dart';
+import 'common/validation.dart';
 import 'workspace.dart';
 
 /// Key for windows platform.
@@ -323,6 +324,19 @@ class PackageMap {
         final pubSpec = await PubSpec.load(pubspecFile.parent);
 
         final name = pubSpec.name!;
+
+        if (packageMap.containsKey(name)) {
+          throw MelosConfigException(
+            '''
+Multiple packages with the name `$name` found in the workspace, which is unsupported.
+To fix this problem, consider renaming your packages to have a unique name.
+
+The packages that caused the problem are:
+- $name at ${relative(pubspecDirPath, from: workspacePath)}
+- $name at ${relative(packageMap[name]!.path, from: workspacePath)}
+''',
+          );
+        }
 
         packageMap[name] = Package._(
           name: name,
