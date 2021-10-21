@@ -2,12 +2,15 @@
 title: Configuration overview
 description: Configure Melos using the `melos.yaml` file.
 ---
+
 # Configuration Overview
 
 Every project requires a `melos.yaml` project in the root. The below outlines
-all of the specific fields and their purpose.
+all of the configurable fields and their purpose.
 
 ## `name`
+
+> required
 
 The name of this project, using for display purposes within IO environments and IDEs.
 
@@ -17,15 +20,44 @@ name: My Awesome Project
 
 ## `packages`
 
+> required
+
 A list of local packages Melos will use to execute commands against.  The list can be
 of specific paths or a [glob](https://docs.python.org/3/library/glob.html) pattern expansion format.
 
 ```yaml
 packages:
+  # e.g. all packages inside the /packages directory
   - packages/**
-  - ext/some_other_package
+  # e.g. including the workspace root as a package
+  - '*'
 ```
+
+> You can can also reduce the scope of packages on a per-command basis via the [`--scope` filter](/filters#scope) flag.
+
+## `ignore`
+
+> required
+
+A list of local packages Melos will ignore when executing commands in the workspace.  The list can be
+of specific paths or a [glob](https://docs.python.org/3/library/glob.html) pattern expansion format.
+
+```yaml
+ignore:
+  # e.g. ignore example apps
+  - 'packages/**/*example'
+```
+
+> You can can also expand the scope of ignored packages on a per-command basis via the [`--scope` filter](/filters#scope) flag.
 
 ## `scripts`
 
-TODO
+> optional
+
+Define custom scripts that can be executed in the workspace via the [`melos run`](/commands/run) command.
+
+Learn more about defining scripts [here](/configuration/scripts).
+
+
+
+
