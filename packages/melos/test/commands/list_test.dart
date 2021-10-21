@@ -1,6 +1,7 @@
 import 'package:melos/src/commands/runner.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/package.dart';
+import 'package:melos/src/workspace_configs.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/scaffolding.dart';
 import 'package:test/test.dart';
@@ -27,7 +28,8 @@ void main() {
             ],
           );
 
-          final melos = Melos(logger: logger, workingDirectory: workspaceDir);
+          final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+          final melos = Melos(logger: logger, config: config);
 
           await melos.list();
 
@@ -60,7 +62,8 @@ b
             ],
           );
 
-          final melos = Melos(logger: logger, workingDirectory: workspaceDir);
+          final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+          final melos = Melos(logger: logger, config: config);
 
           await melos.list();
 
@@ -92,7 +95,8 @@ a
             ],
           );
 
-          final melos = Melos(logger: logger, workingDirectory: workspaceDir);
+          final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+          final melos = Melos(logger: logger, config: config);
 
           await melos.list(showPrivatePackages: true);
 
@@ -120,7 +124,8 @@ c
             ],
           );
 
-          final melos = Melos(logger: logger, workingDirectory: workspaceDir);
+          final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+          final melos = Melos(logger: logger, config: config);
 
           await melos.list(
             showPrivatePackages: true,
@@ -154,7 +159,8 @@ c
             ],
           );
 
-          final melos = Melos(logger: logger, workingDirectory: workspaceDir);
+          final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+          final melos = Melos(logger: logger, config: config);
 
           await melos.list(
             showPrivatePackages: true,
@@ -185,7 +191,8 @@ long_name 0.0.0 packages/long_name PRIVATE
             ],
           );
 
-          final melos = Melos(logger: logger, workingDirectory: workspaceDir);
+          final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+          final melos = Melos(logger: logger, config: config);
 
           await melos.list(long: true);
 

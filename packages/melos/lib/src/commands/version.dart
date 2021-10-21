@@ -49,7 +49,7 @@ mixin _VersionMixin on _RunMixin {
 
     if (workspace.config.scripts.containsKey('preversion')) {
       logger.stdout('Running "preversion" lifecycle script...\n');
-      await run(scriptName: 'preversion', configs: workspace.config);
+      await run(scriptName: 'preversion');
     }
 
     final packageCommits = await _getPackageCommits(
@@ -186,7 +186,7 @@ Hint: try running "melos version --all" to include private packages.
     // TODO allow support for individual package lifecycle version scripts
     if (workspace.config.scripts.containsKey('version')) {
       logger.stdout('Running "version" lifecycle script...\n');
-      await run(scriptName: 'version', configs: workspace.config);
+      await run(scriptName: 'version');
     }
 
     if (gitTag) {
@@ -206,7 +206,7 @@ Hint: try running "melos version --all" to include private packages.
     // TODO allow support for individual package lifecycle postversion scripts
     if (workspace.config.scripts.containsKey('postversion')) {
       logger.stdout('Running "postversion" lifecycle script...\n');
-      await run(scriptName: 'postversion', configs: workspace.config);
+      await run(scriptName: 'postversion');
     }
 
     // TODO automatic push support
@@ -285,7 +285,7 @@ Hint: try running "melos version --all" to include private packages.
     // TODO allow support for individual package lifecycle version scripts
     if (workspace.config.scripts.containsKey('preversion')) {
       logger.stdout('Running "preversion" lifecycle script...\n');
-      await run(scriptName: 'preversion', configs: workspace.config);
+      await run(scriptName: 'preversion');
     }
 
     // Update package pubspec version.
@@ -325,7 +325,7 @@ Hint: try running "melos version --all" to include private packages.
     // TODO allow support for individual package lifecycle version scripts
     if (workspace.config.scripts.containsKey('version')) {
       logger.stdout('Running "version" lifecycle script...\n');
-      await run(scriptName: 'version', configs: workspace.config);
+      await run(scriptName: 'version');
     }
 
     logger.stdout(

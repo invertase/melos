@@ -21,8 +21,12 @@ import '../commands/runner.dart';
 import '../workspace_configs.dart';
 import 'base.dart';
 
-class RunCommand extends MelosCommand {
-  RunCommand(MelosWorkspaceConfig config) : super(config) {
+class ScriptCommand extends MelosCommand {
+  ScriptCommand._(
+    MelosWorkspaceConfig config, {
+    required this.scripts,
+  })  : assert(scripts.isNotEmpty),
+        super(config) {
     argParser.addFlag(
       'no-select',
       negatable: false,
@@ -31,22 +35,42 @@ class RunCommand extends MelosCommand {
     );
   }
 
-  @override
-  final String name = 'run';
+  static ScriptCommand? fromConfig(
+    MelosWorkspaceConfig config, {
+    Iterable<String> exclude = const <String>[],
+  }) {
+    final scripts = config.scripts.keys.toSet();
+    scripts.removeAll(exclude);
+    if (scripts.isEmpty) {
+      return null;
+    }
+    return ScriptCommand._(config, scripts: scripts);
+  }
+
+  final Set<String> scripts;
 
   @override
-  final String description =
-      'Run a script by name defined in the workspace melos.yaml config file.';
+  String get name => scripts.first;
 
   @override
-  final String invocation = 'melos run <name>';
+  List<String> get aliases => scripts.skip(1).toList();
+
+  @override
+  String get description =>
+      'Run scripts by name defined in the workspace melos.yaml config file.';
+
+  @override
+  final String invocation = 'melos <script>';
+
+  @override
+  bool get hidden => true;
 
   @override
   Future<void> run() async {
     final melos = Melos(logger: logger, config: config);
 
+    final scriptName = argResults!.name;
     final noSelect = argResults!['no-select'] as bool;
-    final scriptName = argResults!.rest.isEmpty ? null : argResults!.rest.first;
 
     try {
       return await melos.run(

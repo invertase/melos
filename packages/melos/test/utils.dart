@@ -82,8 +82,9 @@ Directory createTemporaryWorkspaceDirectory({
 
 Future<Directory> createProject(
   Directory workspace,
-  PubSpec partialPubSpec,
-) async {
+  PubSpec partialPubSpec, {
+  String? path,
+}) async {
   final pubSpec = partialPubSpec.environment != null
       ? partialPubSpec
       : partialPubSpec.copy(
@@ -98,16 +99,46 @@ Future<Directory> createProject(
   );
 
   final projectDirectory = Directory(
-    join(
+    joinAll([
       workspace.path,
-      'packages',
-      pubSpec.name,
-    ),
+      if (path != null)
+        path
+      else ...[
+        'packages',
+        pubSpec.name!,
+      ]
+    ]),
   );
 
   projectDirectory.createSync(recursive: true);
 
   await pubSpec.save(projectDirectory);
+
+  // Reach into unParsedYaml and determine whether this is a plugin that
+  // supports Android.
+  // If it is, create an empty main class file to appease flutter pub
+  // get in case an add-to-app module is present in the workspace
+  final androidPluginNode =
+      // ignore: avoid_dynamic_calls
+      pubSpec.unParsedYaml?['flutter']?['plugin']?['platforms']?['android']
+          as Map?;
+
+  if (androidPluginNode != null) {
+    final package = androidPluginNode['package'] as String?;
+    final pluginClass = androidPluginNode['pluginClass'] as String?;
+
+    if (package != null && pluginClass != null) {
+      final javaMainClassFile = File(
+        joinAll([
+          projectDirectory.path,
+          'android/src/main/java',
+          ...package.split('.'),
+          '$pluginClass.java',
+        ]),
+      );
+      javaMainClassFile.createSync(recursive: true);
+    }
+  }
 
   return projectDirectory;
 }
@@ -176,4 +207,13 @@ class PackageDependencyConfig {
   String toString() {
     return _map.toString();
   }
+}
+
+PubSpec pubSpecFromJsonFile({
+  String path = 'test/test_assets/',
+  required String fileName,
+}) {
+  final filePath = '$path$fileName';
+  final jsonAsString = File(filePath).readAsStringSync();
+  return PubSpec.fromJson(json.decode(jsonAsString) as Map);
 }

@@ -248,7 +248,7 @@ melos bootstrap --no-private
 Filter packages where the current local package version exists on pub.dev.
 
 ```bash
-melos bootstrap --no-private
+melos bootstrap --published
 ```
 
 Use `--no-published` to filter packages that have not had their current version published yet.
@@ -276,8 +276,8 @@ melos exec --ignore="*internal*" -- flutter build ios
 Only include packages that have been changed since the specified `ref`, e.g. a commit sha or git tag.
 
 ```bash
-# Run `flutter build ios` on all packages but ignore those whose packages names contain "internal"
-melos version --since=<commit hash>
+# Run `flutter build ios` on all packages that have been changed since the specified commit hash
+melos exec --since=<commit hash> -- flutter build ios
 ```
 
 ### --dir-exists

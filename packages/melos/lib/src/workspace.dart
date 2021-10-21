@@ -48,15 +48,12 @@ class MelosWorkspace {
     required this.logger,
   });
 
-  /// Build a [MelosWorkspace] from a Directory.
-  /// If the directory is not a valid Melos workspace (e.g. no "melos.yaml" file)
-  /// then null is returned.
-  static Future<MelosWorkspace> fromDirectory(
-    Directory directory, {
+  /// Build a [MelosWorkspace] from a workspace configuration.
+  static Future<MelosWorkspace> fromConfig(
+    MelosWorkspaceConfig workspaceConfig, {
     PackageFilter? filter,
     required Logger logger,
   }) async {
-    final workspaceConfig = await MelosWorkspaceConfig.fromDirectory(directory);
     final allPackages = await PackageMap.resolvePackages(
       workspacePath: workspaceConfig.path,
       packages: workspaceConfig.packages,

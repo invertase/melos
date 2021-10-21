@@ -33,6 +33,7 @@ import 'common/git.dart';
 import 'common/glob.dart';
 import 'common/platform.dart';
 import 'common/utils.dart';
+import 'common/validation.dart';
 import 'workspace.dart';
 
 /// Key for windows platform.
@@ -323,6 +324,19 @@ class PackageMap {
         final pubSpec = await PubSpec.load(pubspecFile.parent);
 
         final name = pubSpec.name!;
+
+        if (packageMap.containsKey(name)) {
+          throw MelosConfigException(
+            '''
+Multiple packages with the name `$name` found in the workspace, which is unsupported.
+To fix this problem, consider renaming your packages to have a unique name.
+
+The packages that caused the problem are:
+- $name at ${relative(pubspecDirPath, from: workspacePath)}
+- $name at ${relative(packageMap[name]!.path, from: workspacePath)}
+''',
+          );
+        }
 
         packageMap[name] = Package._(
           name: name,
@@ -744,6 +758,13 @@ class Package {
     return File(joinAll([path, 'lib', 'main.dart'])).existsSync();
   }
 
+  bool get isAddToApp {
+    // Must directly depend on the Flutter SDK.
+    if (!isFlutterPackage) return false;
+
+    return pubSpec.flutter?.module != null;
+  }
+
   /// Returns whether this package supports Flutter for Android.
   bool get flutterAppSupportsAndroid {
     if (!isFlutterApp) return false;
@@ -783,6 +804,58 @@ class Package {
   /// Returns whether this package is a Flutter plugin.
   /// This is determined by whether the pubspec contains a flutter.plugin definition.
   bool get isFlutterPlugin => pubSpec.flutter?.plugin != null;
+
+  String? get androidPackage {
+    final platforms = pubSpec.flutter?.plugin?.platforms;
+    if (platforms == null) {
+      return null;
+    }
+    final android = platforms['android'] as Map<Object?, Object?>?;
+    if (android != null && android['package'] != null) {
+      return android['package']! as String;
+    }
+    return null;
+  }
+
+  String? get androidPluginClass {
+    final platforms = pubSpec.flutter?.plugin?.platforms;
+    if (platforms == null) {
+      return null;
+    }
+    final android = platforms['android'] as Map<Object?, Object?>?;
+    if (android != null && android['pluginClass'] != null) {
+      return android['pluginClass']! as String;
+    }
+    return null;
+  }
+
+  String? get javaPluginClassPath {
+    if (androidPackage == null || androidPluginClass == null) return null;
+
+    final javaPluginClassPath = joinAll([
+      path,
+      'android/src/main/java',
+      ...androidPackage!.split('.'),
+      '${androidPluginClass!}.java',
+    ]);
+
+    if (File(javaPluginClassPath).existsSync()) return javaPluginClassPath;
+    return null;
+  }
+
+  String? get kotlinPluginClassPath {
+    if (androidPackage == null || androidPluginClass == null) return null;
+
+    final kotlinPluginClassPath = joinAll([
+      path,
+      'android/src/main/kotlin',
+      ...androidPackage!.split('.'),
+      '${androidPluginClass!}.kt',
+    ]);
+
+    if (File(kotlinPluginClassPath).existsSync()) return kotlinPluginClassPath;
+    return null;
+  }
 
   /// Returns whether this package supports Flutter for Android.
   bool get flutterPluginSupportsAndroid {
@@ -870,6 +943,21 @@ class Flutter {
 
   Plugin? get plugin => (_flutter['plugin'] as Map<Object?, Object?>?)
       .let((value) => Plugin(value));
+
+  Module? get module => (_flutter['module'] as Map<Object?, Object?>?)
+      .let((value) => Module(value));
+}
+
+class Module {
+  Module(this._module);
+
+  final Map<Object?, Object?> _module;
+
+  String? get androidPackage => _module['androidPackage'] as String?;
+
+  String? get iosBundleIdentifier => _module['iosBundleIdentifier'] as String?;
+
+  bool get androidX => _module['androidX'] == true;
 }
 
 class Plugin {

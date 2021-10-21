@@ -5,25 +5,20 @@ mixin _RunMixin on _Melos {
   Future<void> run({
     String? scriptName,
     bool noSelect = false,
-    // Optional configs to avoid re-parsing the configs
-    MelosWorkspaceConfig? configs,
   }) async {
-    // We don't create a workspace yet, as we don't need to load the packages.
-    configs ??= await MelosWorkspaceConfig.fromDirectory(workingDirectory);
+    if (config.scripts.keys.isEmpty) throw NoScriptException._();
 
-    if (configs.scripts.keys.isEmpty) throw NoScriptException._();
-
-    scriptName ??= await _pickScript(configs);
-    final script = configs.scripts[scriptName];
+    scriptName ??= await _pickScript(config);
+    final script = config.scripts[scriptName];
 
     if (script == null) {
       throw ScriptNotFoundException._(
         scriptName!,
-        configs.scripts.keys.toList(),
+        config.scripts.keys.toList(),
       );
     }
 
-    final exitCode = await _runScript(script, configs, noSelect: noSelect);
+    final exitCode = await _runScript(script, config, noSelect: noSelect);
 
     logger.stdout('');
     logger.stdout(AnsiStyles.yellow.bold('melos run ${script.name}'));
@@ -74,8 +69,8 @@ mixin _RunMixin on _Melos {
     };
 
     if (script.filter != null) {
-      final workspace = await MelosWorkspace.fromDirectory(
-        Directory(config.path),
+      final workspace = await MelosWorkspace.fromConfig(
+        config,
         filter: script.filter,
         logger: logger,
       );
