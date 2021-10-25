@@ -1,3 +1,7 @@
+## 1.0.0-dev.6
+
+ - **FEAT**: add support for linking to commits in changelog (#186).
+
 ## 1.0.0-dev.5
 
  - **FIX**: prevent stack overflow when resolving transitively related packages (#187).
