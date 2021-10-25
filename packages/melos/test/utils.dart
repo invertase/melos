@@ -237,8 +237,8 @@ class VirtualWorkspaceBuilder {
   /// The absolute path to the workspace.
   final String path;
 
-  /// The path relative to the workspace root, where
-  /// packages are located, unless they define a [_VirtualPackage.path]
+  /// The path relative to the workspace root, where packages are located, 
+  /// unless a path is provided in [addPackage].
   final String defaultPackagesPath;
 
   /// The logger to build the workspace with.
