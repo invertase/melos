@@ -1,3 +1,7 @@
+## 1.0.0-dev.5
+
+ - **FIX**: prevent stack overflow when resolving transitively related packages (#187).
+
 ## 1.0.0-dev.4
 
  - **REFACTOR**: Pass workspace config from the top (#176).
