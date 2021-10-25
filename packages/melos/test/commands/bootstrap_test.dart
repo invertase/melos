@@ -158,7 +158,7 @@ e-Because a depends on package_that_does_not_exists any which doesn't exist (cou
 ///
 /// [packages] is a map where keys are package names and values are lists of
 /// packages names on which the package in the corresponding key depends.
-/// 
+///
 /// In this example below **a** has no dependencies and **b** depends only on
 /// **a**:
 /// ```dart
@@ -167,10 +167,10 @@ e-Because a depends on package_that_does_not_exists any which doesn't exist (cou
 ///   'b': ['a']
 /// }
 /// ```
-/// 
-/// For each entry in [packages] a package with the key as the name will be 
+///
+/// For each entry in [packages] a package with the key as the name will be
 /// generated.
-/// 
+///
 /// After running `melos bootstrap`, for each package it is verified that all
 /// direct and transitive dependencies are path dependencies with the correct
 /// path.
@@ -204,7 +204,7 @@ Future<void> dependencyResolutionTest(
 
   List<String> transitiveDependenciesOfPackage(String root) {
     final transitiveDependencies = <String>[];
-    final workingSet = packages[root]!;
+    final workingSet = packages[root]!.toList();
 
     while (workingSet.isNotEmpty) {
       final current = workingSet.removeLast();
