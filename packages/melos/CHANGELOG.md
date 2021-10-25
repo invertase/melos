@@ -1,3 +1,12 @@
+## 1.0.0-dev.4
+
+ - **REFACTOR**: Pass workspace config from the top (#176).
+ - **REFACTOR**: fix analysis & formatting issues (#177).
+ - **REFACTOR**: Instantiate workspace from configs (#169).
+ - **FIX**: ensure local versions of transitive dependencies are bootstrapped (#185).
+ - **FEAT**: Match unknown commands with scripts (#167).
+ - **FEAT**: Added an error message when multiple packages in the workspace have the same name (#178).
+
 ## 1.0.0-dev.3
 
  - **FIX**: Allow add-to-app packages to bootstrap (#162).
