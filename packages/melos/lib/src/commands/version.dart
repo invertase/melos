@@ -67,6 +67,7 @@ mixin _VersionMixin on _RunMixin {
 
         pendingPackageUpdates.add(
           MelosPendingPackageUpdate(
+            workspace,
             package,
             [],
             PackageUpdateReason.graduate,
@@ -98,6 +99,7 @@ mixin _VersionMixin on _RunMixin {
     pendingPackageUpdates.addAll(
       packagesToVersion.map(
         (package) => MelosPendingPackageUpdate(
+          workspace,
           package,
           packageCommits[package.name]!,
           PackageUpdateReason.commit,
@@ -117,6 +119,7 @@ mixin _VersionMixin on _RunMixin {
       if (!packagesToVersion.contains(package) && !packageHasPendingUpdate) {
         pendingPackageUpdates.add(
           MelosPendingPackageUpdate(
+            workspace,
             package,
             [],
             PackageUpdateReason.dependency,
@@ -551,14 +554,15 @@ Hint: try running "melos version --all" to include private packages.
   }
 
   Set<String> _getPackagesWithVersionableCommits(
-    Map<String, List<ConventionalCommit>> packageCommits,
+    Map<String, List<RichGitCommit>> packageCommits,
   ) {
     final packagesWithVersionableCommits = <String>{};
     for (final entry in packageCommits.entries) {
       final packageName = entry.key;
       final packageCommits = entry.value;
-      final versionableCommits =
-          packageCommits.where((e) => e.isVersionableCommit).toList();
+      final versionableCommits = packageCommits
+          .where((e) => e.parsedMessage.isVersionableCommit)
+          .toList();
       if (versionableCommits.isNotEmpty) {
         packagesWithVersionableCommits.add(packageName);
       }
@@ -567,12 +571,12 @@ Hint: try running "melos version --all" to include private packages.
     return packagesWithVersionableCommits;
   }
 
-  Future<Map<String, List<ConventionalCommit>>> _getPackageCommits(
+  Future<Map<String, List<RichGitCommit>>> _getPackageCommits(
     MelosWorkspace workspace, {
     required bool versionPrivatePackages,
     required String? since,
   }) async {
-    final packageCommits = <String, List<ConventionalCommit>>{};
+    final packageCommits = <String, List<RichGitCommit>>{};
     await Pool(10).forEach<Package, void>(workspace.filteredPackages.values,
         (package) async {
       if (!versionPrivatePackages && package.isPrivate) return;
@@ -584,9 +588,8 @@ Hint: try running "melos version --all" to include private packages.
       );
 
       packageCommits[package.name] = commits
-          .map((commit) => ConventionalCommit.tryParse(commit.message))
-          .where((element) => element != null)
-          .cast<ConventionalCommit>()
+          .map(RichGitCommit.tryParse)
+          .whereType<RichGitCommit>()
           .toList();
     }).drain<void>();
     return packageCommits;

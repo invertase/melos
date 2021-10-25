@@ -279,7 +279,7 @@ PackageFilter(
 
 // Not using MapView to prevent map mutation
 class PackageMap {
-  PackageMap._(Map<String, Package> packages, this._logger)
+  PackageMap(Map<String, Package> packages, this._logger)
       : _map = _packagesSortedByName(packages);
 
   static Map<String, Package> _packagesSortedByName(
@@ -338,7 +338,7 @@ The packages that caused the problem are:
           );
         }
 
-        packageMap[name] = Package._(
+        packageMap[name] = Package(
           name: name,
           path: pubspecDirPath,
           pathRelativeToWorkspace: relativePath(pubspecDirPath, workspacePath),
@@ -353,7 +353,7 @@ The packages that caused the problem are:
       }),
     );
 
-    return PackageMap._(packageMap, logger);
+    return PackageMap(packageMap, logger);
   }
 
   final Map<String, Package> _map;
@@ -389,7 +389,7 @@ The packages that caused the problem are:
       includeDependencies: filter.includeDependencies,
     );
 
-    return PackageMap._(
+    return PackageMap(
       {
         for (final package in packageList) package.name: package,
       },
@@ -567,7 +567,7 @@ extension on Iterable<Package> {
 }
 
 class Package {
-  Package._({
+  Package({
     required this.devDependencies,
     required this.dependencies,
     required this.dependencyOverrides,

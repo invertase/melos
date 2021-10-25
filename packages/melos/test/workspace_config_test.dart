@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import 'package:melos/src/common/git_repository.dart';
 import 'package:melos/src/workspace_configs.dart';
 import 'package:test/test.dart';
 
@@ -21,12 +22,13 @@ import 'matchers.dart';
 
 void main() {
   group('VersionCommandConfigs', () {
-    test('message/branch are optional', () {
+    test('message/repository/linkToCommits are optional', () {
       // ignore: use_named_constants
       const value = VersionCommandConfigs();
 
       expect(value.branch, null);
       expect(value.message, null);
+      expect(value.linkToCommits, null);
     });
 
     group('fromYaml', () {
@@ -51,15 +53,27 @@ void main() {
         );
       });
 
+      test('throws if linkToCommits is not a bool', () {
+        expect(
+          () => VersionCommandConfigs.fromYaml(const {'linkToCommits': 42}),
+          throwsMelosConfigException(),
+        );
+      });
+
       test('can decode values', () {
         expect(
           VersionCommandConfigs.fromYaml(
             const {
               'branch': 'branch',
               'message': 'message',
+              'linkToCommits': true,
             },
           ),
-          const VersionCommandConfigs(branch: 'branch', message: 'message'),
+          const VersionCommandConfigs(
+            branch: 'branch',
+            message: 'message',
+            linkToCommits: true,
+          ),
         );
       });
     });
@@ -93,12 +107,14 @@ void main() {
             'version': {
               'message': 'Hello world',
               'branch': 'master',
+              'linkToCommits': true,
             }
           }),
           const CommandConfigs(
             version: VersionCommandConfigs(
               branch: 'master',
               message: 'Hello world',
+              linkToCommits: true,
             ),
           ),
         );
@@ -173,271 +189,243 @@ void main() {
   });
 
   group('MelosWorkspaceConfig', () {
-    //   group('command section', () {
-    //     test('does not fail when missing from file', () {
-    //       final config = MelosWorkspaceConfig.fromYaml(
-    //         <String, Object?>{
-    //           'name': 'mono-root',
-    //           'packages': ['packages/*'],
-    //         },
-    //         path: '/workspace',
-    //       );
+    test(
+        'throws if commands.version.linkToCommits == true but repository is missing',
+        () {
+      expect(
+        () => MelosWorkspaceConfig(
+          name: '',
+          packages: const [],
+          commands: const CommandConfigs(
+            version: VersionCommandConfigs(linkToCommits: true),
+          ),
+          path: '/workspace',
+        ),
+        throwsMelosConfigException(),
+      );
+    });
 
-    //       // reading the commands, which implicitly deserialize the YAML
-    //       // ignore: unnecessary_statements
-    //       config.commands;
-    //     });
+    test('accepts commands.version.linkToCommits == true if repository exists',
+        () {
+      expect(
+        () => MelosWorkspaceConfig(
+          name: '',
+          repository: GitHubRepository(owner: 'invertase', name: 'melos'),
+          packages: const [],
+          commands: const CommandConfigs(
+            version: VersionCommandConfigs(linkToCommits: true),
+          ),
+          path: '/workspace',
+        ),
+        returnsNormally,
+      );
+    });
 
-    //     test('produces a commands map when provided', () {
-    //       final config = MelosWorkspaceConfig.fromYaml(
-    //         <String, Object?>{
-    //           'command': {
-    //             'version': <String, Object?>{},
-    //           },
-    //         },
-    //         path: '/workspace',
-    //       );
+    group('fromYaml', () {
+      test('throws if name is missing', () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap({
+              'packages': <Object?>['*']
+            }),
+            path: '/workspace',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
 
-    //       expect(config.commands, isNotNu);
-    //     });
+      test('throws if name is not a String', () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap({'name': <Object?>[]}, defaults: configMapDefaults),
+            path: '/workspace',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
 
-    //     test('produces a commands map even when missing from file', () {
-    //       final config = MelosWorkspaceConfig.fromYaml();
+      test('throws if name is not a valid dart package name', () {
+        void testName(String name) {
+          expect(
+            () => MelosWorkspaceConfig.fromYaml(
+              createYamlMap({'name': name}, defaults: configMapDefaults),
+              path: '/workspace',
+            ),
+            throwsMelosConfigException(),
+          );
+        }
 
-    //       expect(config.commands, isA<CommandConfigs>());
-    //     });
-    //   });
+        testName('42');
+        testName('hello/world');
+        testName(r'hello$world');
+        testName('hello"world');
+        testName("hello'world");
+        testName('hello#world');
+        testName('hello`world');
+        testName('hello!world');
+        testName('hello?world');
+        testName('hello~world');
+        testName('hello,world');
+        testName('hello.world');
+        testName(r'hello\world');
+        testName('hello|world');
+        testName('hello world');
+        testName('hello*world');
+        testName('hello(world');
+        testName('hello)world');
+        testName('hello=world');
+      });
+
+      test('accepts valid dart package name', () {
+        MelosWorkspaceConfig.fromYaml(
+          createYamlMap({'name': 'hello_world'}, defaults: configMapDefaults),
+          path: '/workspace',
+        );
+        MelosWorkspaceConfig.fromYaml(
+          createYamlMap({'name': 'hello2'}, defaults: configMapDefaults),
+          path: '/workspace',
+        );
+        MelosWorkspaceConfig.fromYaml(
+          createYamlMap({'name': 'HELLO'}, defaults: configMapDefaults),
+          path: '/workspace',
+        );
+        MelosWorkspaceConfig.fromYaml(
+          createYamlMap({'name': 'hello-world'}, defaults: configMapDefaults),
+          path: '/workspace',
+        );
+      });
+
+      test('throws if packages is missing', () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap({'name': 'package_name'}),
+            path: '/workspace',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('throws if packages is not a collection', () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {'packages': <Object?, Object?>{}},
+              defaults: configMapDefaults,
+            ),
+            path: '/workspace',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('throws if packages value is not a String', () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {
+                'packages': [42]
+              },
+              defaults: configMapDefaults,
+            ),
+            path: '/workspace',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('throws if packages is empty', () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {'packages': <Object?>[]},
+              defaults: configMapDefaults,
+            ),
+            path: '/workspace',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('throws if ignore is not a List', () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {'ignore': <Object?, Object?>{}},
+              defaults: configMapDefaults,
+            ),
+            path: '/workspace',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('throws if ignore value is not a String', () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {
+                'ignore': [42]
+              },
+              defaults: configMapDefaults,
+            ),
+            path: '/workspace',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('throws if repository is not a string', () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {'repository': 42},
+              defaults: configMapDefaults,
+            ),
+            path: '/workspace',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('throws if repository is not from a supported git repository host',
+          () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {'repository': 'https://example.com'},
+              defaults: configMapDefaults,
+            ),
+            path: '/workspace',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('accepts a GitHub repository', () {
+        final config = MelosWorkspaceConfig.fromYaml(
+          createYamlMap(
+            {'repository': 'https://github.com/invertase/melos'},
+            defaults: configMapDefaults,
+          ),
+          path: '/workspace',
+        );
+        final repository = config.repository! as GitHubRepository;
+
+        expect(repository.owner, 'invertase');
+        expect(repository.name, 'melos');
+      });
+    });
   });
+}
 
-  group('CommandConfigs', () {
-    // test('vends command-specific config objects', () {
-    //   const expectedMessage = 'Version message';
-    //   const expectedTagPrefix = 'v';
-    //   final commandConfig = CommandConfigs(configsByCommandName: {
-    //     'version': {
-    //       'message': expectedMessage,
-    //     },
-    //     'publish': {
-    //       'tagPrefix': expectedTagPrefix,
-    //     },
-    //   });
-
-    //   final versionConfig = commandConfig.configForCommandNamed('version');
-    //   expect(versionConfig, isNotNull);
-    //   expect(versionConfig.getString('message'), expectedMessage);
-
-    //   final publishConfig = commandConfig.configForCommandNamed('publish');
-    //   expect(publishConfig, isNotNull);
-    //   expect(publishConfig.getString('tagPrefix'), expectedTagPrefix);
-    // });
-
-    // test(
-    //     'vends (empty) command configs even when not provided in the '
-    //     'backing map', () {
-    //   final commandConfig =
-    //       CommandConfigs(configsByCommandName: {});
-    //   final versionConfig = commandConfig.configForCommandNamed('version');
-    //   expect(versionConfig, isNotNull);
-    //   expect(versionConfig.keys, isEmpty);
-    // });
-
-    // group('fromYaml', () {
-    //   test('throws if name is missing', () {
-    //     expect(
-    //       () => MelosWorkspaceConfig.fromYaml(
-    //         createYamlMap({
-    //           'packages': <Object?>['*']
-    //         }),
-    //         path: '/workspace',
-    //       ),
-    //       throwsMelosConfigException(),
-    //     );
-    //   });
-
-    //   test('throws if name is not a String', () {
-    //     expect(
-    //       () => MelosWorkspaceConfig.fromYaml(
-    //         createYamlMap({'name': <Object?>[]}, defaults: configMapDefaults),
-    //         path: '/workspace',
-    //       ),
-    //       throwsMelosConfigException(),
-    //     );
-    //   });
-
-    //   test('throws if name is not a valid dart package name', () {
-    //     void testName(String name) {
-    //       expect(
-    //         () => MelosWorkspaceConfig.fromYaml(
-    //           createYamlMap({'name': name}, defaults: configMapDefaults),
-    //           path: '/workspace',
-    //         ),
-    //         throwsMelosConfigException(),
-    //       );
-    //     }
-
-    //     testName('42');
-    //     testName('hello/world');
-    //     testName(r'hello$world');
-    //     testName('hello"world');
-    //     testName("hello'world");
-    //     testName('hello#world');
-    //     testName('hello`world');
-    //     testName('hello!world');
-    //     testName('hello?world');
-    //     testName('hello~world');
-    //     testName('hello,world');
-    //     testName('hello.world');
-    //     testName(r'hello\world');
-    //     testName('hello|world');
-    //     testName('hello world');
-    //     testName('hello*world');
-    //     testName('hello(world');
-    //     testName('hello)world');
-    //     testName('hello=world');
-    //   });
-
-    //   test('accepts valid dart package name', () {
-    //     MelosWorkspaceConfig.fromYaml(
-    //       createYamlMap({'name': 'hello_world'}, defaults: configMapDefaults),
-    //       path: '/workspace',
-    //     );
-    //     MelosWorkspaceConfig.fromYaml(
-    //       createYamlMap({'name': 'hello2'}, defaults: configMapDefaults),
-    //       path: '/workspace',
-    //     );
-    //     MelosWorkspaceConfig.fromYaml(
-    //       createYamlMap({'name': 'HELLO'}, defaults: configMapDefaults),
-    //       path: '/workspace',
-    //     );
-    //     MelosWorkspaceConfig.fromYaml(
-    //       createYamlMap({'name': 'hello-world'}, defaults: configMapDefaults),
-    //       path: '/workspace',
-    //     );
-    //   });
-
-    //   test('throws if packages is missing', () {
-    //     expect(
-    //       () => MelosWorkspaceConfig.fromYaml(
-    //         createYamlMap({'name': 'package_name'}),
-    //         path: '/workspace',
-    //       ),
-    //       throwsMelosConfigException(),
-    //     );
-    //   });
-
-    //   test('throws if packages is not a collection', () {
-    //     expect(
-    //       () => MelosWorkspaceConfig.fromYaml(
-    //         createYamlMap(
-    //           {'packages': <Object?, Object?>{}},
-    //           defaults: configMapDefaults,
-    //         ),
-    //         path: '/workspace',
-    //       ),
-    //       throwsMelosConfigException(),
-    //     );
-    //   });
-
-    //   test('throws if packages value is not a String', () {
-    //     expect(
-    //       () => MelosWorkspaceConfig.fromYaml(
-    //         createYamlMap(
-    //           {
-    //             'packages': [42]
-    //           },
-    //           defaults: configMapDefaults,
-    //         ),
-    //         path: '/workspace',
-    //       ),
-    //       throwsMelosConfigException(),
-    //     );
-    //   });
-
-    //   test('throws if packages is empty', () {
-    //     expect(
-    //       () => MelosWorkspaceConfig.fromYaml(
-    //         createYamlMap(
-    //           {'packages': <Object?>[]},
-    //           defaults: configMapDefaults,
-    //         ),
-    //         path: '/workspace',
-    //       ),
-    //       throwsMelosConfigException(),
-    //     );
-    //   });
-
-    //   test('throws if ignore is not a List', () {
-    //     expect(
-    //       () => MelosWorkspaceConfig.fromYaml(
-    //         createYamlMap(
-    //           {'ignore': <Object?, Object?>{}},
-    //           defaults: configMapDefaults,
-    //         ),
-    //         path: '/workspace',
-    //       ),
-    //       throwsMelosConfigException(),
-    //     );
-    //   });
-
-    //   test('throws if ignore value is not a String', () {
-    //     expect(
-    //       () => MelosWorkspaceConfig.fromYaml(
-    //         createYamlMap(
-    //           {
-    //             'ignore': [42]
-    //           },
-    //           defaults: configMapDefaults,
-    //         ),
-    //         path: '/workspace',
-    //       ),
-    //       throwsMelosConfigException(),
-    //     );
-    //   });
-
-    //   test('can be constructed with a null yaml map', () {
-    //     expect(
-    //       () => CommandConfigs.fromYaml(null),
-    //       returnsNormally,
-    //     );
-    //   });
-
-    //   test('fails if command configs are not maps', () {
-    //     final commandSection = createYamlMap(<String, Object?>{
-    //       'version': ['should', 'be', 'a', 'map'],
-    //     });
-
-    //     expect(
-    //       () => CommandConfigs.fromYaml(commandSection),
-    //       throwsMelosConfigException(),
-    //     );
-    //   });
-
-    //   test('succeeds with a well-formed config', () {
-    //     const expectedMessage = 'This is my message';
-    //     const expectedPrefix = 'v';
-
-    //     final commandSection = createYamlMap(<String, Object?>{
-    //       'version': {
-    //         'message': expectedMessage,
-    //       },
-    //       'publish': {
-    //         'tagPrefix': expectedPrefix,
-    //       },
-    //     });
-    //     final commandConfig =
-    //         CommandConfigs.fromYaml(commandSection);
-
-    //     expect(
-    //       commandConfig.configForCommandNamed('version').getString('message'),
-    //       expectedMessage,
-    //     );
-    //     expect(
-    //       commandConfig.configForCommandNamed('publish').getString('tagPrefix'),
-    //       expectedPrefix,
-    //     );
-    //   });
-    // });
-  });
+Map<String, Object?> createYamlMap(
+  Map<String, Object?> source, {
+  Map<String, Object?>? defaults,
+}) {
+  return {
+    if (defaults != null) ...defaults,
+    ...source,
+  };
 }
 
 /// Default values used by [MelosWorkspaceConfig.fromYaml].
