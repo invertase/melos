@@ -111,27 +111,27 @@ class MelosChangelog extends Changelog {
         header += '\n\n> Note: This release has breaking changes.';
       }
 
-      final commits = List<ConventionalCommit>.from(
-        update.commits
-            .where((ConventionalCommit commit) => !commit.isMergeCommit)
-            .toList(),
-      );
+      final commits = update.commits
+          .where((commit) => !commit.parsedMessage.isMergeCommit)
+          .toList();
 
       // Sort so that Breaking Changes appear at the top.
       commits.sort((a, b) {
-        final r = a.isBreakingChange
+        final r = a.parsedMessage.isBreakingChange
             .toString()
-            .compareTo(b.isBreakingChange.toString());
+            .compareTo(b.parsedMessage.isBreakingChange.toString());
         if (r != 0) return r;
-        return b.type!.compareTo(a.type!);
+        return b.parsedMessage.type!.compareTo(a.parsedMessage.type!);
       });
 
       entries = commits.map((commit) {
+        final parsedMessage = commit.parsedMessage;
         String entry;
-        if (commit.isMergeCommit) {
-          entry = commit.header;
+        if (parsedMessage.isMergeCommit) {
+          entry = parsedMessage.header;
         } else {
-          entry = '**${commit.type!.toUpperCase()}**: ${commit.description}';
+          entry =
+              '**${parsedMessage.type!.toUpperCase()}**: ${parsedMessage.description}';
         }
 
         final shouldPunctuate = !entry.contains(RegExp(r'[\.\?\!]$'));
@@ -139,7 +139,14 @@ class MelosChangelog extends Changelog {
           entry = '$entry.';
         }
 
-        if (commit.isBreakingChange) {
+        if (update.workspace.config.commands.version.linkToCommits ?? false) {
+          final shortCommitId = commit.id.substring(0, 8);
+          final commitUrl =
+              update.workspace.config.repository!.commitUrl(commit.id);
+          entry = '$entry ([$shortCommitId]($commitUrl))';
+        }
+
+        if (parsedMessage.isBreakingChange) {
           entry = '**BREAKING** $entry';
         }
 

@@ -18,6 +18,7 @@ import '../command_runner/version.dart';
 import '../common/changelog.dart';
 import '../common/exception.dart';
 import '../common/git.dart';
+import '../common/git_commit.dart';
 import '../common/glob.dart';
 import '../common/pending_package_update.dart';
 import '../common/platform.dart';
