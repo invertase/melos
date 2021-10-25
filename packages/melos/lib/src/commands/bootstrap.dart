@@ -210,9 +210,8 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
         pluginTemporaryPath,
       );
 
-      if (package.dependenciesInWorkspace.containsKey(plugin.name) ||
-          package.devDependenciesInWorkspace.containsKey(plugin.name) ||
-          package.dependencyOverridesInWorkspace.containsKey(plugin.name)) {
+      if (package.allTransitiveDependenciesInWorkspace
+          .containsKey(plugin.name)) {
         pubspec = pubspec.copy(
           dependencyOverrides: {
             ...pubspec.dependencyOverrides,
