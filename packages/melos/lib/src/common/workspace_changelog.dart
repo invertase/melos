@@ -22,11 +22,16 @@ import 'package:conventional_commit/conventional_commit.dart';
 import 'package:path/path.dart';
 
 import '../../melos.dart';
+import 'git_commit.dart';
 import 'pending_package_update.dart';
 
 class WorkspaceChangelog {
   WorkspaceChangelog(
-      this.workspace, this.title, this.pendingPackageUpdates, this.logger);
+    this.workspace,
+    this.title,
+    this.pendingPackageUpdates,
+    this.logger,
+  );
 
   final MelosWorkspace workspace;
   final String title;
@@ -57,7 +62,8 @@ class WorkspaceChangelog {
 
         final commits = List<ConventionalCommit>.from(
           update.commits
-              .where((ConventionalCommit commit) => !commit.isMergeCommit)
+              .where(
+                  (RichGitCommit commit) => !commit.parsedMessage.isMergeCommit)
               .toList(),
         );
 
