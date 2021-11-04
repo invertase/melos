@@ -1,4 +1,5 @@
 name: Melos
+repository: https://github.com/invertase/melos
 packages:
   - packages/**
   - "*"
