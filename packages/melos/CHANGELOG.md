@@ -1,3 +1,7 @@
+## 1.0.0-dev.7
+
+ - **FIX**: ignore package filter should merge with `config.ignore` globs.
+
 ## 1.0.0-dev.6
 
  - **FEAT**: add support for linking to commits in changelog (#186).
