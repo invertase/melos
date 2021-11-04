@@ -63,7 +63,7 @@ mixin _VersionMixin on _RunMixin {
 
     if (asStableRelease) {
       for (final package in workspace.filteredPackages.values) {
-        if (package.version.isPreRelease) continue;
+        if (!package.version.isPreRelease) continue;
 
         pendingPackageUpdates.add(
           MelosPendingPackageUpdate(
