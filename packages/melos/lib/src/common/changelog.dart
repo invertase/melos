@@ -112,7 +112,7 @@ class MelosChangelog extends Changelog {
       }
 
       final commits = update.commits
-          .where((commit) => !commit.parsedMessage.isMergeCommit)
+          .where((commit) => !commit.parsedMessage.isMergeCommit && commit.parsedMessage.isVersionableCommit)
           .toList();
 
       // Sort so that Breaking Changes appear at the top.

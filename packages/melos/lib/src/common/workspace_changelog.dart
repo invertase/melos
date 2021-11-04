@@ -38,32 +38,111 @@ class WorkspaceChangelog {
   final Logger logger;
   final List<MelosPendingPackageUpdate> pendingPackageUpdates;
 
+  String get _changelogFileHeader {
+    return '# Change Log\n\nAll notable changes to this project will be documented in this file.\nSee [Conventional Commits](https://conventionalcommits.org) for commit guidelines.\n';
+  }
+
+  String _packageVersionTitle(MelosPendingPackageUpdate update) {
+    return '`${update.package.name}` - `v${update.nextVersion}`';
+  }
+
+  String _packageVersionMarkdownAnchor(MelosPendingPackageUpdate update) {
+    return '#${_packageVersionTitle(update).replaceAll(' ', '-').replaceAll(RegExp('[^a-zA-Z_0-9-]'), '')}';
+  }
+
   String get markdown {
-    var body = '# CHANGELOG\n\n## $title';
-    var entries = <String>[];
+    final body = StringBuffer();
+    final dependencyOnlyPackages = pendingPackageUpdates
+        .where((update) => update.reason == PackageUpdateReason.dependency);
+    final graduatedPackages = pendingPackageUpdates
+        .where((update) => update.reason == PackageUpdateReason.graduate);
+    final packagesWithBreakingChanges = pendingPackageUpdates.where(
+      (update) =>
+          update.reason == PackageUpdateReason.commit &&
+          update.semverReleaseType == SemverReleaseType.major,
+    );
+    final packagesWithOtherChanges = pendingPackageUpdates.where(
+      (update) =>
+          update.reason == PackageUpdateReason.commit &&
+          update.semverReleaseType != SemverReleaseType.major,
+    );
 
-    for (final update in pendingPackageUpdates) {
-      var header = '### ${update.package.name} version: ${update.nextVersion}';
-
-      if (update.reason == PackageUpdateReason.dependency) {
-        entries = ['Update a dependency to the latest release.'];
+    body.writeln(_changelogFileHeader);
+    body.writeln('## $title');
+    body.writeln();
+    body.writeln('### Changes');
+    body.writeln();
+    body.writeln('---');
+    body.writeln();
+    body.writeln('Packages with breaking changes:');
+    body.writeln();
+    if (packagesWithBreakingChanges.isEmpty) {
+      body.writeln('- There are no breaking changes in this release.');
+    } else {
+      for (final update in packagesWithBreakingChanges) {
+        body.writeln(
+          '- [${_packageVersionTitle(update)}](${_packageVersionMarkdownAnchor(update)})',
+        );
       }
-
-      if (update.reason == PackageUpdateReason.graduate) {
-        entries = [
-          'Graduate package to a stable release. See pre-releases prior to this version for changelog entries.'
-        ];
+    }
+    body.writeln();
+    body.writeln('Packages with other changes:');
+    body.writeln();
+    if (packagesWithOtherChanges.isEmpty) {
+      body.writeln('- There are no other changes in this release.');
+    } else {
+      for (final update in packagesWithOtherChanges) {
+        body.writeln(
+          '- [${_packageVersionTitle(update)}](${_packageVersionMarkdownAnchor(update)})',
+        );
       }
+    }
+    if (graduatedPackages.isNotEmpty) {
+      body.writeln();
+      body.writeln(
+        'Packages graduated to a stable release (see pre-releases prior to the stable version for changelog entries):',
+      );
+      body.writeln();
+      for (final update in graduatedPackages) {
+        body.writeln(
+          '- ${_packageVersionTitle(update)}',
+        );
+      }
+    }
+    if (dependencyOnlyPackages.isNotEmpty) {
+      body.writeln();
+      body.writeln('Packages with dependency updates only:');
+      body.writeln();
+      body.writeln(
+        '> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.',
+      );
+      body.writeln();
+      for (final update in dependencyOnlyPackages) {
+        body.writeln(
+          '- ${_packageVersionTitle(update)}',
+        );
+      }
+    }
+    if (packagesWithOtherChanges.isNotEmpty ||
+        packagesWithBreakingChanges.isNotEmpty) {
+      final allChanges = packagesWithBreakingChanges.toList()
+        ..addAll(packagesWithOtherChanges);
+      body.writeln();
+      body.writeln('---');
+      body.writeln();
 
-      if (update.reason == PackageUpdateReason.commit) {
-        if (update.semverReleaseType == SemverReleaseType.major) {
-          header += '\n\n> Note: This release has breaking changes.';
-        }
+      for (final update in allChanges) {
+        body.writeln('#### ${_packageVersionTitle(update)}');
+        body.writeln();
 
         final commits = List<ConventionalCommit>.from(
           update.commits
               .where(
-                  (RichGitCommit commit) => !commit.parsedMessage.isMergeCommit)
+                (RichGitCommit commit) =>
+                    !commit.parsedMessage.isMergeCommit &&
+                    commit.parsedMessage.isVersionableCommit,
+              )
+              .map((commit) => commit.parsedMessage)
               .toList(),
         );
 
@@ -76,33 +155,24 @@ class WorkspaceChangelog {
           return b.type!.compareTo(a.type!);
         });
 
-        entries = commits.map((commit) {
-          String entry;
-          if (commit.isMergeCommit) {
-            entry = commit.header;
-          } else {
-            entry = '**${commit.type!.toUpperCase()}**: ${commit.description}';
-          }
-
-          final shouldPunctuate = !entry.contains(RegExp(r'[\.\?\!]$'));
-          if (shouldPunctuate) {
+        for (final commit in commits) {
+          var entry =
+              '**${commit.type!.toUpperCase()}**: ${commit.description}';
+          // Add trailing punctuation if missing.
+          if (!entry.contains(RegExp(r'[\.\?\!]$'))) {
             entry = '$entry.';
           }
-
           if (commit.isBreakingChange) {
             entry = '**BREAKING** $entry';
           }
+          body.writeln(' - $entry');
+        }
 
-          return entry;
-        }).toList();
+        body.writeln();
       }
-
-      final updateSection = entries.join('\n - ');
-
-      body = '$body\n\n' '$header\n\n - $updateSection';
     }
 
-    return '$body\n\n';
+    return body.toString();
   }
 
   String get path {
@@ -118,10 +188,8 @@ class WorkspaceChangelog {
     final file = File(path);
     final exists = file.existsSync();
     if (exists) {
-      final lines = await file.readAsLines();
-      lines.removeAt(0);
-
-      return lines.join('\n');
+      final contents = await file.readAsString();
+      return contents.replaceFirst(_changelogFileHeader, '');
     }
     return '';
   }

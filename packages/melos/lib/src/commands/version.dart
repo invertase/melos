@@ -558,7 +558,11 @@ Hint: try running "melos version --all" to include private packages.
       final dateSlug =
           "${today.year.toString()}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
       final workspaceChangelog = WorkspaceChangelog(
-          workspace, dateSlug, pendingPackageUpdates, logger);
+        workspace,
+        dateSlug,
+        pendingPackageUpdates,
+        logger,
+      );
 
       await workspaceChangelog.write();
     }
