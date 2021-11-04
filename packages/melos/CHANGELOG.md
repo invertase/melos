@@ -1,3 +1,7 @@
+## 1.0.0-dev.8
+
+ - **FIX**: version `--graduate` should graduate prerelease packages (not the other way around).
+
 ## 1.0.0-dev.7
 
  - **FIX**: ignore package filter should merge with `config.ignore` globs.
