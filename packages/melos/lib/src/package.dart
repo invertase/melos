@@ -224,6 +224,23 @@ class PackageFilter {
     );
   }
 
+  PackageFilter copyWithUpdatedIgnore(List<Glob> updatedIgnore) {
+    return PackageFilter._(
+      dependsOn: dependsOn,
+      dirExists: dirExists,
+      fileExists: fileExists,
+      ignore: updatedIgnore,
+      includePrivatePackages: includePrivatePackages,
+      noDependsOn: noDependsOn,
+      nullSafe: nullSafe,
+      published: published,
+      scope: scope,
+      updatedSince: updatedSince,
+      includeDependencies: includeDependencies,
+      includeDependents: includeDependents,
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       other is PackageFilter &&
