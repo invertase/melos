@@ -1,3 +1,7 @@
+## 1.0.0-dev.9
+
+ - **FIX**: melos.yaml ignores should apply also to `run` commands `MELOS_PACKAGES` env variable (#192).
+
 ## 1.0.0-dev.8
 
  - **FIX**: version `--graduate` should graduate prerelease packages (not the other way around).
