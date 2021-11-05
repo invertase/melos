@@ -71,7 +71,10 @@ mixin _RunMixin on _Melos {
     if (script.filter != null) {
       final workspace = await MelosWorkspace.fromConfig(
         config,
-        filter: script.filter,
+        filter: script.filter!.copyWithUpdatedIgnore([
+          ...script.filter!.ignore,
+          ...config.ignore,
+        ]),
         logger: logger,
       );
 
@@ -126,6 +129,18 @@ mixin _RunMixin on _Melos {
       // a defined script, this comma delimited list of package names is used
       // instead of any filters if detected.
       environment[envKeyMelosPackages] = packagesEnv;
+    } else if (config.ignore.isNotEmpty) {
+      final workspace = await MelosWorkspace.fromConfig(
+        config,
+        filter: PackageFilter(ignore: config.ignore),
+        logger: logger,
+      );
+      final packages = workspace.filteredPackages.values.toList();
+      // MELOS_PACKAGES environment is detected by melos itself when through
+      // a defined script, this comma delimited list of package names is used
+      // instead of any filters if detected.
+      environment[envKeyMelosPackages] =
+          packages.map((e) => e.name).toList().join(',');
     }
 
     final scriptSource = script.run;
