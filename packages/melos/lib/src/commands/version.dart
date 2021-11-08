@@ -23,7 +23,7 @@ mixin _VersionMixin on _RunMixin {
 
     if (updateDependentsVersions && !updateDependentsConstraints) {
       throw ArgumentError(
-        'Cannot use both updateDependentsVersions and updateDependentsConstraints.',
+        'Cannot use updateDependentsVersions without updateDependentsConstraints.',
       );
     }
 
