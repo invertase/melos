@@ -212,6 +212,7 @@ class VersionCommand extends MelosCommand {
         gitTag: tag,
         updateChangelog: changelog,
         updateDependentsConstraints: updateDependentsConstraints,
+        updateDependentsVersions: updateDependentsVersions,
         preid: preid,
         asPrerelease: asPrerelease,
         asStableRelease: asStableRelease,
