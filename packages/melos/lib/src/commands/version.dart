@@ -367,6 +367,22 @@ Hint: try running "melos version --all" to include private packages.
     String dependencyName,
     Version version,
   ) {
+    final currentVersionConstraint =
+        (package.pubSpec.dependencies[dependencyName] ??
+                package.pubSpec.devDependencies[dependencyName])
+            ?._versionConstraint;
+    final hasExactVersionConstraint = currentVersionConstraint is Version;
+    if (hasExactVersionConstraint) {
+      // If the package currently has an exact version constraint, we respect
+      // that and replace it with an exact version constraint for the new
+      // version.
+      return _setDependencyVersionForPackage(
+        package,
+        dependencyName,
+        version,
+      );
+    }
+
     // By default dependency constraint using caret syntax to ensure the range allows
     // all versions guaranteed to be backwards compatible with the specified version.
     // For example, ^1.2.3 is equivalent to '>=1.2.3 <2.0.0', and ^0.1.2 is equivalent to '>=0.1.2 <0.2.0'.
@@ -699,5 +715,16 @@ class PackageNotFoundException extends MelosException {
   @override
   String toString() {
     return 'PackageNotFoundException: The package $packageName';
+  }
+}
+
+extension on DependencyReference {
+  VersionConstraint? get _versionConstraint {
+    final self = this;
+    if (self is HostedReference) {
+      return self.versionConstraint;
+    } else if (self is ExternalHostedReference) {
+      return self.versionConstraint;
+    }
   }
 }
