@@ -1,3 +1,8 @@
+## 1.0.0-dev.10
+
+ - **FIX**: run version cmd with `--dependent-versions` value from cli (#193).
+ - **FEAT**: respect exact version constraints when updating dependents (#194).
+
 ## 1.0.0-dev.9
 
  - **FIX**: melos.yaml ignores should apply also to `run` commands `MELOS_PACKAGES` env variable (#192).
