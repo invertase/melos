@@ -1,5 +1,20 @@
 part of 'runner.dart';
 
+/// Sorts packages in topological order so they may be published in the order
+/// they're sorted.
+void sortPackagesTopologically(List<Package> packages) {
+  final packageNames = packages.map((el) => el.name).toList();
+  final graph = <String, Iterable<String>>{
+    for (var package in packages)
+      package.name: package.dependencies.where(packageNames.contains),
+  };
+  final ordered = topologicalSort(graph.keys, (key) => graph[key]!);
+  packages.sort((a, b) {
+    // `ordered` is in reverse ordering to our desired publish precedence.
+    return ordered.indexOf(b.name).compareTo(ordered.indexOf(a.name));
+  });
+}
+
 mixin _PublishMixin on _ExecMixin {
   Future<void> publish({
     PackageFilter? filter,
@@ -46,6 +61,8 @@ mixin _PublishMixin on _ExecMixin {
       );
       return;
     }
+
+    sortPackagesTopologically(unpublishedPackages);
 
     if (dryRun) {
       logger.stdout(
