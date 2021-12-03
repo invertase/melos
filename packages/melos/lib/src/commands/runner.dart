@@ -22,7 +22,6 @@ import '../common/git_commit.dart';
 import '../common/glob.dart';
 import '../common/pending_package_update.dart';
 import '../common/platform.dart';
-import '../common/pub_dependency_list.dart';
 import '../common/utils.dart' as utils;
 import '../common/utils.dart';
 import '../common/versioning.dart' as versioning;

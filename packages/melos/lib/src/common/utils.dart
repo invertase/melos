@@ -343,15 +343,22 @@ bool isPubSubcommand() {
 
 /// Sorts packages in topological order so they may be published in the order
 /// they're sorted.
+///
+/// Packages with inter-dependencies cannot be topologically sorted and will
+/// remain unchanged.
 void sortPackagesTopologically(List<Package> packages) {
   final packageNames = packages.map((el) => el.name).toList();
   final graph = <String, Iterable<String>>{
     for (var package in packages)
       package.name: package.dependencies.where(packageNames.contains),
   };
-  final ordered = topologicalSort(graph.keys, (key) => graph[key]!);
-  packages.sort((a, b) {
-    // `ordered` is in reverse ordering to our desired publish precedence.
-    return ordered.indexOf(b.name).compareTo(ordered.indexOf(a.name));
-  });
+  try {
+    final ordered = topologicalSort(graph.keys, (key) => graph[key]!);
+    packages.sort((a, b) {
+      // `ordered` is in reverse ordering to our desired publish precedence.
+      return ordered.indexOf(b.name).compareTo(ordered.indexOf(a.name));
+    });
+  } on CycleException {
+    // Cannot sort packages with inter-dependencies. Leave as-is.
+  }
 }

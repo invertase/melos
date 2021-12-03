@@ -48,7 +48,7 @@ void main() {
         ];
         expect(
           () => sortPackagesTopologically(packages),
-          throwsCyclicError,
+          returnsNormally,
         );
       });
     });
