@@ -17,19 +17,27 @@ void main() {
         // a       d
         //   \   /
         //     c
+        //
+        // e  -->  *f (external package)
         final packages = [
           _dummyPackage('a', deps: ['b', 'c']),
           _dummyPackage('b', deps: ['d']),
           _dummyPackage('c', deps: ['d']),
           _dummyPackage('d', deps: []),
+          _dummyPackage('e', deps: ['f']),
         ]..shuffle();
+        final packageNames = packages.map((el) => el.name).toList();
         sortPackagesTopologically(packages);
 
-        final previous = <String>{};
+        final published = <String>{};
         for (final package in packages) {
           final dependencies = package.dependencies;
-          expect(dependencies.every(previous.contains), isTrue);
-          previous.add(package.name);
+          for (final dependency in dependencies) {
+            final isExternal = !packageNames.contains(dependency);
+            final isPublished = published.contains(dependency);
+            expect(isExternal || isPublished, isTrue);
+          }
+          published.add(package.name);
         }
       });
 
