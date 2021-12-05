@@ -162,7 +162,7 @@ mixin _BootstrapMixin on _CleanMixin {
     Package package,
   ) async {
     final pubGetArgs = ['pub', 'get'];
-    final execArgs = workspace.isFlutterWorkspace
+    final execArgs = package.isFlutterPackage
         ? ['flutter', ...pubGetArgs]
         : [if (utils.isPubSubcommand()) 'dart', ...pubGetArgs];
     final executable = currentPlatform.isWindows ? 'cmd' : '/bin/sh';
