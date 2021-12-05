@@ -1,3 +1,9 @@
+## 1.0.0-dev.11
+
+ - **FEAT**: Add topological sort to publish command (#199).
+ - **FEAT**: use `dart` tool to run `pub get` in pure Dart package (#201).
+ - **DOCS**: fix a few things and expand page for `melos.yaml` (#200).
+
 ## 1.0.0-dev.10
 
  - **FIX**: run version cmd with `--dependent-versions` value from cli (#193).
