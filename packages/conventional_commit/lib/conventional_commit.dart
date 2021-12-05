@@ -194,7 +194,7 @@ class ConventionalCommit {
   /// commit type was specified..
   final String? breakingChangeDescription;
 
-  /// Whether this commit was a merge commit, e.g. `Merge #24 into master`
+  /// Whether this commit was a merge commit, e.g. `Merge #24 into main`
   final bool isMergeCommit;
 
   /// Commit message description (text after the scopes).

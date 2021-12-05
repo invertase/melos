@@ -98,7 +98,7 @@ The following projects are using Melos:
 - [gql-dart/ferry](https://github.com/gql-dart/ferry)
 - [cofu-app/cbl-dart](https://github.com/cofu-app/cbl-dart)
 
-> [Submit a PR](https://github.com/invertase/melos/edit/master/packages/melos/README.md) if you'd like to add your project to the list.
+> [Submit a PR](https://github.com/invertase/melos/edit/main/packages/melos/README.md) if you'd like to add your project to the list.
 > You can also add a [readme badge](#readme-badge) to your projects readme to let others know about Melos 💙.
 
 ---
