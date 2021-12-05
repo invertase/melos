@@ -35,6 +35,19 @@ mixin _VersionMixin on _RunMixin {
       filter: filter?.copyWithUpdatedSince(null),
     );
 
+    if (workspace.config.commands.version.branch != null) {
+      final currentBranchName = await gitGetCurrentBranchName(
+        workingDirectory: workspace.path,
+        logger: logger,
+      );
+      if (currentBranchName != workspace.config.commands.version.branch) {
+        throw RestrictedBranchException(
+          workspace.config.commands.version.branch!,
+          currentBranchName,
+        );
+      }
+    }
+
     message ??=
         workspace.config.commands.version.message ?? defaultCommitMessage;
 

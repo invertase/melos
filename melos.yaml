@@ -4,7 +4,7 @@ packages:
   - packages/**
   - "*"
 
-commands:
+command:
   version:
     # Generate commit links in package changelogs.
     linkToCommits: true
@@ -14,13 +14,7 @@ commands:
     workspaceChangelog: true
 
 ide:
-  intellij:
-    true
-    # TODO(Salakar): more granular control
-    # use_workspace_tasks: true
-    # use_flutter_test_tasks: true
-    # use_flutter_run_tasks: true
-    # use_dart_test_tasks: false
+  intellij: true
 
 scripts:
   analyze:
