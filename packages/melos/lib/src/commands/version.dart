@@ -35,6 +35,19 @@ mixin _VersionMixin on _RunMixin {
       filter: filter?.copyWithUpdatedSince(null),
     );
 
+    if (workspace.config.commands.version.branch != null) {
+      final currentBranchName = await gitGetCurrentBranchName(
+        workingDirectory: workspace.path,
+        logger: logger,
+      );
+      if (currentBranchName != workspace.config.commands.version.branch) {
+        throw RestrictedBranchException(
+          workspace.config.commands.version.branch!,
+          currentBranchName,
+        );
+      }
+    }
+
     message ??=
         workspace.config.commands.version.message ?? defaultCommitMessage;
 
@@ -184,6 +197,7 @@ Hint: try running "melos version --all" to include private packages.
       updateDependentsVersions: updateDependentsVersions,
       updateDependentsConstraints: updateDependentsConstraints,
       updateChangelog: updateChangelog,
+      workspace: workspace,
     );
 
     // TODO allow support for individual package lifecycle version scripts
@@ -193,7 +207,7 @@ Hint: try running "melos version --all" to include private packages.
     }
 
     if (gitTag) {
-      await _gitStageChanges(pendingPackageUpdates);
+      await _gitStageChanges(pendingPackageUpdates, workspace);
       await _gitCommitChanges(
         workspace,
         pendingPackageUpdates,
@@ -524,6 +538,7 @@ Hint: try running "melos version --all" to include private packages.
     required bool updateDependentsVersions,
     required bool updateDependentsConstraints,
     required bool updateChangelog,
+    required MelosWorkspace workspace,
   }) async {
     // Note: not pooling & parrellelzing rights to avoid possible file contention.
     await Future.forEach(pendingPackageUpdates,
@@ -567,6 +582,22 @@ Hint: try running "melos version --all" to include private packages.
         }
       }
     });
+
+    // Build a workspace root changelog if enabled.
+    if (updateChangelog &&
+        workspace.config.commands.version.workspaceChangelog) {
+      final today = DateTime.now();
+      final dateSlug =
+          "${today.year.toString()}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+      final workspaceChangelog = WorkspaceChangelog(
+        workspace,
+        dateSlug,
+        pendingPackageUpdates,
+        logger,
+      );
+
+      await workspaceChangelog.write();
+    }
   }
 
   Set<String> _getPackagesWithVersionableCommits(
@@ -670,7 +701,15 @@ Hint: try running "melos version --all" to include private packages.
 
   Future<void> _gitStageChanges(
     List<MelosPendingPackageUpdate> pendingPackageUpdates,
+    MelosWorkspace workspace,
   ) async {
+    if (workspace.config.commands.version.workspaceChangelog) {
+      await gitAdd(
+        'CHANGELOG.md',
+        workingDirectory: workspace.path,
+        logger: logger,
+      );
+    }
     await Future.forEach(pendingPackageUpdates,
         (MelosPendingPackageUpdate pendingPackageUpdate) async {
       await gitAdd(
