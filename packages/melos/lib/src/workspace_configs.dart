@@ -162,7 +162,12 @@ CommandConfigs(
 /// Configurations for `melos version`.
 @immutable
 class VersionCommandConfigs {
-  const VersionCommandConfigs({this.message, this.linkToCommits, this.branch});
+  const VersionCommandConfigs({
+    this.message,
+    this.linkToCommits,
+    this.branch,
+    this.workspaceChangelog = false,
+  });
 
   factory VersionCommandConfigs.fromYaml(Map<Object?, Object?> yaml) {
     final message = assertKeyIsA<String?>(
@@ -181,10 +186,17 @@ class VersionCommandConfigs {
       path: 'command/version',
     );
 
+    final workspaceChangelog = assertKeyIsA<bool?>(
+      key: 'workspaceChangelog',
+      map: yaml,
+      path: 'command/version',
+    );
+
     return VersionCommandConfigs(
       branch: branch,
       linkToCommits: linkToCommits,
       message: message,
+      workspaceChangelog: workspaceChangelog ?? false,
     );
   }
 
@@ -196,6 +208,9 @@ class VersionCommandConfigs {
   /// Whether to add links to commits in the generated CHANGELOG.md.
   final bool? linkToCommits;
 
+  /// Whether to also generate a CHANGELOG.md for the entire workspace at the root.
+  final bool workspaceChangelog;
+
   /// If specified, prevents `melos version` from being used inside branches
   /// other than the one specified.
   final String? branch;
@@ -205,6 +220,7 @@ class VersionCommandConfigs {
       if (message != null) 'message': message,
       if (linkToCommits != null) 'linkToCommits': linkToCommits,
       if (branch != null) 'branch': branch,
+      'workspaceChangelog': workspaceChangelog,
     };
   }
 
@@ -214,6 +230,7 @@ class VersionCommandConfigs {
       runtimeType == other.runtimeType &&
       other.message == message &&
       other.linkToCommits == linkToCommits &&
+      other.workspaceChangelog == workspaceChangelog &&
       other.branch == branch;
 
   @override
@@ -221,6 +238,7 @@ class VersionCommandConfigs {
       runtimeType.hashCode ^
       message.hashCode ^
       linkToCommits.hashCode ^
+      workspaceChangelog.hashCode ^
       branch.hashCode;
 
   @override
@@ -229,6 +247,7 @@ class VersionCommandConfigs {
 VersionCommandConfigs(
   message: $message,
   linkToCommits: $linkToCommits,
+  workspaceChangelog: $workspaceChangelog,
   branch: $branch,
 )''';
   }
