@@ -287,7 +287,7 @@ void main() {
         isFalse,
       );
       expect(
-        ConventionalCommit.tryParse("Merge branch 'master' of invertase/melos")!
+        ConventionalCommit.tryParse("Merge branch 'main' of invertase/melos")!
             .isMergeCommit,
         isTrue,
       );
