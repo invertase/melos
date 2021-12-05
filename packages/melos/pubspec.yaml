@@ -16,6 +16,7 @@ dependencies:
   conventional_commit: ^0.4.1-dev.0
   file: ^6.1.0
   glob: ^2.0.1
+  graphs: ^2.1.0
   http: ^0.13.1
   # peer-dependencies of the local `prompts` fork. To remove once prompts null-safety is published
   io: ^1.0.0

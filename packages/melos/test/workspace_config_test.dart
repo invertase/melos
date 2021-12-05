@@ -106,13 +106,13 @@ void main() {
           CommandConfigs.fromYaml(const {
             'version': {
               'message': 'Hello world',
-              'branch': 'master',
+              'branch': 'main',
               'linkToCommits': true,
             }
           }),
           const CommandConfigs(
             version: VersionCommandConfigs(
-              branch: 'master',
+              branch: 'main',
               message: 'Hello world',
               linkToCommits: true,
             ),

@@ -22,10 +22,12 @@ import 'dart:isolate';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:cli_util/cli_logging.dart';
+import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' show relative, normalize, windows, joinAll;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 
+import '../package.dart';
 import '../prompts/prompt.dart' as prompts;
 import 'platform.dart';
 
@@ -336,5 +338,27 @@ bool isPubSubcommand() {
     return Process.runSync('pub', ['--version']).exitCode != 0;
   } on ProcessException {
     return true;
+  }
+}
+
+/// Sorts packages in topological order so they may be published in the order
+/// they're sorted.
+///
+/// Packages with inter-dependencies cannot be topologically sorted and will
+/// remain unchanged.
+void sortPackagesTopologically(List<Package> packages) {
+  final packageNames = packages.map((el) => el.name).toList();
+  final graph = <String, Iterable<String>>{
+    for (var package in packages)
+      package.name: package.dependencies.where(packageNames.contains),
+  };
+  try {
+    final ordered = topologicalSort(graph.keys, (key) => graph[key]!);
+    packages.sort((a, b) {
+      // `ordered` is in reverse ordering to our desired publish precedence.
+      return ordered.indexOf(b.name).compareTo(ordered.indexOf(a.name));
+    });
+  } on CycleException {
+    // Cannot sort packages with inter-dependencies. Leave as-is.
   }
 }

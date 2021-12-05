@@ -36,8 +36,6 @@ scripts:
     select-package:
       dir-exists:
         - "test/"
-      scope:
-        - melos
     # This tells Melos tests to ignore env variables passed to tests from `melos run test`
     # as they could change the behaviour of how tests filter packages.
     env:
