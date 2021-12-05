@@ -1,3 +1,7 @@
+## 1.0.0-dev.12
+
+ - **FEAT**: optionally allow generating workspace root change logs (#161). ([56fcdff6](https://github.com/invertase/melos/commit/56fcdff6640f73a01c6d7e5f7fb453bf8ef5666e))
+
 ## 1.0.0-dev.11
 
  - **FEAT**: Add topological sort to publish command (#199).
