@@ -4,6 +4,15 @@ packages:
   - packages/**
   - "*"
 
+commands:
+  version:
+    # Generate commit links in package changelogs.
+    linkToCommits: true
+    # Only allow versioning to happen on main branch.
+    branch: main
+    # Additionally build a changelog at the root of the workspace.
+    workspaceChangelog: true
+
 ide:
   intellij:
     true
@@ -12,14 +21,6 @@ ide:
     # use_flutter_test_tasks: true
     # use_flutter_run_tasks: true
     # use_dart_test_tasks: false
-  vscode:
-    false
-    # TODO(Salakar): more granular control
-    # use_workspace_tasks: true
-    # use_flutter_test_tasks: true
-    # use_flutter_run_tasks: true
-    # use_dart_test_tasks: false
-    # use_recommended_settings: true
 
 scripts:
   analyze:
