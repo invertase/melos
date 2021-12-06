@@ -188,8 +188,9 @@ Hint: try running "melos version --all" to include private packages.
     // show commit message
     for (final element in pendingPackageUpdates) {
       logger.trace(AnsiStyles.yellow.bold(element.package.name));
+      logger.trace('');
       for (final e in element.commits) {
-        logger.trace('   ${e.message}');
+        logger.trace(e.message);
       }
     }
 
