@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/glob.dart';
-import 'package:melos/src/common/utils.dart';
 import 'package:melos/src/scripts.dart';
 import 'package:path/path.dart';
 import 'package:pubspec/pubspec.dart';
