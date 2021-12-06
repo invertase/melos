@@ -255,6 +255,8 @@ Future<int> startProcess(
     return _arg;
   }).where((element) => element != null);
 
+  if (logger.isVerbose) environment.addAll({'MELOS_VERBOSE': 'ture'});
+
   final execProcess = await Process.start(
     executable,
     currentPlatform.isWindows

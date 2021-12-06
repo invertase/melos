@@ -14,11 +14,10 @@ abstract class MelosCommand extends Command<void> {
   final MelosWorkspaceConfig config;
 
   Logger get logger {
-    if (currentPlatform.environment['MELON_VERBOSE'] != '') {
+    if (currentPlatform.environment['MELON_VERBOSE'] != null) {
       return Logger.verbose();
     }
     if (globalResults!['verbose'] as bool) {
-      currentPlatform.environment['MELON_VERBOSE'] = 'true';
       return Logger.verbose();
     } else {
       return Logger.standard();
