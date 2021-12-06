@@ -3,6 +3,7 @@ import 'package:args/command_runner.dart';
 import 'package:cli_util/cli_logging.dart';
 
 import '../common/glob.dart';
+import '../common/platform.dart';
 import '../common/utils.dart';
 import '../package.dart';
 import '../workspace_configs.dart';
@@ -12,8 +13,17 @@ abstract class MelosCommand extends Command<void> {
 
   final MelosWorkspaceConfig config;
 
-  Logger get logger =>
-      globalResults!['verbose'] as bool ? Logger.verbose() : Logger.standard();
+  Logger get logger {
+    if (currentPlatform.environment['MELON_VERBOSE'] != '') {
+      return Logger.verbose();
+    }
+    if (globalResults!['verbose'] as bool) {
+      currentPlatform.environment['MELON_VERBOSE'] = 'true';
+      return Logger.verbose();
+    } else {
+      return Logger.standard();
+    }
+  }
 
   /// The `melos.yaml` configuration for this command.
   /// see [ArgParser.allowTrailingOptions]
