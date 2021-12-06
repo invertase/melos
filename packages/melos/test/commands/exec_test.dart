@@ -51,23 +51,23 @@ void main() {
         logger.output,
         equalsIgnoringAnsii(
           '''
-\$ melos exec
-   └> echo hello world
-       └> RUNNING (in 2 packages)
-
-${'-' * terminalWidth}
-a:
+t-\$ melos exec
+t-   └> echo hello world
+t-       └> RUNNING (in 2 packages)
+t-
+t-${'-' * terminalWidth}
+t-a:
 hello world
-a: SUCCESS
-${'-' * terminalWidth}
-b:
+t-a: SUCCESS
+t-${'-' * terminalWidth}
+t-b:
 hello world
-b: SUCCESS
-${'-' * terminalWidth}
-
-\$ melos exec
-   └> echo hello world
-       └> SUCCESS
+t-b: SUCCESS
+t-${'-' * terminalWidth}
+t-
+t-\$ melos exec
+t-   └> echo hello world
+t-       └> SUCCESS
 ''',
         ),
       );
