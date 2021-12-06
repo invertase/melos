@@ -1,3 +1,8 @@
+## 1.0.0-dev.14
+
+ - **FEAT**: logger getter check environment(fixes #206). ([5205eb49](https://github.com/invertase/melos/commit/5205eb49c969b5a1c0ad289e0ab2a752fc99a5f8))
+ - **FEAT**: neatStyle for #202. ([30a6bfba](https://github.com/invertase/melos/commit/30a6bfba2eef780a33af6e3463d249a73334b682))
+
 ## 1.0.0-dev.13
 
  - **FEAT**: verbose logging now logs package commit messages when versioning (#203). ([b87fb8dc](https://github.com/invertase/melos/commit/b87fb8dcf21d0aeb8524cd9212e21115829d5c0d))

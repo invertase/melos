@@ -15,6 +15,28 @@ Packages with breaking changes:
 
 Packages with other changes:
 
+- [`melos` - `v1.0.0-dev.14`](#melos---v100-dev14)
+
+---
+
+#### `melos` - `v1.0.0-dev.14`
+
+ - **FEAT**: logger getter check environment(fixes #206).
+ - **FEAT**: neatStyle for #202.
+
+
+## 2021-12-06
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+- There are no breaking changes in this release.
+
+Packages with other changes:
+
 - [`melos` - `v1.0.0-dev.13`](#melos---v100-dev13)
 
 ---
