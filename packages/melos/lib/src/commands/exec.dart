@@ -93,16 +93,15 @@ mixin _ExecMixin on _Melos {
     final execArgsString = execArgs.join(' ');
     final prefixLogs = concurrency != 1 && packages.length != 1;
 
-    logger
-        .stdout('${AnsiStyles.yellow(r'$')} ${AnsiStyles.bold("melos exec")}');
-    logger.stdout('   └> ${AnsiStyles.cyan.bold(execArgsString)}');
-    logger.stdout(
+    logger.trace('${AnsiStyles.yellow(r'$')} ${AnsiStyles.bold("melos exec")}');
+    logger.trace('   └> ${AnsiStyles.cyan.bold(execArgsString)}');
+    logger.trace(
       '       └> ${AnsiStyles.yellow.bold('RUNNING')} (in ${packages.length} packages)',
     );
 
-    logger.stdout('');
+    logger.trace('');
     if (prefixLogs) {
-      logger.stdout('-' * terminalWidth);
+      logger.trace('-' * terminalWidth);
     }
 
     await pool.forEach<Package, void>(packages, (package) async {
@@ -111,8 +110,8 @@ mixin _ExecMixin on _Melos {
       }
 
       if (!prefixLogs) {
-        logger.stdout('-' * terminalWidth);
-        logger.stdout(AnsiStyles.bgBlack.bold.italic('${package.name}:'));
+        logger.trace('-' * terminalWidth);
+        logger.trace(AnsiStyles.bgBlack.bold.italic('${package.name}:'));
       }
 
       final packageExitCode = await _execForPackage(
@@ -125,19 +124,18 @@ mixin _ExecMixin on _Melos {
       if (packageExitCode > 0) {
         failures[package.name] = packageExitCode;
       } else if (!prefixLogs) {
-        logger.stdout(
+        logger.trace(
           AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
               AnsiStyles.bold.green.bgBlack('SUCCESS'),
         );
       }
     }).drain<void>();
 
-    logger.stdout('-' * terminalWidth);
-    logger.stdout('');
+    logger.trace('-' * terminalWidth);
+    logger.trace('');
 
-    logger
-        .stdout('${AnsiStyles.yellow(r'$')} ${AnsiStyles.bold("melos exec")}');
-    logger.stdout('   └> ${AnsiStyles.cyan.bold(execArgsString)}');
+    logger.trace('${AnsiStyles.yellow(r'$')} ${AnsiStyles.bold("melos exec")}');
+    logger.trace('   └> ${AnsiStyles.cyan.bold(execArgsString)}');
 
     if (failures.isNotEmpty) {
       logger.stdout(
@@ -150,7 +148,7 @@ mixin _ExecMixin on _Melos {
       }
       exitCode = 1;
     } else {
-      logger.stdout('       └> ${AnsiStyles.green.bold('SUCCESS')}');
+      logger.trace('       └> ${AnsiStyles.green.bold('SUCCESS')}');
     }
   }
 }
