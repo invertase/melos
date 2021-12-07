@@ -191,7 +191,7 @@ Hint: try running "melos version --all" to include private packages.
       logger.trace('');
       for (final e in element.commits) {
         final newLinePrefix = e.message.contains('\n') ? '\n' : '';
-        logger.trace('${newLinePrefix}${e.message}');
+        logger.trace('$newLinePrefix${e.message}');
       }
     }
 
