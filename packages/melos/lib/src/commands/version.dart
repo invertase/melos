@@ -190,8 +190,8 @@ Hint: try running "melos version --all" to include private packages.
       logger.trace(AnsiStyles.yellow.bold(element.package.name));
       logger.trace('');
       for (final e in element.commits) {
-        final neatStyle = e.message.contains('\n') ? '\n' : '';
-        logger.trace(neatStyle + e.message);
+        final newLinePrefix = e.message.contains('\n') ? '\n' : '';
+        logger.trace('${newLinePrefix}${e.message}');
       }
     }
 
