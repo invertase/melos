@@ -54,6 +54,9 @@ extension Let<T> on T? {
   }
 }
 
+// Using --verbose if defined.
+const envVerbose = 'MELOS_VERBOSE';
+
 // MELOS_PACKAGES environment variable is a comma delimited list of
 // package names - used instead of filters if it is present.
 // This can be user defined or can come from package selection in `melos run`.
@@ -255,7 +258,7 @@ Future<int> startProcess(
     return _arg;
   }).where((element) => element != null);
 
-  if (logger.isVerbose) environment.addAll({'MELOS_VERBOSE': 'ture'});
+  if (logger.isVerbose) environment.addAll({envVerbose: 'ture'});
 
   final execProcess = await Process.start(
     executable,
