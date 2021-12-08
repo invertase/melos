@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2021-12-08
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+- There are no breaking changes in this release.
+
+Packages with other changes:
+
+- [`melos` - `v1.0.0-dev.14`](#melos---v100-dev14)
+
+---
+
+#### `melos` - `v1.0.0-dev.14`
+
+ - **FIX**: a dependent packages `dependentsInWorkspace` dependents should also be added to `dependentPackagesToVersion`.
+
+
 ## 2021-12-06
 
 ### Changes
