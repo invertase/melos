@@ -106,6 +106,19 @@ mixin _VersionMixin on _RunMixin {
         final packageUnscoped = workspace.allPackages[package.name]!;
         dependentPackagesToVersion
             .addAll(packageUnscoped.dependentsInWorkspace.values);
+
+        // Add dependentsInWorkspace dependents in the workspace until no more are added.
+        var packagesAdded = 1;
+        while (packagesAdded != 0) {
+          final packagesCountBefore = dependentPackagesToVersion.length;
+          final packages = <Package>{...dependentPackagesToVersion};
+          for (final dependentPackage in packages) {
+            dependentPackagesToVersion
+                .addAll(dependentPackage.dependentsInWorkspace.values);
+          }
+          packagesAdded =
+              dependentPackagesToVersion.length - packagesCountBefore;
+        }
       }
     }
 
