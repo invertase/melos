@@ -1,3 +1,55 @@
+## 1.0.0-dev.14
+
+ - **FIX**: a dependent packages `dependentsInWorkspace` dependents should also be added to `dependentPackagesToVersion`. ([5e7e8c75](https://github.com/invertase/melos/commit/5e7e8c756d4d0bebf403056aa863b88c502b69c2))
+
+## 1.0.0-dev.13
+
+ - **FEAT**: verbose logging now logs package commit messages when versioning (#203). ([b87fb8dc](https://github.com/invertase/melos/commit/b87fb8dcf21d0aeb8524cd9212e21115829d5c0d))
+
+## 1.0.0-dev.12
+
+ - **FEAT**: optionally allow generating workspace root change logs (#161). ([56fcdff6](https://github.com/invertase/melos/commit/56fcdff6640f73a01c6d7e5f7fb453bf8ef5666e))
+
+## 1.0.0-dev.11
+
+ - **FEAT**: Add topological sort to publish command (#199).
+ - **FEAT**: use `dart` tool to run `pub get` in pure Dart package (#201).
+ - **DOCS**: fix a few things and expand page for `melos.yaml` (#200).
+
+## 1.0.0-dev.10
+
+ - **FIX**: run version cmd with `--dependent-versions` value from cli (#193).
+ - **FEAT**: respect exact version constraints when updating dependents (#194).
+
+## 1.0.0-dev.9
+
+ - **FIX**: melos.yaml ignores should apply also to `run` commands `MELOS_PACKAGES` env variable (#192).
+
+## 1.0.0-dev.8
+
+ - **FIX**: version `--graduate` should graduate prerelease packages (not the other way around).
+
+## 1.0.0-dev.7
+
+ - **FIX**: ignore package filter should merge with `config.ignore` globs.
+
+## 1.0.0-dev.6
+
+ - **FEAT**: add support for linking to commits in changelog (#186).
+
+## 1.0.0-dev.5
+
+ - **FIX**: prevent stack overflow when resolving transitively related packages (#187).
+
+## 1.0.0-dev.4
+
+ - **REFACTOR**: Pass workspace config from the top (#176).
+ - **REFACTOR**: fix analysis & formatting issues (#177).
+ - **REFACTOR**: Instantiate workspace from configs (#169).
+ - **FIX**: ensure local versions of transitive dependencies are bootstrapped (#185).
+ - **FEAT**: Match unknown commands with scripts (#167).
+ - **FEAT**: Added an error message when multiple packages in the workspace have the same name (#178).
+
 ## 1.0.0-dev.3
 
  - **FIX**: Allow add-to-app packages to bootstrap (#162).

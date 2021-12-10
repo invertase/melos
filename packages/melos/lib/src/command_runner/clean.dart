@@ -15,14 +15,13 @@
  *
  */
 
-import 'dart:io';
-
 import '../commands/runner.dart';
+import '../workspace_configs.dart';
 
 import 'base.dart';
 
 class CleanCommand extends MelosCommand {
-  CleanCommand() {
+  CleanCommand(MelosWorkspaceConfig config) : super(config) {
     setupPackageFilterParser();
   }
 
@@ -36,10 +35,10 @@ class CleanCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    final melos = Melos(logger: logger, workingDirectory: Directory.current);
+    final melos = Melos(logger: logger, config: config);
 
     await melos.clean(
-      filter: parsePackageFilter(Directory.current),
+      filter: parsePackageFilter(config.path),
     );
   }
 }

@@ -16,14 +16,14 @@
  */
 
 import 'dart:async';
-import 'dart:io';
 
 import '../commands/runner.dart';
+import '../workspace_configs.dart';
 
 import 'base.dart';
 
 class BootstrapCommand extends MelosCommand {
-  BootstrapCommand() {
+  BootstrapCommand(MelosWorkspaceConfig config) : super(config) {
     setupPackageFilterParser();
   }
 
@@ -40,10 +40,10 @@ class BootstrapCommand extends MelosCommand {
 
   @override
   FutureOr<void>? run() {
-    final melos = Melos(logger: logger, workingDirectory: Directory.current);
+    final melos = Melos(logger: logger, config: config);
 
     return melos.bootstrap(
-      filter: parsePackageFilter(Directory.current),
+      filter: parsePackageFilter(config.path),
     );
   }
 }

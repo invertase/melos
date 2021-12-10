@@ -1,3 +1,7 @@
+## 0.3.1-dev.1
+
+ - **DOCS**: fix a few things and expand page for `melos.yaml` (#200).
+
 ## 0.3.1-dev.0
 
  - **FEAT**: added config validation and type-safe Dart API (#139) (#140).

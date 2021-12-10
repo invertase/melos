@@ -33,6 +33,7 @@ import 'common/git.dart';
 import 'common/glob.dart';
 import 'common/platform.dart';
 import 'common/utils.dart';
+import 'common/validation.dart';
 import 'workspace.dart';
 
 /// Key for windows platform.
@@ -223,6 +224,23 @@ class PackageFilter {
     );
   }
 
+  PackageFilter copyWithUpdatedIgnore(List<Glob> updatedIgnore) {
+    return PackageFilter._(
+      dependsOn: dependsOn,
+      dirExists: dirExists,
+      fileExists: fileExists,
+      ignore: updatedIgnore,
+      includePrivatePackages: includePrivatePackages,
+      noDependsOn: noDependsOn,
+      nullSafe: nullSafe,
+      published: published,
+      scope: scope,
+      updatedSince: updatedSince,
+      includeDependencies: includeDependencies,
+      includeDependents: includeDependents,
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       other is PackageFilter &&
@@ -278,7 +296,7 @@ PackageFilter(
 
 // Not using MapView to prevent map mutation
 class PackageMap {
-  PackageMap._(Map<String, Package> packages, this._logger)
+  PackageMap(Map<String, Package> packages, this._logger)
       : _map = _packagesSortedByName(packages);
 
   static Map<String, Package> _packagesSortedByName(
@@ -324,7 +342,20 @@ class PackageMap {
 
         final name = pubSpec.name!;
 
-        packageMap[name] = Package._(
+        if (packageMap.containsKey(name)) {
+          throw MelosConfigException(
+            '''
+Multiple packages with the name `$name` found in the workspace, which is unsupported.
+To fix this problem, consider renaming your packages to have a unique name.
+
+The packages that caused the problem are:
+- $name at ${relative(pubspecDirPath, from: workspacePath)}
+- $name at ${relative(packageMap[name]!.path, from: workspacePath)}
+''',
+          );
+        }
+
+        packageMap[name] = Package(
           name: name,
           path: pubspecDirPath,
           pathRelativeToWorkspace: relativePath(pubspecDirPath, workspacePath),
@@ -339,7 +370,7 @@ class PackageMap {
       }),
     );
 
-    return PackageMap._(packageMap, logger);
+    return PackageMap(packageMap, logger);
   }
 
   final Map<String, Package> _map;
@@ -375,7 +406,7 @@ class PackageMap {
       includeDependencies: filter.includeDependencies,
     );
 
-    return PackageMap._(
+    return PackageMap(
       {
         for (final package in packageList) package.name: package,
       },
@@ -553,7 +584,7 @@ extension on Iterable<Package> {
 }
 
 class Package {
-  Package._({
+  Package({
     required this.devDependencies,
     required this.dependencies,
     required this.dependencyOverrides,
@@ -588,6 +619,11 @@ class Package {
     ...dependencyOverridesInWorkspace,
   };
 
+  late final allDependentsInWorkspace = {
+    ...dependentsInWorkspace,
+    ...devDependentsInWorkspace,
+  };
+
   /// The dependencies listen in `dev_dependencies:` inside the package's `pubspec.yaml`
   /// that are part of the melos workspace
   late final Map<String, Package> devDependenciesInWorkspace =
@@ -617,19 +653,17 @@ class Package {
         entry.key: entry.value,
   };
 
-  late final Map<String, Package> allTransitiveDependenciesInWorkspace = {
-    for (final dependency in allDependenciesInWorkspace.entries) ...{
-      dependency.key: dependency.value,
-      ...dependency.value.allTransitiveDependenciesInWorkspace,
-    }
-  };
+  late final Map<String, Package> allTransitiveDependenciesInWorkspace =
+      _transitivelyRelatedPackages(
+    root: this,
+    directlyRelatedPackages: (package) => package.allDependenciesInWorkspace,
+  );
 
-  late final Map<String, Package> allTransitiveDependentsInWorkspace = {
-    for (final dependent in dependentsInWorkspace.entries) ...{
-      dependent.key: dependent.value,
-      ...dependent.value.allTransitiveDependentsInWorkspace,
-    }
-  };
+  late final Map<String, Package> allTransitiveDependentsInWorkspace =
+      _transitivelyRelatedPackages(
+    root: this,
+    directlyRelatedPackages: (package) => package.allDependentsInWorkspace,
+  );
 
   Map<String, Package> _packagesInWorkspaceForNames(List<String> names) {
     return {
@@ -915,6 +949,39 @@ class Package {
   String toString() {
     return 'Package($name)';
   }
+}
+
+/// Collects transitively related packages, starting at [root].
+///
+/// The relationship is defined by [directlyRelatedPackages]. Given a [Package]
+/// that is being traversed, the function returns the packages that are directly
+/// related to it.
+Map<String, Package> _transitivelyRelatedPackages({
+  required Package root,
+  required Map<String, Package> Function(Package) directlyRelatedPackages,
+}) {
+  final result = <String, Package>{};
+  final workingSet = directlyRelatedPackages(root).values.toList();
+
+  while (workingSet.isNotEmpty) {
+    final current = workingSet.removeLast();
+
+    // Don't add the root to the result.
+    if (current.name == root.name) {
+      continue;
+    }
+
+    result.putIfAbsent(current.name, () {
+      // Since `current` is a package that was not in the result, we are
+      // seeing it for the first time and still need to traverse its related
+      // packages.
+      workingSet.insertAll(0, directlyRelatedPackages(current).values);
+
+      return current;
+    });
+  }
+
+  return result;
 }
 
 extension on PubSpec {

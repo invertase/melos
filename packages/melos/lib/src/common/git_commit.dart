@@ -15,6 +15,8 @@
  *
  */
 
+import 'package:conventional_commit/conventional_commit.dart';
+
 class GitCommit {
   GitCommit({
     required this.message,
@@ -39,6 +41,44 @@ GitCommit[
   id="$id",
   date=${date.toIso8601String()},
   message="${message.replaceAll('\n', '').padRight(60).substring(0, 60).trim()}...",
+]''';
+  }
+}
+
+class RichGitCommit extends GitCommit {
+  RichGitCommit({
+    required String author,
+    required String id,
+    required DateTime date,
+    required String message,
+    required this.parsedMessage,
+  }) : super(author: author, id: id, date: date, message: message);
+
+  static RichGitCommit? tryParse(GitCommit commit) {
+    final parsedMessage = ConventionalCommit.tryParse(commit.message);
+    if (parsedMessage == null) {
+      return null;
+    }
+
+    return RichGitCommit(
+      author: commit.author,
+      id: commit.id,
+      date: commit.date,
+      message: commit.message,
+      parsedMessage: parsedMessage,
+    );
+  }
+
+  final ConventionalCommit parsedMessage;
+
+  @override
+  String toString() {
+    return '''
+RichGitCommit[
+  author="$author",
+  id="$id",
+  date=${date.toIso8601String()},
+  parsedMessage=$parsedMessage
 ]''';
   }
 }

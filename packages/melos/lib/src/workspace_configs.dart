@@ -22,6 +22,7 @@ import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 
+import 'common/git_repository.dart';
 import 'common/glob.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
@@ -161,11 +162,21 @@ CommandConfigs(
 /// Configurations for `melos version`.
 @immutable
 class VersionCommandConfigs {
-  const VersionCommandConfigs({this.message, this.branch});
+  const VersionCommandConfigs({
+    this.message,
+    this.linkToCommits,
+    this.branch,
+    this.workspaceChangelog = false,
+  });
 
   factory VersionCommandConfigs.fromYaml(Map<Object?, Object?> yaml) {
     final message = assertKeyIsA<String?>(
       key: 'message',
+      map: yaml,
+      path: 'command/version',
+    );
+    final linkToCommits = assertKeyIsA<bool?>(
+      key: 'linkToCommits',
       map: yaml,
       path: 'command/version',
     );
@@ -175,9 +186,17 @@ class VersionCommandConfigs {
       path: 'command/version',
     );
 
+    final workspaceChangelog = assertKeyIsA<bool?>(
+      key: 'workspaceChangelog',
+      map: yaml,
+      path: 'command/version',
+    );
+
     return VersionCommandConfigs(
       branch: branch,
+      linkToCommits: linkToCommits,
       message: message,
+      workspaceChangelog: workspaceChangelog ?? false,
     );
   }
 
@@ -186,6 +205,12 @@ class VersionCommandConfigs {
   /// A custom header for the generated CHANGELOG.md.
   final String? message;
 
+  /// Whether to add links to commits in the generated CHANGELOG.md.
+  final bool? linkToCommits;
+
+  /// Whether to also generate a CHANGELOG.md for the entire workspace at the root.
+  final bool workspaceChangelog;
+
   /// If specified, prevents `melos version` from being used inside branches
   /// other than the one specified.
   final String? branch;
@@ -193,7 +218,9 @@ class VersionCommandConfigs {
   Map<String, Object?> toJson() {
     return {
       if (message != null) 'message': message,
+      if (linkToCommits != null) 'linkToCommits': linkToCommits,
       if (branch != null) 'branch': branch,
+      'workspaceChangelog': workspaceChangelog,
     };
   }
 
@@ -202,16 +229,25 @@ class VersionCommandConfigs {
       other is VersionCommandConfigs &&
       runtimeType == other.runtimeType &&
       other.message == message &&
+      other.linkToCommits == linkToCommits &&
+      other.workspaceChangelog == workspaceChangelog &&
       other.branch == branch;
 
   @override
-  int get hashCode => runtimeType.hashCode ^ message.hashCode ^ branch.hashCode;
+  int get hashCode =>
+      runtimeType.hashCode ^
+      message.hashCode ^
+      linkToCommits.hashCode ^
+      workspaceChangelog.hashCode ^
+      branch.hashCode;
 
   @override
   String toString() {
     return '''
 VersionCommandConfigs(
   message: $message,
+  linkToCommits: $linkToCommits,
+  workspaceChangelog: $workspaceChangelog,
   branch: $branch,
 )''';
   }
@@ -222,21 +258,14 @@ class MelosWorkspaceConfig {
   MelosWorkspaceConfig({
     required this.path,
     required this.name,
+    this.repository,
     required this.packages,
     this.ignore = const [],
     this.scripts = Scripts.empty,
     this.ide = IDEConfigs.empty,
     this.commands = CommandConfigs.empty,
   }) {
-    final workspaceDir = Directory(path);
-    if (!workspaceDir.existsSync()) {
-      throw MelosConfigException(
-        'The path $path does not point to a directory',
-      );
-    }
-    if (!workspaceDir.isAbsolute) {
-      throw MelosConfigException('path must be an absolute path but got $path');
-    }
+    _validate();
   }
 
   factory MelosWorkspaceConfig.fromYaml(
@@ -250,6 +279,26 @@ class MelosWorkspaceConfig {
       throw MelosConfigException(
         'The name $name is not a valid dart package name',
       );
+    }
+
+    HostedGitRepository? repository;
+    final repositoryUrlString =
+        assertKeyIsA<String?>(key: 'repository', map: yaml);
+    if (repositoryUrlString != null) {
+      Uri repositoryUrl;
+      try {
+        repositoryUrl = Uri.parse(repositoryUrlString);
+      } on FormatException catch (e) {
+        throw MelosConfigException(
+          'The repository URL $repositoryUrlString is not a valid URL:\n $e',
+        );
+      }
+
+      try {
+        repository = parseHostedGitRepositoryUrl(repositoryUrl);
+      } on FormatException catch (e) {
+        throw MelosConfigException(e.toString());
+      }
     }
 
     final packages = assertListIsA<String>(
@@ -291,6 +340,7 @@ class MelosWorkspaceConfig {
     return MelosWorkspaceConfig(
       path: path,
       name: name,
+      repository: repository,
       packages: packages
           .map((package) => createGlob(package, currentDirectoryPath: path))
           .toList(),
@@ -344,7 +394,8 @@ class MelosWorkspaceConfig {
           Directory(joinAll([directory.path, 'packages']));
 
       if (packagesDirectory.existsSync()) {
-        return MelosWorkspaceConfig.fallback(path: directory.path);
+        return MelosWorkspaceConfig.fallback(path: directory.path)
+          ..validatePhysicalWorkspace();
       }
 
       throw MelosConfigException(
@@ -368,7 +419,7 @@ You must have one of the following to be a valid Melos workspace:
     return MelosWorkspaceConfig.fromYaml(
       yamlContents,
       path: melosWorkspaceDirectory.path,
-    );
+    )..validatePhysicalWorkspace();
   }
 
   /// The absolute path to the workspace folder.
@@ -376,6 +427,9 @@ You must have one of the following to be a valid Melos workspace:
 
   /// The name of the melos workspace – used by IDE documentation.
   final String name;
+
+  /// The hosted git repository which contains the workspace.
+  final HostedGitRepository? repository;
 
   /// A list of paths to packages that are included in the melos workspace.
   final List<Glob> packages;
@@ -398,12 +452,38 @@ You must have one of the following to be a valid Melos workspace:
   /// This allows customizing the default behavior of melos commands.
   final CommandConfigs commands;
 
+  /// Validates this workspace configuration for consistency.
+  void _validate() {
+    final workspaceDir = Directory(path);
+    if (!workspaceDir.isAbsolute) {
+      throw MelosConfigException('path must be an absolute path but got $path');
+    }
+
+    final linkToCommits = commands.version.linkToCommits;
+    if (linkToCommits != null && linkToCommits == true && repository == null) {
+      throw MelosConfigException(
+        'repository must be specified if commands/version/linkToCommits is true',
+      );
+    }
+  }
+
+  /// Validates the physical workspace on the file system.
+  void validatePhysicalWorkspace() {
+    final workspaceDir = Directory(path);
+    if (!workspaceDir.existsSync()) {
+      throw MelosConfigException(
+        'The path $path does not point to a directory',
+      );
+    }
+  }
+
   @override
   bool operator ==(Object other) =>
       other is MelosWorkspaceConfig &&
       runtimeType == other.runtimeType &&
       other.path == path &&
       other.name == name &&
+      other.repository == repository &&
       const DeepCollectionEquality().equals(other.packages, packages) &&
       const DeepCollectionEquality().equals(other.ignore, ignore) &&
       other.scripts == scripts &&
@@ -415,6 +495,7 @@ You must have one of the following to be a valid Melos workspace:
       runtimeType.hashCode ^
       path.hashCode ^
       name.hashCode ^
+      repository.hashCode ^
       const DeepCollectionEquality().hash(packages) &
           const DeepCollectionEquality().hash(ignore) ^
       scripts.hashCode ^
@@ -425,6 +506,7 @@ You must have one of the following to be a valid Melos workspace:
     return {
       'name': name,
       'path': path,
+      if (repository != null) 'repository': repository!,
       'packages': packages.map((p) => p.toString()).toList(),
       if (ignore.isNotEmpty) 'ignore': ignore.map((p) => p.toString()).toList(),
       if (scripts.isNotEmpty) 'scripts': scripts.toJson(),
@@ -439,6 +521,7 @@ You must have one of the following to be a valid Melos workspace:
 MelosWorkspaceConfig(
   path: $path,
   name: $name,
+  repository: $repository,
   packages: $packages,
   ignore: $ignore,
   scripts: ${scripts.toString().indent('  ')},

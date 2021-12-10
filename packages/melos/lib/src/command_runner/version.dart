@@ -21,6 +21,7 @@ import 'package:ansi_styles/ansi_styles.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 import '../commands/runner.dart';
+import '../workspace_configs.dart';
 import 'base.dart';
 
 /// Template variable that is replaced with versioned package info in commit
@@ -32,7 +33,7 @@ const defaultCommitMessage =
     'chore(release): publish packages\n\n{$packageVersionsTemplateVar}';
 
 class VersionCommand extends MelosCommand {
-  VersionCommand() {
+  VersionCommand(MelosWorkspaceConfig config) : super(config) {
     setupPackageFilterParser();
     argParser.addFlag(
       'prerelease',
@@ -133,7 +134,7 @@ class VersionCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    final melos = Melos(logger: logger, workingDirectory: Directory.current);
+    final melos = Melos(logger: logger, config: config);
 
     final force = argResults!['yes'] as bool;
     final updateDependentsConstraints =
@@ -206,11 +207,12 @@ class VersionCommand extends MelosCommand {
       }
 
       await melos.autoVersion(
-        filter: parsePackageFilter(Directory.current),
+        filter: parsePackageFilter(config.path),
         force: force,
         gitTag: tag,
         updateChangelog: changelog,
         updateDependentsConstraints: updateDependentsConstraints,
+        updateDependentsVersions: updateDependentsVersions,
         preid: preid,
         asPrerelease: asPrerelease,
         asStableRelease: asStableRelease,
