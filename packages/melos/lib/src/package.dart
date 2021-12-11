@@ -323,17 +323,26 @@ class PackageMap {
 
     final dartToolGlob =
         createGlob('**/.dart_tool/**', currentDirectoryPath: workspacePath);
+    final symlinksPluginsGlob = createGlob(
+      '**/.symlinks/plugins/**',
+      currentDirectoryPath: workspacePath,
+    );
 
-    final allPubspecs = await Directory(workspacePath)
-        .list(recursive: true, followLinks: false)
-        .where(
-          (file) =>
-              file.path.endsWith('pubspec.yaml') &&
-              !dartToolGlob.matches(file.path) &&
-              packages.any((glob) => glob.matches(file.path)) &&
-              !ignore.any((glob) => glob.matches(file.path)),
-        )
-        .toList();
+    final pubspecsByResolvedPath = <String, File>{};
+    await for (final entity in Directory(workspacePath).list(recursive: true)) {
+      final path = entity.path;
+      if (entity is File &&
+          basename(path) == 'pubspec.yaml' &&
+          !dartToolGlob.matches(path) &&
+          !symlinksPluginsGlob.matches(path) &&
+          packages.any((glob) => glob.matches(path)) &&
+          !ignore.any((glob) => glob.matches(path))) {
+        final resolvedPath = await entity.resolveSymbolicLinks();
+        pubspecsByResolvedPath[resolvedPath] = entity;
+      }
+    }
+
+    final allPubspecs = pubspecsByResolvedPath.values;
 
     await Future.wait<void>(
       allPubspecs.map((pubspecFile) async {
@@ -377,7 +386,9 @@ The packages that caused the problem are:
   final Logger _logger;
 
   Iterable<String> get keys => _map.keys;
+
   Iterable<Package> get values => _map.values;
+
   int get length => _map.length;
 
   Package? operator [](String key) {
