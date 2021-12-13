@@ -3,7 +3,6 @@ import 'dart:io' as io;
 import 'package:melos/melos.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
-import 'package:test/scaffolding.dart';
 import 'package:test/test.dart';
 
 import '../matchers.dart';
