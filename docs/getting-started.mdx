@@ -2,6 +2,7 @@
 title: Getting Started
 description: Learn how to start using Melos in your project
 ---
+
 # Getting Started
 
 Melos requires a few one-off steps to be completed before you can start using it.
@@ -52,10 +53,9 @@ regardless of whether a version has been specified.
 ## Next steps
 
 Once successfully bootstrapped, you can develop your packages side-by-side with changes to a single package immediately reflecting
-across other dependent packages. 
+across other dependent packages.
 
-Melos also provides other helpful features such as running scripts across all packages. For example, to create a script which analyzes
-all packages source code for errors (using [tuneup.dart](https://pub.dev/packages/tuneup)), add a new `script` item in your `melos.yaml`:
+Melos also provides other helpful features such as running scripts across all packages. For example, to run dart analyzer in each package, add a new `script` item in your `melos.yaml`:
 
 ```yaml
 name: my_project
@@ -64,7 +64,7 @@ packages:
   - packages/**
 
 scripts:
-  analyze: melos exec -- pub global run tuneup check
+  analyze: melos exec -- "dart analyze ."
 ```
 
 Then execute the command by running `melos run analyze`.
