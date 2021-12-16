@@ -1,0 +1,107 @@
+---
+title: Version Command
+description: "Learn more about the `version` command in Melos."
+---
+
+# Version Command
+
+Automatically version and generate changelogs for all packages. Supports all Melos filtering flags.
+
+```bash
+melos version
+```
+
+> To learn more, visit the [Automated Releases](/guides/automated-releases) documentation.
+
+## --prerelease (-p)
+
+Version any packages with changes as a prerelease. Cannot be combined with graduate flag. Defaults to `false`.
+
+```bash
+melos version --prerelease
+melos version -p
+```
+
+## --graduate (-g)
+
+Graduate current prerelease versioned packages to stable versions, e.g. "0.10.0-dev.1" becomes "0.10.0". Cannot be combined with prerelease flag. Defaults to `false`.
+
+```bash
+melos version --graduate
+melos version -g
+```
+
+## --[no-]changelog (-c)
+
+Update CHANGELOG.md files (based on conventional commit messages). Defaults to `true`.
+
+```bash
+melos version --changelog
+melos version -c
+```
+
+Use `--no-changelog` to disable.
+
+## --[no-]git-tag-version (-t)
+
+Update CHANGELOG.md files (based on conventional commit messages). Defaults to `true`.
+
+```bash
+melos version --git-tag-version
+melos version -t
+```
+
+Use `--no-git-tag-version` to disable.
+
+## --[no-]dependent-constraints
+
+Update dependency version constraints of packages in this workspace that depend on any of the packages that will be updated with this versioning run. (defaults to on)
+
+```bash
+melos version --no-dependent-constraints
+```
+
+Use `--no-dependent-constraints` to disable.
+
+## --[no-]dependent-versions
+
+Make a new patch version and changelog entry in packages that are updated due to "--dependent-constraints" changes. Only usable with "--dependent-constraints" enabled and Conventional Commits based versioning. (defaults to on)
+
+```bash
+melos version --no-dependent-versions
+```
+
+Use `--no-dependent-versions` to disable.
+
+## --all (-a)
+
+Version private packages that are skipped by default.
+
+```bash
+melos version --all
+melos version -a
+```
+
+## --preid
+
+When run with this option, `melos version` will increment prerelease versions using the specified prerelease identifier, e.g. using a "beta" preid along with the --prerelease flag would result in a version in the format "1.0.0-1.0.beta.0". Applies only to Conventional Commits based versioning.
+
+```bash
+melos version --preid=beta
+```
+
+## --message (-m)
+
+Override the release's commit message. If the message contains `{new_package_versions}`, it will be replaced by the list of newly versioned package names. If --message is not provided, the message will default to:
+
+```
+chore(release): publish packages
+
+{new_package_versions}
+```
+
+**Example**:
+
+```bash
+melos version --message="chore(release): publish new versions"
+```

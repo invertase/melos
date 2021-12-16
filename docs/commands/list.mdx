@@ -1,0 +1,59 @@
+---
+title: List Command
+description: "Learn more about the `list` command in Melos."
+---
+
+# List Command
+
+List information about the local packages.
+
+```bash
+melos list
+```
+
+## --long (-l)
+
+Show extended/verbose information. Defaults to `false`.
+
+```bash
+melos list --long
+melos list -l
+```
+
+## --all (-a)
+
+Show private packages that are hidden by default. Defaults to `false`.
+
+```bash
+melos list --all
+melos list -a
+```
+
+## --parsable (-p)
+
+Show parsable output instead of columnified view. Defaults to `false`.
+
+```bash
+melos list --parsable
+melos list -p
+```
+
+## --json
+
+Show information as a JSON array. Defaults to `false`.
+
+```bash
+melos list --json
+```
+
+## --graph
+
+Show dependency graph as a JSON-formatted adjacency list. Defaults to `false`.
+
+## --gviz
+
+Show dependency graph in Graphviz DOT language. Defaults to `false`.
+
+```bash
+melos list --gviz
+```

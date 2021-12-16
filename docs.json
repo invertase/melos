@@ -6,29 +6,39 @@
   "theme": "#FFA03F",
   "googleAnalytics": "G-Q7ME6WLFEJ",
   "sidebar": [
+    ["Overview", "/"],
+    ["Getting Started", "/getting-started"],
+    ["Filters", "/filters"],
     [
-      "Overview",
-      "/"
-    ],
-    [
-      "Getting Started",
-      "/getting-started"
+      "Configuration",
+      [
+        ["Overview", "/configuration/overview"],
+        ["Scripts", "/configuration/scripts"]
+      ]
     ],
     [
       "Commands",
-      "/commands"
+      [
+        ["bootstrap", "/commands/bootstrap"],
+        ["clean", "/commands/clean"],
+        ["exec", "/commands/exec"],
+        ["list", "/commands/list"],
+        ["publish", "/commands/publish"],
+        ["run", "/commands/run"],
+        ["version", "/commands/version"]
+      ]
     ],
+    ["Environment Variables", "/environment-variables"],
+    ["IDE Support", "/ide-support"],
     [
-      "Environment Variables",
-      "/environment-variables"
-    ],
-    [
-      "melos.yaml",
-      "/melos-yaml"
-    ],
-    [
-      "Automated Releases",
-      "/automated-releases"
+      "Guides",
+      [
+        [
+          "Manage multi-package Flutter projects",
+          "https://sagarsuri56.medium.com/managing-multi-package-flutter-projects-with-melos-c8ce96fa7c82"
+        ],
+        ["Automated Releases", "/guides/automated-releases"]
+      ]
     ]
   ]
 }
