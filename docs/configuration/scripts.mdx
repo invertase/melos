@@ -4,3 +4,78 @@ description: Defining workspace scripts in Melos via the `melos.yaml` scripts de
 ---
 
 # Workspace Scripts
+
+Workspace scripts can be executed with `melos run` or will be executed as hooks before/after some
+specific Melos commands.
+
+With the simple syntax, only the name of the script and the command to execute needs to be specified:
+
+```yaml
+scripts:
+  hello: echo 'Hello World'
+```
+
+The extends syntax allows for a more complex configuration of a script:
+
+```yaml
+scripts:
+  hello:
+    name: hey
+    description: 'Greet the world'
+    run: echo '$GREETING World'
+    env:
+      GREETING: 'Hey'
+```
+
+## `scripts/*/name`
+
+A unique identifier for the script.
+
+## `scripts/*/description`
+
+A short description, shown when using `melos run` with no argument.
+
+## `scripts/*/run`
+
+The command to execute.
+
+## `scripts/*/env`
+
+A map of environment variables that will be passed to the executed command.
+
+## `scripts/*/select-package`
+
+The `melos exec` command allows you to execute a command for multiple packages. When used
+in a script, you can declare filter options in the `select-packages` section.
+
+The `hello_flutter` script below is only executed in Flutter packages:
+
+```yaml
+scripts:
+  hello_flutter:
+    run: melos exec -- "echo 'Hello $(dirname $PWD)'"
+    select-package:
+      flutter: true
+```
+
+See the [global options](/filters) for a list of supported filters.
+
+
+----
+
+# Hooks
+
+Certain Melos commands support running scripts before and after the command is executed.
+Before hooks have the same name as the command. Post hooks have the name of the command prefixed with `post`:
+
+```yaml
+scripts:
+  bootstrap: echo `bootstrap command is running...`
+  postbootstrap: echo `bootstrap command is done`
+```
+
+Currently, the following Melos commands support hooks:
+
+- `bootstrap`
+- `clean`
+- `version`

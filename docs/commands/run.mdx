@@ -5,4 +5,16 @@ description: "Learn more about the `run` command in Melos."
 
 # Run Command
 
-TODO
+Run a [script](/configuration/scripts) by name defined in the workspace `melos.yaml` config file.
+
+```bash
+melos run <name>
+```
+
+## --no-select
+
+Skips the prompt to select a package (if defined in the script configuration). Filters defined in the scripts "select-package" options will however still be applied.
+
+```bash
+melos run <name> --no-select
+```
