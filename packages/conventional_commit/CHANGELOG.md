@@ -1,3 +1,7 @@
+## 0.4.1
+
+ - Graduate package to a stable release. See pre-releases prior to this version for changelog entries.
+
 ## 0.4.1-dev.1
 
  - **DOCS**: fix a few things and expand page for `melos.yaml` (#200).
