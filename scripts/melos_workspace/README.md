@@ -1,0 +1,1 @@
+Generates a minimal VSCode workspace project file which includes all local direct/transitive dependencies of a melos target

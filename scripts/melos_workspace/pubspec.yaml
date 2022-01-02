@@ -1,0 +1,17 @@
+name: melos_workspace
+description: A simple command-line application.
+
+environment:
+  sdk: ">=2.14.0 <3.0.0"
+
+dependencies:
+  args:
+
+  freezed_annotation:
+  json_annotation: ^4.4.0
+  path:
+
+dev_dependencies:
+  freezed:
+  json_serializable:
+  build_runner:
