@@ -63,11 +63,69 @@ void main() {
     });
   });
 
+  group('GitLabRepository', () {
+    group('fromUrl', () {
+      test('parse GitLab repository URL correctly', () {
+        final url = Uri.parse('https://gitlab.com/a/b');
+        final repo = GitLabRepository.fromUrl(url);
+        expect(repo.owner, 'a');
+        expect(repo.name, 'b');
+        expect(repo.url, Uri.parse('https://gitlab.com/a/b/'));
+      });
+
+      test('parse GitLab repository URL with nested groups correctly', () {
+        final url = Uri.parse('https://gitlab.com/a/b/c');
+        final repo = GitLabRepository.fromUrl(url);
+        expect(repo.owner, 'a/b');
+        expect(repo.name, 'c');
+        expect(repo.url, Uri.parse('https://gitlab.com/a/b/c/'));
+      });
+
+      test('throws if URL is not a valid GitLab repository URL', () {
+        void expectBadUrl(String url) {
+          final uri = Uri.parse(url);
+          expect(
+            () => GitLabRepository.fromUrl(uri),
+            throwsFormatException,
+            reason: url,
+          );
+        }
+
+        const [
+          '',
+          'http://gitlab.com/a/b',
+          'https://github.com/a/b',
+          'https://gitlab.com/a',
+          'https://gitlab.com/',
+          'https://gitlab.com',
+        ].forEach(expectBadUrl);
+      });
+    });
+
+    test('commitUrl returns correct URL', () {
+      final repo = GitLabRepository(owner: 'a', name: 'b');
+      const commitId = 'b2841394a48cd7d84a4966a788842690e543b2ef';
+
+      expect(
+        repo.commitUrl(commitId),
+        Uri.parse(
+          'https://gitlab.com/a/b/-/commit/b2841394a48cd7d84a4966a788842690e543b2ef',
+        ),
+      );
+    });
+  });
+
   group('parseHostedGitRepositoryUrl', () {
     test('parses GitHub repository URL', () {
       final repo =
           parseHostedGitRepositoryUrl(Uri.parse('https://github.com/a/b'));
       expect(repo, isA<GitHubRepository>());
+    });
+
+    test('parses GitLab repository URL', () {
+      final repo =
+          parseHostedGitRepositoryUrl(Uri.parse('https://gitlab.com/a/b'));
+      expect(repo, isA<GitLabRepository>());
     });
 
     test('throws if URL cannot be parsed as URL to one of known hosts', () {
