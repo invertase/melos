@@ -83,7 +83,7 @@ GitHubRepository(
   int get hashCode => owner.hashCode ^ name.hashCode;
 }
 
-/// A git repository, hosted by GitHub.
+/// A git repository, hosted by GitLab.
 class GitLabRepository extends HostedGitRepository {
   GitLabRepository({
     required this.owner,
