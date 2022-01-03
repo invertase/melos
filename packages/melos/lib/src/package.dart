@@ -299,7 +299,7 @@ class PackageMap {
     required String workspacePath,
     required List<Glob> packages,
     required List<Glob> ignore,
-    required Logger logger,
+    Logger? logger,
   }) async {
     final packageMap = <String, Package>{};
 
@@ -343,7 +343,7 @@ class PackageMap {
   }
 
   final Map<String, Package> _map;
-  final Logger _logger;
+  final Logger? _logger;
 
   Iterable<String> get keys => _map.keys;
   Iterable<Package> get values => _map.values;
@@ -463,7 +463,7 @@ extension on Iterable<Package> {
     return packagesFilteredWithPublishStatus;
   }
 
-  Future<Iterable<Package>> applySince(String? since, Logger logger) async {
+  Future<Iterable<Package>> applySince(String? since, Logger? logger) async {
     if (since == null) return this;
 
     final pool = Pool(10);

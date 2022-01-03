@@ -12,7 +12,7 @@ abstract class MelosCommand extends Command<void> {
 
   final MelosWorkspaceConfig config;
 
-  Logger get logger =>
+  Logger? get logger =>
       globalResults!['verbose'] as bool ? Logger.verbose() : Logger.standard();
 
   /// The `melos.yaml` configuration for this command.

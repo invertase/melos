@@ -12,13 +12,14 @@ mixin _BootstrapMixin on _CleanMixin {
 
         final pubCommandForLogging =
             "${workspace.isFlutterWorkspace ? "flutter " : ""}pub get";
-        logger.stdout(AnsiStyles.yellow.bold('melos bootstrap'));
-        logger.stdout('   └> ${AnsiStyles.cyan.bold(workspace.path)}\n');
+        logger?.stdout(AnsiStyles.yellow.bold('melos bootstrap'));
+        logger?.stdout('   └> ${AnsiStyles.cyan.bold(workspace.path)}\n');
 
-        logger
-            .stdout('Running "$pubCommandForLogging" in workspace packages...');
+        logger?.stdout(
+          'Running "$pubCommandForLogging" in workspace packages...',
+        );
         if (!utils.isCI && workspace.filteredPackages.keys.length > 20) {
-          logger.stdout(
+          logger?.stdout(
             AnsiStyles.yellow(
               'Note: this may take a while in large workspaces such as this one.',
             ),
@@ -29,7 +30,7 @@ mixin _BootstrapMixin on _CleanMixin {
 
         try {
           await for (final package in _runPubGet(workspace)) {
-            logger.stdout(
+            logger?.stdout(
               '''
   ${AnsiStyles.greenBright('✓')} ${AnsiStyles.bold(package.name)}
     └> ${AnsiStyles.blue(package.pathRelativeToWorkspace)}''',
@@ -43,26 +44,26 @@ mixin _BootstrapMixin on _CleanMixin {
           rethrow;
         }
 
-        logger.stdout('');
-        logger.stdout('Linking workspace packages...');
+        logger?.stdout('');
+        logger?.stdout('Linking workspace packages...');
 
         for (final package in workspace.filteredPackages.values) {
           await package.linkPackages(workspace);
         }
 
         cleanWorkspace(workspace);
-        logger.stdout('  > $successMessage');
+        logger?.stdout('  > $successMessage');
 
         if (workspace.config.ide.intelliJ.enabled) {
-          logger.stdout('');
-          logger.stdout('Generating IntelliJ IDE files...');
+          logger?.stdout('');
+          logger?.stdout('Generating IntelliJ IDE files...');
 
           await cleanIntelliJ(workspace);
           await workspace.ide.intelliJ.generate();
-          logger.stdout('  > $successMessage');
+          logger?.stdout('  > $successMessage');
         }
 
-        logger.stdout(
+        logger?.stdout(
           '\n -> ${workspace.filteredPackages.length} plugins bootstrapped',
         );
       },
@@ -123,17 +124,17 @@ mixin _BootstrapMixin on _CleanMixin {
         .toList()
         .join('\n');
 
-    logger.stdout(
+    logger?.stdout(
       '''
   - ${AnsiStyles.bold.cyan(package.name)}
     └> ${AnsiStyles.blue(package.pathRelativeToWorkspace)}''',
     );
 
-    logger.stderr('    └> ${AnsiStyles.red('Failed to install.')}');
+    logger?.stderr('    └> ${AnsiStyles.red('Failed to install.')}');
 
-    logger.stdout('');
-    logger.stdout(processStdOutString);
-    logger.stderr(processStdErrString);
+    logger?.stdout('');
+    logger?.stdout(processStdOutString);
+    logger?.stderr(processStdErrString);
   }
 
   // Return a stream of package that completed.

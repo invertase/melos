@@ -6,7 +6,6 @@ import 'package:melos/src/common/utils.dart';
 import 'package:melos/src/scripts.dart';
 import 'package:path/path.dart';
 import 'package:pubspec/pubspec.dart';
-import 'package:test/scaffolding.dart';
 import 'package:test/test.dart';
 
 import '../matchers.dart';

@@ -18,9 +18,9 @@ class TestLogger extends StandardLogger {
   /// such that:
   ///
   /// ```dart
-  /// logger.stdout('Hello');
-  /// logger.stderr('Error');
-  /// logger.stdout('world');
+  /// logger?.stdout('Hello');
+  /// logger?.stderr('Error');
+  /// logger?.stdout('world');
   /// ```
   ///
   /// has the following output:

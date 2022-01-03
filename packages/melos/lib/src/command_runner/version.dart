@@ -144,7 +144,7 @@ class VersionCommand extends MelosCommand {
 
     if (argResults!.rest.isNotEmpty) {
       if (argResults!.rest.length != 2) {
-        logger.stdout(
+        logger?.stdout(
           '${AnsiStyles.redBright('ERROR:')} when manually setting a version to '
           'apply to a package you must specify both <packageName> and <newVersion> '
           'arguments when calling "melos version".',
@@ -160,7 +160,7 @@ class VersionCommand extends MelosCommand {
         version = Version.parse(argResults!.rest[1]);
       } catch (_) {
         exitCode = 1;
-        logger.stdout(
+        logger?.stdout(
           '${AnsiStyles.redBright('ERROR:')} version "${argResults!.rest[1]}" is not a valid package version.',
         );
         return;
@@ -190,7 +190,7 @@ class VersionCommand extends MelosCommand {
       final preid = argResults!['preid'] as String?;
 
       if (asPrerelease && asStableRelease) {
-        logger.stdout(
+        logger?.stdout(
           '${AnsiStyles.yellow('WARNING:')} graduate & prerelease flags cannot '
           'be combined. Versioning will continue with graduate off.',
         );
@@ -198,7 +198,7 @@ class VersionCommand extends MelosCommand {
       }
 
       if (updateDependentsVersions && !updateDependentsConstraints) {
-        logger.stdout(
+        logger?.stdout(
           '${AnsiStyles.yellow('WARNING:')} the setting --dependent-versions is '
           'turned on but --dependent-constraints is turned off. Versioning '
           'will continue with this setting turned off.',
