@@ -1,0 +1,34 @@
+---
+title: Exec Command
+description: "Learn more about the `exec` command in Melos."
+---
+
+# Exec Command
+
+> Supports all [Melos filtering](/filters) flags.
+
+Execute an arbitrary command in each package.
+
+```bash
+melos exec
+# e.g. melos exec -- pub global run tuneup check
+```
+
+## concurrency (-c)
+
+Defines the max concurrency value of how many packages will execute the command in at any one time. Defaults to `5`.
+
+```bash
+# Set a 1 concurrency
+melos exec -c 1  -- "dart analyze ."
+```
+
+## --fail-fast
+
+Whether exec should fail fast and not execute the script in further packages if the script fails in an individual package.
+Defaults to `false`.
+
+```bash
+# Fail fast
+melos exec --fail-fast -- "dart analyze ."
+```

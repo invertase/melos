@@ -75,7 +75,7 @@ class MelosPendingPackageUpdate {
   /// The prerelease id that will be used for prereleases, e.g. "0.1.0-[preid].1".
   final String? preid;
 
-  final Logger logger;
+  final Logger? logger;
 
   Changelog get changelog {
     // TODO change log styles can be changed here if supported in future.

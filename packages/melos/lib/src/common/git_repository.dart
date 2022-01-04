@@ -83,8 +83,63 @@ GitHubRepository(
   int get hashCode => owner.hashCode ^ name.hashCode;
 }
 
+/// A git repository, hosted by GitLab.
+class GitLabRepository extends HostedGitRepository {
+  GitLabRepository({
+    required this.owner,
+    required this.name,
+  });
+
+  factory GitLabRepository.fromUrl(Uri uri) {
+    if (uri.scheme == 'https' && uri.host == 'gitlab.com') {
+      final match = RegExp(r'^\/((?:.+[\/]?))?\/(.+)\/?$').firstMatch(uri.path);
+      if (match != null) {
+        return GitLabRepository(
+          owner: match.group(1)!,
+          name: match.group(2)!,
+        );
+      }
+    }
+
+    throw FormatException('The URL $uri is not a valid GitLab repository URL.');
+  }
+
+  /// The username of the owner of this repository.
+  final String owner;
+
+  @override
+  final String name;
+
+  @override
+  late Uri url = Uri.parse('https://gitlab.com/$owner/$name/');
+
+  @override
+  Uri commitUrl(String id) => url.resolve('-/commit/$id');
+
+  @override
+  String toString() {
+    return '''
+GitLabRepository(
+  owner: $owner,
+  name: $name,
+)''';
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GitHubRepository &&
+          other.runtimeType == runtimeType &&
+          other.owner == owner &&
+          other.name == name;
+
+  @override
+  int get hashCode => owner.hashCode ^ name.hashCode;
+}
+
 final _hostsToUrlParser = {
   'GitHub': (Uri url) => GitHubRepository.fromUrl(url),
+  'GitLab': (Uri url) => GitLabRepository.fromUrl(url),
 };
 
 /// Tries to parse [url] into a [HostedGitRepository].

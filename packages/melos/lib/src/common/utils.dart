@@ -224,7 +224,7 @@ Future<int> startProcess(
   String? workingDirectory,
   bool onlyOutputOnError = false,
   bool includeParentEnvironment = true,
-  required Logger logger,
+  Logger? logger,
 }) async {
   final workingDirectoryPath = workingDirectory ?? Directory.current.path;
   final executable = currentPlatform.isWindows ? 'cmd' : '/bin/sh';
@@ -306,7 +306,7 @@ Future<int> startProcess(
     (List<int> event) {
       processStdout.addAll(event);
       if (!onlyOutputOnError) {
-        logger.write(utf8.decode(event, allowMalformed: true));
+        logger?.write(utf8.decode(event, allowMalformed: true));
       }
     },
     onDone: processStdoutCompleter.complete,
@@ -315,7 +315,7 @@ Future<int> startProcess(
     (List<int> event) {
       processStderr.addAll(event);
       if (!onlyOutputOnError) {
-        logger.stderr(utf8.decode(event, allowMalformed: true));
+        logger?.stderr(utf8.decode(event, allowMalformed: true));
       }
     },
     onDone: processStderrCompleter.complete,
@@ -326,8 +326,8 @@ Future<int> startProcess(
   final exitCode = await execProcess.exitCode;
 
   if (onlyOutputOnError && exitCode > 0) {
-    logger.stdout(utf8.decode(processStdout, allowMalformed: true));
-    logger.stderr(utf8.decode(processStderr, allowMalformed: true));
+    logger?.stdout(utf8.decode(processStdout, allowMalformed: true));
+    logger?.stderr(utf8.decode(processStderr, allowMalformed: true));
   }
 
   return exitCode;
