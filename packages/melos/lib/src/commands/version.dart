@@ -51,8 +51,8 @@ mixin _VersionMixin on _RunMixin {
     message ??=
         workspace.config.commands.version.message ?? defaultCommitMessage;
 
-    logger.stdout(AnsiStyles.yellow.bold('melos version'));
-    logger.stdout('   └> ${AnsiStyles.cyan.bold(workspace.path)}\n');
+    logger?.stdout(AnsiStyles.yellow.bold('melos version'));
+    logger?.stdout('   └> ${AnsiStyles.cyan.bold(workspace.path)}\n');
 
     final commitMessageTemplate = Template(message, delimiters: '{ }');
 
@@ -61,7 +61,7 @@ mixin _VersionMixin on _RunMixin {
     var pendingPackageUpdates = <MelosPendingPackageUpdate>[];
 
     if (workspace.config.scripts.containsKey('preversion')) {
-      logger.stdout('Running "preversion" lifecycle script...\n');
+      logger?.stdout('Running "preversion" lifecycle script...\n');
       await run(scriptName: 'preversion');
     }
 
@@ -172,12 +172,12 @@ mixin _VersionMixin on _RunMixin {
     }
 
     if (pendingPackageUpdates.isEmpty) {
-      logger.stdout(
+      logger?.stdout(
         AnsiStyles.yellow(
           'No packages were found that required versioning.',
         ),
       );
-      logger.stdout(
+      logger?.stdout(
         AnsiStyles.gray(
           '''
 Hint: try running "melos list" with the same filtering options to see a list of packages that were included.
@@ -188,7 +188,7 @@ Hint: try running "melos version --all" to include private packages.
       return;
     }
 
-    logger.stdout(
+    logger?.stdout(
       AnsiStyles.magentaBright('The following packages will be updated:\n'),
     );
 
@@ -200,15 +200,15 @@ Hint: try running "melos version --all" to include private packages.
 
     // show commit message
     for (final element in pendingPackageUpdates) {
-      logger.trace(AnsiStyles.yellow.bold(element.package.name));
+      logger?.trace(AnsiStyles.yellow.bold(element.package.name));
       for (final e in element.commits) {
-        logger.trace('   ${e.message}');
+        logger?.trace('   ${e.message}');
       }
     }
 
     final shouldContinue = force || promptBool();
     if (!shouldContinue) {
-      logger.stdout(AnsiStyles.red('Operation was canceled.'));
+      logger?.stdout(AnsiStyles.red('Operation was canceled.'));
       exitCode = 1;
       return;
     }
@@ -223,7 +223,7 @@ Hint: try running "melos version --all" to include private packages.
 
     // TODO allow support for individual package lifecycle version scripts
     if (workspace.config.scripts.containsKey('version')) {
-      logger.stdout('Running "version" lifecycle script...\n');
+      logger?.stdout('Running "version" lifecycle script...\n');
       await run(scriptName: 'version');
     }
 
@@ -243,12 +243,12 @@ Hint: try running "melos version --all" to include private packages.
 
     // TODO allow support for individual package lifecycle postversion scripts
     if (workspace.config.scripts.containsKey('postversion')) {
-      logger.stdout('Running "postversion" lifecycle script...\n');
+      logger?.stdout('Running "postversion" lifecycle script...\n');
       await run(scriptName: 'postversion');
     }
 
     // TODO automatic push support
-    logger.stdout(
+    logger?.stdout(
       AnsiStyles.greenBright.bold(
         'Versioning successful. '
         'Ensure you push your git changes and tags (if applicable) via ${AnsiStyles.bgBlack.gray('git push --follow-tags')}',
@@ -267,10 +267,10 @@ Hint: try running "melos version --all" to include private packages.
   }) async {
     final workspace = await createWorkspace();
 
-    logger.stdout(
+    logger?.stdout(
       AnsiStyles.yellow.bold('melos version <packageName> <newVersion>'),
     );
-    logger.stdout('   └> ${AnsiStyles.cyan.bold(workspace.path)}\n');
+    logger?.stdout('   └> ${AnsiStyles.cyan.bold(workspace.path)}\n');
 
     final workspacePackage = workspace.filteredPackages.values.firstWhereOrNull(
       (package) => package.name == packageName,
@@ -279,16 +279,16 @@ Hint: try running "melos version --all" to include private packages.
     // Validate package actually exists in workspace.
     if (workspacePackage == null) {
       exitCode = 1;
-      logger.stdout(
+      logger?.stdout(
         '${AnsiStyles.redBright('ERROR:')} package "$packageName" does not exist in this workspace.',
       );
       return;
     }
 
-    logger.stdout(
+    logger?.stdout(
       AnsiStyles.magentaBright('The following package will be updated:\n'),
     );
-    logger.stdout(
+    logger?.stdout(
       listAsPaddedTable(
         [
           [
@@ -305,7 +305,7 @@ Hint: try running "melos version --all" to include private packages.
         paddingSize: 3,
       ),
     );
-    logger.stdout('');
+    logger?.stdout('');
     final shouldContinue = force || promptBool();
     if (!shouldContinue) {
       throw CancelledException();
@@ -322,7 +322,7 @@ Hint: try running "melos version --all" to include private packages.
 
     // TODO allow support for individual package lifecycle version scripts
     if (workspace.config.scripts.containsKey('preversion')) {
-      logger.stdout('Running "preversion" lifecycle script...\n');
+      logger?.stdout('Running "preversion" lifecycle script...\n');
       await run(scriptName: 'preversion');
     }
 
@@ -331,7 +331,7 @@ Hint: try running "melos version --all" to include private packages.
 
     // Update changelog, if requested.
     if (updateChangelog) {
-      logger.stdout(
+      logger?.stdout(
         'Adding changelog entry in package "$packageName" for version "$newVersion"...',
       );
       final singleEntryChangelog = SingleEntryChangelog(
@@ -344,7 +344,7 @@ Hint: try running "melos version --all" to include private packages.
     }
 
     if (updateDependentsConstraints) {
-      logger.stdout(
+      logger?.stdout(
         'Updating version constraints for packages that depend on "$packageName"...',
       );
       // Update dependents.
@@ -362,11 +362,11 @@ Hint: try running "melos version --all" to include private packages.
 
     // TODO allow support for individual package lifecycle version scripts
     if (workspace.config.scripts.containsKey('version')) {
-      logger.stdout('Running "version" lifecycle script...\n');
+      logger?.stdout('Running "version" lifecycle script...\n');
       await run(scriptName: 'version');
     }
 
-    logger.stdout(
+    logger?.stdout(
       AnsiStyles.greenBright.bold(
         'Versioning successful. Ensure you commit and push your changes (if applicable).',
       ),
@@ -387,7 +387,7 @@ Hint: try running "melos version --all" to include private packages.
 
     // Sanity check that contents actually changed.
     if (contents == updatedContents) {
-      logger.trace(
+      logger?.trace(
         'Failed to update a pubspec.yaml version to $version for package ${package.name}. '
         'You should probably report this issue with a copy of your pubspec.yaml file.',
       );
@@ -454,7 +454,7 @@ Hint: try running "melos version --all" to include private packages.
         package.pubSpec.dependencies[dependencyName] is! HostedReference &&
         package.pubSpec.dependencies[dependencyName]
             is! ExternalHostedReference) {
-      logger.trace(
+      logger?.trace(
         'Skipping updating dependency $dependencyName for package ${package.name} - '
         'the version is a Map definition and is most likely a dependency that is importing from a path or git remote.',
       );
@@ -464,7 +464,7 @@ Hint: try running "melos version --all" to include private packages.
         package.pubSpec.devDependencies[dependencyName] is! HostedReference &&
         package.pubSpec.devDependencies[dependencyName]
             is! ExternalHostedReference) {
-      logger.trace(
+      logger?.trace(
         'Skipping updating dev dependency $dependencyName for package ${package.name} - '
         'the version is a Map definition and is most likely a dependency that is importing from a path or git remote.',
       );
@@ -480,7 +480,7 @@ Hint: try running "melos version --all" to include private packages.
 
     // Sanity check that contents actually changed.
     if (contents == updatedContents) {
-      logger.trace(
+      logger?.trace(
         'Failed to update dependency $dependencyName version to $dependencyVersion for package ${package.name}, '
         'you should probably report this issue with a copy of your pubspec.yaml file.',
       );
@@ -495,7 +495,7 @@ Hint: try running "melos version --all" to include private packages.
     required bool updateDependentsVersions,
     required bool updateDependentsConstraints,
   }) {
-    logger.stdout(
+    logger?.stdout(
       listAsPaddedTable(
         [
           [

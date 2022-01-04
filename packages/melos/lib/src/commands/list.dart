@@ -51,7 +51,7 @@ mixin _ListMixin on _Melos {
     }
 
     const encoder = JsonEncoder.withIndent('  ');
-    logger.stdout(encoder.convert(jsonGraph));
+    logger?.stdout(encoder.convert(jsonGraph));
   }
 
   void _listColumn(
@@ -60,12 +60,12 @@ mixin _ListMixin on _Melos {
     required bool long,
   }) {
     if (workspace.filteredPackages.values.isEmpty) {
-      logger.stdout(
+      logger?.stdout(
         AnsiStyles.yellow(
           'No packages were found with the current filters.',
         ),
       );
-      logger.stdout(
+      logger?.stdout(
         AnsiStyles.gray(
           'Hint: if this is unexpected, '
           'try running the command again with a reduced number of filters applied.',
@@ -89,13 +89,13 @@ mixin _ListMixin on _Melos {
             .cast<List<String>>()
             .toList(),
       );
-      logger.stdout(table);
+      logger?.stdout(table);
       return;
     }
 
     for (final package in workspace.filteredPackages.values) {
       if (!showPrivatePackages && package.isPrivate) continue;
-      logger.stdout(package.name);
+      logger?.stdout(package.name);
     }
   }
 
@@ -107,7 +107,7 @@ mixin _ListMixin on _Melos {
     for (final package in workspace.filteredPackages.values) {
       if (package.isPrivate && !showPrivatePackages) continue;
       if (long) {
-        logger.stdout(
+        logger?.stdout(
           <Object>[
             package.path,
             package.name,
@@ -116,7 +116,7 @@ mixin _ListMixin on _Melos {
           ].join(':'),
         );
       } else {
-        logger.stdout(package.path);
+        logger?.stdout(package.path);
       }
     }
   }
@@ -177,7 +177,7 @@ mixin _ListMixin on _Melos {
     }
 
     const encoder = JsonEncoder.withIndent('  ');
-    logger.stdout(encoder.convert(jsonArrayItems));
+    logger?.stdout(encoder.convert(jsonArrayItems));
   }
 
   void _listGviz(MelosWorkspace workspace) {
@@ -251,6 +251,6 @@ mixin _ListMixin on _Melos {
 
     buffer.add('}');
 
-    logger.stdout(buffer.join('\n'));
+    logger?.stdout(buffer.join('\n'));
   }
 }

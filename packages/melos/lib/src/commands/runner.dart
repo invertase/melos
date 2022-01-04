@@ -61,13 +61,13 @@ class Melos extends _Melos
   }) : logger = logger ?? Logger.standard();
 
   @override
-  final Logger logger;
+  final Logger? logger;
   @override
   final MelosWorkspaceConfig config;
 }
 
 abstract class _Melos {
-  Logger get logger;
+  Logger? get logger;
   MelosWorkspaceConfig get config;
 
   Future<MelosWorkspace> createWorkspace({PackageFilter? filter}) async {
@@ -110,7 +110,7 @@ abstract class _Melos {
     }
 
     if (workspace.config.scripts.containsKey(scriptName)) {
-      logger.stdout('Running $scriptName script...\n');
+      logger?.stdout('Running $scriptName script...\n');
 
       await run(scriptName: scriptName);
     }
@@ -120,7 +120,7 @@ abstract class _Melos {
     } finally {
       final postScript = 'post$scriptName';
       if (workspace.config.scripts.containsKey(postScript)) {
-        logger.stdout('Running $postScript script...\n');
+        logger?.stdout('Running $postScript script...\n');
 
         await run(scriptName: postScript);
       }
