@@ -24,6 +24,7 @@ import 'command_runner/exec.dart';
 import 'command_runner/list.dart';
 import 'command_runner/publish.dart';
 import 'command_runner/run.dart';
+import 'command_runner/script.dart';
 import 'command_runner/version.dart';
 import 'common/utils.dart';
 import 'workspace_configs.dart';
@@ -63,6 +64,12 @@ class MelosCommandRunner extends CommandRunner<void> {
     addCommand(ListCommand(config));
     addCommand(PublishCommand(config));
     addCommand(VersionCommand(config));
+
+    // Keep this last to exclude all built-in commands listed above
+    final script = ScriptCommand.fromConfig(config, exclude: commands.keys);
+    if (script != null) {
+      addCommand(script);
+    }
   }
 
   @override

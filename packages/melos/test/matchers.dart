@@ -69,17 +69,17 @@ class _ContainsDuplicatesMatcher extends Matcher {
 }
 
 TypeMatcher<MelosConfigException> isMelosConfigException({
-  String? message,
+  Object? message,
 }) {
   var matcher = isA<MelosConfigException>();
 
   if (message != null) {
-    matcher = matcher.having((e) => e.message, 'message', equals(message));
+    matcher = matcher.having((e) => e.message, 'message', message);
   }
 
   return matcher;
 }
 
-Matcher throwsMelosConfigException({String? message}) {
+Matcher throwsMelosConfigException({Object? message}) {
   return throwsA(isMelosConfigException(message: message));
 }

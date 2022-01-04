@@ -23,7 +23,7 @@ mixin _VersionMixin on _RunMixin {
 
     if (updateDependentsVersions && !updateDependentsConstraints) {
       throw ArgumentError(
-        'Cannot use both updateDependentsVersions and updateDependentsConstraints.',
+        'Cannot use updateDependentsVersions without updateDependentsConstraints.',
       );
     }
 
@@ -34,6 +34,19 @@ mixin _VersionMixin on _RunMixin {
       // because of the 'since' filter.
       filter: filter?.copyWithUpdatedSince(null),
     );
+
+    if (workspace.config.commands.version.branch != null) {
+      final currentBranchName = await gitGetCurrentBranchName(
+        workingDirectory: workspace.path,
+        logger: logger,
+      );
+      if (currentBranchName != workspace.config.commands.version.branch) {
+        throw RestrictedBranchException(
+          workspace.config.commands.version.branch!,
+          currentBranchName,
+        );
+      }
+    }
 
     message ??=
         workspace.config.commands.version.message ?? defaultCommitMessage;
@@ -63,10 +76,11 @@ mixin _VersionMixin on _RunMixin {
 
     if (asStableRelease) {
       for (final package in workspace.filteredPackages.values) {
-        if (package.version.isPreRelease) continue;
+        if (!package.version.isPreRelease) continue;
 
         pendingPackageUpdates.add(
           MelosPendingPackageUpdate(
+            workspace,
             package,
             [],
             PackageUpdateReason.graduate,
@@ -92,12 +106,26 @@ mixin _VersionMixin on _RunMixin {
         final packageUnscoped = workspace.allPackages[package.name]!;
         dependentPackagesToVersion
             .addAll(packageUnscoped.dependentsInWorkspace.values);
+
+        // Add dependentsInWorkspace dependents in the workspace until no more are added.
+        var packagesAdded = 1;
+        while (packagesAdded != 0) {
+          final packagesCountBefore = dependentPackagesToVersion.length;
+          final packages = <Package>{...dependentPackagesToVersion};
+          for (final dependentPackage in packages) {
+            dependentPackagesToVersion
+                .addAll(dependentPackage.dependentsInWorkspace.values);
+          }
+          packagesAdded =
+              dependentPackagesToVersion.length - packagesCountBefore;
+        }
       }
     }
 
     pendingPackageUpdates.addAll(
       packagesToVersion.map(
         (package) => MelosPendingPackageUpdate(
+          workspace,
           package,
           packageCommits[package.name]!,
           PackageUpdateReason.commit,
@@ -117,6 +145,7 @@ mixin _VersionMixin on _RunMixin {
       if (!packagesToVersion.contains(package) && !packageHasPendingUpdate) {
         pendingPackageUpdates.add(
           MelosPendingPackageUpdate(
+            workspace,
             package,
             [],
             PackageUpdateReason.dependency,
@@ -169,6 +198,14 @@ Hint: try running "melos version --all" to include private packages.
       updateDependentsConstraints: updateDependentsConstraints,
     );
 
+    // show commit message
+    for (final element in pendingPackageUpdates) {
+      logger.trace(AnsiStyles.yellow.bold(element.package.name));
+      for (final e in element.commits) {
+        logger.trace('   ${e.message}');
+      }
+    }
+
     final shouldContinue = force || promptBool();
     if (!shouldContinue) {
       logger?.stdout(AnsiStyles.red('Operation was canceled.'));
@@ -181,6 +218,7 @@ Hint: try running "melos version --all" to include private packages.
       updateDependentsVersions: updateDependentsVersions,
       updateDependentsConstraints: updateDependentsConstraints,
       updateChangelog: updateChangelog,
+      workspace: workspace,
     );
 
     // TODO allow support for individual package lifecycle version scripts
@@ -190,7 +228,7 @@ Hint: try running "melos version --all" to include private packages.
     }
 
     if (gitTag) {
-      await _gitStageChanges(pendingPackageUpdates);
+      await _gitStageChanges(pendingPackageUpdates, workspace);
       await _gitCommitChanges(
         workspace,
         pendingPackageUpdates,
@@ -364,6 +402,22 @@ Hint: try running "melos version --all" to include private packages.
     String dependencyName,
     Version version,
   ) {
+    final currentVersionConstraint =
+        (package.pubSpec.dependencies[dependencyName] ??
+                package.pubSpec.devDependencies[dependencyName])
+            ?._versionConstraint;
+    final hasExactVersionConstraint = currentVersionConstraint is Version;
+    if (hasExactVersionConstraint) {
+      // If the package currently has an exact version constraint, we respect
+      // that and replace it with an exact version constraint for the new
+      // version.
+      return _setDependencyVersionForPackage(
+        package,
+        dependencyName,
+        version,
+      );
+    }
+
     // By default dependency constraint using caret syntax to ensure the range allows
     // all versions guaranteed to be backwards compatible with the specified version.
     // For example, ^1.2.3 is equivalent to '>=1.2.3 <2.0.0', and ^0.1.2 is equivalent to '>=0.1.2 <0.2.0'.
@@ -505,6 +559,7 @@ Hint: try running "melos version --all" to include private packages.
     required bool updateDependentsVersions,
     required bool updateDependentsConstraints,
     required bool updateChangelog,
+    required MelosWorkspace workspace,
   }) async {
     // Note: not pooling & parrellelzing rights to avoid possible file contention.
     await Future.forEach(pendingPackageUpdates,
@@ -548,17 +603,34 @@ Hint: try running "melos version --all" to include private packages.
         }
       }
     });
+
+    // Build a workspace root changelog if enabled.
+    if (updateChangelog &&
+        workspace.config.commands.version.workspaceChangelog) {
+      final today = DateTime.now();
+      final dateSlug =
+          "${today.year.toString()}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+      final workspaceChangelog = WorkspaceChangelog(
+        workspace,
+        dateSlug,
+        pendingPackageUpdates,
+        logger,
+      );
+
+      await workspaceChangelog.write();
+    }
   }
 
   Set<String> _getPackagesWithVersionableCommits(
-    Map<String, List<ConventionalCommit>> packageCommits,
+    Map<String, List<RichGitCommit>> packageCommits,
   ) {
     final packagesWithVersionableCommits = <String>{};
     for (final entry in packageCommits.entries) {
       final packageName = entry.key;
       final packageCommits = entry.value;
-      final versionableCommits =
-          packageCommits.where((e) => e.isVersionableCommit).toList();
+      final versionableCommits = packageCommits
+          .where((e) => e.parsedMessage.isVersionableCommit)
+          .toList();
       if (versionableCommits.isNotEmpty) {
         packagesWithVersionableCommits.add(packageName);
       }
@@ -567,12 +639,12 @@ Hint: try running "melos version --all" to include private packages.
     return packagesWithVersionableCommits;
   }
 
-  Future<Map<String, List<ConventionalCommit>>> _getPackageCommits(
+  Future<Map<String, List<RichGitCommit>>> _getPackageCommits(
     MelosWorkspace workspace, {
     required bool versionPrivatePackages,
     required String? since,
   }) async {
-    final packageCommits = <String, List<ConventionalCommit>>{};
+    final packageCommits = <String, List<RichGitCommit>>{};
     await Pool(10).forEach<Package, void>(workspace.filteredPackages.values,
         (package) async {
       if (!versionPrivatePackages && package.isPrivate) return;
@@ -584,9 +656,8 @@ Hint: try running "melos version --all" to include private packages.
       );
 
       packageCommits[package.name] = commits
-          .map((commit) => ConventionalCommit.tryParse(commit.message))
-          .where((element) => element != null)
-          .cast<ConventionalCommit>()
+          .map(RichGitCommit.tryParse)
+          .whereType<RichGitCommit>()
           .toList();
     }).drain<void>();
     return packageCommits;
@@ -651,7 +722,15 @@ Hint: try running "melos version --all" to include private packages.
 
   Future<void> _gitStageChanges(
     List<MelosPendingPackageUpdate> pendingPackageUpdates,
+    MelosWorkspace workspace,
   ) async {
+    if (workspace.config.commands.version.workspaceChangelog) {
+      await gitAdd(
+        'CHANGELOG.md',
+        workingDirectory: workspace.path,
+        logger: logger,
+      );
+    }
     await Future.forEach(pendingPackageUpdates,
         (MelosPendingPackageUpdate pendingPackageUpdate) async {
       await gitAdd(
@@ -696,5 +775,16 @@ class PackageNotFoundException extends MelosException {
   @override
   String toString() {
     return 'PackageNotFoundException: The package $packageName';
+  }
+}
+
+extension on DependencyReference {
+  VersionConstraint? get _versionConstraint {
+    final self = this;
+    if (self is HostedReference) {
+      return self.versionConstraint;
+    } else if (self is ExternalHostedReference) {
+      return self.versionConstraint;
+    }
   }
 }

@@ -22,7 +22,9 @@ import 'package:conventional_commit/conventional_commit.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 import '../package.dart';
+import '../workspace.dart';
 import 'changelog.dart';
+import 'git_commit.dart';
 import 'versioning.dart' as versioning;
 
 /// Enum representing why the version has been changed when running 'version' command.
@@ -39,6 +41,7 @@ enum PackageUpdateReason {
 
 class MelosPendingPackageUpdate {
   MelosPendingPackageUpdate(
+    this.workspace,
     this.package,
     this.commits,
     this.reason, {
@@ -50,7 +53,11 @@ class MelosPendingPackageUpdate {
 
   /// Commits that triggered this pending update. Can be empty if
   /// [PackageUpdateReason] is [PackageUpdateReason.dependency].
-  final List<ConventionalCommit> commits;
+  final List<RichGitCommit> commits;
+
+  /// The workspace that contains the [package] that this update will apply to
+  /// when committed.
+  final MelosWorkspace workspace;
 
   /// The package that this update will apply to when committed.
   final Package package;
@@ -110,7 +117,7 @@ class MelosPendingPackageUpdate {
     }
 
     return SemverReleaseType.values[commits
-        .map((e) => e.semverReleaseType.index)
+        .map((e) => e.parsedMessage.semverReleaseType.index)
         .toList()
         .reduce(math.max)];
   }

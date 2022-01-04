@@ -5,8 +5,10 @@ import 'package:cli_util/cli_logging.dart';
 import 'package:melos/melos.dart';
 import 'package:melos/src/yamlicious/yaml_writer.dart';
 import 'package:path/path.dart';
+import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
 import 'package:test/scaffolding.dart';
+import 'package:yaml/yaml.dart';
 
 class TestLogger extends StandardLogger {
   final _buffer = StringBuffer();
@@ -73,7 +75,8 @@ Directory createTemporaryWorkspaceDirectory({
   final dir = Directory.current.createTempSync();
   addTearDown(() => dir.delete(recursive: true));
 
-  final config = configBuilder(dir.path).toJson();
+  final config =
+      (configBuilder(dir.path)..validatePhysicalWorkspace()).toJson();
 
   File(join(dir.path, 'melos.yaml')).writeAsStringSync(toYamlString(config));
 
@@ -82,8 +85,9 @@ Directory createTemporaryWorkspaceDirectory({
 
 Future<Directory> createProject(
   Directory workspace,
-  PubSpec partialPubSpec,
-) async {
+  PubSpec partialPubSpec, {
+  String? path,
+}) async {
   final pubSpec = partialPubSpec.environment != null
       ? partialPubSpec
       : partialPubSpec.copy(
@@ -98,11 +102,15 @@ Future<Directory> createProject(
   );
 
   final projectDirectory = Directory(
-    join(
+    joinAll([
       workspace.path,
-      'packages',
-      pubSpec.name,
-    ),
+      if (path != null)
+        path
+      else ...[
+        'packages',
+        pubSpec.name!,
+      ]
+    ]),
   );
 
   projectDirectory.createSync(recursive: true);
@@ -211,4 +219,108 @@ PubSpec pubSpecFromJsonFile({
   final filePath = '$path$fileName';
   final jsonAsString = File(filePath).readAsStringSync();
   return PubSpec.fromJson(json.decode(jsonAsString) as Map);
+}
+
+/// Builder to build a [MelosWorkspace] that is entirely virtual and only exists
+/// in memory.
+class VirtualWorkspaceBuilder {
+  VirtualWorkspaceBuilder(
+    this.melosYaml, {
+    this.path = '/workspace',
+    this.defaultPackagesPath = 'packages',
+    Logger? logger,
+  }) : logger = logger ?? TestLogger();
+
+  /// The contents of the melos.yaml file, to configure the workspace.
+  final String melosYaml;
+
+  /// The absolute path to the workspace.
+  final String path;
+
+  /// The path relative to the workspace root, where packages are located,
+  /// unless a path is provided in [addPackage].
+  final String defaultPackagesPath;
+
+  /// The logger to build the workspace with.
+  final Logger logger;
+
+  Map<String, Object?> get _defaultWorkspaceConfig => {
+        'name': 'virtual-workspace',
+        'packages': ['$defaultPackagesPath/**'],
+      };
+
+  final List<_VirtualPackage> _packages = [];
+
+  /// Adds a virtual package to the workspace.
+  ///
+  /// Use [path] to specify where this packages is located, relative to the
+  /// workspace root. Per default packages are located at
+  /// [defaultPackagesPath]/$PACKAGE_NAME$.
+  void addPackage(
+    String pubSpecYaml, {
+    String? path,
+  }) {
+    _packages.add(_VirtualPackage(pubSpecYaml, path: path));
+  }
+
+  /// Build the workspace based on the current configuration of this builder.
+  MelosWorkspace build() {
+    final config = MelosWorkspaceConfig.fromYaml(
+      {
+        ..._defaultWorkspaceConfig,
+        ...loadYaml(melosYaml) as Map<Object?, Object?>
+      },
+      path: path,
+    );
+
+    final packageMap = _buildVirtualPackageMap(_packages, logger);
+
+    return MelosWorkspace(
+      name: config.name,
+      path: config.path,
+      config: config,
+      allPackages: packageMap,
+      filteredPackages: packageMap,
+      logger: logger,
+    );
+  }
+
+  PackageMap _buildVirtualPackageMap(
+    List<_VirtualPackage> packages,
+    Logger logger,
+  ) {
+    final packageMap = <String, Package>{};
+
+    for (final package in packages) {
+      final pubSpec = PubSpec.fromYamlString(package.pubSpecYaml);
+      final name = pubSpec.name!;
+      final pathRelativeToWorkspace =
+          package.path ?? '$defaultPackagesPath/$name';
+      packageMap[name] = Package(
+        pubSpec: pubSpec,
+        name: name,
+        path: '$path/$pathRelativeToWorkspace',
+        version: pubSpec.version ?? Version.none,
+        publishTo: pubSpec.publishTo,
+        dependencies: pubSpec.dependencies.keys.toList(),
+        devDependencies: pubSpec.devDependencies.keys.toList(),
+        dependencyOverrides: pubSpec.dependencyOverrides.keys.toList(),
+        packageMap: packageMap,
+        pathRelativeToWorkspace: pathRelativeToWorkspace,
+      );
+    }
+
+    return PackageMap(packageMap, logger);
+  }
+}
+
+class _VirtualPackage {
+  _VirtualPackage(
+    this.pubSpecYaml, {
+    this.path,
+  });
+
+  final String pubSpecYaml;
+
+  final String? path;
 }

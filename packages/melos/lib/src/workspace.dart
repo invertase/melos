@@ -39,7 +39,7 @@ class IdeWorkspace {
 /// A representation of a workspace. This includes it's packages, configuration
 /// such as scripts and more.
 class MelosWorkspace {
-  MelosWorkspace._({
+  MelosWorkspace({
     required this.name,
     required this.path,
     required this.config,
@@ -63,7 +63,7 @@ class MelosWorkspace {
 
     final filteredPackages = await allPackages.applyFilter(filter);
 
-    return MelosWorkspace._(
+    return MelosWorkspace(
       name: workspaceConfig.name,
       path: workspaceConfig.path,
       config: workspaceConfig,

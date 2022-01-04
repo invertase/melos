@@ -47,6 +47,8 @@ mixin _PublishMixin on _ExecMixin {
       return;
     }
 
+    sortPackagesTopologically(unpublishedPackages);
+
     if (dryRun) {
       logger?.stdout(
         AnsiStyles.magentaBright.bold(

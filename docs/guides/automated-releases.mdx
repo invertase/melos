@@ -1,6 +1,6 @@
 ---
 title: Automated Releases
-description: Automate your workflow by versioning and publishing packages with Melos
+description: Automate your workflow by versioning and publishing packages with Melos and Conventional Commits.
 ---
 
 # Automated Releases
@@ -18,9 +18,12 @@ messages and detects exactly what sort of version upgrade is required.
 If an existing Git project is already established and does not use Conventional Commits, it is still
 possible to adopt the convention and use Melos for future releases.
 
+TODO how to adopt conventional commits with melos docs
+
 ## Versioning
 
-TODO:
+TODO docs on:
+
 - Scoping
 - Major/minor/patches
 - build versions
@@ -31,7 +34,7 @@ TODO:
 
 To publish packages on [pub.dev](https://pub.dev) you must:
 
-1. Have permission to publish all of the packages.
+1. Have permission to publish all the packages.
 2. Be on a machine which is authenticated with Pub (read: not possible to publish via CIs).
 
 > Internally, Melos uses `pub publish` to publish the packages.

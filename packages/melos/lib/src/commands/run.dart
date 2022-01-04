@@ -71,7 +71,10 @@ mixin _RunMixin on _Melos {
     if (script.filter != null) {
       final workspace = await MelosWorkspace.fromConfig(
         config,
-        filter: script.filter,
+        filter: script.filter!.copyWithUpdatedIgnore([
+          ...script.filter!.ignore,
+          ...config.ignore,
+        ]),
         logger: logger,
       );
 

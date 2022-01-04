@@ -163,7 +163,7 @@ mixin _BootstrapMixin on _CleanMixin {
     Package package,
   ) async {
     final pubGetArgs = ['pub', 'get'];
-    final execArgs = workspace.isFlutterWorkspace
+    final execArgs = package.isFlutterPackage
         ? ['flutter', ...pubGetArgs]
         : [if (utils.isPubSubcommand()) 'dart', ...pubGetArgs];
     final executable = currentPlatform.isWindows ? 'cmd' : '/bin/sh';
@@ -211,9 +211,8 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
         pluginTemporaryPath,
       );
 
-      if (package.dependenciesInWorkspace.containsKey(plugin.name) ||
-          package.devDependenciesInWorkspace.containsKey(plugin.name) ||
-          package.dependencyOverridesInWorkspace.containsKey(plugin.name)) {
+      if (package.allTransitiveDependenciesInWorkspace
+          .containsKey(plugin.name)) {
         pubspec = pubspec.copy(
           dependencyOverrides: {
             ...pubspec.dependencyOverrides,

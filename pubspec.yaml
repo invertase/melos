@@ -16,8 +16,6 @@ dev_dependencies:
 # will depend on, then make sure to add it here otherwise you'll face
 # "'pubspec.yaml' has been modified since".. issues.
 dependency_overrides:
-  ansi_styles:
-    path: ./packages/ansi_styles
   conventional_commit:
     path: ./packages/conventional_commit
   melos:

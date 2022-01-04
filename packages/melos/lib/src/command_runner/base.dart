@@ -146,7 +146,8 @@ abstract class MelosCommand extends Command<void> {
           .toList(),
       ignore: ignore
           .map((e) => createGlob(e, currentDirectoryPath: workingDirPath))
-          .toList(),
+          .toList()
+        ..addAll(config.ignore),
       updatedSince: since,
       includePrivatePackages: argResults![filterOptionPrivate] as bool?,
       published: argResults![filterOptionPublished] as bool?,
