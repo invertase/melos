@@ -1,3 +1,9 @@
+## 1.1.0
+
+ - **FEAT**: follow symlinks when resolving packages (#211). ([f8551924](https://github.com/invertase/melos/commit/f8551924b78d5c1f5ff9cd49cdc1c8ef1e78757f))
+ - **FEAT**: specifying a `Logger` is now optional when using Melos programmatically (#219). ([67dbfc5b](https://github.com/invertase/melos/commit/67dbfc5bbf6ffdc9bf230a7733b3389082f65091))
+ - **FEAT**: add repository host support for `GitLab` (#220). ([096d1713](https://github.com/invertase/melos/commit/096d1713ac964e5e8685bc9f115e174f4a57e7c5))
+
 ## 1.0.0
 
 - **FIX**: a dependent packages `dependentsInWorkspace` dependents should also be added to `dependentPackagesToVersion`. ([5e7e8c75](https://github.com/invertase/melos/commit/5e7e8c756d4d0bebf403056aa863b88c502b69c2))

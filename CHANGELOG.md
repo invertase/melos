@@ -3,6 +3,29 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2022-01-04
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+- There are no breaking changes in this release.
+
+Packages with other changes:
+
+- [`melos` - `v1.1.0`](#melos---v110)
+
+---
+
+#### `melos` - `v1.1.0`
+
+ - **FEAT**: follow symlinks when resolving packages (#211).
+ - **FEAT**: specifying a `Logger` is now optional when using Melos programmatically (#219).
+ - **FEAT**: add repository host support for `GitLab` (#220).
+
+
 ## 2021-12-17
 
 ### Changes
