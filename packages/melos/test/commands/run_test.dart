@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/glob.dart';
-import 'package:melos/src/common/utils.dart';
 import 'package:melos/src/scripts.dart';
 import 'package:path/path.dart';
 import 'package:pubspec/pubspec.dart';
@@ -58,27 +57,15 @@ void main() {
         logger.output,
         equalsIgnoringAnsii(
           '''
-melos run test_script
-   └> melos exec -- "echo hello"
-       └> RUNNING
-
-\$ melos exec
-   └> echo hello
-       └> RUNNING (in 1 packages)
-
-${'-' * terminalWidth}
-a:
+t-melos run test_script
+t-   └> melos exec -- "echo hello"
+t-       └> RUNNING
+t-
 hello
-a: SUCCESS
-${'-' * terminalWidth}
 
-\$ melos exec
-   └> echo hello
-       └> SUCCESS
-
-melos run test_script
-   └> melos exec -- "echo hello"
-       └> SUCCESS
+t-melos run test_script
+t-   └> melos exec -- "echo hello"
+t-       └> SUCCESS
 ''',
         ),
       );
