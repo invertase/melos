@@ -323,8 +323,14 @@ class PackageMap {
 
     final dartToolGlob =
         createGlob('**/.dart_tool/**', currentDirectoryPath: workspacePath);
+    // Flutter syminked plugins for iOS/macOS should not be included in the package list.
     final symlinksPluginsGlob = createGlob(
       '**/.symlinks/plugins/**',
+      currentDirectoryPath: workspacePath,
+    );
+    // Flutter version manager should not be included in the package list.
+    final fvmGlob = createGlob(
+      '**/.fvm/**',
       currentDirectoryPath: workspacePath,
     );
 
@@ -333,6 +339,7 @@ class PackageMap {
       final path = entity.path;
       if (entity is File &&
           basename(path) == 'pubspec.yaml' &&
+          !fvmGlob.matches(path) &&
           !dartToolGlob.matches(path) &&
           !symlinksPluginsGlob.matches(path) &&
           packages.any((glob) => glob.matches(path)) &&
