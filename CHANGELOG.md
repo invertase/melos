@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2022-01-07
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+- There are no breaking changes in this release.
+
+Packages with other changes:
+
+- [`melos` - `v1.1.1`](#melos---v111)
+
+---
+
+#### `melos` - `v1.1.1`
+
+ - **FIX**: ensure `.fvm` directories are excluded when resolving packages.
+ - **DOCS**: add Flame to projects using Melos (#221).
+
+
 ## 2022-01-04
 
 ### Changes

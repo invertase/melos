@@ -1,3 +1,8 @@
+## 1.1.1
+
+ - **FIX**: ensure `.fvm` directories are excluded when resolving packages. ([06bad5bf](https://github.com/invertase/melos/commit/06bad5bf764f6904ff24f3b51b23a9c5961de6dd))
+ - **DOCS**: add Flame to projects using Melos (#221). ([abc6b4d6](https://github.com/invertase/melos/commit/abc6b4d6adb114023e9c8415e8acb91fc82efd25))
+
 ## 1.1.0
 
  - **FEAT**: follow symlinks when resolving packages (#211). ([f8551924](https://github.com/invertase/melos/commit/f8551924b78d5c1f5ff9cd49cdc1c8ef1e78757f))
