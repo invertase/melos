@@ -66,6 +66,14 @@ void main() {
       expect(ConventionalCommit.tryParse('custom: new feature'), isNull);
     });
 
+    test('accepts commit messages with or without a space before description',
+        () {
+      expect(ConventionalCommit.tryParse('feat:new thing'), isNotNull);
+      expect(ConventionalCommit.tryParse('feat(foo):new thing'), isNotNull);
+      expect(ConventionalCommit.tryParse('feat: new thing'), isNotNull);
+      expect(ConventionalCommit.tryParse('feat(foo): new thing'), isNotNull);
+    });
+
     test('correctly handles messages with a `*` scope', () {
       final commit = ConventionalCommit.tryParse(commitMessageStarScope);
       expect(commit, isNotNull);
