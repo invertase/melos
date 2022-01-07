@@ -15,6 +15,33 @@ Packages with breaking changes:
 
 Packages with other changes:
 
+- [`conventional_commit` - `v0.4.2`](#conventional_commit---v042)
+
+Packages with dependency updates only:
+
+> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
+
+- `melos` - `v1.1.2`
+
+---
+
+#### `conventional_commit` - `v0.4.2`
+
+ - **FEAT**: relax commit message validation to accept commit messages without spaces before the description (after `:`).
+
+
+## 2022-01-07
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+- There are no breaking changes in this release.
+
+Packages with other changes:
+
 - [`melos` - `v1.1.1`](#melos---v111)
 
 ---

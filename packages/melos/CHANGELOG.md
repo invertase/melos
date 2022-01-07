@@ -1,3 +1,7 @@
+## 1.1.2
+
+ - Update a dependency to the latest release.
+
 ## 1.1.1
 
  - **FIX**: ensure `.fvm` directories are excluded when resolving packages. ([06bad5bf](https://github.com/invertase/melos/commit/06bad5bf764f6904ff24f3b51b23a9c5961de6dd))

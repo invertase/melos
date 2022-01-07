@@ -1,3 +1,7 @@
+## 0.4.2
+
+ - **FEAT**: relax commit message validation to accept commit messages without spaces before the description (after `:`). ([ddf7fb11](https://github.com/invertase/melos/commit/ddf7fb1114926f4b27a1913c5987ffba66c79686))
+
 ## 0.4.1
 
  - Graduate package to a stable release. See pre-releases prior to this version for changelog entries.
