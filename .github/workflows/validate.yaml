@@ -15,7 +15,10 @@ jobs:
       - name: "Install Tools"
         run: ./.github/workflows/scripts/install-tools.sh
       - name: "Analyze"
-        run: melos run analyze --no-select
+        uses: invertase/github-action-dart-analyzer@v1
+        with:
+          fatal-infos: true
+          fatal-warnings: true
 
   format:
     runs-on: ubuntu-latest
