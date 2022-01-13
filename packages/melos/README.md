@@ -101,6 +101,7 @@ The following projects are using Melos:
 - [ema987/paddinger](https://github.com/ema987/paddinger)
 - [flutter-stripe/flutter_stripe](https://github.com/flutter-stripe/flutter_stripe)
 - [danvick/flutter_form_builder](https://github.com/danvick/flutter_form_builder)
+- [kmartins/groveman](https://github.com/kmartins/groveman)
 
 > Submit a PR if you'd like to add your project to the list.
 > Update the [README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md) and the
