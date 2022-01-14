@@ -322,26 +322,31 @@ class PackageMap {
     final packageMap = <String, Package>{};
 
     final dartToolGlob =
-        createGlob('**/.dart_tool/**', currentDirectoryPath: workspacePath);
+        createGlob('**/.dart_tool', currentDirectoryPath: workspacePath);
     // Flutter syminked plugins for iOS/macOS should not be included in the package list.
     final symlinksPluginsGlob = createGlob(
-      '**/.symlinks/plugins/**',
+      '**/.symlinks/plugins',
       currentDirectoryPath: workspacePath,
     );
     // Flutter version manager should not be included in the package list.
     final fvmGlob = createGlob(
-      '**/.fvm/**',
+      '**/.fvm',
       currentDirectoryPath: workspacePath,
     );
 
     final pubspecsByResolvedPath = <String, File>{};
-    await for (final entity in Directory(workspacePath).list(recursive: true)) {
+    await for (final entity
+        in Directory(workspacePath).listConditionallyRecursive(
+      recurseCondition: (dir) {
+        final path = dir.path;
+        return !dartToolGlob.matches(path) &&
+            !symlinksPluginsGlob.matches(path) &&
+            !fvmGlob.matches(path);
+      },
+    )) {
       final path = entity.path;
       if (entity is File &&
           basename(path) == 'pubspec.yaml' &&
-          !fvmGlob.matches(path) &&
-          !dartToolGlob.matches(path) &&
-          !symlinksPluginsGlob.matches(path) &&
           packages.any((glob) => glob.matches(path)) &&
           !ignore.any((glob) => glob.matches(path))) {
         final resolvedPath = await entity.resolveSymbolicLinks();
