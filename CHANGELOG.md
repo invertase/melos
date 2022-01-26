@@ -3,6 +3,29 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2022-01-26
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+- There are no breaking changes in this release.
+
+Packages with other changes:
+
+- [`melos` - `v1.2.0`](#melos---v120)
+
+---
+
+#### `melos` - `v1.2.0`
+
+ - **FIX**: Issue where symlinks are followed too deeply causing a "File name too long" exception (#227).
+ - **FEAT**: allow passing additional arguments to run commands (#231).
+ - **DOCS**: add groveman as a project using melos (#225).
+
+
 ## 2022-01-07
 
 ### Changes

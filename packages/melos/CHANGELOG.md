@@ -1,3 +1,9 @@
+## 1.2.0
+
+ - **FIX**: Issue where symlinks are followed too deeply causing a "File name too long" exception (#227). ([80332f32](https://github.com/invertase/melos/commit/80332f322421e586c66badda5b2b5aaf5006dc0a))
+ - **FEAT**: allow passing additional arguments to run commands (#231). ([cbae75c7](https://github.com/invertase/melos/commit/cbae75c762b4cff55f47c002800119218d827f76))
+ - **DOCS**: add groveman as a project using melos (#225). ([4bff84ff](https://github.com/invertase/melos/commit/4bff84ffc83387ba9ed43ce786af179e234c7188))
+
 ## 1.1.2
 
  - Update a dependency to the latest release.
