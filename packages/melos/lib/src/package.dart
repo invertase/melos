@@ -333,6 +333,11 @@ class PackageMap {
       '**/.fvm',
       currentDirectoryPath: workspacePath,
     );
+    // Ephemeral plugin symlinked packages should not be included in the package list.
+    final pluginSymlinksGlob = createGlob(
+      '**/.plugin_symlinks',
+      currentDirectoryPath: workspacePath,
+    );
 
     final pubspecsByResolvedPath = <String, File>{};
     await for (final entity
@@ -341,7 +346,8 @@ class PackageMap {
         final path = dir.path;
         return !dartToolGlob.matches(path) &&
             !symlinksPluginsGlob.matches(path) &&
-            !fvmGlob.matches(path);
+            !fvmGlob.matches(path) &&
+            !pluginSymlinksGlob.matches(path);
       },
     )) {
       final path = entity.path;
