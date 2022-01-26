@@ -47,11 +47,14 @@ class RunCommand extends MelosCommand {
 
     final noSelect = argResults!['no-select'] as bool;
     final scriptName = argResults!.rest.isEmpty ? null : argResults!.rest.first;
+    final extraArgs =
+        scriptName != null ? argResults!.rest.skip(1).toList() : <String>[];
 
     try {
       return await melos.run(
         scriptName: scriptName,
         noSelect: noSelect,
+        extraArgs: extraArgs,
       );
     } on NoPackageFoundScriptException catch (err) {
       logger?.stderr(AnsiStyles.yellow(err.toString()));
