@@ -5,6 +5,7 @@ mixin _RunMixin on _Melos {
   Future<void> run({
     String? scriptName,
     bool noSelect = false,
+    List<String> extraArgs = const [],
   }) async {
     if (config.scripts.keys.isEmpty) throw NoScriptException._();
 
@@ -18,7 +19,12 @@ mixin _RunMixin on _Melos {
       );
     }
 
-    final exitCode = await _runScript(script, config, noSelect: noSelect);
+    final exitCode = await _runScript(
+      script,
+      config,
+      noSelect: noSelect,
+      extraArgs: extraArgs,
+    );
 
     logger?.stdout('');
     logger?.stdout(AnsiStyles.yellow.bold('melos run ${script.name}'));
@@ -62,6 +68,7 @@ mixin _RunMixin on _Melos {
     Script script,
     MelosWorkspaceConfig config, {
     required bool noSelect,
+    List<String> extraArgs = const [],
   }) async {
     final environment = {
       'MELOS_ROOT_PATH': config.path,
@@ -141,7 +148,7 @@ mixin _RunMixin on _Melos {
     logger?.stdout('       └> ${AnsiStyles.yellow.bold('RUNNING')}\n');
 
     return startProcess(
-      scriptParts,
+      scriptParts..addAll(extraArgs),
       logger: logger,
       environment: environment,
       workingDirectory: config.path,
