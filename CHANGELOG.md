@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2022-02-04
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+- There are no breaking changes in this release.
+
+Packages with other changes:
+
+- [`melos` - `v1.2.1`](#melos---v121)
+
+---
+
+#### `melos` - `v1.2.1`
+
+ - **FIX**: bump `platform` dependency to to 3.1.0 to support latest Flutter/Dart versions (#237).
+
+
 ## 2022-01-26
 
 ### Changes

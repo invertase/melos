@@ -1,3 +1,7 @@
+## 1.2.1
+
+ - **FIX**: bump `platform` dependency to to 3.1.0 to support latest Flutter/Dart versions (#237). ([2b74f6eb](https://github.com/invertase/melos/commit/2b74f6ebe1852d36b65cfe0e4a8e8d6cd78fe939))
+
 ## 1.2.0
 
  - **FIX**: Issue where symlinks are followed too deeply causing a "File name too long" exception (#227). ([80332f32](https://github.com/invertase/melos/commit/80332f322421e586c66badda5b2b5aaf5006dc0a))
