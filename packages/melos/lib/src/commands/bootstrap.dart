@@ -38,7 +38,12 @@ mixin _BootstrapMixin on _CleanMixin {
           }
         } catch (err) {
           if (err is BootstrapException) {
-            await _logPubGetFailed(err.package, err.process, workspace);
+            await _logPubGetFailed(
+              err.package,
+              err.stdout,
+              err.stderr,
+              workspace,
+            );
           }
           cleanWorkspace(workspace);
           rethrow;
@@ -72,17 +77,12 @@ mixin _BootstrapMixin on _CleanMixin {
 
   Future<void> _logPubGetFailed(
     Package package,
-    Process process,
+    String stdout,
+    String stderr,
     MelosWorkspace workspace,
   ) async {
-    var processStdOutString = utf8.decoder.convert(
-      await process.stdout
-          .reduce((previous, element) => [...previous, ...element]),
-    );
-    var processStdErrString = utf8.decoder.convert(
-      await process.stderr
-          .reduce((previous, element) => [...previous, ...element]),
-    );
+    var processStdOutString = stdout;
+    var processStdErrString = stderr;
 
     processStdOutString = processStdOutString
         .split('\n')
@@ -142,17 +142,18 @@ mixin _BootstrapMixin on _CleanMixin {
     for (final package in workspace.filteredPackages.values) {
       final pubGet = await _runPubGetForPackage(workspace, package);
 
-      // TODO This is a hack. Windows will not exit unless we do this.
-      if (currentPlatform.isWindows) {
-        pubGet.process.stdout.listen((testing) {
-          // Do nothing
-        });
-      }
+      // We always fully consume stdout and stderr. This is required to prevent
+      // leaking resources and to ensure that the process exits. We
+      // need stdout and stderr in case of an error. Otherwise, we don't care
+      // about the output, don't wait for it to finish and don't handle errors.
+      // We just make sure the output streams are drained.
+      final stdout = utf8.decodeStream(pubGet.process.stdout);
+      final stderr = utf8.decodeStream(pubGet.process.stderr);
 
       final exitCode = await pubGet.process.exitCode;
 
       if (exitCode != 0) {
-        throw BootstrapException._(package, pubGet.process);
+        throw BootstrapException._(package, await stdout, await stderr);
       }
       yield package;
     }
@@ -292,11 +293,12 @@ class _PubGet {
 
 /// An exception for when `pub get` for a package failed.
 class BootstrapException implements MelosException {
-  BootstrapException._(this.package, this.process);
+  BootstrapException._(this.package, this.stdout, this.stderr);
 
   /// The package that failed
   final Package package;
-  final Process process;
+  final String stdout;
+  final String stderr;
 
   @override
   String toString() {
