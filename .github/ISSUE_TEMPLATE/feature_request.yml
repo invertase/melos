@@ -21,12 +21,12 @@ body:
 
   - type: input
     validations:
-      required: true
+      required: false
     id: command
     attributes:
       label: Command
       description: |
-        What command would you like to see in Melos?
+        What command (if any) would you like to see in Melos?
       placeholder: "melos new_feature"
 
   - type: textarea
