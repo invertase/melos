@@ -23,7 +23,7 @@ dependencies:
   meta: ^1.1.8
   mustache_template: ^2.0.0
   path: ^1.7.0
-  platform: ^3.0.0
+  platform: ^3.1.0
   pool: ^1.4.0
   pub_semver: ^2.0.0
   pubspec: ^2.0.1
