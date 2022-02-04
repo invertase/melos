@@ -72,7 +72,8 @@ Directory createTemporaryWorkspaceDirectory({
 }) {
   configBuilder ??= (path) => MelosWorkspaceConfig.fallback(path: path);
 
-  final dir = Directory.current.createTempSync();
+  final dir =
+      Directory(join(Directory.current.path, '.dart_tool')).createTempSync();
   addTearDown(() => dir.delete(recursive: true));
 
   final config =
