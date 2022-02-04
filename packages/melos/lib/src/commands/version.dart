@@ -786,5 +786,6 @@ extension on DependencyReference {
     } else if (self is ExternalHostedReference) {
       return self.versionConstraint;
     }
+    return null;
   }
 }
