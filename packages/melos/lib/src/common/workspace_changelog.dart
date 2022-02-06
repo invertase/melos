@@ -58,12 +58,14 @@ class WorkspaceChangelog {
         .where((update) => update.reason == PackageUpdateReason.graduate);
     final packagesWithBreakingChanges = pendingPackageUpdates.where(
       (update) =>
-          update.reason == PackageUpdateReason.commit &&
+          (update.reason == PackageUpdateReason.commit ||
+              update.reason == PackageUpdateReason.manual) &&
           update.semverReleaseType == SemverReleaseType.major,
     );
     final packagesWithOtherChanges = pendingPackageUpdates.where(
       (update) =>
-          update.reason == PackageUpdateReason.commit &&
+          (update.reason == PackageUpdateReason.commit ||
+              update.reason == PackageUpdateReason.manual) &&
           update.semverReleaseType != SemverReleaseType.major,
     );
 

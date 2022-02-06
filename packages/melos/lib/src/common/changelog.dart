@@ -23,6 +23,7 @@ import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 import '../package.dart';
+import 'git_commit.dart';
 import 'pending_package_update.dart';
 
 class Changelog {
@@ -92,74 +93,114 @@ class MelosChangelog extends Changelog {
 
   @override
   String get markdown {
-    var body = '';
-    var entries = <String>[];
-    var header = '## ${update.nextVersion}';
+    final entry = StringBuffer();
+
+    // Changelog entry header.
+    entry.write('## ');
+    entry.writeln(update.nextVersion);
+    entry.writeln();
 
     if (update.reason == PackageUpdateReason.dependency) {
-      entries = ['Update a dependency to the latest release.'];
+      // Dependency change entry.
+      entry.writeln('- Update a dependency to the latest release.');
+      entry.writeln();
     }
 
     if (update.reason == PackageUpdateReason.graduate) {
-      entries = [
-        'Graduate package to a stable release. See pre-releases prior to this version for changelog entries.'
-      ];
+      // Package graduation entry.
+      entry.writeln(
+        '- Graduate package to a stable release. See pre-releases prior to '
+        'this version for changelog entries.',
+      );
+      entry.writeln();
     }
 
-    if (update.reason == PackageUpdateReason.commit) {
+    if (update.reason == PackageUpdateReason.commit ||
+        update.reason == PackageUpdateReason.manual) {
+      // Breaking change note.
       if (update.semverReleaseType == SemverReleaseType.major) {
-        header += '\n\n> Note: This release has breaking changes.';
+        entry.writeln('> Note: This release has breaking changes.');
+        entry.writeln();
       }
 
-      final commits = update.commits
-          .where(
-            (commit) =>
-                !commit.parsedMessage.isMergeCommit &&
-                commit.parsedMessage.isVersionableCommit,
-          )
-          .toList();
+      // User provided changelog entry message.
+      if (update.userChangelogMessage != null) {
+        entry.writeln(update.userChangelogMessage);
+        entry.writeln();
+      }
 
-      // Sort so that Breaking Changes appear at the top.
-      commits.sort((a, b) {
-        final r = a.parsedMessage.isBreakingChange
-            .toString()
-            .compareTo(b.parsedMessage.isBreakingChange.toString());
-        if (r != 0) return r;
-        return b.parsedMessage.type!.compareTo(a.parsedMessage.type!);
-      });
+      // Entires for commits included in new version.
+      final commits = _filteredAndSortedCommits();
+      if (commits.isNotEmpty) {
+        for (final commit in commits) {
+          final parsedMessage = commit.parsedMessage;
 
-      entries = commits.map((commit) {
-        final parsedMessage = commit.parsedMessage;
-        String entry;
-        if (parsedMessage.isMergeCommit) {
-          entry = parsedMessage.header;
-        } else {
-          entry =
-              '**${parsedMessage.type!.toUpperCase()}**: ${parsedMessage.description}';
+          entry.write('- ');
+
+          if (parsedMessage.isBreakingChange) {
+            entry.writeBold('BREAKING');
+            entry.write(' ');
+          }
+
+          if (parsedMessage.isMergeCommit) {
+            entry.writePunctuated(parsedMessage.header);
+          } else {
+            entry.writeBold(parsedMessage.type!.toUpperCase());
+            entry.write(': ');
+            entry.writePunctuated(parsedMessage.description!);
+          }
+
+          if (update.workspace.config.commands.version.linkToCommits ?? false) {
+            final shortCommitId = commit.id.substring(0, 8);
+            final commitUrl =
+                update.workspace.config.repository!.commitUrl(commit.id);
+            entry.write(' ([$shortCommitId]($commitUrl))');
+          }
+
+          entry.writeln();
         }
-
-        final shouldPunctuate = !entry.contains(RegExp(r'[\.\?\!]$'));
-        if (shouldPunctuate) {
-          entry = '$entry.';
-        }
-
-        if (update.workspace.config.commands.version.linkToCommits ?? false) {
-          final shortCommitId = commit.id.substring(0, 8);
-          final commitUrl =
-              update.workspace.config.repository!.commitUrl(commit.id);
-          entry = '$entry ([$shortCommitId]($commitUrl))';
-        }
-
-        if (parsedMessage.isBreakingChange) {
-          entry = '**BREAKING** $entry';
-        }
-
-        return entry;
-      }).toList();
+        entry.writeln();
+      }
     }
 
-    body = entries.join('\n - ');
+    return entry.toString();
+  }
 
-    return '$header\n\n - $body\n\n';
+  List<RichGitCommit> _filteredAndSortedCommits() {
+    final commits = update.commits
+        .where(
+          (commit) =>
+              !commit.parsedMessage.isMergeCommit &&
+              commit.parsedMessage.isVersionableCommit,
+        )
+        .toList();
+
+    // Sort so that Breaking Changes appear at the top.
+    commits.sort((a, b) {
+      final r = a.parsedMessage.isBreakingChange
+          .toString()
+          .compareTo(b.parsedMessage.isBreakingChange.toString());
+      if (r != 0) return r;
+      return b.parsedMessage.type!.compareTo(a.parsedMessage.type!);
+    });
+
+    return commits;
+  }
+}
+
+extension on StringBuffer {
+  void writeBold(String string) {
+    write('**');
+    write(string);
+    write('**');
+  }
+
+  void writePunctuated(String string) {
+    write(string);
+
+    final shouldPunctuate = !string.contains(RegExp(r'[\.\?\!]$'));
+    if (shouldPunctuate) {
+      write('.');
+    }
   }
 }

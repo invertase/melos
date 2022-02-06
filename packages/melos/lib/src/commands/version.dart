@@ -16,6 +16,7 @@ mixin _VersionMixin on _RunMixin {
     bool showPrivatePackages = false,
     String? preid,
     bool versionPrivatePackages = false,
+    Map<String, Version> manualVersions = const {},
   }) async {
     if (asPrerelease && asStableRelease) {
       throw ArgumentError('Cannot use both asPrerelease and asStableRelease.');
@@ -24,6 +25,12 @@ mixin _VersionMixin on _RunMixin {
     if (updateDependentsVersions && !updateDependentsConstraints) {
       throw ArgumentError(
         'Cannot use updateDependentsVersions without updateDependentsConstraints.',
+      );
+    }
+
+    if ((asPrerelease || asStableRelease) && manualVersions.isNotEmpty) {
+      throw ArgumentError(
+        'Cannot use manualVersions with asPrerelease or asStableRelease.',
       );
     }
 
@@ -56,15 +63,6 @@ mixin _VersionMixin on _RunMixin {
 
     final commitMessageTemplate = Template(message, delimiters: '{ }');
 
-    final packagesToVersion = <Package>{};
-    final dependentPackagesToVersion = <Package>{};
-    var pendingPackageUpdates = <MelosPendingPackageUpdate>[];
-
-    if (workspace.config.scripts.containsKey('preversion')) {
-      logger?.stdout('Running "preversion" lifecycle script...\n');
-      await run(scriptName: 'preversion');
-    }
-
     final packageCommits = await _getPackageCommits(
       workspace,
       versionPrivatePackages: versionPrivatePackages,
@@ -73,6 +71,31 @@ mixin _VersionMixin on _RunMixin {
 
     final packagesWithVersionableCommits =
         _getPackagesWithVersionableCommits(packageCommits);
+
+    final packagesToManuallyVersion = manualVersions.keys.map((packageName) {
+      final package = workspace.allPackages[packageName];
+      if (package == null) {
+        throw PackageNotFoundException(packageName);
+      }
+      return package;
+    }).toSet();
+    final packagesToAutoVersion = {
+      for (final package in workspace.filteredPackages.values)
+        if (!packagesToManuallyVersion.contains(package))
+          if (packagesWithVersionableCommits.contains(package.name))
+            if (!asStableRelease || !package.version.isPreRelease) package
+    };
+    final packagesToVersion = {
+      ...packagesToManuallyVersion,
+      ...packagesToAutoVersion,
+    };
+    final dependentPackagesToVersion = <Package>{};
+    final pendingPackageUpdates = <MelosPendingPackageUpdate>[];
+
+    if (workspace.config.scripts.containsKey('preversion')) {
+      logger?.stdout('Running "preversion" lifecycle script...\n');
+      await run(scriptName: 'preversion');
+    }
 
     if (asStableRelease) {
       for (final package in workspace.filteredPackages.values) {
@@ -97,33 +120,77 @@ mixin _VersionMixin on _RunMixin {
       }
     }
 
-    for (final package in workspace.filteredPackages.values) {
-      if (packagesWithVersionableCommits.contains(package.name)) {
-        if (asStableRelease && package.version.isPreRelease) continue;
+    for (final package in packagesToVersion) {
+      final packageUnscoped = workspace.allPackages[package.name]!;
+      dependentPackagesToVersion
+          .addAll(packageUnscoped.dependentsInWorkspace.values);
 
-        packagesToVersion.add(package);
-
-        final packageUnscoped = workspace.allPackages[package.name]!;
-        dependentPackagesToVersion
-            .addAll(packageUnscoped.dependentsInWorkspace.values);
-
-        // Add dependentsInWorkspace dependents in the workspace until no more are added.
-        var packagesAdded = 1;
-        while (packagesAdded != 0) {
-          final packagesCountBefore = dependentPackagesToVersion.length;
-          final packages = <Package>{...dependentPackagesToVersion};
-          for (final dependentPackage in packages) {
-            dependentPackagesToVersion
-                .addAll(dependentPackage.dependentsInWorkspace.values);
-          }
-          packagesAdded =
-              dependentPackagesToVersion.length - packagesCountBefore;
+      // Add dependentsInWorkspace dependents in the workspace until no more are added.
+      var packagesAdded = 1;
+      while (packagesAdded != 0) {
+        final packagesCountBefore = dependentPackagesToVersion.length;
+        final packages = <Package>{...dependentPackagesToVersion};
+        for (final dependentPackage in packages) {
+          dependentPackagesToVersion
+              .addAll(dependentPackage.dependentsInWorkspace.values);
         }
+        packagesAdded = dependentPackagesToVersion.length - packagesCountBefore;
       }
     }
 
     pendingPackageUpdates.addAll(
-      packagesToVersion.map(
+      packagesToManuallyVersion.map(
+        (package) {
+          final name = package.name;
+          final version = manualVersions[name];
+          final commits = packageCommits[name] ?? [];
+
+          String? userChangelogMessage;
+          if (updateChangelog) {
+            final bool promptForMessage;
+            String? defaultUserChangelogMessage;
+
+            if (commits.isEmpty) {
+              logger?.stdout(
+                'Could not find any commits for manually versioned package '
+                '"$name".',
+              );
+
+              promptForMessage = true;
+              defaultUserChangelogMessage = 'Bump "$name" to `$version`.';
+            } else {
+              logger?.stdout(
+                'Found commits for manually versioned package "$name".',
+              );
+
+              promptForMessage = promptBool(
+                message: 'Do you want to provide an additional changelog entry '
+                    'message?',
+              );
+            }
+
+            if (promptForMessage) {
+              userChangelogMessage = promptInput(
+                'Provide a changelog entry message',
+                defaultsTo: defaultUserChangelogMessage,
+              );
+            }
+          }
+
+          return MelosPendingPackageUpdate.manual(
+            workspace,
+            package,
+            commits,
+            version,
+            userChangelogMessage: userChangelogMessage,
+            logger: logger,
+          );
+        },
+      ),
+    );
+
+    pendingPackageUpdates.addAll(
+      packagesToAutoVersion.map(
         (package) => MelosPendingPackageUpdate(
           workspace,
           package,
@@ -166,9 +233,7 @@ mixin _VersionMixin on _RunMixin {
 
     // Filter out private packages.
     if (!versionPrivatePackages) {
-      pendingPackageUpdates = pendingPackageUpdates
-          .where((update) => !update.package.isPrivate)
-          .toList();
+      pendingPackageUpdates.removeWhere((update) => update.package.isPrivate);
     }
 
     if (pendingPackageUpdates.isEmpty) {
@@ -523,6 +588,8 @@ Hint: try running "melos version --all" to include private packages.
               AnsiStyles.italic(
                 (() {
                   switch (pendingUpdate.reason) {
+                    case PackageUpdateReason.manual:
+                      return 'manual versioning';
                     case PackageUpdateReason.commit:
                       final semverType =
                           pendingUpdate.semverReleaseType.toString().substring(

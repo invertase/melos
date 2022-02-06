@@ -116,6 +116,14 @@ class VersionCommand extends MelosCommand {
           'result in a version in the format "1.0.0-1.0.nullsafety.0". '
           'Applies only to Conventional Commits based versioning.',
     );
+    argParser.addMultiOption(
+      'version',
+      abbr: 'V',
+      help: 'Manually specify a version for a package. Can be used multiple '
+          'times. Each value must be in the format "package:version". '
+          'Applies only to Conventional Commits based versioning. Cannot be '
+          'combined with --graduate or --prerelease flag.',
+    );
   }
 
   @override
@@ -188,6 +196,19 @@ class VersionCommand extends MelosCommand {
       final force = argResults!['yes'] as bool;
       final versionPrivatePackages = argResults!['all'] as bool;
       final preid = argResults!['preid'] as String?;
+      final manualVersionArgs = argResults!['version'] as List<String>;
+      final manualVersions = Map.fromEntries(
+        manualVersionArgs.map((arg) {
+          final parts = arg.split(':');
+          if (parts.length != 2) {
+            throw ArgumentError(
+              'manual-version must be in the format "package:version".',
+            );
+          }
+
+          return MapEntry(parts[0], Version.parse(parts[1]));
+        }),
+      );
 
       if (asPrerelease && asStableRelease) {
         logger?.stdout(
@@ -218,6 +239,7 @@ class VersionCommand extends MelosCommand {
         asStableRelease: asStableRelease,
         message: commitMessage,
         versionPrivatePackages: versionPrivatePackages,
+        manualVersions: manualVersions,
       );
     }
   }
