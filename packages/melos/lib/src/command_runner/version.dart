@@ -202,7 +202,7 @@ class VersionCommand extends MelosCommand {
           final parts = arg.split(':');
           if (parts.length != 2) {
             throw ArgumentError(
-              'manual-version must be in the format "package:version".',
+              '`version` arguments must be in the format "package:version".',
             );
           }
 
