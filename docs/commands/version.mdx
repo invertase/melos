@@ -109,11 +109,11 @@ chore(release): publish packages
 melos version --message="chore(release): publish new versions"
 ```
 
-## --version (-V)
+## --manual-version (-V)
 
 Manually specify a version for a package. Can be used multiple times. Each value must be in the format "package:version". Applies only to Conventional Commits based versioning. Cannot be combined with --graduate or --prerelease flag.
 
 ```bash
-melos version --version=foo:1.0.0
+melos version --manual-version=foo:1.0.0
 melos version -V=foo:1.0.0
 ```

@@ -117,7 +117,7 @@ class VersionCommand extends MelosCommand {
           'Applies only to Conventional Commits based versioning.',
     );
     argParser.addMultiOption(
-      'version',
+      'manual-version',
       abbr: 'V',
       help: 'Manually specify a version for a package. Can be used multiple '
           'times. Each value must be in the format "package:version". '
@@ -196,13 +196,14 @@ class VersionCommand extends MelosCommand {
       final force = argResults!['yes'] as bool;
       final versionPrivatePackages = argResults!['all'] as bool;
       final preid = argResults!['preid'] as String?;
-      final manualVersionArgs = argResults!['version'] as List<String>;
+      final manualVersionArgs = argResults!['manual-version'] as List<String>;
       final manualVersions = Map.fromEntries(
         manualVersionArgs.map((arg) {
           final parts = arg.split(':');
           if (parts.length != 2) {
             throw ArgumentError(
-              '`--version` arguments must be in the format "package:version".',
+              '--manual-version arguments must be in the format '
+              '"package:version".',
             );
           }
 
