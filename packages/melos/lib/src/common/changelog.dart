@@ -18,7 +18,6 @@
 import 'dart:io';
 
 import 'package:cli_util/cli_logging.dart';
-import 'package:conventional_commit/conventional_commit.dart';
 import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
 
@@ -118,7 +117,7 @@ class MelosChangelog extends Changelog {
     if (update.reason == PackageUpdateReason.commit ||
         update.reason == PackageUpdateReason.manual) {
       // Breaking change note.
-      if (update.semverReleaseType == SemverReleaseType.major) {
+      if (update.hasBreakingChanges) {
         entry.writeln('> Note: This release has breaking changes.');
         entry.writeln();
       }

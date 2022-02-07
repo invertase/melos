@@ -592,8 +592,8 @@ Hint: try running "melos version --all" to include private packages.
                       return 'manual versioning';
                     case PackageUpdateReason.commit:
                       final semverType =
-                          pendingUpdate.semverReleaseType.toString().substring(
-                                pendingUpdate.semverReleaseType
+                          pendingUpdate.semverReleaseType!.toString().substring(
+                                pendingUpdate.semverReleaseType!
                                         .toString()
                                         .indexOf('.') +
                                     1,

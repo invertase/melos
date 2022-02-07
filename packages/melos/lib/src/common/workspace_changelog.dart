@@ -56,18 +56,10 @@ class WorkspaceChangelog {
         .where((update) => update.reason == PackageUpdateReason.dependency);
     final graduatedPackages = pendingPackageUpdates
         .where((update) => update.reason == PackageUpdateReason.graduate);
-    final packagesWithBreakingChanges = pendingPackageUpdates.where(
-      (update) =>
-          (update.reason == PackageUpdateReason.commit ||
-              update.reason == PackageUpdateReason.manual) &&
-          update.semverReleaseType == SemverReleaseType.major,
-    );
-    final packagesWithOtherChanges = pendingPackageUpdates.where(
-      (update) =>
-          (update.reason == PackageUpdateReason.commit ||
-              update.reason == PackageUpdateReason.manual) &&
-          update.semverReleaseType != SemverReleaseType.major,
-    );
+    final packagesWithBreakingChanges =
+        pendingPackageUpdates.where((update) => update.hasBreakingChanges);
+    final packagesWithOtherChanges =
+        pendingPackageUpdates.where((update) => !update.hasBreakingChanges);
 
     body.writeln(_changelogFileHeader);
     body.writeln('## $title');

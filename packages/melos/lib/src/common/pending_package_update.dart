@@ -117,7 +117,7 @@ class MelosPendingPackageUpdate {
     return manualVersion ??
         versioning.nextVersion(
           currentVersion,
-          semverReleaseType,
+          semverReleaseType!,
           graduate: graduate,
           preid: preid,
           prerelease: prerelease,
@@ -125,7 +125,13 @@ class MelosPendingPackageUpdate {
   }
 
   /// Taking into account all the commits in this update, what is the highest [SemverReleaseType].
-  SemverReleaseType get semverReleaseType {
+  ///
+  /// Is `null` for manually versioned packages.
+  SemverReleaseType? get semverReleaseType {
+    if (reason == PackageUpdateReason.manual) {
+      return null;
+    }
+
     if (reason == PackageUpdateReason.dependency) {
       // Version bumps for dependencies should be patches.
       // If the dependencies had breaking changes then this package should have had commits to update it separately.
@@ -142,19 +148,19 @@ class MelosPendingPackageUpdate {
       return SemverReleaseType.major;
     }
 
-    if (reason == PackageUpdateReason.manual && commits.isEmpty) {
-      // Users are allowed to specify a version manually, possibly without there
-      // being any commits since the last version bump.
-      // We don't compare the current and next version to find a
-      // SemverReleaseType because the user might not strictly adhere to the
-      // Semver rules.
-      return SemverReleaseType.patch;
-    }
-
     return SemverReleaseType.values[commits
         .map((e) => e.parsedMessage.semverReleaseType.index)
         .toList()
         .reduce(math.max)];
+  }
+
+  /// Whether this update contains breaking changes.
+  bool get hasBreakingChanges {
+    if (reason == PackageUpdateReason.manual) {
+      return commits.any((commit) => commit.parsedMessage.isBreakingChange);
+    }
+
+    return semverReleaseType == SemverReleaseType.major;
   }
 
   @override
