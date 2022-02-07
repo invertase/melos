@@ -18,9 +18,11 @@
 import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
+import 'package:glob/glob.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 import '../commands/runner.dart';
+import '../package.dart';
 import '../workspace_configs.dart';
 import 'base.dart';
 
@@ -82,8 +84,7 @@ class VersionCommand extends MelosCommand {
       defaultsTo: true,
       help:
           'By default, melos version will commit changes to pubspec.yaml files '
-          'and tag the release. Pass --no-git-tag-version to disable the behavior. '
-          'Applies only to Conventional Commits based versioning.',
+          'and tag the release. Pass --no-git-tag-version to disable the behavior.',
     );
     argParser.addOption(
       'message',
@@ -121,8 +122,7 @@ class VersionCommand extends MelosCommand {
       abbr: 'V',
       help: 'Manually specify a version for a package. Can be used multiple '
           'times. Each value must be in the format "package:version". '
-          'Applies only to Conventional Commits based versioning. Cannot be '
-          'combined with --graduate or --prerelease flag.',
+          'Cannot be combined with --graduate or --prerelease flag.',
     );
   }
 
@@ -149,6 +149,8 @@ class VersionCommand extends MelosCommand {
         argResults!['dependent-constraints'] as bool;
     final tag = argResults!['git-tag-version'] as bool;
     final changelog = argResults!['changelog'] as bool;
+    final commitMessage =
+        (argResults!['message'] as String?)?.replaceAll(r'\n', '\n');
 
     if (argResults!.rest.isNotEmpty) {
       if (argResults!.rest.length != 2) {
@@ -162,54 +164,35 @@ class VersionCommand extends MelosCommand {
       }
 
       final packageName = argResults!.rest[0];
-
-      Version version;
-      try {
-        version = Version.parse(argResults!.rest[1]);
-      } catch (_) {
-        exitCode = 1;
-        logger?.stdout(
-          '${AnsiStyles.redBright('ERROR:')} version "${argResults!.rest[1]}" is not a valid package version.',
-        );
+      final version = _parseVersion(argResults!.rest[1]);
+      if (version == null) {
         return;
       }
 
       return melos.version(
-        packageName: packageName,
-        newVersion: version,
+        // We only want to version the specified package and not all packages
+        // that could be versioned.
+        filter: PackageFilter(ignore: [Glob('**')]),
+        manualVersions: {packageName: version},
         force: force,
         gitTag: tag,
         updateChangelog: changelog,
         updateDependentsConstraints: updateDependentsConstraints,
+        updateDependentsVersions: false,
+        message: commitMessage,
       );
     } else {
-      final commitMessage =
-          (argResults!['message'] as String?)?.replaceAll(r'\n', '\n');
-
-      final changelog = argResults!['changelog'] as bool;
       var asStableRelease = argResults!['graduate'] as bool;
-      final tag = argResults!['git-tag-version'] as bool;
       final asPrerelease = argResults!['prerelease'] as bool;
-      final updateDependentsConstraints =
-          argResults!['dependent-constraints'] as bool;
       var updateDependentsVersions = argResults!['dependent-versions'] as bool;
-      final force = argResults!['yes'] as bool;
       final versionPrivatePackages = argResults!['all'] as bool;
       final preid = argResults!['preid'] as String?;
       final manualVersionArgs = argResults!['manual-version'] as List<String>;
-      final manualVersions = Map.fromEntries(
-        manualVersionArgs.map((arg) {
-          final parts = arg.split(':');
-          if (parts.length != 2) {
-            throw ArgumentError(
-              '--manual-version arguments must be in the format '
-              '"package:version".',
-            );
-          }
 
-          return MapEntry(parts[0], Version.parse(parts[1]));
-        }),
-      );
+      final manualVersions = _parseManualVersions(manualVersionArgs);
+      if (manualVersions == null) {
+        return;
+      }
 
       if (asPrerelease && asStableRelease) {
         logger?.stdout(
@@ -228,7 +211,7 @@ class VersionCommand extends MelosCommand {
         updateDependentsVersions = false;
       }
 
-      await melos.autoVersion(
+      await melos.version(
         filter: parsePackageFilter(config.path),
         force: force,
         gitTag: tag,
@@ -243,5 +226,42 @@ class VersionCommand extends MelosCommand {
         manualVersions: manualVersions,
       );
     }
+  }
+
+  Version? _parseVersion(String argument) {
+    try {
+      return Version.parse(argument);
+    } catch (_) {
+      exitCode = 1;
+      logger?.stdout(
+        '${AnsiStyles.redBright('ERROR:')} version "$argument" is not a valid package version.',
+      );
+      return null;
+    }
+  }
+
+  Map<String, Version>? _parseManualVersions(List<String> arguments) {
+    final manualVersions = <String, Version>{};
+
+    for (final argument in arguments) {
+      final parts = argument.split(':');
+      if (parts.length != 2) {
+        exitCode = 1;
+        logger?.stdout(
+          '${AnsiStyles.redBright('ERROR:')} --manual-version arguments must be in the format "package:version".',
+        );
+        return null;
+      }
+
+      final packageName = parts[0];
+      final version = _parseVersion(parts[1]);
+      if (version == null) {
+        return null;
+      }
+
+      manualVersions[packageName] = version;
+    }
+
+    return manualVersions;
   }
 }

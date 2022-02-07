@@ -1,8 +1,9 @@
 part of 'runner.dart';
 
 mixin _VersionMixin on _RunMixin {
-  /// Version packages automatically based on the git history
-  Future<void> autoVersion({
+  /// Version packages automatically based on the git history or with manually
+  /// specified versions.
+  Future<void> version({
     PackageFilter? filter,
     bool asPrerelease = false,
     bool asStableRelease = false,
@@ -72,13 +73,19 @@ mixin _VersionMixin on _RunMixin {
     final packagesWithVersionableCommits =
         _getPackagesWithVersionableCommits(packageCommits);
 
-    final packagesToManuallyVersion = manualVersions.keys.map((packageName) {
-      final package = workspace.allPackages[packageName];
-      if (package == null) {
-        throw PackageNotFoundException(packageName);
+    for (final packageName in manualVersions.keys) {
+      if (!workspace.allPackages.keys.contains(packageName)) {
+        exitCode = 1;
+        logger?.stdout(
+          '${AnsiStyles.redBright('ERROR:')} package "$packageName" does not exist in this workspace.',
+        );
+        return;
       }
-      return package;
-    }).toSet();
+    }
+
+    final packagesToManuallyVersion = manualVersions.keys
+        .map((packageName) => workspace.allPackages[packageName]!)
+        .toSet();
     final packagesToAutoVersion = {
       for (final package in workspace.filteredPackages.values)
         if (!packagesToManuallyVersion.contains(package))
@@ -312,130 +319,22 @@ Hint: try running "melos version --all" to include private packages.
       await run(scriptName: 'postversion');
     }
 
-    // TODO automatic push support
-    logger?.stdout(
-      AnsiStyles.greenBright.bold(
-        'Versioning successful. '
-        'Ensure you push your git changes and tags (if applicable) via ${AnsiStyles.bgBlack.gray('git push --follow-tags')}',
-      ),
-    );
-  }
-
-  /// Manually version one package with a given version
-  Future<void> version({
-    bool force = false,
-    required String packageName,
-    required Version newVersion,
-    bool gitTag = true,
-    bool updateChangelog = true,
-    bool updateDependentsConstraints = true,
-  }) async {
-    final workspace = await createWorkspace();
-
-    logger?.stdout(
-      AnsiStyles.yellow.bold('melos version <packageName> <newVersion>'),
-    );
-    logger?.stdout('   └> ${AnsiStyles.cyan.bold(workspace.path)}\n');
-
-    final workspacePackage = workspace.filteredPackages.values.firstWhereOrNull(
-      (package) => package.name == packageName,
-    );
-
-    // Validate package actually exists in workspace.
-    if (workspacePackage == null) {
-      exitCode = 1;
+    if (gitTag) {
+      // TODO automatic push support
       logger?.stdout(
-        '${AnsiStyles.redBright('ERROR:')} package "$packageName" does not exist in this workspace.',
+        AnsiStyles.greenBright.bold(
+          'Versioning successful. '
+          'Ensure you push your git changes and tags (if applicable) via ${AnsiStyles.bgBlack.gray('git push --follow-tags')}',
+        ),
       );
-      return;
-    }
-
-    logger?.stdout(
-      AnsiStyles.magentaBright('The following package will be updated:\n'),
-    );
-    logger?.stdout(
-      listAsPaddedTable(
-        [
-          [
-            AnsiStyles.underline.bold('Package Name'),
-            AnsiStyles.underline.bold('Current Version'),
-            AnsiStyles.underline.bold('Updated Version'),
-          ],
-          [
-            AnsiStyles.italic(packageName),
-            AnsiStyles.dim(workspacePackage.version.toString()),
-            AnsiStyles.green(newVersion.toString()),
-          ],
-        ],
-        paddingSize: 3,
-      ),
-    );
-    logger?.stdout('');
-    final shouldContinue = force || promptBool();
-    if (!shouldContinue) {
-      throw CancelledException();
-    }
-
-    var changelogEntry = '';
-
-    if (updateChangelog) {
-      changelogEntry = promptInput(
-        'Describe your change for the changelog entry',
-        defaultsTo: 'Bump "$packageName" to `$newVersion`.',
-      );
-    }
-
-    // TODO allow support for individual package lifecycle version scripts
-    if (workspace.config.scripts.containsKey('preversion')) {
-      logger?.stdout('Running "preversion" lifecycle script...\n');
-      await run(scriptName: 'preversion');
-    }
-
-    // Update package pubspec version.
-    await _setPubspecVersionForPackage(workspacePackage, newVersion);
-
-    // Update changelog, if requested.
-    if (updateChangelog) {
+    } else {
       logger?.stdout(
-        'Adding changelog entry in package "$packageName" for version "$newVersion"...',
+        AnsiStyles.greenBright.bold(
+          'Versioning successful. '
+          'Ensure you commit and push your changes (if applicable).',
+        ),
       );
-      final singleEntryChangelog = SingleEntryChangelog(
-        workspacePackage,
-        newVersion,
-        changelogEntry,
-        logger,
-      );
-      await singleEntryChangelog.write();
     }
-
-    if (updateDependentsConstraints) {
-      logger?.stdout(
-        'Updating version constraints for packages that depend on "$packageName"...',
-      );
-      // Update dependents.
-      await Future.forEach([
-        ...workspacePackage.dependentsInWorkspace.values,
-        ...workspacePackage.devDependentsInWorkspace.values,
-      ], (Package package) {
-        return _setDependentPackageVersionConstraint(
-          package,
-          workspacePackage.name,
-          newVersion,
-        );
-      });
-    }
-
-    // TODO allow support for individual package lifecycle version scripts
-    if (workspace.config.scripts.containsKey('version')) {
-      logger?.stdout('Running "version" lifecycle script...\n');
-      await run(scriptName: 'version');
-    }
-
-    logger?.stdout(
-      AnsiStyles.greenBright.bold(
-        'Versioning successful. Ensure you commit and push your changes (if applicable).',
-      ),
-    );
   }
 
   Future<void> _setPubspecVersionForPackage(
