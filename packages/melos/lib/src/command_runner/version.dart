@@ -172,7 +172,7 @@ class VersionCommand extends MelosCommand {
       return melos.version(
         // We only want to version the specified package and not all packages
         // that could be versioned.
-        filter: PackageFilter(ignore: [Glob('**')]),
+        filter: PackageFilter(scope: [Glob(packageName)]),
         manualVersions: {packageName: version},
         force: force,
         gitTag: tag,
