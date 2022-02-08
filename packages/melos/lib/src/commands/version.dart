@@ -17,7 +17,7 @@ mixin _VersionMixin on _RunMixin {
     bool showPrivatePackages = false,
     String? preid,
     bool versionPrivatePackages = false,
-    Map<String, Version> manualVersions = const {},
+    Map<String, versioning.ManualVersionChange> manualVersions = const {},
   }) async {
     if (asPrerelease && asStableRelease) {
       throw ArgumentError('Cannot use both asPrerelease and asStableRelease.');
@@ -149,7 +149,7 @@ mixin _VersionMixin on _RunMixin {
       packagesToManuallyVersion.map(
         (package) {
           final name = package.name;
-          final version = manualVersions[name];
+          final version = manualVersions[name]!(package.version);
           final commits = packageCommits[name] ?? [];
 
           String? userChangelogMessage;
