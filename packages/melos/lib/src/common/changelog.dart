@@ -67,23 +67,6 @@ class Changelog {
   }
 }
 
-class SingleEntryChangelog extends Changelog {
-  SingleEntryChangelog(
-    Package package,
-    Version version,
-    this.entry,
-    Logger? logger,
-  ) : super(package, version, logger);
-
-  final String entry;
-
-  @override
-  String get markdown {
-    final changelogHeader = '## $version';
-    return '$changelogHeader\n\n - $entry\n\n';
-  }
-}
-
 class MelosChangelog extends Changelog {
   MelosChangelog(this.update, Logger? logger)
       : super(update.package, update.nextVersion, logger);
@@ -92,102 +75,11 @@ class MelosChangelog extends Changelog {
 
   @override
   String get markdown {
-    final entry = StringBuffer();
-
-    // Changelog entry header.
-    entry.write('## ');
-    entry.writeln(update.nextVersion);
-    entry.writeln();
-
-    if (update.reason == PackageUpdateReason.dependency) {
-      // Dependency change entry.
-      entry.writeln('- Update a dependency to the latest release.');
-      entry.writeln();
-    }
-
-    if (update.reason == PackageUpdateReason.graduate) {
-      // Package graduation entry.
-      entry.writeln(
-        '- Graduate package to a stable release. See pre-releases prior to '
-        'this version for changelog entries.',
-      );
-      entry.writeln();
-    }
-
-    if (update.reason == PackageUpdateReason.commit ||
-        update.reason == PackageUpdateReason.manual) {
-      // Breaking change note.
-      if (update.hasBreakingChanges) {
-        entry.writeln('> Note: This release has breaking changes.');
-        entry.writeln();
-      }
-
-      // User provided changelog entry message.
-      if (update.userChangelogMessage != null) {
-        entry.writeln(update.userChangelogMessage);
-        entry.writeln();
-      }
-
-      // Entires for commits included in new version.
-      final commits = _filteredAndSortedCommits();
-      if (commits.isNotEmpty) {
-        for (final commit in commits) {
-          final parsedMessage = commit.parsedMessage;
-
-          entry.write('- ');
-
-          if (parsedMessage.isBreakingChange) {
-            entry.writeBold('BREAKING');
-            entry.write(' ');
-          }
-
-          if (parsedMessage.isMergeCommit) {
-            entry.writePunctuated(parsedMessage.header);
-          } else {
-            entry.writeBold(parsedMessage.type!.toUpperCase());
-            entry.write(': ');
-            entry.writePunctuated(parsedMessage.description!);
-          }
-
-          if (update.workspace.config.commands.version.linkToCommits ?? false) {
-            final shortCommitId = commit.id.substring(0, 8);
-            final commitUrl =
-                update.workspace.config.repository!.commitUrl(commit.id);
-            entry.write(' ([$shortCommitId]($commitUrl))');
-          }
-
-          entry.writeln();
-        }
-        entry.writeln();
-      }
-    }
-
-    return entry.toString();
-  }
-
-  List<RichGitCommit> _filteredAndSortedCommits() {
-    final commits = update.commits
-        .where(
-          (commit) =>
-              !commit.parsedMessage.isMergeCommit &&
-              commit.parsedMessage.isVersionableCommit,
-        )
-        .toList();
-
-    // Sort so that Breaking Changes appear at the top.
-    commits.sort((a, b) {
-      final r = a.parsedMessage.isBreakingChange
-          .toString()
-          .compareTo(b.parsedMessage.isBreakingChange.toString());
-      if (r != 0) return r;
-      return b.parsedMessage.type!.compareTo(a.parsedMessage.type!);
-    });
-
-    return commits;
+    return (StringBuffer()..writePackageChangelog(update)).toString();
   }
 }
 
-extension on StringBuffer {
+extension MarkdownStringBufferExtension on StringBuffer {
   void writeBold(String string) {
     write('**');
     write(string);
@@ -202,4 +94,116 @@ extension on StringBuffer {
       write('.');
     }
   }
+
+  void writeLink(String name, {String? uri}) {
+    write('[');
+    write(name);
+    write(']');
+    if (uri != null) {
+      write('(');
+      write(uri);
+      write(')');
+    }
+  }
+}
+
+extension ChangelogStringBufferExtension on StringBuffer {
+  void writePackageChangelog(MelosPendingPackageUpdate update) {
+    // Changelog entry header.
+    write('## ');
+    writeln(update.nextVersion);
+    writeln();
+
+    if (update.reason == PackageUpdateReason.dependency) {
+      // Dependency change entry.
+      writeln('- Update a dependency to the latest release.');
+      writeln();
+    }
+
+    if (update.reason == PackageUpdateReason.graduate) {
+      // Package graduation entry.
+      writeln(
+        '- Graduate package to a stable release. See pre-releases prior to '
+        'this version for changelog entries.',
+      );
+      writeln();
+    }
+
+    if (update.reason == PackageUpdateReason.commit ||
+        update.reason == PackageUpdateReason.manual) {
+      // Breaking change note.
+      if (update.hasBreakingChanges) {
+        writeln('> Note: This release has breaking changes.');
+        writeln();
+      }
+
+      writePackageUpdateChanges(update);
+    }
+  }
+
+  void writePackageUpdateChanges(MelosPendingPackageUpdate update) {
+    // User provided changelog entry message.
+    if (update.userChangelogMessage != null) {
+      writeln(update.userChangelogMessage);
+      writeln();
+    }
+
+    // Entries for commits included in new version.
+    final commits = _filteredAndSortedCommits(update);
+    if (commits.isNotEmpty) {
+      for (final commit in commits) {
+        final parsedMessage = commit.parsedMessage;
+
+        write('- ');
+
+        if (parsedMessage.isBreakingChange) {
+          writeBold('BREAKING');
+          write(' ');
+        }
+
+        if (parsedMessage.isMergeCommit) {
+          writePunctuated(parsedMessage.header);
+        } else {
+          writeBold(parsedMessage.type!.toUpperCase());
+          write(': ');
+          writePunctuated(parsedMessage.description!);
+        }
+
+        if (update.workspace.config.commands.version.linkToCommits ?? false) {
+          final shortCommitId = commit.id.substring(0, 8);
+          final commitUrl =
+              update.workspace.config.repository!.commitUrl(commit.id);
+          write(' (');
+          writeLink(shortCommitId, uri: commitUrl.toString());
+          write(')');
+        }
+
+        writeln();
+      }
+      writeln();
+    }
+  }
+}
+
+List<RichGitCommit> _filteredAndSortedCommits(
+  MelosPendingPackageUpdate update,
+) {
+  final commits = update.commits
+      .where(
+        (commit) =>
+            !commit.parsedMessage.isMergeCommit &&
+            commit.parsedMessage.isVersionableCommit,
+      )
+      .toList();
+
+  // Sort so that Breaking Changes appear at the top.
+  commits.sort((a, b) {
+    final r = a.parsedMessage.isBreakingChange
+        .toString()
+        .compareTo(b.parsedMessage.isBreakingChange.toString());
+    if (r != 0) return r;
+    return b.parsedMessage.type!.compareTo(a.parsedMessage.type!);
+  });
+
+  return commits;
 }

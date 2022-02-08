@@ -18,11 +18,10 @@
 import 'dart:io';
 
 import 'package:cli_util/cli_logging.dart';
-import 'package:conventional_commit/conventional_commit.dart';
 import 'package:path/path.dart';
 
 import '../../melos.dart';
-import 'git_commit.dart';
+import 'changelog.dart';
 import 'pending_package_update.dart';
 
 class WorkspaceChangelog {
@@ -129,40 +128,7 @@ class WorkspaceChangelog {
         body.writeln('#### ${_packageVersionTitle(update)}');
         body.writeln();
 
-        final commits = List<ConventionalCommit>.from(
-          update.commits
-              .where(
-                (RichGitCommit commit) =>
-                    !commit.parsedMessage.isMergeCommit &&
-                    commit.parsedMessage.isVersionableCommit,
-              )
-              .map((commit) => commit.parsedMessage)
-              .toList(),
-        );
-
-        // Sort so that Breaking Changes appear at the top.
-        commits.sort((a, b) {
-          final r = a.isBreakingChange
-              .toString()
-              .compareTo(b.isBreakingChange.toString());
-          if (r != 0) return r;
-          return b.type!.compareTo(a.type!);
-        });
-
-        for (final commit in commits) {
-          var entry =
-              '**${commit.type!.toUpperCase()}**: ${commit.description}';
-          // Add trailing punctuation if missing.
-          if (!entry.contains(RegExp(r'[\.\?\!]$'))) {
-            entry = '$entry.';
-          }
-          if (commit.isBreakingChange) {
-            entry = '**BREAKING** $entry';
-          }
-          body.writeln(' - $entry');
-        }
-
-        body.writeln();
+        body.writePackageUpdateChanges(update);
       }
     }
 
