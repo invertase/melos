@@ -1,3 +1,7 @@
+## 1.2.2
+
+- **FIX**: fully consume `pub get` output when bootstrapping (#240). ([09e98a5e](https://github.com/invertase/melos/commit/09e98a5e6197db661cdf4f89deeff5020aa3b417))
+
 ## 1.2.1
 
  - **FIX**: bump `platform` dependency to to 3.1.0 to support latest Flutter/Dart versions (#237). ([2b74f6eb](https://github.com/invertase/melos/commit/2b74f6ebe1852d36b65cfe0e4a8e8d6cd78fe939))

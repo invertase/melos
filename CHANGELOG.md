@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2022-02-09
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+- There are no breaking changes in this release.
+
+Packages with other changes:
+
+- [`melos` - `v1.2.2`](#melos---v122)
+
+---
+
+#### `melos` - `v1.2.2`
+
+ - **FIX**: fully consume `pub get` output when bootstrapping (#240).
+
+
 ## 2022-02-04
 
 ### Changes
