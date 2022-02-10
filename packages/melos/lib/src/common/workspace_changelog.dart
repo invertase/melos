@@ -125,6 +125,12 @@ class WorkspaceChangelog {
       body.writeln();
 
       for (final update in allChanges) {
+        if (update.reason == PackageUpdateReason.dependency) {
+          // Dependency only updates have no changelog entries
+          // and are already listed in the previous
+          // "Packages with dependency updates only" section.
+          continue;
+        }
         body.writeln('#### ${_packageVersionTitle(update)}');
         body.writeln();
 
