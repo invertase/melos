@@ -29,6 +29,9 @@ import 'versioning.dart' as versioning;
 
 /// Enum representing why the version has been changed when running 'version' command.
 enum PackageUpdateReason {
+  /// The user provided a new version.
+  manual,
+
   /// Changed due to a commit modifying code in this package.
   commit,
 
@@ -49,7 +52,20 @@ class MelosPendingPackageUpdate {
     this.graduate = false,
     this.preid,
     required this.logger,
-  });
+  })  : manualVersion = null,
+        userChangelogMessage = null;
+
+  MelosPendingPackageUpdate.manual(
+    this.workspace,
+    this.package,
+    this.commits,
+    this.manualVersion, {
+    this.userChangelogMessage,
+    required this.logger,
+  })  : reason = PackageUpdateReason.manual,
+        prerelease = false,
+        graduate = false,
+        preid = null;
 
   /// Commits that triggered this pending update. Can be empty if
   /// [PackageUpdateReason] is [PackageUpdateReason.dependency].
@@ -75,6 +91,15 @@ class MelosPendingPackageUpdate {
   /// The prerelease id that will be used for prereleases, e.g. "0.1.0-[preid].1".
   final String? preid;
 
+  /// The next version of the package, if it has been manually specified by the
+  /// user.
+  final Version? manualVersion;
+
+  /// Changelog message that the user provided directly.
+  ///
+  /// This is only used for manually versioned packages.
+  final String? userChangelogMessage;
+
   final Logger? logger;
 
   Changelog get changelog {
@@ -89,17 +114,24 @@ class MelosPendingPackageUpdate {
 
   /// Next pub version that will occur as part of this package update.
   Version get nextVersion {
-    return versioning.nextVersion(
-      currentVersion,
-      semverReleaseType,
-      graduate: graduate,
-      preid: preid,
-      prerelease: prerelease,
-    );
+    return manualVersion ??
+        versioning.nextVersion(
+          currentVersion,
+          semverReleaseType!,
+          graduate: graduate,
+          preid: preid,
+          prerelease: prerelease,
+        );
   }
 
   /// Taking into account all the commits in this update, what is the highest [SemverReleaseType].
-  SemverReleaseType get semverReleaseType {
+  ///
+  /// Is `null` for manually versioned packages.
+  SemverReleaseType? get semverReleaseType {
+    if (reason == PackageUpdateReason.manual) {
+      return null;
+    }
+
     if (reason == PackageUpdateReason.dependency) {
       // Version bumps for dependencies should be patches.
       // If the dependencies had breaking changes then this package should have had commits to update it separately.
@@ -120,6 +152,15 @@ class MelosPendingPackageUpdate {
         .map((e) => e.parsedMessage.semverReleaseType.index)
         .toList()
         .reduce(math.max)];
+  }
+
+  /// Whether this update contains breaking changes.
+  bool get hasBreakingChanges {
+    if (reason == PackageUpdateReason.manual) {
+      return commits.any((commit) => commit.parsedMessage.isBreakingChange);
+    }
+
+    return semverReleaseType == SemverReleaseType.major;
   }
 
   @override

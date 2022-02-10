@@ -18,11 +18,10 @@
 import 'dart:io';
 
 import 'package:cli_util/cli_logging.dart';
-import 'package:conventional_commit/conventional_commit.dart';
 import 'package:path/path.dart';
 
 import '../../melos.dart';
-import 'git_commit.dart';
+import 'changelog.dart';
 import 'pending_package_update.dart';
 
 class WorkspaceChangelog {
@@ -56,16 +55,10 @@ class WorkspaceChangelog {
         .where((update) => update.reason == PackageUpdateReason.dependency);
     final graduatedPackages = pendingPackageUpdates
         .where((update) => update.reason == PackageUpdateReason.graduate);
-    final packagesWithBreakingChanges = pendingPackageUpdates.where(
-      (update) =>
-          update.reason == PackageUpdateReason.commit &&
-          update.semverReleaseType == SemverReleaseType.major,
-    );
-    final packagesWithOtherChanges = pendingPackageUpdates.where(
-      (update) =>
-          update.reason == PackageUpdateReason.commit &&
-          update.semverReleaseType != SemverReleaseType.major,
-    );
+    final packagesWithBreakingChanges =
+        pendingPackageUpdates.where((update) => update.hasBreakingChanges);
+    final packagesWithOtherChanges =
+        pendingPackageUpdates.where((update) => !update.hasBreakingChanges);
 
     body.writeln(_changelogFileHeader);
     body.writeln('## $title');
@@ -77,11 +70,11 @@ class WorkspaceChangelog {
     body.writeln('Packages with breaking changes:');
     body.writeln();
     if (packagesWithBreakingChanges.isEmpty) {
-      body.writeln('- There are no breaking changes in this release.');
+      body.writeln(' - There are no breaking changes in this release.');
     } else {
       for (final update in packagesWithBreakingChanges) {
         body.writeln(
-          '- [${_packageVersionTitle(update)}](${_packageVersionMarkdownAnchor(update)})',
+          ' - [${_packageVersionTitle(update)}](${_packageVersionMarkdownAnchor(update)})',
         );
       }
     }
@@ -89,11 +82,11 @@ class WorkspaceChangelog {
     body.writeln('Packages with other changes:');
     body.writeln();
     if (packagesWithOtherChanges.isEmpty) {
-      body.writeln('- There are no other changes in this release.');
+      body.writeln(' - There are no other changes in this release.');
     } else {
       for (final update in packagesWithOtherChanges) {
         body.writeln(
-          '- [${_packageVersionTitle(update)}](${_packageVersionMarkdownAnchor(update)})',
+          ' - [${_packageVersionTitle(update)}](${_packageVersionMarkdownAnchor(update)})',
         );
       }
     }
@@ -105,7 +98,7 @@ class WorkspaceChangelog {
       body.writeln();
       for (final update in graduatedPackages) {
         body.writeln(
-          '- ${_packageVersionTitle(update)}',
+          ' - ${_packageVersionTitle(update)}',
         );
       }
     }
@@ -119,7 +112,7 @@ class WorkspaceChangelog {
       body.writeln();
       for (final update in dependencyOnlyPackages) {
         body.writeln(
-          '- ${_packageVersionTitle(update)}',
+          ' - ${_packageVersionTitle(update)}',
         );
       }
     }
@@ -132,43 +125,16 @@ class WorkspaceChangelog {
       body.writeln();
 
       for (final update in allChanges) {
+        if (update.reason == PackageUpdateReason.dependency) {
+          // Dependency only updates have no changelog entries
+          // and are already listed in the previous
+          // "Packages with dependency updates only" section.
+          continue;
+        }
         body.writeln('#### ${_packageVersionTitle(update)}');
         body.writeln();
 
-        final commits = List<ConventionalCommit>.from(
-          update.commits
-              .where(
-                (RichGitCommit commit) =>
-                    !commit.parsedMessage.isMergeCommit &&
-                    commit.parsedMessage.isVersionableCommit,
-              )
-              .map((commit) => commit.parsedMessage)
-              .toList(),
-        );
-
-        // Sort so that Breaking Changes appear at the top.
-        commits.sort((a, b) {
-          final r = a.isBreakingChange
-              .toString()
-              .compareTo(b.isBreakingChange.toString());
-          if (r != 0) return r;
-          return b.type!.compareTo(a.type!);
-        });
-
-        for (final commit in commits) {
-          var entry =
-              '**${commit.type!.toUpperCase()}**: ${commit.description}';
-          // Add trailing punctuation if missing.
-          if (!entry.contains(RegExp(r'[\.\?\!]$'))) {
-            entry = '$entry.';
-          }
-          if (commit.isBreakingChange) {
-            entry = '**BREAKING** $entry';
-          }
-          body.writeln(' - $entry');
-        }
-
-        body.writeln();
+        body.writePackageUpdateChanges(update);
       }
     }
 

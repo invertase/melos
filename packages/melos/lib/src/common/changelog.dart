@@ -18,11 +18,11 @@
 import 'dart:io';
 
 import 'package:cli_util/cli_logging.dart';
-import 'package:conventional_commit/conventional_commit.dart';
 import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 import '../package.dart';
+import 'git_commit.dart';
 import 'pending_package_update.dart';
 
 class Changelog {
@@ -67,23 +67,6 @@ class Changelog {
   }
 }
 
-class SingleEntryChangelog extends Changelog {
-  SingleEntryChangelog(
-    Package package,
-    Version version,
-    this.entry,
-    Logger? logger,
-  ) : super(package, version, logger);
-
-  final String entry;
-
-  @override
-  String get markdown {
-    final changelogHeader = '## $version';
-    return '$changelogHeader\n\n - $entry\n\n';
-  }
-}
-
 class MelosChangelog extends Changelog {
   MelosChangelog(this.update, Logger? logger)
       : super(update.package, update.nextVersion, logger);
@@ -92,74 +75,135 @@ class MelosChangelog extends Changelog {
 
   @override
   String get markdown {
-    var body = '';
-    var entries = <String>[];
-    var header = '## ${update.nextVersion}';
+    return (StringBuffer()..writePackageChangelog(update)).toString();
+  }
+}
+
+extension MarkdownStringBufferExtension on StringBuffer {
+  void writeBold(String string) {
+    write('**');
+    write(string);
+    write('**');
+  }
+
+  void writePunctuated(String string) {
+    write(string);
+
+    final shouldPunctuate = !string.contains(RegExp(r'[\.\?\!]$'));
+    if (shouldPunctuate) {
+      write('.');
+    }
+  }
+
+  void writeLink(String name, {String? uri}) {
+    write('[');
+    write(name);
+    write(']');
+    if (uri != null) {
+      write('(');
+      write(uri);
+      write(')');
+    }
+  }
+}
+
+extension ChangelogStringBufferExtension on StringBuffer {
+  void writePackageChangelog(MelosPendingPackageUpdate update) {
+    // Changelog entry header.
+    write('## ');
+    writeln(update.nextVersion);
+    writeln();
 
     if (update.reason == PackageUpdateReason.dependency) {
-      entries = ['Update a dependency to the latest release.'];
+      // Dependency change entry.
+      writeln(' - Update a dependency to the latest release.');
+      writeln();
     }
 
     if (update.reason == PackageUpdateReason.graduate) {
-      entries = [
-        'Graduate package to a stable release. See pre-releases prior to this version for changelog entries.'
-      ];
+      // Package graduation entry.
+      writeln(
+        ' - Graduate package to a stable release. See pre-releases prior to '
+        'this version for changelog entries.',
+      );
+      writeln();
     }
 
-    if (update.reason == PackageUpdateReason.commit) {
-      if (update.semverReleaseType == SemverReleaseType.major) {
-        header += '\n\n> Note: This release has breaking changes.';
+    if (update.reason == PackageUpdateReason.commit ||
+        update.reason == PackageUpdateReason.manual) {
+      // Breaking change note.
+      if (update.hasBreakingChanges) {
+        writeln('> Note: This release has breaking changes.');
+        writeln();
       }
 
-      final commits = update.commits
-          .where(
-            (commit) =>
-                !commit.parsedMessage.isMergeCommit &&
-                commit.parsedMessage.isVersionableCommit,
-          )
-          .toList();
+      writePackageUpdateChanges(update);
+    }
+  }
 
-      // Sort so that Breaking Changes appear at the top.
-      commits.sort((a, b) {
-        final r = a.parsedMessage.isBreakingChange
-            .toString()
-            .compareTo(b.parsedMessage.isBreakingChange.toString());
-        if (r != 0) return r;
-        return b.parsedMessage.type!.compareTo(a.parsedMessage.type!);
-      });
+  void writePackageUpdateChanges(MelosPendingPackageUpdate update) {
+    // User provided changelog entry message.
+    if (update.userChangelogMessage != null) {
+      writeln(' - ${update.userChangelogMessage}');
+      writeln();
+    }
 
-      entries = commits.map((commit) {
+    // Entries for commits included in new version.
+    final commits = _filteredAndSortedCommits(update);
+    if (commits.isNotEmpty) {
+      for (final commit in commits) {
         final parsedMessage = commit.parsedMessage;
-        String entry;
-        if (parsedMessage.isMergeCommit) {
-          entry = parsedMessage.header;
-        } else {
-          entry =
-              '**${parsedMessage.type!.toUpperCase()}**: ${parsedMessage.description}';
+
+        write(' - ');
+
+        if (parsedMessage.isBreakingChange) {
+          writeBold('BREAKING');
+          write(' ');
         }
 
-        final shouldPunctuate = !entry.contains(RegExp(r'[\.\?\!]$'));
-        if (shouldPunctuate) {
-          entry = '$entry.';
+        if (parsedMessage.isMergeCommit) {
+          writePunctuated(parsedMessage.header);
+        } else {
+          writeBold(parsedMessage.type!.toUpperCase());
+          write(': ');
+          writePunctuated(parsedMessage.description!);
         }
 
         if (update.workspace.config.commands.version.linkToCommits ?? false) {
           final shortCommitId = commit.id.substring(0, 8);
           final commitUrl =
               update.workspace.config.repository!.commitUrl(commit.id);
-          entry = '$entry ([$shortCommitId]($commitUrl))';
+          write(' (');
+          writeLink(shortCommitId, uri: commitUrl.toString());
+          write(')');
         }
 
-        if (parsedMessage.isBreakingChange) {
-          entry = '**BREAKING** $entry';
-        }
-
-        return entry;
-      }).toList();
+        writeln();
+      }
+      writeln();
     }
-
-    body = entries.join('\n - ');
-
-    return '$header\n\n - $body\n\n';
   }
+}
+
+List<RichGitCommit> _filteredAndSortedCommits(
+  MelosPendingPackageUpdate update,
+) {
+  final commits = update.commits
+      .where(
+        (commit) =>
+            !commit.parsedMessage.isMergeCommit &&
+            commit.parsedMessage.isVersionableCommit,
+      )
+      .toList();
+
+  // Sort so that Breaking Changes appear at the top.
+  commits.sort((a, b) {
+    final r = a.parsedMessage.isBreakingChange
+        .toString()
+        .compareTo(b.parsedMessage.isBreakingChange.toString());
+    if (r != 0) return r;
+    return b.parsedMessage.type!.compareTo(a.parsedMessage.type!);
+  });
+
+  return commits;
 }

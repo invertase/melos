@@ -7,7 +7,7 @@ description: "Learn more about the `version` command in Melos."
 
 > Supports all [Melos filtering](/filters) flags.
 
-Automatically version and generate changelogs for all packages. 
+Automatically version and generate changelogs for all packages.
 
 
 ```bash
@@ -107,4 +107,14 @@ chore(release): publish packages
 
 ```bash
 melos version --message="chore(release): publish new versions"
+```
+
+## --manual-version (-V)
+
+Manually specify a version change for a package. Can be used multiple times. Each value must be in the format "<package name>:<major|patch|minor|build|exactVersion>". Cannot be combined with --graduate or --prerelease flag.
+
+```bash
+melos version --manual-version=foo:patch
+melos version --manual-version=foo:1.0.0
+melos version -V=foo:1.0.0
 ```

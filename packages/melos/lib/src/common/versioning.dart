@@ -273,3 +273,51 @@ Version nextVersion(
     'is not supported by Melos, please raise an issue on GitHub if this is unexpected behaviour.',
   );
 }
+
+Version incrementBuildNumber(Version currentVersion) {
+  final build = currentVersion.build;
+
+  int? nextBuildNumber;
+  if (build.isEmpty) {
+    nextBuildNumber = 0;
+  } else if (build.length == 1) {
+    final Object? buildNumber = build.first;
+    if (buildNumber is int) {
+      nextBuildNumber = buildNumber + 1;
+    }
+  }
+
+  if (nextBuildNumber != null) {
+    return Version(
+      currentVersion.major,
+      currentVersion.minor,
+      currentVersion.patch,
+      build: nextBuildNumber.toString(),
+    );
+  }
+
+  throw ArgumentError(
+    'Cannot increment build number for version $currentVersion',
+  );
+}
+
+class ManualVersionChange {
+  factory ManualVersionChange(Version version) =>
+      ManualVersionChange._((_) => version);
+
+  ManualVersionChange._(this._impl);
+
+  factory ManualVersionChange.incrementBySemverReleaseType(
+    SemverReleaseType releaseType,
+  ) =>
+      ManualVersionChange._(
+        (currentVersion) => nextVersion(currentVersion, releaseType),
+      );
+
+  factory ManualVersionChange.incrementBuildNumber() =>
+      ManualVersionChange._(incrementBuildNumber);
+
+  final Version Function(Version) _impl;
+
+  Version call(Version currentVersion) => _impl(currentVersion);
+}

@@ -18,9 +18,14 @@
 import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
+import 'package:collection/collection.dart';
+import 'package:conventional_commit/conventional_commit.dart';
+import 'package:glob/glob.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 import '../commands/runner.dart';
+import '../common/versioning.dart';
+import '../package.dart';
 import '../workspace_configs.dart';
 import 'base.dart';
 
@@ -82,8 +87,7 @@ class VersionCommand extends MelosCommand {
       defaultsTo: true,
       help:
           'By default, melos version will commit changes to pubspec.yaml files '
-          'and tag the release. Pass --no-git-tag-version to disable the behavior. '
-          'Applies only to Conventional Commits based versioning.',
+          'and tag the release. Pass --no-git-tag-version to disable the behavior.',
     );
     argParser.addOption(
       'message',
@@ -116,6 +120,14 @@ class VersionCommand extends MelosCommand {
           'result in a version in the format "1.0.0-1.0.nullsafety.0". '
           'Applies only to Conventional Commits based versioning.',
     );
+    argParser.addMultiOption(
+      'manual-version',
+      abbr: 'V',
+      help: 'Manually specify a version change for a package. Can be used '
+          'multiple times. Each value must be in the format '
+          '"<package name>:<major|patch|minor|build|exactVersion>". '
+          'Cannot be combined with --graduate or --prerelease flag.',
+    );
   }
 
   @override
@@ -129,8 +141,8 @@ class VersionCommand extends MelosCommand {
   // ignore: leading_newlines_in_multiline_strings
   final String invocation = ' ${AnsiStyles.bold('melos version')}\n'
       '          Version packages automatically using the Conventional Commits specification.\n\n'
-      '        ${AnsiStyles.bold('melos version')} <package name> <new version>\n'
-      '          Manually set a package to a specific version, and update all packages that depend on it.\n';
+      '        ${AnsiStyles.bold('melos version')} <package name> <major|patch|minor|build|exactVersion>\n'
+      '          Manually update the version of a package, and update all packages that depend on it.\n';
 
   @override
   Future<void> run() async {
@@ -141,6 +153,8 @@ class VersionCommand extends MelosCommand {
         argResults!['dependent-constraints'] as bool;
     final tag = argResults!['git-tag-version'] as bool;
     final changelog = argResults!['changelog'] as bool;
+    final commitMessage =
+        (argResults!['message'] as String?)?.replaceAll(r'\n', '\n');
 
     if (argResults!.rest.isNotEmpty) {
       if (argResults!.rest.length != 2) {
@@ -154,40 +168,35 @@ class VersionCommand extends MelosCommand {
       }
 
       final packageName = argResults!.rest[0];
-
-      Version version;
-      try {
-        version = Version.parse(argResults!.rest[1]);
-      } catch (_) {
-        exitCode = 1;
-        logger?.stdout(
-          '${AnsiStyles.redBright('ERROR:')} version "${argResults!.rest[1]}" is not a valid package version.',
-        );
+      final versionChange = _parseManualVersionChange(argResults!.rest[1]);
+      if (versionChange == null) {
         return;
       }
 
       return melos.version(
-        packageName: packageName,
-        newVersion: version,
+        // We only want to version the specified package and not all packages
+        // that could be versioned.
+        filter: PackageFilter(scope: [Glob(packageName)]),
+        manualVersions: {packageName: versionChange},
         force: force,
         gitTag: tag,
         updateChangelog: changelog,
         updateDependentsConstraints: updateDependentsConstraints,
+        updateDependentsVersions: false,
+        message: commitMessage,
       );
     } else {
-      final commitMessage =
-          (argResults!['message'] as String?)?.replaceAll(r'\n', '\n');
-
-      final changelog = argResults!['changelog'] as bool;
       var asStableRelease = argResults!['graduate'] as bool;
-      final tag = argResults!['git-tag-version'] as bool;
       final asPrerelease = argResults!['prerelease'] as bool;
-      final updateDependentsConstraints =
-          argResults!['dependent-constraints'] as bool;
       var updateDependentsVersions = argResults!['dependent-versions'] as bool;
-      final force = argResults!['yes'] as bool;
       final versionPrivatePackages = argResults!['all'] as bool;
       final preid = argResults!['preid'] as String?;
+      final manualVersionArgs = argResults!['manual-version'] as List<String>;
+
+      final manualVersions = _parseManualVersions(manualVersionArgs);
+      if (manualVersions == null) {
+        return;
+      }
 
       if (asPrerelease && asStableRelease) {
         logger?.stdout(
@@ -206,7 +215,7 @@ class VersionCommand extends MelosCommand {
         updateDependentsVersions = false;
       }
 
-      await melos.autoVersion(
+      await melos.version(
         filter: parsePackageFilter(config.path),
         force: force,
         gitTag: tag,
@@ -218,7 +227,65 @@ class VersionCommand extends MelosCommand {
         asStableRelease: asStableRelease,
         message: commitMessage,
         versionPrivatePackages: versionPrivatePackages,
+        manualVersions: manualVersions,
       );
     }
+  }
+
+  ManualVersionChange? _parseManualVersionChange(String argument) {
+    // ignore: parameter_assignments
+    argument = argument.trim();
+
+    if (argument == 'build') {
+      return ManualVersionChange.incrementBuildNumber();
+    }
+
+    final semverReleaseType = SemverReleaseType.values
+        .firstWhereOrNull((releaseType) => releaseType.name == argument);
+    if (semverReleaseType != null) {
+      return ManualVersionChange.incrementBySemverReleaseType(
+        semverReleaseType,
+      );
+    }
+
+    try {
+      return ManualVersionChange(Version.parse(argument));
+    } catch (_) {
+      exitCode = 1;
+      logger?.stdout(
+        '${AnsiStyles.redBright('ERROR:')} version "$argument" is not a '
+        'valid package version.',
+      );
+      return null;
+    }
+  }
+
+  Map<String, ManualVersionChange>? _parseManualVersions(
+    List<String> arguments,
+  ) {
+    final manualVersions = <String, ManualVersionChange>{};
+
+    for (final argument in arguments) {
+      final parts = argument.split(':');
+      if (parts.length != 2) {
+        exitCode = 1;
+        logger?.stdout(
+          '${AnsiStyles.redBright('ERROR:')} --manual-version arguments must '
+          'be in the format '
+          '"<package name>:<major|patch|minor|build|exactVersion>".',
+        );
+        return null;
+      }
+
+      final packageName = parts[0];
+      final version = _parseManualVersionChange(parts[1]);
+      if (version == null) {
+        return null;
+      }
+
+      manualVersions[packageName] = version;
+    }
+
+    return manualVersions;
   }
 }
