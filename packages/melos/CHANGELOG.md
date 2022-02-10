@@ -1,3 +1,7 @@
+## 1.3.0
+
+ - **FEAT**: add `--manual-version` option to `version` command (#242). ([279c53e4](https://github.com/invertase/melos/commit/279c53e44c735c1ef2339d1c73f097e820a72251))
+
 ## 1.2.2
 
 - **FIX**: fully consume `pub get` output when bootstrapping (#240). ([09e98a5e](https://github.com/invertase/melos/commit/09e98a5e6197db661cdf4f89deeff5020aa3b417))
