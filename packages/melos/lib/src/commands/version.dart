@@ -261,7 +261,9 @@ Hint: try running "melos version --all" to include private packages.
     }
 
     logger?.stdout(
-      AnsiStyles.magentaBright('The following packages will be updated:\n'),
+      AnsiStyles.magentaBright(
+        'The following ${AnsiStyles.bold(pendingPackageUpdates.length.toString())} packages will be updated:\n',
+      ),
     );
 
     _logNewVersionTable(
