@@ -116,14 +116,14 @@ extension ChangelogStringBufferExtension on StringBuffer {
 
     if (update.reason == PackageUpdateReason.dependency) {
       // Dependency change entry.
-      writeln('- Update a dependency to the latest release.');
+      writeln(' - Update a dependency to the latest release.');
       writeln();
     }
 
     if (update.reason == PackageUpdateReason.graduate) {
       // Package graduation entry.
       writeln(
-        '- Graduate package to a stable release. See pre-releases prior to '
+        ' - Graduate package to a stable release. See pre-releases prior to '
         'this version for changelog entries.',
       );
       writeln();
@@ -154,7 +154,7 @@ extension ChangelogStringBufferExtension on StringBuffer {
       for (final commit in commits) {
         final parsedMessage = commit.parsedMessage;
 
-        write('- ');
+        write(' - ');
 
         if (parsedMessage.isBreakingChange) {
           writeBold('BREAKING');

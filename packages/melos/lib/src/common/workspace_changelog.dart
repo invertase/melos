@@ -70,11 +70,11 @@ class WorkspaceChangelog {
     body.writeln('Packages with breaking changes:');
     body.writeln();
     if (packagesWithBreakingChanges.isEmpty) {
-      body.writeln('- There are no breaking changes in this release.');
+      body.writeln(' - There are no breaking changes in this release.');
     } else {
       for (final update in packagesWithBreakingChanges) {
         body.writeln(
-          '- [${_packageVersionTitle(update)}](${_packageVersionMarkdownAnchor(update)})',
+          ' - [${_packageVersionTitle(update)}](${_packageVersionMarkdownAnchor(update)})',
         );
       }
     }
@@ -82,11 +82,11 @@ class WorkspaceChangelog {
     body.writeln('Packages with other changes:');
     body.writeln();
     if (packagesWithOtherChanges.isEmpty) {
-      body.writeln('- There are no other changes in this release.');
+      body.writeln(' - There are no other changes in this release.');
     } else {
       for (final update in packagesWithOtherChanges) {
         body.writeln(
-          '- [${_packageVersionTitle(update)}](${_packageVersionMarkdownAnchor(update)})',
+          ' - [${_packageVersionTitle(update)}](${_packageVersionMarkdownAnchor(update)})',
         );
       }
     }
@@ -98,7 +98,7 @@ class WorkspaceChangelog {
       body.writeln();
       for (final update in graduatedPackages) {
         body.writeln(
-          '- ${_packageVersionTitle(update)}',
+          ' - ${_packageVersionTitle(update)}',
         );
       }
     }
@@ -112,7 +112,7 @@ class WorkspaceChangelog {
       body.writeln();
       for (final update in dependencyOnlyPackages) {
         body.writeln(
-          '- ${_packageVersionTitle(update)}',
+          ' - ${_packageVersionTitle(update)}',
         );
       }
     }
