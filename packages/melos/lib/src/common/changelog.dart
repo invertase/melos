@@ -144,7 +144,7 @@ extension ChangelogStringBufferExtension on StringBuffer {
   void writePackageUpdateChanges(MelosPendingPackageUpdate update) {
     // User provided changelog entry message.
     if (update.userChangelogMessage != null) {
-      writeln(update.userChangelogMessage);
+      writeln(' - ${update.userChangelogMessage}');
       writeln();
     }
 
