@@ -20,6 +20,18 @@ jobs:
           fatal-infos: true
           fatal-warnings: true
 
+  # This job ensures `melos` compiles and runs fine on the
+  # minimum Dart SDK version that it supports.
+  dart_version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 2.12.0 # Update when min sdk supported version of `melos` package changes.
+      - name: "Run Melos"
+        run: ./.github/workflows/scripts/install-tools.sh
+
   format:
     runs-on: ubuntu-latest
     timeout-minutes: 5
