@@ -54,6 +54,10 @@ extension Let<T> on T? {
   }
 }
 
+extension EnumShortName on Enum {
+  String get shortName => toString().split('.').last;
+}
+
 // MELOS_PACKAGES environment variable is a comma delimited list of
 // package names - used instead of filters if it is present.
 // This can be user defined or can come from package selection in `melos run`.
