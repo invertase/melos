@@ -54,9 +54,7 @@ extension Let<T> on T? {
   }
 }
 
-extension EnumShortName on Enum {
-  String get shortName => toString().split('.').last;
-}
+String describeEnum(Object value) => value.toString().split('.').last;
 
 // MELOS_PACKAGES environment variable is a comma delimited list of
 // package names - used instead of filters if it is present.

@@ -241,8 +241,9 @@ class VersionCommand extends MelosCommand {
       return ManualVersionChange.incrementBuildNumber();
     }
 
-    final semverReleaseType = SemverReleaseType.values
-        .firstWhereOrNull((releaseType) => releaseType.shortName == argument);
+    final semverReleaseType = SemverReleaseType.values.firstWhereOrNull(
+      (releaseType) => describeEnum(releaseType) == argument,
+    );
     if (semverReleaseType != null) {
       return ManualVersionChange.incrementBySemverReleaseType(
         semverReleaseType,
