@@ -24,6 +24,7 @@ import 'package:glob/glob.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 import '../commands/runner.dart';
+import '../common/utils.dart';
 import '../common/versioning.dart';
 import '../package.dart';
 import '../workspace_configs.dart';
@@ -240,8 +241,9 @@ class VersionCommand extends MelosCommand {
       return ManualVersionChange.incrementBuildNumber();
     }
 
-    final semverReleaseType = SemverReleaseType.values
-        .firstWhereOrNull((releaseType) => releaseType.name == argument);
+    final semverReleaseType = SemverReleaseType.values.firstWhereOrNull(
+      (releaseType) => describeEnum(releaseType) == argument,
+    );
     if (semverReleaseType != null) {
       return ManualVersionChange.incrementBySemverReleaseType(
         semverReleaseType,
