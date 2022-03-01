@@ -439,10 +439,29 @@ Hint: try running "melos version --all" to include private packages.
 
     final pubspec = File(pubspecPathForDirectory(Directory(package.path)));
     final contents = await pubspec.readAsString();
-    final updatedContents = contents.replaceAllMapped(
-        dependencyVersionReplaceRegex(dependencyName), (Match match) {
-      return '${match.group(1)}$dependencyVersion';
-    });
+
+    final isExternalHostedReference = package
+            .pubSpec.dependencies[dependencyName] is ExternalHostedReference ||
+        package.pubSpec.devDependencies[dependencyName]
+            is ExternalHostedReference;
+
+    var updatedContents = contents;
+    if (isExternalHostedReference) {
+      var index = contents.indexOf('$dependencyName:');
+      index = contents.indexOf('version: ', index) + 'version: '.length;
+      var endIndex = contents.indexOf('\n', index);
+      if (endIndex == -1) {
+        endIndex = contents.length;
+      }
+      
+      final updatedVersion = dependencyVersion.toString();
+      updatedContents = contents.replaceRange(index, endIndex, updatedVersion);
+    } else {
+      updatedContents = contents.replaceAllMapped(
+          dependencyVersionReplaceRegex(dependencyName), (Match match) {
+        return '${match.group(1)}$dependencyVersion';
+      });
+    }
 
     // Sanity check that contents actually changed.
     if (contents == updatedContents) {
