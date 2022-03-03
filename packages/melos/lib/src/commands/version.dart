@@ -443,8 +443,11 @@ Hint: try running "melos version --all" to include private packages.
     final contents = await pubspec.readAsString();
     String updatedContents;
 
-    if (package.pubSpec.dependencies[dependencyName] is GitReference ||
-        package.pubSpec.devDependencies[dependencyName] is GitReference) {
+    final gitReference =
+        package.pubSpec.dependencies[dependencyName] is GitReference ||
+            package.pubSpec.devDependencies[dependencyName] is GitReference;
+
+    if (gitReference) {
       updatedContents = contents.replaceAllMapped(
           dependencyTagReplaceRegex(dependencyName), (Match match) {
         return '${match.group(1)}$dependencyName-v${dependencyVersion.toString().substring(1)}';
