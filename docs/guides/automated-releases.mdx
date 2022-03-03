@@ -53,3 +53,26 @@ Once satisfied with your pending releases, release them to [pub.dev](https://pub
 ```dart
 melos publish --no-dry-run
 ```
+
+## Git hosted packages
+
+If your packages are private and don't publish to [pub.dev](https://pub.dev), you can use the tag generated as git reference in your `pubspec.yaml` file and Melos will ensure the versions are updated accordingly.
+
+Example:
+```yaml
+dependencies:
+  internal_dep:
+    git:
+      url: git@github.com:org/repo.git
+      path: packages/internal_dep
+      ref: internal_dep-v0.0.1
+
+# to be updated to
+
+dependencies:
+  internal_dep:
+    git:
+      url: git@github.com:org/repo.git
+      path: packages/internal_dep
+      ref: internal_dep-v0.0.2
+```
