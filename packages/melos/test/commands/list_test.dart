@@ -206,6 +206,69 @@ c 0.0.0 packages/c
           );
         }),
       );
+
+      test(
+        'relativePaths flag prints relative paths only if true',
+        withMockFs(() async {
+          final workspaceDir = createMockWorkspaceFs(
+            packages: [
+              MockPackageFs(name: 'a'),
+              MockPackageFs(name: 'b'),
+              MockPackageFs(name: 'c'),
+            ],
+          );
+
+          final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+          final melos = Melos(logger: logger, config: config);
+          await melos.list(
+            kind: ListOutputKind.parsable,
+            showPrivatePackages: true,
+            relativePaths: true,
+          );
+
+          expect(
+            logger.output,
+            equalsIgnoringAnsii(
+              '''
+packages/a
+packages/b
+packages/c
+''',
+            ),
+          );
+        }),
+      );
+
+      test(
+        'full package path is printed by default if relativePaths is false or not set',
+        withMockFs(() async {
+          final workspaceDir = createMockWorkspaceFs(
+            packages: [
+              MockPackageFs(name: 'a'),
+              MockPackageFs(name: 'b'),
+              MockPackageFs(name: 'c'),
+            ],
+          );
+
+          final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+          final melos = Melos(logger: logger, config: config);
+          await melos.list(
+            kind: ListOutputKind.parsable,
+            showPrivatePackages: true,
+          );
+
+          expect(
+            logger.output,
+            equalsIgnoringAnsii(
+              '''
+/melos_workspace/packages/a
+/melos_workspace/packages/b
+/melos_workspace/packages/c
+''',
+            ),
+          );
+        }),
+      );
     });
   });
 }

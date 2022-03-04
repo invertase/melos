@@ -7,6 +7,7 @@ mixin _ListMixin on _Melos {
   Future<void> list({
     bool showPrivatePackages = false,
     bool long = false,
+    bool relativePaths = false,
     PackageFilter? filter,
     ListOutputKind kind = ListOutputKind.column,
   }) async {
@@ -19,6 +20,7 @@ mixin _ListMixin on _Melos {
         return _listParsable(
           workspace,
           long: long,
+          relativePaths: relativePaths,
           showPrivatePackages: showPrivatePackages,
         );
       case ListOutputKind.column:
@@ -31,6 +33,7 @@ mixin _ListMixin on _Melos {
         return _listJson(
           workspace,
           showPrivatePackages: showPrivatePackages,
+          relativePaths: relativePaths,
           long: long,
         );
       case ListOutputKind.gviz:
@@ -102,21 +105,24 @@ mixin _ListMixin on _Melos {
   void _listParsable(
     MelosWorkspace workspace, {
     required bool showPrivatePackages,
+    required bool relativePaths,
     required bool long,
   }) {
     for (final package in workspace.filteredPackages.values) {
       if (package.isPrivate && !showPrivatePackages) continue;
+      final packagePath =
+          relativePaths ? package.pathRelativeToWorkspace : package.path;
       if (long) {
         logger?.stdout(
           <Object>[
-            package.path,
+            packagePath,
             package.name,
             package.version,
             if (package.isPrivate) 'PRIVATE',
           ].join(':'),
         );
       } else {
-        logger?.stdout(package.path);
+        logger?.stdout(packagePath);
       }
     }
   }
@@ -124,18 +130,21 @@ mixin _ListMixin on _Melos {
   void _listJson(
     MelosWorkspace workspace, {
     required bool showPrivatePackages,
+    required bool relativePaths,
     required bool long,
   }) {
     final jsonArrayItems = <Map<String, Object?>>[];
 
     for (final package in workspace.filteredPackages.values) {
       if (!showPrivatePackages && package.isPrivate) continue;
+      final packagePath =
+          relativePaths ? package.pathRelativeToWorkspace : package.path;
 
       final jsonObject = {
         'name': package.name,
         'version': package.version.toString(),
         'private': package.isPrivate,
-        'location': package.path,
+        'location': packagePath,
         'type': package.type.index
       };
 

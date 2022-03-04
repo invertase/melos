@@ -41,6 +41,13 @@ class ListCommand extends MelosCommand {
       help: 'Show parsable output instead of columnified view.',
     );
     argParser.addFlag(
+      'relative',
+      abbr: 'r',
+      negatable: false,
+      help:
+          'When printing output, use package paths relative to the root of the workspace.',
+    );
+    argParser.addFlag(
       'json',
       negatable: false,
       help: 'Show information as a JSON array.',
@@ -76,6 +83,7 @@ class ListCommand extends MelosCommand {
     final all = argResults!['all'] as bool;
     final parsable = argResults!['parsable'] as bool;
     final json = argResults!['json'] as bool;
+    final relative = argResults!['relative'] as bool;
     final graph = argResults!['graph'] as bool;
     final gviz = argResults!['gviz'] as bool;
 
@@ -92,6 +100,7 @@ class ListCommand extends MelosCommand {
       showPrivatePackages: all,
       long: long,
       filter: parsePackageFilter(config.path),
+      relativePaths: relative,
       kind: kind,
     );
   }
