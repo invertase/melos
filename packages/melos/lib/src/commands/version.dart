@@ -293,6 +293,7 @@ Hint: try running "melos version --all" to include private packages.
       updateDependentsConstraints: updateDependentsConstraints,
       updateChangelog: updateChangelog,
       workspace: workspace,
+      gitTag: gitTag,
     );
 
     // TODO allow support for individual package lifecycle version scripts
@@ -367,6 +368,8 @@ Hint: try running "melos version --all" to include private packages.
     Package package,
     String dependencyName,
     Version version,
+    MelosWorkspace workspace,
+    bool gitTag,
   ) {
     final currentVersionConstraint =
         (package.pubSpec.dependencies[dependencyName] ??
@@ -381,6 +384,8 @@ Hint: try running "melos version --all" to include private packages.
         package,
         dependencyName,
         version,
+        workspace,
+        gitTag,
       );
     }
 
@@ -408,6 +413,8 @@ Hint: try running "melos version --all" to include private packages.
       package,
       dependencyName,
       versionConstraint,
+      workspace,
+      gitTag,
     );
   }
 
@@ -415,6 +422,8 @@ Hint: try running "melos version --all" to include private packages.
     Package package,
     String dependencyName,
     VersionConstraint dependencyVersion,
+    MelosWorkspace workspace,
+    bool gitTag,
   ) async {
     if (package.pubSpec.dependencies.containsKey(dependencyName) &&
         package.pubSpec.dependencies[dependencyName] is! GitReference &&
@@ -447,7 +456,9 @@ Hint: try running "melos version --all" to include private packages.
         package.pubSpec.dependencies[dependencyName] is GitReference ||
             package.pubSpec.devDependencies[dependencyName] is GitReference;
 
-    if (gitReference) {
+    if (gitReference &&
+        gitTag &&
+        workspace.config.commands.version.updateGitTagRefs) {
       updatedContents = contents.replaceAllMapped(
           dependencyTagReplaceRegex(dependencyName), (Match match) {
         return '${match.group(1)}$dependencyName-v${dependencyVersion.toString().substring(1)}';
@@ -543,6 +554,7 @@ Hint: try running "melos version --all" to include private packages.
     required bool updateDependentsConstraints,
     required bool updateChangelog,
     required MelosWorkspace workspace,
+    required bool gitTag,
   }) async {
     // Note: not pooling & parrellelzing rights to avoid possible file contention.
     await Future.forEach(pendingPackageUpdates,
@@ -573,6 +585,8 @@ Hint: try running "melos version --all" to include private packages.
                     !updateDependentsVersions)
                 ? pendingPackageUpdate.package.version
                 : pendingPackageUpdate.nextVersion,
+            workspace,
+            gitTag,
           );
         });
       }
