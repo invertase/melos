@@ -74,6 +74,23 @@ void main() {
       expect(ConventionalCommit.tryParse('feat(foo): new thing'), isNotNull);
     });
 
+    test('accepts commit messages with prefix before conventional commit type',
+        () {
+      expect(
+        ConventionalCommit.tryParse('Merged PR 404: feat: new thing'),
+        isNotNull,
+      );
+      expect(
+        ConventionalCommit.tryParse(
+            'Merge pull request #404: feat(foo):new thing'),
+        isNotNull,
+      );
+      expect(
+        ConventionalCommit.tryParse('Merged branch (test): fix(test): tests'),
+        isNotNull,
+      );
+    });
+
     test('correctly handles messages with a `*` scope', () {
       final commit = ConventionalCommit.tryParse(commitMessageStarScope);
       expect(commit, isNotNull);
