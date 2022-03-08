@@ -77,7 +77,7 @@ void main() {
     test('accepts commit messages with prefix before conventional commit type',
         () {
       expect(
-        ConventionalCommit.tryParse('Merged PR 404: feat: new thing'),
+        ConventionalCommit.tryParse('Merged PR 404: feat(scope): new feature'),
         isNotNull,
       );
       expect(
@@ -89,6 +89,17 @@ void main() {
         isNotNull,
       );
     });
+
+    test(
+      'correctly parses commit with prefix before conventional commit type',
+      () {
+        final commitMessage = 'Merged PR 404: feat(scope): new feature';
+        final conventionalCommit = ConventionalCommit.tryParse(commitMessage);
+        expect(conventionalCommit?.type, 'feat');
+        expect(conventionalCommit?.scopes, ['scope']);
+        expect(conventionalCommit?.description, 'new feature');
+      },
+    );
 
     test('correctly handles messages with a `*` scope', () {
       final commit = ConventionalCommit.tryParse(commitMessageStarScope);
