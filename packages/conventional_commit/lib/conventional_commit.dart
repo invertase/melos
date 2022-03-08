@@ -16,7 +16,7 @@
  */
 
 final _conventionalCommitRegex = RegExp(
-  r'^(?<type>build|chore|ci|docs|feat|fix|bug|perf|refactor|revert|style|test)(?<scope>\([a-zA-Z0-9_,\s\*]+\)?((?=:\s?)|(?=!:\s?)))?(?<breaking>!)?(?<description>:\s?.*)?|^(?<merge>Merged? \w+)',
+  r'(?<type>build|chore|ci|docs|feat|fix|bug|perf|refactor|revert|style|test)(?<scope>\([a-zA-Z0-9_,\s\*]+\)?((?=:\s?)|(?=!:\s?)))?(?<breaking>!)?(?<description>:\s?.*)?|^(?<merge>Merged? \w+)',
 );
 
 final _breakingChangeRegex =
