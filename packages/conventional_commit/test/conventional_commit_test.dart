@@ -81,8 +81,7 @@ void main() {
         isNotNull,
       );
       expect(
-        ConventionalCommit.tryParse(
-            'Merge pull request #404: feat(foo):new thing'),
+        ConventionalCommit.tryParse('Merge pull request #404: feat(foo):bar'),
         isNotNull,
       );
       expect(
