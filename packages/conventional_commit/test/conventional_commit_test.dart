@@ -93,7 +93,7 @@ void main() {
     test(
       'correctly parses commit with prefix before conventional commit type',
       () {
-        final commitMessage = 'Merged PR 404: feat(scope): new feature';
+        const commitMessage = 'Merged PR 404: feat(scope): new feature';
         final conventionalCommit = ConventionalCommit.tryParse(commitMessage);
         expect(conventionalCommit?.type, 'feat');
         expect(conventionalCommit?.scopes, ['scope']);
