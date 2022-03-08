@@ -85,7 +85,7 @@ void main() {
         isNotNull,
       );
       expect(
-        ConventionalCommit.tryParse('Merged branch (test): fix(test): tests'),
+        ConventionalCommit.tryParse('Merged branch test to main: fix: test'),
         isNotNull,
       );
     });
