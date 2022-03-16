@@ -367,6 +367,7 @@ Hint: try running "melos version --all" to include private packages.
     Package package,
     String dependencyName,
     Version version,
+    MelosWorkspace workspace,
   ) {
     final currentVersionConstraint =
         (package.pubSpec.dependencies[dependencyName] ??
@@ -381,6 +382,7 @@ Hint: try running "melos version --all" to include private packages.
         package,
         dependencyName,
         version,
+        workspace,
       );
     }
 
@@ -408,6 +410,7 @@ Hint: try running "melos version --all" to include private packages.
       package,
       dependencyName,
       versionConstraint,
+      workspace,
     );
   }
 
@@ -415,8 +418,10 @@ Hint: try running "melos version --all" to include private packages.
     Package package,
     String dependencyName,
     VersionConstraint dependencyVersion,
+    MelosWorkspace workspace,
   ) async {
     if (package.pubSpec.dependencies.containsKey(dependencyName) &&
+        package.pubSpec.dependencies[dependencyName] is! GitReference &&
         package.pubSpec.dependencies[dependencyName] is! HostedReference &&
         package.pubSpec.dependencies[dependencyName]
             is! ExternalHostedReference) {
@@ -427,6 +432,7 @@ Hint: try running "melos version --all" to include private packages.
       return;
     }
     if (package.pubSpec.devDependencies.containsKey(dependencyName) &&
+        package.pubSpec.devDependencies[dependencyName] is! GitReference &&
         package.pubSpec.devDependencies[dependencyName] is! HostedReference &&
         package.pubSpec.devDependencies[dependencyName]
             is! ExternalHostedReference) {
@@ -439,10 +445,23 @@ Hint: try running "melos version --all" to include private packages.
 
     final pubspec = File(pubspecPathForDirectory(Directory(package.path)));
     final contents = await pubspec.readAsString();
-    final updatedContents = contents.replaceAllMapped(
-        dependencyVersionReplaceRegex(dependencyName), (Match match) {
-      return '${match.group(1)}$dependencyVersion';
-    });
+    String updatedContents;
+
+    final gitReference =
+        package.pubSpec.dependencies[dependencyName] is GitReference ||
+            package.pubSpec.devDependencies[dependencyName] is GitReference;
+
+    if (gitReference && workspace.config.commands.version.updateGitTagRefs) {
+      updatedContents = contents.replaceAllMapped(
+          dependencyTagReplaceRegex(dependencyName), (Match match) {
+        return '${match.group(1)}$dependencyName-v${dependencyVersion.toString().substring(1)}';
+      });
+    } else {
+      updatedContents = contents.replaceAllMapped(
+          dependencyVersionReplaceRegex(dependencyName), (Match match) {
+        return '${match.group(1)}$dependencyVersion';
+      });
+    }
 
     // Sanity check that contents actually changed.
     if (contents == updatedContents) {
@@ -558,6 +577,7 @@ Hint: try running "melos version --all" to include private packages.
                     !updateDependentsVersions)
                 ? pendingPackageUpdate.package.version
                 : pendingPackageUpdate.nextVersion,
+            workspace,
           );
         });
       }
