@@ -74,6 +74,33 @@ void main() {
       expect(ConventionalCommit.tryParse('feat(foo): new thing'), isNotNull);
     });
 
+    test('accepts commit messages with prefix before conventional commit type',
+        () {
+      expect(
+        ConventionalCommit.tryParse('Merged PR 404: feat(scope): new feature'),
+        isNotNull,
+      );
+      expect(
+        ConventionalCommit.tryParse('Merge pull request #404: feat(foo):bar'),
+        isNotNull,
+      );
+      expect(
+        ConventionalCommit.tryParse('Merged branch develop to main: fix: test'),
+        isNotNull,
+      );
+    });
+
+    test(
+      'correctly parses commit with prefix before conventional commit type',
+      () {
+        const commitMessage = 'Merged PR 404: feat(scope): new feature';
+        final conventionalCommit = ConventionalCommit.tryParse(commitMessage);
+        expect(conventionalCommit?.type, 'feat');
+        expect(conventionalCommit?.scopes, ['scope']);
+        expect(conventionalCommit?.description, 'new feature');
+      },
+    );
+
     test('correctly handles messages with a `*` scope', () {
       final commit = ConventionalCommit.tryParse(commitMessageStarScope);
       expect(commit, isNotNull);
