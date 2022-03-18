@@ -1,3 +1,7 @@
+## 0.4.3
+
+ - **FEAT**: allow prefixes before conventional commit type (#259). ([e856cfa5](https://github.com/invertase/melos/commit/e856cfa59f3a3c2b5bd753d2be0a1a0a512822a0))
+
 ## 0.4.2
 
  - **FEAT**: relax commit message validation to accept commit messages without spaces before the description (after `:`). ([ddf7fb11](https://github.com/invertase/melos/commit/ddf7fb1114926f4b27a1913c5987ffba66c79686))
