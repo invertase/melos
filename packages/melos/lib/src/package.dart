@@ -105,6 +105,13 @@ RegExp dependencyVersionReplaceRegex(String dependencyName) {
   );
 }
 
+RegExp dependencyTagReplaceRegex(String dependencyName) {
+  return RegExp(
+    '''(?<tag_ref>^\\s+ref\\s?:\\s?)(?<opening_quote>["']?)(?<tag>$dependencyName-v[\\d]+\\.[\\d]+\\.[\\d]+)(?<closing_quote>['"]?)\$''',
+    multiLine: true,
+  );
+}
+
 class PackageFilter {
   PackageFilter({
     this.scope = const [],
@@ -724,7 +731,9 @@ class Package {
   /// Queries the pub.dev registry for published versions of this package.
   /// Primarily used for publish filters and versioning.
   Future<List<String>> getPublishedVersions() async {
-    final url = pubUrl.replace(path: '/packages/$name.json');
+    final pubHosted = pubSpec.publishTo ?? pubUrl;
+
+    final url = pubHosted.replace(path: '/packages/$name.json');
     final response = await http.get(url);
 
     if (response.statusCode == 404) {

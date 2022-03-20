@@ -167,6 +167,7 @@ class VersionCommandConfigs {
     this.linkToCommits,
     this.branch,
     this.workspaceChangelog = false,
+    this.updateGitTagRefs = false,
   });
 
   factory VersionCommandConfigs.fromYaml(Map<Object?, Object?> yaml) {
@@ -192,11 +193,18 @@ class VersionCommandConfigs {
       path: 'command/version',
     );
 
+    final updateGitTagRefs = assertKeyIsA<bool?>(
+      key: 'updateGitTagRefs',
+      map: yaml,
+      path: 'command/version',
+    );
+
     return VersionCommandConfigs(
       branch: branch,
       linkToCommits: linkToCommits,
       message: message,
       workspaceChangelog: workspaceChangelog ?? false,
+      updateGitTagRefs: updateGitTagRefs ?? false,
     );
   }
 
@@ -211,6 +219,9 @@ class VersionCommandConfigs {
   /// Whether to also generate a CHANGELOG.md for the entire workspace at the root.
   final bool workspaceChangelog;
 
+  /// Whether to also update pubspec with git referenced packages.
+  final bool updateGitTagRefs;
+
   /// If specified, prevents `melos version` from being used inside branches
   /// other than the one specified.
   final String? branch;
@@ -221,6 +232,7 @@ class VersionCommandConfigs {
       if (linkToCommits != null) 'linkToCommits': linkToCommits,
       if (branch != null) 'branch': branch,
       'workspaceChangelog': workspaceChangelog,
+      'updateGitTagRefs': updateGitTagRefs,
     };
   }
 
@@ -231,6 +243,7 @@ class VersionCommandConfigs {
       other.message == message &&
       other.linkToCommits == linkToCommits &&
       other.workspaceChangelog == workspaceChangelog &&
+      other.updateGitTagRefs == updateGitTagRefs &&
       other.branch == branch;
 
   @override
@@ -239,6 +252,7 @@ class VersionCommandConfigs {
       message.hashCode ^
       linkToCommits.hashCode ^
       workspaceChangelog.hashCode ^
+      updateGitTagRefs.hashCode ^
       branch.hashCode;
 
   @override
@@ -248,6 +262,7 @@ VersionCommandConfigs(
   message: $message,
   linkToCommits: $linkToCommits,
   workspaceChangelog: $workspaceChangelog,
+  updateGitTagRefs: $updateGitTagRefs,
   branch: $branch,
 )''';
   }
