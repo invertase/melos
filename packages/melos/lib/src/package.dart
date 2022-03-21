@@ -105,6 +105,14 @@ RegExp dependencyVersionReplaceRegex(String dependencyName) {
   );
 }
 
+// https://regex101.com/r/ob8xRv/1
+RegExp hostedDependencyVersionReplaceRegex(String dependencyName) {
+  return RegExp(
+    '''(^[ \t]*?(?<dependency>$dependencyName)[ \\t]*?:[ \\t]*?[\\s\\S]*?[ \\t]*?version:[ \\t]*?)(?<version>any|["'^<>=]*\\d\\.\\d\\.\\d['"._ \\t<>=\\d-\\w+]*|\$)\$''',
+    multiLine: true,
+  );
+}
+
 RegExp dependencyTagReplaceRegex(String dependencyName) {
   return RegExp(
     '''(?<tag_ref>^\\s+ref\\s?:\\s?)(?<opening_quote>["']?)(?<tag>$dependencyName-v[\\d]+\\.[\\d]+\\.[\\d]+)(?<closing_quote>['"]?)\$''',

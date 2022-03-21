@@ -445,13 +445,24 @@ Hint: try running "melos version --all" to include private packages.
 
     final pubspec = File(pubspecPathForDirectory(Directory(package.path)));
     final contents = await pubspec.readAsString();
-    String updatedContents;
+
+    final isExternalHostedReference = package
+            .pubSpec.dependencies[dependencyName] is ExternalHostedReference ||
+        package.pubSpec.devDependencies[dependencyName]
+            is ExternalHostedReference;
 
     final gitReference =
         package.pubSpec.dependencies[dependencyName] is GitReference ||
             package.pubSpec.devDependencies[dependencyName] is GitReference;
 
-    if (gitReference && workspace.config.commands.version.updateGitTagRefs) {
+    var updatedContents = contents;
+    if (isExternalHostedReference) {
+      updatedContents = contents.replaceAllMapped(
+          hostedDependencyVersionReplaceRegex(dependencyName), (Match match) {
+        return '${match.group(1)}$dependencyVersion';
+      });
+    } else if (gitReference &&
+        workspace.config.commands.version.updateGitTagRefs) {
       updatedContents = contents.replaceAllMapped(
           dependencyTagReplaceRegex(dependencyName), (Match match) {
         return '${match.group(1)}$dependencyName-v${dependencyVersion.toString().substring(1)}';
