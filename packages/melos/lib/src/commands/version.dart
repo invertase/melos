@@ -457,15 +457,10 @@ Hint: try running "melos version --all" to include private packages.
 
     var updatedContents = contents;
     if (isExternalHostedReference) {
-      var index = contents.indexOf('$dependencyName:');
-      index = contents.indexOf('version: ', index) + 'version: '.length;
-      var endIndex = contents.indexOf('\n', index);
-      if (endIndex == -1) {
-        endIndex = contents.length;
-      }
-
-      final updatedVersion = dependencyVersion.toString();
-      updatedContents = contents.replaceRange(index, endIndex, updatedVersion);
+      updatedContents = contents.replaceAllMapped(
+          hostedDependencyVersionReplaceRegex(dependencyName), (Match match) {
+        return '${match.group(1)}$dependencyVersion';
+      });
     } else if (gitReference &&
         workspace.config.commands.version.updateGitTagRefs) {
       updatedContents = contents.replaceAllMapped(
