@@ -105,7 +105,7 @@ RegExp dependencyVersionReplaceRegex(String dependencyName) {
   );
 }
 
-// https://regex101.com/r/ob8xRv/1
+// https://regex101.com/r/HIeQaI/1
 RegExp hostedDependencyVersionReplaceRegex(String dependencyName) {
   return RegExp(
     '''(^[ \t]*?(?<dependency>$dependencyName)[ \\t]*?:[ \\t]*?[\\s\\S]*?[ \\t]*?version:[ \\t]*?)(?<version>any|\\^.*|["'^<>=]*\\d\\.\\d\\.\\d['"._ \\t<>=\\d-\\w+]*|\$)\$''',
