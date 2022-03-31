@@ -83,12 +83,16 @@ Generating IntelliJ IDE files...
       final aConfig = packageConfigForPackageAt(aDir);
 
       expect(
-        aConfig.packages.firstWhere((p) => p.name == 'absolute').rootUri,
-        'file://${absoluteProject.path}',
+        Uri.parse(
+          aConfig.packages.firstWhere((p) => p.name == 'absolute').rootUri,
+        ).path,
+        absoluteProject.path,
       );
       expect(
-        aConfig.packages.firstWhere((p) => p.name == 'relative').rootUri,
-        'file://${relativeProject.path}',
+        Uri.parse(
+          aConfig.packages.firstWhere((p) => p.name == 'relative').rootUri,
+        ).path,
+        relativeProject.path,
       );
       expect(aConfig.generator, 'melos');
     });
