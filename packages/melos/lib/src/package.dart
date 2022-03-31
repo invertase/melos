@@ -639,7 +639,8 @@ class Package {
     required this.version,
     required this.publishTo,
     required this.pubSpec,
-  }) : _packageMap = packageMap;
+  })  : _packageMap = packageMap,
+        assert(isAbsolute(path));
 
   final Map<String, Package> _packageMap;
 

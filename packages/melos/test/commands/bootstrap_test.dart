@@ -1,6 +1,7 @@
 import 'dart:io' as io;
 
 import 'package:melos/melos.dart';
+import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
 import 'package:test/test.dart';
@@ -10,6 +11,88 @@ import '../utils.dart';
 
 void main() {
   group('bootstrap', () {
+    test(
+        'supports path dependencies in the pubspec for dependencies that '
+        'are not part of the workspace', () async {
+      final absoluteDir =
+          io.Directory(join(io.Directory.current.path, '.dart_tool'))
+              .createTempSync();
+      addTearDown(() => absoluteDir.delete(recursive: true));
+      final relativeDir =
+          io.Directory(join(io.Directory.current.path, '.dart_tool'))
+              .createTempSync();
+      addTearDown(() => relativeDir.delete(recursive: true));
+
+      final absoluteProject = await createProject(
+        absoluteDir,
+        const PubSpec(name: 'absolute'),
+        path: '',
+      );
+      final relativeProject = await createProject(
+        relativeDir,
+        const PubSpec(name: 'relative'),
+        path: '',
+      );
+
+      final workspaceDir = createTemporaryWorkspaceDirectory();
+
+      final relativePathFromAToRelative = relative(
+        relativeProject.path,
+        from: join(workspaceDir.path, 'packages', 'a'),
+      );
+
+      final aDir = await createProject(
+        workspaceDir,
+        PubSpec(
+          name: 'a',
+          dependencies: {
+            'relative': PathReference(relativePathFromAToRelative),
+            'absolute': PathReference(absoluteProject.path),
+          },
+        ),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final melos = Melos(logger: logger, config: config);
+
+      await melos.bootstrap();
+
+      expect(
+        logger.output,
+        equalsIgnoringAnsii(
+          '''
+melos bootstrap
+   └> ${workspaceDir.path}
+
+Running "pub get" in workspace packages...
+  ✓ a
+    └> packages/a
+
+Linking workspace packages...
+  > SUCCESS
+
+Generating IntelliJ IDE files...
+  > SUCCESS
+
+ -> 1 plugins bootstrapped
+''',
+        ),
+      );
+
+      final aConfig = packageConfigForPackageAt(aDir);
+
+      expect(
+        aConfig.packages.firstWhere((p) => p.name == 'absolute').rootUri,
+        'file://${absoluteProject.path}',
+      );
+      expect(
+        aConfig.packages.firstWhere((p) => p.name == 'relative').rootUri,
+        'file://${relativeProject.path}',
+      );
+      expect(aConfig.generator, 'melos');
+    });
+
     test('resolves workspace packages with path dependency', () async {
       final workspaceDir = createTemporaryWorkspaceDirectory();
 

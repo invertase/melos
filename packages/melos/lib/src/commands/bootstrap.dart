@@ -204,6 +204,34 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
         join(workspace.melosToolPath, package.pathRelativeToWorkspace);
     var pubspec = package.pubSpec;
 
+    // Since the generated temporary package is located at the different path than
+    // original package, this may break path dependencies that this package uses.
+    // As such, we're updating the path dependencies to match the new location
+    // by converting paths to absolute ones.
+    Map<String, DependencyReference> transformPathDependenciesToAbsolute(
+      Map<String, DependencyReference> dependencies,
+    ) {
+      final result = {...dependencies};
+
+      for (final entry in dependencies.entries) {
+        final dependency = entry.value;
+        if (dependency is PathReference && dependency.path != null) {
+          result[entry.key] =
+              PathReference(normalize(absolute(package.path, dependency.path)));
+        }
+      }
+
+      return result;
+    }
+
+    pubspec = pubspec.copy(
+      dependencies: transformPathDependenciesToAbsolute(pubspec.dependencies),
+      devDependencies:
+          transformPathDependenciesToAbsolute(pubspec.devDependencies),
+      dependencyOverrides:
+          transformPathDependenciesToAbsolute(pubspec.dependencyOverrides),
+    );
+
     // Traversing all packages so that transitive dependencies for the bootstraped
     // packages are setup properly.
     for (final plugin in workspace.allPackages.values) {
