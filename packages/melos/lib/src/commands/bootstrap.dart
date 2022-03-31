@@ -217,7 +217,7 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
         final dependency = entry.value;
         if (dependency is PathReference && dependency.path != null) {
           result[entry.key] =
-              PathReference(normalize(absolute(package.path, dependency.path)));
+              PathReference(absolute(package.path, dependency.path));
         }
       }
 
