@@ -9,19 +9,21 @@ import 'package:test/test.dart';
 import '../matchers.dart';
 import '../utils.dart';
 
+io.Directory createTmpDir() {
+  final dir = io.Directory.systemTemp.createTempSync();
+  addTearDown(() => dir.delete(recursive: true));
+  return dir;
+}
+
 void main() {
   group('bootstrap', () {
     test(
         'supports path dependencies in the pubspec for dependencies that '
         'are not part of the workspace', () async {
-      final absoluteDir =
-          io.Directory(join(io.Directory.current.path, '.dart_tool'))
-              .createTempSync();
-      addTearDown(() => absoluteDir.delete(recursive: true));
-      final relativeDir =
-          io.Directory(join(io.Directory.current.path, '.dart_tool'))
-              .createTempSync();
-      addTearDown(() => relativeDir.delete(recursive: true));
+      final absoluteDir = createTmpDir();
+      final relativeDir = createTmpDir();
+      final relativeOverrideDir = createTmpDir();
+      final relativeDevDir = createTmpDir();
 
       final absoluteProject = await createProject(
         absoluteDir,
@@ -33,21 +35,40 @@ void main() {
         const PubSpec(name: 'relative'),
         path: '',
       );
+      final relativeDevProject = await createProject(
+        relativeDevDir,
+        const PubSpec(name: 'relative_dev'),
+        path: '',
+      );
+      final relativeOverrideProject = await createProject(
+        relativeOverrideDir,
+        const PubSpec(name: 'relative_override'),
+        path: '',
+      );
 
       final workspaceDir = createTemporaryWorkspaceDirectory();
 
-      final relativePathFromAToRelative = relative(
-        relativeProject.path,
-        from: join(workspaceDir.path, 'packages', 'a'),
-      );
+      final aPath = join(workspaceDir.path, 'packages', 'a');
 
       final aDir = await createProject(
         workspaceDir,
         PubSpec(
           name: 'a',
           dependencies: {
-            'relative': PathReference(relativePathFromAToRelative),
+            'relative': PathReference(
+              relative(relativeProject.path, from: aPath),
+            ),
             'absolute': PathReference(absoluteProject.path),
+          },
+          dependencyOverrides: {
+            'relative_override': PathReference(
+              relative(relativeOverrideProject.path, from: aPath),
+            ),
+          },
+          devDependencies: {
+            'relative_dev': PathReference(
+              relative(relativeDevProject.path, from: aPath),
+            ),
           },
         ),
       );
@@ -93,6 +114,20 @@ Generating IntelliJ IDE files...
           aConfig.packages.firstWhere((p) => p.name == 'relative').rootUri,
         ).path,
         relativeProject.path,
+      );
+      expect(
+        Uri.parse(
+          aConfig.packages.firstWhere((p) => p.name == 'relative_dev').rootUri,
+        ).path,
+        relativeDevProject.path,
+      );
+      expect(
+        Uri.parse(
+          aConfig.packages
+              .firstWhere((p) => p.name == 'relative_override')
+              .rootUri,
+        ).path,
+        relativeOverrideProject.path,
       );
       expect(aConfig.generator, 'melos');
     });
