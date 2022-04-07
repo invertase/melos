@@ -5,13 +5,17 @@ import 'dart:math';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:cli_util/cli_logging.dart';
+import 'package:collection/collection.dart';
 import 'package:conventional_commit/conventional_commit.dart';
 import 'package:file/local.dart';
+import 'package:meta/meta.dart';
 import 'package:mustache_template/mustache.dart';
 import 'package:path/path.dart';
 import 'package:pool/pool.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
+import 'package:yaml/yaml.dart';
+import 'package:yaml_edit/yaml_edit.dart';
 
 import '../command_runner/version.dart';
 import '../common/exception.dart';

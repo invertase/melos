@@ -21,6 +21,46 @@ import 'package:test/test.dart';
 import 'matchers.dart';
 
 void main() {
+  group('BootstrapCommandConfigs', () {
+    test('usePubspecOverrides is optional', () {
+      // ignore: use_named_constants
+      const value = BootstrapCommandConfigs();
+
+      expect(value.usePubspecOverrides, false);
+    });
+
+    group('fromYaml', () {
+      test('accepts empty object', () {
+        expect(
+          BootstrapCommandConfigs.fromYaml(const {}),
+          BootstrapCommandConfigs.empty,
+        );
+      });
+
+      test('throws if usePubspecOverrides is not a bool', () {
+        expect(
+          () => BootstrapCommandConfigs.fromYaml(const {
+            'usePubspecOverrides': 42,
+          }),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('can decode values', () {
+        expect(
+          BootstrapCommandConfigs.fromYaml(
+            const {
+              'usePubspecOverrides': true,
+            },
+          ),
+          const BootstrapCommandConfigs(
+            usePubspecOverrides: true,
+          ),
+        );
+      });
+    });
+  });
+
   group('VersionCommandConfigs', () {
     test('message/repository/linkToCommits are optional', () {
       // ignore: use_named_constants
@@ -80,7 +120,12 @@ void main() {
   });
 
   group('CommandConfigs', () {
-    test('defaults to empty version configs', () {
+    test('defaults to empty configs', () {
+      expect(
+        CommandConfigs.empty.bootstrap,
+        BootstrapCommandConfigs.empty,
+      );
+
       expect(
         CommandConfigs.empty.version,
         VersionCommandConfigs.empty,
@@ -94,10 +139,25 @@ void main() {
     });
 
     group('fromYaml', () {
-      test('supports `version` missing', () {
+      test('supports `bootstrap` and `version` missing', () {
         expect(
           CommandConfigs.fromYaml(const {}),
           CommandConfigs.empty,
+        );
+      });
+
+      test('can decode `bootstrap`', () {
+        expect(
+          CommandConfigs.fromYaml(const {
+            'bootstrap': {
+              'usePubspecOverrides': true,
+            }
+          }),
+          const CommandConfigs(
+            bootstrap: BootstrapCommandConfigs(
+              usePubspecOverrides: true,
+            ),
+          ),
         );
       });
 
@@ -117,6 +177,13 @@ void main() {
               linkToCommits: true,
             ),
           ),
+        );
+      });
+
+      test('throws if `bootstrap` is not a map', () {
+        expect(
+          () => CommandConfigs.fromYaml(const {'bootstrap': 42}),
+          throwsMelosConfigException(),
         );
       });
 

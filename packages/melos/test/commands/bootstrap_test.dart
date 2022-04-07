@@ -1,6 +1,8 @@
 import 'dart:io' as io;
 
 import 'package:melos/melos.dart';
+import 'package:melos/src/commands/runner.dart';
+import 'package:melos/src/common/utils.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
 import 'package:test/test.dart';
@@ -98,6 +100,190 @@ Generating IntelliJ IDE files...
       }),
     );
 
+    group('pubspec overrides', () {
+      test(
+        'bootstrap transitive dependencies',
+        () => dependencyResolutionTest(
+          {
+            'a': [],
+            'b': ['a'],
+            'c': ['b'],
+          },
+          usePubspecOverrides: true,
+        ),
+        skip: !isPubspecOverridesSupported,
+      );
+
+      test(
+        'bootstrap cyclic dependencies',
+        () => dependencyResolutionTest(
+          {
+            'a': ['b'],
+            'b': ['a'],
+          },
+          usePubspecOverrides: true,
+        ),
+        skip: !isPubspecOverridesSupported,
+      );
+
+      group('mergeMelosPubspecOverrides', () {
+        void expectMergedMelosPubspecOverrides({
+          required Map<String, String> melosDependencyOverrides,
+          required String? currentPubspecOverrides,
+          required String? updatedPubspecOverrides,
+        }) {
+          expect(
+            mergeMelosPubspecOverrides(
+              melosDependencyOverrides,
+              currentPubspecOverrides,
+            ),
+            updatedPubspecOverrides,
+          );
+        }
+
+        test('pubspec_overrides.yaml does not exist', () {
+          expectMergedMelosPubspecOverrides(
+            melosDependencyOverrides: {},
+            currentPubspecOverrides: null,
+            updatedPubspecOverrides: null,
+          );
+          expectMergedMelosPubspecOverrides(
+            melosDependencyOverrides: {'a': '../a'},
+            currentPubspecOverrides: null,
+            updatedPubspecOverrides: '''
+# melos_managed_dependency_overrides: a
+dependency_overrides:
+  a:
+    path: ../a
+''',
+          );
+        });
+
+        test('existing pubspec_overrides.yaml is empty', () {
+          expectMergedMelosPubspecOverrides(
+            melosDependencyOverrides: {},
+            currentPubspecOverrides: '',
+            updatedPubspecOverrides: null,
+          );
+          expectMergedMelosPubspecOverrides(
+            melosDependencyOverrides: {'a': '../a'},
+            currentPubspecOverrides: '',
+            updatedPubspecOverrides: '''
+# melos_managed_dependency_overrides: a
+dependency_overrides:
+  a:
+    path: ../a
+''',
+          );
+        });
+
+        test('existing pubspec_overrides.yaml has dependency_overrides', () {
+          expectMergedMelosPubspecOverrides(
+            melosDependencyOverrides: {'a': '../a'},
+            currentPubspecOverrides: '''
+dependency_overrides: null
+''',
+            updatedPubspecOverrides: '''
+# melos_managed_dependency_overrides: a
+dependency_overrides: 
+  a:
+    path: ../a
+''',
+          );
+
+          expectMergedMelosPubspecOverrides(
+            melosDependencyOverrides: {'a': '../a'},
+            currentPubspecOverrides: '''
+dependency_overrides:
+  x: any
+''',
+            updatedPubspecOverrides: '''
+# melos_managed_dependency_overrides: a
+dependency_overrides:
+  a:
+    path: ../a
+  x: any
+''',
+          );
+        });
+
+        test('add melos managed dependency', () {
+          expectMergedMelosPubspecOverrides(
+            melosDependencyOverrides: {'a': '../a', 'b': '../b'},
+            currentPubspecOverrides: '''
+# melos_managed_dependency_overrides: a
+dependency_overrides:
+  a:
+    path: ../a
+''',
+            updatedPubspecOverrides: '''
+# melos_managed_dependency_overrides: a,b
+dependency_overrides:
+  a:
+    path: ../a
+  b:
+    path: ../b
+''',
+          );
+        });
+
+        test('remove melos managed dependency', () {
+          expectMergedMelosPubspecOverrides(
+            melosDependencyOverrides: {},
+            currentPubspecOverrides: '''
+# melos_managed_dependency_overrides: a
+dependency_overrides:
+  a:
+    path: ../a
+''',
+            updatedPubspecOverrides: '''
+dependency_overrides: null
+''',
+          );
+        });
+
+        test('update melos managed dependency', () {
+          expectMergedMelosPubspecOverrides(
+            melosDependencyOverrides: {'a': '../aa'},
+            currentPubspecOverrides: '''
+# melos_managed_dependency_overrides: a
+dependency_overrides:
+  a:
+    path: ../a
+''',
+            updatedPubspecOverrides: '''
+# melos_managed_dependency_overrides: a
+dependency_overrides:
+  a:
+    path: ../aa
+''',
+          );
+        });
+
+        test('add, update and remove melos managed dependency', () {
+          expectMergedMelosPubspecOverrides(
+            melosDependencyOverrides: {'b': '../bb', 'c': '../c'},
+            currentPubspecOverrides: '''
+# melos_managed_dependency_overrides: a,b
+dependency_overrides:
+  a:
+    path: ../a
+  b:
+    path: ../b
+''',
+            updatedPubspecOverrides: '''
+# melos_managed_dependency_overrides: b,c
+dependency_overrides:
+  b:
+    path: ../bb
+  c:
+    path: ../c
+''',
+          );
+        });
+      });
+    });
+
     test('handles errors in pub get', () async {
       final workspaceDir = createTemporaryWorkspaceDirectory();
 
@@ -135,7 +321,7 @@ Generating IntelliJ IDE files...
 melos bootstrap
    └> ${workspaceDir.path}
 
-Running "pub get" in workspace packages...
+Running "dart pub get" in workspace packages...
   - a
     └> packages/a
 e-    └> Failed to install.
@@ -158,7 +344,7 @@ e-Because a depends on package_that_does_not_exists any which doesn't exist (cou
 /// [packages] is a map where keys are package names and values are lists of
 /// packages names on which the package in the corresponding key depends.
 ///
-/// In this example below **a** has no dependencies and **b** depends only on
+/// In the example below **a** has no dependencies and **b** depends only on
 /// **a**:
 /// ```dart
 /// {
@@ -174,9 +360,15 @@ e-Because a depends on package_that_does_not_exists any which doesn't exist (cou
 /// direct and transitive dependencies are path dependencies with the correct
 /// path.
 Future<void> dependencyResolutionTest(
-  Map<String, List<String>> packages,
-) async {
-  final workspaceDir = createTemporaryWorkspaceDirectory();
+  Map<String, List<String>> packages, {
+  bool usePubspecOverrides = false,
+}) async {
+  final workspaceDir = createTemporaryWorkspaceDirectory(
+    configBuilder: (path) => MelosWorkspaceConfig.fallback(
+      path: path,
+      usePubspecOverrides: usePubspecOverrides,
+    ),
+  );
 
   Future<MapEntry<String, io.Directory>> createPackage(
     MapEntry<String, List<String>> entry,
@@ -239,7 +431,13 @@ Future<void> dependencyResolutionTest(
     config: config,
   );
 
-  await melos.bootstrap();
+  try {
+    await melos.bootstrap();
+  } on BootstrapException {
+    // ignore: avoid_print
+    print(logger.output);
+    rethrow;
+  }
 
   await Future.wait<void>(packages.keys.map(validatePackage));
 }
