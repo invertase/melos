@@ -116,26 +116,38 @@ IntelliJConfig(
 /// Melos command-specific configurations.
 @immutable
 class CommandConfigs {
-  const CommandConfigs({this.version = VersionCommandConfigs.empty});
+  const CommandConfigs({
+    this.bootstrap = BootstrapCommandConfigs.empty,
+    this.version = VersionCommandConfigs.empty,
+  });
 
   factory CommandConfigs.fromYaml(Map<Object?, Object?> yaml) {
+    final bootstrapMap = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'bootstrap',
+      map: yaml,
+      path: 'command',
+    );
+
     final versionMap = assertKeyIsA<Map<Object?, Object?>?>(
       key: 'version',
       map: yaml,
-      path: 'commands',
+      path: 'command',
     );
 
     return CommandConfigs(
+      bootstrap: BootstrapCommandConfigs.fromYaml(bootstrapMap ?? {}),
       version: VersionCommandConfigs.fromYaml(versionMap ?? {}),
     );
   }
 
   static const CommandConfigs empty = CommandConfigs();
 
+  final BootstrapCommandConfigs bootstrap;
   final VersionCommandConfigs version;
 
   Map<String, Object?> toJson() {
     return {
+      'bootstrap': bootstrap.toJson(),
       'version': version.toJson(),
     };
   }
@@ -144,18 +156,71 @@ class CommandConfigs {
   bool operator ==(Object other) =>
       other is CommandConfigs &&
       runtimeType == other.runtimeType &&
+      other.bootstrap == bootstrap &&
       other.version == version;
 
   @override
-  int get hashCode => runtimeType.hashCode ^ version.hashCode;
+  int get hashCode =>
+      runtimeType.hashCode ^ bootstrap.hashCode ^ version.hashCode;
 
   @override
   String toString() {
     return '''
 CommandConfigs(
+  bootstrap: ${bootstrap.toString().indent('  ')},
   version: ${version.toString().indent('  ')},
 )
 ''';
+  }
+}
+
+/// Configurations for `melos bootstrap`.
+@immutable
+class BootstrapCommandConfigs {
+  const BootstrapCommandConfigs({
+    this.usePubspecOverrides = false,
+  });
+
+  factory BootstrapCommandConfigs.fromYaml(Map<Object?, Object?> yaml) {
+    final usePubspecOverrides = assertKeyIsA<bool?>(
+          key: 'usePubspecOverrides',
+          map: yaml,
+          path: 'command/bootstrap',
+        ) ??
+        false;
+
+    return BootstrapCommandConfigs(
+      usePubspecOverrides: usePubspecOverrides,
+    );
+  }
+
+  static const BootstrapCommandConfigs empty = BootstrapCommandConfigs();
+
+  /// Whether to use `pubspec_overrides.yaml` for overriding workspace
+  /// dependencies during development.
+  final bool usePubspecOverrides;
+
+  Map<String, Object?> toJson() {
+    return {
+      'usePubspecOverrides': usePubspecOverrides,
+    };
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is BootstrapCommandConfigs &&
+      runtimeType == other.runtimeType &&
+      other.usePubspecOverrides == usePubspecOverrides;
+
+  @override
+  int get hashCode => runtimeType.hashCode ^ usePubspecOverrides.hashCode;
+
+  @override
+  String toString() {
+    return '''
+BootstrapCommandConfigs(
+  usePubspecOverrides: $usePubspecOverrides,
+)''';
   }
 }
 
@@ -372,13 +437,22 @@ class MelosWorkspaceConfig {
     );
   }
 
-  MelosWorkspaceConfig.fallback({required String path})
-      : this(
+  MelosWorkspaceConfig.fallback({
+    required String path,
+    bool usePubspecOverrides = false,
+  }) : this(
           name: 'Melos',
           packages: [
             createGlob('packages/**', currentDirectoryPath: path),
           ],
           path: path,
+          commands: usePubspecOverrides
+              ? const CommandConfigs(
+                  bootstrap: BootstrapCommandConfigs(
+                    usePubspecOverrides: true,
+                  ),
+                )
+              : CommandConfigs.empty,
         );
 
   static Directory? _searchForAncestorDirectoryWithMelosYaml(Directory from) {
@@ -526,7 +600,7 @@ You must have one of the following to be a valid Melos workspace:
       if (ignore.isNotEmpty) 'ignore': ignore.map((p) => p.toString()).toList(),
       if (scripts.isNotEmpty) 'scripts': scripts.toJson(),
       'ide': ide.toJson(),
-      'commands': commands.toJson(),
+      'command': commands.toJson(),
     };
   }
 

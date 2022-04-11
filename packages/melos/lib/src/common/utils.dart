@@ -103,13 +103,16 @@ int get terminalWidth {
   return 80;
 }
 
-String get currentDartVersion {
-  return Version.parse(currentPlatform.version.split(' ')[0]).toString();
+Version get currentDartVersion {
+  return Version.parse(currentPlatform.version.split(' ')[0]);
 }
 
 String get nextDartMajorVersion {
-  return Version.parse(currentDartVersion).nextMajor.toString();
+  return currentDartVersion.nextMajor.toString();
 }
+
+bool get isPubspecOverridesSupported =>
+    currentDartVersion.compareTo(Version.parse('2.17.0-266.0.dev')) >= 0;
 
 String promptInput(String message, {String? defaultsTo}) {
   return prompts.get(message, defaultsTo: defaultsTo);
@@ -161,6 +164,10 @@ String melosStatePathForDirectory(Directory directory) {
 
 String pubspecPathForDirectory(Directory directory) {
   return joinAll([directory.path, 'pubspec.yaml']);
+}
+
+String pubspecOverridesPathForDirectory(Directory directory) {
+  return joinAll([directory.path, 'pubspec_overrides.yaml']);
 }
 
 String relativePath(String path, String from) {

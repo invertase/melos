@@ -18,4 +18,5 @@ export 'src/workspace_configs.dart'
         IDEConfigs,
         IntelliJConfig,
         MelosWorkspaceConfig,
+        BootstrapCommandConfigs,
         VersionCommandConfigs;

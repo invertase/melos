@@ -269,7 +269,7 @@ class VirtualWorkspaceBuilder {
     final config = MelosWorkspaceConfig.fromYaml(
       {
         ..._defaultWorkspaceConfig,
-        ...loadYaml(melosYaml) as Map<Object?, Object?>
+        ...loadYaml(melosYaml) as Map<Object?, Object?>? ?? {},
       },
       path: path,
     );
