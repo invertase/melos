@@ -45,40 +45,7 @@ b
       );
 
       test(
-        'does not log private packages by default',
-        withMockFs(() async {
-          final workspaceDir = createMockWorkspaceFs(
-            packages: [
-              MockPackageFs(name: 'a', version: Version.none),
-              // b has no version, so it is considered private
-              MockPackageFs(name: 'b'),
-              // c has a version but publish_to:none so is private
-              MockPackageFs(
-                name: 'c',
-                version: Version.none,
-                publishToNone: true,
-              ),
-            ],
-          );
-
-          final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
-          final melos = Melos(logger: logger, config: config);
-
-          await melos.list();
-
-          expect(
-            logger.output,
-            equalsIgnoringAnsii(
-              '''
-a
-''',
-            ),
-          );
-        }),
-      );
-
-      test(
-        'log private packages',
+        'logs private packages by default',
         withMockFs(() async {
           final workspaceDir = createMockWorkspaceFs(
             packages: [
@@ -172,34 +139,6 @@ c
 a         1.2.3 packages/a
 b         0.0.0 packages/b         PRIVATE
 long_name 0.0.0 packages/long_name PRIVATE
-''',
-            ),
-          );
-        }),
-      );
-
-      test(
-        'long flag hides private packages by default',
-        withMockFs(() async {
-          final workspaceDir = createMockWorkspaceFs(
-            packages: [
-              MockPackageFs(name: 'a', version: Version(1, 2, 3)),
-              MockPackageFs(name: 'b'),
-              MockPackageFs(name: 'c', version: Version.none),
-            ],
-          );
-
-          final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
-          final melos = Melos(logger: logger, config: config);
-
-          await melos.list(long: true);
-
-          expect(
-            logger.output,
-            equalsIgnoringAnsii(
-              '''
-a 1.2.3 packages/a
-c 0.0.0 packages/c
 ''',
             ),
           );
