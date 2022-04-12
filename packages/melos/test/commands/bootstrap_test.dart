@@ -1,9 +1,9 @@
 import 'dart:io' as io;
 
 import 'package:melos/melos.dart';
-import 'package:path/path.dart';
 import 'package:melos/src/commands/runner.dart';
 import 'package:melos/src/common/utils.dart';
+import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
 import 'package:test/test.dart';
@@ -88,7 +88,7 @@ void main() {
 melos bootstrap
    └> ${workspaceDir.path}
 
-Running "pub get" in workspace packages...
+Running "dart pub get" in workspace packages...
   ✓ a
     └> packages/a
 
