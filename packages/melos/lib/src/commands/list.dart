@@ -5,7 +5,6 @@ enum ListOutputKind { json, parsable, graph, gviz, column }
 
 mixin _ListMixin on _Melos {
   Future<void> list({
-    bool showPrivatePackages = false,
     bool long = false,
     bool relativePaths = false,
     PackageFilter? filter,
@@ -15,24 +14,21 @@ mixin _ListMixin on _Melos {
 
     switch (kind) {
       case ListOutputKind.graph:
-        return _listGraph(workspace, showPrivatePackages: showPrivatePackages);
+        return _listGraph(workspace);
       case ListOutputKind.parsable:
         return _listParsable(
           workspace,
           long: long,
           relativePaths: relativePaths,
-          showPrivatePackages: showPrivatePackages,
         );
       case ListOutputKind.column:
         return _listColumn(
           workspace,
           long: long,
-          showPrivatePackages: showPrivatePackages,
         );
       case ListOutputKind.json:
         return _listJson(
           workspace,
-          showPrivatePackages: showPrivatePackages,
           relativePaths: relativePaths,
           long: long,
         );
@@ -41,15 +37,9 @@ mixin _ListMixin on _Melos {
     }
   }
 
-  void _listGraph(
-    MelosWorkspace workspace, {
-    required bool showPrivatePackages,
-  }) {
+  void _listGraph(MelosWorkspace workspace) {
     final jsonGraph = <String, List<String>>{};
     for (final package in workspace.filteredPackages.values) {
-      if (!showPrivatePackages && package.isPrivate) {
-        continue;
-      }
       jsonGraph[package.name] = package.dependenciesInWorkspace.keys.toList();
     }
 
@@ -59,7 +49,6 @@ mixin _ListMixin on _Melos {
 
   void _listColumn(
     MelosWorkspace workspace, {
-    required bool showPrivatePackages,
     required bool long,
   }) {
     if (workspace.filteredPackages.values.isEmpty) {
@@ -80,7 +69,6 @@ mixin _ListMixin on _Melos {
     if (long) {
       final table = listAsPaddedTable(
         workspace.filteredPackages.values
-            .where((package) => !package.isPrivate || showPrivatePackages)
             .map(
               (package) => [
                 package.name,
@@ -97,19 +85,16 @@ mixin _ListMixin on _Melos {
     }
 
     for (final package in workspace.filteredPackages.values) {
-      if (!showPrivatePackages && package.isPrivate) continue;
       logger?.stdout(package.name);
     }
   }
 
   void _listParsable(
     MelosWorkspace workspace, {
-    required bool showPrivatePackages,
     required bool relativePaths,
     required bool long,
   }) {
     for (final package in workspace.filteredPackages.values) {
-      if (package.isPrivate && !showPrivatePackages) continue;
       final packagePath = relativePaths
           ? printablePath(package.pathRelativeToWorkspace)
           : package.path;
@@ -130,14 +115,12 @@ mixin _ListMixin on _Melos {
 
   void _listJson(
     MelosWorkspace workspace, {
-    required bool showPrivatePackages,
     required bool relativePaths,
     required bool long,
   }) {
     final jsonArrayItems = <Map<String, Object?>>[];
 
     for (final package in workspace.filteredPackages.values) {
-      if (!showPrivatePackages && package.isPrivate) continue;
       final packagePath = relativePaths
           ? printablePath(package.pathRelativeToWorkspace)
           : package.path;

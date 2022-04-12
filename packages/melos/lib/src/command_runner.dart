@@ -17,7 +17,6 @@
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
-import '../version.g.dart';
 import 'command_runner/bootstrap.dart';
 import 'command_runner/clean.dart';
 import 'command_runner/exec.dart';
@@ -50,12 +49,6 @@ class MelosCommandRunner extends CommandRunner<void> {
       negatable: false,
       help: 'Enable verbose logging.',
     );
-    argParser.addFlag(
-      'version',
-      abbr: 'v',
-      negatable: false,
-      help: 'Print the current Melos version.',
-    );
 
     addCommand(ExecCommand(config));
     addCommand(BootstrapCommand(config));
@@ -74,11 +67,6 @@ class MelosCommandRunner extends CommandRunner<void> {
 
   @override
   Future<void> runCommand(ArgResults topLevelResults) async {
-    if (topLevelResults['version'] == true) {
-      // ignore: avoid_print
-      print(melosVersion);
-      return;
-    }
     await super.runCommand(topLevelResults);
   }
 }
