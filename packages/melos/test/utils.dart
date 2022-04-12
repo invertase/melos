@@ -227,7 +227,7 @@ PubSpec pubSpecFromJsonFile({
 class VirtualWorkspaceBuilder {
   VirtualWorkspaceBuilder(
     this.melosYaml, {
-    this.path = '/workspace',
+    this.path = currentPlatform.isWindows ? '\\workspace' : '/workspace',
     this.defaultPackagesPath = 'packages',
     Logger? logger,
   }) : logger = logger ?? TestLogger();
