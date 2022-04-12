@@ -78,7 +78,7 @@ a
       );
 
       test(
-        'log private packages if showPrivatePackages is true',
+        'log private packages',
         withMockFs(() async {
           final workspaceDir = createMockWorkspaceFs(
             packages: [
@@ -97,7 +97,7 @@ a
           final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
           final melos = Melos(logger: logger, config: config);
 
-          await melos.list(showPrivatePackages: true);
+          await melos.list();
 
           expect(
             logger.output,
@@ -127,8 +127,8 @@ c
           final melos = Melos(logger: logger, config: config);
 
           await melos.list(
-            showPrivatePackages: true,
             filter: PackageFilter(
+              includePrivatePackages: true,
               ignore: [
                 createGlob('b', currentDirectoryPath: workspaceDir.path),
               ],
@@ -148,7 +148,7 @@ c
       );
 
       test(
-        'supports long flag for extra informations',
+        'supports long flag for extra information',
         withMockFs(() async {
           final workspaceDir = createMockWorkspaceFs(
             packages: [
@@ -162,7 +162,6 @@ c
           final melos = Melos(logger: logger, config: config);
 
           await melos.list(
-            showPrivatePackages: true,
             long: true,
           );
 
@@ -222,7 +221,6 @@ c 0.0.0 packages/c
           final melos = Melos(logger: logger, config: config);
           await melos.list(
             kind: ListOutputKind.parsable,
-            showPrivatePackages: true,
             relativePaths: true,
           );
 
@@ -254,7 +252,6 @@ packages/c
           final melos = Melos(logger: logger, config: config);
           await melos.list(
             kind: ListOutputKind.parsable,
-            showPrivatePackages: true,
           );
 
           expect(

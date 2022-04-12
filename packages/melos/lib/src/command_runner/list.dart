@@ -90,7 +90,6 @@ class ListCommand extends MelosCommand {
     if (gviz) kind = ListOutputKind.gviz;
 
     return melos.list(
-      showPrivatePackages: true,
       long: long,
       filter: parsePackageFilter(config.path),
       relativePaths: relative,
