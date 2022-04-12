@@ -284,8 +284,9 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
         join(workspace.melosToolPath, package.pathRelativeToWorkspace);
     var pubspec = package.pubSpec;
 
-    // Since the generated temporary package is located at the different path than
-    // original package, this may break path dependencies that this package uses.
+    // Since the generated temporary package is located at a different path
+    // than the original package, this may break path dependencies that this
+    // package uses.
     // As such, we're updating the path dependencies to match the new location
     // by converting paths to absolute ones.
     Map<String, DependencyReference> transformPathDependenciesToAbsolute(
@@ -300,7 +301,7 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
 
           if (currentPlatform.isWindows) {
             result[entry.key] = PathReference(
-              windows.normalize(absolutePath),
+              windows.normalize(absolutePath).replaceAll(r'\', r'\\'),
             );
           } else {
             result[entry.key] = PathReference(absolutePath);
