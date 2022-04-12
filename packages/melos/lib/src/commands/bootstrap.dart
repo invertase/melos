@@ -216,8 +216,15 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
       for (final entry in dependencies.entries) {
         final dependency = entry.value;
         if (dependency is PathReference && dependency.path != null) {
-          result[entry.key] =
-              PathReference(absolute(package.path, dependency.path));
+          final absolutePath = absolute(package.path, dependency.path);
+
+          if (currentPlatform.isWindows) {
+            result[entry.key] = PathReference(
+              windows.normalize(absolutePath).replaceAll(r'\', r'\\'),
+            );
+          } else {
+            result[entry.key] = PathReference(absolutePath);
+          }
         }
       }
 
