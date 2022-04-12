@@ -26,6 +26,7 @@ dependencies:
   platform: ^3.1.0
   pool: ^1.4.0
   pub_semver: ^2.0.0
+  pub_updater: ^0.2.2
   pubspec: ^2.1.0
   string_scanner: ^1.0.5
   yaml: ^3.1.0
