@@ -104,31 +104,37 @@ Generating IntelliJ IDE files...
       );
 
       final aConfig = packageConfigForPackageAt(aDir);
-
+      final actualAbsoultePath = prettyUri(
+        aConfig.packages.firstWhere((p) => p.name == 'absolute').rootUri,
+      );
       expect(
-        Uri.parse(
-          aConfig.packages.firstWhere((p) => p.name == 'absolute').rootUri,
-        ).path,
+        actualAbsoultePath,
         absoluteProject.path,
       );
+
+      final actualRelativePath = prettyUri(
+        aConfig.packages.firstWhere((p) => p.name == 'relative').rootUri,
+      );
       expect(
-        Uri.parse(
-          aConfig.packages.firstWhere((p) => p.name == 'relative').rootUri,
-        ).path,
+        actualRelativePath,
         relativeProject.path,
       );
-      expect(
-        Uri.parse(
-          aConfig.packages.firstWhere((p) => p.name == 'relative_dev').rootUri,
-        ).path,
-        relativeDevProject.path,
+
+      final actualRelativeDevPath = prettyUri(
+        aConfig.packages.firstWhere((p) => p.name == 'relative_dev').rootUri,
       );
       expect(
-        Uri.parse(
-          aConfig.packages
-              .firstWhere((p) => p.name == 'relative_override')
-              .rootUri,
-        ).path,
+        actualRelativeDevPath,
+        relativeDevProject.path,
+      );
+
+      final actualRelativeOverridePath = prettyUri(
+        aConfig.packages
+            .firstWhere((p) => p.name == 'relative_override')
+            .rootUri,
+      );
+      expect(
+        actualRelativeOverridePath,
         relativeOverrideProject.path,
       );
       expect(aConfig.generator, 'melos');

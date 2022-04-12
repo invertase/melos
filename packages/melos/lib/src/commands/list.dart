@@ -85,7 +85,7 @@ mixin _ListMixin on _Melos {
               (package) => [
                 package.name,
                 AnsiStyles.green((package.version).toString()),
-                AnsiStyles.gray(package.pathRelativeToWorkspace),
+                AnsiStyles.gray(printablePath(package.pathRelativeToWorkspace)),
                 if (package.isPrivate) AnsiStyles.red('PRIVATE')
               ],
             )
@@ -110,8 +110,9 @@ mixin _ListMixin on _Melos {
   }) {
     for (final package in workspace.filteredPackages.values) {
       if (package.isPrivate && !showPrivatePackages) continue;
-      final packagePath =
-          relativePaths ? package.pathRelativeToWorkspace : package.path;
+      final packagePath = relativePaths
+          ? printablePath(package.pathRelativeToWorkspace)
+          : package.path;
       if (long) {
         logger?.stdout(
           <Object>[
@@ -137,8 +138,9 @@ mixin _ListMixin on _Melos {
 
     for (final package in workspace.filteredPackages.values) {
       if (!showPrivatePackages && package.isPrivate) continue;
-      final packagePath =
-          relativePaths ? package.pathRelativeToWorkspace : package.path;
+      final packagePath = relativePaths
+          ? printablePath(package.pathRelativeToWorkspace)
+          : package.path;
 
       final jsonObject = {
         'name': package.name,

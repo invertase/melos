@@ -23,7 +23,8 @@ import 'dart:isolate';
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:cli_util/cli_logging.dart';
 import 'package:graphs/graphs.dart';
-import 'package:path/path.dart' show relative, normalize, windows, joinAll;
+import 'package:path/path.dart'
+    show relative, normalize, windows, posix, joinAll;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 
@@ -128,6 +129,12 @@ bool get isCI {
       keys.contains('CONTINUOUS_INTEGRATION') ||
       keys.contains('BUILD_NUMBER') ||
       keys.contains('RUN_ID');
+}
+
+String printablePath(String path) {
+  return posix
+      .prettyUri(posix.normalize(path))
+      .replaceAll(RegExp(r'[\/\\]+'), '/');
 }
 
 Future<String> getMelosRoot() async {

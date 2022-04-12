@@ -83,7 +83,7 @@ mixin _BootstrapMixin on _CleanMixin {
       logger?.stdout(
         '''
   $_checkLabel ${AnsiStyles.bold(package.name)}
-    └> ${AnsiStyles.blue(package.pathRelativeToWorkspace)}''',
+    └> ${AnsiStyles.blue(printablePath(package.pathRelativeToWorkspace))}''',
       );
     }
   }
@@ -131,7 +131,7 @@ mixin _BootstrapMixin on _CleanMixin {
         logger?.stdout(
           '''
   $_checkLabel ${AnsiStyles.bold(package.name)}
-    └> ${AnsiStyles.blue(package.pathRelativeToWorkspace)}''',
+    └> ${AnsiStyles.blue(printablePath(package.pathRelativeToWorkspace))}''',
         );
       }
     } catch (err) {
@@ -261,7 +261,7 @@ mixin _BootstrapMixin on _CleanMixin {
     logger?.stdout(
       '''
   - ${AnsiStyles.bold.cyan(package.name)}
-    └> ${AnsiStyles.blue(package.pathRelativeToWorkspace)}''',
+    └> ${AnsiStyles.blue(printablePath(package.pathRelativeToWorkspace))}''',
     );
 
     logger?.stderr('    └> ${AnsiStyles.red(exception.message)}');

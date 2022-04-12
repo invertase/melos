@@ -24,6 +24,7 @@ import 'package:path/path.dart';
 
 import 'common/git_repository.dart';
 import 'common/glob.dart';
+import 'common/platform.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
 import 'scripts.dart';
@@ -445,7 +446,9 @@ class MelosWorkspaceConfig {
           packages: [
             createGlob('packages/**', currentDirectoryPath: path),
           ],
-          path: path,
+          path: currentPlatform.isWindows
+              ? windows.normalize(path).replaceAll(r'\', r'\\')
+              : path,
           commands: usePubspecOverrides
               ? const CommandConfigs(
                   bootstrap: BootstrapCommandConfigs(

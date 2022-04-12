@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cli_util/cli_logging.dart';
 import 'package:melos/melos.dart';
+import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/yamlicious/yaml_writer.dart';
 import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
@@ -75,11 +76,12 @@ Directory createTemporaryWorkspaceDirectory({
   final dir =
       Directory(join(Directory.current.path, '.dart_tool')).createTempSync();
   addTearDown(() => dir.delete(recursive: true));
+  final path = currentPlatform.isWindows
+      ? windows.normalize(dir.path).replaceAll(r'\', r'\\')
+      : dir.path;
+  final config = (configBuilder(path)..validatePhysicalWorkspace()).toJson();
 
-  final config =
-      (configBuilder(dir.path)..validatePhysicalWorkspace()).toJson();
-
-  File(join(dir.path, 'melos.yaml')).writeAsStringSync(toYamlString(config));
+  File(join(path, 'melos.yaml')).writeAsStringSync(toYamlString(config));
 
   return dir;
 }
@@ -227,16 +229,20 @@ PubSpec pubSpecFromJsonFile({
 class VirtualWorkspaceBuilder {
   VirtualWorkspaceBuilder(
     this.melosYaml, {
-    this.path = currentPlatform.isWindows ? '\\workspace' : '/workspace',
+    this.path = '/workspace',
     this.defaultPackagesPath = 'packages',
     Logger? logger,
-  }) : logger = logger ?? TestLogger();
+  }) : logger = logger ?? TestLogger() {
+    if (currentPlatform.isWindows) {
+      path = r'\\workspace';
+    }
+  }
 
   /// The contents of the melos.yaml file, to configure the workspace.
   final String melosYaml;
 
   /// The absolute path to the workspace.
-  final String path;
+  late String path;
 
   /// The path relative to the workspace root, where packages are located,
   /// unless a path is provided in [addPackage].
