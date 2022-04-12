@@ -15,6 +15,7 @@
  */
 
 import 'package:melos/src/common/git_repository.dart';
+import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/workspace_configs.dart';
 import 'package:test/test.dart';
 
@@ -266,7 +267,7 @@ void main() {
           commands: const CommandConfigs(
             version: VersionCommandConfigs(linkToCommits: true),
           ),
-          path: '/workspace',
+          path: currentPlatform.isWindows ? r'\\workspace' : '/workspace',
         ),
         throwsMelosConfigException(),
       );
@@ -282,7 +283,7 @@ void main() {
           commands: const CommandConfigs(
             version: VersionCommandConfigs(linkToCommits: true),
           ),
-          path: '/workspace',
+          path: currentPlatform.isWindows ? r'\\workspace' : '/workspace',
         ),
         returnsNormally,
       );
@@ -295,7 +296,7 @@ void main() {
             createYamlMap({
               'packages': <Object?>['*']
             }),
-            path: '/workspace',
+            path: currentPlatform.isWindows ? r'\\workspace' : '/workspace',
           ),
           throwsMelosConfigException(),
         );
@@ -305,7 +306,7 @@ void main() {
         expect(
           () => MelosWorkspaceConfig.fromYaml(
             createYamlMap({'name': <Object?>[]}, defaults: configMapDefaults),
-            path: '/workspace',
+            path: currentPlatform.isWindows ? r'\\workspace' : '/workspace',
           ),
           throwsMelosConfigException(),
         );
@@ -316,7 +317,7 @@ void main() {
           expect(
             () => MelosWorkspaceConfig.fromYaml(
               createYamlMap({'name': name}, defaults: configMapDefaults),
-              path: '/workspace',
+              path: currentPlatform.isWindows ? r'\\workspace' : '/workspace',
             ),
             throwsMelosConfigException(),
           );
@@ -346,19 +347,19 @@ void main() {
       test('accepts valid dart package name', () {
         MelosWorkspaceConfig.fromYaml(
           createYamlMap({'name': 'hello_world'}, defaults: configMapDefaults),
-          path: '/workspace',
+          path: currentPlatform.isWindows ? r'\\workspace' : '/workspace',
         );
         MelosWorkspaceConfig.fromYaml(
           createYamlMap({'name': 'hello2'}, defaults: configMapDefaults),
-          path: '/workspace',
+          path: currentPlatform.isWindows ? r'\\workspace' : '/workspace',
         );
         MelosWorkspaceConfig.fromYaml(
           createYamlMap({'name': 'HELLO'}, defaults: configMapDefaults),
-          path: '/workspace',
+          path: currentPlatform.isWindows ? r'\\workspace' : '/workspace',
         );
         MelosWorkspaceConfig.fromYaml(
           createYamlMap({'name': 'hello-world'}, defaults: configMapDefaults),
-          path: '/workspace',
+          path: currentPlatform.isWindows ? r'\\workspace' : '/workspace',
         );
       });
 
@@ -366,7 +367,7 @@ void main() {
         expect(
           () => MelosWorkspaceConfig.fromYaml(
             createYamlMap({'name': 'package_name'}),
-            path: '/workspace',
+            path: currentPlatform.isWindows ? r'\\workspace' : '/workspace',
           ),
           throwsMelosConfigException(),
         );
@@ -379,7 +380,7 @@ void main() {
               {'packages': <Object?, Object?>{}},
               defaults: configMapDefaults,
             ),
-            path: '/workspace',
+            path: currentPlatform.isWindows ? r'\\workspace' : '/workspace',
           ),
           throwsMelosConfigException(),
         );
@@ -394,7 +395,7 @@ void main() {
               },
               defaults: configMapDefaults,
             ),
-            path: '/workspace',
+            path: currentPlatform.isWindows ? r'\\workspace' : '/workspace',
           ),
           throwsMelosConfigException(),
         );
@@ -407,7 +408,7 @@ void main() {
               {'packages': <Object?>[]},
               defaults: configMapDefaults,
             ),
-            path: '/workspace',
+            path: currentPlatform.isWindows ? r'\\workspace' : '/workspace',
           ),
           throwsMelosConfigException(),
         );
@@ -420,7 +421,7 @@ void main() {
               {'ignore': <Object?, Object?>{}},
               defaults: configMapDefaults,
             ),
-            path: '/workspace',
+            path: currentPlatform.isWindows ? r'\\workspace' : '/workspace',
           ),
           throwsMelosConfigException(),
         );
@@ -435,7 +436,7 @@ void main() {
               },
               defaults: configMapDefaults,
             ),
-            path: '/workspace',
+            path: currentPlatform.isWindows ? r'\\workspace' : '/workspace',
           ),
           throwsMelosConfigException(),
         );
@@ -448,7 +449,7 @@ void main() {
               {'repository': 42},
               defaults: configMapDefaults,
             ),
-            path: '/workspace',
+            path: currentPlatform.isWindows ? r'\\workspace' : '/workspace',
           ),
           throwsMelosConfigException(),
         );
@@ -462,7 +463,7 @@ void main() {
               {'repository': 'https://example.com'},
               defaults: configMapDefaults,
             ),
-            path: '/workspace',
+            path: currentPlatform.isWindows ? r'\\workspace' : '/workspace',
           ),
           throwsMelosConfigException(),
         );
@@ -474,7 +475,7 @@ void main() {
             {'repository': 'https://github.com/invertase/melos'},
             defaults: configMapDefaults,
           ),
-          path: '/workspace',
+          path: currentPlatform.isWindows ? r'\\workspace' : '/workspace',
         );
         final repository = config.repository! as GitHubRepository;
 

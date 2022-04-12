@@ -391,8 +391,8 @@ Multiple packages with the name `$name` found in the workspace, which is unsuppo
 To fix this problem, consider renaming your packages to have a unique name.
 
 The packages that caused the problem are:
-- $name at ${relative(pubspecDirPath, from: workspacePath)}
-- $name at ${relative(packageMap[name]!.path, from: workspacePath)}
+- $name at ${printablePath(relativePath(pubspecDirPath, workspacePath))}
+- $name at ${printablePath(relativePath(packageMap[name]!.path, workspacePath))}
 ''',
           );
         }
@@ -639,7 +639,8 @@ class Package {
     required this.version,
     required this.publishTo,
     required this.pubSpec,
-  }) : _packageMap = packageMap;
+  })  : _packageMap = packageMap,
+        assert(isAbsolute(path));
 
   final Map<String, Package> _packageMap;
 

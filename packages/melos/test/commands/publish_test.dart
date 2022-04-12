@@ -62,7 +62,7 @@ Package _dummyPackage(String name, {List<String> deps = const []}) {
     dependencyOverrides: [],
     packageMap: {},
     name: name,
-    path: '',
+    path: '/',
     pathRelativeToWorkspace: '',
     version: Version(1, 0, 0),
     publishTo: null,

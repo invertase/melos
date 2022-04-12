@@ -3,6 +3,7 @@ import 'dart:io' as io;
 import 'package:melos/melos.dart';
 import 'package:melos/src/commands/runner.dart';
 import 'package:melos/src/common/utils.dart';
+import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
 import 'package:test/test.dart';
@@ -10,8 +11,135 @@ import 'package:test/test.dart';
 import '../matchers.dart';
 import '../utils.dart';
 
+io.Directory createTmpDir() {
+  final dir = io.Directory.systemTemp.createTempSync();
+  addTearDown(() => dir.delete(recursive: true));
+  return dir;
+}
+
 void main() {
   group('bootstrap', () {
+    test(
+        'supports path dependencies in the pubspec for dependencies that '
+        'are not part of the workspace', () async {
+      final absoluteDir = createTmpDir();
+      final relativeDir = createTmpDir();
+      final relativeOverrideDir = createTmpDir();
+      final relativeDevDir = createTmpDir();
+
+      final absoluteProject = await createProject(
+        absoluteDir,
+        const PubSpec(name: 'absolute'),
+        path: '',
+      );
+      final relativeProject = await createProject(
+        relativeDir,
+        const PubSpec(name: 'relative'),
+        path: '',
+      );
+      final relativeDevProject = await createProject(
+        relativeDevDir,
+        const PubSpec(name: 'relative_dev'),
+        path: '',
+      );
+      final relativeOverrideProject = await createProject(
+        relativeOverrideDir,
+        const PubSpec(name: 'relative_override'),
+        path: '',
+      );
+
+      final workspaceDir = createTemporaryWorkspaceDirectory();
+
+      final aPath = join(workspaceDir.path, 'packages', 'a');
+
+      final aDir = await createProject(
+        workspaceDir,
+        PubSpec(
+          name: 'a',
+          dependencies: {
+            'relative': PathReference(
+              relativePath(relativeProject.path, aPath),
+            ),
+            'absolute': PathReference(absoluteProject.path),
+          },
+          dependencyOverrides: {
+            'relative_override': PathReference(
+              relativePath(relativeOverrideProject.path, aPath),
+            ),
+          },
+          devDependencies: {
+            'relative_dev': PathReference(
+              relativePath(relativeDevProject.path, aPath),
+            ),
+          },
+        ),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final melos = Melos(logger: logger, config: config);
+
+      await melos.bootstrap();
+
+      expect(
+        logger.output,
+        equalsIgnoringAnsii(
+          '''
+melos bootstrap
+   └> ${workspaceDir.path}
+
+Running "dart pub get" in workspace packages...
+  ✓ a
+    └> packages/a
+
+Linking workspace packages...
+  > SUCCESS
+
+Generating IntelliJ IDE files...
+  > SUCCESS
+
+ -> 1 plugins bootstrapped
+''',
+        ),
+      );
+
+      final aConfig = packageConfigForPackageAt(aDir);
+      final actualAbsoultePath = prettyUri(
+        aConfig.packages.firstWhere((p) => p.name == 'absolute').rootUri,
+      );
+      expect(
+        actualAbsoultePath,
+        absoluteProject.path,
+      );
+
+      final actualRelativePath = prettyUri(
+        aConfig.packages.firstWhere((p) => p.name == 'relative').rootUri,
+      );
+      expect(
+        actualRelativePath,
+        relativeProject.path,
+      );
+
+      final actualRelativeDevPath = prettyUri(
+        aConfig.packages.firstWhere((p) => p.name == 'relative_dev').rootUri,
+      );
+      expect(
+        actualRelativeDevPath,
+        relativeDevProject.path,
+      );
+
+      final actualRelativeOverridePath = prettyUri(
+        aConfig.packages
+            .firstWhere((p) => p.name == 'relative_override')
+            .rootUri,
+      );
+      expect(
+        actualRelativeOverridePath,
+        relativeOverrideProject.path,
+      );
+      expect(aConfig.generator, 'melos');
+    });
+
     test('resolves workspace packages with path dependency', () async {
       final workspaceDir = createTemporaryWorkspaceDirectory();
 

@@ -83,7 +83,7 @@ mixin _BootstrapMixin on _CleanMixin {
       logger?.stdout(
         '''
   $_checkLabel ${AnsiStyles.bold(package.name)}
-    └> ${AnsiStyles.blue(package.pathRelativeToWorkspace)}''',
+    └> ${AnsiStyles.blue(printablePath(package.pathRelativeToWorkspace))}''',
       );
     }
   }
@@ -131,7 +131,7 @@ mixin _BootstrapMixin on _CleanMixin {
         logger?.stdout(
           '''
   $_checkLabel ${AnsiStyles.bold(package.name)}
-    └> ${AnsiStyles.blue(package.pathRelativeToWorkspace)}''',
+    └> ${AnsiStyles.blue(printablePath(package.pathRelativeToWorkspace))}''',
         );
       }
     } catch (err) {
@@ -261,7 +261,7 @@ mixin _BootstrapMixin on _CleanMixin {
     logger?.stdout(
       '''
   - ${AnsiStyles.bold.cyan(package.name)}
-    └> ${AnsiStyles.blue(package.pathRelativeToWorkspace)}''',
+    └> ${AnsiStyles.blue(printablePath(package.pathRelativeToWorkspace))}''',
     );
 
     logger?.stderr('    └> ${AnsiStyles.red(exception.message)}');
@@ -283,6 +283,42 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
     final pluginTemporaryPath =
         join(workspace.melosToolPath, package.pathRelativeToWorkspace);
     var pubspec = package.pubSpec;
+
+    // Since the generated temporary package is located at a different path
+    // than the original package, this may break path dependencies that this
+    // package uses.
+    // As such, we're updating the path dependencies to match the new location
+    // by converting paths to absolute ones.
+    Map<String, DependencyReference> transformPathDependenciesToAbsolute(
+      Map<String, DependencyReference> dependencies,
+    ) {
+      final result = {...dependencies};
+
+      for (final entry in dependencies.entries) {
+        final dependency = entry.value;
+        if (dependency is PathReference && dependency.path != null) {
+          final absolutePath = absolute(package.path, dependency.path);
+
+          if (currentPlatform.isWindows) {
+            result[entry.key] = PathReference(
+              windows.normalize(absolutePath).replaceAll(r'\', r'\\'),
+            );
+          } else {
+            result[entry.key] = PathReference(absolutePath);
+          }
+        }
+      }
+
+      return result;
+    }
+
+    pubspec = pubspec.copy(
+      dependencies: transformPathDependenciesToAbsolute(pubspec.dependencies),
+      devDependencies:
+          transformPathDependenciesToAbsolute(pubspec.devDependencies),
+      dependencyOverrides:
+          transformPathDependenciesToAbsolute(pubspec.dependencyOverrides),
+    );
 
     // Traversing all packages so that transitive dependencies for the bootstraped
     // packages are setup properly.

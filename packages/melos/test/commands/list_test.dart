@@ -1,5 +1,6 @@
 import 'package:melos/src/commands/runner.dart';
 import 'package:melos/src/common/glob.dart';
+import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/package.dart';
 import 'package:melos/src/workspace_configs.dart';
 import 'package:pub_semver/pub_semver.dart';
@@ -204,6 +205,8 @@ packages/c
             ),
           );
         }),
+        // TODO test output is not compatible with windows
+        skip: currentPlatform.isWindows,
       );
     });
   });
