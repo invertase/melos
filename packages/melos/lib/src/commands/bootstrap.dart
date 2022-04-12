@@ -300,7 +300,7 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
 
           if (currentPlatform.isWindows) {
             result[entry.key] = PathReference(
-              windows.normalize(absolutePath).replaceAll(r'\', r'\\'),
+              windows.normalize(absolutePath),
             );
           } else {
             result[entry.key] = PathReference(absolutePath);

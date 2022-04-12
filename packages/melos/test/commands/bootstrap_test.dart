@@ -58,18 +58,18 @@ void main() {
           name: 'a',
           dependencies: {
             'relative': PathReference(
-              relative(relativeProject.path, from: aPath),
+              relativePath(relativeProject.path, aPath),
             ),
             'absolute': PathReference(absoluteProject.path),
           },
           dependencyOverrides: {
             'relative_override': PathReference(
-              relative(relativeOverrideProject.path, from: aPath),
+              relativePath(relativeOverrideProject.path, aPath),
             ),
           },
           devDependencies: {
             'relative_dev': PathReference(
-              relative(relativeDevProject.path, from: aPath),
+              relativePath(relativeDevProject.path, aPath),
             ),
           },
         ),
