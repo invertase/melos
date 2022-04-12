@@ -29,12 +29,6 @@ class ListCommand extends MelosCommand {
       help: 'Show extended information.',
     );
     argParser.addFlag(
-      'all',
-      abbr: 'a',
-      negatable: false,
-      help: 'Show private packages that are hidden by default.',
-    );
-    argParser.addFlag(
       'parsable',
       abbr: 'p',
       negatable: false,
@@ -80,7 +74,6 @@ class ListCommand extends MelosCommand {
   @override
   Future<void> run() async {
     final long = argResults!['long'] as bool;
-    final all = argResults!['all'] as bool;
     final parsable = argResults!['parsable'] as bool;
     final json = argResults!['json'] as bool;
     final relative = argResults!['relative'] as bool;
@@ -97,7 +90,7 @@ class ListCommand extends MelosCommand {
     if (gviz) kind = ListOutputKind.gviz;
 
     return melos.list(
-      showPrivatePackages: all,
+      showPrivatePackages: true,
       long: long,
       filter: parsePackageFilter(config.path),
       relativePaths: relative,
