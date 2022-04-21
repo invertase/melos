@@ -83,7 +83,7 @@ void main() {
 
       expect(
         logger.output,
-        equalsIgnoringAnsii(
+        ignoringAnsii(
           '''
 melos bootstrap
    └> ${workspaceDir.path}
@@ -176,21 +176,31 @@ Generating IntelliJ IDE files...
 
       expect(
         logger.output,
-        equalsIgnoringAnsii(
-          '''
+        ignoringAnsii(
+          allOf(
+            [
+              '''
 melos bootstrap
    └> ${workspaceDir.path}
 
-Running "flutter pub get" in workspace packages...
+Running "flutter pub get" in workspace packages...''',
+              '''
   ✓ a
     └> packages/a
+''',
+              '''
   ✓ b
     └> packages/b
+''',
+              '''
   ✓ c
     └> packages/c
+''',
+              '''
   ✓ d
     └> packages/d
-
+''',
+              '''
 Linking workspace packages...
   > SUCCESS
 
@@ -199,6 +209,8 @@ Generating IntelliJ IDE files...
 
  -> 4 plugins bootstrapped
 ''',
+            ].map(contains).toList(),
+          ),
         ),
       );
 
@@ -444,7 +456,7 @@ dependency_overrides:
 
       expect(
         logger.output,
-        equalsIgnoringAnsii(
+        ignoringAnsii(
           '''
 melos bootstrap
    └> ${workspaceDir.path}

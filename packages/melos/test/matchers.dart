@@ -20,13 +20,13 @@ import 'package:test/test.dart';
 
 Matcher packageNamed(dynamic matcher) => _PackageNameMatcher(matcher);
 
-Matcher equalsIgnoringAnsii(String str) {
-  return _EqualsIgnoringAnsii(str);
+Matcher ignoringAnsii(Object? matcher) {
+  return _IgnoringAnsii(matcher);
 }
 
-class _EqualsIgnoringAnsii extends CustomMatcher {
-  _EqualsIgnoringAnsii(String str)
-      : super('String ignoring Ansii', 'String', str);
+class _IgnoringAnsii extends CustomMatcher {
+  _IgnoringAnsii(Object? matcher)
+      : super('String ignoring Ansii', 'String', matcher);
 
   @override
   Object? featureValueOf(covariant String actual) {
