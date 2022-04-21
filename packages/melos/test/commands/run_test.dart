@@ -58,7 +58,7 @@ void main() {
 
         expect(
           logger.output,
-          equalsIgnoringAnsii(
+          ignoringAnsii(
             '''
 melos run test_script
    └> melos exec -- "echo hello"
@@ -129,7 +129,7 @@ melos run test_script
 
         expect(
           logger.output,
-          equalsIgnoringAnsii(
+          ignoringAnsii(
             r'''
 melos run test_script
    └> echo $0 $1 $2

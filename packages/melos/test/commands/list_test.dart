@@ -35,7 +35,7 @@ void main() {
 
           expect(
             logger.output,
-            equalsIgnoringAnsii(
+            ignoringAnsii(
               '''
 a
 b
@@ -69,7 +69,7 @@ b
 
           expect(
             logger.output,
-            equalsIgnoringAnsii(
+            ignoringAnsii(
               '''
 a
 b
@@ -105,7 +105,7 @@ c
 
           expect(
             logger.output,
-            equalsIgnoringAnsii(
+            ignoringAnsii(
               '''
 a
 c
@@ -135,7 +135,7 @@ c
 
           expect(
             logger.output,
-            equalsIgnoringAnsii(
+            ignoringAnsii(
               '''
 a         1.2.3 packages/a
 b         0.0.0 packages/b         PRIVATE
@@ -166,7 +166,7 @@ long_name 0.0.0 packages/long_name PRIVATE
 
           expect(
             logger.output,
-            equalsIgnoringAnsii(
+            ignoringAnsii(
               '''
 packages/a
 packages/b
@@ -196,7 +196,7 @@ packages/c
 
           expect(
             logger.output,
-            equalsIgnoringAnsii(
+            ignoringAnsii(
               '''
 /melos_workspace/packages/a
 /melos_workspace/packages/b

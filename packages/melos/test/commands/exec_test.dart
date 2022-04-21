@@ -51,7 +51,7 @@ void main() {
 
         expect(
           logger.output,
-          equalsIgnoringAnsii(
+          ignoringAnsii(
             '''
 \$ melos exec
    └> echo hello world

@@ -68,24 +68,27 @@ mixin _BootstrapMixin on _CleanMixin {
       );
     }
 
-    for (final package in workspace.allPackages.values) {
-      if (package.pubSpec.dependencyOverrides.isNotEmpty) {
-        logger?.stderr(
-          '''
+    await Stream.fromIterable(workspace.allPackages.values).parallel(
+      (package) async {
+        if (package.pubSpec.dependencyOverrides.isNotEmpty) {
+          logger?.stderr(
+            '''
   $_warningLabel: ${AnsiStyles.bold(package.name)}
     └> dependency_overrides in pubspec.yaml are being overridden in pubspec_overrides.yaml''',
-        );
-      }
+          );
+        }
 
-      await _generatePubspecOverrides(workspace, package);
-      await _runPubGetForPackage(workspace, package);
+        await _generatePubspecOverrides(workspace, package);
+        await _runPubGetForPackage(workspace, package);
 
-      logger?.stdout(
-        '''
+        logger?.stdout(
+          '''
   $_checkLabel ${AnsiStyles.bold(package.name)}
     └> ${AnsiStyles.blue(printablePath(package.pathRelativeToWorkspace))}''',
-      );
-    }
+        );
+      },
+      parallelism: canRunPubGetConcurrently ? null : 1,
+    ).drain<void>();
   }
 
   Future<void> _generatePubspecOverrides(
@@ -150,16 +153,18 @@ mixin _BootstrapMixin on _CleanMixin {
   }
 
   // Return a stream of package that completed.
-  Stream<Package> _runPubGet(MelosWorkspace workspace) async* {
-    for (final package in workspace.filteredPackages.values) {
-      await _runPubGetForPackage(
-        workspace,
-        package,
-        inTemporaryProject: true,
+  Stream<Package> _runPubGet(MelosWorkspace workspace) =>
+      Stream.fromIterable(workspace.filteredPackages.values).parallel(
+        (package) async {
+          await _runPubGetForPackage(
+            workspace,
+            package,
+            inTemporaryProject: true,
+          );
+          return package;
+        },
+        parallelism: canRunPubGetConcurrently ? null : 1,
       );
-      yield package;
-    }
-  }
 
   Future<void> _runPubGetForPackage(
     MelosWorkspace workspace,
