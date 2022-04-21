@@ -115,6 +115,9 @@ String get nextDartMajorVersion {
 bool get isPubspecOverridesSupported =>
     currentDartVersion.compareTo(Version.parse('2.17.0-266.0.dev')) >= 0;
 
+bool get canRunPubGetConcurrently =>
+    currentDartVersion.compareTo(Version.parse('2.16.0')) >= 0;
+
 String promptInput(String message, {String? defaultsTo}) {
   return prompts.get(message, defaultsTo: defaultsTo);
 }
@@ -439,9 +442,14 @@ extension DirectoryUtils on Directory {
 
 extension StreamUtils<T> on Stream<T> {
   /// Runs [convert] for each event in this stream and emits the result, while
-  /// ensuring that no more than [Platform.numberOfProcessors] events are being
+  /// ensuring that no more events than specified by [parallelism] are being
   /// processed at any given time.
-  Stream<R> parallel<R>(Future<R> Function(T) convert) async* {
+  ///
+  /// If [parallelism] is `null`, [Platform.numberOfProcessors] is used.
+  Stream<R> parallel<R>(
+    Future<R> Function(T) convert, {
+    int? parallelism,
+  }) async* {
     final pending = <Future<R>>[];
     final done = <Future<R>>[];
 
@@ -457,7 +465,7 @@ extension StreamUtils<T> on Stream<T> {
       });
       pending.add(future);
 
-      if (pending.length < Platform.numberOfProcessors) {
+      if (pending.length < (parallelism ?? Platform.numberOfProcessors)) {
         continue;
       }
 
