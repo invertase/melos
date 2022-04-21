@@ -68,7 +68,8 @@ mixin _BootstrapMixin on _CleanMixin {
       );
     }
 
-    for (final package in workspace.allPackages.values) {
+    await Stream.fromIterable(workspace.allPackages.values)
+        .parallel((package) async {
       if (package.pubSpec.dependencyOverrides.isNotEmpty) {
         logger?.stderr(
           '''
@@ -85,7 +86,7 @@ mixin _BootstrapMixin on _CleanMixin {
   $_checkLabel ${AnsiStyles.bold(package.name)}
     └> ${AnsiStyles.blue(printablePath(package.pathRelativeToWorkspace))}''',
       );
-    }
+    }).toList();
   }
 
   Future<void> _generatePubspecOverrides(
@@ -150,16 +151,16 @@ mixin _BootstrapMixin on _CleanMixin {
   }
 
   // Return a stream of package that completed.
-  Stream<Package> _runPubGet(MelosWorkspace workspace) async* {
-    for (final package in workspace.filteredPackages.values) {
-      await _runPubGetForPackage(
-        workspace,
-        package,
-        inTemporaryProject: true,
-      );
-      yield package;
-    }
-  }
+  Stream<Package> _runPubGet(MelosWorkspace workspace) =>
+      Stream.fromIterable(workspace.filteredPackages.values)
+          .parallel((package) async {
+        await _runPubGetForPackage(
+          workspace,
+          package,
+          inTemporaryProject: true,
+        );
+        return package;
+      });
 
   Future<void> _runPubGetForPackage(
     MelosWorkspace workspace,

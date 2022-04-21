@@ -436,3 +436,41 @@ extension DirectoryUtils on Directory {
     return recurse(this, {});
   }
 }
+
+extension StreamUtils<T> on Stream<T> {
+  /// Runs [convert] for each event in this stream and emits the result, while
+  /// ensuring that no more than [Platform.numberOfProcessors] events are being
+  /// processed at any given time.
+  Stream<R> parallel<R>(Future<R> Function(T) convert) async* {
+    final pending = <Future<R>>[];
+    final done = <Future<R>>[];
+
+    await for (final value in this) {
+      late final Future<R> future;
+      future = Future(() async {
+        try {
+          return await convert(value);
+        } finally {
+          pending.remove(future);
+          done.add(future);
+        }
+      });
+      pending.add(future);
+
+      if (pending.length < Platform.numberOfProcessors) {
+        continue;
+      }
+
+      await Future.any(pending);
+
+      for (final future in done) {
+        yield await future;
+      }
+      done.clear();
+    }
+
+    for (final result in await Future.wait(pending)) {
+      yield result;
+    }
+  }
+}
