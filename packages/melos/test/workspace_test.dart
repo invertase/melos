@@ -20,6 +20,7 @@ import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/package.dart';
 import 'package:melos/src/workspace.dart';
 import 'package:melos/src/workspace_configs.dart';
+import 'package:path/path.dart' as p;
 import 'package:pubspec/pubspec.dart';
 import 'package:test/test.dart';
 
@@ -134,6 +135,19 @@ The packages that caused the problem are:
         );
       }),
     );
+
+    test('load workspace config when workspace contains broken symlink',
+        () async {
+      final workspaceDir = createTemporaryWorkspaceDirectory();
+
+      final link = Link(p.join(workspaceDir.path, 'link'));
+      await link.create(p.join(workspaceDir.path, 'does-not-exist'));
+
+      await MelosWorkspace.fromConfig(
+        await MelosWorkspaceConfig.fromDirectory(workspaceDir),
+        logger: TestLogger(),
+      );
+    });
 
     group('package filtering', () {
       group('--include-dependencies', () {

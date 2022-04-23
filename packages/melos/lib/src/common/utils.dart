@@ -407,7 +407,7 @@ extension DirectoryUtils on Directory {
           }
         } else if (entity is Link) {
           if (!followLinks ||
-              visitedLinks.contains(await entity.resolveSymbolicLinks())) {
+              visitedLinks.contains(await entity.tryResolveSymbolicLinks())) {
             yield entity;
             break;
           }
@@ -437,6 +437,21 @@ extension DirectoryUtils on Directory {
     }
 
     return recurse(this, {});
+  }
+}
+
+extension FileSystemEntityUtils on FileSystemEntity {
+  /// Tries to resolve the path of this [FileSystemEntity] through
+  /// [resolveSymbolicLinks] and returns `null` if the path cannot be resolved.
+  ///
+  /// For example, a path cannot be resolved when it is a link to a non-existing
+  /// file.
+  Future<String?> tryResolveSymbolicLinks() async {
+    try {
+      return await resolveSymbolicLinks();
+    } on FileSystemException {
+      return null;
+    }
   }
 }
 
