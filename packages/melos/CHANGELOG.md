@@ -1,3 +1,7 @@
+## 2.0.0
+
+ - Bump "melos" to `2.0.0`.
+
 ## 1.6.0-dev.2
 
  - **PERF**: run `pub get` in parallel during bootstrapping (#279). ([9870270d](https://github.com/invertase/melos/commit/9870270dbe7a6b5834110aeae0e49d79ca3b8c42))

@@ -15,6 +15,27 @@ Packages with breaking changes:
 
 Packages with other changes:
 
+ - [`melos` - `v2.0.0`](#melos---v200)
+
+---
+
+#### `melos` - `v2.0.0`
+
+ - Bump "melos" to `2.0.0`.
+
+
+## 2022-04-26
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
  - [`melos` - `v1.6.0-dev.2`](#melos---v160-dev2)
 
 ---
