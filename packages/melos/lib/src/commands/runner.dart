@@ -28,6 +28,7 @@ import '../common/utils.dart';
 import '../common/utils.dart' as utils;
 import '../common/versioning.dart' as versioning;
 import '../common/workspace_changelog.dart';
+import '../global_options.dart';
 import '../package.dart';
 import '../prompts/prompt.dart' as prompts;
 import '../scripts.dart';
@@ -72,7 +73,10 @@ abstract class _Melos {
   Logger? get logger;
   MelosWorkspaceConfig get config;
 
-  Future<MelosWorkspace> createWorkspace({PackageFilter? filter}) async {
+  Future<MelosWorkspace> createWorkspace({
+    GlobalOptions? global,
+    PackageFilter? filter,
+  }) async {
     var filterWithEnv = filter;
 
     if (currentPlatform.environment.containsKey(envKeyMelosPackages)) {
@@ -89,11 +93,13 @@ abstract class _Melos {
       );
     }
 
-    return MelosWorkspace.fromConfig(
+    return (await MelosWorkspace.fromConfig(
       config,
+      global: global,
       filter: filterWithEnv,
       logger: logger,
-    );
+    ))
+      ..validate();
   }
 
   Future<void> _runLifecycle(

@@ -231,6 +231,7 @@ class VirtualWorkspaceBuilder {
     this.melosYaml, {
     this.path = '/workspace',
     this.defaultPackagesPath = 'packages',
+    this.sdkPath,
     Logger? logger,
   }) : logger = logger ?? TestLogger() {
     if (currentPlatform.isWindows) {
@@ -250,6 +251,9 @@ class VirtualWorkspaceBuilder {
 
   /// The logger to build the workspace with.
   final Logger logger;
+
+  /// Optional Dart/Flutter SDK path.
+  final String? sdkPath;
 
   Map<String, Object?> get _defaultWorkspaceConfig => {
         'name': 'virtual-workspace',
@@ -289,6 +293,7 @@ class VirtualWorkspaceBuilder {
       allPackages: packageMap,
       filteredPackages: packageMap,
       logger: logger,
+      sdkPath: sdkPath,
     );
   }
 

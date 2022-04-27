@@ -217,6 +217,7 @@ class VersionCommand extends MelosCommand {
       }
 
       await melos.version(
+        global: global,
         filter: parsePackageFilter(config.path),
         force: force,
         gitTag: tag,

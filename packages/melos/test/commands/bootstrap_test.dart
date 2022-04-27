@@ -251,7 +251,7 @@ Generating IntelliJ IDE files...
           },
           usePubspecOverrides: true,
         ),
-        skip: !isPubspecOverridesSupported,
+        skip: !isPubspecOverridesSupported(),
       );
 
       test(
@@ -263,7 +263,7 @@ Generating IntelliJ IDE files...
           },
           usePubspecOverrides: true,
         ),
-        skip: !isPubspecOverridesSupported,
+        skip: !isPubspecOverridesSupported(),
       );
 
       group('mergeMelosPubspecOverrides', () {

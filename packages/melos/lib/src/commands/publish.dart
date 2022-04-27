@@ -2,13 +2,14 @@ part of 'runner.dart';
 
 mixin _PublishMixin on _ExecMixin {
   Future<void> publish({
+    GlobalOptions? global,
     PackageFilter? filter,
     bool dryRun = true,
     bool gitTagVersion = true,
     // yes
     bool force = false,
   }) async {
-    final workspace = await createWorkspace(filter: filter);
+    final workspace = await createWorkspace(global: global, filter: filter);
 
     logger?.stdout(
       AnsiStyles.yellow.bold('melos publish${dryRun ? " --dry-run" : ''}'),
@@ -142,8 +143,7 @@ mixin _PublishMixin on _ExecMixin {
       'Publishing ${unpublishedPackages.length} packages to registry:',
     );
     final execArgs = [
-      if (isPubSubcommand()) 'dart',
-      'pub',
+      ...pubCommandExecArgs(useFlutter: false, workspace: workspace),
       'publish',
     ];
 

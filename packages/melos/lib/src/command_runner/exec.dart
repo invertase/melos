@@ -63,6 +63,7 @@ class ExecCommand extends MelosCommand {
       execArgs,
       concurrency: concurrency,
       failFast: failFast,
+      global: global,
       filter: packageFilter,
     );
   }

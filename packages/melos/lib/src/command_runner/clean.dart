@@ -38,6 +38,7 @@ class CleanCommand extends MelosCommand {
     final melos = Melos(logger: logger, config: config);
 
     await melos.clean(
+      global: global,
       filter: parsePackageFilter(config.path),
     );
   }

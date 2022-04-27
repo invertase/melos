@@ -83,7 +83,8 @@ mixin _RunMixin on _Melos {
           ...config.ignore,
         ]),
         logger: logger,
-      );
+      )
+        ..validate();
 
       final packages = workspace.filteredPackages.values.toList();
 

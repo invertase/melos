@@ -17,6 +17,7 @@
 import 'dart:io';
 
 import 'package:melos/src/common/glob.dart';
+import 'package:melos/src/common/utils.dart';
 import 'package:melos/src/package.dart';
 import 'package:melos/src/workspace.dart';
 import 'package:melos/src/workspace_configs.dart';
@@ -405,6 +406,110 @@ The packages that caused the problem are:
               isNot(containsDuplicates),
             );
           }),
+        );
+      });
+    });
+
+    group('resolveSdkPath', () {
+      final workspacePath = p.normalize('/workspace');
+      final configSdkPath = p.normalize('/sdks/config');
+      final commandSdkPath = p.normalize('/sdks/command-line');
+
+      test('should return null if no sdk path is provided', () {
+        expect(
+          resolveSdkPath(
+            configSdkPath: null,
+            commandSdkPath: null,
+            workspacePath: workspacePath,
+          ),
+          null,
+        );
+      });
+
+      test('commandSdkPath has precedence over configSdkPath', () {
+        expect(
+          resolveSdkPath(
+            configSdkPath: configSdkPath,
+            commandSdkPath: commandSdkPath,
+            workspacePath: workspacePath,
+          ),
+          commandSdkPath,
+        );
+      });
+
+      test('use configSdkPath if commandSdkPath is not specified', () {
+        expect(
+          resolveSdkPath(
+            configSdkPath: configSdkPath,
+            commandSdkPath: null,
+            workspacePath: workspacePath,
+          ),
+          configSdkPath,
+        );
+      });
+
+      test('allow trailing path separator in sdk paths', () {
+        expect(
+          resolveSdkPath(
+            configSdkPath: null,
+            commandSdkPath: p.join(commandSdkPath, ''),
+            workspacePath: workspacePath,
+          ),
+          commandSdkPath,
+        );
+        expect(
+          resolveSdkPath(
+            configSdkPath: p.join(configSdkPath, ''),
+            commandSdkPath: null,
+            workspacePath: workspacePath,
+          ),
+          configSdkPath,
+        );
+      });
+
+      test('create absolute path from a relative sdk path', () {
+        expect(
+          resolveSdkPath(
+            configSdkPath: null,
+            commandSdkPath: 'sdk',
+            workspacePath: workspacePath,
+          ),
+          p.join(workspacePath, 'sdk'),
+        );
+        expect(
+          resolveSdkPath(
+            configSdkPath: 'sdk',
+            commandSdkPath: null,
+            workspacePath: workspacePath,
+          ),
+          p.join(workspacePath, 'sdk'),
+        );
+      });
+
+      test('return null if sdk path is `auto`', () {
+        expect(
+          resolveSdkPath(
+            configSdkPath: autoSdkPathOptionValue,
+            commandSdkPath: null,
+            workspacePath: workspacePath,
+          ),
+          null,
+        );
+        expect(
+          resolveSdkPath(
+            configSdkPath: null,
+            commandSdkPath: autoSdkPathOptionValue,
+            workspacePath: workspacePath,
+          ),
+          null,
+        );
+        expect(
+          resolveSdkPath(
+            configSdkPath: autoSdkPathOptionValue,
+            commandSdkPath: autoSdkPathOptionValue,
+            workspacePath: workspacePath,
+          ),
+          null,
         );
       });
     });

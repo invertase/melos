@@ -43,6 +43,7 @@ class BootstrapCommand extends MelosCommand {
     final melos = Melos(logger: logger, config: config);
 
     return melos.bootstrap(
+      global: global,
       filter: parsePackageFilter(config.path),
     );
   }

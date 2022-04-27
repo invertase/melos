@@ -3,11 +3,12 @@ part of 'runner.dart';
 mixin _ExecMixin on _Melos {
   Future<void> exec(
     List<String> execArgs, {
+    GlobalOptions? global,
     PackageFilter? filter,
     int concurrency = 5,
     bool failFast = false,
   }) async {
-    final workspace = await createWorkspace(filter: filter);
+    final workspace = await createWorkspace(global: global, filter: filter);
     final packages = workspace.filteredPackages.values;
 
     await _execForAllPackages(

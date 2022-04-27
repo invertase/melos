@@ -23,14 +23,19 @@ import 'dart:isolate';
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:cli_util/cli_logging.dart';
 import 'package:graphs/graphs.dart';
-import 'package:path/path.dart'
-    show relative, normalize, windows, posix, joinAll;
+import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 
 import '../package.dart';
 import '../prompts/prompt.dart' as prompts;
+import '../workspace.dart';
 import 'platform.dart';
+
+const globalOptionVerbose = 'verbose';
+const globalOptionSdkPath = 'sdk-path';
+
+const autoSdkPathOptionValue = 'auto';
 
 const filterOptionScope = 'scope';
 const filterOptionIgnore = 'ignore';
@@ -104,19 +109,39 @@ int get terminalWidth {
   return 80;
 }
 
-Version get currentDartVersion {
-  return Version.parse(currentPlatform.version.split(' ')[0]);
+// https://regex101.com/r/XlfVPy/1
+final _dartSdkVersionRegexp = RegExp(r'^Dart SDK version: (\S+)');
+
+Version currentDartVersion(String dartTool) {
+  final result = Process.runSync(
+    dartTool,
+    ['--version'],
+    stdoutEncoding: utf8,
+  );
+
+  if (result.exitCode != 0) {
+    throw Exception(
+      'Failed to get current Dart version:\n${result.stdout}\n${result.stderr}',
+    );
+  }
+
+  final versionOutput = result.stdout as String;
+  final versionString =
+      _dartSdkVersionRegexp.matchAsPrefix(versionOutput)!.group(1)!;
+
+  return Version.parse(versionString);
 }
 
-String get nextDartMajorVersion {
-  return currentDartVersion.nextMajor.toString();
+String nextDartMajorVersion([String dartTool = 'dart']) {
+  return currentDartVersion(dartTool).nextMajor.toString();
 }
 
-bool get isPubspecOverridesSupported =>
-    currentDartVersion.compareTo(Version.parse('2.17.0-266.0.dev')) >= 0;
+bool isPubspecOverridesSupported([String dartTool = 'dart']) =>
+    currentDartVersion(dartTool).compareTo(Version.parse('2.17.0-266.0.dev')) >=
+    0;
 
-bool get canRunPubGetConcurrently =>
-    currentDartVersion.compareTo(Version.parse('2.16.0')) >= 0;
+bool canRunPubGetConcurrently([String dartTool = 'dart']) =>
+    currentDartVersion(dartTool).compareTo(Version.parse('2.16.0')) >= 0;
 
 String promptInput(String message, {String? defaultsTo}) {
   return prompts.get(message, defaultsTo: defaultsTo);
@@ -135,8 +160,8 @@ bool get isCI {
 }
 
 String printablePath(String path) {
-  return posix
-      .prettyUri(posix.normalize(path))
+  return p.posix
+      .prettyUri(p.posix.normalize(path))
       .replaceAll(RegExp(r'[\/\\]+'), '/');
 }
 
@@ -165,28 +190,28 @@ Future<YamlMap?> loadYamlFile(String path) async {
 }
 
 String melosYamlPathForDirectory(Directory directory) {
-  return joinAll([directory.path, 'melos.yaml']);
+  return p.joinAll([directory.path, 'melos.yaml']);
 }
 
 String melosStatePathForDirectory(Directory directory) {
-  return joinAll([directory.path, '.melos']);
+  return p.joinAll([directory.path, '.melos']);
 }
 
 String pubspecPathForDirectory(Directory directory) {
-  return joinAll([directory.path, 'pubspec.yaml']);
+  return p.joinAll([directory.path, 'pubspec.yaml']);
 }
 
 String pubspecOverridesPathForDirectory(Directory directory) {
-  return joinAll([directory.path, 'pubspec_overrides.yaml']);
+  return p.joinAll([directory.path, 'pubspec_overrides.yaml']);
 }
 
 String relativePath(String path, String from) {
   if (currentPlatform.isWindows) {
-    return windows
-        .normalize(relative(path, from: from))
+    return p.windows
+        .normalize(p.relative(path, from: from))
         .replaceAll(r'\', r'\\');
   }
-  return normalize(relative(path, from: from));
+  return p.normalize(p.relative(path, from: from));
 }
 
 String listAsPaddedTable(List<List<String>> table, {int paddingSize = 1}) {
@@ -352,9 +377,10 @@ Future<int> startProcess(
   return exitCode;
 }
 
-bool isPubSubcommand() {
+bool isPubSubcommand({required MelosWorkspace workspace}) {
   try {
-    return Process.runSync('pub', ['--version']).exitCode != 0;
+    return Process.runSync(workspace.sdkTool('pub'), ['--version']).exitCode !=
+        0;
   } on ProcessException {
     return true;
   }
@@ -380,6 +406,24 @@ void sortPackagesTopologically(List<Package> packages) {
   } on CycleException {
     // Cannot sort packages with inter-dependencies. Leave as-is.
   }
+}
+
+/// Given a workspace and package, this assembles the correct command
+/// to run pub / dart pub / flutter pub.
+/// Takes into account a potential sdk path being provided.
+/// If no sdk path is provided then it will assume to use the pub
+/// command available in PATH.
+List<String> pubCommandExecArgs({
+  required bool useFlutter,
+  required MelosWorkspace workspace,
+}) {
+  return [
+    if (useFlutter)
+      workspace.sdkTool('flutter')
+    else if (isPubSubcommand(workspace: workspace))
+      workspace.sdkTool('dart'),
+    'pub',
+  ];
 }
 
 extension DirectoryUtils on Directory {

@@ -186,7 +186,7 @@ class PackageFilter {
   /// Include/Exclude packages with `publish_to: none`.
   final bool? includePrivatePackages;
 
-  /// Include/exlude packages that are up-to-date on pub.dev
+  /// Include/exclude packages that are up-to-date on pub.dev
   final bool? published;
 
   /// Include/exclude packages that are null-safe.
