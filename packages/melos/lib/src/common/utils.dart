@@ -482,3 +482,29 @@ extension StreamUtils<T> on Stream<T> {
     }
   }
 }
+
+extension Utf8StreamUtils on Stream<List<int>> {
+  /// Fully consumes this stream and returns the decoded string, while also
+  /// starting to call [log] after [timeout] has elapsed for the previously
+  /// decoded lines and all subsequent lines.
+  Future<String> toStringAndLogAfterTimeout({
+    required Duration timeout,
+    required void Function(String) log,
+  }) async {
+    final bufferedLines = <String>[];
+    final stopwatch = Stopwatch()..start();
+    return transform(utf8.decoder).transform(const LineSplitter()).map((line) {
+      if (stopwatch.elapsed >= timeout) {
+        if (bufferedLines.isNotEmpty) {
+          bufferedLines.forEach(log);
+          bufferedLines.clear();
+        }
+        log(line);
+      } else {
+        bufferedLines.add(line);
+      }
+
+      return line;
+    }).join('\n');
+  }
+}
