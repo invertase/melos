@@ -180,6 +180,7 @@ CommandConfigs(
 class BootstrapCommandConfigs {
   const BootstrapCommandConfigs({
     this.usePubspecOverrides = false,
+    this.runPubGetInParallel = true,
   });
 
   factory BootstrapCommandConfigs.fromYaml(Map<Object?, Object?> yaml) {
@@ -190,8 +191,16 @@ class BootstrapCommandConfigs {
         ) ??
         false;
 
+    final runPubGetInParallel = assertKeyIsA<bool?>(
+          key: 'runPubGetInParallel',
+          map: yaml,
+          path: 'command/bootstrap',
+        ) ??
+        true;
+
     return BootstrapCommandConfigs(
       usePubspecOverrides: usePubspecOverrides,
+      runPubGetInParallel: runPubGetInParallel,
     );
   }
 
@@ -201,9 +210,15 @@ class BootstrapCommandConfigs {
   /// dependencies during development.
   final bool usePubspecOverrides;
 
+  /// Whether to run `pub get` in parallel during bootstrapping.
+  ///
+  /// The default is `true`.
+  final bool runPubGetInParallel;
+
   Map<String, Object?> toJson() {
     return {
       'usePubspecOverrides': usePubspecOverrides,
+      'runPubGetInParallel': runPubGetInParallel,
     };
   }
 
@@ -211,16 +226,21 @@ class BootstrapCommandConfigs {
   bool operator ==(Object other) =>
       other is BootstrapCommandConfigs &&
       runtimeType == other.runtimeType &&
-      other.usePubspecOverrides == usePubspecOverrides;
+      other.usePubspecOverrides == usePubspecOverrides &&
+      other.runPubGetInParallel == runPubGetInParallel;
 
   @override
-  int get hashCode => runtimeType.hashCode ^ usePubspecOverrides.hashCode;
+  int get hashCode =>
+      runtimeType.hashCode ^
+      usePubspecOverrides.hashCode ^
+      runPubGetInParallel.hashCode;
 
   @override
   String toString() {
     return '''
 BootstrapCommandConfigs(
   usePubspecOverrides: $usePubspecOverrides,
+  runPubGetInParallel: $runPubGetInParallel,
 )''';
   }
 }
