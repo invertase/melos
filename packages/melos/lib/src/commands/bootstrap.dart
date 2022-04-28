@@ -203,13 +203,21 @@ mixin _BootstrapMixin on _CleanMixin {
       process.stdin.writeln(r'exit $?');
     }
 
+    const logTimeout = Duration(seconds: 10);
+    final packagePrefix = '[${AnsiStyles.blue.bold(package.name)}]: ';
+    void Function(String) logLineTo(void Function(String)? log) =>
+        (line) => log?.call('$packagePrefix$line');
+
     // We always fully consume stdout and stderr. This is required to prevent
-    // leaking resources and to ensure that the process exits. We
-    // need stdout and stderr in case of an error. Otherwise, we don't care
-    // about the output, don't wait for it to finish and don't handle errors.
-    // We just make sure the output streams are drained.
-    final stdout = utf8.decodeStream(process.stdout);
-    final stderr = utf8.decodeStream(process.stderr);
+    // leaking resources and to ensure that the process exits.
+    final stdout = process.stdout.toStringAndLogAfterTimeout(
+      timeout: logTimeout,
+      log: logLineTo(logger?.stdout),
+    );
+    final stderr = process.stderr.toStringAndLogAfterTimeout(
+      timeout: logTimeout,
+      log: logLineTo(logger?.stderr),
+    );
 
     final exitCode = await process.exitCode;
 
