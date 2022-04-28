@@ -30,6 +30,13 @@ void main() {
       expect(value.usePubspecOverrides, false);
     });
 
+    test('runPubGetInParallel is optional', () {
+      // ignore: use_named_constants
+      const value = BootstrapCommandConfigs();
+
+      expect(value.runPubGetInParallel, true);
+    });
+
     group('fromYaml', () {
       test('accepts empty object', () {
         expect(
@@ -47,15 +54,26 @@ void main() {
         );
       });
 
+      test('throws if runPubGetInParallel is not a bool', () {
+        expect(
+          () => BootstrapCommandConfigs.fromYaml(const {
+            'runPubGetInParallel': 42,
+          }),
+          throwsMelosConfigException(),
+        );
+      });
+
       test('can decode values', () {
         expect(
           BootstrapCommandConfigs.fromYaml(
             const {
               'usePubspecOverrides': true,
+              'runPubGetInParallel': false,
             },
           ),
           const BootstrapCommandConfigs(
             usePubspecOverrides: true,
+            runPubGetInParallel: false,
           ),
         );
       });

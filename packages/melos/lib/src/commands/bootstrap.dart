@@ -87,7 +87,10 @@ mixin _BootstrapMixin on _CleanMixin {
     └> ${AnsiStyles.blue(printablePath(package.pathRelativeToWorkspace))}''',
         );
       },
-      parallelism: canRunPubGetConcurrently ? null : 1,
+      parallelism: workspace.config.commands.bootstrap.runPubGetInParallel &&
+              canRunPubGetConcurrently
+          ? null
+          : 1,
     ).drain<void>();
   }
 
@@ -163,7 +166,10 @@ mixin _BootstrapMixin on _CleanMixin {
           );
           return package;
         },
-        parallelism: canRunPubGetConcurrently ? null : 1,
+        parallelism: workspace.config.commands.bootstrap.runPubGetInParallel &&
+                canRunPubGetConcurrently
+            ? null
+            : 1,
       );
 
   Future<void> _runPubGetForPackage(
