@@ -814,6 +814,7 @@ class Package {
   /// This is determined by ensuring all the following conditions are met:
   ///  a) the package depends on the Flutter SDK.
   ///  b) the package does not define itself as a Flutter plugin inside pubspec.yaml.
+  ///  c) a lib/main.dart file exists in the package.
   bool get isFlutterApp {
     // Must directly depend on the Flutter SDK.
     if (!isFlutterPackage) return false;
@@ -821,7 +822,7 @@ class Package {
     // Must not have a Flutter plugin definition in it's pubspec.yaml.
     if (pubSpec.flutter?.plugin != null) return false;
 
-    return true;
+    return File(joinAll([path, 'lib', 'main.dart'])).existsSync();
   }
 
   bool get isAddToApp {
