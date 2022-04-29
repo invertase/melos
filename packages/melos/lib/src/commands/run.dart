@@ -84,7 +84,7 @@ mixin _RunMixin on _Melos {
         ]),
         logger: logger,
       )
-        ..validate();
+        ..validate(commandSdkPath: config.sdkPath);
 
       final packages = workspace.filteredPackages.values.toList();
 

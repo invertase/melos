@@ -131,8 +131,13 @@ class MelosWorkspace {
   /// such as pub install.
   late final String melosToolPath = p.join(path, '.dart_tool', 'melos_tool');
 
-  void validate() {
-    if (sdkPath != null) {
+  /// Validate the workspace sdk setting.
+  /// If commandSdkPath is not null then we skip validation of the workspace sdk path
+  /// because the commandSdkPath has precedence over the the workspace one.
+  void validate({
+    required String? commandSdkPath,
+  }) {
+    if (sdkPath != null && commandSdkPath == null) {
       final dartTool = sdkTool('dart');
       if (!File(dartTool).existsSync()) {
         throw MelosConfigException(
