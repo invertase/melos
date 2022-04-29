@@ -98,7 +98,7 @@ class MelosConfigException implements MelosException {
     Object? key,
     int? index,
     String? path,
-  }) : this('${_descriptor(key: key, index: index, path: path)} is is required but missing');
+  }) : this('${_descriptor(key: key, index: index, path: path)} is required but missing');
 
   MelosConfigException.invalidType({
     required Object expectedType,
