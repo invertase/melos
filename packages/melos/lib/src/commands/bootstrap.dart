@@ -184,7 +184,7 @@ mixin _BootstrapMixin on _CleanMixin {
   }) async {
     final execArgs = [
       ...pubCommandExecArgs(
-        useFlutter: package.isFlutterApp,
+        useFlutter: package.isFlutterPackage,
         workspace: workspace,
       ),
       'get',

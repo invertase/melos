@@ -457,7 +457,7 @@ dependency_overrides:
       );
 
       await expectLater(
-        runMelosBootstrap(melos, logger),
+        melos.bootstrap(),
         throwsA(
           isA<BootstrapException>()
               .having((e) => e.package.name, 'package.name', 'a'),
