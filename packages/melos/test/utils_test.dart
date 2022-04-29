@@ -21,7 +21,7 @@ void main() {
           workspace: workspace,
           useFlutter: false,
         ),
-        ['dart', 'pub'],
+        [if (isPubSubcommand(workspace: workspace)) 'dart', 'pub'],
       );
     });
 

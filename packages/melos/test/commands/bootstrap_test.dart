@@ -77,7 +77,12 @@ void main() {
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final workspace = await MelosWorkspace.fromConfig(config);
       final melos = Melos(logger: logger, config: config);
+      final pubExecArgs = pubCommandExecArgs(
+        useFlutter: workspace.isFlutterWorkspace,
+        workspace: workspace,
+      );
 
       await melos.bootstrap();
 
@@ -88,7 +93,7 @@ void main() {
 melos bootstrap
    └> ${workspaceDir.path}
 
-Running "dart pub get" in workspace packages...
+Running "${pubExecArgs.join(' ')} get" in workspace packages...
   ✓ a
     └> packages/a
 
@@ -441,9 +446,14 @@ dependency_overrides:
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final workspace = await MelosWorkspace.fromConfig(config);
       final melos = Melos(
         logger: logger,
         config: config,
+      );
+      final pubExecArgs = pubCommandExecArgs(
+        useFlutter: workspace.isFlutterWorkspace,
+        workspace: workspace,
       );
 
       await expectLater(
@@ -461,7 +471,7 @@ dependency_overrides:
 melos bootstrap
    └> ${workspaceDir.path}
 
-Running "dart pub get" in workspace packages...
+Running "${pubExecArgs.join(' ')} get" in workspace packages...
   - a
     └> packages/a
 e-    └> Failed to install.
