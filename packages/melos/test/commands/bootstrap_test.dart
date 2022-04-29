@@ -84,7 +84,7 @@ void main() {
         workspace: workspace,
       );
 
-      await melos.bootstrap();
+      await runMelosBootstrap(melos, logger);
 
       expect(
         logger.output,
@@ -177,7 +177,7 @@ Generating IntelliJ IDE files...
         config: config,
       );
 
-      await melos.bootstrap();
+      await runMelosBootstrap(melos, logger);
 
       expect(
         logger.output,
@@ -457,7 +457,7 @@ dependency_overrides:
       );
 
       await expectLater(
-        melos.bootstrap(),
+        runMelosBootstrap(melos, logger),
         throwsA(
           isA<BootstrapException>()
               .having((e) => e.package.name, 'package.name', 'a'),
@@ -487,6 +487,16 @@ e-Because a depends on package_that_does_not_exists any which doesn't exist (cou
 
     test('can supports package filter', () {}, skip: true);
   });
+}
+
+Future<void> runMelosBootstrap(Melos melos, TestLogger logger) async {
+  try {
+    await melos.bootstrap();
+  } on BootstrapException {
+    // ignore: avoid_print
+    print(logger.output);
+    rethrow;
+  }
 }
 
 /// Tests whether dependencies are resolved correctly.
@@ -581,13 +591,7 @@ Future<void> dependencyResolutionTest(
     config: config,
   );
 
-  try {
-    await melos.bootstrap();
-  } on BootstrapException {
-    // ignore: avoid_print
-    print(logger.output);
-    rethrow;
-  }
+  await runMelosBootstrap(melos, logger);
 
   await Future.wait<void>(packages.keys.map(validatePackage));
 }
