@@ -127,7 +127,10 @@ Version currentDartVersion(String dartTool) {
 
   final versionOutput = result.stdout as String;
   final versionString =
-      _dartSdkVersionRegexp.matchAsPrefix(versionOutput)!.group(1)!;
+      _dartSdkVersionRegexp.matchAsPrefix(versionOutput)?.group(1);
+  if (versionString == null) {
+    throw Exception('Unable to parse Dart version from:\n$versionOutput');
+  }
 
   return Version.parse(versionString);
 }
