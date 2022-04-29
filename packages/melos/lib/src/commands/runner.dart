@@ -99,7 +99,7 @@ abstract class _Melos {
       filter: filterWithEnv,
       logger: logger,
     ))
-      ..validate(commandSdkPath: global?.sdkPath);
+      ..validate();
   }
 
   Future<void> _runLifecycle(

@@ -134,10 +134,8 @@ class MelosWorkspace {
   /// Validate the workspace sdk setting.
   /// If commandSdkPath is not null then we skip validation of the workspace sdk path
   /// because the commandSdkPath has precedence over the the workspace one.
-  void validate({
-    required String? commandSdkPath,
-  }) {
-    if (sdkPath != null && commandSdkPath == null) {
+  void validate() {
+    if (sdkPath != null) {
       final dartTool = sdkTool('dart');
       if (!File(dartTool).existsSync()) {
         throw MelosConfigException(

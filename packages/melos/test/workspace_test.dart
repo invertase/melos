@@ -410,68 +410,6 @@ The packages that caused the problem are:
       });
     });
 
-    group('validate', () {
-      test(
-        'should not throw if no command sdk path is passed and workspace sdk path is valid',
-        withMockFs(() async {
-          const String? commandSdkPath = null;
-
-          final mockWorkspaceRootDir = createMockWorkspaceFs(
-            packages: [
-              MockPackageFs(name: 'a'),
-              MockPackageFs(name: 'b'),
-            ],
-          );
-
-          final aDir = Directory('${mockWorkspaceRootDir.path}/packages/a');
-          final config = await MelosWorkspaceConfig.fromDirectory(aDir);
-          final workspace = await MelosWorkspace.fromConfig(
-            config,
-            logger: TestLogger(),
-          );
-
-          expect(
-            () => workspace.validate(
-              commandSdkPath: commandSdkPath,
-            ),
-            returnsNormally,
-          );
-        }),
-      );
-
-      test(
-        'should not throw if a valid command sdk path is passed and workspace sdk path is not valid',
-        withMockFs(() async {
-          const commandSdkPath = '.sdk';
-
-          final mockWorkspaceRootDir = createMockWorkspaceFs(
-            packages: [
-              MockPackageFs(name: 'a'),
-              MockPackageFs(name: 'b'),
-            ],
-            sdkPath: '/some/invalid/path/to/sdk',
-          );
-
-          Directory('${mockWorkspaceRootDir.path}/.sdk').createSync();
-          File('${mockWorkspaceRootDir.path}/.sdk/dart').createSync();
-
-          final aDir = Directory('${mockWorkspaceRootDir.path}/packages/a');
-          final config = await MelosWorkspaceConfig.fromDirectory(aDir);
-          final workspace = await MelosWorkspace.fromConfig(
-            config,
-            logger: TestLogger(),
-          );
-
-          expect(
-            () => workspace.validate(
-              commandSdkPath: commandSdkPath,
-            ),
-            returnsNormally,
-          );
-        }),
-      );
-    });
-
     group('resolveSdkPath', () {
       final workspacePath = p.normalize('/workspace');
       final configSdkPath = p.normalize('/sdks/config');

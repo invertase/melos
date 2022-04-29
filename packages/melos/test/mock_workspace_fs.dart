@@ -32,7 +32,6 @@ Directory createMockWorkspaceFs({
   Iterable<MockPackageFs> packages = const [],
   bool setCwdToWorkspace = true,
   bool? intellij,
-  String? sdkPath,
 }) {
   assert(
     IOOverrides.current is MockFs,
@@ -45,7 +44,6 @@ Directory createMockWorkspaceFs({
     workspaceName,
     workspacePackagesGlobs,
     intellij: intellij,
-    sdkPath: sdkPath,
   );
 
   // Sythesize a "package" (enough to satisfy our test requirements) for each
@@ -69,7 +67,6 @@ void _createMelosConfig(
   String workspaceName,
   Iterable<String> workspacePackagesGlobs, {
   required bool? intellij,
-  String? sdkPath,
 }) {
   final melosYaml = File(join(workspaceRoot, 'melos.yaml'));
 
@@ -82,15 +79,6 @@ packages:
 ${_yamlStringList(workspacePackagesGlobs)}
 ''',
   );
-
-  if (sdkPath != null && sdkPath.isNotEmpty) {
-    melosYaml.writeAsStringSync(
-      '''
-sdkPath: $sdkPath
-''',
-      mode: FileMode.append,
-    );
-  }
 
   if (intellij != null) {
     melosYaml.writeAsStringSync(
