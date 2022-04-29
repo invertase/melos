@@ -22,11 +22,14 @@ import 'package:cli_util/cli_logging.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
-import '../melos.dart';
 import 'common/intellij_project.dart';
 import 'common/platform.dart';
 import 'common/pub_dependency_list.dart';
 import 'common/utils.dart' as utils;
+import 'common/validation.dart';
+import 'global_options.dart';
+import 'package.dart';
+import 'workspace_configs.dart';
 
 class IdeWorkspace {
   IdeWorkspace._(this._workspace);
@@ -147,9 +150,10 @@ class MelosWorkspace {
           prepend: true,
         );
 
-  /// Validate the workspace sdk setting.
-  /// If commandSdkPath is not null then we skip validation of the workspace sdk path
-  /// because the commandSdkPath has precedence over the the workspace one.
+  /// Validates this workspace against the environment.
+  ///
+  /// By making this a separate method we can create workspaces for testing
+  /// which are not strictly valid.
   void validate() {
     if (sdkPath != null) {
       final dartTool = sdkTool('dart');
@@ -267,8 +271,8 @@ class MelosWorkspace {
   }
 }
 
-/// Takes the raw sdkPaths from the workspace config file and the command line
-/// and resolves the final path.
+/// Takes the raw SDK paths from the workspace config file, the environment
+/// variable and the command line and resolves the final path.
 ///
 /// The path provided through the command line takes precedence over the path
 /// from the config file.

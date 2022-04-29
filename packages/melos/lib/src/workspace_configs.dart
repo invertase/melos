@@ -572,7 +572,7 @@ You must have one of the following to be a valid Melos workspace:
   final CommandConfigs commands;
 
   /// Path to the Dart/Flutter SDK that should be used, unless overridden though
-  /// the command line.
+  /// the command line option or the environment variable.
   final String? sdkPath;
 
   /// Validates this workspace configuration for consistency.

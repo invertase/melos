@@ -477,7 +477,7 @@ The packages that caused the problem are:
             commandSdkPath: null,
             workspacePath: workspacePath,
           ),
-          commandSdkPath,
+          envSdkPath,
         );
       });
 
@@ -510,7 +510,7 @@ The packages that caused the problem are:
             commandSdkPath: null,
             workspacePath: workspacePath,
           ),
-          configSdkPath,
+          envSdkPath,
         );
         expect(
           resolveSdkPath(

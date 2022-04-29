@@ -55,9 +55,8 @@ class MelosCommandRunner extends CommandRunner<void> {
       help: 'Path to the Dart/Flutter SDK that should be used. This command '
           'line option has precedence over the `sdkPath` option in the '
           '`melos.yaml` configuration file and the `MELOS_SDK_PATH` '
-          'environment variable. If the special value "auto" is '
-          'given, the `sdkPath` setting in `melos.yaml` is ignored and '
-          'the SDK is determined from the environment.',
+          'environment variable. To use the system-wide SDK, provide '
+          'the special value "auto".',
     );
 
     addCommand(ExecCommand(config));
