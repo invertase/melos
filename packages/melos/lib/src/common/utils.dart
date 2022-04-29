@@ -117,6 +117,7 @@ Version currentDartVersion(String dartTool) {
     dartTool,
     ['--version'],
     stdoutEncoding: utf8,
+    stderrEncoding: utf8,
   );
 
   if (result.exitCode != 0) {
@@ -125,7 +126,11 @@ Version currentDartVersion(String dartTool) {
     );
   }
 
-  final versionOutput = result.stdout as String;
+  // Older Dart SDK versions output to stderr instead of stdout.
+  final stdout = result.stdout as String;
+  final stderr = result.stderr as String;
+  final versionOutput = stdout.trim().isEmpty ? stderr : stdout;
+
   final versionString =
       _dartSdkVersionRegexp.matchAsPrefix(versionOutput)?.group(1);
   if (versionString == null) {
