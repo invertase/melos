@@ -22,10 +22,12 @@ import 'package:melos/src/package.dart';
 import 'package:melos/src/workspace.dart';
 import 'package:melos/src/workspace_configs.dart';
 import 'package:path/path.dart' as p;
+import 'package:platform/platform.dart';
 import 'package:pubspec/pubspec.dart';
 import 'package:test/test.dart';
 
 import 'matchers.dart';
+import 'mock_env.dart';
 import 'mock_fs.dart';
 import 'mock_workspace_fs.dart';
 import 'utils.dart';
@@ -148,6 +150,33 @@ The packages that caused the problem are:
         await MelosWorkspaceConfig.fromDirectory(workspaceDir),
         logger: TestLogger(),
       );
+    });
+
+    group('sdkPath', () {
+      test('use SDK path from environment variable', () async {
+        withMockPlatform(
+          () {
+            final workspace = VirtualWorkspaceBuilder('').build();
+            expect(workspace.sdkPath, '/sdks/env');
+          },
+          platform: FakePlatform.fromPlatform(const LocalPlatform())
+            ..environment[envKeyMelosSdkPath] = '/sdks/env',
+        );
+      });
+
+      test('prepend SDK bin directory to PATH', () async {
+        withMockPlatform(
+          () {
+            final workspace = VirtualWorkspaceBuilder(
+              '',
+              sdkPath: '/sdk',
+            ).build();
+            expect(workspace.path, '/sdk$pathEnvVarSeparator/bin');
+          },
+          platform: FakePlatform.fromPlatform(const LocalPlatform())
+            ..environment['PATH'] = '/bin',
+        );
+      });
     });
 
     group('package filtering', () {
@@ -413,12 +442,14 @@ The packages that caused the problem are:
     group('resolveSdkPath', () {
       final workspacePath = p.normalize('/workspace');
       final configSdkPath = p.normalize('/sdks/config');
+      final envSdkPath = p.normalize('/sdks/env');
       final commandSdkPath = p.normalize('/sdks/command-line');
 
       test('should return null if no sdk path is provided', () {
         expect(
           resolveSdkPath(
             configSdkPath: null,
+            envSdkPath: null,
             commandSdkPath: null,
             workspacePath: workspacePath,
           ),
@@ -426,10 +457,11 @@ The packages that caused the problem are:
         );
       });
 
-      test('commandSdkPath has precedence over configSdkPath', () {
+      test('commandSdkPath has precedence over envSdkPath', () {
         expect(
           resolveSdkPath(
             configSdkPath: configSdkPath,
+            envSdkPath: envSdkPath,
             commandSdkPath: commandSdkPath,
             workspacePath: workspacePath,
           ),
@@ -437,10 +469,23 @@ The packages that caused the problem are:
         );
       });
 
-      test('use configSdkPath if commandSdkPath is not specified', () {
+      test('envSdkPath has precedence over configSdkPath', () {
         expect(
           resolveSdkPath(
             configSdkPath: configSdkPath,
+            envSdkPath: envSdkPath,
+            commandSdkPath: null,
+            workspacePath: workspacePath,
+          ),
+          commandSdkPath,
+        );
+      });
+
+      test('use configSdkPath if no other sdkPath is specified', () {
+        expect(
+          resolveSdkPath(
+            configSdkPath: configSdkPath,
+            envSdkPath: null,
             commandSdkPath: null,
             workspacePath: workspacePath,
           ),
@@ -452,6 +497,7 @@ The packages that caused the problem are:
         expect(
           resolveSdkPath(
             configSdkPath: null,
+            envSdkPath: null,
             commandSdkPath: p.join(commandSdkPath, ''),
             workspacePath: workspacePath,
           ),
@@ -459,7 +505,17 @@ The packages that caused the problem are:
         );
         expect(
           resolveSdkPath(
+            configSdkPath: null,
+            envSdkPath: p.join(envSdkPath, ''),
+            commandSdkPath: null,
+            workspacePath: workspacePath,
+          ),
+          configSdkPath,
+        );
+        expect(
+          resolveSdkPath(
             configSdkPath: p.join(configSdkPath, ''),
+            envSdkPath: null,
             commandSdkPath: null,
             workspacePath: workspacePath,
           ),
@@ -471,6 +527,7 @@ The packages that caused the problem are:
         expect(
           resolveSdkPath(
             configSdkPath: null,
+            envSdkPath: null,
             commandSdkPath: 'sdk',
             workspacePath: workspacePath,
           ),
@@ -478,7 +535,17 @@ The packages that caused the problem are:
         );
         expect(
           resolveSdkPath(
+            configSdkPath: null,
+            envSdkPath: 'sdk',
+            commandSdkPath: null,
+            workspacePath: workspacePath,
+          ),
+          p.join(workspacePath, 'sdk'),
+        );
+        expect(
+          resolveSdkPath(
             configSdkPath: 'sdk',
+            envSdkPath: null,
             commandSdkPath: null,
             workspacePath: workspacePath,
           ),
@@ -490,6 +557,7 @@ The packages that caused the problem are:
         expect(
           resolveSdkPath(
             configSdkPath: autoSdkPathOptionValue,
+            envSdkPath: null,
             commandSdkPath: null,
             workspacePath: workspacePath,
           ),
@@ -498,6 +566,16 @@ The packages that caused the problem are:
         expect(
           resolveSdkPath(
             configSdkPath: null,
+            envSdkPath: autoSdkPathOptionValue,
+            commandSdkPath: null,
+            workspacePath: workspacePath,
+          ),
+          null,
+        );
+        expect(
+          resolveSdkPath(
+            configSdkPath: null,
+            envSdkPath: null,
             commandSdkPath: autoSdkPathOptionValue,
             workspacePath: workspacePath,
           ),
@@ -506,6 +584,7 @@ The packages that caused the problem are:
         expect(
           resolveSdkPath(
             configSdkPath: autoSdkPathOptionValue,
+            envSdkPath: autoSdkPathOptionValue,
             commandSdkPath: autoSdkPathOptionValue,
             workspacePath: workspacePath,
           ),

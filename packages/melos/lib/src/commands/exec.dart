@@ -35,6 +35,9 @@ mixin _ExecMixin on _Melos {
       'MELOS_PACKAGE_VERSION': (package.version).toString(),
       'MELOS_PACKAGE_PATH': package.path,
       'MELOS_ROOT_PATH': workspace.path,
+      if (workspace.sdkPath != null) envKeyMelosSdkPath: workspace.sdkPath!,
+      if (workspace.childProcessPath != null)
+        'PATH': workspace.childProcessPath!,
     };
 
     // TODO what if it's not called 'example'?
@@ -67,8 +70,9 @@ mixin _ExecMixin on _Melos {
       environment.remove('MELOS_PARENT_PACKAGE_NAME');
       environment.remove('MELOS_PARENT_PACKAGE_VERSION');
       environment.remove('MELOS_PARENT_PACKAGE_PATH');
-      environment.remove('MELOS_PACKAGES');
-      environment.remove('MELOS_TERMINAL_WIDTH');
+      environment.remove(envKeyMelosPackages);
+      environment.remove(envKeyMelosSdkPath);
+      environment.remove(envKeyMelosTerminalWidth);
     }
 
     return startProcess(

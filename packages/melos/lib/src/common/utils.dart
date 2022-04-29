@@ -67,6 +67,8 @@ String describeEnum(Object value) => value.toString().split('.').last;
 // This can be user defined or can come from package selection in `melos run`.
 const envKeyMelosPackages = 'MELOS_PACKAGES';
 
+const envKeyMelosSdkPath = 'MELOS_SDK_PATH';
+
 const envKeyMelosTerminalWidth = 'MELOS_TERMINAL_WIDTH';
 
 final melosPackageUri = Uri.parse('package:melos/melos.dart');
@@ -171,6 +173,20 @@ String printablePath(String path) {
   return p.posix
       .prettyUri(p.posix.normalize(path))
       .replaceAll(RegExp(r'[\/\\]+'), '/');
+}
+
+String get pathEnvVarSeparator => currentPlatform.isWindows ? ';' : ':';
+
+String addToPathEnvVar({
+  required String directory,
+  required String currentPath,
+  bool prepend = false,
+}) {
+  if (prepend) {
+    return '$directory$pathEnvVarSeparator$currentPath';
+  } else {
+    return '$currentPath$pathEnvVarSeparator$directory';
+  }
 }
 
 Future<String> getMelosRoot() async {

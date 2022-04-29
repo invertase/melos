@@ -24,6 +24,7 @@ import 'package:path/path.dart' as p;
 
 import '../melos.dart';
 import 'common/intellij_project.dart';
+import 'common/platform.dart';
 import 'common/pub_dependency_list.dart';
 import 'common/utils.dart' as utils;
 
@@ -74,6 +75,7 @@ class MelosWorkspace {
       filteredPackages: filteredPackages,
       sdkPath: resolveSdkPath(
         configSdkPath: workspaceConfig.sdkPath,
+        envSdkPath: currentPlatform.environment[utils.envKeyMelosSdkPath],
         commandSdkPath: global?.sdkPath,
         workspacePath: workspaceConfig.path,
       ),
@@ -131,6 +133,20 @@ class MelosWorkspace {
   /// such as pub install.
   late final String melosToolPath = p.join(path, '.dart_tool', 'melos_tool');
 
+  /// PATH environment variable for child processes launched in this workspace.
+  ///
+  /// Is `null` if the PATH for child processes is the same as the PATH for the
+  /// current process.
+  late final String? childProcessPath = sdkPath == null
+      ? null
+      : utils.addToPathEnvVar(
+          directory: p.join(sdkPath!, 'bin'),
+          currentPath: currentPlatform.environment['PATH']!,
+          // We prepend the path to the bin directory in the Dart/Flutter SDK
+          // because we want to shadow any system wide SDK.
+          prepend: true,
+        );
+
   /// Validate the workspace sdk setting.
   /// If commandSdkPath is not null then we skip validation of the workspace sdk path
   /// because the commandSdkPath has precedence over the the workspace one.
@@ -157,6 +173,8 @@ class MelosWorkspace {
   Future<int> exec(List<String> execArgs, {bool onlyOutputOnError = false}) {
     final environment = {
       'MELOS_ROOT_PATH': path,
+      if (sdkPath != null) utils.envKeyMelosSdkPath: sdkPath!,
+      if (childProcessPath != null) 'PATH': childProcessPath!,
     };
 
     return utils.startProcess(
@@ -175,6 +193,8 @@ class MelosWorkspace {
   }) {
     final environment = {
       'MELOS_ROOT_PATH': path,
+      if (sdkPath != null) utils.envKeyMelosSdkPath: sdkPath!,
+      if (childProcessPath != null) 'PATH': childProcessPath!,
     };
 
     return utils.startProcess(
@@ -257,10 +277,11 @@ class MelosWorkspace {
 @visibleForTesting
 String? resolveSdkPath({
   required String? configSdkPath,
+  required String? envSdkPath,
   required String? commandSdkPath,
   required String workspacePath,
 }) {
-  var sdkPath = commandSdkPath ?? configSdkPath;
+  var sdkPath = commandSdkPath ?? envSdkPath ?? configSdkPath;
   if (sdkPath == utils.autoSdkPathOptionValue) {
     return null;
   }

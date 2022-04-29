@@ -48,3 +48,8 @@ Note, this 'parent package' functionality only currently works when the 'child p
 ### `MELOS_PACKAGES`
 
 Define a comma delimited list of package names that Melos should focus on. This bypasses all filtering flags if defined.
+
+### `MELOS_SDK_PATH`
+
+The path to the Dart/Flutter SDK to use. This environment variable has precedence over the `sdkPath`
+option in `melos.yaml`, but is overridden by the command line option `--sdk-path`.

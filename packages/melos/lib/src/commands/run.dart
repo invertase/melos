@@ -3,6 +3,7 @@ part of 'runner.dart';
 mixin _RunMixin on _Melos {
   @override
   Future<void> run({
+    GlobalOptions? global,
     String? scriptName,
     bool noSelect = false,
     List<String> extraArgs = const [],
@@ -22,6 +23,7 @@ mixin _RunMixin on _Melos {
     final exitCode = await _runScript(
       script,
       config,
+      global: global,
       noSelect: noSelect,
       extraArgs: extraArgs,
     );
@@ -67,25 +69,30 @@ mixin _RunMixin on _Melos {
   Future<int> _runScript(
     Script script,
     MelosWorkspaceConfig config, {
+    GlobalOptions? global,
     required bool noSelect,
     List<String> extraArgs = const [],
   }) async {
+    final workspace = await MelosWorkspace.fromConfig(
+      config,
+      global: global,
+      filter: script.filter?.copyWithUpdatedIgnore([
+        ...script.filter!.ignore,
+        ...config.ignore,
+      ]),
+      logger: logger,
+    )
+      ..validate();
+
     final environment = {
       'MELOS_ROOT_PATH': config.path,
+      if (workspace.sdkPath != null) envKeyMelosSdkPath: workspace.sdkPath!,
+      if (workspace.childProcessPath != null)
+        'PATH': workspace.childProcessPath!,
       ...script.env,
     };
 
     if (script.filter != null) {
-      final workspace = await MelosWorkspace.fromConfig(
-        config,
-        filter: script.filter!.copyWithUpdatedIgnore([
-          ...script.filter!.ignore,
-          ...config.ignore,
-        ]),
-        logger: logger,
-      )
-        ..validate();
-
       final packages = workspace.filteredPackages.values.toList();
 
       var choices = packages.map((e) => AnsiStyles.cyan(e.name)).toList();
