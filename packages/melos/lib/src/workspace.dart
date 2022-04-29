@@ -265,12 +265,6 @@ String? resolveSdkPath({
     return null;
   }
 
-  /// Intentionally passing empty sdk-path from command should be treated as
-  /// pulling command from path.
-  if (commandSdkPath != null && commandSdkPath.isEmpty) {
-    return null;
-  }
-
   /// If the sdk path is a relative one, prepend the workspace path
   /// to make it a valid full absolute path now.
   if (sdkPath != null && p.isRelative(sdkPath)) {
