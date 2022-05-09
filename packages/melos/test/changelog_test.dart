@@ -46,9 +46,7 @@ void main() {
 
     expect(
       renderCommitPackageUpdate(workspace, package, commit),
-      contains(
-        '**FEAT**: b ([#123]($issueUrl)).',
-      ),
+      contains('**FEAT**: b ([#123]($issueUrl)).'),
     );
   });
 }
