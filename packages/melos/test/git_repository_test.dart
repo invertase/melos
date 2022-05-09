@@ -61,6 +61,16 @@ void main() {
         ),
       );
     });
+
+    test('issueUrl returns correct URL', () {
+      final repo = GitHubRepository(owner: 'a', name: 'b');
+      const issueId = '123';
+
+      expect(
+        repo.issueUrl(issueId),
+        Uri.parse('https://github.com/a/b/issues/123'),
+      );
+    });
   });
 
   group('GitLabRepository', () {
@@ -111,6 +121,16 @@ void main() {
         Uri.parse(
           'https://gitlab.com/a/b/-/commit/b2841394a48cd7d84a4966a788842690e543b2ef',
         ),
+      );
+    });
+
+    test('issueUrl returns correct URL', () {
+      final repo = GitLabRepository(owner: 'a', name: 'b');
+      const issueId = '123';
+
+      expect(
+        repo.issueUrl(issueId),
+        Uri.parse('https://gitlab.com/a/b/-/issues/123'),
       );
     });
   });

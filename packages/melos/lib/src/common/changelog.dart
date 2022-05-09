@@ -23,6 +23,7 @@ import 'package:pub_semver/pub_semver.dart';
 
 import '../package.dart';
 import 'git_commit.dart';
+import 'git_repository.dart';
 import 'pending_package_update.dart';
 
 class Changelog {
@@ -142,6 +143,13 @@ extension ChangelogStringBufferExtension on StringBuffer {
   }
 
   void writePackageUpdateChanges(MelosPendingPackageUpdate update) {
+    final config = update.workspace.config;
+    final repository = config.repository;
+    final linkToCommits = config.commands.version.linkToCommits ?? false;
+
+    String processCommitHeader(String header) =>
+        repository != null ? header.withIssueLinks(repository) : header;
+
     // User provided changelog entry message.
     if (update.userChangelogMessage != null) {
       writeln(' - ${update.userChangelogMessage}');
@@ -162,17 +170,16 @@ extension ChangelogStringBufferExtension on StringBuffer {
         }
 
         if (parsedMessage.isMergeCommit) {
-          writePunctuated(parsedMessage.header);
+          writePunctuated(processCommitHeader(parsedMessage.header));
         } else {
           writeBold(parsedMessage.type!.toUpperCase());
           write(': ');
-          writePunctuated(parsedMessage.description!);
+          writePunctuated(processCommitHeader(parsedMessage.description!));
         }
 
-        if (update.workspace.config.commands.version.linkToCommits ?? false) {
+        if (linkToCommits) {
           final shortCommitId = commit.id.substring(0, 8);
-          final commitUrl =
-              update.workspace.config.repository!.commitUrl(commit.id);
+          final commitUrl = repository!.commitUrl(commit.id);
           write(' (');
           writeLink(shortCommitId, uri: commitUrl.toString());
           write(')');
@@ -206,4 +213,16 @@ List<RichGitCommit> _filteredAndSortedCommits(
   });
 
   return commits;
+}
+
+// https://regex101.com/r/Q1IV9n/1
+final _issueLinkRegexp = RegExp(r'#(\d+)');
+
+extension on String {
+  String withIssueLinks(HostedGitRepository repository) {
+    return replaceAllMapped(_issueLinkRegexp, (match) {
+      final issueUrl = repository.issueUrl(match.group(1)!);
+      return '[${match.group(0)}]($issueUrl)';
+    });
+  }
 }

@@ -27,6 +27,9 @@ abstract class HostedGitRepository {
 
   /// The URL of the commit with the given [id] on the host's web site.
   Uri commitUrl(String id);
+
+  /// The URL of the issue/PR with the given [id] on the host's web site.
+  Uri issueUrl(String id);
 }
 
 /// A git repository, hosted by GitHub.
@@ -61,6 +64,9 @@ class GitHubRepository extends HostedGitRepository {
 
   @override
   Uri commitUrl(String id) => url.resolve('commit/$id');
+
+  @override
+  Uri issueUrl(String id) => url.resolve('issues/$id');
 
   @override
   String toString() {
@@ -115,6 +121,9 @@ class GitLabRepository extends HostedGitRepository {
 
   @override
   Uri commitUrl(String id) => url.resolve('-/commit/$id');
+
+  @override
+  Uri issueUrl(String id) => url.resolve('-/issues/$id');
 
   @override
   String toString() {
