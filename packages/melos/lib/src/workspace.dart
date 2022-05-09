@@ -19,11 +19,15 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:cli_util/cli_logging.dart';
-import 'package:path/path.dart';
+import 'package:meta/meta.dart';
+import 'package:path/path.dart' as p;
 
 import 'common/intellij_project.dart';
+import 'common/platform.dart';
 import 'common/pub_dependency_list.dart';
 import 'common/utils.dart' as utils;
+import 'common/validation.dart';
+import 'global_options.dart';
 import 'package.dart';
 import 'workspace_configs.dart';
 
@@ -45,12 +49,14 @@ class MelosWorkspace {
     required this.config,
     required this.allPackages,
     required this.filteredPackages,
+    required this.sdkPath,
     this.logger,
   });
 
   /// Build a [MelosWorkspace] from a workspace configuration.
   static Future<MelosWorkspace> fromConfig(
     MelosWorkspaceConfig workspaceConfig, {
+    GlobalOptions? global,
     PackageFilter? filter,
     Logger? logger,
   }) async {
@@ -70,6 +76,12 @@ class MelosWorkspace {
       allPackages: allPackages,
       logger: logger,
       filteredPackages: filteredPackages,
+      sdkPath: resolveSdkPath(
+        configSdkPath: workspaceConfig.sdkPath,
+        envSdkPath: currentPlatform.environment[utils.envKeyMelosSdkPath],
+        commandSdkPath: global?.sdkPath,
+        workspacePath: workspaceConfig.path,
+      ),
     );
   }
 
@@ -98,15 +110,75 @@ class MelosWorkspace {
   late final bool isFlutterWorkspace =
       allPackages.values.any((package) => package.isFlutterPackage);
 
+  /// Path to the Dart/Flutter SDK, if specified by the user.
+  final String? sdkPath;
+
+  /// Returns the path to a [tool] from the Dart/Flutter SDK.
+  ///
+  /// If no [sdkPath] is specified, this will return the name of the tool as is
+  /// so that it can be used as an executable from PATH.
+  String sdkTool(String tool) {
+    final sdkPath = this.sdkPath;
+    if (sdkPath != null) {
+      return p.join(sdkPath, 'bin', tool);
+    }
+    return tool;
+  }
+
+  late final bool canRunPubGetConcurrently =
+      utils.canRunPubGetConcurrently(sdkTool('dart'));
+
+  late final bool isPubspecOverridesSupported =
+      utils.isPubspecOverridesSupported(sdkTool('dart'));
+
   /// Returns a string path to the 'melos_tool' directory in this workspace.
   /// This directory should be git ignored and is used by Melos for temporary tasks
   /// such as pub install.
-  late final String melosToolPath = join(path, '.dart_tool', 'melos_tool');
+  late final String melosToolPath = p.join(path, '.dart_tool', 'melos_tool');
+
+  /// PATH environment variable for child processes launched in this workspace.
+  ///
+  /// Is `null` if the PATH for child processes is the same as the PATH for the
+  /// current process.
+  late final String? childProcessPath = sdkPath == null
+      ? null
+      : utils.addToPathEnvVar(
+          directory: p.join(sdkPath!, 'bin'),
+          currentPath: currentPlatform.environment['PATH']!,
+          // We prepend the path to the bin directory in the Dart/Flutter SDK
+          // because we want to shadow any system wide SDK.
+          prepend: true,
+        );
+
+  /// Validates this workspace against the environment.
+  ///
+  /// By making this a separate method we can create workspaces for testing
+  /// which are not strictly valid.
+  void validate() {
+    if (sdkPath != null) {
+      final dartTool = sdkTool('dart');
+      if (!File(dartTool).existsSync()) {
+        throw MelosConfigException(
+          'SDK path is not valid. Could not find dart tool at $dartTool',
+        );
+      }
+      if (isFlutterWorkspace) {
+        final flutterTool = sdkTool('flutter');
+        if (!File(flutterTool).existsSync()) {
+          throw MelosConfigException(
+            'SDK path is not valid. Could not find flutter tool at $dartTool',
+          );
+        }
+      }
+    }
+  }
 
   /// Execute a command in the root of this workspace.
   Future<int> exec(List<String> execArgs, {bool onlyOutputOnError = false}) {
     final environment = {
       'MELOS_ROOT_PATH': path,
+      if (sdkPath != null) utils.envKeyMelosSdkPath: sdkPath!,
+      if (childProcessPath != null) 'PATH': childProcessPath!,
     };
 
     return utils.startProcess(
@@ -125,6 +197,8 @@ class MelosWorkspace {
   }) {
     final environment = {
       'MELOS_ROOT_PATH': path,
+      if (sdkPath != null) utils.envKeyMelosSdkPath: sdkPath!,
+      if (childProcessPath != null) 'PATH': childProcessPath!,
     };
 
     return utils.startProcess(
@@ -138,16 +212,19 @@ class MelosWorkspace {
 
   /// Builds a dependency graph of dependencies and their dependents in this workspace.
   Future<Map<String, Set<String>>> getDependencyGraph() async {
+    final pubExecArgs = utils.pubCommandExecArgs(
+      useFlutter: isFlutterWorkspace,
+      workspace: this,
+    );
     final pubDepsExecArgs = ['--style=list', '--dev'];
     final pubListCommandOutput = await Process.run(
-      isFlutterWorkspace
-          ? 'flutter'
-          : utils.isPubSubcommand()
-              ? 'dart'
-              : 'pub',
-      isFlutterWorkspace
-          ? ['pub', 'deps', '--', ...pubDepsExecArgs]
-          : [if (utils.isPubSubcommand()) 'pub', 'deps', ...pubDepsExecArgs],
+      pubExecArgs.removeAt(0),
+      [
+        ...pubDepsExecArgs,
+        'deps',
+        if (isFlutterWorkspace) '--',
+        ...pubDepsExecArgs,
+      ],
       runInShell: true,
       workingDirectory: melosToolPath,
     );
@@ -192,4 +269,32 @@ class MelosWorkspace {
 
     return dependencyGraphFlat;
   }
+}
+
+/// Takes the raw SDK paths from the workspace config file, the environment
+/// variable and the command line and resolves the final path.
+///
+/// The path provided through the command line takes precedence over the path
+/// from the config file.
+///
+/// Relative paths are resolved relative to the workspace path.
+@visibleForTesting
+String? resolveSdkPath({
+  required String? configSdkPath,
+  required String? envSdkPath,
+  required String? commandSdkPath,
+  required String workspacePath,
+}) {
+  var sdkPath = commandSdkPath ?? envSdkPath ?? configSdkPath;
+  if (sdkPath == utils.autoSdkPathOptionValue) {
+    return null;
+  }
+
+  /// If the sdk path is a relative one, prepend the workspace path
+  /// to make it a valid full absolute path now.
+  if (sdkPath != null && p.isRelative(sdkPath)) {
+    sdkPath = p.join(workspacePath, sdkPath);
+  }
+
+  return sdkPath;
 }

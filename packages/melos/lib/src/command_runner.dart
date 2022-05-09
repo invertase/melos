@@ -17,6 +17,7 @@
 
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
+
 import 'command_runner/bootstrap.dart';
 import 'command_runner/clean.dart';
 import 'command_runner/exec.dart';
@@ -35,7 +36,7 @@ import 'workspace_configs.dart';
 /// ```dart
 /// final melos = MelosCommandRunner();
 ///
-/// await melos.run(['boostrap']);
+/// await melos.run(['bootstrap']);
 /// ```
 class MelosCommandRunner extends CommandRunner<void> {
   MelosCommandRunner(MelosWorkspaceConfig config)
@@ -45,9 +46,17 @@ class MelosCommandRunner extends CommandRunner<void> {
           usageLineLength: terminalWidth,
         ) {
     argParser.addFlag(
-      'verbose',
+      globalOptionVerbose,
       negatable: false,
       help: 'Enable verbose logging.',
+    );
+    argParser.addOption(
+      globalOptionSdkPath,
+      help: 'Path to the Dart/Flutter SDK that should be used. This command '
+          'line option has precedence over the `sdkPath` option in the '
+          '`melos.yaml` configuration file and the `MELOS_SDK_PATH` '
+          'environment variable. To use the system-wide SDK, provide '
+          'the special value "auto".',
     );
 
     addCommand(ExecCommand(config));

@@ -5,15 +5,20 @@ final _warningLabel = AnsiStyles.yellow('WARNING');
 final _checkLabel = AnsiStyles.greenBright('✓');
 
 mixin _BootstrapMixin on _CleanMixin {
-  Future<void> bootstrap({PackageFilter? filter}) async {
-    final workspace = await createWorkspace(filter: filter);
+  Future<void> bootstrap({GlobalOptions? global, PackageFilter? filter}) async {
+    final workspace = await createWorkspace(global: global, filter: filter);
 
     return _runLifecycle(
       workspace,
       ScriptLifecycle.bootstrap,
       () async {
-        final pubCommandForLogging =
-            "${workspace.isFlutterWorkspace ? "flutter " : "dart "}pub get";
+        final pubCommandForLogging = [
+          ...pubCommandExecArgs(
+            useFlutter: workspace.isFlutterWorkspace,
+            workspace: workspace,
+          ),
+          'get'
+        ].join(' ');
 
         logger?.stdout(AnsiStyles.yellow.bold('melos bootstrap'));
         logger?.stdout('   └> ${AnsiStyles.cyan.bold(workspace.path)}\n');
@@ -61,7 +66,7 @@ mixin _BootstrapMixin on _CleanMixin {
   Future<void> _linkPackagesWithPubspecOverrides(
     MelosWorkspace workspace,
   ) async {
-    if (!isPubspecOverridesSupported) {
+    if (!workspace.isPubspecOverridesSupported) {
       logger?.stderr(
         '$_warningLabel: Dart 2.17.0 or greater is required to use Melos with '
         'pubspec overrides.',
@@ -88,7 +93,7 @@ mixin _BootstrapMixin on _CleanMixin {
         );
       },
       parallelism: workspace.config.commands.bootstrap.runPubGetInParallel &&
-              canRunPubGetConcurrently
+              workspace.canRunPubGetConcurrently
           ? null
           : 1,
     ).drain<void>();
@@ -167,7 +172,7 @@ mixin _BootstrapMixin on _CleanMixin {
           return package;
         },
         parallelism: workspace.config.commands.bootstrap.runPubGetInParallel &&
-                canRunPubGetConcurrently
+                workspace.canRunPubGetConcurrently
             ? null
             : 1,
       );
@@ -177,10 +182,14 @@ mixin _BootstrapMixin on _CleanMixin {
     Package package, {
     bool inTemporaryProject = false,
   }) async {
-    final pubGetArgs = ['pub', 'get'];
-    final execArgs = package.isFlutterPackage
-        ? ['flutter', ...pubGetArgs]
-        : [if (utils.isPubSubcommand()) 'dart', ...pubGetArgs];
+    final execArgs = [
+      ...pubCommandExecArgs(
+        useFlutter: package.isFlutterPackage,
+        workspace: workspace,
+      ),
+      'get',
+    ];
+
     final executable = currentPlatform.isWindows ? 'cmd' : '/bin/sh';
     final packagePath = inTemporaryProject
         ? join(workspace.melosToolPath, package.pathRelativeToWorkspace)

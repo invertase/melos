@@ -359,6 +359,7 @@ class MelosWorkspaceConfig {
   MelosWorkspaceConfig({
     required this.path,
     required this.name,
+    this.sdkPath,
     this.repository,
     required this.packages,
     this.ignore = const [],
@@ -438,10 +439,16 @@ class MelosWorkspaceConfig {
       map: yaml,
     );
 
+    final sdkPath = assertKeyIsA<String?>(
+      key: 'sdkPath',
+      map: yaml,
+    );
+
     return MelosWorkspaceConfig(
       path: path,
       name: name,
       repository: repository,
+      sdkPath: sdkPath,
       packages: packages
           .map((package) => createGlob(package, currentDirectoryPath: path))
           .toList(),
@@ -563,6 +570,10 @@ You must have one of the following to be a valid Melos workspace:
   ///
   /// This allows customizing the default behavior of melos commands.
   final CommandConfigs commands;
+
+  /// Path to the Dart/Flutter SDK that should be used, unless overridden though
+  /// the command line option or the environment variable.
+  final String? sdkPath;
 
   /// Validates this workspace configuration for consistency.
   void _validate() {

@@ -77,9 +77,14 @@ void main() {
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final workspace = await MelosWorkspace.fromConfig(config);
       final melos = Melos(logger: logger, config: config);
+      final pubExecArgs = pubCommandExecArgs(
+        useFlutter: workspace.isFlutterWorkspace,
+        workspace: workspace,
+      );
 
-      await melos.bootstrap();
+      await runMelosBootstrap(melos, logger);
 
       expect(
         logger.output,
@@ -88,7 +93,7 @@ void main() {
 melos bootstrap
    └> ${workspaceDir.path}
 
-Running "dart pub get" in workspace packages...
+Running "${pubExecArgs.join(' ')} get" in workspace packages...
   ✓ a
     └> packages/a
 
@@ -172,7 +177,7 @@ Generating IntelliJ IDE files...
         config: config,
       );
 
-      await melos.bootstrap();
+      await runMelosBootstrap(melos, logger);
 
       expect(
         logger.output,
@@ -251,7 +256,7 @@ Generating IntelliJ IDE files...
           },
           usePubspecOverrides: true,
         ),
-        skip: !isPubspecOverridesSupported,
+        skip: !isPubspecOverridesSupported(),
       );
 
       test(
@@ -263,7 +268,7 @@ Generating IntelliJ IDE files...
           },
           usePubspecOverrides: true,
         ),
-        skip: !isPubspecOverridesSupported,
+        skip: !isPubspecOverridesSupported(),
       );
 
       group('mergeMelosPubspecOverrides', () {
@@ -441,9 +446,14 @@ dependency_overrides:
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final workspace = await MelosWorkspace.fromConfig(config);
       final melos = Melos(
         logger: logger,
         config: config,
+      );
+      final pubExecArgs = pubCommandExecArgs(
+        useFlutter: workspace.isFlutterWorkspace,
+        workspace: workspace,
       );
 
       await expectLater(
@@ -461,7 +471,7 @@ dependency_overrides:
 melos bootstrap
    └> ${workspaceDir.path}
 
-Running "dart pub get" in workspace packages...
+Running "${pubExecArgs.join(' ')} get" in workspace packages...
   - a
     └> packages/a
 e-    └> Failed to install.
@@ -477,6 +487,16 @@ e-Because a depends on package_that_does_not_exists any which doesn't exist (cou
 
     test('can supports package filter', () {}, skip: true);
   });
+}
+
+Future<void> runMelosBootstrap(Melos melos, TestLogger logger) async {
+  try {
+    await melos.bootstrap();
+  } on BootstrapException {
+    // ignore: avoid_print
+    print(logger.output);
+    rethrow;
+  }
 }
 
 /// Tests whether dependencies are resolved correctly.
@@ -571,13 +591,7 @@ Future<void> dependencyResolutionTest(
     config: config,
   );
 
-  try {
-    await melos.bootstrap();
-  } on BootstrapException {
-    // ignore: avoid_print
-    print(logger.output);
-    rethrow;
-  }
+  await runMelosBootstrap(melos, logger);
 
   await Future.wait<void>(packages.keys.map(validatePackage));
 }

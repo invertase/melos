@@ -31,6 +31,24 @@ Supported hosts:
 repository: https://github.com/invertase/melos
 ```
 
+## `sdkPath`
+
+Path to the Dart/Flutter SDK that should be used.
+
+Relative paths are resolved relative to the `melos.yaml` file.
+
+To use the system-wide SDK, provide the special value "auto".
+
+If the SDK path is specified though multiple mechanisms, the precedence from highest to lowest is:
+
+1. `--sdk-path` global command line option
+2. `MELOS_SDK_PATH` environment variable
+3. `sdkPath` in `melos.yaml`
+
+```yaml
+sdkPath: .fvm/flutter_sdk
+```
+
 ## `packages`
 
 > required

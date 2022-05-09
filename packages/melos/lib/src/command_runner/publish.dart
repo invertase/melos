@@ -61,6 +61,7 @@ class PublishCommand extends MelosCommand {
     final filter = parsePackageFilter(config.path);
 
     return melos.publish(
+      global: global,
       filter: filter,
       dryRun: dryRun,
       force: yes,

@@ -4,6 +4,7 @@ import 'package:cli_util/cli_logging.dart';
 
 import '../common/glob.dart';
 import '../common/utils.dart';
+import '../global_options.dart';
 import '../package.dart';
 import '../workspace_configs.dart';
 
@@ -12,8 +13,10 @@ abstract class MelosCommand extends Command<void> {
 
   final MelosWorkspaceConfig config;
 
-  Logger? get logger =>
-      globalResults!['verbose'] as bool ? Logger.verbose() : Logger.standard();
+  /// The global Melos options parsed from the command line.
+  late final global = _parseGlobalOptions();
+
+  Logger? get logger => global.verbose ? Logger.verbose() : Logger.standard();
 
   /// The `melos.yaml` configuration for this command.
   /// see [ArgParser.allowTrailingOptions]
@@ -25,6 +28,13 @@ abstract class MelosCommand extends Command<void> {
     usageLineLength: terminalWidth,
     allowTrailingOptions: allowTrailingOptions,
   );
+
+  GlobalOptions _parseGlobalOptions() {
+    return GlobalOptions(
+      verbose: globalResults![globalOptionVerbose]! as bool,
+      sdkPath: globalResults![globalOptionSdkPath] as String?,
+    );
+  }
 
   void setupPackageFilterParser() {
     argParser.addFlag(

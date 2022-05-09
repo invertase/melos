@@ -4,6 +4,7 @@ mixin _VersionMixin on _RunMixin {
   /// Version packages automatically based on the git history or with manually
   /// specified versions.
   Future<void> version({
+    GlobalOptions? global,
     PackageFilter? filter,
     bool asPrerelease = false,
     bool asStableRelease = false,
@@ -36,6 +37,7 @@ mixin _VersionMixin on _RunMixin {
     }
 
     final workspace = await createWorkspace(
+      global: global,
       // We ignore `since` package list filtering on the 'version' command as it
       // already filters it itself, filtering here would map dependant version fail
       // as it won't be aware of any packages that have been filtered out here

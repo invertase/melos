@@ -5,12 +5,13 @@ enum ListOutputKind { json, parsable, graph, gviz, column }
 
 mixin _ListMixin on _Melos {
   Future<void> list({
+    GlobalOptions? global,
     bool long = false,
     bool relativePaths = false,
     PackageFilter? filter,
     ListOutputKind kind = ListOutputKind.column,
   }) async {
-    final workspace = await createWorkspace(filter: filter);
+    final workspace = await createWorkspace(global: global, filter: filter);
 
     switch (kind) {
       case ListOutputKind.graph:
