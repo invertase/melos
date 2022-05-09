@@ -56,7 +56,7 @@ void main() {
 
         expect(
           pubspecOverrides,
-          yamlFile({'dependency_overrides': null}),
+          isNot(fileExists),
         );
       },
       skip: !isPubspecOverridesSupported(),

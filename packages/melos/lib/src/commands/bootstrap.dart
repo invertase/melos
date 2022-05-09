@@ -120,7 +120,7 @@ mixin _BootstrapMixin on _CleanMixin {
     final pubspecOverridesFile =
         File(utils.pubspecOverridesPathForDirectory(Directory(package.path)));
     final pubspecOverridesContents = pubspecOverridesFile.existsSync()
-        ? pubspecOverridesFile.readAsStringSync()
+        ? await pubspecOverridesFile.readAsString()
         : null;
 
     // Write new version of pubspec_overrides.yaml if it has changed.
@@ -129,8 +129,13 @@ mixin _BootstrapMixin on _CleanMixin {
       pubspecOverridesContents,
     );
     if (updatedPubspecOverridesContents != null) {
-      pubspecOverridesFile.createSync(recursive: true);
-      pubspecOverridesFile.writeAsStringSync(updatedPubspecOverridesContents);
+      if (updatedPubspecOverridesContents.isEmpty) {
+        await pubspecOverridesFile.delete();
+      } else {
+        await pubspecOverridesFile.create(recursive: true);
+        await pubspecOverridesFile
+            .writeAsString(updatedPubspecOverridesContents);
+      }
     }
   }
 
@@ -564,7 +569,7 @@ String? mergeMelosPubspecOverrides(
     // This means it is possible that dependency_overrides and/or
     // melos_managed_dependency_overrides are now empty.
     if (dependencyOverrides?.isEmpty ?? false) {
-      pubspecOverridesEditor.update(['dependency_overrides'], null);
+      pubspecOverridesEditor.remove(['dependency_overrides']);
     }
   }
 
@@ -596,6 +601,12 @@ String? mergeMelosPubspecOverrides(
           );
         }
       }
+    }
+
+    if (result.trim() == '{}') {
+      // YamlEditor uses an empty dictionary ({}) when all properties have been
+      // removed and the file is essentially empty.
+      return '';
     }
 
     // Make sure the `pubspec_overrides.yaml` file always ends with a newline.

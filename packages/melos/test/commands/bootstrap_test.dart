@@ -381,9 +381,7 @@ dependency_overrides:
   a:
     path: ../a
 ''',
-            updatedPubspecOverrides: '''
-dependency_overrides: null
-''',
+            updatedPubspecOverrides: '',
           );
         });
 

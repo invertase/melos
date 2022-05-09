@@ -89,6 +89,49 @@ Matcher throwsMelosConfigException({Object? message}) {
   return throwsA(isMelosConfigException(message: message));
 }
 
+final Matcher fileExists = _FileExists();
+
+class _FileExists extends Matcher {
+  _FileExists();
+
+  @override
+  bool matches(Object? item, Map matchState) {
+    final io.File file;
+    if (item is File) {
+      file = item;
+    } else if (item is String) {
+      file = io.File(p.normalize(item));
+    } else {
+      matchState['fileExists.invalidItem'] = true;
+      return false;
+    }
+
+    if (file.existsSync()) {
+      return true;
+    }
+
+    return false;
+  }
+
+  @override
+  Description describe(Description description) =>
+      description.add('file exists');
+
+  @override
+  Description describeMismatch(
+    Object? item,
+    Description mismatchDescription,
+    Map matchState,
+    bool verbose,
+  ) {
+    if (matchState['fileExists.invalidItem'] == true) {
+      return mismatchDescription.add('is not a reference to a file');
+    }
+
+    return mismatchDescription.add('does not exist');
+  }
+}
+
 Matcher fileContents(Object? matcher) => _FileContents(wrapMatcher(matcher));
 
 class _FileContents extends Matcher {
@@ -125,9 +168,8 @@ class _FileContents extends Matcher {
   }
 
   @override
-  Description describe(Description description) => description
-    ..add('file with contents that ')
-    ..addDescriptionOf(_matcher);
+  Description describe(Description description) =>
+      description.add('file with contents that ').addDescriptionOf(_matcher);
 
   @override
   Description describeMismatch(
@@ -145,9 +187,7 @@ class _FileContents extends Matcher {
     }
 
     final contents = matchState['fileContents.contents'] as String;
-    mismatchDescription
-      ..add('contains ')
-      ..addDescriptionOf(contents);
+    mismatchDescription.add('contains ').addDescriptionOf(contents);
 
     final innerDescription = StringDescription();
     _matcher.describeMismatch(
@@ -202,8 +242,8 @@ class _Yaml extends Matcher {
 
   @override
   Description describe(Description description) => description
-    ..add('is valid Yaml string with parsed value that ')
-    ..addDescriptionOf(_matcher);
+      .add('is valid Yaml string with parsed value that ')
+      .addDescriptionOf(_matcher);
 
   @override
   Description describeMismatch(
@@ -219,16 +259,15 @@ class _Yaml extends Matcher {
     final error = matchState['yaml.error'] as Object?;
     final stack = matchState['yaml.stack'] as StackTrace?;
     if (error != null) {
-      return mismatchDescription.add('could not be parsed: \n')
-        ..addDescriptionOf(error)
-        ..add('\n')
-        ..add(stack.toString());
+      return mismatchDescription
+          .add('could not be parsed: \n')
+          .addDescriptionOf(error)
+          .add('\n')
+          .add(stack.toString());
     }
 
     final value = matchState['yaml.value'] as Object?;
-    mismatchDescription
-      ..add('has the parsed value ')
-      ..addDescriptionOf(value);
+    mismatchDescription.add('has the parsed value ').addDescriptionOf(value);
 
     final innerDescription = StringDescription();
     _matcher.describeMismatch(

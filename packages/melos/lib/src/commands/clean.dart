@@ -52,7 +52,11 @@ mixin _CleanMixin on _Melos {
       final contents = await pubspecOverridesFile.readAsString();
       final updatedContents = mergeMelosPubspecOverrides({}, contents);
       if (updatedContents != null) {
-        await pubspecOverridesFile.writeAsString(updatedContents);
+        if (updatedContents.isEmpty) {
+          await pubspecOverridesFile.delete();
+        } else {
+          await pubspecOverridesFile.writeAsString(updatedContents);
+        }
       }
     }
   }
