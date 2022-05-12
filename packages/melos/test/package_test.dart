@@ -26,10 +26,10 @@ const pubPackageJson = '''
 void main() {
   group('MelosPackage', () {
     final httpClientMock = HttpClientMock();
+    late MelosWorkspace workspace;
 
     setUpAll(() => testClient = httpClientMock);
 
-    late MelosWorkspace workspace;
     setUp(() async {
       reset(httpClientMock);
       IOOverrides.global = MockFs();
@@ -45,10 +45,9 @@ void main() {
       );
     });
 
-    tearDown(() {
-      testClient = null;
-      IOOverrides.global = null;
-    });
+    tearDown(() => IOOverrides.global = null);
+
+    tearDownAll(() => testClient = null);
 
     test('requests published packages from pub.dev by default', () async {
       final uri = Uri.parse('https://pub.dev/packages/melos.json');
