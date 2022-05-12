@@ -1,10 +1,12 @@
 import 'dart:io';
 
 import 'package:glob/glob.dart';
+import 'package:http/http.dart' as http;
+import 'package:melos/src/common/http.dart';
 import 'package:melos/src/package.dart';
 import 'package:melos/src/workspace.dart';
 import 'package:melos/src/workspace_configs.dart';
-import 'package:nock/nock.dart';
+import 'package:mockito/mockito.dart';
 import 'package:platform/platform.dart';
 import 'package:test/test.dart';
 
@@ -23,11 +25,13 @@ const pubPackageJson = '''
 
 void main() {
   group('MelosPackage', () {
-    setUpAll(nock.init);
-
+    final httpClientMock = HttpClientMock();
     late MelosWorkspace workspace;
+
+    setUpAll(() => testClient = httpClientMock);
+
     setUp(() async {
-      nock.cleanAll();
+      reset(httpClientMock);
       IOOverrides.global = MockFs();
 
       final config = await MelosWorkspaceConfig.fromDirectory(
@@ -41,32 +45,33 @@ void main() {
       );
     });
 
-    tearDown(() {
-      IOOverrides.global = null;
-    });
+    tearDown(() => IOOverrides.global = null);
+
+    tearDownAll(() => testClient = null);
 
     test('requests published packages from pub.dev by default', () async {
-      final interceptor = nock('https://pub.dev').get('/packages/melos.json')
-        ..reply(200, pubPackageJson);
+      final uri = Uri.parse('https://pub.dev/packages/melos.json');
+      when(httpClientMock.get(uri))
+          .thenAnswer((_) async => http.Response(pubPackageJson, 200));
 
       final package = workspace.allPackages.values.first;
       await package.getPublishedVersions();
 
-      expect(interceptor.isDone, isTrue);
+      verify(httpClientMock.get(uri)).called(1);
     });
 
     test(
       'requests published packages from PUB_HOSTED_URL if present',
       withMockPlatform(
         () async {
-          final interceptor = nock('http://localhost:8080')
-              .get('/packages/melos.json')
-            ..reply(200, pubPackageJson);
+          final uri = Uri.parse('http://localhost:8080/packages/melos.json');
+          when(httpClientMock.get(uri))
+              .thenAnswer((_) async => http.Response(pubPackageJson, 200));
 
           final package = workspace.allPackages.values.first;
           await package.getPublishedVersions();
 
-          expect(interceptor.isDone, isTrue);
+          verify(httpClientMock.get(uri)).called(1);
         },
         platform: FakePlatform.fromPlatform(const LocalPlatform())
           ..environment['PUB_HOSTED_URL'] = 'http://localhost:8080',
