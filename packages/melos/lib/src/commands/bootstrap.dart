@@ -73,7 +73,7 @@ mixin _BootstrapMixin on _CleanMixin {
       );
     }
 
-    await Stream.fromIterable(workspace.allPackages.values).parallel(
+    await Stream.fromIterable(workspace.filteredPackages.values).parallel(
       (package) async {
         if (package.pubSpec.dependencyOverrides.isNotEmpty) {
           logger?.stderr(
