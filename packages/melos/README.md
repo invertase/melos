@@ -116,7 +116,7 @@ The following projects are using Melos:
 Install the latest Melos version as a global package via [Pub](https://pub.dev/).
 
 ```bash
-pub global activate melos
+dart pub global activate melos
 
 # Or alternatively to specify a specific version:
 # pub global activate melos 0.4.1
