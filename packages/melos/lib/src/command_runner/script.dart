@@ -74,6 +74,7 @@ class ScriptCommand extends MelosCommand {
 
     try {
       return await melos.run(
+        global: global,
         scriptName: scriptName,
         noSelect: noSelect,
       );
