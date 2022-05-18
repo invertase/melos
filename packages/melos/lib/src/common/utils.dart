@@ -120,6 +120,7 @@ Version currentDartVersion(String dartTool) {
     ['--version'],
     stdoutEncoding: utf8,
     stderrEncoding: utf8,
+    runInShell: true,
   );
 
   if (result.exitCode != 0) {
