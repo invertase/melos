@@ -14,6 +14,19 @@ melos exec
 # e.g. melos exec -- pub global run tuneup check
 ```
 
+The command is executed in a shell. On Windows the shell is `cmd.exe` and on all other platforms
+it is `sh`.
+
+If multiple commands are being executed and no further commands should be executed
+after a command has failed, connect the commands with `&&`:
+
+```yaml
+melos exec -- "melos bootstrap && melos run build"
+```
+
+It is important to pass multiple commands as a single string to `melos exec`, otherwise the shell
+will pass only the first command to `melos exec`.
+
 ## concurrency (-c)
 
 Defines the max concurrency value of how many packages will execute the command in at any one time. Defaults to `5`.

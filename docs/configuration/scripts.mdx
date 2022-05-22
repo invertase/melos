@@ -27,6 +27,17 @@ scripts:
       GREETING: 'Hey'
 ```
 
+Scripts are executed in a shell. On Windows the shell is `cmd.exe` and on all other platforms
+it is `sh`.
+
+If multiple commands are being executed in a script and no further commands should be executed
+after a command has failed, connect the commands with `&&`:
+
+```yaml
+scripts:
+  prepare: melos bootstrap && melos run build
+```
+
 ## `scripts/*/name`
 
 A unique identifier for the script.
@@ -45,8 +56,8 @@ A map of environment variables that will be passed to the executed command.
 
 ## `scripts/*/select-package`
 
-The `melos exec` command allows you to execute a command for multiple packages. When used
-in a script, you can declare filter options in the `select-packages` section.
+The [`melos exec`](/commands/exec) command allows you to execute a command for multiple packages.
+When used in a script, you can declare filter options in the `select-packages` section.
 
 The `hello_flutter` script below is only executed in Flutter packages:
 
@@ -76,6 +87,6 @@ scripts:
 
 Currently, the following Melos commands support hooks:
 
-- `bootstrap`
-- `clean`
-- `version`
+- [`bootstrap`](/commands/bootstrap)
+- [`clean`](/commands/clean)
+- [`version`](/commands/version)
