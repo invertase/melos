@@ -120,6 +120,7 @@ Version currentDartVersion(String dartTool) {
     ['--version'],
     stdoutEncoding: utf8,
     stderrEncoding: utf8,
+    runInShell: true,
   );
 
   if (result.exitCode != 0) {
@@ -403,7 +404,11 @@ Future<int> startProcess(
 
 bool isPubSubcommand({required MelosWorkspace workspace}) {
   try {
-    return Process.runSync(workspace.sdkTool('pub'), ['--version']).exitCode !=
+    return Process.runSync(
+          workspace.sdkTool('pub'),
+          ['--version'],
+          runInShell: true,
+        ).exitCode !=
         0;
   } on ProcessException {
     return true;
