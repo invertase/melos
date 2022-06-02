@@ -103,17 +103,17 @@ Linking workspace packages...
 Generating IntelliJ IDE files...
   > SUCCESS
 
- -> 1 plugins bootstrapped
+ -> 1 packages bootstrapped
 ''',
         ),
       );
 
       final aConfig = packageConfigForPackageAt(aDir);
-      final actualAbsoultePath = prettyUri(
+      final actualAbsolutePath = prettyUri(
         aConfig.packages.firstWhere((p) => p.name == 'absolute').rootUri,
       );
       expect(
-        actualAbsoultePath,
+        actualAbsolutePath,
         absoluteProject.path,
       );
 
@@ -212,7 +212,7 @@ Linking workspace packages...
 Generating IntelliJ IDE files...
   > SUCCESS
 
- -> 4 plugins bootstrapped
+ -> 4 packages bootstrapped
 ''',
             ].map(contains).toList(),
           ),
@@ -226,6 +226,43 @@ Generating IntelliJ IDE files...
         '../../b',
       );
       expect(aConfig.generator, 'melos');
+    });
+
+    test('respects user dependency_overrides', () async {
+      final workspaceDir = createTemporaryWorkspaceDirectory();
+
+      final pkgA = await createProject(
+        workspaceDir,
+        PubSpec(
+          name: 'a',
+          dependencies: {'path': HostedReference(VersionConstraint.any)},
+          dependencyOverrides: {'path': HostedReference(VersionConstraint.any)},
+        ),
+      );
+
+      await createProject(
+        workspaceDir,
+        const PubSpec(
+          name: 'path',
+        ),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      await melos.bootstrap();
+
+      final packageConfig = packageConfigForPackageAt(pkgA);
+      expect(
+        packageConfig.packages
+            .firstWhere((package) => package.name == 'path')
+            .rootUri,
+        contains('hosted/pub.dartlang.org/path'),
+      );
     });
 
     test(
@@ -271,6 +308,54 @@ Generating IntelliJ IDE files...
         skip: !isPubspecOverridesSupported(),
       );
 
+      test(
+        'respects user dependency_overrides',
+        () async {
+          final workspaceDir = createTemporaryWorkspaceDirectory(
+            configBuilder: (path) => MelosWorkspaceConfig.fallback(
+              path: path,
+              usePubspecOverrides: true,
+            ),
+          );
+
+          final pkgA = await createProject(
+            workspaceDir,
+            PubSpec(
+              name: 'a',
+              dependencies: {'path': HostedReference(VersionConstraint.any)},
+              dependencyOverrides: {
+                'path': HostedReference(VersionConstraint.any)
+              },
+            ),
+          );
+
+          await createProject(
+            workspaceDir,
+            const PubSpec(
+              name: 'path',
+            ),
+          );
+
+          final logger = TestLogger();
+          final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+          final melos = Melos(
+            logger: logger,
+            config: config,
+          );
+
+          await melos.bootstrap();
+
+          final packageConfig = packageConfigForPackageAt(pkgA);
+          expect(
+            packageConfig.packages
+                .firstWhere((package) => package.name == 'path')
+                .rootUri,
+            contains('hosted/pub.dartlang.org/path'),
+          );
+        },
+        skip: !isPubspecOverridesSupported(),
+      );
+
       group('mergeMelosPubspecOverrides', () {
         void expectMergedMelosPubspecOverrides({
           required Map<String, String> melosDependencyOverrides,
@@ -279,7 +364,10 @@ Generating IntelliJ IDE files...
         }) {
           expect(
             mergeMelosPubspecOverrides(
-              melosDependencyOverrides,
+              {
+                for (final entry in melosDependencyOverrides.entries)
+                  entry.key: PathReference(entry.value)
+              },
               currentPubspecOverrides,
             ),
             updatedPubspecOverrides,
@@ -391,13 +479,13 @@ dependency_overrides:
             currentPubspecOverrides: '''
 # melos_managed_dependency_overrides: a
 dependency_overrides:
-  a:
+  a: 
     path: ../a
 ''',
             updatedPubspecOverrides: '''
 # melos_managed_dependency_overrides: a
 dependency_overrides:
-  a:
+  a: 
     path: ../aa
 ''',
           );
@@ -417,7 +505,7 @@ dependency_overrides:
             updatedPubspecOverrides: '''
 # melos_managed_dependency_overrides: b,c
 dependency_overrides:
-  b:
+  b: 
     path: ../bb
   c:
     path: ../c
