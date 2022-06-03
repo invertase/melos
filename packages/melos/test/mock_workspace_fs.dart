@@ -106,6 +106,12 @@ void _createPackage(MockPackageFs package, String workspaceRoot) {
     '''
 dependencies:
 ${_yamlMap(package.dependencyMap, indent: 2)}
+
+dev_dependencies:
+${_yamlMap(package.devDependencyMap, indent: 2)}
+
+dependency_overrides:
+${_yamlMap(package.dependencyOverridesMap, indent: 2)}
 ''',
   );
 
@@ -129,11 +135,15 @@ class MockPackageFs {
     required this.name,
     String? path,
     List<String>? dependencies,
+    List<String>? devDependencies,
+    List<String>? dependencyOverrides,
     this.version,
     this.publishToNone = false,
     bool generateExample = false,
   })  : _path = path,
         dependencies = dependencies ?? const [],
+        devDependencies = devDependencies ?? const [],
+        dependencyOverrides = dependencyOverrides ?? const [],
         createExamplePackage = generateExample;
 
   /// Name of the package (must be a valid Dart package name)
@@ -148,13 +158,28 @@ class MockPackageFs {
   /// `true` if this package's yaml has a `publish_to: none` setting.
   final bool publishToNone;
 
-  /// A list of package names this one depends on
+  /// A list of package names that are dependencies of this one.
   final List<String> dependencies;
 
+  /// A list of package names that are dev dependencies of this one.
+  final List<String> devDependencies;
+
+  /// A list of package names that are dependency overrides of this one.
+  final List<String> dependencyOverrides;
+
   /// A mapping of dependency names to their versions (always "any")
-  Map<String, String> get dependencyMap {
-    return Map.fromEntries(dependencies.map((name) => MapEntry(name, 'any')));
-  }
+  Map<String, String> get dependencyMap =>
+      Map.fromEntries(dependencies.map((name) => MapEntry(name, 'any')));
+
+  /// A mapping of dev dependency names to their versions (always "any")
+  Map<String, String> get devDependencyMap => Map.fromEntries(
+        devDependencies.map((name) => MapEntry(name, 'any')),
+      );
+
+  /// A mapping of dependency overrides names to their versions (always "any")
+  Map<String, String> get dependencyOverridesMap => Map.fromEntries(
+        dependencyOverrides.map((name) => MapEntry(name, 'any')),
+      );
 
   /// `true` if an example package should be generated
   final bool createExamplePackage;
