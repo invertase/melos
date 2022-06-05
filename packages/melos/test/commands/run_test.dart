@@ -61,12 +61,12 @@ void main() {
           ignoringAnsii(
             '''
 melos run test_script
-   └> melos exec -- "echo hello"
-       └> RUNNING
+  └> melos exec -- "echo hello"
+     └> RUNNING
 
 \$ melos exec
-   └> echo hello
-       └> RUNNING (in 1 packages)
+  └> echo hello
+     └> RUNNING (in 1 packages)
 
 ${'-' * terminalWidth}
 a:
@@ -75,12 +75,12 @@ a: SUCCESS
 ${'-' * terminalWidth}
 
 \$ melos exec
-   └> echo hello
-       └> SUCCESS
+  └> echo hello
+     └> SUCCESS
 
 melos run test_script
-   └> melos exec -- "echo hello"
-       └> SUCCESS
+  └> melos exec -- "echo hello"
+     └> SUCCESS
 ''',
           ),
         );
@@ -132,14 +132,14 @@ melos run test_script
           ignoringAnsii(
             r'''
 melos run test_script
-   └> echo $0 $1 $2
-       └> RUNNING
+  └> echo $0 $1 $2
+     └> RUNNING
 
 /bin/sh foo bar baz
 
 melos run test_script
-   └> echo $0 $1 $2
-       └> SUCCESS
+  └> echo $0 $1 $2
+     └> SUCCESS
 ''',
           ),
         );

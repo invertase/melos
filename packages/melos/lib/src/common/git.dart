@@ -178,7 +178,8 @@ Future<String?> gitLatestTagForPackage(
     logger: logger,
   )) {
     logger.trace(
-      '[GIT] Found a git tag for the latest ${package.name} version (${package.version.toString()}).',
+      '[GIT] Found a git tag for the latest ${package.name} version '
+      '(${package.version.toString()}).',
     );
     return currentVersionTag;
   }
@@ -242,7 +243,8 @@ Future<List<GitCommit>> gitCommitsForPackage(
   sinceOrLatestTag ??= await gitLatestTagForPackage(package, logger: logger);
 
   logger.trace(
-    '[GIT] Getting commits for package ${package.name} since "${sinceOrLatestTag ?? '@'}".',
+    '[GIT] Getting commits for package ${package.name} since '
+    '"${sinceOrLatestTag ?? '@'}".',
   );
 
   final processResult = await gitExecuteCommand(

@@ -58,7 +58,8 @@ class Changelog {
     var contents = await read();
     if (contents.contains(markdown)) {
       logger.trace(
-        'Identical changelog content for ${package.name} v$version already exists, skipping.',
+        'Identical changelog content for ${package.name} v$version already '
+        'exists, skipping.',
       );
       return;
     }

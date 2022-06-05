@@ -98,16 +98,13 @@ mixin _ExecMixin on _Melos {
     final execArgsString = execArgs.join(' ');
     final prefixLogs = concurrency != 1 && packages.length != 1;
 
+    logger.command('melos exec', withDollarSign: true);
     logger
-        .stdout('${AnsiStyles.yellow(r'$')} ${AnsiStyles.bold("melos exec")}');
-    logger.stdout('   └> ${AnsiStyles.cyan.bold(execArgsString)}');
-    logger.stdout(
-      '       └> ${AnsiStyles.yellow.bold('RUNNING')} (in ${packages.length} packages)',
-    );
-
-    logger.stdout('');
+        .child(targetStyle(execArgsString))
+        .child('$runningLabel (in ${packages.length} packages)')
+        .newLine();
     if (prefixLogs) {
-      logger.stdout('-' * terminalWidth);
+      logger.horizontalLine();
     }
 
     await pool.forEach<Package, void>(packages, (package) async {
@@ -116,8 +113,9 @@ mixin _ExecMixin on _Melos {
       }
 
       if (!prefixLogs) {
-        logger.stdout('-' * terminalWidth);
-        logger.stdout(AnsiStyles.bgBlack.bold.italic('${package.name}:'));
+        logger
+          ..horizontalLine()
+          ..log(AnsiStyles.bgBlack.bold.italic('${package.name}:'));
       }
 
       final packageExitCode = await _execForPackage(
@@ -130,32 +128,32 @@ mixin _ExecMixin on _Melos {
       if (packageExitCode > 0) {
         failures[package.name] = packageExitCode;
       } else if (!prefixLogs) {
-        logger.stdout(
+        logger.log(
           AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
               AnsiStyles.bgBlack(successLabel),
         );
       }
     }).drain<void>();
 
-    logger.stdout('-' * terminalWidth);
-    logger.stdout('');
-
     logger
-        .stdout('${AnsiStyles.yellow(r'$')} ${AnsiStyles.bold("melos exec")}');
-    logger.stdout('   └> ${AnsiStyles.cyan.bold(execArgsString)}');
+      ..horizontalLine()
+      ..newLine()
+      ..command('melos exec', withDollarSign: true);
+
+    final resultLogger = logger.child(targetStyle(execArgsString));
 
     if (failures.isNotEmpty) {
-      logger.stdout(
-        '       └> $failedLabel (in ${failures.length} packages)',
-      );
+      final failuresLogger =
+          resultLogger.child('$failedLabel (in ${failures.length} packages)');
       for (final packageName in failures.keys) {
-        logger.stdout(
-          '           └> ${AnsiStyles.yellow(packageName)} (with exit code ${failures[packageName]})',
+        failuresLogger.child(
+          '${errorPackageNameStyle(packageName)} '
+          '(with exit code ${failures[packageName]})',
         );
       }
       exitCode = 1;
     } else {
-      logger.stdout('       └> $successLabel');
+      resultLogger.child(successLabel);
     }
   }
 }

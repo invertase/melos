@@ -119,7 +119,9 @@ abstract class _Melos {
     }
 
     if (workspace.config.scripts.containsKey(scriptName)) {
-      logger.stdout('Running $scriptName script...\n');
+      logger
+        ..log('Running $scriptName script...')
+        ..newLine();
 
       await run(scriptName: scriptName);
     }
@@ -129,7 +131,9 @@ abstract class _Melos {
     } finally {
       final postScript = 'post$scriptName';
       if (workspace.config.scripts.containsKey(postScript)) {
-        logger.stdout('Running $postScript script...\n');
+        logger
+          ..log('Running $postScript script...')
+          ..newLine();
 
         await run(scriptName: postScript);
       }

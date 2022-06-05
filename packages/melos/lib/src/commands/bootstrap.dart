@@ -16,12 +16,12 @@ mixin _BootstrapMixin on _CleanMixin {
           'get'
         ].join(' ');
 
-        logger.stdout(AnsiStyles.yellow.bold('melos bootstrap'));
-        logger.stdout('   └> ${AnsiStyles.cyan.bold(workspace.path)}\n');
+        logger
+          ..command('melos bootstrap')
+          ..child(targetStyle(workspace.path))
+          ..newLine();
 
-        logger.stdout(
-          'Running "$pubCommandForLogging" in workspace packages...',
-        );
+        logger.log('Running "$pubCommandForLogging" in workspace packages...');
         if (!utils.isCI && workspace.filteredPackages.keys.length > 20) {
           logger.warning(
             'Note: this may take a while in large workspaces such as this one.',
@@ -40,20 +40,22 @@ mixin _BootstrapMixin on _CleanMixin {
           rethrow;
         }
 
-        logger.stdout('  > $successLabel');
+        logger.child(successLabel, prefix: '> ');
 
         if (workspace.config.ide.intelliJ.enabled) {
-          logger.stdout('');
-          logger.stdout('Generating IntelliJ IDE files...');
+          logger
+            ..newLine()
+            ..log('Generating IntelliJ IDE files...');
 
           await cleanIntelliJ(workspace);
           await workspace.ide.intelliJ.generate();
-          logger.stdout('  > $successLabel');
+          logger.child(successLabel, prefix: '> ');
         }
-
-        logger?.stdout(
-          '\n -> ${workspace.filteredPackages.length} packages bootstrapped',
-        );
+        logger
+          ..newLine()
+          ..log(
+            ' -> ${workspace.filteredPackages.length} packages bootstrapped',
+          );
       },
     );
   }
@@ -73,11 +75,7 @@ mixin _BootstrapMixin on _CleanMixin {
         await _generatePubspecOverrides(workspace, package);
         await _runPubGetForPackage(workspace, package);
 
-        logger.stdout(
-          '''
-  $checkLabel ${AnsiStyles.bold(package.name)}
-    └> ${AnsiStyles.blue(printablePath(package.pathRelativeToWorkspace))}''',
-        );
+        _logBootstrapSuccess(package);
       },
       parallelism: workspace.config.commands.bootstrap.runPubGetInParallel &&
               workspace.canRunPubGetConcurrently
@@ -127,24 +125,24 @@ mixin _BootstrapMixin on _CleanMixin {
     }
   }
 
-  Future<void> _linkPackagesWithPubFiles(MelosWorkspace workspace) async {
+  Future<void> _linkPackagesWithPubFiles(
+    MelosWorkspace workspace,
+  ) async {
     await _generateTemporaryProjects(workspace);
 
     try {
+      // ignore: prefer_foreach
       await for (final package in _runPubGet(workspace)) {
-        logger.stdout(
-          '''
-  $checkLabel ${AnsiStyles.bold(package.name)}
-    └> ${AnsiStyles.blue(printablePath(package.pathRelativeToWorkspace))}''',
-        );
+        _logBootstrapSuccess(package);
       }
     } catch (err) {
       cleanWorkspace(workspace);
       rethrow;
     }
 
-    logger.stdout('');
-    logger.stdout('Linking workspace packages...');
+    logger
+      ..newLine()
+      ..log('Linking workspace packages...');
 
     for (final package in workspace.filteredPackages.values) {
       await package.linkPackages(workspace);
@@ -233,6 +231,12 @@ mixin _BootstrapMixin on _CleanMixin {
     }
   }
 
+  void _logBootstrapSuccess(Package package) {
+    logger.child(packageNameStyle(package.name), prefix: '$checkLabel ').child(
+          packagePathStyle(printablePath(package.pathRelativeToWorkspace)),
+        );
+  }
+
   void _logBootstrapException(
     BootstrapException exception,
     MelosWorkspace workspace,
@@ -279,15 +283,12 @@ mixin _BootstrapMixin on _CleanMixin {
         .toList()
         .join('\n');
 
-    logger.stdout(
-      '''
-  - ${AnsiStyles.bold.cyan(package.name)}
-    └> ${AnsiStyles.blue(printablePath(package.pathRelativeToWorkspace))}''',
-    );
+    logger
+        .child(targetStyle(package.name), prefix: '- ')
+        .child(packagePathStyle(printablePath(package.pathRelativeToWorkspace)))
+        .child(errorMessageColor(exception.message), stderr: true)
+        .newLine();
 
-    logger.stderr('    └> ${AnsiStyles.red(exception.message)}');
-
-    logger.stdout('');
     if (processStdOutString != null) {
       logger.stdout(processStdOutString);
     }

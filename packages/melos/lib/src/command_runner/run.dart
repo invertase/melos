@@ -57,7 +57,7 @@ class RunCommand extends MelosCommand {
       );
     } on NoPackageFoundScriptException catch (err) {
       logger.warning(err.toString(), label: false);
-      logger.stdout(usage);
+      logger.log(usage);
     }
   }
 }

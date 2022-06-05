@@ -94,7 +94,7 @@ void main() {
         ignoringAnsii(
           '''
 melos bootstrap
-   └> ${workspaceDir.path}
+  └> ${workspaceDir.path}
 
 Running "${pubExecArgs.join(' ')} get" in workspace packages...
   ✓ a
@@ -189,7 +189,7 @@ Generating IntelliJ IDE files...
             [
               '''
 melos bootstrap
-   └> ${workspaceDir.path}
+  └> ${workspaceDir.path}
 
 Running "flutter pub get" in workspace packages...''',
               '''
@@ -561,12 +561,12 @@ dependency_overrides:
         ignoringAnsii(
           '''
 melos bootstrap
-   └> ${workspaceDir.path}
+  └> ${workspaceDir.path}
 
 Running "${pubExecArgs.join(' ')} get" in workspace packages...
   - a
     └> packages/a
-e-    └> Failed to install.
+e-       └> Failed to install.
 
 Resolving dependencies...
 e-Because a depends on package_that_does_not_exists any which doesn't exist (could not find package package_that_does_not_exists at https://pub.dartlang.org), version solving failed.

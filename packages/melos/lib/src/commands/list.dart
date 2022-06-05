@@ -54,16 +54,13 @@ mixin _ListMixin on _Melos {
     required bool long,
   }) {
     if (workspace.filteredPackages.values.isEmpty) {
-      logger.stdout(
-        AnsiStyles.yellow(
-          'No packages were found with the current filters.',
-        ),
+      logger.warning(
+        'No packages were found with the current filters.',
+        label: false,
       );
-      logger.stdout(
-        AnsiStyles.gray(
-          'Hint: if this is unexpected, '
-          'try running the command again with a reduced number of filters applied.',
-        ),
+      logger.hint(
+        'If this is unexpected, try running the command again with a reduced '
+        'number of filters applied.',
       );
       return;
     }
