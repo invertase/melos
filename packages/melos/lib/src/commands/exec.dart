@@ -132,7 +132,7 @@ mixin _ExecMixin on _Melos {
       } else if (!prefixLogs) {
         logger.stdout(
           AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
-              AnsiStyles.bold.green.bgBlack('SUCCESS'),
+              AnsiStyles.bgBlack(successLabel),
         );
       }
     }).drain<void>();
@@ -146,7 +146,7 @@ mixin _ExecMixin on _Melos {
 
     if (failures.isNotEmpty) {
       logger.stdout(
-        '       └> ${AnsiStyles.red.bold('FAILED')} (in ${failures.length} packages)',
+        '       └> $failedLabel (in ${failures.length} packages)',
       );
       for (final packageName in failures.keys) {
         logger.stdout(
@@ -155,7 +155,7 @@ mixin _ExecMixin on _Melos {
       }
       exitCode = 1;
     } else {
-      logger.stdout('       └> ${AnsiStyles.green.bold('SUCCESS')}');
+      logger.stdout('       └> $successLabel');
     }
   }
 }

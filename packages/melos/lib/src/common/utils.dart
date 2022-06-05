@@ -21,12 +21,12 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:ansi_styles/ansi_styles.dart';
-import 'package:cli_util/cli_logging.dart';
 import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
 
+import '../logging.dart';
 import '../package.dart';
 import '../prompts/prompt.dart' as prompts;
 import '../workspace.dart';
@@ -293,7 +293,7 @@ Future<int> startProcess(
   String? workingDirectory,
   bool onlyOutputOnError = false,
   bool includeParentEnvironment = true,
-  required Logger logger,
+  required MelosLogger logger,
 }) async {
   final workingDirectoryPath = workingDirectory ?? Directory.current.path;
   final executable = currentPlatform.isWindows ? 'cmd' : '/bin/sh';

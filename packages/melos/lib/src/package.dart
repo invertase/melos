@@ -19,7 +19,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:cli_util/cli_logging.dart';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart';
@@ -34,6 +33,7 @@ import 'common/http.dart' as http;
 import 'common/platform.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
+import 'logging.dart';
 import 'workspace.dart';
 
 /// Key for windows platform.
@@ -332,7 +332,7 @@ class PackageMap {
     required String workspacePath,
     required List<Glob> packages,
     required List<Glob> ignore,
-    required Logger logger,
+    required MelosLogger logger,
   }) async {
     final packageMap = <String, Package>{};
 
@@ -416,7 +416,7 @@ The packages that caused the problem are:
   }
 
   final Map<String, Package> _map;
-  final Logger _logger;
+  final MelosLogger _logger;
 
   Iterable<String> get keys => _map.keys;
 
@@ -538,7 +538,10 @@ extension on Iterable<Package> {
     return packagesFilteredWithPublishStatus;
   }
 
-  Future<Iterable<Package>> applySince(String? since, Logger logger) async {
+  Future<Iterable<Package>> applySince(
+    String? since,
+    MelosLogger logger,
+  ) async {
     if (since == null) return this;
 
     final pool = Pool(10);

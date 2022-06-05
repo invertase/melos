@@ -235,7 +235,7 @@ class VirtualWorkspaceBuilder {
     this.defaultPackagesPath = 'packages',
     this.sdkPath,
     Logger? logger,
-  }) : logger = logger ?? TestLogger() {
+  }) : logger = (logger ?? TestLogger()).toMelosLogger() {
     if (currentPlatform.isWindows) {
       path = r'\\workspace';
     }
@@ -252,7 +252,7 @@ class VirtualWorkspaceBuilder {
   final String defaultPackagesPath;
 
   /// The logger to build the workspace with.
-  final Logger logger;
+  final MelosLogger logger;
 
   /// Optional Dart/Flutter SDK path.
   final String? sdkPath;
@@ -301,7 +301,7 @@ class VirtualWorkspaceBuilder {
 
   PackageMap _buildVirtualPackageMap(
     List<_VirtualPackage> packages,
-    Logger logger,
+    MelosLogger logger,
   ) {
     final packageMap = <String, Package>{};
 

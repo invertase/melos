@@ -5,6 +5,7 @@ import 'package:cli_util/cli_logging.dart';
 import '../common/glob.dart';
 import '../common/utils.dart';
 import '../global_options.dart';
+import '../logging.dart';
 import '../package.dart';
 import '../workspace_configs.dart';
 
@@ -16,7 +17,8 @@ abstract class MelosCommand extends Command<void> {
   /// The global Melos options parsed from the command line.
   late final global = _parseGlobalOptions();
 
-  Logger get logger => global.verbose ? Logger.verbose() : Logger.standard();
+  late final logger =
+      MelosLogger(global.verbose ? Logger.verbose() : Logger.standard());
 
   /// The `melos.yaml` configuration for this command.
   /// see [ArgParser.allowTrailingOptions]

@@ -15,8 +15,6 @@
  *
  */
 
-import 'package:ansi_styles/ansi_styles.dart';
-
 import '../commands/runner.dart';
 import '../workspace_configs.dart';
 import 'base.dart';
@@ -80,7 +78,7 @@ class ScriptCommand extends MelosCommand {
         extraArgs: argResults!.rest,
       );
     } on NoPackageFoundScriptException catch (err) {
-      logger.stderr(AnsiStyles.yellow(err.toString()));
+      logger.warning(err.toString(), label: false);
       logger.stdout(usage);
     }
   }

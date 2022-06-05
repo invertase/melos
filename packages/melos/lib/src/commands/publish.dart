@@ -26,7 +26,7 @@ mixin _PublishMixin on _ExecMixin {
           await _getLatestPublishedVersionForPackages(workspace);
     } finally {
       readRegistryProgress.finish(
-        message: AnsiStyles.green('SUCCESS'),
+        message: successLabel,
         showTiming: true,
       );
     }
@@ -180,7 +180,7 @@ mixin _PublishMixin on _ExecMixin {
       }
 
       updateRegistryProgress.finish(
-        message: AnsiStyles.green('SUCCESS'),
+        message: successLabel,
         showTiming: true,
       );
 

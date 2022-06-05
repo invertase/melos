@@ -77,7 +77,10 @@ void main() {
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
-      final workspace = await MelosWorkspace.fromConfig(config, logger: logger);
+      final workspace = await MelosWorkspace.fromConfig(
+        config,
+        logger: logger.toMelosLogger(),
+      );
       final melos = Melos(logger: logger, config: config);
       final pubExecArgs = pubCommandExecArgs(
         useFlutter: workspace.isFlutterWorkspace,
@@ -532,7 +535,10 @@ dependency_overrides:
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
-      final workspace = await MelosWorkspace.fromConfig(config, logger: logger);
+      final workspace = await MelosWorkspace.fromConfig(
+        config,
+        logger: logger.toMelosLogger(),
+      );
       final melos = Melos(
         logger: logger,
         config: config,

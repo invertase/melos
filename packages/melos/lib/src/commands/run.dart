@@ -35,10 +35,10 @@ mixin _RunMixin on _Melos {
     );
 
     if (exitCode != 0) {
-      logger.stdout('       └> ${AnsiStyles.red.bold('FAILED')}');
+      logger.stdout('       └> $failedLabel');
       throw ScriptException._(script.name);
     }
-    logger.stdout('       └> ${AnsiStyles.green.bold('SUCCESS')}');
+    logger.stdout('       └> $successLabel');
   }
 
   Future<String?> _pickScript(MelosWorkspaceConfig config) async {

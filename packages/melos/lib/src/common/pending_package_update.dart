@@ -17,10 +17,10 @@
 
 import 'dart:math' as math;
 
-import 'package:cli_util/cli_logging.dart';
 import 'package:conventional_commit/conventional_commit.dart';
 import 'package:pub_semver/pub_semver.dart';
 
+import '../logging.dart';
 import '../package.dart';
 import '../workspace.dart';
 import 'changelog.dart';
@@ -100,7 +100,7 @@ class MelosPendingPackageUpdate {
   /// This is only used for manually versioned packages.
   final String? userChangelogMessage;
 
-  final Logger logger;
+  final MelosLogger logger;
 
   Changelog get changelog {
     // TODO changelog styles can be changed here if supported in future.

@@ -1,9 +1,5 @@
 part of 'runner.dart';
 
-final _successLabel = AnsiStyles.green('SUCCESS');
-final _warningLabel = AnsiStyles.yellow('WARNING');
-final _checkLabel = AnsiStyles.greenBright('✓');
-
 mixin _BootstrapMixin on _CleanMixin {
   Future<void> bootstrap({GlobalOptions? global, PackageFilter? filter}) async {
     final workspace = await createWorkspace(global: global, filter: filter);
@@ -27,10 +23,9 @@ mixin _BootstrapMixin on _CleanMixin {
           'Running "$pubCommandForLogging" in workspace packages...',
         );
         if (!utils.isCI && workspace.filteredPackages.keys.length > 20) {
-          logger.stdout(
-            AnsiStyles.yellow(
-              'Note: this may take a while in large workspaces such as this one.',
-            ),
+          logger.warning(
+            'Note: this may take a while in large workspaces such as this one.',
+            label: false,
           );
         }
 
@@ -45,7 +40,7 @@ mixin _BootstrapMixin on _CleanMixin {
           rethrow;
         }
 
-        logger.stdout('  > $_successLabel');
+        logger.stdout('  > $successLabel');
 
         if (workspace.config.ide.intelliJ.enabled) {
           logger.stdout('');
@@ -53,7 +48,7 @@ mixin _BootstrapMixin on _CleanMixin {
 
           await cleanIntelliJ(workspace);
           await workspace.ide.intelliJ.generate();
-          logger.stdout('  > $_successLabel');
+          logger.stdout('  > $successLabel');
         }
 
         logger?.stdout(
@@ -67,8 +62,8 @@ mixin _BootstrapMixin on _CleanMixin {
     MelosWorkspace workspace,
   ) async {
     if (!workspace.isPubspecOverridesSupported) {
-      logger.stderr(
-        '$_warningLabel: Dart 2.17.0 or greater is required to use Melos with '
+      logger.warning(
+        'Dart 2.17.0 or greater is required to use Melos with '
         'pubspec overrides.',
       );
     }
@@ -80,7 +75,7 @@ mixin _BootstrapMixin on _CleanMixin {
 
         logger.stdout(
           '''
-  $_checkLabel ${AnsiStyles.bold(package.name)}
+  $checkLabel ${AnsiStyles.bold(package.name)}
     └> ${AnsiStyles.blue(printablePath(package.pathRelativeToWorkspace))}''',
         );
       },
@@ -139,7 +134,7 @@ mixin _BootstrapMixin on _CleanMixin {
       await for (final package in _runPubGet(workspace)) {
         logger.stdout(
           '''
-  $_checkLabel ${AnsiStyles.bold(package.name)}
+  $checkLabel ${AnsiStyles.bold(package.name)}
     └> ${AnsiStyles.blue(printablePath(package.pathRelativeToWorkspace))}''',
         );
       }

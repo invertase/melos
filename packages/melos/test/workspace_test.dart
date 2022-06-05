@@ -16,11 +16,10 @@
 
 import 'dart:io';
 
+import 'package:melos/melos.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/utils.dart';
-import 'package:melos/src/package.dart';
 import 'package:melos/src/workspace.dart';
-import 'package:melos/src/workspace_configs.dart';
 import 'package:path/path.dart' as p;
 import 'package:platform/platform.dart';
 import 'package:pubspec/pubspec.dart';
@@ -59,7 +58,7 @@ void main() {
       await expectLater(
         () async => MelosWorkspace.fromConfig(
           await MelosWorkspaceConfig.fromDirectory(workspaceDir),
-          logger: TestLogger(),
+          logger: TestLogger().toMelosLogger(),
         ),
         throwsMelosConfigException(
           message: anyOf(
@@ -98,7 +97,7 @@ The packages that caused the problem are:
         final config = await MelosWorkspaceConfig.fromDirectory(aDir);
         final workspace = await MelosWorkspace.fromConfig(
           config,
-          logger: TestLogger(),
+          logger: TestLogger().toMelosLogger(),
         );
 
         expect(
@@ -129,7 +128,7 @@ The packages that caused the problem are:
         );
         final workspace = await MelosWorkspace.fromConfig(
           config,
-          logger: TestLogger(),
+          logger: TestLogger().toMelosLogger(),
         );
 
         expect(
@@ -148,7 +147,7 @@ The packages that caused the problem are:
 
       await MelosWorkspace.fromConfig(
         await MelosWorkspaceConfig.fromDirectory(workspaceDir),
-        logger: TestLogger(),
+        logger: TestLogger().toMelosLogger(),
       );
     });
 
@@ -201,7 +200,7 @@ The packages that caused the problem are:
                 ],
                 includeDependencies: true,
               ),
-              logger: TestLogger(),
+              logger: TestLogger().toMelosLogger(),
             );
 
             expect(workspace.filteredPackages.values, [packageNamed('b')]);
@@ -228,7 +227,7 @@ The packages that caused the problem are:
                 ],
                 includeDependencies: true,
               ),
-              logger: TestLogger(),
+              logger: TestLogger().toMelosLogger(),
             );
 
             expect(
@@ -262,7 +261,7 @@ The packages that caused the problem are:
                 ],
                 includeDependencies: true,
               ),
-              logger: TestLogger(),
+              logger: TestLogger().toMelosLogger(),
             );
 
             expect(
@@ -298,7 +297,7 @@ The packages that caused the problem are:
                 ],
                 includeDependencies: true,
               ),
-              logger: TestLogger(),
+              logger: TestLogger().toMelosLogger(),
             );
 
             expect(workspace.filteredPackages.values, hasLength(4));
@@ -331,7 +330,7 @@ The packages that caused the problem are:
                 ],
                 includeDependents: true,
               ),
-              logger: TestLogger(),
+              logger: TestLogger().toMelosLogger(),
             );
 
             expect(workspace.filteredPackages.values, [packageNamed('a')]);
@@ -358,7 +357,7 @@ The packages that caused the problem are:
                 ],
                 includeDependents: true,
               ),
-              logger: TestLogger(),
+              logger: TestLogger().toMelosLogger(),
             );
 
             expect(workspace.filteredPackages.values, hasLength(2));
@@ -390,7 +389,7 @@ The packages that caused the problem are:
                 ],
                 includeDependents: true,
               ),
-              logger: TestLogger(),
+              logger: TestLogger().toMelosLogger(),
             );
 
             expect(
@@ -426,7 +425,7 @@ The packages that caused the problem are:
                 ],
                 includeDependents: true,
               ),
-              logger: TestLogger(),
+              logger: TestLogger().toMelosLogger(),
             );
 
             expect(workspace.filteredPackages.values, hasLength(4));
