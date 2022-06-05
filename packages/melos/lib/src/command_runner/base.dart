@@ -16,7 +16,7 @@ abstract class MelosCommand extends Command<void> {
   /// The global Melos options parsed from the command line.
   late final global = _parseGlobalOptions();
 
-  Logger? get logger => global.verbose ? Logger.verbose() : Logger.standard();
+  Logger get logger => global.verbose ? Logger.verbose() : Logger.standard();
 
   /// The `melos.yaml` configuration for this command.
   /// see [ArgParser.allowTrailingOptions]

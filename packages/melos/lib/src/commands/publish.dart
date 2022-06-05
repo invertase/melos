@@ -11,13 +11,13 @@ mixin _PublishMixin on _ExecMixin {
   }) async {
     final workspace = await createWorkspace(global: global, filter: filter);
 
-    logger?.stdout(
+    logger.stdout(
       AnsiStyles.yellow.bold('melos publish${dryRun ? " --dry-run" : ''}'),
     );
-    logger?.stdout('   └> ${AnsiStyles.cyan.bold(workspace.path)}\n');
+    logger.stdout('   └> ${AnsiStyles.cyan.bold(workspace.path)}\n');
 
     final readRegistryProgress =
-        logger?.progress('Reading pub registry for package information');
+        logger.progress('Reading pub registry for package information');
 
     Map<String, String?> latestPublishedVersionForPackages;
 
@@ -25,7 +25,7 @@ mixin _PublishMixin on _ExecMixin {
       latestPublishedVersionForPackages =
           await _getLatestPublishedVersionForPackages(workspace);
     } finally {
-      readRegistryProgress?.finish(
+      readRegistryProgress.finish(
         message: AnsiStyles.green('SUCCESS'),
         showTiming: true,
       );
@@ -40,7 +40,7 @@ mixin _PublishMixin on _ExecMixin {
     ];
 
     if (unpublishedPackages.isEmpty) {
-      logger?.stdout(
+      logger.stdout(
         AnsiStyles.green.bold(
           '\nNo unpublished packages found - all local packages are already up to date.',
         ),
@@ -51,20 +51,20 @@ mixin _PublishMixin on _ExecMixin {
     sortPackagesTopologically(unpublishedPackages);
 
     if (dryRun) {
-      logger?.stdout(
+      logger.stdout(
         AnsiStyles.magentaBright.bold(
           '\nThe following packages will be validated only (dry run):\n',
         ),
       );
     } else {
-      logger?.stdout(
+      logger.stdout(
         AnsiStyles.yellowBright.bold(
           '\nThe following packages WILL be published to the registry:\n',
         ),
       );
     }
 
-    logger?.stdout(
+    logger.stdout(
       listAsPaddedTable(
         [
           [
@@ -87,7 +87,7 @@ mixin _PublishMixin on _ExecMixin {
     if (!force) {
       final shouldContinue = promptBool();
       if (!shouldContinue) throw CancelledException();
-      logger?.stdout('');
+      logger.stdout('');
     }
 
     await _publish(
@@ -139,7 +139,7 @@ mixin _PublishMixin on _ExecMixin {
     required bool dryRun,
     required bool gitTagVersion,
   }) async {
-    final updateRegistryProgress = logger?.progress(
+    final updateRegistryProgress = logger.progress(
       'Publishing ${unpublishedPackages.length} packages to registry:',
     );
     final execArgs = [
@@ -163,8 +163,8 @@ mixin _PublishMixin on _ExecMixin {
 
     if (exitCode != 1) {
       if (!dryRun && gitTagVersion) {
-        logger?.stdout('');
-        logger?.stdout(
+        logger.stdout('');
+        logger.stdout(
           'Creating git tags for any versions not already created... ',
         );
         await Future.forEach(unpublishedPackages, (Package package) async {
@@ -179,18 +179,18 @@ mixin _PublishMixin on _ExecMixin {
         });
       }
 
-      updateRegistryProgress?.finish(
+      updateRegistryProgress.finish(
         message: AnsiStyles.green('SUCCESS'),
         showTiming: true,
       );
 
       if (!dryRun) {
-        logger?.stdout(
+        logger.stdout(
           AnsiStyles.green
               .bold('\nAll packages have successfully been published.'),
         );
       } else {
-        logger?.stdout(
+        logger.stdout(
           AnsiStyles.green.bold('\nAll packages were validated successfully.'),
         );
       }

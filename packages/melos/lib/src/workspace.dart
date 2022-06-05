@@ -50,7 +50,7 @@ class MelosWorkspace {
     required this.allPackages,
     required this.filteredPackages,
     required this.sdkPath,
-    this.logger,
+    required this.logger,
   });
 
   /// Build a [MelosWorkspace] from a workspace configuration.
@@ -58,7 +58,7 @@ class MelosWorkspace {
     MelosWorkspaceConfig workspaceConfig, {
     GlobalOptions? global,
     PackageFilter? filter,
-    Logger? logger,
+    required Logger logger,
   }) async {
     final allPackages = await PackageMap.resolvePackages(
       workspacePath: workspaceConfig.path,
@@ -85,7 +85,7 @@ class MelosWorkspace {
     );
   }
 
-  final Logger? logger;
+  final Logger logger;
 
   /// An optional name as defined in "melos.yaml". This name is used for logging
   /// purposes and also used when generating certain IDE files.

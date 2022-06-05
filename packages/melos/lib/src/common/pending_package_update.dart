@@ -100,10 +100,10 @@ class MelosPendingPackageUpdate {
   /// This is only used for manually versioned packages.
   final String? userChangelogMessage;
 
-  final Logger? logger;
+  final Logger logger;
 
   Changelog get changelog {
-    // TODO change log styles can be changed here if supported in future.
+    // TODO changelog styles can be changed here if supported in future.
     return MelosChangelog(this, logger);
   }
 

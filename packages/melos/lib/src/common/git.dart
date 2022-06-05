@@ -53,12 +53,12 @@ String gitTagForPackageVersion(
 Future<ProcessResult> gitExecuteCommand({
   required List<String> arguments,
   required String workingDirectory,
-  Logger? logger,
+  required Logger logger,
   bool throwOnExitCodeError = true,
 }) async {
   const executable = 'git';
 
-  logger?.trace(
+  logger.trace(
     '[GIT] Executing command `$executable ${arguments.join(' ')}` '
     'in directory `$workingDirectory`.',
   );
@@ -87,7 +87,7 @@ Future<List<String>> gitTagsForPackage(
   Package package, {
   TagReleaseType tagReleaseType = TagReleaseType.all,
   String preid = 'dev',
-  Logger? logger,
+  required Logger logger,
 }) async {
   final filterPattern =
       gitTagFilterPattern(package.name, tagReleaseType, preid: preid);
@@ -114,7 +114,7 @@ Future<List<String>> gitTagsForPackage(
 Future<bool> gitTagExists(
   String tag, {
   required String workingDirectory,
-  Logger? logger,
+  required Logger logger,
 }) async {
   final processResult = await gitExecuteCommand(
     arguments: ['tag', '-l', tag],
@@ -131,7 +131,7 @@ Future<bool> gitTagCreate(
   String message, {
   required String workingDirectory,
   String? commitId,
-  Logger? logger,
+  required Logger logger,
 }) async {
   if (await gitTagExists(
     tag,
@@ -166,7 +166,7 @@ Future<bool> gitTagCreate(
 Future<String?> gitLatestTagForPackage(
   Package package, {
   String preid = 'dev',
-  Logger? logger,
+  required Logger logger,
 }) async {
   // Package doesn't have a version, skip.
   if (package.version.toString() == '0.0.0') return null;
@@ -178,7 +178,7 @@ Future<String?> gitLatestTagForPackage(
     workingDirectory: package.path,
     logger: logger,
   )) {
-    logger?.trace(
+    logger.trace(
       '[GIT] Found a git tag for the latest ${package.name} version (${package.version.toString()}).',
     );
     return currentVersionTag;
@@ -203,7 +203,7 @@ Future<String?> gitLatestTagForPackage(
 Future<void> gitAdd(
   String filePattern, {
   required String workingDirectory,
-  Logger? logger,
+  required Logger logger,
 }) async {
   final arguments = ['add', filePattern];
   await gitExecuteCommand(
@@ -217,7 +217,7 @@ Future<void> gitAdd(
 Future<void> gitCommit(
   String message, {
   required String workingDirectory,
-  Logger? logger,
+  required Logger logger,
 }) async {
   final arguments = ['commit', '-m', message];
   await gitExecuteCommand(
@@ -234,7 +234,7 @@ Future<List<GitCommit>> gitCommitsForPackage(
   Package package, {
   String? since,
   String preid = 'dev',
-  Logger? logger,
+  required Logger logger,
 }) async {
   var sinceOrLatestTag = since;
   if (sinceOrLatestTag != null && sinceOrLatestTag.isEmpty) {
@@ -242,7 +242,7 @@ Future<List<GitCommit>> gitCommitsForPackage(
   }
   sinceOrLatestTag ??= await gitLatestTagForPackage(package, logger: logger);
 
-  logger?.trace(
+  logger.trace(
     '[GIT] Getting commits for package ${package.name} since "${sinceOrLatestTag ?? '@'}".',
   );
 
@@ -278,7 +278,7 @@ Future<List<GitCommit>> gitCommitsForPackage(
 /// Returns the current branch name of the local git repository.
 Future<String> gitGetCurrentBranchName({
   required String workingDirectory,
-  Logger? logger,
+  required Logger logger,
 }) async {
   final arguments = ['rev-parse', '--abbrev-ref', 'HEAD'];
   final processResult = await gitExecuteCommand(
@@ -292,7 +292,7 @@ Future<String> gitGetCurrentBranchName({
 /// Fetches updates for the default remote in the repository.
 Future<void> gitRemoteUpdate({
   required String workingDirectory,
-  Logger? logger,
+  required Logger logger,
 }) async {
   final arguments = ['remote', 'update'];
   await gitExecuteCommand(
@@ -308,7 +308,7 @@ Future<bool> gitIsBehindUpstream({
   required String workingDirectory,
   String remote = 'origin',
   String? branch,
-  Logger? logger,
+  required Logger logger,
 }) async {
   await gitRemoteUpdate(workingDirectory: workingDirectory, logger: logger);
 
@@ -336,7 +336,7 @@ Future<bool> gitIsBehindUpstream({
   final aheadCount = leftRightCounts[1];
   final isBehind = behindCount > 0;
 
-  logger?.trace(
+  logger.trace(
     '[GIT] Local branch `$localBranch` is behind remote branch `$remoteBranch` '
     'by $behindCount commit(s) and ahead by $aheadCount.',
   );

@@ -58,8 +58,8 @@ class RunCommand extends MelosCommand {
         extraArgs: extraArgs,
       );
     } on NoPackageFoundScriptException catch (err) {
-      logger?.stderr(AnsiStyles.yellow(err.toString()));
-      logger?.stdout(usage);
+      logger.stderr(AnsiStyles.yellow(err.toString()));
+      logger.stdout(usage);
     }
   }
 }

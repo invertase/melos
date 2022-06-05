@@ -35,10 +35,10 @@ mixin _RunMixin on _Melos {
     );
 
     if (exitCode != 0) {
-      logger?.stdout('       └> ${AnsiStyles.red.bold('FAILED')}');
+      logger.stdout('       └> ${AnsiStyles.red.bold('FAILED')}');
       throw ScriptException._(script.name);
     }
-    logger?.stdout('       └> ${AnsiStyles.green.bold('SUCCESS')}');
+    logger.stdout('       └> ${AnsiStyles.green.bold('SUCCESS')}');
   }
 
   Future<String?> _pickScript(MelosWorkspaceConfig config) async {
@@ -149,11 +149,11 @@ mixin _RunMixin on _Melos {
     final scriptSource = script.effectiveRun;
     final scriptParts = scriptSource.split(' ');
 
-    logger?.stdout(AnsiStyles.yellow.bold('melos run ${script.name}'));
-    logger?.stdout(
+    logger.stdout(AnsiStyles.yellow.bold('melos run ${script.name}'));
+    logger.stdout(
       '   └> ${AnsiStyles.cyan.bold(scriptSource.replaceAll('\n', ''))}',
     );
-    logger?.stdout('       └> ${AnsiStyles.yellow.bold('RUNNING')}\n');
+    logger.stdout('       └> ${AnsiStyles.yellow.bold('RUNNING')}\n');
 
     return startProcess(
       scriptParts..addAll(extraArgs),

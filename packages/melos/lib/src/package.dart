@@ -321,7 +321,7 @@ class PackageMap {
       return a.toLowerCase().compareTo(b.toLowerCase());
     });
 
-    // Map litterals creates an HashMap which preserves key order.
+    // Map literals creates an HashMap which preserves key order.
     // So map.keys/map.values will be sorted by name.
     return {
       for (final name in sortedNames) name: packages[name]!,
@@ -332,7 +332,7 @@ class PackageMap {
     required String workspacePath,
     required List<Glob> packages,
     required List<Glob> ignore,
-    Logger? logger,
+    required Logger logger,
   }) async {
     final packageMap = <String, Package>{};
 
@@ -416,7 +416,7 @@ The packages that caused the problem are:
   }
 
   final Map<String, Package> _map;
-  final Logger? _logger;
+  final Logger _logger;
 
   Iterable<String> get keys => _map.keys;
 
@@ -538,7 +538,7 @@ extension on Iterable<Package> {
     return packagesFilteredWithPublishStatus;
   }
 
-  Future<Iterable<Package>> applySince(String? since, Logger? logger) async {
+  Future<Iterable<Package>> applySince(String? since, Logger logger) async {
     if (since == null) return this;
 
     final pool = Pool(10);

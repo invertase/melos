@@ -31,7 +31,7 @@ class Changelog {
 
   final Package package;
   final Version version;
-  final Logger? logger;
+  final Logger logger;
 
   String get markdown {
     throw UnimplementedError();
@@ -57,7 +57,7 @@ class Changelog {
   Future<void> write() async {
     var contents = await read();
     if (contents.contains(markdown)) {
-      logger?.trace(
+      logger.trace(
         'Identical changelog content for ${package.name} v$version already exists, skipping.',
       );
       return;
@@ -69,7 +69,7 @@ class Changelog {
 }
 
 class MelosChangelog extends Changelog {
-  MelosChangelog(this.update, Logger? logger)
+  MelosChangelog(this.update, Logger logger)
       : super(update.package, update.nextVersion, logger);
 
   final MelosPendingPackageUpdate update;
