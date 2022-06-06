@@ -201,7 +201,7 @@ class VersionCommand extends MelosCommand {
 
       if (asPrerelease && asStableRelease) {
         logger.warning(
-          'Graduate & prerelease flags cannot be combined. Versioning will '
+          'graduate & prerelease flags cannot be combined. Versioning will '
           'continue with graduate off.',
         );
         asStableRelease = false;

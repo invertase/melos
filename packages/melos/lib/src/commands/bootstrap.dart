@@ -125,9 +125,7 @@ mixin _BootstrapMixin on _CleanMixin {
     }
   }
 
-  Future<void> _linkPackagesWithPubFiles(
-    MelosWorkspace workspace,
-  ) async {
+  Future<void> _linkPackagesWithPubFiles(MelosWorkspace workspace) async {
     await _generateTemporaryProjects(workspace);
 
     try {
