@@ -57,7 +57,7 @@ mixin _BootstrapMixin on _CleanMixin {
         }
 
         logger?.stdout(
-          '\n -> ${workspace.filteredPackages.length} plugins bootstrapped',
+          '\n -> ${workspace.filteredPackages.length} packages bootstrapped',
         );
       },
     );
@@ -75,14 +75,6 @@ mixin _BootstrapMixin on _CleanMixin {
 
     await Stream.fromIterable(workspace.filteredPackages.values).parallel(
       (package) async {
-        if (package.pubSpec.dependencyOverrides.isNotEmpty) {
-          logger?.stderr(
-            '''
-  $_warningLabel: ${AnsiStyles.bold(package.name)}
-    └> dependency_overrides in pubspec.yaml are being overridden in pubspec_overrides.yaml''',
-          );
-        }
-
         await _generatePubspecOverrides(workspace, package);
         await _runPubGetForPackage(workspace, package);
 
@@ -105,14 +97,15 @@ mixin _BootstrapMixin on _CleanMixin {
   ) async {
     final allTransitiveDependencies =
         package.allTransitiveDependenciesInWorkspace;
-    final melosDependencyOverrides = <String, String>{};
+    final melosDependencyOverrides = {...package.pubSpec.dependencyOverrides};
 
     // Traversing all packages so that transitive dependencies for the
     // bootstraped packages are setup properly.
     for (final otherPackage in workspace.allPackages.values) {
-      if (allTransitiveDependencies.containsKey(otherPackage.name)) {
+      if (allTransitiveDependencies.containsKey(otherPackage.name) &&
+          !melosDependencyOverrides.containsKey(otherPackage.name)) {
         melosDependencyOverrides[otherPackage.name] =
-            utils.relativePath(otherPackage.path, package.path);
+            PathReference(utils.relativePath(otherPackage.path, package.path));
       }
     }
 
@@ -313,7 +306,7 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
   // Traversing all packages so that transitive dependencies for the bootstraped
   // packages are setup properly.
   for (final package in workspace.allPackages.values) {
-    final pluginTemporaryPath =
+    final packageTemporaryPath =
         join(workspace.melosToolPath, package.pathRelativeToWorkspace);
     var pubspec = package.pubSpec;
 
@@ -355,18 +348,19 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
 
     // Traversing all packages so that transitive dependencies for the bootstraped
     // packages are setup properly.
-    for (final plugin in workspace.allPackages.values) {
-      final pluginPath = utils.relativePath(
-        join(workspace.melosToolPath, plugin.pathRelativeToWorkspace),
-        pluginTemporaryPath,
+    for (final otherPackage in workspace.allPackages.values) {
+      final otherPackagePath = utils.relativePath(
+        join(workspace.melosToolPath, otherPackage.pathRelativeToWorkspace),
+        packageTemporaryPath,
       );
 
       if (package.allTransitiveDependenciesInWorkspace
-          .containsKey(plugin.name)) {
+              .containsKey(otherPackage.name) &&
+          !package.dependencyOverrides.contains(otherPackage.name)) {
         pubspec = pubspec.copy(
           dependencyOverrides: {
             ...pubspec.dependencyOverrides,
-            plugin.name: PathReference(pluginPath),
+            otherPackage.name: PathReference(otherPackagePath),
           },
         );
 
@@ -374,31 +368,32 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
         // dependencies of the package must have their android main classes copied
         // to the temporary workspace, otherwise pub get fails.
         if (package.isAddToApp &&
-            plugin.isFlutterPlugin &&
-            plugin.flutterPluginSupportsAndroid &&
-            plugin.androidPackage != null &&
-            (plugin.javaPluginClassPath != null ||
-                plugin.kotlinPluginClassPath != null)) {
+            otherPackage.isFlutterPlugin &&
+            otherPackage.flutterPluginSupportsAndroid &&
+            otherPackage.androidPackage != null &&
+            (otherPackage.javaPluginClassPath != null ||
+                otherPackage.kotlinPluginClassPath != null)) {
           // A plugin should only have one main class, written in java
           // or kotlin. We want to copy that class to the temporary workspace
           // at the same relative location, so pub get can find it
-          final hasJavaPluginClass = plugin.javaPluginClassPath != null;
-          final hasKotlinPluginClass = plugin.kotlinPluginClassPath != null;
-          final pathParts = plugin.androidPackage!.split('.');
+          final hasJavaPluginClass = otherPackage.javaPluginClassPath != null;
+          final hasKotlinPluginClass =
+              otherPackage.kotlinPluginClassPath != null;
+          final pathParts = otherPackage.androidPackage!.split('.');
           final mainClassDirectoryName = hasJavaPluginClass ? 'java' : 'kotlin';
           final mainClassFileSuffix = hasJavaPluginClass ? '.java' : '.kt';
           final destinationMainClassPath = joinAll([
-            join(workspace.melosToolPath, plugin.pathRelativeToWorkspace),
+            join(workspace.melosToolPath, otherPackage.pathRelativeToWorkspace),
             'android/src/main/$mainClassDirectoryName',
             ...pathParts,
-            '${plugin.androidPluginClass!}$mainClassFileSuffix',
+            '${otherPackage.androidPluginClass!}$mainClassFileSuffix',
           ]);
           File(destinationMainClassPath).createSync(recursive: true);
           String? classPath;
           if (hasJavaPluginClass) {
-            classPath = plugin.javaPluginClassPath;
+            classPath = otherPackage.javaPluginClassPath;
           } else if (hasKotlinPluginClass) {
-            classPath = plugin.kotlinPluginClassPath;
+            classPath = otherPackage.kotlinPluginClassPath;
           }
           File(classPath!).copySync(destinationMainClassPath);
         }
@@ -410,7 +405,7 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
         '$header\n${toYamlString(pubspec.toJson())}';
 
     final pubspecFile = File(
-      utils.pubspecPathForDirectory(Directory(pluginTemporaryPath)),
+      utils.pubspecPathForDirectory(Directory(packageTemporaryPath)),
     );
     pubspecFile.createSync(recursive: true);
     pubspecFile.writeAsStringSync(generatedPubspecYamlString);
@@ -422,7 +417,7 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
     final originalPubspecLock = join(package.path, 'pubspec.lock');
     if (File(originalPubspecLock).existsSync()) {
       final pubspecLockContents = File(originalPubspecLock).readAsStringSync();
-      final copiedPubspecLock = join(pluginTemporaryPath, 'pubspec.lock');
+      final copiedPubspecLock = join(packageTemporaryPath, 'pubspec.lock');
       File(copiedPubspecLock).writeAsStringSync(pubspecLockContents);
     }
   }
@@ -462,7 +457,7 @@ final _managedDependencyOverridesRegex = RegExp(
 /// obsolete from `dependency_overrides` and the marker comment.
 @visibleForTesting
 String? mergeMelosPubspecOverrides(
-  Map<String, String> melosDependencyOverrides,
+  Map<String, DependencyReference> melosDependencyOverrides,
   String? pubspecOverridesContents,
 ) {
   // ignore: parameter_assignments
@@ -495,12 +490,16 @@ String? mergeMelosPubspecOverrides(
 
         if (melosDependencyOverrides.containsKey(packageName)) {
           // Update changed dependency override.
-          final pathSpec = dependencyOverride.value as Map;
-          final packagePath = melosDependencyOverrides[packageName];
-          if (pathSpec['path'] != packagePath) {
+          final currentRef =
+              DependencyReference.fromJson(dependencyOverride.value);
+          final newRef = melosDependencyOverrides[packageName];
+          if (currentRef != newRef) {
             pubspecOverridesEditor.update(
-              ['dependency_overrides', packageName, 'path'],
-              packagePath,
+              ['dependency_overrides', packageName],
+              wrapAsYamlNode(
+                newRef!.toJson() as Object,
+                collectionStyle: CollectionStyle.BLOCK,
+              ),
             );
           }
         } else {
@@ -530,9 +529,8 @@ String? mergeMelosPubspecOverrides(
           <dynamic, dynamic>{
             'dependency_overrides': {
               for (final dependencyOverride in melosDependencyOverrides.entries)
-                dependencyOverride.key: {
-                  'path': dependencyOverride.value,
-                },
+                dependencyOverride.key:
+                    dependencyOverride.value.toJson() as Object,
             },
           },
           collectionStyle: CollectionStyle.BLOCK,
@@ -545,9 +543,8 @@ String? mergeMelosPubspecOverrides(
           wrapAsYamlNode(
             {
               for (final dependencyOverride in melosDependencyOverrides.entries)
-                dependencyOverride.key: {
-                  'path': dependencyOverride.value,
-                },
+                dependencyOverride.key:
+                    dependencyOverride.value.toJson() as Object,
             },
             collectionStyle: CollectionStyle.BLOCK,
           ),
@@ -557,7 +554,7 @@ String? mergeMelosPubspecOverrides(
           pubspecOverridesEditor.update(
             ['dependency_overrides', dependencyOverride.key],
             wrapAsYamlNode(
-              {'path': dependencyOverride.value},
+              dependencyOverride.value.toJson() as Object,
               collectionStyle: CollectionStyle.BLOCK,
             ),
           );
