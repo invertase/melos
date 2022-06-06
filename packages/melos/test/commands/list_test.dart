@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:melos/src/commands/runner.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/platform.dart';
@@ -145,7 +147,9 @@ long_name 0.0.0 packages/long_name PRIVATE
           );
         }),
       );
+    });
 
+    group('parsable', () {
       test(
         'relativePaths flag prints relative paths only if true',
         withMockFs(() async {
@@ -207,6 +211,162 @@ packages/c
         }),
         // TODO test output is not compatible with windows
         skip: currentPlatform.isWindows,
+      );
+    });
+
+    group('graph', () {
+      test(
+        'reports all dependencies in workspace',
+        withMockFs(() async {
+          final workspaceDir = createMockWorkspaceFs(
+            packages: [
+              MockPackageFs(name: 'a'),
+              MockPackageFs(name: 'b'),
+              MockPackageFs(name: 'c'),
+              MockPackageFs(
+                name: 'd',
+                dependencies: ['a'],
+                devDependencies: ['b'],
+                dependencyOverrides: ['c'],
+              ),
+            ],
+          );
+
+          final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+          final melos = Melos(logger: logger, config: config);
+          await melos.list(
+            kind: ListOutputKind.graph,
+          );
+
+          expect(
+            logger.output,
+            '''
+{
+  "a": [],
+  "b": [],
+  "c": [],
+  "d": [
+    "a",
+    "b",
+    "c"
+  ]
+}
+''',
+          );
+        }),
+      );
+    });
+
+    group('json', () {
+      test(
+        'reports all dependencies in workspace',
+        withMockFs(() async {
+          final workspaceDir = createMockWorkspaceFs(
+            packages: [
+              MockPackageFs(name: 'a'),
+              MockPackageFs(name: 'b'),
+              MockPackageFs(name: 'c'),
+              MockPackageFs(
+                name: 'd',
+                dependencies: ['a'],
+                devDependencies: ['b'],
+                dependencyOverrides: ['c'],
+              ),
+            ],
+          );
+
+          final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+          final melos = Melos(logger: logger, config: config);
+          await melos.list(
+            kind: ListOutputKind.json,
+            long: true,
+          );
+          final json = (jsonDecode(logger.output) as List<Object?>)
+              .cast<Map<String, Object?>>();
+
+          expect(
+            json.map(
+              (pkg) => {
+                'name': pkg['name'],
+                'dependencies': pkg['dependencies'],
+                'dependents': pkg['dependents'],
+              },
+            ),
+            [
+              {
+                'name': 'a',
+                'dependencies': <String>[],
+                'dependents': ['d'],
+              },
+              {
+                'name': 'b',
+                'dependencies': <String>[],
+                'dependents': ['d'],
+              },
+              {
+                'name': 'c',
+                'dependencies': <String>[],
+                'dependents': ['d'],
+              },
+              {
+                'name': 'd',
+                'dependencies': ['a', 'b', 'c'],
+                'dependents': <String>[],
+              },
+            ],
+          );
+        }),
+      );
+    });
+
+    group('gviz', () {
+      test(
+        'reports all dependencies in workspace',
+        withMockFs(() async {
+          final workspaceDir = createMockWorkspaceFs(
+            packages: [
+              MockPackageFs(name: 'a'),
+              MockPackageFs(name: 'b'),
+              MockPackageFs(name: 'c'),
+              MockPackageFs(
+                name: 'd',
+                dependencies: ['a'],
+                devDependencies: ['b'],
+                dependencyOverrides: ['c'],
+              ),
+            ],
+          );
+
+          final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+          final melos = Melos(logger: logger, config: config);
+          await melos.list(
+            kind: ListOutputKind.gviz,
+          );
+
+          expect(
+            logger.output,
+            '''
+digraph packages {
+  size="10"; ratio=fill;
+  a [shape="box"; color="#ff5307"];
+  b [shape="box"; color="#e03cc2"];
+  c [shape="box"; color="#fa533c"];
+  d [shape="box"; color="#80dce6"];
+  d -> a [style="filled"; color="#ff5307"];
+  d -> b [style="dashed"; color="#e03cc2"];
+  d -> c [style="dotted"; color="#fa533c"];
+  subgraph "cluster packages" {
+    label="packages";
+    color="#6b4949";
+    a;
+    b;
+    c;
+    d;
+  }
+}
+''',
+          );
+        }),
       );
     });
   });

@@ -41,7 +41,8 @@ mixin _ListMixin on _Melos {
   void _listGraph(MelosWorkspace workspace) {
     final jsonGraph = <String, List<String>>{};
     for (final package in workspace.filteredPackages.values) {
-      jsonGraph[package.name] = package.dependenciesInWorkspace.keys.toList();
+      jsonGraph[package.name] =
+          package.allDependenciesInWorkspace.keys.toList();
     }
 
     const encoder = JsonEncoder.withIndent('  ');
@@ -139,8 +140,8 @@ mixin _ListMixin on _Melos {
           'flutter_package': package.isFlutterPackage,
           'flutter_app': package.isFlutterApp,
           'flutter_plugin': package.isFlutterPlugin,
-          'dependencies': package.dependenciesInWorkspace.keys.toList(),
-          'dependents': package.dependentsInWorkspace.keys.toList(),
+          'dependencies': package.allDependenciesInWorkspace.keys.toList(),
+          'dependents': package.allDependentsInWorkspace.keys.toList(),
         });
 
         if (package.isFlutterApp) {
@@ -218,6 +219,12 @@ mixin _ListMixin on _Melos {
       for (final dep in package.devDependenciesInWorkspace.values) {
         buffer.add(
           '  ${package.name} -> ${dep.name} [style="dashed"; color="${getColor(dep.name)}"];',
+        );
+      }
+
+      for (final dep in package.dependencyOverridesInWorkspace.values) {
+        buffer.add(
+          '  ${package.name} -> ${dep.name} [style="dotted"; color="${getColor(dep.name)}"];',
         );
       }
     }

@@ -667,34 +667,42 @@ class Package {
   late final allDependentsInWorkspace = {
     ...dependentsInWorkspace,
     ...devDependentsInWorkspace,
+    ...dependentsOverridesInWorkspace,
   };
 
-  /// The dependencies listen in `dev_dependencies:` inside the package's `pubspec.yaml`
-  /// that are part of the melos workspace
-  late final Map<String, Package> devDependenciesInWorkspace =
-      _packagesInWorkspaceForNames(devDependencies);
-
-  /// The dependencies listen in `dependencies:` inside the package's `pubspec.yaml`
-  /// that are part of the melos workspace
+  /// The dependencies listed in `dependencies:` inside the package's
+  /// `pubspec.yaml` that are part of the melos workspace
   late final Map<String, Package> dependenciesInWorkspace =
       _packagesInWorkspaceForNames(dependencies);
 
-  /// The dependencies listen in `dependency_overrides:` inside the package's `pubspec.yaml`
-  /// that are part of the melos workspace
+  /// The dependencies listed in `dev_dependencies:` inside the package's
+  /// `pubspec.yaml` that are part of the melos workspace
+  late final Map<String, Package> devDependenciesInWorkspace =
+      _packagesInWorkspaceForNames(devDependencies);
+
+  /// The dependencies listed in `dependency_overrides:` inside the package's
+  /// `pubspec.yaml` that are part of the melos workspace
   late final Map<String, Package> dependencyOverridesInWorkspace =
       _packagesInWorkspaceForNames(dependencyOverrides);
 
-  /// The packages that depends on this package.
+  /// The packages that depend on this package as a dependency.
   late final Map<String, Package> dependentsInWorkspace = {
     for (final entry in _packageMap.entries)
       if (entry.value.dependenciesInWorkspace.containsKey(name))
         entry.key: entry.value,
   };
 
-  /// The packages that depends on this package.
+  /// The packages that depend on this package as a dev dependency..
   late final Map<String, Package> devDependentsInWorkspace = {
     for (final entry in _packageMap.entries)
       if (entry.value.devDependenciesInWorkspace.containsKey(name))
+        entry.key: entry.value,
+  };
+
+  /// The packages that depend on this package as a dependency override.
+  late final Map<String, Package> dependentsOverridesInWorkspace = {
+    for (final entry in _packageMap.entries)
+      if (entry.value.dependencyOverridesInWorkspace.containsKey(name))
         entry.key: entry.value,
   };
 
