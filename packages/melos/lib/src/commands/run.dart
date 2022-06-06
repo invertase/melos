@@ -31,7 +31,7 @@ mixin _RunMixin on _Melos {
     logger?.stdout('');
     logger?.stdout(AnsiStyles.yellow.bold('melos run ${script.name}'));
     logger?.stdout(
-      '   └> ${AnsiStyles.cyan.bold(script.run.replaceAll('\n', ''))}',
+      '   └> ${AnsiStyles.cyan.bold(script.effectiveRun.replaceAll('\n', ''))}',
     );
 
     if (exitCode != 0) {
@@ -146,7 +146,7 @@ mixin _RunMixin on _Melos {
       environment[envKeyMelosPackages] = packagesEnv;
     }
 
-    final scriptSource = script.run;
+    final scriptSource = script.effectiveRun;
     final scriptParts = scriptSource.split(' ');
 
     logger?.stdout(AnsiStyles.yellow.bold('melos run ${script.name}'));
