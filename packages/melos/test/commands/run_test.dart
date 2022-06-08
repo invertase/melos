@@ -147,5 +147,74 @@ melos run test_script
       // TODO test is not compatible with Windows
       skip: currentPlatform.isWindows,
     );
+
+    test(
+      'supports running "melos exec" script with "exec" options',
+      () async {
+        final workspaceDir = createTemporaryWorkspaceDirectory(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: Scripts({
+              'test_script': Script(
+                name: 'test_script',
+                run: 'echo "hello"',
+                exec: ExecOptions(
+                  concurrency: 1,
+                ),
+              )
+            }),
+          ),
+        );
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'a'),
+        );
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        await melos.run(scriptName: 'test_script', noSelect: true);
+
+        expect(
+          logger.output,
+          ignoringAnsii(
+            '''
+melos run test_script
+   └> melos exec --concurrency 1 -- "echo \\"hello\\""
+       └> RUNNING
+
+\$ melos exec
+   └> echo "hello"
+       └> RUNNING (in 1 packages)
+
+${'-' * terminalWidth}
+a:
+hello
+a: SUCCESS
+${'-' * terminalWidth}
+
+\$ melos exec
+   └> echo "hello"
+       └> SUCCESS
+
+melos run test_script
+   └> melos exec --concurrency 1 -- "echo \\"hello\\""
+       └> SUCCESS
+''',
+          ),
+        );
+      },
+      // TODO test is not compatible with Windows
+      skip: currentPlatform.isWindows,
+    );
   });
 }

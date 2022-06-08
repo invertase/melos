@@ -50,6 +50,47 @@ A short description, shown when using `melos run` with no argument.
 
 The command to execute.
 
+## `scripts/*/exec`
+
+Execute a script in multiple packages through `melos exec`.
+
+This options must either contain the command to execute in multiple packages or the options for the
+`melos exec` command.
+
+When using the default options for `melos exec`, it's easiest to specify the command in the `exec`
+option:
+
+```yaml
+scripts:
+  hello:
+    exec: echo 'Hello $(dirname $PWD)'
+```
+
+If you need to provide options for the `exec` command, specify them in the `exec` option and
+specify the command in the `run` option:
+
+```yaml
+scripts:
+  hello:
+    run: echo 'Hello $(dirname $PWD)'
+    exec:
+      concurrency: 1
+```
+
+See the [`select-package`](#scriptsselect-package) option for filtering the packages to execute
+the command in.
+
+## `scripts/*/exec/concurrency`
+
+Defines the max concurrency value of how many packages will execute the command in at any one time.
+Defaults to `5`.
+
+## `scripts/*/exec/failFast`
+
+Whether `exec` should fail fast and not execute the script in further packages if the script fails
+in an individual package.
+Defaults to `false`.
+
 ## `scripts/*/env`
 
 A map of environment variables that will be passed to the executed command.
@@ -64,7 +105,7 @@ The `hello_flutter` script below is only executed in Flutter packages:
 ```yaml
 scripts:
   hello_flutter:
-    run: melos exec -- "echo 'Hello $(dirname $PWD)'"
+    exec: echo 'Hello $(dirname $PWD)'
     select-package:
       flutter: true
 ```

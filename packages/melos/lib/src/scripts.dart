@@ -91,6 +91,40 @@ class Scripts extends MapView<String, Script> {
   }
 }
 
+@immutable
+class ExecOptions {
+  ExecOptions({
+    this.concurrency,
+    this.failFast,
+  });
+
+  final int? concurrency;
+  final bool? failFast;
+
+  Map<String, Object?> toJson() => {
+        if (concurrency != null) 'concurrency': concurrency,
+        if (failFast != null) 'failFast': failFast,
+      };
+
+  @override
+  bool operator ==(Object other) =>
+      other is ExecOptions &&
+      runtimeType == other.runtimeType &&
+      concurrency == other.concurrency &&
+      failFast == other.failFast;
+
+  @override
+  int get hashCode =>
+      runtimeType.hashCode ^ concurrency.hashCode ^ failFast.hashCode;
+
+  @override
+  String toString() => '''
+ExecOptions(
+  concurrency: $concurrency,
+  failFast: $failFast,
+)''';
+}
+
 class Script {
   Script({
     required this.name,
@@ -98,6 +132,7 @@ class Script {
     this.description,
     this.env = const {},
     this.filter,
+    this.exec,
   });
 
   factory Script.fromYaml(
@@ -110,15 +145,28 @@ class Script {
     String? description;
     var env = <String, String>{};
     PackageFilter? packageFilter;
+    ExecOptions? exec;
 
     if (yaml is String) {
       run = yaml;
     } else if (yaml is Map<Object?, Object?>) {
-      run = assertKeyIsA<String>(
-        key: 'run',
-        map: yaml,
-        path: scriptPath,
-      );
+      final execYaml = yaml['exec'];
+      if (execYaml is String) {
+        if (yaml['run'] is String) {
+          throw MelosConfigException(
+            'The script $name specifies a command in both "run" and "exec". '
+            'Remove one of them.',
+          );
+        }
+        run = execYaml;
+      } else {
+        run = assertKeyIsA<String>(
+          key: 'run',
+          map: yaml,
+          path: scriptPath,
+        );
+      }
+
       description = assertKeyIsA<String?>(
         key: 'description',
         map: yaml,
@@ -153,6 +201,20 @@ class Script {
               scriptName: name,
               workspacePath: workspacePath,
             );
+
+      if (execYaml is String) {
+        exec = ExecOptions();
+      } else {
+        final execMap = assertKeyIsA<Map<Object?, Object?>?>(
+          key: 'exec',
+          map: yaml,
+          path: scriptPath,
+        );
+
+        exec = execMap == null
+            ? null
+            : execOptionsFromYaml(execMap, scriptName: name);
+      }
     } else {
       throw MelosConfigException('Unsupported value for script $name');
     }
@@ -163,6 +225,7 @@ class Script {
       description: description,
       env: env,
       filter: packageFilter,
+      exec: exec,
     );
   }
 
@@ -175,54 +238,54 @@ class Script {
     // necessary for the glob workaround
     required String workspacePath,
   }) {
-    final packagePath = 'scripts/$scriptName/select-package';
+    final filtersPath = 'scripts/$scriptName/select-package';
 
     final scope = assertListOrString(
       key: filterOptionScope,
       map: yaml,
-      path: packagePath,
+      path: filtersPath,
     );
     final ignore = assertListOrString(
       key: filterOptionIgnore,
       map: yaml,
-      path: packagePath,
+      path: filtersPath,
     );
     final dirExists = assertListOrString(
       key: filterOptionDirExists,
       map: yaml,
-      path: packagePath,
+      path: filtersPath,
     );
     final fileExists = assertListOrString(
       key: filterOptionFileExists,
       map: yaml,
-      path: packagePath,
+      path: filtersPath,
     );
     final dependsOn = assertListOrString(
       key: filterOptionDependsOn,
       map: yaml,
-      path: packagePath,
+      path: filtersPath,
     );
     final noDependsOn = assertListOrString(
       key: filterOptionNoDependsOn,
       map: yaml,
-      path: packagePath,
+      path: filtersPath,
     );
 
     final updatedSince = assertIsA<String?>(
       value: yaml[filterOptionSince],
       key: filterOptionSince,
-      path: packagePath,
+      path: filtersPath,
     );
 
     final excludePrivatePackagesTmp = assertIsA<bool?>(
       value: yaml[filterOptionNoPrivate],
       key: filterOptionNoPrivate,
-      path: packagePath,
+      path: filtersPath,
     );
     final includePrivatePackagesTmp = assertIsA<bool?>(
       value: yaml[filterOptionPrivate],
       key: filterOptionNoPrivate,
-      path: packagePath,
+      path: filtersPath,
     );
     if (includePrivatePackagesTmp != null &&
         excludePrivatePackagesTmp != null) {
@@ -241,17 +304,17 @@ class Script {
     final published = assertIsA<bool?>(
       value: yaml[filterOptionPublished],
       key: filterOptionPublished,
-      path: packagePath,
+      path: filtersPath,
     );
     final nullSafe = assertIsA<bool?>(
       value: yaml[filterOptionNullsafety],
       key: filterOptionNullsafety,
-      path: packagePath,
+      path: filtersPath,
     );
     final flutter = assertIsA<bool?>(
       value: yaml[filterOptionFlutter],
       key: filterOptionFlutter,
-      path: packagePath,
+      path: filtersPath,
     );
 
     return PackageFilter(
@@ -273,21 +336,74 @@ class Script {
     );
   }
 
-  /// A unique identifier for the script
+  @visibleForTesting
+  static ExecOptions execOptionsFromYaml(
+    Map<Object?, Object?> yaml, {
+    required String scriptName,
+  }) {
+    final execPath = 'scripts/$scriptName/exec';
+
+    final concurrency = assertKeyIsA<int?>(
+      key: 'concurrency',
+      map: yaml,
+      path: execPath,
+    );
+
+    final failFast = assertKeyIsA<bool?>(
+      key: 'failFast',
+      map: yaml,
+      path: execPath,
+    );
+
+    return ExecOptions(
+      concurrency: concurrency,
+      failFast: failFast,
+    );
+  }
+
+  /// A unique identifier for the script.
   final String name;
 
-  /// The command to execute
+  /// The command specified by the user.
   final String run;
+
+  /// The command to run when executing this script.
+  late final effectiveRun = _buildEffectiveCommand();
 
   /// A short description, shown when using `melos run` with no argument.
   final String? description;
 
-  /// Environment variables that will be passed to[run].
+  /// Environment variables that will be passed to [run].
   final Map<String, String> env;
 
   /// If the [run] command is a melos command, allows filtering packages
   /// that will execute the command.
   final PackageFilter? filter;
+
+  /// The options for `melos exec`, if [run] should be executed in multiple
+  /// packages.
+  final ExecOptions? exec;
+
+  String _buildEffectiveCommand() {
+    String _quoteScript(String script) => '"${script.replaceAll('"', r'\"')}"';
+
+    final exec = this.exec;
+    if (exec != null) {
+      final parts = ['melos', 'exec'];
+
+      if (exec.concurrency != null) {
+        parts.addAll(['--concurrency', '${exec.concurrency}']);
+      }
+      if (exec.failFast != null) {
+        parts.addAll(['--fail-fast', '${exec.failFast}']);
+      }
+
+      parts.addAll(['--', _quoteScript(run)]);
+
+      return parts.join(' ');
+    }
+    return run;
+  }
 
   Map<Object?, Object?> toJson() {
     return {
@@ -296,6 +412,7 @@ class Script {
       if (description != null) 'description': description,
       if (env.isNotEmpty) 'env': env,
       if (filter != null) 'select-package': filter!.toJson(),
+      if (exec != null) 'exec': exec!.toJson(),
     };
   }
 
@@ -307,7 +424,8 @@ class Script {
       other.run == run &&
       other.description == description &&
       const DeepCollectionEquality().equals(other.env, env) &&
-      other.filter == filter;
+      other.filter == filter &&
+      other.exec == exec;
 
   @override
   int get hashCode =>
@@ -316,7 +434,8 @@ class Script {
       run.hashCode ^
       description.hashCode ^
       const DeepCollectionEquality().hash(env) ^
-      filter.hashCode;
+      filter.hashCode ^
+      exec.hashCode;
 
   @override
   String toString() {
@@ -327,6 +446,7 @@ Script(
   description: $description,
   env: $env,
   packageFilter: ${filter.toString().indent('  ')},
+  exec: ${exec.toString().indent('  ')},
 )''';
   }
 }
