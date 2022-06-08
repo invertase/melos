@@ -189,12 +189,12 @@ melos run test_script
           ignoringAnsii(
             '''
 melos run test_script
-   └> melos exec --concurrency 1 -- "echo \\"hello\\""
-       └> RUNNING
+  └> melos exec --concurrency 1 -- "echo \\"hello\\""
+     └> RUNNING
 
 \$ melos exec
-   └> echo "hello"
-       └> RUNNING (in 1 packages)
+  └> echo "hello"
+     └> RUNNING (in 1 packages)
 
 ${'-' * terminalWidth}
 a:
@@ -203,12 +203,12 @@ a: SUCCESS
 ${'-' * terminalWidth}
 
 \$ melos exec
-   └> echo "hello"
-       └> SUCCESS
+  └> echo "hello"
+     └> SUCCESS
 
 melos run test_script
-   └> melos exec --concurrency 1 -- "echo \\"hello\\""
-       └> SUCCESS
+  └> melos exec --concurrency 1 -- "echo \\"hello\\""
+     └> SUCCESS
 ''',
           ),
         );
