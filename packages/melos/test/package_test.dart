@@ -2,10 +2,8 @@ import 'dart:io';
 
 import 'package:glob/glob.dart';
 import 'package:http/http.dart' as http;
+import 'package:melos/melos.dart';
 import 'package:melos/src/common/http.dart';
-import 'package:melos/src/package.dart';
-import 'package:melos/src/workspace.dart';
-import 'package:melos/src/workspace_configs.dart';
 import 'package:mockito/mockito.dart';
 import 'package:platform/platform.dart';
 import 'package:test/test.dart';
@@ -41,7 +39,7 @@ void main() {
       );
       workspace = await MelosWorkspace.fromConfig(
         config,
-        logger: TestLogger(),
+        logger: TestLogger().toMelosLogger(),
       );
     });
 

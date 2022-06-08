@@ -11,13 +11,11 @@ mixin _PublishMixin on _ExecMixin {
   }) async {
     final workspace = await createWorkspace(global: global, filter: filter);
 
-    logger?.stdout(
-      AnsiStyles.yellow.bold('melos publish${dryRun ? " --dry-run" : ''}'),
-    );
-    logger?.stdout('   └> ${AnsiStyles.cyan.bold(workspace.path)}\n');
+    logger.command('melos publish${dryRun ? " --dry-run" : ''}');
+    logger.child(targetStyle(workspace.path)).newLine();
 
     final readRegistryProgress =
-        logger?.progress('Reading pub registry for package information');
+        logger.progress('Reading pub registry for package information');
 
     Map<String, String?> latestPublishedVersionForPackages;
 
@@ -25,8 +23,8 @@ mixin _PublishMixin on _ExecMixin {
       latestPublishedVersionForPackages =
           await _getLatestPublishedVersionForPackages(workspace);
     } finally {
-      readRegistryProgress?.finish(
-        message: AnsiStyles.green('SUCCESS'),
+      readRegistryProgress.finish(
+        message: successLabel,
         showTiming: true,
       );
     }
@@ -40,31 +38,31 @@ mixin _PublishMixin on _ExecMixin {
     ];
 
     if (unpublishedPackages.isEmpty) {
-      logger?.stdout(
-        AnsiStyles.green.bold(
-          '\nNo unpublished packages found - all local packages are already up to date.',
-        ),
-      );
+      logger
+        ..newLine()
+        ..success(
+          'No unpublished packages found - '
+          'all local packages are already up to date.',
+        );
       return;
     }
 
     sortPackagesTopologically(unpublishedPackages);
 
-    if (dryRun) {
-      logger?.stdout(
-        AnsiStyles.magentaBright.bold(
-          '\nThe following packages will be validated only (dry run):\n',
+    logger
+      ..newLine()
+      ..warning(
+        AnsiStyles.bold(
+          dryRun
+              ? 'The following packages will be validated only (dry run):'
+              : 'The following packages WILL be published to the registry:',
         ),
-      );
-    } else {
-      logger?.stdout(
-        AnsiStyles.yellowBright.bold(
-          '\nThe following packages WILL be published to the registry:\n',
-        ),
-      );
-    }
+        label: false,
+        dryRun: dryRun,
+      )
+      ..newLine();
 
-    logger?.stdout(
+    logger.stdout(
       listAsPaddedTable(
         [
           [
@@ -87,7 +85,7 @@ mixin _PublishMixin on _ExecMixin {
     if (!force) {
       final shouldContinue = promptBool();
       if (!shouldContinue) throw CancelledException();
-      logger?.stdout('');
+      logger.newLine();
     }
 
     await _publish(
@@ -139,7 +137,7 @@ mixin _PublishMixin on _ExecMixin {
     required bool dryRun,
     required bool gitTagVersion,
   }) async {
-    final updateRegistryProgress = logger?.progress(
+    final updateRegistryProgress = logger.progress(
       'Publishing ${unpublishedPackages.length} packages to registry:',
     );
     final execArgs = [
@@ -163,10 +161,9 @@ mixin _PublishMixin on _ExecMixin {
 
     if (exitCode != 1) {
       if (!dryRun && gitTagVersion) {
-        logger?.stdout('');
-        logger?.stdout(
-          'Creating git tags for any versions not already created... ',
-        );
+        logger
+          ..newLine()
+          ..log('Creating git tags for any versions not already created... ');
         await Future.forEach(unpublishedPackages, (Package package) async {
           final tag =
               gitTagForPackageVersion(package.name, package.version.toString());
@@ -179,21 +176,19 @@ mixin _PublishMixin on _ExecMixin {
         });
       }
 
-      updateRegistryProgress?.finish(
-        message: AnsiStyles.green('SUCCESS'),
+      updateRegistryProgress.finish(
+        message: successLabel,
         showTiming: true,
       );
 
-      if (!dryRun) {
-        logger?.stdout(
-          AnsiStyles.green
-              .bold('\nAll packages have successfully been published.'),
+      logger
+        ..newLine()
+        ..success(
+          dryRun
+              ? 'All packages were validated successfully.'
+              : 'All packages have successfully been published.',
+          dryRun: dryRun,
         );
-      } else {
-        logger?.stdout(
-          AnsiStyles.green.bold('\nAll packages were validated successfully.'),
-        );
-      }
     }
   }
 }

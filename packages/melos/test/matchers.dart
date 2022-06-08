@@ -16,6 +16,7 @@
 
 import 'dart:io' as io;
 
+import 'package:ansi_styles/ansi_styles.dart';
 import 'package:file/file.dart';
 import 'package:melos/src/common/validation.dart';
 import 'package:melos/src/package.dart';
@@ -35,7 +36,7 @@ class _IgnoringAnsii extends CustomMatcher {
 
   @override
   Object? featureValueOf(covariant String actual) {
-    return actual.replaceAll(RegExp(r'\x1b\[[0-9;]*m'), '');
+    return AnsiStyles.strip(actual);
   }
 }
 

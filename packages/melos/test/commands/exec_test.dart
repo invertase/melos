@@ -54,8 +54,8 @@ void main() {
           ignoringAnsii(
             '''
 \$ melos exec
-   └> echo hello world
-       └> RUNNING (in 2 packages)
+  └> echo hello world
+     └> RUNNING (in 2 packages)
 
 ${'-' * terminalWidth}
 a:
@@ -68,8 +68,8 @@ b: SUCCESS
 ${'-' * terminalWidth}
 
 \$ melos exec
-   └> echo hello world
-       └> SUCCESS
+  └> echo hello world
+     └> SUCCESS
 ''',
           ),
         );

@@ -26,7 +26,7 @@ void main() {
       final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
       final workspace = await MelosWorkspace.fromConfig(
         config,
-        logger: TestLogger(),
+        logger: TestLogger().toMelosLogger(),
         filter: PackageFilter(
           dirExists: ['test'],
         ),
@@ -62,7 +62,7 @@ void main() {
       final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
       final workspace = await MelosWorkspace.fromConfig(
         config,
-        logger: TestLogger(),
+        logger: TestLogger().toMelosLogger(),
         filter: PackageFilter(
           fileExists: ['log.txt'],
         ),

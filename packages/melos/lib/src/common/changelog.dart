@@ -17,10 +17,10 @@
 
 import 'dart:io';
 
-import 'package:cli_util/cli_logging.dart';
 import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
 
+import '../logging.dart';
 import '../package.dart';
 import 'git_commit.dart';
 import 'git_repository.dart';
@@ -31,7 +31,7 @@ class Changelog {
 
   final Package package;
   final Version version;
-  final Logger? logger;
+  final MelosLogger logger;
 
   String get markdown {
     throw UnimplementedError();
@@ -57,8 +57,9 @@ class Changelog {
   Future<void> write() async {
     var contents = await read();
     if (contents.contains(markdown)) {
-      logger?.trace(
-        'Identical changelog content for ${package.name} v$version already exists, skipping.',
+      logger.trace(
+        'Identical changelog content for ${package.name} v$version already '
+        'exists, skipping.',
       );
       return;
     }
@@ -69,7 +70,7 @@ class Changelog {
 }
 
 class MelosChangelog extends Changelog {
-  MelosChangelog(this.update, Logger? logger)
+  MelosChangelog(this.update, MelosLogger logger)
       : super(update.package, update.nextVersion, logger);
 
   final MelosPendingPackageUpdate update;

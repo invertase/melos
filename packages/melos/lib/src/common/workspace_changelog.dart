@@ -17,10 +17,10 @@
 
 import 'dart:io';
 
-import 'package:cli_util/cli_logging.dart';
 import 'package:path/path.dart';
 
-import '../../melos.dart';
+import '../logging.dart';
+import '../workspace.dart';
 import 'changelog.dart';
 import 'pending_package_update.dart';
 
@@ -34,7 +34,7 @@ class WorkspaceChangelog {
 
   final MelosWorkspace workspace;
   final String title;
-  final Logger? logger;
+  final MelosLogger logger;
   final List<MelosPendingPackageUpdate> pendingPackageUpdates;
 
   String get _changelogFileHeader {
@@ -163,7 +163,7 @@ class WorkspaceChangelog {
   Future<void> write() async {
     var contents = await read();
     if (contents.contains(markdown)) {
-      logger?.trace(
+      logger.trace(
         'Identical changelog content for ${workspace.name} already exists, skipping.',
       );
       return;

@@ -77,7 +77,10 @@ void main() {
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
-      final workspace = await MelosWorkspace.fromConfig(config);
+      final workspace = await MelosWorkspace.fromConfig(
+        config,
+        logger: logger.toMelosLogger(),
+      );
       final melos = Melos(logger: logger, config: config);
       final pubExecArgs = pubCommandExecArgs(
         useFlutter: workspace.isFlutterWorkspace,
@@ -91,7 +94,7 @@ void main() {
         ignoringAnsii(
           '''
 melos bootstrap
-   └> ${workspaceDir.path}
+  └> ${workspaceDir.path}
 
 Running "${pubExecArgs.join(' ')} get" in workspace packages...
   ✓ a
@@ -186,7 +189,7 @@ Generating IntelliJ IDE files...
             [
               '''
 melos bootstrap
-   └> ${workspaceDir.path}
+  └> ${workspaceDir.path}
 
 Running "flutter pub get" in workspace packages...''',
               '''
@@ -532,7 +535,10 @@ dependency_overrides:
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
-      final workspace = await MelosWorkspace.fromConfig(config);
+      final workspace = await MelosWorkspace.fromConfig(
+        config,
+        logger: logger.toMelosLogger(),
+      );
       final melos = Melos(
         logger: logger,
         config: config,
@@ -555,12 +561,12 @@ dependency_overrides:
         ignoringAnsii(
           '''
 melos bootstrap
-   └> ${workspaceDir.path}
+  └> ${workspaceDir.path}
 
 Running "${pubExecArgs.join(' ')} get" in workspace packages...
   - a
     └> packages/a
-e-    └> Failed to install.
+e-       └> Failed to install.
 
 Resolving dependencies...
 e-Because a depends on package_that_does_not_exists any which doesn't exist (could not find package package_that_does_not_exists at https://pub.dartlang.org), version solving failed.

@@ -159,10 +159,10 @@ class VersionCommand extends MelosCommand {
 
     if (argResults!.rest.isNotEmpty) {
       if (argResults!.rest.length != 2) {
-        logger?.stdout(
-          '${AnsiStyles.redBright('ERROR:')} when manually setting a version to '
-          'apply to a package you must specify both <packageName> and <newVersion> '
-          'arguments when calling "melos version".',
+        logger.error(
+          'When manually setting a version to apply to a package you must '
+          'specify both <packageName> and <newVersion> arguments when calling '
+          '"melos version".',
         );
         exitCode = 1;
         return;
@@ -200,18 +200,18 @@ class VersionCommand extends MelosCommand {
       }
 
       if (asPrerelease && asStableRelease) {
-        logger?.stdout(
-          '${AnsiStyles.yellow('WARNING:')} graduate & prerelease flags cannot '
-          'be combined. Versioning will continue with graduate off.',
+        logger.warning(
+          'graduate & prerelease flags cannot be combined. Versioning will '
+          'continue with graduate off.',
         );
         asStableRelease = false;
       }
 
       if (updateDependentsVersions && !updateDependentsConstraints) {
-        logger?.stdout(
-          '${AnsiStyles.yellow('WARNING:')} the setting --dependent-versions is '
-          'turned on but --dependent-constraints is turned off. Versioning '
-          'will continue with this setting turned off.',
+        logger.warning(
+          'The setting --dependent-versions is turned on but '
+          '--dependent-constraints is turned off. Versioning will continue '
+          'with this setting turned off.',
         );
         updateDependentsVersions = false;
       }
@@ -255,10 +255,7 @@ class VersionCommand extends MelosCommand {
       return ManualVersionChange(Version.parse(argument));
     } catch (_) {
       exitCode = 1;
-      logger?.stdout(
-        '${AnsiStyles.redBright('ERROR:')} version "$argument" is not a '
-        'valid package version.',
-      );
+      logger.error('version "$argument" is not a valid package version.');
       return null;
     }
   }
@@ -272,9 +269,8 @@ class VersionCommand extends MelosCommand {
       final parts = argument.split(':');
       if (parts.length != 2) {
         exitCode = 1;
-        logger?.stdout(
-          '${AnsiStyles.redBright('ERROR:')} --manual-version arguments must '
-          'be in the format '
+        logger.error(
+          '--manual-version arguments must be in the format '
           '"<package name>:<major|patch|minor|build|exactVersion>".',
         );
         return null;

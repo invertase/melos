@@ -11,6 +11,7 @@ export 'src/commands/runner.dart'
 export 'src/common/exception.dart' show CancelledException, MelosException;
 export 'src/common/validation.dart' show MelosConfigException;
 export 'src/global_options.dart' show GlobalOptions;
+export 'src/logging.dart' show MelosLogger, ToMelosLoggerExtension;
 export 'src/package.dart' show Package, PackageFilter, PackageMap, PackageType;
 export 'src/workspace.dart' show IdeWorkspace, MelosWorkspace;
 export 'src/workspace_configs.dart'

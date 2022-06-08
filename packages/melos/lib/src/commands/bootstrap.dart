@@ -1,9 +1,5 @@
 part of 'runner.dart';
 
-final _successLabel = AnsiStyles.green('SUCCESS');
-final _warningLabel = AnsiStyles.yellow('WARNING');
-final _checkLabel = AnsiStyles.greenBright('✓');
-
 mixin _BootstrapMixin on _CleanMixin {
   Future<void> bootstrap({GlobalOptions? global, PackageFilter? filter}) async {
     final workspace = await createWorkspace(global: global, filter: filter);
@@ -20,17 +16,16 @@ mixin _BootstrapMixin on _CleanMixin {
           'get'
         ].join(' ');
 
-        logger?.stdout(AnsiStyles.yellow.bold('melos bootstrap'));
-        logger?.stdout('   └> ${AnsiStyles.cyan.bold(workspace.path)}\n');
+        logger
+          ..command('melos bootstrap')
+          ..child(targetStyle(workspace.path))
+          ..newLine();
 
-        logger?.stdout(
-          'Running "$pubCommandForLogging" in workspace packages...',
-        );
+        logger.log('Running "$pubCommandForLogging" in workspace packages...');
         if (!utils.isCI && workspace.filteredPackages.keys.length > 20) {
-          logger?.stdout(
-            AnsiStyles.yellow(
-              'Note: this may take a while in large workspaces such as this one.',
-            ),
+          logger.warning(
+            'Note: this may take a while in large workspaces such as this one.',
+            label: false,
           );
         }
 
@@ -45,20 +40,22 @@ mixin _BootstrapMixin on _CleanMixin {
           rethrow;
         }
 
-        logger?.stdout('  > $_successLabel');
+        logger.child(successLabel, prefix: '> ');
 
         if (workspace.config.ide.intelliJ.enabled) {
-          logger?.stdout('');
-          logger?.stdout('Generating IntelliJ IDE files...');
+          logger
+            ..newLine()
+            ..log('Generating IntelliJ IDE files...');
 
           await cleanIntelliJ(workspace);
           await workspace.ide.intelliJ.generate();
-          logger?.stdout('  > $_successLabel');
+          logger.child(successLabel, prefix: '> ');
         }
-
-        logger?.stdout(
-          '\n -> ${workspace.filteredPackages.length} packages bootstrapped',
-        );
+        logger
+          ..newLine()
+          ..log(
+            ' -> ${workspace.filteredPackages.length} packages bootstrapped',
+          );
       },
     );
   }
@@ -67,8 +64,8 @@ mixin _BootstrapMixin on _CleanMixin {
     MelosWorkspace workspace,
   ) async {
     if (!workspace.isPubspecOverridesSupported) {
-      logger?.stderr(
-        '$_warningLabel: Dart 2.17.0 or greater is required to use Melos with '
+      logger.warning(
+        'Dart 2.17.0 or greater is required to use Melos with '
         'pubspec overrides.',
       );
     }
@@ -78,11 +75,7 @@ mixin _BootstrapMixin on _CleanMixin {
         await _generatePubspecOverrides(workspace, package);
         await _runPubGetForPackage(workspace, package);
 
-        logger?.stdout(
-          '''
-  $_checkLabel ${AnsiStyles.bold(package.name)}
-    └> ${AnsiStyles.blue(printablePath(package.pathRelativeToWorkspace))}''',
-        );
+        _logBootstrapSuccess(package);
       },
       parallelism: workspace.config.commands.bootstrap.runPubGetInParallel &&
               workspace.canRunPubGetConcurrently
@@ -136,20 +129,18 @@ mixin _BootstrapMixin on _CleanMixin {
     await _generateTemporaryProjects(workspace);
 
     try {
+      // ignore: prefer_foreach
       await for (final package in _runPubGet(workspace)) {
-        logger?.stdout(
-          '''
-  $_checkLabel ${AnsiStyles.bold(package.name)}
-    └> ${AnsiStyles.blue(printablePath(package.pathRelativeToWorkspace))}''',
-        );
+        _logBootstrapSuccess(package);
       }
     } catch (err) {
       cleanWorkspace(workspace);
       rethrow;
     }
 
-    logger?.stdout('');
-    logger?.stdout('Linking workspace packages...');
+    logger
+      ..newLine()
+      ..log('Linking workspace packages...');
 
     for (final package in workspace.filteredPackages.values) {
       await package.linkPackages(workspace);
@@ -212,18 +203,18 @@ mixin _BootstrapMixin on _CleanMixin {
 
     const logTimeout = Duration(seconds: 10);
     final packagePrefix = '[${AnsiStyles.blue.bold(package.name)}]: ';
-    void Function(String) logLineTo(void Function(String)? log) =>
-        (line) => log?.call('$packagePrefix$line');
+    void Function(String) logLineTo(void Function(String) log) =>
+        (line) => log.call('$packagePrefix$line');
 
     // We always fully consume stdout and stderr. This is required to prevent
     // leaking resources and to ensure that the process exits.
     final stdout = process.stdout.toStringAndLogAfterTimeout(
       timeout: logTimeout,
-      log: logLineTo(logger?.stdout),
+      log: logLineTo(logger.stdout),
     );
     final stderr = process.stderr.toStringAndLogAfterTimeout(
       timeout: logTimeout,
-      log: logLineTo(logger?.stderr),
+      log: logLineTo(logger.stderr),
     );
 
     final exitCode = await process.exitCode;
@@ -236,6 +227,12 @@ mixin _BootstrapMixin on _CleanMixin {
         stderr: await stderr,
       );
     }
+  }
+
+  void _logBootstrapSuccess(Package package) {
+    logger.child(packageNameStyle(package.name), prefix: '$checkLabel ').child(
+          packagePathStyle(printablePath(package.pathRelativeToWorkspace)),
+        );
   }
 
   void _logBootstrapException(
@@ -284,20 +281,17 @@ mixin _BootstrapMixin on _CleanMixin {
         .toList()
         .join('\n');
 
-    logger?.stdout(
-      '''
-  - ${AnsiStyles.bold.cyan(package.name)}
-    └> ${AnsiStyles.blue(printablePath(package.pathRelativeToWorkspace))}''',
-    );
+    logger
+        .child(targetStyle(package.name), prefix: '- ')
+        .child(packagePathStyle(printablePath(package.pathRelativeToWorkspace)))
+        .child(errorMessageColor(exception.message), stderr: true)
+        .newLine();
 
-    logger?.stderr('    └> ${AnsiStyles.red(exception.message)}');
-
-    logger?.stdout('');
     if (processStdOutString != null) {
-      logger?.stdout(processStdOutString);
+      logger.stdout(processStdOutString);
     }
     if (processStdErrString != null) {
-      logger?.stderr(processStdErrString);
+      logger.stderr(processStdErrString);
     }
   }
 }

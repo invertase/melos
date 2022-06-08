@@ -29,6 +29,7 @@ import '../common/utils.dart' as utils;
 import '../common/versioning.dart' as versioning;
 import '../common/workspace_changelog.dart';
 import '../global_options.dart';
+import '../logging.dart';
 import '../package.dart';
 import '../prompts/prompt.dart' as prompts;
 import '../scripts.dart';
@@ -61,16 +62,16 @@ class Melos extends _Melos
   Melos({
     required this.config,
     Logger? logger,
-  }) : logger = logger ?? Logger.standard();
+  }) : logger = (logger ?? Logger.standard()).toMelosLogger();
 
   @override
-  final Logger? logger;
+  final MelosLogger logger;
   @override
   final MelosWorkspaceConfig config;
 }
 
 abstract class _Melos {
-  Logger? get logger;
+  MelosLogger get logger;
   MelosWorkspaceConfig get config;
 
   Future<MelosWorkspace> createWorkspace({
@@ -118,7 +119,9 @@ abstract class _Melos {
     }
 
     if (workspace.config.scripts.containsKey(scriptName)) {
-      logger?.stdout('Running $scriptName script...\n');
+      logger
+        ..log('Running $scriptName script...')
+        ..newLine();
 
       await run(scriptName: scriptName);
     }
@@ -128,7 +131,9 @@ abstract class _Melos {
     } finally {
       final postScript = 'post$scriptName';
       if (workspace.config.scripts.containsKey(postScript)) {
-        logger?.stdout('Running $postScript script...\n');
+        logger
+          ..log('Running $postScript script...')
+          ..newLine();
 
         await run(scriptName: postScript);
       }

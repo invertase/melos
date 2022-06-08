@@ -18,7 +18,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:cli_util/cli_logging.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
@@ -28,6 +27,7 @@ import 'common/pub_dependency_list.dart';
 import 'common/utils.dart' as utils;
 import 'common/validation.dart';
 import 'global_options.dart';
+import 'logging.dart';
 import 'package.dart';
 import 'workspace_configs.dart';
 
@@ -50,7 +50,7 @@ class MelosWorkspace {
     required this.allPackages,
     required this.filteredPackages,
     required this.sdkPath,
-    this.logger,
+    required this.logger,
   });
 
   /// Build a [MelosWorkspace] from a workspace configuration.
@@ -58,7 +58,7 @@ class MelosWorkspace {
     MelosWorkspaceConfig workspaceConfig, {
     GlobalOptions? global,
     PackageFilter? filter,
-    Logger? logger,
+    required MelosLogger logger,
   }) async {
     final allPackages = await PackageMap.resolvePackages(
       workspacePath: workspaceConfig.path,
@@ -85,7 +85,7 @@ class MelosWorkspace {
     );
   }
 
-  final Logger? logger;
+  final MelosLogger logger;
 
   /// An optional name as defined in "melos.yaml". This name is used for logging
   /// purposes and also used when generating certain IDE files.
