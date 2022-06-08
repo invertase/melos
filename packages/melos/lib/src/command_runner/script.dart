@@ -77,6 +77,7 @@ class ScriptCommand extends MelosCommand {
         global: global,
         scriptName: scriptName,
         noSelect: noSelect,
+        extraArgs: argResults!.rest,
       );
     } on NoPackageFoundScriptException catch (err) {
       logger?.stderr(AnsiStyles.yellow(err.toString()));
