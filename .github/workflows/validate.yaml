@@ -51,6 +51,8 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
@@ -64,6 +66,8 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
