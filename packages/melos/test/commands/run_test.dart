@@ -58,14 +58,15 @@ void main() {
 
         expect(
           logger.output,
+          ignoringAnsii(
             '''
 melos run test_script
   └> melos exec -- "echo hello"
      └> RUNNING
 
 \$ melos exec
-   └> echo hello
-       └> RUNNING (in 1 packages)
+  └> echo hello
+     └> RUNNING (in 1 packages)
 
 ${'-' * terminalWidth}
 a:
@@ -74,13 +75,14 @@ a: SUCCESS
 ${'-' * terminalWidth}
 
 \$ melos exec
-   └> echo hello
-       └> SUCCESS
+  └> echo hello
+     └> SUCCESS
 
 melos run test_script
   └> melos exec -- "echo hello"
      └> SUCCESS
 ''',
+          ),
         );
       },
       // TODO test is not compatible with Windows (windows prints
@@ -184,14 +186,15 @@ melos run test_script
 
         expect(
           logger.output,
+          ignoringAnsii(
             '''
 melos run test_script
   └> melos exec --concurrency 1 -- "echo \\"hello\\""
      └> RUNNING
 
 \$ melos exec
-   └> echo "hello"
-       └> RUNNING (in 1 packages)
+  └> echo "hello"
+     └> RUNNING (in 1 packages)
 
 ${'-' * terminalWidth}
 a:
@@ -200,13 +203,14 @@ a: SUCCESS
 ${'-' * terminalWidth}
 
 \$ melos exec
-   └> echo "hello"
-       └> SUCCESS
+  └> echo "hello"
+     └> SUCCESS
 
 melos run test_script
   └> melos exec --concurrency 1 -- "echo \\"hello\\""
      └> SUCCESS
 ''',
+          ),
         );
       },
       // TODO test is not compatible with Windows
