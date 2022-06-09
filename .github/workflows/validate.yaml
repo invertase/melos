@@ -74,14 +74,15 @@ jobs:
 
   test_windows:
     runs-on: windows-latest
-    timeout-minutes: 25
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
       - name: "Install Tools"
-        run: ./.github/workflows/scripts/install-tools.sh
-      - uses: actions/checkout@v2
+        run: .\.github\workflows\scripts\install-tools.bat
       - name: "Run Tests"
         run: cmd /K melos run test --no-select
