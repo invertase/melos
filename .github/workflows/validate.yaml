@@ -13,12 +13,25 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - uses: bluefireteam/melos-action@v1
+      - name: "Install Tools"
+        run: ./.github/workflows/scripts/install-tools.sh
       - name: "Analyze"
         uses: invertase/github-action-dart-analyzer@v1
         with:
           fatal-infos: true
           fatal-warnings: true
+
+  # This job ensures `melos` compiles and runs fine on the
+  # minimum Dart SDK version that it supports.
+  dart_version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 2.12.0 # Update when min sdk supported version of `melos` package changes.
+      - name: "Run Melos"
+        run: ./.github/workflows/scripts/install-tools.sh
 
   format:
     runs-on: ubuntu-latest
@@ -28,7 +41,8 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - uses: bluefireteam/melos-action@v1
+      - name: "Install Tools"
+        run: ./.github/workflows/scripts/install-tools.sh
       - name: "Check formatting"
         run: melos run format-check
 
@@ -40,7 +54,8 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - uses: bluefireteam/melos-action@v1
+      - name: "Install Tools"
+        run: ./.github/workflows/scripts/install-tools.sh
       - name: "Run Tests"
         run: melos run test --no-select
 
@@ -52,7 +67,8 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - uses: bluefireteam/melos-action@v1
+      - name: "Install Tools"
+        run: ./.github/workflows/scripts/install-tools.sh
       - name: "Run Tests"
         run: melos run test --no-select
 
@@ -64,7 +80,8 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - uses: bluefireteam/melos-action@v1
+      - name: "Install Tools"
+        run: ./.github/workflows/scripts/install-tools.sh
       - uses: actions/checkout@v2
       - name: "Run Tests"
         run: cmd /K melos run test --no-select
