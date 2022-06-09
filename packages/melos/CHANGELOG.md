@@ -1,3 +1,12 @@
+## 2.4.0
+
+ - **REFACTOR**: encapsulate log formatting in `MelosLogger` ([#314](https://github.com/invertase/melos/issues/314)). ([ec808b02](https://github.com/invertase/melos/commit/ec808b0205cb267f3c8bedd8dce98a02f9f6a086))
+ - **FIX**: pass extra args to script when invoked without `run` ([#316](https://github.com/invertase/melos/issues/316)). ([f0a62a2d](https://github.com/invertase/melos/commit/f0a62a2d124b4b8e29534c16daaff88a49f69442))
+ - **FIX**: report all dependencies in `list` command ([#313](https://github.com/invertase/melos/issues/313)). ([bb76d3a1](https://github.com/invertase/melos/commit/bb76d3a126794df05d0c823f6f8aae0311761ae1))
+ - **FIX**: respect user `dependency_overrides` ([#312](https://github.com/invertase/melos/issues/312)). ([ff5bfbe6](https://github.com/invertase/melos/commit/ff5bfbe6a43f3a1a788832951c1873d150a28d7d))
+ - **FIX**: Run Process.runSync in another shell to get Dart version ([#300](https://github.com/invertase/melos/issues/300)). ([0aa81a7b](https://github.com/invertase/melos/commit/0aa81a7bbad0d635981ffd52d323fe80dff97458))
+ - **FEAT**: simplify writing scripts that use `melos exec` ([#315](https://github.com/invertase/melos/issues/315)). ([3e5807dd](https://github.com/invertase/melos/commit/3e5807ddde999479c6d9937a131dd0919ad7dae8))
+
 ## 2.3.1
 
  - **FIX**: use global options when running scripts ([#296](https://github.com/invertase/melos/issues/296)). ([115d0471](https://github.com/invertase/melos/commit/115d04710028612686eba3cb669f93704cac5893))
