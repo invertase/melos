@@ -10,8 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: "Install Flutter"
-        run: ./.github/workflows/scripts/install-flutter.sh stable
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
       - name: "Install Tools"
         run: ./.github/workflows/scripts/install-tools.sh
       - name: "Analyze"
@@ -34,42 +35,42 @@ jobs:
 
   format:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v2
-      - name: "Install Flutter"
-        run: ./.github/workflows/scripts/install-flutter.sh stable
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
       - name: "Install Tools"
         run: ./.github/workflows/scripts/install-tools.sh
-      - name: "Dart"
-        run: |
-          melos run format
-          ./.github/workflows/scripts/validate-formatting.sh
+      - name: "Check formatting"
+        run: melos run format-check
 
   test_linux:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - name: "Install Flutter"
-        run: ./.github/workflows/scripts/install-flutter.sh stable
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
       - name: "Install Tools"
-        run: |
-          ./.github/workflows/scripts/install-tools.sh
+        run: ./.github/workflows/scripts/install-tools.sh
       - name: "Run Tests"
         run: melos run test --no-select
 
   test_macos:
     runs-on: macos-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - name: "Install Flutter"
-        run: ./.github/workflows/scripts/install-flutter.sh stable
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
       - name: "Install Tools"
         run: ./.github/workflows/scripts/install-tools.sh
       - name: "Run Tests"
@@ -82,8 +83,9 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - name: "Install Flutter"
-        run: .\.github\workflows\scripts\install-flutter.bat stable
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
       - name: "Install Tools"
         run: .\.github\workflows\scripts\install-tools.bat
       - name: "Run Tests"

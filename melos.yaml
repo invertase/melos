@@ -37,4 +37,9 @@ scripts:
       MELOS_TEST: true
 
   format: dart format -o write .
+
+  format-check:
+    run: melos exec flutter format . --set-exit-if-changed
+    description: Run `flutter format` checks for all packages.
+
   version: dart run scripts/generate_version.dart
