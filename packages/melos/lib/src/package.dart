@@ -129,6 +129,7 @@ class PackageFilter {
     List<String> dependsOn = const [],
     List<String> noDependsOn = const [],
     this.updatedSince,
+    this.diff,
     this.includePrivatePackages,
     this.published,
     this.nullSafe,
@@ -155,6 +156,7 @@ class PackageFilter {
     required this.dependsOn,
     required this.noDependsOn,
     required this.updatedSince,
+    required this.diff,
     required this.includePrivatePackages,
     required this.published,
     required this.nullSafe,
@@ -182,6 +184,9 @@ class PackageFilter {
 
   /// Filter package based on whether they received changed since a specific git commit/tag ID.
   final String? updatedSince;
+
+  /// Filter package based on whether they received changed different between current branch and a specific git commit/tag ID.
+  final String? diff;
 
   /// Include/Exclude packages with `publish_to: none`.
   final bool? includePrivatePackages;
@@ -213,6 +218,7 @@ class PackageFilter {
       if (dependsOn.isNotEmpty) filterOptionDependsOn: dependsOn,
       if (noDependsOn.isNotEmpty) filterOptionNoDependsOn: noDependsOn,
       if (updatedSince != null) filterOptionSince: updatedSince,
+      if (diff != null) filterOptionDiff: diff,
       if (includePrivatePackages != null)
         filterOptionPrivate: includePrivatePackages,
       if (published != null) filterOptionPublished: published,
@@ -234,6 +240,7 @@ class PackageFilter {
       published: published,
       scope: scope,
       updatedSince: since,
+      diff: diff,
       includeDependencies: includeDependencies,
       includeDependents: includeDependents,
     );
@@ -251,6 +258,7 @@ class PackageFilter {
       published: published,
       scope: scope,
       updatedSince: updatedSince,
+      diff: diff,
       includeDependencies: includeDependencies,
       includeDependents: includeDependents,
     );
@@ -271,7 +279,8 @@ class PackageFilter {
       const DeepCollectionEquality().equals(other.fileExists, fileExists) &&
       const DeepCollectionEquality().equals(other.dependsOn, dependsOn) &&
       const DeepCollectionEquality().equals(other.noDependsOn, noDependsOn) &&
-      other.updatedSince == updatedSince;
+      other.updatedSince == updatedSince &&
+      other.diff == diff;
 
   @override
   int get hashCode =>
@@ -287,7 +296,8 @@ class PackageFilter {
       const DeepCollectionEquality().hash(fileExists) ^
       const DeepCollectionEquality().hash(dependsOn) ^
       const DeepCollectionEquality().hash(noDependsOn) ^
-      updatedSince.hashCode;
+      updatedSince.hashCode ^
+      diff.hashCode;
 
   @override
   String toString() {
@@ -305,6 +315,7 @@ PackageFilter(
   dependsOn: $dependsOn,
   noDependsOn: $noDependsOn,
   updatedSince: $updatedSince,
+  diff: $diff,
 )''';
   }
 }
@@ -443,7 +454,8 @@ The packages that caused the problem are:
         .applyNoDependsOn(filter.noDependsOn)
         .filterNullSafe(nullSafe: filter.nullSafe)
         .filterPublishedPackages(published: filter.published)
-        .then((packages) => packages.applySince(filter.updatedSince, _logger));
+        .then((packages) => packages.applySince(filter.updatedSince, _logger))
+        .then((packages) => packages.applyDiff(filter.diff, _logger));
 
     packageList = packageList.applyIncludeDependentsOrDependencies(
       includeDependents: filter.includeDependents,
@@ -551,6 +563,27 @@ extension on Iterable<Package> {
       return gitCommitsForPackage(package, since: since, logger: logger)
           .then((commits) async {
         if (commits.isNotEmpty) {
+          packagesFilteredWithGitCommitsSince.add(package);
+        }
+      });
+    }).drain<void>();
+
+    return packagesFilteredWithGitCommitsSince;
+  }
+
+  Future<Iterable<Package>> applyDiff(
+    String? diff,
+    MelosLogger logger,
+  ) async {
+    if (diff == null) return this;
+
+    final pool = Pool(10);
+    final packagesFilteredWithGitCommitsSince = <Package>[];
+
+    await pool.forEach<Package, void>(this, (package) {
+      return gitHasDiffInPackage(package, diff: diff, logger: logger)
+          .then((commits) async {
+        if (commits) {
           packagesFilteredWithGitCommitsSince.add(package);
         }
       });

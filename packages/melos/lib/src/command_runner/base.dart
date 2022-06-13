@@ -92,6 +92,13 @@ abstract class MelosCommand extends Command<void> {
           '`ref`, e.g. a commit sha or git tag.',
     );
 
+    argParser.addOption(
+      filterOptionDiff,
+      valueHelp: 'ref',
+      help: 'Only include packages that are different between current branch '
+          'and the specified `ref`, e.g. a commit sha or git tag.',
+    );
+
     argParser.addMultiOption(
       filterOptionDirExists,
       valueHelp: 'dirRelativeToPackageRoot',
@@ -149,6 +156,7 @@ abstract class MelosCommand extends Command<void> {
 
     final since =
         sinceEnabled ? argResults![filterOptionSince] as String? : null;
+    final diff = argResults![filterOptionDiff] as String?;
     final scope = argResults![filterOptionScope] as List<String>? ?? [];
     final ignore = argResults![filterOptionIgnore] as List<String>? ?? [];
 
@@ -161,6 +169,7 @@ abstract class MelosCommand extends Command<void> {
           .toList()
         ..addAll(config.ignore),
       updatedSince: since,
+      diff: diff,
       includePrivatePackages: argResults![filterOptionPrivate] as bool?,
       published: argResults![filterOptionPublished] as bool?,
       nullSafe: argResults![filterOptionNullsafety] as bool?,
