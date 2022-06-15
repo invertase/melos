@@ -185,7 +185,7 @@ class PackageFilter {
   /// Filter package based on whether they received changed since a specific git commit/tag ID.
   final String? updatedSince;
 
-  /// Filter package based on whether they received changed different between current branch and a specific git commit/tag ID.
+  /// Filter package based on whether they are different between specific git commit/tag ID.
   final String? diff;
 
   /// Include/Exclude packages with `publish_to: none`.

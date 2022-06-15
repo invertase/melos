@@ -351,8 +351,7 @@ Future<bool> gitHasDiffInPackage(
   required MelosLogger logger,
 }) async {
   logger.trace(
-    '[GIT] Getting diff for package ${package.name} between '
-    '@ and "$diff".',
+    '[GIT] Getting $diff diff for package ${package.name}.',
   );
 
   final processResult = await gitExecuteCommand(

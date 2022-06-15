@@ -95,8 +95,9 @@ abstract class MelosCommand extends Command<void> {
     argParser.addOption(
       filterOptionDiff,
       valueHelp: 'ref',
-      help: 'Only include packages that are different between current branch '
-          'and the specified `ref`, e.g. a commit sha or git tag.',
+      help: 'Only include packages that are different between current working '
+          'tree and the specified `ref`, e.g. a commit sha or git tag, '
+          'or between two different refs.',
     );
 
     argParser.addMultiOption(
