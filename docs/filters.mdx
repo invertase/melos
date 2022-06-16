@@ -52,6 +52,18 @@ Only include packages that have been changed since the specified `ref`, e.g. a c
 melos exec --since=<commit hash> -- flutter build ios
 ```
 
+## --diff
+
+Only include packages that are different between the current working tree and the specified `ref`, e.g. a commit sha or git tag, or between two different refs.
+
+```bash
+# Run `flutter build ios` on all packages that are different between current branch and the specified commit hash
+melos exec --diff=<commit hash> -- flutter build ios
+
+# Run `flutter build ios` on all packages that are different between remote `main` branch and HEAD
+melos exec --diff=origin/main...HEAD -- flutter build ios
+```
+
 ## --dir-exists
 
 Include only packages where a specific directory exists inside the package.
