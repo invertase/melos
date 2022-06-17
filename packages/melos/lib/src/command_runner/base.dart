@@ -89,7 +89,15 @@ abstract class MelosCommand extends Command<void> {
       filterOptionSince,
       valueHelp: 'ref',
       help: 'Only include packages that have been changed since the specified '
-          '`ref`, e.g. a commit sha or git tag.',
+          '`ref`, e.g. a commit sha or git tag. Cannot be used with --diff.',
+    );
+
+    argParser.addOption(
+      filterOptionDiff,
+      valueHelp: 'ref',
+      help: 'Only include packages that are different between current working '
+          'tree and the specified `ref`, e.g. a commit sha or git tag, '
+          'or between two different refs. Cannot be used with --since.',
     );
 
     argParser.addMultiOption(
@@ -149,6 +157,7 @@ abstract class MelosCommand extends Command<void> {
 
     final since =
         sinceEnabled ? argResults![filterOptionSince] as String? : null;
+    final diff = argResults![filterOptionDiff] as String?;
     final scope = argResults![filterOptionScope] as List<String>? ?? [];
     final ignore = argResults![filterOptionIgnore] as List<String>? ?? [];
 
@@ -161,6 +170,7 @@ abstract class MelosCommand extends Command<void> {
           .toList()
         ..addAll(config.ignore),
       updatedSince: since,
+      diff: diff,
       includePrivatePackages: argResults![filterOptionPrivate] as bool?,
       published: argResults![filterOptionPublished] as bool?,
       nullSafe: argResults![filterOptionNullsafety] as bool?,

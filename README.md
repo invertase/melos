@@ -40,11 +40,11 @@ To solve these (and many other) problems, some projects will organize their code
 To setup and use this melos mono repo locally for the purposes of contributing, clone it and run the following commands from the root of the repository:
 
 ```bash
-# Remove previous instances of melos:
-dart pub global deactivate melos
+# Install melos if it's not already installed:
+dart pub global activate melos
 
 # Activate 'melos' from path:
-dart pub global activate --source="path" . --executable="melos"
+melos activate
 
 # Confirm you now using a local development version:
 melos --help

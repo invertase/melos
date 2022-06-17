@@ -42,6 +42,7 @@ const filterOptionIgnore = 'ignore';
 const filterOptionDirExists = 'dir-exists';
 const filterOptionFileExists = 'file-exists';
 const filterOptionSince = 'since';
+const filterOptionDiff = 'diff';
 const filterOptionNullsafety = 'nullsafety';
 const filterOptionNoPrivate = 'no-private';
 const filterOptionPrivate = 'private';

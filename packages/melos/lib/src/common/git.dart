@@ -344,3 +344,27 @@ Future<bool> gitIsBehindUpstream({
 
   return isBehind;
 }
+
+Future<bool> gitHasDiffInPackage(
+  Package package, {
+  required String diff,
+  required MelosLogger logger,
+}) async {
+  logger.trace(
+    '[GIT] Getting $diff diff for package ${package.name}.',
+  );
+
+  final processResult = await gitExecuteCommand(
+    arguments: [
+      '--no-pager',
+      'diff',
+      '--name-status',
+      diff,
+      '--',
+      '.',
+    ],
+    workingDirectory: package.path,
+    logger: logger,
+  );
+  return (processResult.stdout as String).isNotEmpty;
+}

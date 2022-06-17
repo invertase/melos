@@ -277,6 +277,12 @@ class Script {
       path: filtersPath,
     );
 
+    final diff = assertIsA<String?>(
+      value: yaml[filterOptionDiff],
+      key: filterOptionDiff,
+      path: filtersPath,
+    );
+
     final excludePrivatePackagesTmp = assertIsA<bool?>(
       value: yaml[filterOptionNoPrivate],
       key: filterOptionNoPrivate,
@@ -329,6 +335,7 @@ class Script {
       dependsOn: dependsOn,
       noDependsOn: noDependsOn,
       updatedSince: updatedSince,
+      diff: diff,
       includePrivatePackages: includePrivatePackages,
       published: published,
       nullSafe: nullSafe,

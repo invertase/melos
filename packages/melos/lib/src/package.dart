@@ -27,6 +27,7 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
 
 import '../version.g.dart';
+import 'common/exception.dart';
 import 'common/git.dart';
 import 'common/glob.dart';
 import 'common/http.dart' as http;
@@ -129,6 +130,7 @@ class PackageFilter {
     List<String> dependsOn = const [],
     List<String> noDependsOn = const [],
     this.updatedSince,
+    this.diff,
     this.includePrivatePackages,
     this.published,
     this.nullSafe,
@@ -143,7 +145,9 @@ class PackageFilter {
         noDependsOn = [
           ...noDependsOn,
           if (flutter == false) 'flutter',
-        ];
+        ] {
+    _validate();
+  }
 
   /// A default constructor with **all** properties as requires, to ensure that
   /// copyWith functions properly copy all properties.
@@ -155,12 +159,15 @@ class PackageFilter {
     required this.dependsOn,
     required this.noDependsOn,
     required this.updatedSince,
+    required this.diff,
     required this.includePrivatePackages,
     required this.published,
     required this.nullSafe,
     required this.includeDependencies,
     required this.includeDependents,
-  });
+  }) {
+    _validate();
+  }
 
   /// Patterns for filtering packages by name.
   final List<Glob> scope;
@@ -183,6 +190,9 @@ class PackageFilter {
   /// Filter package based on whether they received changed since a specific git commit/tag ID.
   final String? updatedSince;
 
+  /// Filter package based on whether they are different between specific git commit/tag ID.
+  final String? diff;
+
   /// Include/Exclude packages with `publish_to: none`.
   final bool? includePrivatePackages;
 
@@ -202,6 +212,14 @@ class PackageFilter {
   /// This supersede other filters.
   final bool includeDependencies;
 
+  void _validate() {
+    if (updatedSince != null && diff != null) {
+      throw InvalidPackageFilterException(
+        'Cannot specify both updatedSince and diff.',
+      );
+    }
+  }
+
   Map<String, Object?> toJson() {
     return {
       if (scope.isNotEmpty)
@@ -213,6 +231,7 @@ class PackageFilter {
       if (dependsOn.isNotEmpty) filterOptionDependsOn: dependsOn,
       if (noDependsOn.isNotEmpty) filterOptionNoDependsOn: noDependsOn,
       if (updatedSince != null) filterOptionSince: updatedSince,
+      if (diff != null) filterOptionDiff: diff,
       if (includePrivatePackages != null)
         filterOptionPrivate: includePrivatePackages,
       if (published != null) filterOptionPublished: published,
@@ -234,6 +253,7 @@ class PackageFilter {
       published: published,
       scope: scope,
       updatedSince: since,
+      diff: diff,
       includeDependencies: includeDependencies,
       includeDependents: includeDependents,
     );
@@ -251,6 +271,7 @@ class PackageFilter {
       published: published,
       scope: scope,
       updatedSince: updatedSince,
+      diff: diff,
       includeDependencies: includeDependencies,
       includeDependents: includeDependents,
     );
@@ -271,7 +292,8 @@ class PackageFilter {
       const DeepCollectionEquality().equals(other.fileExists, fileExists) &&
       const DeepCollectionEquality().equals(other.dependsOn, dependsOn) &&
       const DeepCollectionEquality().equals(other.noDependsOn, noDependsOn) &&
-      other.updatedSince == updatedSince;
+      other.updatedSince == updatedSince &&
+      other.diff == diff;
 
   @override
   int get hashCode =>
@@ -287,7 +309,8 @@ class PackageFilter {
       const DeepCollectionEquality().hash(fileExists) ^
       const DeepCollectionEquality().hash(dependsOn) ^
       const DeepCollectionEquality().hash(noDependsOn) ^
-      updatedSince.hashCode;
+      updatedSince.hashCode ^
+      diff.hashCode;
 
   @override
   String toString() {
@@ -305,8 +328,18 @@ PackageFilter(
   dependsOn: $dependsOn,
   noDependsOn: $noDependsOn,
   updatedSince: $updatedSince,
+  diff: $diff,
 )''';
   }
+}
+
+class InvalidPackageFilterException extends MelosException {
+  InvalidPackageFilterException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => 'Invalid package filters: $message';
 }
 
 // Not using MapView to prevent map mutation
@@ -442,8 +475,17 @@ The packages that caused the problem are:
         .applyDependsOn(filter.dependsOn)
         .applyNoDependsOn(filter.noDependsOn)
         .filterNullSafe(nullSafe: filter.nullSafe)
-        .filterPublishedPackages(published: filter.published)
-        .then((packages) => packages.applySince(filter.updatedSince, _logger));
+        .filterPublishedPackages(published: filter.published);
+
+    final updatedSince = filter.updatedSince;
+    if (updatedSince != null) {
+      packageList = await packageList.applySince(updatedSince, _logger);
+    }
+
+    final diff = filter.diff;
+    if (diff != null) {
+      packageList = await packageList.applyDiff(diff, _logger);
+    }
 
     packageList = packageList.applyIncludeDependentsOrDependencies(
       includeDependents: filter.includeDependents,
@@ -551,6 +593,27 @@ extension on Iterable<Package> {
       return gitCommitsForPackage(package, since: since, logger: logger)
           .then((commits) async {
         if (commits.isNotEmpty) {
+          packagesFilteredWithGitCommitsSince.add(package);
+        }
+      });
+    }).drain<void>();
+
+    return packagesFilteredWithGitCommitsSince;
+  }
+
+  Future<Iterable<Package>> applyDiff(
+    String? diff,
+    MelosLogger logger,
+  ) async {
+    if (diff == null) return this;
+
+    final pool = Pool(10);
+    final packagesFilteredWithGitCommitsSince = <Package>[];
+
+    await pool.forEach<Package, void>(this, (package) {
+      return gitHasDiffInPackage(package, diff: diff, logger: logger)
+          .then((commits) async {
+        if (commits) {
           packagesFilteredWithGitCommitsSince.add(package);
         }
       });
