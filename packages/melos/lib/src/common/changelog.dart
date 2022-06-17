@@ -147,6 +147,7 @@ extension ChangelogStringBufferExtension on StringBuffer {
     final config = update.workspace.config;
     final repository = config.repository;
     final linkToCommits = config.commands.version.linkToCommits ?? false;
+    final includeCommitId = config.commands.version.includeCommitId ?? false;
 
     String processCommitHeader(String header) =>
         repository != null ? header.withIssueLinks(repository) : header;
@@ -178,11 +179,15 @@ extension ChangelogStringBufferExtension on StringBuffer {
           writePunctuated(processCommitHeader(parsedMessage.description!));
         }
 
-        if (linkToCommits) {
+        if (linkToCommits || includeCommitId) {
           final shortCommitId = commit.id.substring(0, 8);
           final commitUrl = repository!.commitUrl(commit.id);
           write(' (');
-          writeLink(shortCommitId, uri: commitUrl.toString());
+          if (linkToCommits) {
+            writeLink(shortCommitId, uri: commitUrl.toString());
+          } else {
+            write(shortCommitId);
+          }
           write(')');
         }
 

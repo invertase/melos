@@ -251,6 +251,7 @@ class VersionCommandConfigs {
   const VersionCommandConfigs({
     this.message,
     this.linkToCommits,
+    this.includeCommitId,
     this.branch,
     this.workspaceChangelog = false,
     this.updateGitTagRefs = false,
@@ -264,6 +265,11 @@ class VersionCommandConfigs {
     );
     final linkToCommits = assertKeyIsA<bool?>(
       key: 'linkToCommits',
+      map: yaml,
+      path: 'command/version',
+    );
+    final includeCommitId = assertKeyIsA<bool?>(
+      key: 'includeCommitId',
       map: yaml,
       path: 'command/version',
     );
@@ -288,6 +294,7 @@ class VersionCommandConfigs {
     return VersionCommandConfigs(
       branch: branch,
       linkToCommits: linkToCommits,
+      includeCommitId: includeCommitId,
       message: message,
       workspaceChangelog: workspaceChangelog ?? false,
       updateGitTagRefs: updateGitTagRefs ?? false,
@@ -301,6 +308,9 @@ class VersionCommandConfigs {
 
   /// Whether to add links to commits in the generated CHANGELOG.md.
   final bool? linkToCommits;
+
+  /// Whether to add commits ids in the generated CHANGELOG.md.
+  final bool? includeCommitId;
 
   /// Whether to also generate a CHANGELOG.md for the entire workspace at the root.
   final bool workspaceChangelog;
@@ -316,6 +326,7 @@ class VersionCommandConfigs {
     return {
       if (message != null) 'message': message,
       if (linkToCommits != null) 'linkToCommits': linkToCommits,
+      if (includeCommitId != null) 'includeCommitId': includeCommitId,
       if (branch != null) 'branch': branch,
       'workspaceChangelog': workspaceChangelog,
       'updateGitTagRefs': updateGitTagRefs,
@@ -328,6 +339,7 @@ class VersionCommandConfigs {
       runtimeType == other.runtimeType &&
       other.message == message &&
       other.linkToCommits == linkToCommits &&
+      other.includeCommitId == includeCommitId &&
       other.workspaceChangelog == workspaceChangelog &&
       other.updateGitTagRefs == updateGitTagRefs &&
       other.branch == branch;
@@ -337,6 +349,7 @@ class VersionCommandConfigs {
       runtimeType.hashCode ^
       message.hashCode ^
       linkToCommits.hashCode ^
+      includeCommitId.hashCode ^
       workspaceChangelog.hashCode ^
       updateGitTagRefs.hashCode ^
       branch.hashCode;
@@ -347,6 +360,7 @@ class VersionCommandConfigs {
 VersionCommandConfigs(
   message: $message,
   linkToCommits: $linkToCommits,
+  includeCommitId: $includeCommitId,
   workspaceChangelog: $workspaceChangelog,
   updateGitTagRefs: $updateGitTagRefs,
   branch: $branch,
