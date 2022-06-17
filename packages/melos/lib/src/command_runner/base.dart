@@ -89,7 +89,7 @@ abstract class MelosCommand extends Command<void> {
       filterOptionSince,
       valueHelp: 'ref',
       help: 'Only include packages that have been changed since the specified '
-          '`ref`, e.g. a commit sha or git tag.',
+          '`ref`, e.g. a commit sha or git tag. Cannot be used with --diff.',
     );
 
     argParser.addOption(
@@ -97,7 +97,7 @@ abstract class MelosCommand extends Command<void> {
       valueHelp: 'ref',
       help: 'Only include packages that are different between current working '
           'tree and the specified `ref`, e.g. a commit sha or git tag, '
-          'or between two different refs.',
+          'or between two different refs. Cannot be used with --since.',
     );
 
     argParser.addMultiOption(

@@ -27,6 +27,7 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
 
 import '../version.g.dart';
+import 'common/exception.dart';
 import 'common/git.dart';
 import 'common/glob.dart';
 import 'common/http.dart' as http;
@@ -144,7 +145,9 @@ class PackageFilter {
         noDependsOn = [
           ...noDependsOn,
           if (flutter == false) 'flutter',
-        ];
+        ] {
+    _validate();
+  }
 
   /// A default constructor with **all** properties as requires, to ensure that
   /// copyWith functions properly copy all properties.
@@ -162,7 +165,9 @@ class PackageFilter {
     required this.nullSafe,
     required this.includeDependencies,
     required this.includeDependents,
-  });
+  }) {
+    _validate();
+  }
 
   /// Patterns for filtering packages by name.
   final List<Glob> scope;
@@ -206,6 +211,14 @@ class PackageFilter {
   ///
   /// This supersede other filters.
   final bool includeDependencies;
+
+  void _validate() {
+    if (updatedSince != null && diff != null) {
+      throw InvalidPackageFilterException(
+        'Cannot specify both updatedSince and diff.',
+      );
+    }
+  }
 
   Map<String, Object?> toJson() {
     return {
@@ -318,6 +331,15 @@ PackageFilter(
   diff: $diff,
 )''';
   }
+}
+
+class InvalidPackageFilterException extends MelosException {
+  InvalidPackageFilterException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => 'Invalid package filters: $message';
 }
 
 // Not using MapView to prevent map mutation
@@ -453,9 +475,17 @@ The packages that caused the problem are:
         .applyDependsOn(filter.dependsOn)
         .applyNoDependsOn(filter.noDependsOn)
         .filterNullSafe(nullSafe: filter.nullSafe)
-        .filterPublishedPackages(published: filter.published)
-        .then((packages) => packages.applySince(filter.updatedSince, _logger))
-        .then((packages) => packages.applyDiff(filter.diff, _logger));
+        .filterPublishedPackages(published: filter.published);
+
+    final updatedSince = filter.updatedSince;
+    if (updatedSince != null) {
+      packageList = await packageList.applySince(updatedSince, _logger);
+    }
+
+    final diff = filter.diff;
+    if (diff != null) {
+      packageList = await packageList.applyDiff(diff, _logger);
+    }
 
     packageList = packageList.applyIncludeDependentsOrDependencies(
       includeDependents: filter.includeDependents,
