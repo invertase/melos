@@ -10,6 +10,7 @@ import 'package:test/test.dart';
 
 import '../matchers.dart';
 import '../utils.dart';
+import '../workspace_config_test.dart';
 
 io.Directory createTmpDir() {
   final dir = io.Directory.systemTemp.createTempSync();
@@ -570,6 +571,58 @@ e-       └> Failed to install.
 
 Resolving dependencies...
 e-Because a depends on package_that_does_not_exists any which doesn't exist (could not find package package_that_does_not_exists at https://pub.dartlang.org), version solving failed.
+''',
+        ),
+      );
+    });
+
+    test('can run pub get offline', () async {
+      final workspaceDir = createTemporaryWorkspaceDirectory(
+        configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
+          createYamlMap(
+            {
+              'command': {
+                'bootstrap': {
+                  'runPubGetOffline': true,
+                },
+              },
+            },
+            defaults: configMapDefaults,
+          ),
+          path: path,
+        ),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final workspace = await MelosWorkspace.fromConfig(
+        config,
+        logger: logger.toMelosLogger(),
+      );
+      final melos = Melos(logger: logger, config: config);
+      final pubExecArgs = pubCommandExecArgs(
+        useFlutter: workspace.isFlutterWorkspace,
+        workspace: workspace,
+      );
+
+      await runMelosBootstrap(melos, logger);
+
+      expect(
+        logger.output,
+        ignoringAnsii(
+          '''
+melos bootstrap
+  └> ${workspaceDir.path}
+
+Running "${pubExecArgs.join(' ')} get --offline" in workspace packages...
+
+Linking workspace packages...
+  > SUCCESS
+
+Generating IntelliJ IDE files...
+  > SUCCESS
+
+ -> 0 packages bootstrapped
 ''',
         ),
       );
