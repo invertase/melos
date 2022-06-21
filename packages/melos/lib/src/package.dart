@@ -414,7 +414,7 @@ class PackageMap {
         final resolvedPath = await entity.resolveSymbolicLinks();
         pubspecsByResolvedPath[resolvedPath] = entity;
       } else if (entity is Directory &&
-          isPackageDirectory(entity) &&
+          isPackageDirectory(entity.path) &&
           isIncluded) {
         final pubspecPath = p.join(path, 'pubspec.yaml');
         pubspecsByResolvedPath[pubspecPath] = File(pubspecPath);
