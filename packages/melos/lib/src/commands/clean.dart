@@ -28,9 +28,7 @@ mixin _CleanMixin on _Melos {
   }
 
   void cleanWorkspace(MelosWorkspace workspace) {
-    if (dirExists(workspace.melosToolPath)) {
-      deleteEntry(workspace.melosToolPath);
-    }
+    deleteEntry(workspace.melosToolPath);
   }
 
   Future<void> _cleanPackage(Package package) async {
@@ -66,9 +64,9 @@ mixin _CleanMixin on _Melos {
         currentDirectoryPath: workspace.path,
       );
 
-      await for (final melosYmlFile
+      await for (final melosXmlFile
           in melosXmlGlob.listFileSystem(const LocalFileSystem())) {
-        deleteEntry(melosYmlFile.path);
+        deleteEntry(melosXmlFile.path);
       }
     }
   }

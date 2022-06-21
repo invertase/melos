@@ -58,7 +58,7 @@ void writeTextFile(
   if (recursive) {
     fileObject.createSync(recursive: true);
   }
-  File(file).writeAsStringSync(contents, encoding: encoding);
+  fileObject.writeAsStringSync(contents, encoding: encoding);
 }
 
 /// Creates [file] and writes [contents] to it.

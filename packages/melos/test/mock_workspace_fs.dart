@@ -109,9 +109,11 @@ ${_yamlMap(package.dependencyOverridesMap, indent: 2)}
 ''',
   );
 
-  final packagePath = join(workspaceRoot, package.path);
-  final pubspecPath = join(packagePath, 'pubspec.yaml');
-  writeTextFile(pubspecPath, pubspec.toString(), recursive: true);
+  writeTextFile(
+    join(workspaceRoot, package.path, 'pubspec.yaml'),
+    pubspec.toString(),
+    recursive: true,
+  );
 }
 
 String _yamlStringList(Iterable<String> elements) {
