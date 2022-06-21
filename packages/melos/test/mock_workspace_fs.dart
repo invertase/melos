@@ -16,6 +16,7 @@
 
 import 'dart:io';
 
+import 'package:melos/src/common/io.dart';
 import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
 
@@ -68,27 +69,20 @@ void _createMelosConfig(
   Iterable<String> workspacePackagesGlobs, {
   required bool? intellij,
 }) {
-  final melosYaml = File(join(workspaceRoot, 'melos.yaml'));
-
-  melosYaml.createSync(recursive: true);
-
-  melosYaml.writeAsStringSync(
-    '''
+  var contents = '''
 name: $workspaceName
 packages:
 ${_yamlStringList(workspacePackagesGlobs)}
-''',
-  );
+''';
 
   if (intellij != null) {
-    melosYaml.writeAsStringSync(
-      '''
+    contents += '''
 ide:
   intellij: $intellij
-''',
-      mode: FileMode.append,
-    );
+''';
   }
+
+  writeTextFile(join(workspaceRoot, 'melos.yaml'), contents, recursive: true);
 }
 
 void _createPackage(MockPackageFs package, String workspaceRoot) {
@@ -115,9 +109,9 @@ ${_yamlMap(package.dependencyOverridesMap, indent: 2)}
 ''',
   );
 
-  File(join(workspaceRoot, package.path, 'pubspec.yaml'))
-    ..createSync(recursive: true)
-    ..writeAsStringSync(pubspec.toString());
+  final packagePath = join(workspaceRoot, package.path);
+  final pubspecPath = join(packagePath, 'pubspec.yaml');
+  writeTextFile(pubspecPath, pubspec.toString(), recursive: true);
 }
 
 String _yamlStringList(Iterable<String> elements) {

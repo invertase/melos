@@ -28,8 +28,8 @@ mixin _CleanMixin on _Melos {
   }
 
   void cleanWorkspace(MelosWorkspace workspace) {
-    if (Directory(workspace.melosToolPath).existsSync()) {
-      Directory(workspace.melosToolPath).deleteSync(recursive: true);
+    if (dirExists(workspace.melosToolPath)) {
+      deleteEntry(workspace.melosToolPath);
     }
   }
 
@@ -40,31 +40,27 @@ mixin _CleanMixin on _Melos {
     ];
 
     for (final generatedPubFilePath in pathsToClean) {
-      final file = File(join(package.path, generatedPubFilePath));
-      if (file.existsSync()) {
-        await file.delete(recursive: true);
-      }
+      deleteEntry(join(package.path, generatedPubFilePath));
     }
 
     // Remove any Melos generated dependency overrides from
     // `pubspec_overrides.yaml`.
-    final pubspecOverridesFile =
-        File(join(package.path, 'pubspec_overrides.yaml'));
-    if (pubspecOverridesFile.existsSync()) {
-      final contents = await pubspecOverridesFile.readAsString();
+    final pubspecOverridesFile = join(package.path, 'pubspec_overrides.yaml');
+    if (fileExists(pubspecOverridesFile)) {
+      final contents = await readTextFileAsync(pubspecOverridesFile);
       final updatedContents = mergeMelosPubspecOverrides({}, contents);
       if (updatedContents != null) {
         if (updatedContents.isEmpty) {
-          await pubspecOverridesFile.delete();
+          deleteEntry(pubspecOverridesFile);
         } else {
-          await pubspecOverridesFile.writeAsString(updatedContents);
+          await writeTextFileAsync(pubspecOverridesFile, updatedContents);
         }
       }
     }
   }
 
   Future<void> cleanIntelliJ(MelosWorkspace workspace) async {
-    if (workspace.ide.intelliJ.runConfigurationsDir.existsSync()) {
+    if (dirExists(workspace.ide.intelliJ.runConfigurationsDir.path)) {
       final melosXmlGlob = createGlob(
         join(workspace.ide.intelliJ.runConfigurationsDir.path, 'melos_*.xml'),
         currentDirectoryPath: workspace.path,
@@ -72,7 +68,7 @@ mixin _CleanMixin on _Melos {
 
       await for (final melosYmlFile
           in melosXmlGlob.listFileSystem(const LocalFileSystem())) {
-        await melosYmlFile.delete();
+        deleteEntry(melosYmlFile.path);
       }
     }
   }

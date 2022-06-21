@@ -22,6 +22,7 @@ import 'package:path/path.dart' show join, joinAll;
 import '../common/utils.dart' as utils;
 import '../package.dart';
 import '../workspace.dart';
+import 'io.dart';
 import 'platform.dart';
 
 const String _kTemplatesDirName = 'templates';
@@ -131,9 +132,8 @@ class IntellijProject {
       templatesRootPath = await pathTemplates;
     }
 
-    final templateFile =
-        File(joinAll([templatesRootPath, '$fileName$_kTmplExtension']));
-    final template = await templateFile.readAsString();
+    final templateFile = join(templatesRootPath, '$fileName$_kTmplExtension');
+    final template = await readTextFileAsync(templateFile);
 
     _cacheTemplates[fileName] = template;
 
@@ -141,9 +141,7 @@ class IntellijProject {
   }
 
   Future<void> forceWriteToFile(String filePath, String fileContents) async {
-    final outputFile = File(filePath);
-    await outputFile.create(recursive: true);
-    await outputFile.writeAsString(fileContents);
+    await writeTextFileAsync(filePath, fileContents, recursive: true);
   }
 
   /// Create a .name file using the workspace name.

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:cli_util/cli_logging.dart';
 import 'package:http/http.dart' as http;
 import 'package:melos/melos.dart';
+import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/yamlicious/yaml_writer.dart';
 import 'package:mockito/mockito.dart';
@@ -75,17 +76,16 @@ Directory createTemporaryWorkspaceDirectory({
 }) {
   configBuilder ??= (path) => MelosWorkspaceConfig.fallback(path: path);
 
-  final dir =
-      Directory(join(Directory.current.path, '.dart_tool')).createTempSync();
-  addTearDown(() => dir.delete(recursive: true));
+  final dir = createTempDir(join(Directory.current.path, '.dart_tool'));
+  addTearDown(() => deleteEntry(dir));
   final path = currentPlatform.isWindows
-      ? windows.normalize(dir.path).replaceAll(r'\', r'\\')
-      : dir.path;
+      ? windows.normalize(dir).replaceAll(r'\', r'\\')
+      : dir;
   final config = (configBuilder(path)..validatePhysicalWorkspace()).toJson();
 
-  File(join(path, 'melos.yaml')).writeAsStringSync(toYamlString(config));
+  writeTextFile(join(path, 'melos.yaml'), toYamlString(config));
 
-  return dir;
+  return Directory(dir);
 }
 
 Future<Directory> createProject(
@@ -118,7 +118,7 @@ Future<Directory> createProject(
     ]),
   );
 
-  projectDirectory.createSync(recursive: true);
+  ensureDir(projectDirectory.path);
 
   await pubSpec.save(projectDirectory);
 
@@ -136,15 +136,15 @@ Future<Directory> createProject(
     final pluginClass = androidPluginNode['pluginClass'] as String?;
 
     if (package != null && pluginClass != null) {
-      final javaMainClassFile = File(
-        joinAll([
-          projectDirectory.path,
-          'android/src/main/java',
-          ...package.split('.'),
-          '$pluginClass.java',
-        ]),
-      );
-      javaMainClassFile.createSync(recursive: true);
+      final javaMainClassFile = joinAll([
+        projectDirectory.path,
+        'android/src/main/java',
+        ...package.split('.'),
+        '$pluginClass.java',
+      ]);
+      if (!fileExists(javaMainClassFile)) {
+        writeTextFile(javaMainClassFile, '', recursive: true);
+      }
     }
   }
 
@@ -152,13 +152,13 @@ Future<Directory> createProject(
 }
 
 PackageConfig packageConfigForPackageAt(Directory dir) {
-  final source = File(
+  final source = readTextFile(
     join(
       dir.path,
       '.dart_tool',
       'package_config.json',
     ),
-  ).readAsStringSync();
+  );
 
   return PackageConfig.fromJson(json.decode(source) as Map);
 }
@@ -222,7 +222,7 @@ PubSpec pubSpecFromJsonFile({
   required String fileName,
 }) {
   final filePath = '$path$fileName';
-  final jsonAsString = File(filePath).readAsStringSync();
+  final jsonAsString = readTextFile(filePath);
   return PubSpec.fromJson(json.decode(jsonAsString) as Map);
 }
 

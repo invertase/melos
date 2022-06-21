@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/glob.dart';
+import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:melos/src/scripts.dart';
@@ -40,7 +39,7 @@ void main() {
           workspaceDir,
           const PubSpec(name: 'a'),
         );
-        File(join(aDir.path, 'log.txt')).createSync();
+        writeTextFile(join(aDir.path, 'log.txt'), '');
 
         await createProject(
           workspaceDir,

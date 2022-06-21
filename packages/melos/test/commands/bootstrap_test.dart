@@ -2,6 +2,7 @@ import 'dart:io' as io;
 
 import 'package:melos/melos.dart';
 import 'package:melos/src/commands/runner.dart';
+import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
@@ -11,10 +12,10 @@ import 'package:test/test.dart';
 import '../matchers.dart';
 import '../utils.dart';
 
-io.Directory createTmpDir() {
-  final dir = io.Directory.systemTemp.createTempSync();
-  addTearDown(() => dir.delete(recursive: true));
-  return dir;
+io.Directory createTestTempDir() {
+  final dir = createTempDir(io.Directory.systemTemp.path);
+  addTearDown(() => deleteEntry(dir));
+  return io.Directory(dir);
 }
 
 void main() {
@@ -22,10 +23,10 @@ void main() {
     test(
         'supports path dependencies in the pubspec for dependencies that '
         'are not part of the workspace', () async {
-      final absoluteDir = createTmpDir();
-      final relativeDir = createTmpDir();
-      final relativeOverrideDir = createTmpDir();
-      final relativeDevDir = createTmpDir();
+      final absoluteDir = createTestTempDir();
+      final relativeDir = createTestTempDir();
+      final relativeOverrideDir = createTestTempDir();
+      final relativeDevDir = createTestTempDir();
 
       final absoluteProject = await createProject(
         absoluteDir,

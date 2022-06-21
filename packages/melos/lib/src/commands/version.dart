@@ -345,8 +345,8 @@ mixin _VersionMixin on _RunMixin {
     Package package,
     Version version,
   ) async {
-    final pubspec = File(pubspecPathForDirectory(Directory(package.path)));
-    final contents = await pubspec.readAsString();
+    final pubspec = pubspecPathForDirectory(package.path);
+    final contents = await readTextFileAsync(pubspec);
 
     final updatedContents =
         contents.replaceAllMapped(versionReplaceRegex, (match) {
@@ -364,7 +364,7 @@ mixin _VersionMixin on _RunMixin {
       return;
     }
 
-    await pubspec.writeAsString(updatedContents);
+    await writeTextFileAsync(pubspec, updatedContents);
   }
 
   Future<void> _setDependentPackageVersionConstraint(
@@ -451,8 +451,8 @@ mixin _VersionMixin on _RunMixin {
       return;
     }
 
-    final pubspec = File(pubspecPathForDirectory(Directory(package.path)));
-    final contents = await pubspec.readAsString();
+    final pubspec = pubspecPathForDirectory(package.path);
+    final contents = await readTextFileAsync(pubspec);
 
     final isExternalHostedReference = package
             .pubSpec.dependencies[dependencyName] is ExternalHostedReference ||
@@ -493,7 +493,7 @@ mixin _VersionMixin on _RunMixin {
       return;
     }
 
-    await pubspec.writeAsString(updatedContents);
+    await writeTextFileAsync(pubspec, updatedContents);
   }
 
   void _logNewVersionTable(

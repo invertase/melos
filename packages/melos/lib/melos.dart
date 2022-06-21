@@ -9,6 +9,7 @@ export 'src/commands/runner.dart'
         ScriptNotFoundException,
         ListOutputKind;
 export 'src/common/exception.dart' show CancelledException, MelosException;
+export 'src/common/io.dart' show IOException;
 export 'src/common/validation.dart' show MelosConfigException;
 export 'src/global_options.dart' show GlobalOptions;
 export 'src/logging.dart' show MelosLogger, ToMelosLoggerExtension;
