@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2022-06-21
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v2.5.0`](#melos---v250)
+
+---
+
+#### `melos` - `v2.5.0`
+
+ - **FIX**: follow up [#330](https://github.com/invertase/melos/issues/330) ([#331](https://github.com/invertase/melos/issues/331)). ([f6eec0a2](https://github.com/invertase/melos/commit/f6eec0a295c186715a68ee5b6ee96f32de2184e9))
+ - **FIX**: find packages in matched directories ([#330](https://github.com/invertase/melos/issues/330)). ([c7be5235](https://github.com/invertase/melos/commit/c7be523517155ab0a4221e3bf95474cd2cea17a3))
+ - **FIX**: make file IO more robust ([#329](https://github.com/invertase/melos/issues/329)). ([dfd877d6](https://github.com/invertase/melos/commit/dfd877d62b607cf5c2c482c5a9719e4d5523606a))
+ - **FIX**: handle `UsageException` ([#328](https://github.com/invertase/melos/issues/328)). ([c187f9d9](https://github.com/invertase/melos/commit/c187f9d99197d3549b3da9b9612509317f03171a))
+ - **FEAT**: add `runPubGetOffline` option ([#326](https://github.com/invertase/melos/issues/326)). ([8358a5a1](https://github.com/invertase/melos/commit/8358a5a11b55a81e1a01b31fe1931f7ba88c07e0))
+ - **FEAT**: add includeCommitId option ([#325](https://github.com/invertase/melos/issues/325)). ([e981adf7](https://github.com/invertase/melos/commit/e981adf72f2a53181f184239f592781c728616cb))
+ - **FEAT**: add --diff filter ([#323](https://github.com/invertase/melos/issues/323)). ([2f6545f6](https://github.com/invertase/melos/commit/2f6545f658a2eabc50ab7c68f47326588d6eeb2c))
+
+
 ## 2022-06-10
 
 ### Changes
