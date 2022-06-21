@@ -151,6 +151,104 @@ The packages that caused the problem are:
       );
     });
 
+    group('locate packages', () {
+      group('in workspace root', () {
+        test('by matching pubspec.yaml', () async {
+          final workspaceDir = createTemporaryWorkspaceDirectory(
+            configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
+              const {
+                'name': 'test',
+                'packages': ['*']
+              },
+              path: path,
+            ),
+          );
+
+          await createProject(
+            workspaceDir,
+            const PubSpec(name: 'a'),
+            path: '.',
+          );
+
+          final workspace = await MelosWorkspace.fromConfig(
+            await MelosWorkspaceConfig.fromDirectory(workspaceDir),
+            logger: TestLogger().toMelosLogger(),
+          );
+
+          expect(workspace.allPackages['a'], isNotNull);
+        });
+
+        test('by matching package directory', () async {
+          final workspaceDir = createTemporaryWorkspaceDirectory(
+            configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
+              const {
+                'name': 'test',
+                'packages': ['.']
+              },
+              path: path,
+            ),
+          );
+
+          await createProject(
+            workspaceDir,
+            const PubSpec(name: 'a'),
+            path: '.',
+          );
+
+          final workspace = await MelosWorkspace.fromConfig(
+            await MelosWorkspaceConfig.fromDirectory(workspaceDir),
+            logger: TestLogger().toMelosLogger(),
+          );
+
+          expect(workspace.allPackages['a'], isNotNull);
+        });
+      });
+
+      group('in child directory', () {
+        test('by matching pubspec.yaml', () async {
+          final workspaceDir = createTemporaryWorkspaceDirectory(
+            configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
+              const {
+                'name': 'test',
+                'packages': ['packages/a/*']
+              },
+              path: path,
+            ),
+          );
+
+          await createProject(workspaceDir, const PubSpec(name: 'a'));
+
+          final workspace = await MelosWorkspace.fromConfig(
+            await MelosWorkspaceConfig.fromDirectory(workspaceDir),
+            logger: TestLogger().toMelosLogger(),
+          );
+
+          expect(workspace.allPackages['a'], isNotNull);
+        });
+
+        test('by matching package directory', () async {
+          final workspaceDir = createTemporaryWorkspaceDirectory(
+            configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
+              const {
+                'name': 'test',
+                'packages': ['packages/a']
+              },
+              path: path,
+            ),
+          );
+
+          await createProject(workspaceDir, const PubSpec(name: 'a'));
+
+          final workspace = await MelosWorkspace.fromConfig(
+            await MelosWorkspaceConfig.fromDirectory(workspaceDir),
+            logger: TestLogger().toMelosLogger(),
+          );
+
+          expect(workspace.allPackages['a'], isNotNull);
+        });
+      });
+    });
+
     group('sdkPath', () {
       test('use SDK path from environment variable', () async {
         withMockPlatform(

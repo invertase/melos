@@ -550,10 +550,11 @@ You must have one of the following to be a valid Melos workspace:
   /// The hosted git repository which contains the workspace.
   final HostedGitRepository? repository;
 
-  /// A list of paths to packages that are included in the melos workspace.
+  /// A list of [Glob]s for paths that should be searched for packages.
   final List<Glob> packages;
 
-  /// A list of paths to exclude from the melos workspace.
+  /// A list of [Glob]s for paths that should be excluded from the search for
+  /// packages.
   final List<Glob> ignore;
 
   /// A list of scripts that can be executed with `melos run` or will be executed

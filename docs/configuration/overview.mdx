@@ -53,15 +53,17 @@ sdkPath: .fvm/flutter_sdk
 
 > required
 
-A list of local packages Melos will use to execute commands against. The list can be
-of specific paths or a [glob](https://docs.python.org/3/library/glob.html) pattern expansion format.
+A list of paths to local packages that are included in the Melos workspace. Each entry can be
+specific path or a [glob] pattern.
 
 ```yaml
 packages:
-  # e.g. all packages inside the /packages directory
+  # e.g. include all packages inside the `packages` directory at any level
   - packages/**
-  # e.g. including the workspace root as a package
-  - "*"
+  # e.g. include all packages inside the `packages` directory that are direct children
+  - packages/*
+  # e.g. include the package in the workspace root
+  - .
 ```
 
 > You can also reduce the scope of packages on a per-command basis via the [`--scope` filter](/filters#scope) flag.
@@ -70,13 +72,13 @@ packages:
 
 > required
 
-A list of local packages Melos will ignore when executing commands in the workspace. The list can be
-of specific paths or a [glob](https://docs.python.org/3/library/glob.html) pattern expansion format.
+A list of paths to local packages that are exluded from the Melos workspace. Each entry can be
+specific path or a [glob] pattern.
 
 ```yaml
 ignore:
   # e.g. ignore example apps
-  - "packages/**/*example"
+  - "packages/**/example"
 ```
 
 > You can also expand the scope of ignored packages on a per-command basis via the [`--scope` filter](/filters#scope) flag.
@@ -195,3 +197,5 @@ command:
   version:
     updateGitTagRefs: true
 ```
+
+[glob]: https://docs.python.org/3/library/glob.html

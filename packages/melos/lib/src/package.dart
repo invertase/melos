@@ -22,6 +22,7 @@ import 'dart:io';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:path/path.dart';
+import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
@@ -388,23 +389,34 @@ class PackageMap {
     );
 
     final pubspecsByResolvedPath = <String, File>{};
-    await for (final entity
-        in Directory(workspacePath).listConditionallyRecursive(
-      recurseCondition: (dir) {
-        final path = dir.path;
-        return !dartToolGlob.matches(path) &&
-            !symlinksPluginsGlob.matches(path) &&
-            !fvmGlob.matches(path) &&
-            !pluginSymlinksGlob.matches(path);
-      },
-    )) {
+
+    Stream<FileSystemEntity> allWorkspaceEntities() async* {
+      final workspaceDir = Directory(workspacePath);
+      yield workspaceDir;
+      yield* workspaceDir.listConditionallyRecursive(
+        recurseCondition: (dir) {
+          final path = dir.path;
+          return !dartToolGlob.matches(path) &&
+              !symlinksPluginsGlob.matches(path) &&
+              !fvmGlob.matches(path) &&
+              !pluginSymlinksGlob.matches(path);
+        },
+      );
+    }
+
+    await for (final entity in allWorkspaceEntities()) {
       final path = entity.path;
-      if (entity is File &&
-          basename(path) == 'pubspec.yaml' &&
-          packages.any((glob) => glob.matches(path)) &&
-          !ignore.any((glob) => glob.matches(path))) {
+      late final isIncluded = packages.any((glob) => glob.matches(path)) &&
+          !ignore.any((glob) => glob.matches(path));
+
+      if (entity is File && basename(path) == 'pubspec.yaml' && isIncluded) {
         final resolvedPath = await entity.resolveSymbolicLinks();
         pubspecsByResolvedPath[resolvedPath] = entity;
+      } else if (entity is Directory &&
+          isPackageDirectory(entity) &&
+          isIncluded) {
+        final pubspecPath = p.join(path, 'pubspec.yaml');
+        pubspecsByResolvedPath[pubspecPath] = File(pubspecPath);
       }
     }
 
