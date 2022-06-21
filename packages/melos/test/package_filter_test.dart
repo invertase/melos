@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:melos/melos.dart';
+import 'package:melos/src/common/io.dart';
 import 'package:path/path.dart';
 import 'package:pubspec/pubspec.dart';
 import 'package:test/test.dart';
@@ -16,7 +15,7 @@ void main() {
         workspaceDir,
         const PubSpec(name: 'a'),
       );
-      Directory(join(aDir.path, 'test')).createSync();
+      ensureDir(join(aDir.path, 'test'));
 
       await createProject(
         workspaceDir,
@@ -52,7 +51,7 @@ void main() {
         workspaceDir,
         const PubSpec(name: 'a'),
       );
-      File(join(aDir.path, 'log.txt')).createSync();
+      writeTextFile(join(aDir.path, 'log.txt'), '');
 
       await createProject(
         workspaceDir,

@@ -15,13 +15,12 @@
  *
  */
 
-import 'dart:io';
-
 import 'package:path/path.dart';
 
 import '../logging.dart';
 import '../workspace.dart';
 import 'changelog.dart';
+import 'io.dart';
 import 'pending_package_update.dart';
 
 class WorkspaceChangelog {
@@ -151,10 +150,8 @@ class WorkspaceChangelog {
   }
 
   Future<String> read() async {
-    final file = File(path);
-    final exists = file.existsSync();
-    if (exists) {
-      final contents = await file.readAsString();
+    if (fileExists(path)) {
+      final contents = await readTextFileAsync(path);
       return contents.replaceFirst(_changelogFileHeader, '');
     }
     return '';
@@ -170,6 +167,6 @@ class WorkspaceChangelog {
     }
     contents = '$markdown$contents';
 
-    await File(path).writeAsString(contents);
+    await writeTextFileAsync(path, contents);
   }
 }

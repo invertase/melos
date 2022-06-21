@@ -42,20 +42,19 @@ mixin _ExecMixin on _Melos {
 
     // TODO what if it's not called 'example'?
     if (package.path.endsWith('example')) {
-      final exampleParentPackagePath = Directory(package.path).parent.path;
-      final exampleParentPubspecFile = File(
-        '$exampleParentPackagePath${currentPlatform.pathSeparator}pubspec.yaml',
-      );
+      final exampleParentPackagePath = p.normalize('${package.path}/..');
+      final exampleParentPubspecPath =
+          p.normalize('$exampleParentPackagePath/pubspec.yaml');
 
-      if (exampleParentPubspecFile.existsSync()) {
-        final exampleParentPackage =
-            await PubSpec.load(exampleParentPubspecFile.parent);
+      if (fileExists(exampleParentPubspecPath)) {
+        final exampleParentPackage = PubSpec.fromYamlString(
+          await readTextFileAsync(exampleParentPubspecPath),
+        );
 
         environment['MELOS_PARENT_PACKAGE_NAME'] = exampleParentPackage.name!;
         environment['MELOS_PARENT_PACKAGE_VERSION'] =
             (exampleParentPackage.version ?? Version.none).toString();
-        environment['MELOS_PARENT_PACKAGE_PATH'] =
-            exampleParentPubspecFile.parent.path;
+        environment['MELOS_PARENT_PACKAGE_PATH'] = exampleParentPackagePath;
       }
     }
     if (environment.containsKey('MELOS_TEST')) {

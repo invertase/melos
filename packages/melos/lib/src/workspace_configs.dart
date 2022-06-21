@@ -24,6 +24,7 @@ import 'package:path/path.dart';
 
 import 'common/git_repository.dart';
 import 'common/glob.dart';
+import 'common/io.dart';
 import 'common/platform.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
@@ -522,7 +523,7 @@ class MelosWorkspaceConfig {
     for (var testedDirectory = from;
         testedDirectory.path != testedDirectory.parent.path;
         testedDirectory = testedDirectory.parent) {
-      if (isWorkspaceDirectory(testedDirectory)) {
+      if (isWorkspaceDirectory(testedDirectory.path)) {
         return testedDirectory;
       }
     }
@@ -542,10 +543,9 @@ class MelosWorkspaceConfig {
     if (melosWorkspaceDirectory == null) {
       // Allow melos to use a project without a `melos.yaml` file if a `packages`
       // directory exists.
-      final packagesDirectory =
-          Directory(joinAll([directory.path, 'packages']));
+      final packagesDirectory = joinAll([directory.path, 'packages']);
 
-      if (packagesDirectory.existsSync()) {
+      if (dirExists(packagesDirectory)) {
         return MelosWorkspaceConfig.fallback(path: directory.path)
           ..validatePhysicalWorkspace();
       }
@@ -561,7 +561,8 @@ You must have one of the following to be a valid Melos workspace:
       );
     }
 
-    final melosYamlPath = melosYamlPathForDirectory(melosWorkspaceDirectory);
+    final melosYamlPath =
+        melosYamlPathForDirectory(melosWorkspaceDirectory.path);
     final yamlContents = await loadYamlFile(melosYamlPath);
 
     if (yamlContents == null) {
@@ -625,8 +626,7 @@ You must have one of the following to be a valid Melos workspace:
 
   /// Validates the physical workspace on the file system.
   void validatePhysicalWorkspace() {
-    final workspaceDir = Directory(path);
-    if (!workspaceDir.existsSync()) {
+    if (!dirExists(path)) {
       throw MelosConfigException(
         'The path $path does not point to a directory',
       );

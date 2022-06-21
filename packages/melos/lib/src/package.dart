@@ -31,6 +31,7 @@ import 'common/exception.dart';
 import 'common/git.dart';
 import 'common/glob.dart';
 import 'common/http.dart' as http;
+import 'common/io.dart';
 import 'common/platform.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
@@ -517,9 +518,7 @@ extension on Iterable<Package> {
     return where((package) {
       return directoryPaths.every((dirExistsPath) {
         // TODO(rrousselGit): should support environment variables
-        final dir = Directory(join(package.path, dirExistsPath));
-
-        return dir.existsSync();
+        return dirExists(join(package.path, dirExistsPath));
       });
     });
   }
@@ -534,7 +533,7 @@ extension on Iterable<Package> {
         final _fileExistsPath =
             fileExistsPath.replaceAll(r'$MELOS_PACKAGE_NAME', package.name);
 
-        return File(join(package.path, _fileExistsPath)).existsSync();
+        return fileExists(join(package.path, _fileExistsPath));
       });
       return fileExistsMatched;
     });
@@ -847,11 +846,11 @@ class Package {
         join(workspace.melosToolPath, pathRelativeToWorkspace);
 
     await Future.forEach(generatedPubFilePaths, (String tempFilePath) async {
-      final fileToCopy = File(join(pluginTemporaryPath, tempFilePath));
-      if (!fileToCopy.existsSync()) {
+      final fileToCopy = join(pluginTemporaryPath, tempFilePath);
+      if (!fileExists(fileToCopy)) {
         return;
       }
-      var temporaryFileContents = await fileToCopy.readAsString();
+      var temporaryFileContents = await readTextFileAsync(fileToCopy);
 
       // Ensure the file generator tool name and version is for 'melos'.
       if (tempFilePath.endsWith('package_config.json')) {
@@ -878,9 +877,11 @@ class Package {
       temporaryFileContents =
           temporaryFileContents.replaceAll(melosToolPathRegExp, '');
 
-      final fileToCreate = File(join(path, tempFilePath));
-      await fileToCreate.create(recursive: true);
-      await fileToCreate.writeAsString(temporaryFileContents);
+      await writeTextFileAsync(
+        join(path, tempFilePath),
+        temporaryFileContents,
+        recursive: true,
+      );
     });
   }
 
@@ -896,7 +897,7 @@ class Package {
     // Must not have a Flutter plugin definition in it's pubspec.yaml.
     if (pubSpec.flutter?.plugin != null) return false;
 
-    return File(joinAll([path, 'lib', 'main.dart'])).existsSync();
+    return fileExists(joinAll([path, 'lib', 'main.dart']));
   }
 
   bool get isAddToApp {
@@ -980,7 +981,7 @@ class Package {
       '${androidPluginClass!}.java',
     ]);
 
-    if (File(javaPluginClassPath).existsSync()) return javaPluginClassPath;
+    if (fileExists(javaPluginClassPath)) return javaPluginClassPath;
     return null;
   }
 
@@ -994,7 +995,7 @@ class Package {
       '${androidPluginClass!}.kt',
     ]);
 
-    if (File(kotlinPluginClassPath).existsSync()) return kotlinPluginClassPath;
+    if (fileExists(kotlinPluginClassPath)) return kotlinPluginClassPath;
     return null;
   }
 
@@ -1035,9 +1036,7 @@ class Package {
   }
 
   /// Returns whether this package contains a test directory.
-  bool get hasTests {
-    return Directory(joinAll([path, 'test'])).existsSync();
-  }
+  bool get hasTests => dirExists(joinAll([path, 'test']));
 
   bool _flutterAppSupportsPlatform(String platform) {
     assert(
@@ -1049,8 +1048,7 @@ class Package {
           platform == kLinux,
     );
 
-    return Directory('$path${currentPlatform.pathSeparator}$platform')
-        .existsSync();
+    return dirExists('$path${currentPlatform.pathSeparator}$platform');
   }
 
   bool _flutterPluginSupportsPlatform(String platform) {

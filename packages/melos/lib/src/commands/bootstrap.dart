@@ -105,9 +105,9 @@ mixin _BootstrapMixin on _CleanMixin {
 
     // Load current pubspec_overrides.yaml.
     final pubspecOverridesFile =
-        File(utils.pubspecOverridesPathForDirectory(Directory(package.path)));
-    final pubspecOverridesContents = pubspecOverridesFile.existsSync()
-        ? await pubspecOverridesFile.readAsString()
+        utils.pubspecOverridesPathForDirectory(package.path);
+    final pubspecOverridesContents = fileExists(pubspecOverridesFile)
+        ? await readTextFileAsync(pubspecOverridesFile)
         : null;
 
     // Write new version of pubspec_overrides.yaml if it has changed.
@@ -117,11 +117,12 @@ mixin _BootstrapMixin on _CleanMixin {
     );
     if (updatedPubspecOverridesContents != null) {
       if (updatedPubspecOverridesContents.isEmpty) {
-        await pubspecOverridesFile.delete();
+        deleteEntry(pubspecOverridesFile);
       } else {
-        await pubspecOverridesFile.create(recursive: true);
-        await pubspecOverridesFile
-            .writeAsString(updatedPubspecOverridesContents);
+        await writeTextFileAsync(
+          pubspecOverridesFile,
+          updatedPubspecOverridesContents,
+        );
       }
     }
   }
@@ -384,14 +385,13 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
             ...pathParts,
             '${otherPackage.androidPluginClass!}$mainClassFileSuffix',
           ]);
-          File(destinationMainClassPath).createSync(recursive: true);
           String? classPath;
           if (hasJavaPluginClass) {
             classPath = otherPackage.javaPluginClassPath;
           } else if (hasKotlinPluginClass) {
             classPath = otherPackage.kotlinPluginClassPath;
           }
-          File(classPath!).copySync(destinationMainClassPath);
+          copyFile(classPath!, destinationMainClassPath, recursive: true);
         }
       }
     }
@@ -400,21 +400,21 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
     final generatedPubspecYamlString =
         '$header\n${toYamlString(pubspec.toJson())}';
 
-    final pubspecFile = File(
-      utils.pubspecPathForDirectory(Directory(packageTemporaryPath)),
+    await writeTextFileAsync(
+      utils.pubspecPathForDirectory(packageTemporaryPath),
+      generatedPubspecYamlString,
+      recursive: true,
     );
-    pubspecFile.createSync(recursive: true);
-    pubspecFile.writeAsStringSync(generatedPubspecYamlString);
 
     // Original pubspec.lock files should also be preserved in our packages
     // mirror, if we don't then this makes melos bootstrap function the same
     // as `dart pub upgrade` every time - which we don't want.
     // See https://github.com/invertase/melos/issues/68
     final originalPubspecLock = join(package.path, 'pubspec.lock');
-    if (File(originalPubspecLock).existsSync()) {
-      final pubspecLockContents = File(originalPubspecLock).readAsStringSync();
+    if (fileExists(originalPubspecLock)) {
+      final pubspecLockContents = await readTextFileAsync(originalPubspecLock);
       final copiedPubspecLock = join(packageTemporaryPath, 'pubspec.lock');
-      File(copiedPubspecLock).writeAsStringSync(pubspecLockContents);
+      await writeTextFileAsync(copiedPubspecLock, pubspecLockContents);
     }
   }
 }

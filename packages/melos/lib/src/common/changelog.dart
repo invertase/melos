@@ -15,8 +15,6 @@
  *
  */
 
-import 'dart:io';
-
 import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
 
@@ -24,6 +22,7 @@ import '../logging.dart';
 import '../package.dart';
 import 'git_commit.dart';
 import 'git_repository.dart';
+import 'io.dart';
 import 'pending_package_update.dart';
 
 class Changelog {
@@ -47,9 +46,8 @@ class Changelog {
   }
 
   Future<String> read() async {
-    final exists = File(path).existsSync();
-    if (exists) {
-      return File(path).readAsString();
+    if (fileExists(path)) {
+      return readTextFile(path);
     }
     return '';
   }
@@ -65,7 +63,7 @@ class Changelog {
     }
     contents = '$markdown$contents';
 
-    await File(path).writeAsString(contents);
+    await writeTextFileAsync(path, contents);
   }
 }
 

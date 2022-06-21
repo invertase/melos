@@ -22,6 +22,7 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 import 'common/intellij_project.dart';
+import 'common/io.dart';
 import 'common/platform.dart';
 import 'common/pub_dependency_list.dart';
 import 'common/utils.dart' as utils;
@@ -157,14 +158,14 @@ class MelosWorkspace {
   void validate() {
     if (sdkPath != null) {
       final dartTool = sdkTool('dart');
-      if (!File(dartTool).existsSync()) {
+      if (!fileExists(dartTool)) {
         throw MelosConfigException(
           'SDK path is not valid. Could not find dart tool at $dartTool',
         );
       }
       if (isFlutterWorkspace) {
         final flutterTool = sdkTool('flutter');
-        if (!File(flutterTool).existsSync()) {
+        if (!fileExists(flutterTool)) {
           throw MelosConfigException(
             'SDK path is not valid. Could not find flutter tool at $dartTool',
           );
