@@ -181,6 +181,7 @@ class BootstrapCommandConfigs {
   const BootstrapCommandConfigs({
     this.usePubspecOverrides = false,
     this.runPubGetInParallel = true,
+    this.runPubGetOffline = false,
   });
 
   factory BootstrapCommandConfigs.fromYaml(Map<Object?, Object?> yaml) {
@@ -198,9 +199,17 @@ class BootstrapCommandConfigs {
         ) ??
         true;
 
+    final runPubGetOffline = assertKeyIsA<bool?>(
+          key: 'runPubGetOffline',
+          map: yaml,
+          path: 'command/bootstrap',
+        ) ??
+        false;
+
     return BootstrapCommandConfigs(
       usePubspecOverrides: usePubspecOverrides,
       runPubGetInParallel: runPubGetInParallel,
+      runPubGetOffline: runPubGetOffline,
     );
   }
 
@@ -215,10 +224,17 @@ class BootstrapCommandConfigs {
   /// The default is `true`.
   final bool runPubGetInParallel;
 
+  /// Whether to attempt to run `pub get` in offline mode during bootstrapping.
+  /// Useful in closed network environments with pre-populated pubcaches.
+  ///
+  /// The default is `false`.
+  final bool runPubGetOffline;
+
   Map<String, Object?> toJson() {
     return {
       'usePubspecOverrides': usePubspecOverrides,
       'runPubGetInParallel': runPubGetInParallel,
+      'runPubGetOffline': runPubGetOffline,
     };
   }
 
@@ -227,13 +243,15 @@ class BootstrapCommandConfigs {
       other is BootstrapCommandConfigs &&
       runtimeType == other.runtimeType &&
       other.usePubspecOverrides == usePubspecOverrides &&
-      other.runPubGetInParallel == runPubGetInParallel;
+      other.runPubGetInParallel == runPubGetInParallel &&
+      other.runPubGetOffline == runPubGetOffline;
 
   @override
   int get hashCode =>
       runtimeType.hashCode ^
       usePubspecOverrides.hashCode ^
-      runPubGetInParallel.hashCode;
+      runPubGetInParallel.hashCode ^
+      runPubGetOffline.hashCode;
 
   @override
   String toString() {
@@ -241,6 +259,7 @@ class BootstrapCommandConfigs {
 BootstrapCommandConfigs(
   usePubspecOverrides: $usePubspecOverrides,
   runPubGetInParallel: $runPubGetInParallel,
+  runPubGetOffline: $runPubGetOffline,
 )''';
   }
 }

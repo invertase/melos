@@ -181,6 +181,21 @@ void main() {
         );
       });
 
+      test('can decode `bootstrap` with pub get offline', () {
+        expect(
+          CommandConfigs.fromYaml(const {
+            'bootstrap': {
+              'runPubGetOffline': true,
+            }
+          }),
+          const CommandConfigs(
+            bootstrap: BootstrapCommandConfigs(
+              runPubGetOffline: true,
+            ),
+          ),
+        );
+      });
+
       test('can decode `version`', () {
         expect(
           CommandConfigs.fromYaml(const {

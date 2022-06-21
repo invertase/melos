@@ -13,7 +13,8 @@ mixin _BootstrapMixin on _CleanMixin {
             useFlutter: workspace.isFlutterWorkspace,
             workspace: workspace,
           ),
-          'get'
+          'get',
+          if (workspace.config.commands.bootstrap.runPubGetOffline) '--offline'
         ].join(' ');
 
         logger
@@ -177,6 +178,7 @@ mixin _BootstrapMixin on _CleanMixin {
         workspace: workspace,
       ),
       'get',
+      if (workspace.config.commands.bootstrap.runPubGetOffline) '--offline'
     ];
 
     final executable = currentPlatform.isWindows ? 'cmd' : '/bin/sh';
