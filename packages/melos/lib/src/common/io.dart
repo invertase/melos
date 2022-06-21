@@ -144,6 +144,7 @@ extension FileSystemEntityUtils on FileSystemEntity {
 
 extension DirectoryUtils on Directory {
   /// Lists the sub-directories and files of this [Directory] similar to [list].
+  ///
   /// However instead of just having a `recursive` parameter that decides
   /// whether to recurse into all or no subdirectories, a function
   /// [recurseCondition] can be given that can decide for a given directory
