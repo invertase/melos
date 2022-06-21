@@ -38,6 +38,36 @@ void main() {
     });
   });
 
+  group('includeCommitId', () {
+    test('when enabled, adds commit id behind each one', () {
+      final workspace = buildWorkspaceWithRepository(
+        includeCommitId: true,
+        linkToCommits: false,
+      );
+      final package = workspace.allPackages['test_pkg']!;
+      final commit = testCommit(message: 'feat(a): b');
+
+      expect(
+        renderCommitPackageUpdate(workspace, package, commit),
+        contains('**FEAT**: b. (${commit.id.substring(0, 8)})'),
+      );
+    });
+
+    test(
+        'when enabled, and linkToCommits is also enabled adds link to commit behind each one',
+        () {
+      final workspace = buildWorkspaceWithRepository(includeCommitId: true);
+      final package = workspace.allPackages['test_pkg']!;
+      final commit = testCommit(message: 'feat(a): b');
+      final commitUrl = workspace.config.repository!.commitUrl(commit.id);
+
+      expect(
+        renderCommitPackageUpdate(workspace, package, commit),
+        contains('**FEAT**: b. ([${commit.id.substring(0, 8)}]($commitUrl))'),
+      );
+    });
+  });
+
   test('when repository is specified, adds links to referenced issues/PRs', () {
     final workspace = buildWorkspaceWithRepository(linkToCommits: false);
     final package = workspace.allPackages['test_pkg']!;
@@ -51,13 +81,17 @@ void main() {
   });
 }
 
-MelosWorkspace buildWorkspaceWithRepository({bool linkToCommits = true}) {
+MelosWorkspace buildWorkspaceWithRepository({
+  bool linkToCommits = true,
+  bool includeCommitId = false,
+}) {
   final workspaceBuilder = VirtualWorkspaceBuilder(
     '''
     repository: https://github.com/a/b
     command:
       version:
         linkToCommits: $linkToCommits
+        includeCommitId: $includeCommitId
     ''',
   )..addPackage(
       '''
