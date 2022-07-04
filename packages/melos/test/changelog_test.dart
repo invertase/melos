@@ -26,14 +26,7 @@ import 'utils.dart';
 void main() {
   group('conventional commit', () {
     test('write scopes', () {
-      final workspace = (VirtualWorkspaceBuilder(
-        '',
-      )..addPackage(
-              '''
-      name: test_pkg
-      ''',
-            ))
-          .build();
+      final workspace = buildWorkspaceWithRepository(includeScopes: true);
       final package = workspace.allPackages['test_pkg']!;
 
       // No scope
@@ -70,7 +63,7 @@ void main() {
 
   group('linkToCommits', () {
     test('when enabled, adds link to commit behind each one', () {
-      final workspace = buildWorkspaceWithRepository();
+      final workspace = buildWorkspaceWithRepository(linkToCommits: true);
       final package = workspace.allPackages['test_pkg']!;
       final commit = testCommit(message: 'feat: a');
       final commitUrl = workspace.config.repository!.commitUrl(commit.id);
@@ -86,7 +79,6 @@ void main() {
     test('when enabled, adds commit id behind each one', () {
       final workspace = buildWorkspaceWithRepository(
         includeCommitId: true,
-        linkToCommits: false,
       );
       final package = workspace.allPackages['test_pkg']!;
       final commit = testCommit(message: 'feat: a');
@@ -98,22 +90,27 @@ void main() {
     });
 
     test(
-        'when enabled, and linkToCommits is also enabled adds link to commit behind each one',
-        () {
-      final workspace = buildWorkspaceWithRepository(includeCommitId: true);
-      final package = workspace.allPackages['test_pkg']!;
-      final commit = testCommit(message: 'feat: a');
-      final commitUrl = workspace.config.repository!.commitUrl(commit.id);
+      'when enabled, and linkToCommits is also enabled adds link to commit'
+      ' behind each one',
+      () {
+        final workspace = buildWorkspaceWithRepository(
+          includeCommitId: true,
+          linkToCommits: true,
+        );
+        final package = workspace.allPackages['test_pkg']!;
+        final commit = testCommit(message: 'feat: a');
+        final commitUrl = workspace.config.repository!.commitUrl(commit.id);
 
-      expect(
-        renderCommitPackageUpdate(workspace, package, commit),
-        contains('**FEAT**: a. ([${commit.id.substring(0, 8)}]($commitUrl))'),
-      );
-    });
+        expect(
+          renderCommitPackageUpdate(workspace, package, commit),
+          contains('**FEAT**: a. ([${commit.id.substring(0, 8)}]($commitUrl))'),
+        );
+      },
+    );
   });
 
   test('when repository is specified, adds links to referenced issues/PRs', () {
-    final workspace = buildWorkspaceWithRepository(linkToCommits: false);
+    final workspace = buildWorkspaceWithRepository();
     final package = workspace.allPackages['test_pkg']!;
     final commit = testCommit(message: 'feat: a (#123)');
     final issueUrl = workspace.config.repository!.issueUrl('123');
@@ -126,7 +123,8 @@ void main() {
 }
 
 MelosWorkspace buildWorkspaceWithRepository({
-  bool linkToCommits = true,
+  bool includeScopes = false,
+  bool linkToCommits = false,
   bool includeCommitId = false,
 }) {
   final workspaceBuilder = VirtualWorkspaceBuilder(
@@ -134,8 +132,9 @@ MelosWorkspace buildWorkspaceWithRepository({
     repository: https://github.com/a/b
     command:
       version:
-        linkToCommits: $linkToCommits
+        includeScopes: $includeScopes
         includeCommitId: $includeCommitId
+        linkToCommits: $linkToCommits
     ''',
   )..addPackage(
       '''

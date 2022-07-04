@@ -269,22 +269,28 @@ BootstrapCommandConfigs(
 @immutable
 class VersionCommandConfigs {
   const VersionCommandConfigs({
+    this.branch,
     this.message,
+    this.includeScopes = false,
     this.linkToCommits,
     this.includeCommitId,
-    this.branch,
     this.workspaceChangelog = false,
     this.updateGitTagRefs = false,
   });
 
   factory VersionCommandConfigs.fromYaml(Map<Object?, Object?> yaml) {
+    final branch = assertKeyIsA<String?>(
+      key: 'branch',
+      map: yaml,
+      path: 'command/version',
+    );
     final message = assertKeyIsA<String?>(
       key: 'message',
       map: yaml,
       path: 'command/version',
     );
-    final linkToCommits = assertKeyIsA<bool?>(
-      key: 'linkToCommits',
+    final includeScopes = assertKeyIsA<bool?>(
+      key: 'includeScopes',
       map: yaml,
       path: 'command/version',
     );
@@ -293,18 +299,16 @@ class VersionCommandConfigs {
       map: yaml,
       path: 'command/version',
     );
-    final branch = assertKeyIsA<String?>(
-      key: 'branch',
+    final linkToCommits = assertKeyIsA<bool?>(
+      key: 'linkToCommits',
       map: yaml,
       path: 'command/version',
     );
-
     final workspaceChangelog = assertKeyIsA<bool?>(
       key: 'workspaceChangelog',
       map: yaml,
       path: 'command/version',
     );
-
     final updateGitTagRefs = assertKeyIsA<bool?>(
       key: 'updateGitTagRefs',
       map: yaml,
@@ -313,9 +317,10 @@ class VersionCommandConfigs {
 
     return VersionCommandConfigs(
       branch: branch,
-      linkToCommits: linkToCommits,
-      includeCommitId: includeCommitId,
       message: message,
+      includeScopes: includeScopes ?? false,
+      includeCommitId: includeCommitId,
+      linkToCommits: linkToCommits,
       workspaceChangelog: workspaceChangelog ?? false,
       updateGitTagRefs: updateGitTagRefs ?? false,
     );
@@ -323,14 +328,22 @@ class VersionCommandConfigs {
 
   static const VersionCommandConfigs empty = VersionCommandConfigs();
 
+  /// If specified, prevents `melos version` from being used inside branches
+  /// other than the one specified.
+  final String? branch;
+
   /// A custom header for the generated CHANGELOG.md.
   final String? message;
 
-  /// Whether to add links to commits in the generated CHANGELOG.md.
-  final bool? linkToCommits;
+  /// Whether to include conventional commit scopes in the generated
+  /// CHANGELOG.md.
+  final bool includeScopes;
 
   /// Whether to add commits ids in the generated CHANGELOG.md.
   final bool? includeCommitId;
+
+  /// Whether to add links to commits in the generated CHANGELOG.md.
+  final bool? linkToCommits;
 
   /// Whether to also generate a CHANGELOG.md for the entire workspace at the root.
   final bool workspaceChangelog;
@@ -338,16 +351,13 @@ class VersionCommandConfigs {
   /// Whether to also update pubspec with git referenced packages.
   final bool updateGitTagRefs;
 
-  /// If specified, prevents `melos version` from being used inside branches
-  /// other than the one specified.
-  final String? branch;
-
   Map<String, Object?> toJson() {
     return {
-      if (message != null) 'message': message,
-      if (linkToCommits != null) 'linkToCommits': linkToCommits,
-      if (includeCommitId != null) 'includeCommitId': includeCommitId,
       if (branch != null) 'branch': branch,
+      if (message != null) 'message': message,
+      'includeScopes': includeScopes,
+      if (includeCommitId != null) 'includeCommitId': includeCommitId,
+      if (linkToCommits != null) 'linkToCommits': linkToCommits,
       'workspaceChangelog': workspaceChangelog,
       'updateGitTagRefs': updateGitTagRefs,
     };
@@ -356,34 +366,37 @@ class VersionCommandConfigs {
   @override
   bool operator ==(Object other) =>
       other is VersionCommandConfigs &&
-      runtimeType == other.runtimeType &&
+      other.runtimeType == runtimeType &&
+      other.branch == branch &&
       other.message == message &&
-      other.linkToCommits == linkToCommits &&
+      other.includeScopes == includeScopes &&
       other.includeCommitId == includeCommitId &&
+      other.linkToCommits == linkToCommits &&
       other.workspaceChangelog == workspaceChangelog &&
-      other.updateGitTagRefs == updateGitTagRefs &&
-      other.branch == branch;
+      other.updateGitTagRefs == updateGitTagRefs;
 
   @override
   int get hashCode =>
       runtimeType.hashCode ^
+      branch.hashCode ^
       message.hashCode ^
-      linkToCommits.hashCode ^
+      includeScopes.hashCode ^
       includeCommitId.hashCode ^
+      linkToCommits.hashCode ^
       workspaceChangelog.hashCode ^
-      updateGitTagRefs.hashCode ^
-      branch.hashCode;
+      updateGitTagRefs.hashCode;
 
   @override
   String toString() {
     return '''
 VersionCommandConfigs(
+  branch: $branch,
   message: $message,
-  linkToCommits: $linkToCommits,
+  includeScopes: $includeScopes,
   includeCommitId: $includeCommitId,
+  linkToCommits: $linkToCommits,
   workspaceChangelog: $workspaceChangelog,
   updateGitTagRefs: $updateGitTagRefs,
-  branch: $branch,
 )''';
   }
 }
