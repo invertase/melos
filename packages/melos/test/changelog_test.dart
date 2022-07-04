@@ -24,6 +24,38 @@ import 'package:test/test.dart';
 import 'utils.dart';
 
 void main() {
+  group('conventional commit', () {
+    test('write scopes', () {
+      final workspace = (VirtualWorkspaceBuilder(
+        '',
+      )..addPackage(
+              '''
+      name: test_pkg
+      ''',
+            ))
+          .build();
+      final package = workspace.allPackages['test_pkg']!;
+
+      expect(
+        renderCommitPackageUpdate(
+          workspace,
+          package,
+          testCommit(message: 'feat(a): b'),
+        ),
+        contains('**FEAT**(a): b.'),
+      );
+
+      expect(
+        renderCommitPackageUpdate(
+          workspace,
+          package,
+          testCommit(message: 'feat(a,b): b'),
+        ),
+        contains('**FEAT**(a,b): b.'),
+      );
+    });
+  });
+
   group('linkToCommits', () {
     test('when enabled, adds link to commit behind each one', () {
       final workspace = buildWorkspaceWithRepository();
