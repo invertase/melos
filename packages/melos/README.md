@@ -90,7 +90,7 @@ The location of your packages can be configured via the `melos.yaml` configurati
 
 The following projects are using Melos:
 
-- [FirebaseExtended/flutterfire](https://github.com/FirebaseExtended/flutterfire)
+- [firebase/flutterfire](https://github.com/firebase/flutterfire)
 - [Flame-Engine/Flame](https://github.com/flame-engine/flame)
 - [aws-amplify/amplify-flutter](https://github.com/aws-amplify/amplify-flutter)
 - [fluttercommunity/plus_plugins](https://github.com/fluttercommunity/plus_plugins)
