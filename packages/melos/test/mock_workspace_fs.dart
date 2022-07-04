@@ -17,7 +17,7 @@
 import 'dart:io';
 
 import 'package:melos/src/common/io.dart';
-import 'package:path/path.dart';
+import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
 import 'mock_fs.dart';
@@ -28,7 +28,7 @@ import 'mock_fs.dart';
 /// The returned directory represents the workspace root.
 Directory createMockWorkspaceFs({
   String workspaceName = 'monorepo',
-  String workspaceRoot = '/melos_workspace',
+  String? workspaceRoot,
   Iterable<String> workspacePackagesGlobs = const ['packages/**'],
   Iterable<MockPackageFs> packages = const [],
   bool setCwdToWorkspace = true,
@@ -38,6 +38,10 @@ Directory createMockWorkspaceFs({
     IOOverrides.current is MockFs,
     'Mock workspaces can only be created inside a mock filesystem',
   );
+
+  // ignore: parameter_assignments
+  workspaceRoot =
+      Platform.isWindows ? r'C:\melos_workspace' : '/melos_workspace';
 
   // Create a `melos.yaml`
   _createMelosConfig(
@@ -82,7 +86,7 @@ ide:
 ''';
   }
 
-  writeTextFile(join(workspaceRoot, 'melos.yaml'), contents, recursive: true);
+  writeTextFile(p.join(workspaceRoot, 'melos.yaml'), contents, recursive: true);
 }
 
 void _createPackage(MockPackageFs package, String workspaceRoot) {
@@ -110,7 +114,7 @@ ${_yamlMap(package.dependencyOverridesMap, indent: 2)}
   );
 
   writeTextFile(
-    join(workspaceRoot, package.path, 'pubspec.yaml'),
+    p.join(workspaceRoot, package.path, 'pubspec.yaml'),
     pubspec.toString(),
     recursive: true,
   );
@@ -148,7 +152,7 @@ class MockPackageFs {
   final Version? version;
 
   /// Workspace-root relative path
-  String get path => _path ?? 'packages/$name';
+  String get path => _path ?? p.join('packages', name);
   final String? _path;
 
   /// `true` if this package's yaml has a `publish_to: none` setting.
@@ -185,7 +189,7 @@ class MockPackageFs {
     return createExamplePackage
         ? MockPackageFs(
             name: '${name}_example',
-            path: join(path, 'example'),
+            path: p.join(path, 'example'),
             dependencies: [name],
             publishToNone: true,
           )
