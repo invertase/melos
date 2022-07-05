@@ -10,11 +10,13 @@ class CancelledException implements MelosException {
 
 class RestrictedBranchException implements MelosException {
   RestrictedBranchException(this.allowedBranch, this.currentBranch);
+
   final String allowedBranch;
   final String currentBranch;
+
   @override
-  String toString() {
-    return 'RestrictedBranchException: This command is configured in melos.yaml to only be '
-        'allowed to run on the "$allowedBranch" but the current branch is "$currentBranch".';
-  }
+  String toString() =>
+      'RestrictedBranchException: This command is configured in melos.yaml '
+      'to only be allowed to run on the "$allowedBranch" but the current '
+      'branch is "$currentBranch".';
 }

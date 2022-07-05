@@ -60,13 +60,15 @@ class IntellijProject {
   }
 
   /// Path to the .idea/.name file in the current workspace.
-  /// This file generated with the workspace name as its contents. IntelliJ
-  /// uses this to change the project display name the IDE.
+  ///
+  /// This file generated with the workspace name as its contents. IntelliJ uses
+  /// this to change the project display name the IDE.
   String get pathDotName {
     return joinAll([pathDotIdea, '.name']);
   }
 
   /// Path to the .idea/modules.xml file in the current workspace.
+  ///
   /// This file is generated with a module for each discovered package in the
   /// current workspace.
   String get pathModulesXml {
@@ -118,6 +120,7 @@ class IntellijProject {
   }
 
   /// Reads a file template from the templates directory.
+  ///
   /// Additionally keeps a cache to reduce reads.
   Future<String> readFileTemplate(
     String fileName, {
@@ -145,6 +148,7 @@ class IntellijProject {
   }
 
   /// Create a .name file using the workspace name.
+  ///
   /// This gets picked up by the IDE and is used for display purposes.
   Future<void> writeNameFile() {
     return forceWriteToFile(pathDotName, _workspace.config.name);

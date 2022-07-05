@@ -45,7 +45,11 @@ class WorkspaceChangelog {
   }
 
   String _packageVersionMarkdownAnchor(MelosPendingPackageUpdate update) {
-    return '#${_packageVersionTitle(update).replaceAll(' ', '-').replaceAll(RegExp('[^a-zA-Z_0-9-]'), '')}';
+    // ignore: prefer_interpolation_to_compose_strings
+    return '#' +
+        _packageVersionTitle(update)
+            .replaceAll(' ', '-')
+            .replaceAll(RegExp('[^a-zA-Z_0-9-]'), '');
   }
 
   String get markdown {
@@ -73,7 +77,9 @@ class WorkspaceChangelog {
     } else {
       for (final update in packagesWithBreakingChanges) {
         body.writeln(
-          ' - [${_packageVersionTitle(update)}](${_packageVersionMarkdownAnchor(update)})',
+          // ignore: missing_whitespace_between_adjacent_strings
+          ' - [${_packageVersionTitle(update)}]'
+          '(${_packageVersionMarkdownAnchor(update)})',
         );
       }
     }
@@ -85,14 +91,17 @@ class WorkspaceChangelog {
     } else {
       for (final update in packagesWithOtherChanges) {
         body.writeln(
-          ' - [${_packageVersionTitle(update)}](${_packageVersionMarkdownAnchor(update)})',
+          // ignore: missing_whitespace_between_adjacent_strings
+          ' - [${_packageVersionTitle(update)}]'
+          '(${_packageVersionMarkdownAnchor(update)})',
         );
       }
     }
     if (graduatedPackages.isNotEmpty) {
       body.writeln();
       body.writeln(
-        'Packages graduated to a stable release (see pre-releases prior to the stable version for changelog entries):',
+        'Packages graduated to a stable release (see pre-releases prior to the '
+        'stable version for changelog entries):',
       );
       body.writeln();
       for (final update in graduatedPackages) {
@@ -106,7 +115,10 @@ class WorkspaceChangelog {
       body.writeln('Packages with dependency updates only:');
       body.writeln();
       body.writeln(
-        '> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.',
+        '> Packages listed below depend on other packages in this workspace '
+        'that have had changes. Their versions have been incremented to bump '
+        'the minimum dependency versions of the packages they depend upon in '
+        'this project.',
       );
       body.writeln();
       for (final update in dependencyOnlyPackages) {
@@ -161,7 +173,8 @@ class WorkspaceChangelog {
     var contents = await read();
     if (contents.contains(markdown)) {
       logger.trace(
-        'Identical changelog content for ${workspace.name} already exists, skipping.',
+        'Identical changelog content for ${workspace.name} already exists, '
+        'skipping.',
       );
       return;
     }

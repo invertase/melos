@@ -19,7 +19,6 @@ import 'dart:async';
 
 import '../commands/runner.dart';
 import '../workspace_configs.dart';
-
 import 'base.dart';
 
 class BootstrapCommand extends MelosCommand {
@@ -35,8 +34,8 @@ class BootstrapCommand extends MelosCommand {
 
   @override
   final String description =
-      'Initialize the workspace, link local packages together and install remaining package dependencies. '
-      'Supports all package filtering options.';
+      'Initialize the workspace, link local packages together and install '
+      'remaining package dependencies. Supports all package filtering options.';
 
   @override
   FutureOr<void>? run() {

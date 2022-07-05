@@ -20,8 +20,8 @@ abstract class MelosCommand extends Command<void> {
   late final logger =
       MelosLogger(global.verbose ? Logger.verbose() : Logger.standard());
 
-  /// The `melos.yaml` configuration for this command.
-  /// see [ArgParser.allowTrailingOptions]
+  /// The `melos.yaml` configuration for this command. see
+  /// [ArgParser.allowTrailingOptions]
   bool get allowTrailingOptions => true;
 
   /// Overridden to support line wrapping when printing usage.

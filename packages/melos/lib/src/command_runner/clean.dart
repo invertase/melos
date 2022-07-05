@@ -17,7 +17,6 @@
 
 import '../commands/runner.dart';
 import '../workspace_configs.dart';
-
 import 'base.dart';
 
 class CleanCommand extends MelosCommand {
@@ -30,8 +29,8 @@ class CleanCommand extends MelosCommand {
 
   @override
   final String description = 'Clean this workspace and all packages. '
-      'This deletes the temporary pub & ide files such as ".packages" & ".flutter-plugins". '
-      'Supports all package filtering options.';
+      'This deletes the temporary pub & ide files such as ".packages" & '
+      '".flutter-plugins". Supports all package filtering options.';
 
   @override
   Future<void> run() async {

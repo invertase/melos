@@ -29,7 +29,8 @@ class ExecCommand extends MelosCommand {
       'fail-fast',
       abbr: 'f',
       help:
-          'Whether exec should fail fast and not execute the script in further packages if the script fails in a individual package.',
+          'Whether exec should fail fast and not execute the script in further '
+          'packages if the script fails in a individual package.',
     );
   }
 
@@ -41,7 +42,8 @@ class ExecCommand extends MelosCommand {
 
   @override
   final String description =
-      'Execute an arbitrary command in each package. Supports all package filtering options.';
+      'Execute an arbitrary command in each package. Supports all package '
+      'filtering options.';
 
   @override
   Future<void> run() async {

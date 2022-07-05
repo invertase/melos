@@ -133,8 +133,9 @@ class MelosWorkspace {
       utils.isPubspecOverridesSupported(sdkTool('dart'));
 
   /// Returns a string path to the 'melos_tool' directory in this workspace.
-  /// This directory should be git ignored and is used by Melos for temporary tasks
-  /// such as pub install.
+  ///
+  /// This directory should be git ignored and is used by Melos for temporary
+  /// tasks such as pub install.
   late final String melosToolPath = p.join(path, '.dart_tool', 'melos_tool');
 
   /// PATH environment variable for child processes launched in this workspace.
@@ -211,7 +212,8 @@ class MelosWorkspace {
     );
   }
 
-  /// Builds a dependency graph of dependencies and their dependents in this workspace.
+  /// Builds a dependency graph of dependencies and their dependents in this
+  /// workspace.
   Future<Map<String, Set<String>>> getDependencyGraph() async {
     final pubExecArgs = utils.pubCommandExecArgs(
       useFlutter: isFlutterWorkspace,

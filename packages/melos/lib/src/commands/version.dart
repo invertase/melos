@@ -26,7 +26,8 @@ mixin _VersionMixin on _RunMixin {
 
     if (updateDependentsVersions && !updateDependentsConstraints) {
       throw ArgumentError(
-        'Cannot use updateDependentsVersions without updateDependentsConstraints.',
+        'Cannot use updateDependentsVersions without '
+        'updateDependentsConstraints.',
       );
     }
 
@@ -39,9 +40,9 @@ mixin _VersionMixin on _RunMixin {
     final workspace = await createWorkspace(
       global: global,
       // We ignore `since` package list filtering on the 'version' command as it
-      // already filters it itself, filtering here would map dependant version fail
-      // as it won't be aware of any packages that have been filtered out here
-      // because of the 'since' filter.
+      // already filters it itself, filtering here would map dependant version
+      // fail as it won't be aware of any packages that have been filtered out
+      // here because of the 'since' filter.
       filter: filter?.copyWithUpdatedSince(null),
     );
 
@@ -137,7 +138,8 @@ mixin _VersionMixin on _RunMixin {
       dependentPackagesToVersion
           .addAll(packageUnscoped.dependentsInWorkspace.values);
 
-      // Add dependentsInWorkspace dependents in the workspace until no more are added.
+      // Add dependentsInWorkspace dependents in the workspace until no more are
+      // added.
       var packagesAdded = 1;
       while (packagesAdded != 0) {
         final packagesCountBefore = dependentPackagesToVersion.length;
@@ -229,13 +231,15 @@ mixin _VersionMixin on _RunMixin {
             const [],
             PackageUpdateReason.dependency,
             // Dependent packages that should have graduated would have already
-            // gone through graduation logic above. So graduate should use the default
-            // of 'false' here so as not to graduate anything that was specifically
-            // excluded.
+            // gone through graduation logic above. So graduate should use the
+            // default of 'false' here so as not to graduate anything that was
+            // specifically excluded.
             // graduate: false,
             prerelease: asPrerelease,
-            // TODO Should dependent packages also get the same preid, can we expose this as an option?
-            // TODO In the case of "nullsafety" it doesn't make sense for dependent packages to also become nullsafety preid versions.
+            // TODO Should dependent packages also get the same preid, can we
+            // expose this as an option?
+            // TODO In the case of "nullsafety" it doesn't make sense for
+            // dependent packages to also become nullsafety preid versions.
             // preid: preid,
             logger: logger,
           ),
@@ -254,8 +258,8 @@ mixin _VersionMixin on _RunMixin {
         label: false,
       );
       logger.hint(
-        'Try running "melos list" with the same filtering options to see a list '
-        'of packages that were included.',
+        'Try running "melos list" with the same filtering options to see a '
+        'list of packages that were included.',
       );
       logger.hint(
         'Try running "melos version --all" to include private packages',
@@ -265,7 +269,8 @@ mixin _VersionMixin on _RunMixin {
 
     logger.log(
       AnsiStyles.magentaBright(
-        'The following ${packageNameStyle(pendingPackageUpdates.length.toString())} '
+        'The following '
+        '${packageNameStyle(pendingPackageUpdates.length.toString())} '
         'packages will be updated:\n',
       ),
     );
@@ -390,14 +395,16 @@ mixin _VersionMixin on _RunMixin {
       );
     }
 
-    // By default dependency constraint using caret syntax to ensure the range allows
-    // all versions guaranteed to be backwards compatible with the specified version.
-    // For example, ^1.2.3 is equivalent to '>=1.2.3 <2.0.0', and ^0.1.2 is equivalent to '>=0.1.2 <0.2.0'.
+    // By default dependency constraint using caret syntax to ensure the range
+    // allows all versions guaranteed to be backwards compatible with the
+    // specified version.
+    // For example, ^1.2.3 is equivalent to '>=1.2.3 <2.0.0', and ^0.1.2 is
+    //equivalent to '>=0.1.2 <0.2.0'.
     var versionConstraint = VersionConstraint.compatibleWith(version);
 
-    // For nullsafety releases we use a >=currentVersion <nextMajorVersion constraint
-    // to allow nullsafety prerelease id versions to function similar to semver without
-    // the actual major, minor & patch versions changing.
+    // For nullsafety releases we use a >=currentVersion <nextMajorVersion
+    // constraint to allow nullsafety prerelease id versions to function similar
+    // to semver without the actual major, minor & patch versions changing.
     // e.g. >=1.2.0-1.0.nullsafety.0 <1.2.0-2.0.nullsafety.0
     if (version.toString().contains('.nullsafety.')) {
       final nextMajorFromCurrentVersion =
@@ -473,7 +480,8 @@ mixin _VersionMixin on _RunMixin {
         workspace.config.commands.version.updateGitTagRefs) {
       updatedContents = contents.replaceAllMapped(
           dependencyTagReplaceRegex(dependencyName), (Match match) {
-        return '${match.group(1)}$dependencyName-v${dependencyVersion.toString().substring(1)}';
+        return '${match.group(1)}$dependencyName-'
+            'v${dependencyVersion.toString().substring(1)}';
       });
     } else {
       updatedContents = contents.replaceAllMapped(
@@ -539,7 +547,8 @@ mixin _VersionMixin on _RunMixin {
                                         .indexOf('.') +
                                     1,
                               );
-                      return 'updated with ${AnsiStyles.underline(semverType)} changes';
+                      return 'updated with ${AnsiStyles.underline(semverType)} '
+                          'changes';
                     case PackageUpdateReason.dependency:
                       if (pendingUpdate.reason ==
                               PackageUpdateReason.dependency &&
@@ -567,7 +576,8 @@ mixin _VersionMixin on _RunMixin {
     required bool updateChangelog,
     required MelosWorkspace workspace,
   }) async {
-    // Note: not pooling & parrellelzing rights to avoid possible file contention.
+    // Note: not pooling & parallelizing rights to avoid possible file
+    // contention.
     await Future.forEach(pendingPackageUpdates,
         (MelosPendingPackageUpdate pendingPackageUpdate) async {
       // Update package pubspec version.
@@ -589,9 +599,9 @@ mixin _VersionMixin on _RunMixin {
           return _setDependentPackageVersionConstraint(
             package,
             pendingPackageUpdate.package.name,
-            // Note if we're not updating dependent versions then we use the current
-            // version rather than the next version as the next version would never
-            // have been applied.
+            // Note if we're not updating dependent versions then we use the
+            // current version rather than the next version as the next version
+            // would never have been applied.
             (pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
                     !updateDependentsVersions)
                 ? pendingPackageUpdate.package.version
@@ -616,7 +626,8 @@ mixin _VersionMixin on _RunMixin {
         workspace.config.commands.version.workspaceChangelog) {
       final today = DateTime.now();
       final dateSlug =
-          "${today.year.toString()}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+          "${today.year.toString()}-${today.month.toString().padLeft(2, '0')}-"
+          "${today.day.toString().padLeft(2, '0')}";
       final workspaceChangelog = WorkspaceChangelog(
         workspace,
         dateSlug,
@@ -681,7 +692,8 @@ mixin _VersionMixin on _RunMixin {
         return;
       }
 
-      // TODO '--tag-version-prefix' support (if we decide to support it later) would pass prefix named arg to gitTagForPackageVersion:
+      // TODO '--tag-version-prefix' support (if we decide to support it later)
+      // would pass prefix named arg to gitTagForPackageVersion:
       final tag = gitTagForPackageVersion(
         pendingPackageUpdate.package.name,
         pendingPackageUpdate.nextVersion.toString(),
@@ -761,7 +773,8 @@ mixin _VersionMixin on _RunMixin {
         );
       });
 
-      // TODO this is a temporary workaround for committing generated dart files.
+      // TODO this is a temporary workaround for committing generated dart
+      // files.
       // TODO remove once options exposed for this in a later release.
       if (pendingPackageUpdate.package.name == 'melos') {
         await gitAdd(

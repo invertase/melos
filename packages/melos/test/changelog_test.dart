@@ -90,8 +90,8 @@ void main() {
     });
 
     test(
-      'when enabled, and linkToCommits is also enabled adds link to commit'
-      ' behind each one',
+      'when enabled, and linkToCommits is also enabled adds link to commit '
+      'behind each one',
       () {
         final workspace = buildWorkspaceWithRepository(
           includeCommitId: true,

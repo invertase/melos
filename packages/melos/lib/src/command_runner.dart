@@ -33,7 +33,7 @@ import 'workspace_configs.dart';
 ///
 /// To run a command, do:
 ///
-/// ```dart
+/// ```dart main
 /// final melos = MelosCommandRunner();
 ///
 /// await melos.run(['bootstrap']);
@@ -42,7 +42,8 @@ class MelosCommandRunner extends CommandRunner<void> {
   MelosCommandRunner(MelosWorkspaceConfig config)
       : super(
           'melos',
-          'A CLI tool for managing Dart & Flutter projects with multiple packages.',
+          'A CLI tool for managing Dart & Flutter projects with multiple '
+              'packages.',
           usageLineLength: terminalWidth,
         ) {
     argParser.addFlag(

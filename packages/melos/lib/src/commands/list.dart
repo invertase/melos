@@ -209,19 +209,22 @@ mixin _ListMixin on _Melos {
     for (final package in workspace.filteredPackages.values) {
       for (final dep in package.dependenciesInWorkspace.values) {
         buffer.add(
-          '  ${package.name} -> ${dep.name} [style="filled"; color="${getColor(dep.name)}"];',
+          '  ${package.name} -> ${dep.name} '
+          '[style="filled"; color="${getColor(dep.name)}"];',
         );
       }
 
       for (final dep in package.devDependenciesInWorkspace.values) {
         buffer.add(
-          '  ${package.name} -> ${dep.name} [style="dashed"; color="${getColor(dep.name)}"];',
+          '  ${package.name} -> ${dep.name} '
+          '[style="dashed"; color="${getColor(dep.name)}"];',
         );
       }
 
       for (final dep in package.dependencyOverridesInWorkspace.values) {
         buffer.add(
-          '  ${package.name} -> ${dep.name} [style="dotted"; color="${getColor(dep.name)}"];',
+          '  ${package.name} -> ${dep.name} '
+          '[style="dotted"; color="${getColor(dep.name)}"];',
         );
       }
     }

@@ -182,7 +182,8 @@ packages/c
       );
 
       test(
-        'full package path is printed by default if relativePaths is false or not set',
+        'full package path is printed by default if relativePaths is false or '
+        'not set',
         withMockFs(() async {
           final packages = [
             MockPackageFs(name: 'a'),

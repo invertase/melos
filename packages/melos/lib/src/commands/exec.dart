@@ -58,8 +58,8 @@ mixin _ExecMixin on _Melos {
       }
     }
     if (environment.containsKey('MELOS_TEST')) {
-      // TODO(rrousselGit) refactor this to not have to manually maitain the list
-      // of env variables to remove
+      // TODO(rrousselGit) refactor this to not have to manually maitain the
+      // list of env variables to remove
       environment.remove('MELOS_TEST');
       environment.remove('MELOS_ROOT_PATH');
       environment.remove('MELOS_SCRIPT');

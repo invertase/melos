@@ -343,8 +343,8 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
           transformPathDependenciesToAbsolute(pubspec.dependencyOverrides),
     );
 
-    // Traversing all packages so that transitive dependencies for the bootstraped
-    // packages are setup properly.
+    // Traversing all packages so that transitive dependencies for the
+    // bootstraped packages are setup properly.
     for (final otherPackage in workspace.allPackages.values) {
       final otherPackagePath = utils.relativePath(
         join(workspace.melosToolPath, otherPackage.pathRelativeToWorkspace),
@@ -362,8 +362,8 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
         );
 
         // If this package is an an add-to-app module, all plugins that are
-        // dependencies of the package must have their android main classes copied
-        // to the temporary workspace, otherwise pub get fails.
+        // dependencies of the package must have their android main classes 
+        // copied to the temporary workspace, otherwise pub get fails.
         if (package.isAddToApp &&
             otherPackage.isFlutterPlugin &&
             otherPackage.flutterPluginSupportsAndroid &&

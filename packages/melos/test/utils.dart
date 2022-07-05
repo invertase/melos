@@ -19,11 +19,10 @@ class TestLogger extends StandardLogger {
 
   /// All the logs in order that were emitted so far.
   ///
-  /// This includes both [stdout], [stderr] and [trace].
-  /// Logs from [trace] and [stderr] are respectively prefixed by `t-` and `e-`
-  /// such that:
+  /// This includes both [stdout], [stderr] and [trace]. Logs from [trace] and
+  /// [stderr] are respectively prefixed by `t-` and `e-` such that:
   ///
-  /// ```dart
+  /// ```dart main
   /// logger.stdout('Hello');
   /// logger.stderr('Error');
   /// logger.stdout('world');
@@ -37,8 +36,8 @@ class TestLogger extends StandardLogger {
   /// world
   /// ```
   ///
-  /// This both ensures that tests to not forget to check errors and
-  /// allows testing what the logs would actually look like.
+  /// This both ensures that tests to not forget to check errors and allows
+  /// testing what the logs would actually look like.
   String get output => _buffer.toString();
 
   @override

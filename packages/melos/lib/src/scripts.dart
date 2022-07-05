@@ -384,8 +384,8 @@ class Script {
   /// Environment variables that will be passed to [run].
   final Map<String, String> env;
 
-  /// If the [run] command is a melos command, allows filtering packages
-  /// that will execute the command.
+  /// If the [run] command is a melos command, allows filtering packages that
+  /// will execute the command.
   final PackageFilter? filter;
 
   /// The options for `melos exec`, if [run] should be executed in multiple

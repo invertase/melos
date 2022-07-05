@@ -43,9 +43,10 @@ Version nextStableVersion(
     }
   }
 
-  // Although semantic versioning doesn't promise any compatibility between versions prior to 1.0.0,
-  // the Dart community convention is to treat those versions semantically as well. The interpretation
-  // of each number is just shifted down one slot:
+  // Although semantic versioning doesn't promise any compatibility between
+  // versions prior to 1.0.0, the Dart community convention is to treat those
+  // versions semantically as well. The interpretation of each number is just
+  // shifted down one slot:
   //   - going from 0.1.2 to 0.2.0 indicates a breaking change
   //   - going to 0.1.3 indicates a new feature
   //   - going to 0.1.2+1 indicates a change that doesn't affect the public API
@@ -76,14 +77,16 @@ Version nextPrereleaseVersion(
     final currentPre = currentVersion.preRelease.length == 2
         ? currentVersion.preRelease[1] as int
         : -1;
-    // Note we preserve the current prereleases preid if no preid option specified.
-    // So 1.0.0-nullsafety.0 would become ...-nullsafety.X rather than use the default preid "dev".
+    // Note we preserve the current prereleases preid if no preid option
+    // specified. So 1.0.0-nullsafety.0 would become ...-nullsafety.X rather
+    //than use the default preid "dev".
     var nextPreidInt = currentPre + 1;
     final nextPreidName = preid ?? currentVersion.preRelease[0] as String;
 
     // Reset the preid int if preid name has changed,
     // e.g. was "...dev.3" and is now a "nullsafety" preid so the next
-    // prerelease version becomes "...nullsafety.0" instead of "...nullsafety.4".
+    // prerelease version becomes "...nullsafety.0" instead of
+    // "...nullsafety.4".
     if (nextPreidName != currentVersion.preRelease[0]) {
       nextPreidInt = 0;
     }
@@ -117,15 +120,17 @@ Version nextVersion(
   final shouldGraduate = graduate;
   var shouldMakePreRelease = prerelease;
   if (currentVersion.preRelease.isNotEmpty) {
-    // If the current version then we should make a prerelease, unless graduating
-    // the version is explicitly requested.
+    // If the current version then we should make a prerelease, unless
+    // graduating the version is explicitly requested.
     shouldMakePreRelease = !shouldGraduate;
     // Extract the existing preid from prerelease list if no preid provided.
     // We do this to preserve the current preid so it's not overridden with the
     // default 'dev' preid.
     if (preid == null) {
-      //  - Versions in the format `0.8.0-nullsafety.1` have 2 pre release items, so we extract 'nullsafety' preid.
-      //  - Versions in the format `0.2.0-1.2.nullsafety.4` have 2 pre release items, so we extract 'nullsafety' preid.
+      //  - Versions in the format `0.8.0-nullsafety.1` have 2 pre release
+      //    items, so we extract 'nullsafety' preid.
+      //  - Versions in the format `0.2.0-1.2.nullsafety.4` have 2 pre release
+      //    items, so we extract 'nullsafety' preid.
       requestedPreidOrDefault = currentVersion.preRelease.length == 2
           ? currentVersion.preRelease[0] as String
           : currentVersion.preRelease[2] as String;
@@ -176,8 +181,9 @@ Version nextVersion(
   if (!currentVersion.isPreRelease &&
       shouldMakePreRelease &&
       requestedPreidOrDefault == 'nullsafety') {
-    // Going from non-null to a first nullsafety release then the convention here
-    // is that a major version is created regardless of the requested release type.
+    // Going from non-null to a first nullsafety release then the convention
+    // here is that a major version is created regardless of the requested
+    // release type.
     final nextMajorStable =
         nextStableVersion(currentVersion, SemverReleaseType.major);
 
@@ -209,8 +215,9 @@ Version nextVersion(
     if (currentVersion.preRelease[0] == 'nullsafety') {
       baseVersion = currentVersion;
     } else if (currentVersion.major == 0) {
-      // Bump the 'major' version again if the preids changed (e.g. dev to nullsafety)
-      // and the current version is not yet full semver (>= 1.0.0), e.g.:
+      // Bump the 'major' version again if the preids changed
+      // (e.g. dev to nullsafety) and the current version is not yet full
+      //semver (>= 1.0.0), e.g.:
       // `0.1.0-dev.5` should become `0.2.0-1.0.nullsafety.0`
       // and not `0.1.0-1.0.nullsafety.0`.
       // >=1.0.0 is already handled by [nextStableVersion].
@@ -233,8 +240,9 @@ Version nextVersion(
       currentVersion.preRelease.length == 4 &&
       currentVersion.preRelease[2] == 'nullsafety' &&
       requestedPreidOrDefault == 'nullsafety') {
-    // e.g. for 0.2.0-1.2.nullsafety.4 then currentVersion.preRelease is in the format:
-    // [1, 2, nullsafety, 4] so this equates to [major, minor, preid, patch].
+    // e.g. for 0.2.0-1.2.nullsafety.4 then currentVersion.preRelease is in the
+    // format: [1, 2, nullsafety, 4] so this equates to
+    // [major, minor, preid, patch].
     var nextPreMajor = currentVersion.preRelease[0] as int;
     var nextPreMinor = currentVersion.preRelease[1] as int;
     var nextPrePatch = currentVersion.preRelease[3] as int;
@@ -266,8 +274,9 @@ Version nextVersion(
   // Unhandled versioning behaviour.
   throw UnsupportedError(
     'Incrementing the version $currentVersion with the following options '
-    '(graduate: $graduate, preid: $preid, prerelease: $prerelease, releaseType: $releaseType) '
-    'is not supported by Melos, please raise an issue on GitHub if this is unexpected behaviour.',
+    '(graduate: $graduate, preid: $preid, prerelease: $prerelease, '
+    'releaseType: $releaseType) is not supported by Melos, please raise an '
+    'issue on GitHub if this is unexpected behaviour.',
   );
 }
 

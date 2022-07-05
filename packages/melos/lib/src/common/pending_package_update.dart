@@ -28,7 +28,8 @@ import 'changelog.dart';
 import 'git_commit.dart';
 import 'versioning.dart' as versioning;
 
-/// Enum representing why the version has been changed when running 'version' command.
+/// Enum representing why the version has been changed when running 'version'
+/// command.
 enum PackageUpdateReason {
   /// The user provided a new version.
   manual,
@@ -86,11 +87,12 @@ class MelosPendingPackageUpdate {
   /// Whether the next package version will be made a prerelease version.
   final bool prerelease;
 
-  /// If true and the package is currently a prerelease version, the next package version
-  /// will graduate to a stable, non-prerelease version.
+  /// If true and the package is currently a prerelease version, the next
+  /// package version will graduate to a stable, non-prerelease version.
   final bool graduate;
 
-  /// The prerelease id that will be used for prereleases, e.g. "0.1.0-[preid].1".
+  /// The prerelease id that will be used for prereleases, e.g.
+  /// "0.1.0-[preid].1".
   final String? preid;
 
   /// The next version of the package, if it has been manually specified by the
@@ -126,7 +128,8 @@ class MelosPendingPackageUpdate {
         );
   }
 
-  /// Taking into account all the commits in this update, what is the highest [SemverReleaseType].
+  /// Taking into account all the commits in this update, what is the highest
+  /// [SemverReleaseType].
   ///
   /// Is `null` for manually versioned packages.
   SemverReleaseType? get semverReleaseType {
@@ -136,7 +139,8 @@ class MelosPendingPackageUpdate {
 
     if (reason == PackageUpdateReason.dependency) {
       // Version bumps for dependencies should be patches.
-      // If the dependencies had breaking changes then this package should have had commits to update it separately.
+      // If the dependencies had breaking changes then this package should have
+      // had commits to update it separately.
       return SemverReleaseType.patch;
     }
 
@@ -176,6 +180,11 @@ class MelosPendingPackageUpdate {
 
   @override
   String toString() {
-    return 'MelosPendingPackageUpdate(packageName: ${package.name}, semverType: $semverReleaseType, currentVersion: $currentVersion, nextVersion: $nextVersion)';
+    return 'MelosPendingPackageUpdate('
+        'packageName: ${package.name}, '
+        'semverType: $semverReleaseType, '
+        'currentVersion: $currentVersion, '
+        'nextVersion: $nextVersion'
+        ')';
   }
 }
