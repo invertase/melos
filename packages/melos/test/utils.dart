@@ -348,3 +348,7 @@ class HttpClientMock extends Mock implements http.Client {
     ) as Future<http.Response>;
   }
 }
+
+extension StringTestExtension on String {
+  String normalizeNewLines() => replaceAll('\r\n', '\n');
+}

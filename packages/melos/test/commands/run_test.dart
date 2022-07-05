@@ -1,7 +1,6 @@
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
-import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:melos/src/scripts.dart';
 import 'package:path/path.dart';
@@ -13,52 +12,51 @@ import '../utils.dart';
 
 void main() {
   group('script', () {
-    test(
-      'supports passing package filter options to "melos exec" scripts',
-      () async {
-        final workspaceDir = createTemporaryWorkspaceDirectory(
-          configBuilder: (path) => MelosWorkspaceConfig(
-            path: path,
-            name: 'test_package',
-            packages: [
-              createGlob('packages/**', currentDirectoryPath: path),
-            ],
-            scripts: Scripts({
-              'test_script': Script(
-                name: 'test_script',
-                run: 'melos exec -- "echo hello"',
-                filter: PackageFilter(
-                  fileExists: ['log.txt'],
-                ),
-              )
-            }),
-          ),
-        );
+    test('supports passing package filter options to "melos exec" scripts',
+        () async {
+      final workspaceDir = createTemporaryWorkspaceDirectory(
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: Scripts({
+            'test_script': Script(
+              name: 'test_script',
+              run: 'melos exec -- "echo hello"',
+              filter: PackageFilter(
+                fileExists: ['log.txt'],
+              ),
+            )
+          }),
+        ),
+      );
 
-        final aDir = await createProject(
-          workspaceDir,
-          const PubSpec(name: 'a'),
-        );
-        writeTextFile(join(aDir.path, 'log.txt'), '');
+      final aDir = await createProject(
+        workspaceDir,
+        const PubSpec(name: 'a'),
+      );
+      writeTextFile(join(aDir.path, 'log.txt'), '');
 
-        await createProject(
-          workspaceDir,
-          const PubSpec(name: 'b'),
-        );
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'b'),
+      );
 
-        final logger = TestLogger();
-        final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
-        final melos = Melos(
-          logger: logger,
-          config: config,
-        );
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
 
-        await melos.run(scriptName: 'test_script', noSelect: true);
+      await melos.run(scriptName: 'test_script', noSelect: true);
 
-        expect(
-          logger.output,
-          ignoringAnsii(
-            '''
+      expect(
+        logger.output.normalizeNewLines(),
+        ignoringAnsii(
+          '''
 melos run test_script
   └> melos exec -- "echo hello"
      └> RUNNING
@@ -81,55 +79,48 @@ melos run test_script
   └> melos exec -- "echo hello"
      └> SUCCESS
 ''',
-          ),
-        );
-      },
-      // TODO test is not compatible with Windows (windows prints
-      // `hello\r\n` for carriage returns, whereas here they
-      // appear as `hello\n`)
-      skip: currentPlatform.isWindows,
-    );
+        ),
+      );
+    });
 
-    test(
-      'supports passing additional arguments to run scripts',
-      () async {
-        final workspaceDir = createTemporaryWorkspaceDirectory(
-          configBuilder: (path) => MelosWorkspaceConfig(
-            path: path,
-            name: 'test_package',
-            packages: [
-              createGlob('packages/**', currentDirectoryPath: path),
-            ],
-            scripts: Scripts({
-              'test_script': Script(
-                name: 'test_script',
-                run: r'echo $0 $1 $2',
-              )
-            }),
-          ),
-        );
-
-        final logger = TestLogger();
-        final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
-        final melos = Melos(
-          logger: logger,
-          config: config,
-        );
-
-        await melos.run(
-          scriptName: 'test_script',
-          noSelect: true,
-          extraArgs: [
-            'foo',
-            'bar',
-            'baz',
+    test('supports passing additional arguments to run scripts', () async {
+      final workspaceDir = createTemporaryWorkspaceDirectory(
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
           ],
-        );
+          scripts: Scripts({
+            'test_script': Script(
+              name: 'test_script',
+              run: r'echo $0 $1 $2',
+            )
+          }),
+        ),
+      );
 
-        expect(
-          logger.output,
-          ignoringAnsii(
-            r'''
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      await melos.run(
+        scriptName: 'test_script',
+        noSelect: true,
+        extraArgs: [
+          'foo',
+          'bar',
+          'baz',
+        ],
+      );
+
+      expect(
+        logger.output.normalizeNewLines(),
+        ignoringAnsii(
+          r'''
 melos run test_script
   └> echo $0 $1 $2
      └> RUNNING
@@ -140,53 +131,48 @@ melos run test_script
   └> echo $0 $1 $2
      └> SUCCESS
 ''',
-          ),
-        );
-      },
-      // TODO test is not compatible with Windows
-      skip: currentPlatform.isWindows,
-    );
+        ),
+      );
+    });
 
-    test(
-      'supports running "melos exec" script with "exec" options',
-      () async {
-        final workspaceDir = createTemporaryWorkspaceDirectory(
-          configBuilder: (path) => MelosWorkspaceConfig(
-            path: path,
-            name: 'test_package',
-            packages: [
-              createGlob('packages/**', currentDirectoryPath: path),
-            ],
-            scripts: Scripts({
-              'test_script': Script(
-                name: 'test_script',
-                run: 'echo "hello"',
-                exec: ExecOptions(
-                  concurrency: 1,
-                ),
-              )
-            }),
-          ),
-        );
+    test('supports running "melos exec" script with "exec" options', () async {
+      final workspaceDir = createTemporaryWorkspaceDirectory(
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: Scripts({
+            'test_script': Script(
+              name: 'test_script',
+              run: 'echo "hello"',
+              exec: ExecOptions(
+                concurrency: 1,
+              ),
+            )
+          }),
+        ),
+      );
 
-        await createProject(
-          workspaceDir,
-          const PubSpec(name: 'a'),
-        );
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'a'),
+      );
 
-        final logger = TestLogger();
-        final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
-        final melos = Melos(
-          logger: logger,
-          config: config,
-        );
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
 
-        await melos.run(scriptName: 'test_script', noSelect: true);
+      await melos.run(scriptName: 'test_script', noSelect: true);
 
-        expect(
-          logger.output,
-          ignoringAnsii(
-            '''
+      expect(
+        logger.output.normalizeNewLines(),
+        ignoringAnsii(
+          '''
 melos run test_script
   └> melos exec --concurrency 1 -- "echo \\"hello\\""
      └> RUNNING
@@ -209,11 +195,8 @@ melos run test_script
   └> melos exec --concurrency 1 -- "echo \\"hello\\""
      └> SUCCESS
 ''',
-          ),
-        );
-      },
-      // TODO test is not compatible with Windows
-      skip: currentPlatform.isWindows,
-    );
+        ),
+      );
+    });
   });
 }

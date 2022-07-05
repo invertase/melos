@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:melos/src/commands/runner.dart';
 import 'package:melos/src/common/glob.dart';
-import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/package.dart';
 import 'package:melos/src/workspace_configs.dart';
+import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 
@@ -184,13 +184,16 @@ packages/c
       test(
         'full package path is printed by default if relativePaths is false or not set',
         withMockFs(() async {
+          final packages = [
+            MockPackageFs(name: 'a'),
+            MockPackageFs(name: 'b'),
+            MockPackageFs(name: 'c'),
+          ];
           final workspaceDir = createMockWorkspaceFs(
-            packages: [
-              MockPackageFs(name: 'a'),
-              MockPackageFs(name: 'b'),
-              MockPackageFs(name: 'c'),
-            ],
+            packages: packages,
           );
+          final packagePaths = packages
+              .map((package) => p.join(workspaceDir.path, package.path));
 
           final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
           final melos = Melos(logger: logger, config: config);
@@ -202,15 +205,11 @@ packages/c
             logger.output,
             ignoringAnsii(
               '''
-/melos_workspace/packages/a
-/melos_workspace/packages/b
-/melos_workspace/packages/c
+${packagePaths.join('\n')}
 ''',
             ),
           );
         }),
-        // TODO test output is not compatible with windows
-        skip: currentPlatform.isWindows,
       );
     });
 
