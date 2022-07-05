@@ -82,13 +82,16 @@ void main() {
   });
 
   group('VersionCommandConfigs', () {
-    test('message/repository/linkToCommits are optional', () {
-      // ignore: use_named_constants
-      const value = VersionCommandConfigs();
+    test('defaults', () {
+      const value = VersionCommandConfigs.empty;
 
       expect(value.branch, null);
       expect(value.message, null);
+      expect(value.includeScopes, false);
+      expect(value.includeCommitId, null);
       expect(value.linkToCommits, null);
+      expect(value.updateGitTagRefs, false);
+      expect(value.workspaceChangelog, false);
     });
 
     group('fromYaml', () {
@@ -99,6 +102,13 @@ void main() {
         );
       });
 
+      test('throws if branch is not a string', () {
+        expect(
+          () => VersionCommandConfigs.fromYaml(const {'branch': 42}),
+          throwsMelosConfigException(),
+        );
+      });
+
       test('throws if message is not a string', () {
         expect(
           () => VersionCommandConfigs.fromYaml(const {'message': 42}),
@@ -106,9 +116,9 @@ void main() {
         );
       });
 
-      test('throws if branch is not a string', () {
+      test('throws if includeScopes is not a bool', () {
         expect(
-          () => VersionCommandConfigs.fromYaml(const {'branch': 42}),
+          () => VersionCommandConfigs.fromYaml(const {'includeScopes': 42}),
           throwsMelosConfigException(),
         );
       });
@@ -126,13 +136,21 @@ void main() {
             const {
               'branch': 'branch',
               'message': 'message',
+              'includeScopes': true,
+              'includeCommitId': true,
               'linkToCommits': true,
+              'updateGitTagRefs': true,
+              'workspaceChangelog': true,
             },
           ),
           const VersionCommandConfigs(
             branch: 'branch',
             message: 'message',
+            includeScopes: true,
+            includeCommitId: true,
             linkToCommits: true,
+            updateGitTagRefs: true,
+            workspaceChangelog: true,
           ),
         );
       });

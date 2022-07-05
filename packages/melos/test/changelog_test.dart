@@ -24,16 +24,53 @@ import 'package:test/test.dart';
 import 'utils.dart';
 
 void main() {
+  group('conventional commit', () {
+    test('write scopes', () {
+      final workspace = buildWorkspaceWithRepository(includeScopes: true);
+      final package = workspace.allPackages['test_pkg']!;
+
+      // No scope
+      expect(
+        renderCommitPackageUpdate(
+          workspace,
+          package,
+          testCommit(message: 'feat: a'),
+        ),
+        contains('**FEAT**: a.'),
+      );
+
+      // One scope
+      expect(
+        renderCommitPackageUpdate(
+          workspace,
+          package,
+          testCommit(message: 'feat(a): b'),
+        ),
+        contains('**FEAT**(a): b.'),
+      );
+
+      // Multiple scopes
+      expect(
+        renderCommitPackageUpdate(
+          workspace,
+          package,
+          testCommit(message: 'feat(a,b): c'),
+        ),
+        contains('**FEAT**(a,b): c.'),
+      );
+    });
+  });
+
   group('linkToCommits', () {
     test('when enabled, adds link to commit behind each one', () {
-      final workspace = buildWorkspaceWithRepository();
+      final workspace = buildWorkspaceWithRepository(linkToCommits: true);
       final package = workspace.allPackages['test_pkg']!;
-      final commit = testCommit(message: 'feat(a): b');
+      final commit = testCommit(message: 'feat: a');
       final commitUrl = workspace.config.repository!.commitUrl(commit.id);
 
       expect(
         renderCommitPackageUpdate(workspace, package, commit),
-        contains('**FEAT**: b. ([${commit.id.substring(0, 8)}]($commitUrl))'),
+        contains('**FEAT**: a. ([${commit.id.substring(0, 8)}]($commitUrl))'),
       );
     });
   });
@@ -42,47 +79,52 @@ void main() {
     test('when enabled, adds commit id behind each one', () {
       final workspace = buildWorkspaceWithRepository(
         includeCommitId: true,
-        linkToCommits: false,
       );
       final package = workspace.allPackages['test_pkg']!;
-      final commit = testCommit(message: 'feat(a): b');
+      final commit = testCommit(message: 'feat: a');
 
       expect(
         renderCommitPackageUpdate(workspace, package, commit),
-        contains('**FEAT**: b. (${commit.id.substring(0, 8)})'),
+        contains('**FEAT**: a. (${commit.id.substring(0, 8)})'),
       );
     });
 
     test(
-        'when enabled, and linkToCommits is also enabled adds link to commit behind each one',
-        () {
-      final workspace = buildWorkspaceWithRepository(includeCommitId: true);
-      final package = workspace.allPackages['test_pkg']!;
-      final commit = testCommit(message: 'feat(a): b');
-      final commitUrl = workspace.config.repository!.commitUrl(commit.id);
+      'when enabled, and linkToCommits is also enabled adds link to commit'
+      ' behind each one',
+      () {
+        final workspace = buildWorkspaceWithRepository(
+          includeCommitId: true,
+          linkToCommits: true,
+        );
+        final package = workspace.allPackages['test_pkg']!;
+        final commit = testCommit(message: 'feat: a');
+        final commitUrl = workspace.config.repository!.commitUrl(commit.id);
 
-      expect(
-        renderCommitPackageUpdate(workspace, package, commit),
-        contains('**FEAT**: b. ([${commit.id.substring(0, 8)}]($commitUrl))'),
-      );
-    });
+        expect(
+          renderCommitPackageUpdate(workspace, package, commit),
+          contains('**FEAT**: a. ([${commit.id.substring(0, 8)}]($commitUrl))'),
+        );
+      },
+    );
   });
 
   test('when repository is specified, adds links to referenced issues/PRs', () {
-    final workspace = buildWorkspaceWithRepository(linkToCommits: false);
+    final workspace = buildWorkspaceWithRepository();
     final package = workspace.allPackages['test_pkg']!;
-    final commit = testCommit(message: 'feat(a): b (#123)');
+    final commit = testCommit(message: 'feat: a (#123)');
     final issueUrl = workspace.config.repository!.issueUrl('123');
 
     expect(
       renderCommitPackageUpdate(workspace, package, commit),
-      contains('**FEAT**: b ([#123]($issueUrl)).'),
+      contains('**FEAT**: a ([#123]($issueUrl)).'),
     );
   });
 }
 
 MelosWorkspace buildWorkspaceWithRepository({
-  bool linkToCommits = true,
+  bool includeScopes = false,
+  bool linkToCommits = false,
   bool includeCommitId = false,
 }) {
   final workspaceBuilder = VirtualWorkspaceBuilder(
@@ -90,8 +132,9 @@ MelosWorkspace buildWorkspaceWithRepository({
     repository: https://github.com/a/b
     command:
       version:
-        linkToCommits: $linkToCommits
+        includeScopes: $includeScopes
         includeCommitId: $includeCommitId
+        linkToCommits: $linkToCommits
     ''',
   )..addPackage(
       '''

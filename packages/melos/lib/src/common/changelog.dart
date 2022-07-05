@@ -173,6 +173,13 @@ extension ChangelogStringBufferExtension on StringBuffer {
           writePunctuated(processCommitHeader(parsedMessage.header));
         } else {
           writeBold(parsedMessage.type!.toUpperCase());
+          if (config.commands.version.includeScopes) {
+            if (parsedMessage.scopes.isNotEmpty) {
+              write('(');
+              write(parsedMessage.scopes.join(','));
+              write(')');
+            }
+          }
           write(': ');
           writePunctuated(processCommitHeader(parsedMessage.description!));
         }
