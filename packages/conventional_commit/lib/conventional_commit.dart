@@ -39,9 +39,10 @@ enum SemverReleaseType {
   major,
 }
 
-/// A representation of a parsed conventional commit message. Parsing is based
-/// upon the Conventional Commits 1.0.0 specification available at
-/// https://www.conventionalcommits.org/en/v1.0.0/
+/// A representation of a parsed conventional commit message.
+///
+/// Parsing is based upon the Conventional Commits 1.0.0 specification available
+/// at https://www.conventionalcommits.org/en/v1.0.0/
 class ConventionalCommit {
   ConventionalCommit._({
     required this.header,
@@ -190,9 +191,11 @@ class ConventionalCommit {
   final bool isBreakingChange;
 
   /// The description of the breaking change, e.g. the text after BREAKING
-  /// CHANGE: <description>. Will be null if [isBreakingChange] is false.
-  /// Defaults to [description] if the `BREAKING CHANGE:` footer format was not
-  /// used, e.g. only `!` after the commit type was specified.
+  /// CHANGE: <description>.
+  ///
+  /// Will be null if [isBreakingChange] is false. Defaults to [description] if
+  /// the `BREAKING CHANGE:` footer format was not used, e.g. only `!` after the
+  /// commit type was specified.
   final String? breakingChangeDescription;
 
   /// Whether this commit was a merge commit, e.g. `Merge #24 into main`
@@ -205,15 +208,18 @@ class ConventionalCommit {
   /// commit message.)
   final String header;
 
-  /// An optional body describing the change in more detail. Note this can
-  /// contain multiple paragraphs separated by new lines.
+  /// An optional body describing the change in more detail.
+  ///
+  /// Note this can contain multiple paragraphs separated by new lines.
   final String? body;
 
   /// Footers other than BREAKING CHANGE: <description> may be provided and
-  /// follow a convention similar to git trailer format. A footer’s token MUST
-  /// use "-" in place of whitespace characters, e.g., Acked-by (this helps
-  /// differentiate the footer section from a multi-paragraph body). An
-  /// exception is made for BREAKING CHANGE, which MAY also be used as a token.
+  /// follow a convention similar to git trailer format.
+  ///
+  /// A footer’s token MUST use "-" in place of whitespace characters, e.g.,
+  /// Acked-by (this helps differentiate the footer section from a
+  /// multi-paragraph body). An exception is made for BREAKING CHANGE, which MAY
+  /// also be used as a token.
   final List<String> footers;
 
   // TODO(Salakar): this api should probably not be in this package

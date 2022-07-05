@@ -217,7 +217,7 @@ Version nextVersion(
     } else if (currentVersion.major == 0) {
       // Bump the 'major' version again if the preids changed
       // (e.g. dev to nullsafety) and the current version is not yet full
-      //semver (>= 1.0.0), e.g.:
+      // semver (>= 1.0.0), e.g.:
       // `0.1.0-dev.5` should become `0.2.0-1.0.nullsafety.0`
       // and not `0.1.0-1.0.nullsafety.0`.
       // >=1.0.0 is already handled by [nextStableVersion].

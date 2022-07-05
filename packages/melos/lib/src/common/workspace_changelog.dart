@@ -36,9 +36,12 @@ class WorkspaceChangelog {
   final MelosLogger logger;
   final List<MelosPendingPackageUpdate> pendingPackageUpdates;
 
-  String get _changelogFileHeader {
-    return '# Change Log\n\nAll notable changes to this project will be documented in this file.\nSee [Conventional Commits](https://conventionalcommits.org) for commit guidelines.\n';
-  }
+  String get _changelogFileHeader => '''
+# Change Log
+
+All notable changes to this project will be documented in this file.
+See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
+''';
 
   String _packageVersionTitle(MelosPendingPackageUpdate update) {
     return '`${update.package.name}` - `v${update.nextVersion}`';
@@ -76,11 +79,12 @@ class WorkspaceChangelog {
       body.writeln(' - There are no breaking changes in this release.');
     } else {
       for (final update in packagesWithBreakingChanges) {
-        body.writeln(
-          // ignore: missing_whitespace_between_adjacent_strings
-          ' - [${_packageVersionTitle(update)}]'
-          '(${_packageVersionMarkdownAnchor(update)})',
+        body.write(' - ');
+        body.writeLink(
+          _packageVersionTitle(update),
+          uri: _packageVersionMarkdownAnchor(update),
         );
+        body.writeln();
       }
     }
     body.writeln();
@@ -90,11 +94,12 @@ class WorkspaceChangelog {
       body.writeln(' - There are no other changes in this release.');
     } else {
       for (final update in packagesWithOtherChanges) {
-        body.writeln(
-          // ignore: missing_whitespace_between_adjacent_strings
-          ' - [${_packageVersionTitle(update)}]'
-          '(${_packageVersionMarkdownAnchor(update)})',
+        body.write(' - ');
+        body.writeLink(
+          _packageVersionTitle(update),
+          uri: _packageVersionMarkdownAnchor(update),
         );
+        body.writeln();
       }
     }
     if (graduatedPackages.isNotEmpty) {
@@ -105,9 +110,7 @@ class WorkspaceChangelog {
       );
       body.writeln();
       for (final update in graduatedPackages) {
-        body.writeln(
-          ' - ${_packageVersionTitle(update)}',
-        );
+        body.writeln(' - ${_packageVersionTitle(update)}');
       }
     }
     if (dependencyOnlyPackages.isNotEmpty) {
@@ -122,9 +125,7 @@ class WorkspaceChangelog {
       );
       body.writeln();
       for (final update in dependencyOnlyPackages) {
-        body.writeln(
-          ' - ${_packageVersionTitle(update)}',
-        );
+        body.writeln(' - ${_packageVersionTitle(update)}');
       }
     }
     if (packagesWithOtherChanges.isNotEmpty ||

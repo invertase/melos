@@ -427,9 +427,10 @@ void sortPackagesTopologically(List<Package> packages) {
 }
 
 /// Given a workspace and package, this assembles the correct command to run pub
-/// / dart pub / flutter pub. Takes into account a potential sdk path being
-/// provided. If no sdk path is provided then it will assume to use the pub
-/// command available in PATH.
+/// / dart pub / flutter pub.
+///
+/// Takes into account a potential sdk path being provided. If no sdk path is
+/// provided then it will assume to use the pub command available in PATH.
 List<String> pubCommandExecArgs({
   required bool useFlutter,
   required MelosWorkspace workspace,

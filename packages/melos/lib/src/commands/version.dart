@@ -399,7 +399,7 @@ mixin _VersionMixin on _RunMixin {
     // allows all versions guaranteed to be backwards compatible with the
     // specified version.
     // For example, ^1.2.3 is equivalent to '>=1.2.3 <2.0.0', and ^0.1.2 is
-    //equivalent to '>=0.1.2 <0.2.0'.
+    // equivalent to '>=0.1.2 <0.2.0'.
     var versionConstraint = VersionConstraint.compatibleWith(version);
 
     // For nullsafety releases we use a >=currentVersion <nextMajorVersion

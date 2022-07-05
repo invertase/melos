@@ -479,8 +479,9 @@ The packages that caused the problem are:
     return _map[key];
   }
 
-  /// Detect packages in the workspace with the provided filters. This is the
-  /// default packages behaviour when a workspace is loaded.
+  /// Detect packages in the workspace with the provided filters.
+  ///
+  /// This is the default packages behaviour when a workspace is loaded.
   Future<PackageMap> applyFilter(PackageFilter? filter) async {
     if (filter == null) return this;
 
@@ -814,8 +815,9 @@ class Package {
     return PackageType.dartPackage;
   }
 
-  /// Returns whether this package is for Flutter. This is determined by whether
-  /// the package depends on the Flutter SDK.
+  /// Returns whether this package is for Flutter.
+  ///
+  /// This is determined by whether the package depends on the Flutter SDK.
   late final bool isFlutterPackage = dependencies.contains('flutter');
 
   /// Returns whether this package is private (publish_to set to 'none').
