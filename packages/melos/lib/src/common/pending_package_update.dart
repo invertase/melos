@@ -18,6 +18,7 @@
 import 'dart:math' as math;
 
 import 'package:conventional_commit/conventional_commit.dart';
+import 'package:meta/meta.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 import '../logging.dart';
@@ -42,8 +43,9 @@ enum PackageUpdateReason {
   graduate,
 }
 
+@immutable
 class MelosPendingPackageUpdate {
-  MelosPendingPackageUpdate(
+  const MelosPendingPackageUpdate(
     this.workspace,
     this.package,
     this.commits,
@@ -170,10 +172,10 @@ class MelosPendingPackageUpdate {
   }
 
   @override
+  int get hashCode => package.name.hashCode;
+
+  @override
   String toString() {
     return 'MelosPendingPackageUpdate(packageName: ${package.name}, semverType: $semverReleaseType, currentVersion: $currentVersion, nextVersion: $nextVersion)';
   }
-
-  @override
-  int get hashCode => package.name.hashCode;
 }

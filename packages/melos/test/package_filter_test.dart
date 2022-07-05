@@ -27,7 +27,7 @@ void main() {
         config,
         logger: TestLogger().toMelosLogger(),
         filter: PackageFilter(
-          dirExists: ['test'],
+          dirExists: const ['test'],
         ),
       );
 
@@ -63,7 +63,7 @@ void main() {
         config,
         logger: TestLogger().toMelosLogger(),
         filter: PackageFilter(
-          fileExists: ['log.txt'],
+          fileExists: const ['log.txt'],
         ),
       );
 

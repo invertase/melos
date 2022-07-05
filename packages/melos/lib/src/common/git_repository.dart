@@ -15,7 +15,10 @@
  *
  */
 
+import 'package:meta/meta.dart';
+
 /// A hosted git repository.
+@immutable
 abstract class HostedGitRepository {
   const HostedGitRepository();
 
@@ -33,8 +36,9 @@ abstract class HostedGitRepository {
 }
 
 /// A git repository, hosted by GitHub.
+@immutable
 class GitHubRepository extends HostedGitRepository {
-  GitHubRepository({
+  const GitHubRepository({
     required this.owner,
     required this.name,
   });
@@ -60,7 +64,7 @@ class GitHubRepository extends HostedGitRepository {
   final String name;
 
   @override
-  late Uri url = Uri.parse('https://github.com/$owner/$name/');
+  Uri get url => Uri.parse('https://github.com/$owner/$name/');
 
   @override
   Uri commitUrl(String id) => url.resolve('commit/$id');
@@ -90,6 +94,7 @@ GitHubRepository(
 }
 
 /// A git repository, hosted by GitLab.
+@immutable
 class GitLabRepository extends HostedGitRepository {
   GitLabRepository({
     required this.owner,
@@ -117,7 +122,7 @@ class GitLabRepository extends HostedGitRepository {
   final String name;
 
   @override
-  late Uri url = Uri.parse('https://gitlab.com/$owner/$name/');
+  Uri get url => Uri.parse('https://gitlab.com/$owner/$name/');
 
   @override
   Uri commitUrl(String id) => url.resolve('-/commit/$id');

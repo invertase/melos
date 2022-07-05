@@ -158,7 +158,6 @@ class IntellijProject {
       case PackageType.flutterApp:
         return 'flutter_app_module.iml';
       case PackageType.dartPackage:
-      default:
         return 'dart_package_module.iml';
     }
   }

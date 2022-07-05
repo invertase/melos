@@ -1,3 +1,5 @@
+// ignore_for_file: strict_raw_type
+
 /*
  * Copyright (c) 2016-present Invertase Limited & Contributors
  *

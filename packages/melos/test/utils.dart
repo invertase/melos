@@ -160,7 +160,7 @@ PackageConfig packageConfigForPackageAt(Directory dir) {
     ),
   );
 
-  return PackageConfig.fromJson(json.decode(source) as Map);
+  return PackageConfig.fromJson(json.decode(source) as Map<String, Object?>);
 }
 
 class PackageConfig {
@@ -170,17 +170,17 @@ class PackageConfig {
     required this.generator,
   });
 
-  PackageConfig.fromJson(Map<Object?, Object?> json)
+  PackageConfig.fromJson(Map<String, Object?> json)
       : this._(
           json,
           generator: json['generator']! as String,
           packages: (json['packages']! as List)
-              .cast<Map>()
+              .cast<Map<String, Object?>>()
               .map((e) => PackageDependencyConfig.fromJson(e))
               .toList(),
         );
 
-  final Map _map;
+  final Map<String, Object?> _map;
   final List<PackageDependencyConfig> packages;
   final String generator;
 
@@ -198,7 +198,7 @@ class PackageDependencyConfig {
     required this.packageUri,
   });
 
-  PackageDependencyConfig.fromJson(Map<Object?, Object?> json)
+  PackageDependencyConfig.fromJson(Map<String, Object?> json)
       : this._(
           json,
           name: json['name']! as String,
@@ -209,7 +209,7 @@ class PackageDependencyConfig {
   final String name;
   final String rootUri;
   final String packageUri;
-  final Map _map;
+  final Map<String, Object?> _map;
 
   @override
   String toString() {

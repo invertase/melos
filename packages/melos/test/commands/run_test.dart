@@ -12,51 +12,52 @@ import '../utils.dart';
 
 void main() {
   group('script', () {
-    test('supports passing package filter options to "melos exec" scripts',
-        () async {
-      final workspaceDir = createTemporaryWorkspaceDirectory(
-        configBuilder: (path) => MelosWorkspaceConfig(
-          path: path,
-          name: 'test_package',
-          packages: [
-            createGlob('packages/**', currentDirectoryPath: path),
-          ],
-          scripts: Scripts({
-            'test_script': Script(
-              name: 'test_script',
-              run: 'melos exec -- "echo hello"',
-              filter: PackageFilter(
-                fileExists: ['log.txt'],
-              ),
-            )
-          }),
-        ),
-      );
+    test(
+      'supports passing package filter options to "melos exec" scripts',
+      () async {
+        final workspaceDir = createTemporaryWorkspaceDirectory(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: Scripts({
+              'test_script': Script(
+                name: 'test_script',
+                run: 'melos exec -- "echo hello"',
+                filter: PackageFilter(
+                  fileExists: const ['log.txt'],
+                ),
+              )
+            }),
+          ),
+        );
 
-      final aDir = await createProject(
-        workspaceDir,
-        const PubSpec(name: 'a'),
-      );
-      writeTextFile(join(aDir.path, 'log.txt'), '');
+        final aDir = await createProject(
+          workspaceDir,
+          const PubSpec(name: 'a'),
+        );
+        writeTextFile(join(aDir.path, 'log.txt'), '');
 
-      await createProject(
-        workspaceDir,
-        const PubSpec(name: 'b'),
-      );
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'b'),
+        );
 
-      final logger = TestLogger();
-      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
-      final melos = Melos(
-        logger: logger,
-        config: config,
-      );
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
 
-      await melos.run(scriptName: 'test_script', noSelect: true);
+        await melos.run(scriptName: 'test_script', noSelect: true);
 
-      expect(
-        logger.output.normalizeNewLines(),
-        ignoringAnsii(
-          '''
+        expect(
+          logger.output.normalizeNewLines(),
+          ignoringAnsii(
+            '''
 melos run test_script
   └> melos exec -- "echo hello"
      └> RUNNING
@@ -79,9 +80,10 @@ melos run test_script
   └> melos exec -- "echo hello"
      └> SUCCESS
 ''',
-        ),
-      );
-    });
+          ),
+        );
+      },
+    );
 
     test('supports passing additional arguments to run scripts', () async {
       final workspaceDir = createTemporaryWorkspaceDirectory(

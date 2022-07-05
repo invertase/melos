@@ -39,7 +39,6 @@ Version nextStableVersion(
       case SemverReleaseType.minor:
         return currentVersion.nextMinor;
       case SemverReleaseType.patch:
-      default:
         return currentVersion.nextPatch;
     }
   }
@@ -56,7 +55,6 @@ Version nextStableVersion(
     case SemverReleaseType.minor:
       return currentVersion.nextPatch;
     case SemverReleaseType.patch:
-    default:
       // Bump the build number, or set it if it does not exist.
       final currentBuild =
           currentVersion.build.length == 1 ? currentVersion.build[0] as int : 0;
@@ -251,7 +249,6 @@ Version nextVersion(
         nextPrePatch = 0;
         break;
       case SemverReleaseType.patch:
-      default:
         nextPrePatch++;
         break;
     }

@@ -289,30 +289,28 @@ Future<int> startProcess(
   final workingDirectoryPath = workingDirectory ?? Directory.current.path;
   final executable = currentPlatform.isWindows ? 'cmd' : '/bin/sh';
   final filteredArgs = execArgs.map((arg) {
-    var _arg = arg;
-
     // Remove empty args.
-    if (_arg.trim().isEmpty) {
+    if (arg.trim().isEmpty) {
       return null;
     }
 
     // Attempt to make line continuations Windows & Linux compatible.
-    if (_arg.trim() == r'\') {
-      return currentPlatform.isWindows ? _arg.replaceAll(r'\', '^') : _arg;
+    if (arg.trim() == r'\') {
+      return currentPlatform.isWindows ? arg.replaceAll(r'\', '^') : arg;
     }
-    if (_arg.trim() == '^') {
-      return currentPlatform.isWindows ? _arg : _arg.replaceAll('^', r'\');
+    if (arg.trim() == '^') {
+      return currentPlatform.isWindows ? arg : arg.replaceAll('^', r'\');
     }
 
     // Inject MELOS_* variables if any.
     environment.forEach((key, value) {
       if (key.startsWith('MELOS_')) {
-        _arg = _arg.replaceAll('\$$key', value);
-        _arg = _arg.replaceAll(key, value);
+        arg = arg.replaceAll('\$$key', value);
+        arg = arg.replaceAll(key, value);
       }
     });
 
-    return _arg;
+    return arg;
   }).where((element) => element != null);
 
   final execProcess = await Process.start(
@@ -336,7 +334,7 @@ Future<int> startProcess(
   if (prefix != null && prefix.isNotEmpty) {
     final pluginPrefixTransformer =
         StreamTransformer<String, String>.fromHandlers(
-      handleData: (String data, EventSink sink) {
+      handleData: (data, sink) {
         const lineSplitter = LineSplitter();
         var lines = lineSplitter.convert(data);
         lines = lines
@@ -423,7 +421,7 @@ void sortPackagesTopologically(List<Package> packages) {
       // `ordered` is in reverse ordering to our desired publish precedence.
       return ordered.indexOf(b.name).compareTo(ordered.indexOf(a.name));
     });
-  } on CycleException {
+  } on CycleException<String> {
     // Cannot sort packages with inter-dependencies. Leave as-is.
   }
 }

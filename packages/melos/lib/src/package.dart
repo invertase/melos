@@ -21,6 +21,7 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
@@ -123,6 +124,7 @@ RegExp dependencyTagReplaceRegex(String dependencyName) {
   );
 }
 
+@immutable
 class PackageFilter {
   PackageFilter({
     this.scope = const [],
@@ -542,10 +544,10 @@ extension on Iterable<Package> {
       final fileExistsMatched = filePaths.any((fileExistsPath) {
         // TODO(rrousselGit): refactor the logic for applying environment variables
         // TODO(rrousselGit): should support environment variables other than PACKAGE_NAME
-        final _fileExistsPath =
+        final expandedFileExistsPath =
             fileExistsPath.replaceAll(r'$MELOS_PACKAGE_NAME', package.name);
 
-        return fileExists(join(package.path, _fileExistsPath));
+        return fileExists(join(package.path, expandedFileExistsPath));
       });
       return fileExistsMatched;
     });

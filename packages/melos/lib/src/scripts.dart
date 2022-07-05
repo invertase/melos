@@ -125,6 +125,7 @@ ExecOptions(
 )''';
 }
 
+@immutable
 class Script {
   Script({
     required this.name,

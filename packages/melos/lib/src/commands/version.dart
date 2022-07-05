@@ -117,7 +117,7 @@ mixin _VersionMixin on _RunMixin {
           MelosPendingPackageUpdate(
             workspace,
             package,
-            [],
+            const [],
             PackageUpdateReason.graduate,
             graduate: asStableRelease,
             prerelease: asPrerelease,
@@ -226,7 +226,7 @@ mixin _VersionMixin on _RunMixin {
           MelosPendingPackageUpdate(
             workspace,
             package,
-            [],
+            const [],
             PackageUpdateReason.dependency,
             // Dependent packages that should have graduated would have already
             // gone through graduation logic above. So graduate should use the default
@@ -549,8 +549,6 @@ mixin _VersionMixin on _RunMixin {
                       return 'dependency was updated';
                     case PackageUpdateReason.graduate:
                       return 'graduate to stable';
-                    default:
-                      return 'unknown';
                   }
                 })(),
               ),

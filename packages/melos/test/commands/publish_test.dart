@@ -6,7 +6,7 @@ import 'package:pubspec/pubspec.dart';
 import 'package:test/expect.dart';
 import 'package:test/scaffolding.dart';
 
-final throwsCyclicError = throwsA(isA<CycleException>());
+final throwsCyclicError = throwsA(isA<CycleException<String>>());
 
 void main() {
   group('publish', () {
