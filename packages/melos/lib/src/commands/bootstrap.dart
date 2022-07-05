@@ -362,7 +362,7 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
         );
 
         // If this package is an an add-to-app module, all plugins that are
-        // dependencies of the package must have their android main classes 
+        // dependencies of the package must have their android main classes
         // copied to the temporary workspace, otherwise pub get fails.
         if (package.isAddToApp &&
             otherPackage.isFlutterPlugin &&
