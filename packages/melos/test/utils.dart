@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/platform.dart';
-import 'package:melos/src/yamlicious/yaml_writer.dart';
+import 'package:melos/src/common/utils.dart';
 import 'package:mockito/mockito.dart';
 import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
@@ -83,7 +83,7 @@ Directory createTemporaryWorkspaceDirectory({
       : dir;
   final config = (configBuilder(path)..validatePhysicalWorkspace()).toJson();
 
-  writeTextFile(join(path, 'melos.yaml'), toYamlString(config));
+  writeTextFile(join(path, 'melos.yaml'), prettyEncodeJson(config));
 
   return Directory(dir);
 }

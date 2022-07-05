@@ -398,7 +398,7 @@ Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
 
     const header = '# Generated file - do not commit this file.';
     final generatedPubspecYamlString =
-        '$header\n${toYamlString(pubspec.toJson())}';
+        '$header\n${prettyEncodeJson(pubspec.toJson())}';
 
     await writeTextFileAsync(
       utils.pubspecPathForDirectory(packageTemporaryPath),

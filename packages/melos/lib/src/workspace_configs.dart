@@ -659,7 +659,7 @@ You must have one of the following to be a valid Melos workspace:
       ide.hashCode ^
       commands.hashCode;
 
-  Map<Object?, Object> toJson() {
+  Map<String, Object> toJson() {
     return {
       'name': name,
       'path': path,

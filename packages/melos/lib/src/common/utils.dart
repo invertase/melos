@@ -514,3 +514,7 @@ extension Utf8StreamUtils on Stream<List<int>> {
     }).join('\n');
   }
 }
+
+// Encodes a [value] as a JSON string with indentation.
+String prettyEncodeJson(Object? value) =>
+    const JsonEncoder.withIndent('  ').convert(value);

@@ -37,7 +37,6 @@ import '../prompts/prompt.dart' as prompts;
 import '../scripts.dart';
 import '../workspace.dart';
 import '../workspace_configs.dart';
-import '../yamlicious/yaml_writer.dart';
 
 part 'bootstrap.dart';
 part 'clean.dart';
