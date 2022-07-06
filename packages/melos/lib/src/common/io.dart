@@ -173,7 +173,8 @@ extension DirectoryUtils on Directory {
             break;
           }
 
-          // We can ignore the link case here because [FileSystemEntity.typeSync] resolves links by default.
+          // We can ignore the link case here because
+          // [FileSystemEntity.typeSync] resolves links by default.
           // ignore: exhaustive_cases
           switch (FileSystemEntity.typeSync(entity.path)) {
             case FileSystemEntityType.directory:
@@ -203,11 +204,10 @@ extension DirectoryUtils on Directory {
 
 /// Tries to resiliently perform [operation].
 ///
-/// Some file system operations can intermittently fail on Windows because
-/// other processes are locking a file. We've seen this with virus scanners
-/// when we try to delete or move something while it's being scanned. To
-/// mitigate that, on Windows, this will retry the operation a few times if it
-/// fails.
+/// Some file system operations can intermittently fail on Windows because other
+/// processes are locking a file. We've seen this with virus scanners when we
+/// try to delete or move something while it's being scanned. To mitigate that,
+/// on Windows, this will retry the operation a few times if it fails.
 ///
 /// For some operations it makes sense to handle ERROR_DIR_NOT_EMPTY
 /// differently. They can pass [ignoreEmptyDir] = `true`.
@@ -270,7 +270,8 @@ bool _isDirectoryNotEmptyException(FileSystemException e) {
       // #define	ENOTEMPTY	39	/* Directory not empty */
       // https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/uapi/asm-generic/errno.h#n20
       (Platform.isLinux && errorCode == 39) ||
-          // On Windows this may fail with ERROR_DIR_NOT_EMPTY or ERROR_ALREADY_EXISTS
+          // On Windows this may fail with ERROR_DIR_NOT_EMPTY or
+          // ERROR_ALREADY_EXISTS
           // https://docs.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-
           (Platform.isWindows && (errorCode == 145 || errorCode == 183)) ||
           // On MacOS rename will fail with ENOTEMPTY if directory exists.

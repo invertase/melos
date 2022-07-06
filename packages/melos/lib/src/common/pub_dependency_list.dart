@@ -16,6 +16,7 @@
  */
 
 import 'package:collection/collection.dart';
+import 'package:meta/meta.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:string_scanner/string_scanner.dart';
 
@@ -27,33 +28,33 @@ class PubDependencyList extends VersionedEntry {
   ) : super.copy(entry);
 
   factory PubDependencyList.parse(String input) {
-    final _scanner = StringScanner(input);
+    final scanner = StringScanner(input);
 
     final sdks = <String, Version>{};
 
     void scanSdk() {
-      _scanner.expect(_sdkLine, name: 'SDK');
-      final entry = VersionedEntry.fromMatch(_scanner.lastMatch!);
+      scanner.expect(_sdkLine, name: 'SDK');
+      final entry = VersionedEntry.fromMatch(scanner.lastMatch!);
       assert(!sdks.containsKey(entry.name));
       sdks[entry.name] = entry.version;
     }
 
     do {
       scanSdk();
-    } while (_scanner.matches(_sdkLine));
+    } while (scanner.matches(_sdkLine));
 
-    _scanner.expect(_sourcePackageLine, name: 'Source package');
-    final sourcePackage = VersionedEntry.fromMatch(_scanner.lastMatch!);
+    scanner.expect(_sourcePackageLine, name: 'Source package');
+    final sourcePackage = VersionedEntry.fromMatch(scanner.lastMatch!);
 
     final sections =
         <String, Map<VersionedEntry, Map<String, VersionConstraint>>>{};
 
-    while (_scanner.scan(_emptyLine)) {
-      final section = _scanSection(_scanner);
+    while (scanner.scan(_emptyLine)) {
+      final section = _scanSection(scanner);
       sections[section.key] = section.value;
     }
 
-    assert(_scanner.isDone, '${_scanner.position} of ${input.length}');
+    assert(scanner.isDone, '${scanner.position} of ${input.length}');
 
     return PubDependencyList._(
       sourcePackage,
@@ -107,8 +108,9 @@ MapEntry<String, Map<VersionedEntry, Map<String, VersionConstraint>>>
   return MapEntry(header, entries);
 }
 
+@immutable
 class VersionedEntry {
-  VersionedEntry(this.name, this.version);
+  const VersionedEntry(this.name, this.version);
 
   VersionedEntry.copy(VersionedEntry other)
       : name = other.name,
@@ -125,11 +127,11 @@ class VersionedEntry {
   final Version version;
 
   @override
-  int get hashCode => name.hashCode;
-
-  @override
   bool operator ==(Object other) =>
       other is VersionedEntry && name == other.name;
+
+  @override
+  int get hashCode => name.hashCode;
 
   @override
   String toString() => '$name @ $version';

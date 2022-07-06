@@ -39,7 +39,10 @@ class TestCase {
 
   @override
   String toString() {
-    return 'TestCase[$currentVersion => $expectedVersion ($requestedReleaseType)]\n  { '
+    return 'TestCase['
+        // ignore: missing_whitespace_between_adjacent_strings
+        '$currentVersion => $expectedVersion ($requestedReleaseType)'
+        ']\n  { '
         'shouldMakePrereleaseVersion:$shouldMakePrereleaseVersion, '
         'shouldMakeGraduateVersion:$shouldMakeGraduateVersion, '
         'requestedPreId:$requestedPreId '
@@ -88,9 +91,10 @@ const _versioningTestCases = [
     shouldMakePrereleaseVersion: true,
   ),
 
-  // Although semantic versioning doesn't promise any compatibility between versions prior to 1.0.0,
-  // the Dart community convention is to treat those versions semantically as well. The interpretation
-  // of each number is just shifted down one slot
+  // Although semantic versioning doesn't promise any compatibility between
+  // versions prior to 1.0.0, the Dart community convention is to treat those
+  // versions semantically as well. The interpretation of each number is just
+  // shifted down one slot
   TestCase('0.1.0', '0.2.0', SemverReleaseType.major),
   TestCase('0.1.0', '0.1.1', SemverReleaseType.minor),
   TestCase('0.1.0', '0.1.0+1', SemverReleaseType.patch),
@@ -128,7 +132,8 @@ const _versioningTestCases = [
   ),
 
   // Check that we preserve prerelease status, e.g. if already a prerelease
-  // then it should stay as a prerelease and not graduate to a non-prerelease version.
+  // then it should stay as a prerelease and not graduate to a non-prerelease
+  // version.
   TestCase('1.0.0-dev.1', '1.0.0-dev.2', SemverReleaseType.patch),
   // It should however graduate if it was specifically requested.
   TestCase(
@@ -144,8 +149,9 @@ const _versioningTestCases = [
     shouldMakeGraduateVersion: true,
   ),
 
-  // Check that we preserve any current prerelease preid if no preid option specified.
-  // So 1.0.0-beta.0 would become ...-beta.X rather than use the default preid "dev".
+  // Check that we preserve any current prerelease preid if no preid option
+  // specified. So 1.0.0-beta.0 would become ...-beta.X rather than use the
+  // default preid "dev".
   TestCase('1.0.0-beta.3', '1.0.0-beta.4', SemverReleaseType.patch),
 
   // Nullsafety
@@ -218,7 +224,8 @@ const _versioningTestCases = [
     SemverReleaseType.patch,
   ),
 
-  // Any nullsafety versions using the previous versioning style should get switched over.
+  // Any nullsafety versions using the previous versioning style should get
+  //switched over.
   NullSafetyTestCase(
     '0.8.0-nullsafety.1',
     '0.8.0-1.0.nullsafety.0',
@@ -247,23 +254,26 @@ void main() {
   group('Semantic Versioning', () {
     for (final testCase in _versioningTestCases) {
       test(
-          '#${_versioningTestCases.indexOf(testCase)}: the version ${testCase.currentVersion} should increment to ${testCase.expectedVersion}',
-          () {
-        final newVersion = nextVersion(
-          Version.parse(testCase.currentVersion),
-          testCase.requestedReleaseType,
-          graduate: testCase.shouldMakeGraduateVersion,
-          preid: testCase.requestedPreId,
-          prerelease: testCase.shouldMakePrereleaseVersion,
-        );
+        '#${_versioningTestCases.indexOf(testCase)}: the version '
+        '${testCase.currentVersion} should increment to '
+        '${testCase.expectedVersion}',
+        () {
+          final newVersion = nextVersion(
+            Version.parse(testCase.currentVersion),
+            testCase.requestedReleaseType,
+            graduate: testCase.shouldMakeGraduateVersion,
+            preid: testCase.requestedPreId,
+            prerelease: testCase.shouldMakePrereleaseVersion,
+          );
 
-        expect(
-          newVersion.toString(),
-          equals(testCase.expectedVersion),
-          reason:
-              'The version created did not match the version expected by this test case: $testCase.',
-        );
-      });
+          expect(
+            newVersion.toString(),
+            equals(testCase.expectedVersion),
+            reason: 'The version created did not match the version expected by '
+                'this test case: $testCase.',
+          );
+        },
+      );
     }
   });
 }

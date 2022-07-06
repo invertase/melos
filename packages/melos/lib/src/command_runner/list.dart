@@ -39,7 +39,8 @@ class ListCommand extends MelosCommand {
       abbr: 'r',
       negatable: false,
       help:
-          'When printing output, use package paths relative to the root of the workspace.',
+          'When printing output, use package paths relative to the root of the '
+          'workspace.',
     );
     argParser.addFlag(
       'json',
@@ -66,7 +67,8 @@ class ListCommand extends MelosCommand {
 
   @override
   final String description =
-      'List local packages in various output formats. Supports all package filtering options.';
+      'List local packages in various output formats. Supports all package '
+      'filtering options.';
 
   @override
   final String invocation = 'melos list';

@@ -54,9 +54,10 @@ class VersionCommand extends MelosCommand {
       abbr: 'g',
       negatable: false,
       help:
-          'Graduate current prerelease versioned packages to stable versions, e.g. '
-          '"0.10.0-dev.1" would become "0.10.0". Cannot be combined with prerelease '
-          'flag. Applies only to Conventional Commits based versioning.',
+          'Graduate current prerelease versioned packages to stable versions, '
+          'e.g. "0.10.0-dev.1" would become "0.10.0". Cannot be combined with '
+          'prerelease flag. Applies only to Conventional Commits based '
+          'versioning.',
     );
     argParser.addFlag(
       'changelog',
@@ -88,7 +89,8 @@ class VersionCommand extends MelosCommand {
       defaultsTo: true,
       help:
           'By default, melos version will commit changes to pubspec.yaml files '
-          'and tag the release. Pass --no-git-tag-version to disable the behavior.',
+          'and tag the release. Pass --no-git-tag-version to disable the '
+          'behaviour.',
     );
     argParser.addOption(
       'message',
@@ -136,14 +138,17 @@ class VersionCommand extends MelosCommand {
 
   @override
   final String description =
-      'Automatically version and generate changelogs based on the Conventional Commits specification. Supports all package filtering options.';
+      'Automatically version and generate changelogs based on the Conventional '
+      'Commits specification. Supports all package filtering options.';
 
   @override
-  // ignore: leading_newlines_in_multiline_strings
-  final String invocation = ' ${AnsiStyles.bold('melos version')}\n'
-      '          Version packages automatically using the Conventional Commits specification.\n\n'
-      '        ${AnsiStyles.bold('melos version')} <package name> <major|patch|minor|build|exactVersion>\n'
-      '          Manually update the version of a package, and update all packages that depend on it.\n';
+  final String invocation = '''
+ ${AnsiStyles.bold('melos version')}
+          Version packages automatically using the Conventional Commits specification.
+
+        ${AnsiStyles.bold('melos version')} <package name> <major|patch|minor|build|exactVersion>
+          Manually update the version of a package, and update all packages that depend on it.
+''';
 
   @override
   Future<void> run() async {

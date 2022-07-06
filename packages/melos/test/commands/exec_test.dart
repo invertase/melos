@@ -41,7 +41,7 @@ void main() {
         ['echo', 'hello', 'world'],
         concurrency: 1,
         filter: PackageFilter(
-          fileExists: ['log.txt'],
+          fileExists: const ['log.txt'],
         ),
       );
 

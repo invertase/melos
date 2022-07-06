@@ -15,7 +15,10 @@
  *
  */
 
+import 'package:meta/meta.dart';
+
 /// Global options that apply to all Melos commands.
+@immutable
 class GlobalOptions {
   const GlobalOptions({
     this.verbose = false,

@@ -652,11 +652,12 @@ Future<void> runMelosBootstrap(Melos melos, TestLogger logger) async {
 ///
 /// In the example below **a** has no dependencies and **b** depends only on
 /// **a**:
-/// ```dart
-/// {
+///
+/// ```dart main
+/// final packages = {
 ///   'a': [],
 ///   'b': ['a']
-/// }
+/// };
 /// ```
 ///
 /// For each entry in [packages] a package with the key as the name will be

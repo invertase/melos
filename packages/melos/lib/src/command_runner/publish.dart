@@ -48,8 +48,8 @@ class PublishCommand extends MelosCommand {
 
   @override
   final String description =
-      'Publish any unpublished packages or package versions in your repository to pub.dev. '
-      'Dry run is on by default.';
+      'Publish any unpublished packages or package versions in your repository '
+      'to pub.dev. Dry run is on by default.';
 
   @override
   Future<void> run() async {

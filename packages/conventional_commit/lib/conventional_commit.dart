@@ -40,6 +40,7 @@ enum SemverReleaseType {
 }
 
 /// A representation of a parsed conventional commit message.
+///
 /// Parsing is based upon the Conventional Commits 1.0.0 specification available
 /// at https://www.conventionalcommits.org/en/v1.0.0/
 class ConventionalCommit {
@@ -57,7 +58,7 @@ class ConventionalCommit {
 
   /// Create a new [ConventionalCommit] from a commit message [String].
   ///
-  /// ```dart
+  /// ```dart main
   /// var message = '''
   /// type(scope)!: commit message description
   ///
@@ -185,13 +186,16 @@ class ConventionalCommit {
   /// The type specified in this commit, e.g. `feat`.
   final String? type;
 
-  /// Whether this commit was a breaking change, e.g. `!` was specified after the scopes in the commit message.
+  /// Whether this commit was a breaking change, e.g. `!` was specified after
+  /// the scopes in the commit message.
   final bool isBreakingChange;
 
-  /// The description of the breaking change, e.g. the text after BREAKING CHANGE: <description>.
+  /// The description of the breaking change, e.g. the text after BREAKING
+  /// CHANGE: <description>.
+  ///
   /// Will be null if [isBreakingChange] is false. Defaults to [description] if
   /// the `BREAKING CHANGE:` footer format was not used, e.g. only `!` after the
-  /// commit type was specified..
+  /// commit type was specified.
   final String? breakingChangeDescription;
 
   /// Whether this commit was a merge commit, e.g. `Merge #24 into main`
@@ -200,23 +204,27 @@ class ConventionalCommit {
   /// Commit message description (text after the scopes).
   final String? description;
 
-  /// The original commit message header (this is normally the first line of the commit message.)
+  /// The original commit message header (this is normally the first line of the
+  /// commit message.)
   final String header;
 
   /// An optional body describing the change in more detail.
+  ///
   /// Note this can contain multiple paragraphs separated by new lines.
   final String? body;
 
   /// Footers other than BREAKING CHANGE: <description> may be provided and
   /// follow a convention similar to git trailer format.
-  /// A footer’s token MUST use "-" in place of whitespace characters,
-  /// e.g., Acked-by (this helps differentiate the footer section from a
-  /// multi-paragraph body). An exception is made for BREAKING CHANGE, which
-  /// MAY also be used as a token.
+  ///
+  /// A footer’s token MUST use "-" in place of whitespace characters, e.g.,
+  /// Acked-by (this helps differentiate the footer section from a
+  /// multi-paragraph body). An exception is made for BREAKING CHANGE, which MAY
+  /// also be used as a token.
   final List<String> footers;
 
   // TODO(Salakar): this api should probably not be in this package
-  /// Whether this commit should trigger a version bump in it's residing package.
+  /// Whether this commit should trigger a version bump in it's residing
+  /// package.
   bool get isVersionableCommit {
     if (isMergeCommit) return false;
     return isBreakingChange ||
@@ -232,7 +240,8 @@ class ConventionalCommit {
   }
 
   // TODO(Salakar): this api should probably not be in this package
-  /// Returns the [SemverReleaseType] for this commit, e.g. [SemverReleaseType.major].
+  /// Returns the [SemverReleaseType] for this commit, e.g.
+  /// [SemverReleaseType.major].
   SemverReleaseType get semverReleaseType {
     if (isBreakingChange) {
       return SemverReleaseType.major;

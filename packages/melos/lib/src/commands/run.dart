@@ -46,9 +46,13 @@ mixin _RunMixin on _Melos {
 
     final scriptChoices = scripts.map((script) {
       final styledName = AnsiStyles.cyan(script.name);
-      final styledDescription = script.description != null
-          ? '\n    └> ${AnsiStyles.gray(script.description!.trim().split('\n').join('\n       '))}'
-          : '';
+      final styledDescription = script.description?.let((description) {
+            final formattedDescription = AnsiStyles.gray(
+              description.trim().split('\n').join('\n       '),
+            );
+            return '\n    └> $formattedDescription';
+          }) ??
+          '';
       return '$styledName$styledDescription';
     }).toList();
 
@@ -185,7 +189,8 @@ class ScriptNotFoundException implements MelosException {
   @override
   String toString() {
     final builder = StringBuffer(
-      "ScriptNotFoundException: The script $scriptName could not be found in the 'melos.yaml' file.",
+      'ScriptNotFoundException: The script $scriptName could not be found in '
+      "the 'melos.yaml' file.",
     );
 
     for (final scriptName in availableScriptNames) {
@@ -201,7 +206,8 @@ class NoScriptException implements MelosException {
 
   @override
   String toString() {
-    return "NoScriptException: This workspace has no scripts defined in it's 'melos.yaml' file.";
+    return "NoScriptException: This workspace has no scripts defined in it's "
+        "'melos.yaml' file.";
   }
 }
 

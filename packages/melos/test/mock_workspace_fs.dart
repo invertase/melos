@@ -22,8 +22,8 @@ import 'package:pub_semver/pub_semver.dart';
 
 import 'mock_fs.dart';
 
-/// Creates a mock workspace at [workspaceRoot], containing a `melos.yaml`
-/// and a set of package folders as described by [packages].
+/// Creates a mock workspace at [workspaceRoot], containing a `melos.yaml` and a
+/// set of package folders as described by [packages].
 ///
 /// The returned directory represents the workspace root.
 Directory createMockWorkspaceFs({
@@ -51,7 +51,7 @@ Directory createMockWorkspaceFs({
     intellij: intellij,
   );
 
-  // Sythesize a "package" (enough to satisfy our test requirements) for each
+  // Synthesize a "package" (enough to satisfy our test requirements) for each
   // entry in `packages`
   for (final package in packages) {
     _createPackage(package, workspaceRoot);
@@ -129,7 +129,8 @@ String _yamlMap(Map<String, String> map, {required int indent}) {
   return map.entries.map((e) => '$indentString${e.key}: ${e.value}').join('\n');
 }
 
-/// Used to generate a package's on-disk representation via [createMockWorkspaceFs].
+/// Used to generate a package's on-disk representation via
+/// [createMockWorkspaceFs].
 class MockPackageFs {
   MockPackageFs({
     required this.name,

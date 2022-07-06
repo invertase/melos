@@ -107,16 +107,16 @@ void main() {
 
       test('clone properties besides updatedSince', () {
         final filter = PackageFilter(
-          dependsOn: ['a'],
-          dirExists: ['a'],
-          fileExists: ['a'],
+          dependsOn: const ['a'],
+          dirExists: const ['a'],
+          fileExists: const ['a'],
           flutter: true,
           scope: [Glob('a')],
           ignore: [Glob('a')],
           includeDependencies: true,
           includeDependents: true,
           includePrivatePackages: false,
-          noDependsOn: ['a'],
+          noDependsOn: const ['a'],
           nullSafe: true,
           published: true,
           updatedSince: '123',

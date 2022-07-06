@@ -345,7 +345,8 @@ class VersionCommandConfigs {
   /// Whether to add links to commits in the generated CHANGELOG.md.
   final bool? linkToCommits;
 
-  /// Whether to also generate a CHANGELOG.md for the entire workspace at the root.
+  /// Whether to also generate a CHANGELOG.md for the entire workspace at the
+  /// root.
   final bool workspaceChangelog;
 
   /// Whether to also update pubspec with git referenced packages.
@@ -554,8 +555,8 @@ class MelosWorkspaceConfig {
         _searchForAncestorDirectoryWithMelosYaml(directory);
 
     if (melosWorkspaceDirectory == null) {
-      // Allow melos to use a project without a `melos.yaml` file if a `packages`
-      // directory exists.
+      // Allow melos to use a project without a `melos.yaml` file if a
+      // `packages` directory exists.
       final packagesDirectory = joinAll([directory.path, 'packages']);
 
       if (dirExists(packagesDirectory)) {
@@ -604,8 +605,8 @@ You must have one of the following to be a valid Melos workspace:
   /// packages.
   final List<Glob> ignore;
 
-  /// A list of scripts that can be executed with `melos run` or will be executed
-  /// before/after some specific melos commands.
+  /// A list of scripts that can be executed with `melos run` or will be
+  /// executed before/after some specific melos commands.
   final Scripts scripts;
 
   /// IDE-specific configurations.
@@ -616,7 +617,7 @@ You must have one of the following to be a valid Melos workspace:
 
   /// Command-specific configurations.
   ///
-  /// This allows customizing the default behavior of melos commands.
+  /// This allows customizing the default behaviour of melos commands.
   final CommandConfigs commands;
 
   /// Path to the Dart/Flutter SDK that should be used, unless overridden though

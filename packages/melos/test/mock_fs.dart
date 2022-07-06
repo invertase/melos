@@ -22,8 +22,8 @@ import 'dart:io';
 import 'package:file/memory.dart';
 import 'package:melos/src/common/platform.dart';
 
-/// Overrides the body of a test so that I/O is run against an in-memory
-/// file system, not the host's disk.
+/// Overrides the body of a test so that I/O is run against an in-memory file
+/// system, not the host's disk.
 ///
 /// The I/O override is applied only to the code running within [testBody].
 FutureOr<void> Function() withMockFs(FutureOr<void> Function() testBody) {
@@ -36,7 +36,7 @@ FutureOr<void> Function() withMockFs(FutureOr<void> Function() testBody) {
 ///
 /// Usage:
 ///
-/// ```dart
+/// ```dart main
 /// test('My FS test', withMockFs(() {
 ///   File('foo').createSync(); // File created in memory
 /// }));

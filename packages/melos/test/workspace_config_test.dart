@@ -277,7 +277,7 @@ void main() {
         expect(
           IDEConfigs.fromYaml(const {'intellij': true}),
           isA<IDEConfigs>()
-              .having((e) => e.intelliJ.enabled, 'intelliJ.eneabled', true),
+              .having((e) => e.intelliJ.enabled, 'intelliJ.enabled', true),
         );
       });
     });
@@ -373,27 +373,29 @@ void main() {
 
   group('MelosWorkspaceConfig', () {
     test(
-        'throws if commands.version.linkToCommits == true but repository is missing',
-        () {
-      expect(
-        () => MelosWorkspaceConfig(
-          name: '',
-          packages: const [],
-          commands: const CommandConfigs(
-            version: VersionCommandConfigs(linkToCommits: true),
+      'throws if commands.version.linkToCommits == true but repository is '
+      'missing',
+      () {
+        expect(
+          () => MelosWorkspaceConfig(
+            name: '',
+            packages: const [],
+            commands: const CommandConfigs(
+              version: VersionCommandConfigs(linkToCommits: true),
+            ),
+            path: testWorkspacePath,
           ),
-          path: testWorkspacePath,
-        ),
-        throwsMelosConfigException(),
-      );
-    });
+          throwsMelosConfigException(),
+        );
+      },
+    );
 
     test('accepts commands.version.linkToCommits == true if repository exists',
         () {
       expect(
         () => MelosWorkspaceConfig(
           name: '',
-          repository: GitHubRepository(owner: 'invertase', name: 'melos'),
+          repository: const GitHubRepository(owner: 'invertase', name: 'melos'),
           packages: const [],
           commands: const CommandConfigs(
             version: VersionCommandConfigs(linkToCommits: true),

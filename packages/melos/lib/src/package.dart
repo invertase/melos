@@ -21,6 +21,7 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
@@ -123,6 +124,7 @@ RegExp dependencyTagReplaceRegex(String dependencyName) {
   );
 }
 
+@immutable
 class PackageFilter {
   PackageFilter({
     this.scope = const [],
@@ -189,10 +191,12 @@ class PackageFilter {
   /// Include only packages that do not depend on a specific package.
   final List<String> noDependsOn;
 
-  /// Filter package based on whether they received changed since a specific git commit/tag ID.
+  /// Filter package based on whether they received changed since a specific git
+  /// commit/tag ID.
   final String? updatedSince;
 
-  /// Filter package based on whether they are different between specific git commit/tag ID.
+  /// Filter package based on whether they are different between specific git
+  /// commit/tag ID.
   final String? diff;
 
   /// Include/Exclude packages with `publish_to: none`.
@@ -373,7 +377,7 @@ class PackageMap {
 
     final dartToolGlob =
         createGlob('**/.dart_tool', currentDirectoryPath: workspacePath);
-    // Flutter syminked plugins for iOS/macOS should not be included in the package list.
+    // Flutter symlinked plugins for iOS/macOS should not be included in the package list.
     final symlinksPluginsGlob = createGlob(
       '**/.symlinks/plugins',
       currentDirectoryPath: workspacePath,
@@ -383,7 +387,8 @@ class PackageMap {
       '**/.fvm',
       currentDirectoryPath: workspacePath,
     );
-    // Ephemeral plugin symlinked packages should not be included in the package list.
+    // Ephemeral plugin symlinked packages should not be included in the package
+    // list.
     final pluginSymlinksGlob = createGlob(
       '**/.plugin_symlinks',
       currentDirectoryPath: workspacePath,
@@ -475,6 +480,7 @@ The packages that caused the problem are:
   }
 
   /// Detect packages in the workspace with the provided filters.
+  ///
   /// This is the default packages behaviour when a workspace is loaded.
   Future<PackageMap> applyFilter(PackageFilter? filter) async {
     if (filter == null) return this;
@@ -540,12 +546,14 @@ extension on Iterable<Package> {
 
     return where((package) {
       final fileExistsMatched = filePaths.any((fileExistsPath) {
-        // TODO(rrousselGit): refactor the logic for applying environment variables
-        // TODO(rrousselGit): should support environment variables other than PACKAGE_NAME
-        final _fileExistsPath =
+        // TODO(rrousselGit): refactor the logic for applying environment
+        // variables
+        // TODO(rrousselGit): should support environment variables other than
+        // PACKAGE_NAME
+        final expandedFileExistsPath =
             fileExistsPath.replaceAll(r'$MELOS_PACKAGE_NAME', package.name);
 
-        return fileExists(join(package.path, _fileExistsPath));
+        return fileExists(join(package.path, expandedFileExistsPath));
       });
       return fileExistsMatched;
     });
@@ -553,9 +561,8 @@ extension on Iterable<Package> {
 
   /// Whether to include packages with `publish_to: none`.
   ///
-  /// If `include` is true, only include private packages.
-  /// If false, only include public packages.
-  /// If null, does nothing.
+  /// If `include` is true, only include private packages. If false, only
+  /// include public packages. If null, does nothing.
   Iterable<Package> filterPrivatePackages({bool? include}) {
     if (include == null) return this;
 
@@ -565,9 +572,8 @@ extension on Iterable<Package> {
   /// Whether to include/exclude packages with no changes since the latest
   /// version available on the registry.
   ///
-  /// If `include` is true, only include published packages.
-  /// If false, only include unpublished packages.
-  /// If null, does nothing.
+  /// If `include` is true, only include published packages. If false, only
+  /// include unpublished packages. If null, does nothing.
   Future<Iterable<Package>> filterPublishedPackages({
     required bool? published,
   }) async {
@@ -635,9 +641,8 @@ extension on Iterable<Package> {
 
   /// Whether to include/exclude packages that are null-safe.
   ///
-  /// If `include` is true, only null-safe packages.
-  /// If false, only include packages that are not null-safe.
-  /// If null, does nothing.
+  /// If `include` is true, only null-safe packages. If false, only include
+  /// packages that are not null-safe. If null, does nothing.
   Iterable<Package> filterNullSafe({required bool? nullSafe}) {
     if (nullSafe == null) return this;
 
@@ -811,6 +816,7 @@ class Package {
   }
 
   /// Returns whether this package is for Flutter.
+  ///
   /// This is determined by whether the package depends on the Flutter SDK.
   late final bool isFlutterPackage = dependencies.contains('flutter');
 
@@ -852,7 +858,8 @@ class Package {
     return versions.reversed.toList();
   }
 
-  /// Generates Pub/Flutter related temporary files such as .packages or pubspec.lock.
+  /// Generates Pub/Flutter related temporary files such as .packages or
+  /// pubspec.lock.
   Future<void> linkPackages(MelosWorkspace workspace) async {
     final pluginTemporaryPath =
         join(workspace.melosToolPath, pathRelativeToWorkspace);
@@ -877,8 +884,8 @@ class Package {
             const JsonEncoder.withIndent('  ').convert(packageConfig);
       }
 
-      final regexPathSeparator =
-          '${currentPlatform.isWindows ? r'\' : ''}${currentPlatform.pathSeparator}';
+      final regexPathSeparator = '${currentPlatform.isWindows ? r'\' : ''}'
+          '${currentPlatform.pathSeparator}';
       final melosToolPathRegExp = RegExp(
         '\\.dart_tool${regexPathSeparator}melos_tool$regexPathSeparator',
       );
@@ -898,10 +905,13 @@ class Package {
   }
 
   /// Returns whether this package is a Flutter app.
+  ///
   /// This is determined by ensuring all the following conditions are met:
-  ///  a) the package depends on the Flutter SDK.
-  ///  b) the package does not define itself as a Flutter plugin inside pubspec.yaml.
-  ///  c) a lib/main.dart file exists in the package.
+  ///
+  /// - a) the package depends on the Flutter SDK.
+  /// - b) the package does not define itself as a Flutter plugin inside
+  ///   pubspec.yaml.
+  /// - c) a lib/main.dart file exists in the package.
   bool get isFlutterApp {
     // Must directly depend on the Flutter SDK.
     if (!isFlutterPackage) return false;
@@ -956,7 +966,9 @@ class Package {
   }
 
   /// Returns whether this package is a Flutter plugin.
-  /// This is determined by whether the pubspec contains a flutter.plugin definition.
+  ///
+  /// This is determined by whether the pubspec contains a flutter.plugin
+  /// definition.
   bool get isFlutterPlugin => pubSpec.flutter?.plugin != null;
 
   String? get androidPackage {

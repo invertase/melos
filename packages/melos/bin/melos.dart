@@ -26,8 +26,8 @@ Future<void> main(List<String> arguments) async {
     if (!isUpToDate) {
       final latestVersion = await pubUpdater.getLatestVersion(packageName);
       final shouldUpdate = utils.promptBool(
-        message:
-            'There is a new version of $packageName available ($latestVersion). Would you like to update?',
+        message: 'There is a new version of $packageName available '
+            '($latestVersion). Would you like to update?',
         defaultsTo: true,
       );
       if (shouldUpdate) {

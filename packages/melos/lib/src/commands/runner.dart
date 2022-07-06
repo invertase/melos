@@ -84,7 +84,8 @@ abstract class _Melos {
     if (currentPlatform.environment.containsKey(envKeyMelosPackages)) {
       // MELOS_PACKAGES environment variable is a comma delimited list of
       // package names - used instead of filters if it is present.
-      // This can be user defined or can come from package selection in `melos run`.
+      // This can be user defined or can come from package selection in
+      // `melos run`.
       filterWithEnv = PackageFilter(
         scope: currentPlatform.environment[envKeyMelosPackages]!
             .split(',')

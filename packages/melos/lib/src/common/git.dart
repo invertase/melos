@@ -27,7 +27,8 @@ enum TagReleaseType {
   stable,
 }
 
-/// Generate a filter pattern for a package name, useful for listing tags for a package.
+/// Generate a filter pattern for a package name, useful for listing tags for a
+/// package.
 String gitTagFilterPattern(
   String packageName,
   TagReleaseType tagReleaseType, {
@@ -80,7 +81,9 @@ Future<ProcessResult> gitExecuteCommand({
   return processResult;
 }
 
-/// Return a list of git tags for a Melos package, in date created descending order.
+/// Return a list of git tags for a Melos package, in date created descending
+/// order.
+///
 /// Optionally specify [tagReleaseType] to specify [TagReleaseType].
 Future<List<String>> gitTagsForPackage(
   Package package, {
@@ -101,8 +104,10 @@ Future<List<String>> gitTagsForPackage(
       .where((e) => e.isNotEmpty)
       .where((tag) {
     if (tagReleaseType == TagReleaseType.stable) {
-      // TODO(Salakar) This is probably not the best way to determine if a tag is pre-release or not.
-      //   should we parse it, extract the version and pass it through to pub_semver?
+      // TODO(Salakar) This is probably not the best way to determine if a tag
+      // is pre-release or not.
+      // Should we parse it, extract the version and pass it through to
+      // pub_semver?
       return !tag.contains('-$preid.');
     }
     return true;
@@ -124,6 +129,7 @@ Future<bool> gitTagExists(
 }
 
 /// Create a tag, if it does not already exist.
+///
 /// Returns true if tag was successfully created.
 Future<bool> gitTagCreate(
   String tag,
@@ -158,10 +164,16 @@ Future<bool> gitTagCreate(
   );
 }
 
-/// Return the latest git tag for a Melos package. Latest determined in the following order;
-///     1) The current package version exists as a tag?
-///  OR 2) The latest tag sorted by listing tags in created date descending order.
-///        Note: If the current version is a prerelease then only prerelease tags are requested.
+/// Return the latest git tag for a Melos package.
+///
+/// The latest tag is determined in the following order:
+///
+/// - 1.  The current package version exists as a tag? OR
+/// - 2.  The latest tag sorted by listing tags in created date descending
+///       order.
+///
+///       Note: If the current version is a prerelease then only prerelease tags
+///       are requested.
 Future<String?> gitLatestTagForPackage(
   Package package, {
   String preid = 'dev',
@@ -184,7 +196,8 @@ Future<String?> gitLatestTagForPackage(
     return currentVersionTag;
   }
 
-  // If the current version is a prerelease then only prerelease tags are requested.
+  // If the current version is a prerelease then only prerelease tags are
+  // requested.
   final tagReleaseType = package.version.isPreRelease
       ? TagReleaseType.prerelease
       : TagReleaseType.all;
@@ -228,8 +241,9 @@ Future<void> gitCommit(
 }
 
 /// Returns a list of [GitCommit]s for a Melos package.
-/// Optionally specify [since] to start after a specified commit or tag. Defaults
-/// to the latest release tag.
+///
+/// Optionally specify [since] to start after a specified commit or tag.
+/// Defaults to the latest release tag.
 Future<List<GitCommit>> gitCommitsForPackage(
   Package package, {
   String? since,
@@ -303,8 +317,8 @@ Future<void> gitRemoteUpdate({
   );
 }
 
-/// Determine if the local git repository is behind on commits from it's
-/// remote branch.
+/// Determine if the local git repository is behind on commits from it's remote
+/// branch.
 Future<bool> gitIsBehindUpstream({
   required String workingDirectory,
   String remote = 'origin',

@@ -24,8 +24,9 @@ class RunCommand extends MelosCommand {
     argParser.addFlag(
       'no-select',
       negatable: false,
-      help:
-          'Skips the prompt to select a package (if defined in the script configuration). Filters defined in the scripts "select-package" options will however still be applied.',
+      help: 'Skips the prompt to select a package (if defined in the script '
+          'configuration). Filters defined in the scripts "select-package" '
+          'options will however still be applied.',
     );
   }
 
