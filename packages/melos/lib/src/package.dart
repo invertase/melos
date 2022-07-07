@@ -16,6 +16,7 @@
  */
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
@@ -394,7 +395,8 @@ class PackageMap {
       currentDirectoryPath: workspacePath,
     );
 
-    final pubspecsByResolvedPath = <String, File>{};
+    final pubspecsByResolvedPath =
+        HashMap<String, File>(equals: p.equals, hashCode: p.hash);
 
     Stream<FileSystemEntity> allWorkspaceEntities() async* {
       final workspaceDir = Directory(workspacePath);
