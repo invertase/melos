@@ -216,10 +216,12 @@ class IntellijProject {
   Future<void> writeModulesXml() async {
     final ideaModules = <String>[];
     final workspaceModuleName = _workspace.config.name.toLowerCase();
+    final moduleNamePrefix = _workspace.config.ide.intelliJ.moduleNamePrefix;
     for (final package in _workspace.filteredPackages.values) {
+      final moduleName = '$moduleNamePrefix${package.name}';
       ideaModules.add(
         ideaModuleStringForName(
-          package.name,
+          moduleName,
           relativePath: package.pathRelativeToWorkspace,
         ),
       );

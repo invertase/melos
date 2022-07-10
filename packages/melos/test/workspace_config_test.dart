@@ -291,19 +291,62 @@ void main() {
       );
     });
 
+    test('has "melos_" moduleNamePrefix by default', () {
+      expect(
+        IntelliJConfig.empty.moduleNamePrefix,
+        'melos_',
+      );
+    });
+
     group('fromYaml', () {
-      test('throws if yaml is not a boolean', () {
+      test('yields default config from empty map', () {
         expect(
-          () => IntelliJConfig.fromYaml(const <dynamic, dynamic>{}),
-          throwsMelosConfigException(),
+          IntelliJConfig.fromYaml(const <dynamic, dynamic>{}),
+          IntelliJConfig.empty,
         );
       });
 
-      test('accepts booleans as yaml', () {
+      test('supports "enabled"', () {
         expect(
-          IntelliJConfig.fromYaml(false),
+          IntelliJConfig.fromYaml(const <dynamic, dynamic>{'enabled': false}),
           const IntelliJConfig(enabled: false),
         );
+        expect(
+          IntelliJConfig.fromYaml(const <dynamic, dynamic>{'enabled': true}),
+          IntelliJConfig.empty,
+        );
+      });
+
+      test('supports "moduleNamePrefix" override', () {
+        expect(
+          IntelliJConfig.fromYaml(
+            const <dynamic, dynamic>{'moduleNamePrefix': 'prefix1'},
+          ),
+          const IntelliJConfig(moduleNamePrefix: 'prefix1'),
+        );
+      });
+
+      test('yields "moduleNamePrefix" of "melos_" by default', () {
+        expect(
+          IntelliJConfig.fromYaml(const <dynamic, dynamic>{}).moduleNamePrefix,
+          'melos_',
+        );
+      });
+
+      group('legacy config support', () {
+        test('accepts boolean as yaml', () {
+          expect(
+            IntelliJConfig.fromYaml(false),
+            const IntelliJConfig(enabled: false),
+          );
+        });
+        
+        test('yields "moduleNamePrefix" of "melos_" by default', () {
+          expect(
+            IntelliJConfig.fromYaml(true).moduleNamePrefix,
+            'melos_',
+          );
+        });
       });
     });
   });
