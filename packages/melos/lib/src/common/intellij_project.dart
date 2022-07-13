@@ -83,6 +83,11 @@ class IntellijProject {
     return joinAll([package.path, 'melos_${package.name}.iml']);
   }
 
+  String pathWorkspaceModuleIml() {
+    final workspaceModuleName = _workspace.config.name.toLowerCase();
+    return joinAll([_workspace.path, 'melos_$workspaceModuleName.iml']);
+  }
+
   String injectTemplateVariable({
     required String template,
     required String variableName,
@@ -167,21 +172,43 @@ class IntellijProject {
   }
 
   Future<void> writePackageModule(Package package) async {
+    final path = pathPackageModuleIml(package);
+    if (fileExists(path)) {
+      // The user might have modified the module, so we don't want to overwrite
+      // them.
+      return;
+    }
+
     final template = await readFileTemplate(
       moduleTemplateFileForPackageType(package.type),
       templateCategory: 'modules',
     );
-    return forceWriteToFile(pathPackageModuleIml(package), template);
+
+    return forceWriteToFile(path, template);
+  }
+
+  Future<void> writePackageModules() async {
+    await Future.forEach(
+      _workspace.filteredPackages.values,
+      writePackageModule,
+    );
   }
 
   Future<void> writeWorkspaceModule() async {
+    final path = pathWorkspaceModuleIml();
+    if (fileExists(path)) {
+      // The user might have modified the module, so we don't want to overwrite
+      // them.
+      return;
+    }
+
     final ideaWorkspaceModuleImlTemplate = await readFileTemplate(
       'workspace_root_module.iml',
       templateCategory: 'modules',
     );
-    final workspaceModuleName = _workspace.config.name.toLowerCase();
+
     return forceWriteToFile(
-      joinAll([_workspace.path, 'melos_$workspaceModuleName.iml']),
+      path,
       ideaWorkspaceModuleImlTemplate,
     );
   }
@@ -312,11 +339,7 @@ class IntellijProject {
     await writeNameFile();
 
     // <WORKSPACE_ROOT>/<PACKAGE_DIR>/<PACKAGE_NAME>.iml
-
-    await Future.forEach(_workspace.filteredPackages.values,
-        (Package package) async {
-      await writePackageModule(package);
-    });
+    await writePackageModules();
 
     // <WORKSPACE_ROOT>/<WORKSPACE_NAME>.iml
     await writeWorkspaceModule();
