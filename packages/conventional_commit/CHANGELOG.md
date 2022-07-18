@@ -1,3 +1,7 @@
+## 0.4.3+1
+
+ - **REFACTOR**: enable more lint rules ([#346](https://github.com/invertase/melos/issues/346)). ([70448bec](https://github.com/invertase/melos/commit/70448bec7d8cf5f8d0a8dc8c2660e70033936329))
+
 ## 0.4.3
 
  - **FEAT**: allow prefixes before conventional commit type (#259). ([e856cfa5](https://github.com/invertase/melos/commit/e856cfa59f3a3c2b5bd753d2be0a1a0a512822a0))

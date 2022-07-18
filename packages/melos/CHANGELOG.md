@@ -1,3 +1,14 @@
+## 2.6.0
+
+ - **REFACTOR**: use `homepage` and `repository` keys in `pubspec.yaml` ([#354](https://github.com/invertase/melos/issues/354)). ([c7a78e3a](https://github.com/invertase/melos/commit/c7a78e3af1ebc3d3a0d2973fdbe154813b8eb2e3))
+ - **REFACTOR**: enable more lint rules ([#346](https://github.com/invertase/melos/issues/346)). ([70448bec](https://github.com/invertase/melos/commit/70448bec7d8cf5f8d0a8dc8c2660e70033936329))
+ - **REFACTOR**: remove local fork of `yamlicious` ([#345](https://github.com/invertase/melos/issues/345)). ([64a15b83](https://github.com/invertase/melos/commit/64a15b83f87d9c21c0bcad10f4e6d4941f935091))
+ - **REFACTOR**: remove local fork of `prompts` package ([#344](https://github.com/invertase/melos/issues/344)). ([200450c3](https://github.com/invertase/melos/commit/200450c3064ae461dafc1eebee285c762a28eba1))
+ - **FIX**: don't override Intellij module config files ([#351](https://github.com/invertase/melos/issues/351)). ([850e9f82](https://github.com/invertase/melos/commit/850e9f8227ff3233b3f348260ec16ff05b13991d))
+ - **FIX**: false positive for non-unique packages ([#348](https://github.com/invertase/melos/issues/348)). ([9c136194](https://github.com/invertase/melos/commit/9c136194ac888be5f6b6ccc0543ea369507ba129))
+ - **FEAT**: write conventional commit scopes in changelog ([#341](https://github.com/invertase/melos/issues/341)). ([0c64d61e](https://github.com/invertase/melos/commit/0c64d61eb9fa0f65b85a21e0843e112d0b717733))
+ - **DOCS**: update link to the FlutterFire repository ([#338](https://github.com/invertase/melos/issues/338)). ([344df53c](https://github.com/invertase/melos/commit/344df53c2bd8bd8e331708013e336fed9e820b81))
+
 ## 2.5.0
 
  - **FIX**: follow up [#330](https://github.com/invertase/melos/issues/330) ([#331](https://github.com/invertase/melos/issues/331)). ([f6eec0a2](https://github.com/invertase/melos/commit/f6eec0a295c186715a68ee5b6ee96f32de2184e9))
