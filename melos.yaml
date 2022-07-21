@@ -50,4 +50,4 @@ scripts:
 
   activate:pub:
     description: Activate the published version of melos.
-    run: dart pub global activate melos
+    run: dart pub global activate melos --overwrite
