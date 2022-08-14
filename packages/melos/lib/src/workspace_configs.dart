@@ -22,7 +22,6 @@ import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 
-import '../melos.dart';
 import 'common/git_repository.dart';
 import 'common/glob.dart';
 import 'common/io.dart';
@@ -75,9 +74,10 @@ IDEConfigs(
 /// IntelliJ-specific configurations
 @immutable
 class IntelliJConfig {
-  const IntelliJConfig(
-      {this.enabled = _defaultEnabled,
-      this.moduleNamePrefix = _defaultModuleNamePrefix});
+  const IntelliJConfig({
+    this.enabled = _defaultEnabled,
+    this.moduleNamePrefix = _defaultModuleNamePrefix,
+  });
 
   factory IntelliJConfig.fromYaml(Object? yaml) {
     if (yaml is Map<Object?, Object?>) {
@@ -92,7 +92,9 @@ class IntelliJConfig {
           ? assertKeyIsA<bool>(key: 'enabled', map: yaml, path: 'ide/intellij')
           : _defaultEnabled;
       return IntelliJConfig(
-          enabled: enabled, moduleNamePrefix: moduleNamePrefix);
+        enabled: enabled,
+        moduleNamePrefix: moduleNamePrefix,
+      );
     } else {
       final enabled = assertIsA<bool>(
         value: yaml,

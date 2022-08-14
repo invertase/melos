@@ -340,7 +340,7 @@ void main() {
             const IntelliJConfig(enabled: false),
           );
         });
-        
+
         test('yields "moduleNamePrefix" of "melos_" by default', () {
           expect(
             IntelliJConfig.fromYaml(true).moduleNamePrefix,
