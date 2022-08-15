@@ -402,8 +402,10 @@ class Script {
       if (exec.concurrency != null) {
         parts.addAll(['--concurrency', '${exec.concurrency}']);
       }
-      if (exec.failFast != null) {
-        parts.addAll(['--fail-fast', '${exec.failFast}']);
+
+      // --fail-fast is a flag and as such does not accept any value
+      if (exec.failFast ?? false) {
+        parts.add('--fail-fast');
       }
 
       parts.addAll(['--', _quoteScript(run)]);
