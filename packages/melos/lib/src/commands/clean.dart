@@ -60,7 +60,10 @@ mixin _CleanMixin on _Melos {
   Future<void> cleanIntelliJ(MelosWorkspace workspace) async {
     if (dirExists(workspace.ide.intelliJ.runConfigurationsDir.path)) {
       final melosXmlGlob = createGlob(
-        join(workspace.ide.intelliJ.runConfigurationsDir.path, 'melos_*.xml'),
+        join(
+          workspace.ide.intelliJ.runConfigurationsDir.path,
+          '$kRunConfigurationPrefix*.xml',
+        ),
         currentDirectoryPath: workspace.path,
       );
 

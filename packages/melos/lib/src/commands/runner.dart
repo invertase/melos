@@ -24,6 +24,7 @@ import '../common/exception.dart';
 import '../common/git.dart';
 import '../common/git_commit.dart';
 import '../common/glob.dart';
+import '../common/intellij_project.dart';
 import '../common/io.dart';
 import '../common/pending_package_update.dart';
 import '../common/platform.dart';

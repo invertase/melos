@@ -25,6 +25,8 @@ import '../workspace.dart';
 import 'io.dart';
 import 'platform.dart';
 
+const String kRunConfigurationPrefix = 'melos_';
+
 const String _kTemplatesDirName = 'templates';
 const String _kIntellijDirName = 'intellij';
 const String _kDotIdeaDirName = '.idea';
@@ -75,17 +77,28 @@ class IntellijProject {
     return joinAll([pathDotIdea, 'modules.xml']);
   }
 
-  Future<String> pathTemplatesForDirectory(String directory) async {
-    return joinAll([await pathTemplates, directory]);
+  String _fullModuleName(String name) {
+    return '${_workspace.config.ide.intelliJ.moduleNamePrefix}$name';
+  }
+
+  String get workspaceModuleName {
+    return _fullModuleName(_workspace.name.toLowerCase());
+  }
+
+  String packageModuleName(Package package) {
+    return _fullModuleName(package.name);
+  }
+
+  String get pathWorkspaceModuleIml {
+    return joinAll([_workspace.path, '$workspaceModuleName.iml']);
   }
 
   String pathPackageModuleIml(Package package) {
-    return joinAll([package.path, 'melos_${package.name}.iml']);
+    return joinAll([package.path, '${packageModuleName(package)}.iml']);
   }
 
-  String pathWorkspaceModuleIml() {
-    final workspaceModuleName = _workspace.config.name.toLowerCase();
-    return joinAll([_workspace.path, 'melos_$workspaceModuleName.iml']);
+  Future<String> pathTemplatesForDirectory(String directory) async {
+    return joinAll([await pathTemplates, directory]);
   }
 
   String injectTemplateVariable({
@@ -111,19 +124,6 @@ class IntellijProject {
     return updatedTemplate;
   }
 
-  String ideaModuleStringForName(String moduleName, {String? relativePath}) {
-    var module = '';
-    if (relativePath == null) {
-      module =
-          '<module fileurl="file://\$PROJECT_DIR\$/melos_$moduleName.iml" filepath="\$PROJECT_DIR\$/melos_$moduleName.iml" />';
-    } else {
-      module =
-          '<module fileurl="file://\$PROJECT_DIR\$/$relativePath/melos_$moduleName.iml" filepath="\$PROJECT_DIR\$/$relativePath/melos_$moduleName.iml" />';
-    }
-    // Pad to preserve formatting on generated file. Indent x6.
-    return '      $module';
-  }
-
   /// Reads a file template from the templates directory.
   ///
   /// Additionally keeps a cache to reduce reads.
@@ -146,6 +146,18 @@ class IntellijProject {
     _cacheTemplates[fileName] = template;
 
     return template;
+  }
+
+  String ideaModuleStringForName(String moduleName, {String? relativePath}) {
+    final imlPath = relativePath != null
+        ? '$relativePath/$moduleName.iml'
+        : '$moduleName.iml';
+    final module = '<module '
+        'fileurl="file://\$PROJECT_DIR\$/$imlPath" '
+        'filepath="\$PROJECT_DIR\$/$imlPath" '
+        '/>';
+    // Pad to preserve formatting on generated file. Indent x6.
+    return '      $module';
   }
 
   Future<void> forceWriteToFile(String filePath, String fileContents) async {
@@ -195,7 +207,7 @@ class IntellijProject {
   }
 
   Future<void> writeWorkspaceModule() async {
-    final path = pathWorkspaceModuleIml();
+    final path = pathWorkspaceModuleIml;
     if (fileExists(path)) {
       // The user might have modified the module, so we don't want to overwrite
       // them.
@@ -206,7 +218,6 @@ class IntellijProject {
       'workspace_root_module.iml',
       templateCategory: 'modules',
     );
-
     return forceWriteToFile(
       path,
       ideaWorkspaceModuleImlTemplate,
@@ -215,11 +226,10 @@ class IntellijProject {
 
   Future<void> writeModulesXml() async {
     final ideaModules = <String>[];
-    final workspaceModuleName = _workspace.config.name.toLowerCase();
     for (final package in _workspace.filteredPackages.values) {
       ideaModules.add(
         ideaModuleStringForName(
-          package.name,
+          packageModuleName(package),
           relativePath: package.pathRelativeToWorkspace,
         ),
       );
@@ -260,6 +270,8 @@ class IntellijProject {
 
     await Future.forEach(runConfigurations.keys, (String scriptName) async {
       final scriptArgs = runConfigurations[scriptName]!;
+      final pathSafeScriptArgs =
+          scriptArgs.replaceAll(RegExp('[^A-Za-z0-9]'), '_');
 
       final generatedRunConfiguration =
           injectTemplateVariables(melosScriptTemplate, {
@@ -271,7 +283,7 @@ class IntellijProject {
       final outputFile = joinAll([
         pathDotIdea,
         'runConfigurations',
-        'melos_${scriptArgs.replaceAll(RegExp('[^A-Za-z0-9]'), '_')}.xml'
+        '$kRunConfigurationPrefix$pathSafeScriptArgs.xml'
       ]);
 
       await forceWriteToFile(outputFile, generatedRunConfiguration);
@@ -338,10 +350,10 @@ class IntellijProject {
     // <WORKSPACE_ROOT>/.idea/.name
     await writeNameFile();
 
-    // <WORKSPACE_ROOT>/<PACKAGE_DIR>/<PACKAGE_NAME>.iml
+    // <WORKSPACE_ROOT>/<PACKAGE_DIR>/<MODULE_NAME_PREFIX><PACKAGE_NAME>.iml
     await writePackageModules();
 
-    // <WORKSPACE_ROOT>/<WORKSPACE_NAME>.iml
+    // <WORKSPACE_ROOT>/<MODULE_NAME_PREFIX><WORKSPACE_NAME>.iml
     await writeWorkspaceModule();
 
     // <WORKSPACE_ROOT>/.idea/modules.xml

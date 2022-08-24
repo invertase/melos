@@ -81,7 +81,7 @@ ignore:
 
 > You can also expand the scope of ignored packages on a per-command basis via the [`--scope` filter](/filters#scope) flag.
 
-## `ide/intellij`
+## `ide/intellij/enabled`
 
 Whether to generate IntelliJ IDEA config files to improve the developer experience when working
 in a Melos workspace.
@@ -90,8 +90,16 @@ The default is `true`.
 
 ```yaml
 ide:
-  intellij: false
+  intellij:
+    enabled: false           # set to false to override default and disable
 ```
+
+## `ide/intellij/moduleNamePrefix`
+
+Used when generating IntelliJ project modules files, this value specifies a string to prepend to a package's IntelliJ
+module name. Use this to avoid name collisions with other IntelliJ modules you may already have in place.
+
+The default is 'melos_'.
 
 ## `scripts`
 

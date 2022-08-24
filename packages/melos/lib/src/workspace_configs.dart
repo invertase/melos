@@ -74,23 +74,44 @@ IDEConfigs(
 /// IntelliJ-specific configurations
 @immutable
 class IntelliJConfig {
-  const IntelliJConfig({this.enabled = true});
+  const IntelliJConfig({
+    this.enabled = _defaultEnabled,
+    this.moduleNamePrefix = _defaultModuleNamePrefix,
+  });
 
   factory IntelliJConfig.fromYaml(Object? yaml) {
-    // TODO support more granular configuration than just a boolean
-
-    final enabled = assertIsA<bool>(
-      value: yaml,
-      key: 'intellij',
-      path: 'ide',
-    );
-
-    return IntelliJConfig(enabled: enabled);
+    if (yaml is Map<Object?, Object?>) {
+      final moduleNamePrefix = yaml.containsKey('moduleNamePrefix')
+          ? assertKeyIsA<String>(
+              map: yaml,
+              key: 'moduleNamePrefix',
+              path: 'ide/intellij',
+            )
+          : _defaultModuleNamePrefix;
+      final enabled = yaml.containsKey('enabled')
+          ? assertKeyIsA<bool>(key: 'enabled', map: yaml, path: 'ide/intellij')
+          : _defaultEnabled;
+      return IntelliJConfig(
+        enabled: enabled,
+        moduleNamePrefix: moduleNamePrefix,
+      );
+    } else {
+      final enabled = assertIsA<bool>(
+        value: yaml,
+        key: 'intellij',
+        path: 'ide',
+      );
+      return IntelliJConfig(enabled: enabled);
+    }
   }
 
   static const empty = IntelliJConfig();
+  static const _defaultModuleNamePrefix = 'melos_';
+  static const _defaultEnabled = true;
 
   final bool enabled;
+
+  final String moduleNamePrefix;
 
   Object? toJson() {
     return enabled;
