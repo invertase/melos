@@ -7,7 +7,8 @@
 
 ---
 
-Parse a git commit message into a [Conventional Commit](https://www.conventionalcommits.org/en/v1.0.0/) format.
+Parse a git commit message into a
+[Conventional Commit](https://www.conventionalcommits.org/en/v1.0.0/) format.
 
 ## Example
 
@@ -50,17 +51,11 @@ void main() {
   print(parsedCommit.breakingChangeDescription);
   // : This is a breaking change because of X Y Z.
 
-  print(parsedCommit.semverReleaseType);
-  // : SemverReleaseType.major
-
   print(parsedCommit.footers);
   // : ['Co-authored-by: @Salakar', 'Refs #123 #456']
 
   print(parsedCommit.isMergeCommit);
   // : false
-
-  print(parsedCommit.isVersionableCommit);
-  // : true
 }
 ```
 

@@ -15,8 +15,10 @@
  *
  */
 
-final _conventionalCommitRegex = RegExp(
-  r'(?<type>build|chore|ci|docs|feat|fix|bug|perf|refactor|revert|style|test)(?<scope>\([a-zA-Z0-9_,\s\*]+\)?((?=:\s?)|(?=!:\s?)))?(?<breaking>!)?(?<description>:\s?.*)?|^(?<merge>Merge \w+)',
+final _mergeCommitPrefixRegex = RegExp('^Merged? (.*?:)?');
+
+final _conventionalCommitHeaderRegex = RegExp(
+  r'(?<type>[a-zA-Z0-9_]+)(\((?<scope>[a-zA-Z0-9_,\s\*]+)\))?(?<breaking>!)?: ?(?<description>.+)',
 );
 
 final _breakingChangeRegex =
@@ -26,18 +28,6 @@ final _footerRegex = RegExp(
   r'^(?<footer>(?:[a-z-A-Z0-9\-]+|BREAKING\sCHANGE)(?::\s|\s#).*$)',
   multiLine: true,
 );
-
-/// Indicates the semver release type this commit message creates.
-enum SemverReleaseType {
-  /// A patch release indicates non-breaking changes (e.g. bug fixes).
-  patch,
-
-  /// Indicates new API changes have been made (e.g. new features).
-  minor,
-
-  /// A major release is when the breaking changes have been introduced.
-  major,
-}
 
 /// A representation of a parsed conventional commit message.
 ///
@@ -75,30 +65,33 @@ class ConventionalCommit {
   /// ```
   static ConventionalCommit? tryParse(String commitMessage) {
     final header = commitMessage.split('\n')[0];
-    final match = _conventionalCommitRegex.firstMatch(header);
+    final mergeCommitPrefixMatch = _mergeCommitPrefixRegex.firstMatch(header);
+    final isMergeCommit = mergeCommitPrefixMatch != null;
+    final headerMatch = _conventionalCommitHeaderRegex.firstMatch(
+      isMergeCommit ? header.substring(mergeCommitPrefixMatch!.end) : header,
+    );
 
-    if (match == null) {
+    if (headerMatch == null) {
+      if (isMergeCommit) {
+        return ConventionalCommit._(
+          header: header,
+          isMergeCommit: isMergeCommit,
+          isBreakingChange: false,
+          scopes: [],
+        );
+      }
       return null;
     }
 
-    final isMergeCommit = match.namedGroup('merge') != null;
-    if (isMergeCommit) {
-      return ConventionalCommit._(
-        header: header,
-        isMergeCommit: isMergeCommit,
-        isBreakingChange: false,
-        scopes: [],
-      );
-    }
+    final type = headerMatch.namedGroup('type')!.toLowerCase();
+    final scopes = (headerMatch.namedGroup('scope') ?? '')
+        .split(',')
+        .map((scope) => scope.trim())
+        .where((scope) => scope.isNotEmpty)
+        .toList();
+    final description = headerMatch.namedGroup('description')!.trim();
 
-    final type = match.namedGroup('type');
-    var description = (match.namedGroup('description') ?? '').trim();
-    description = description.replaceAll(RegExp(r'^:\s'), '').trim();
-    if (description.isEmpty) {
-      return null;
-    }
-
-    final isBreakingChange = match.namedGroup('breaking') != null ||
+    final isBreakingChange = headerMatch.namedGroup('breaking') != null ||
         commitMessage.contains('BREAKING: ') ||
         commitMessage.contains('BREAKING CHANGE: ');
 
@@ -159,14 +152,6 @@ class ConventionalCommit {
         )
         .toList();
 
-    final scopes = (match.namedGroup('scope') ?? '')
-        .replaceAll(RegExp(r'^\('), '')
-        .replaceAll(RegExp(r'\)$'), '')
-        .split(',')
-        .map((e) => e.trim())
-        .where((element) => element.isNotEmpty)
-        .toList();
-
     return ConventionalCommit._(
       body: body,
       breakingChangeDescription: breakingChangeDescription,
@@ -185,6 +170,12 @@ class ConventionalCommit {
 
   /// The type specified in this commit, e.g. `feat`.
   final String? type;
+
+  /// Whether this commit adds a new feature.
+  bool get isFeature => type == 'feat';
+
+  /// Whether this commit represents a bug fix.
+  bool get isFix => type == 'fix';
 
   /// Whether this commit was a breaking change, e.g. `!` was specified after
   /// the scopes in the commit message.
@@ -222,42 +213,10 @@ class ConventionalCommit {
   /// also be used as a token.
   final List<String> footers;
 
-  // TODO(Salakar): this api should probably not be in this package
-  /// Whether this commit should trigger a version bump in it's residing
-  /// package.
-  bool get isVersionableCommit {
-    if (isMergeCommit) return false;
-    return isBreakingChange ||
-        [
-          'docs', // TODO: what if markdown docs and not code docs
-          'feat',
-          'fix',
-          'bug',
-          'perf',
-          'refactor',
-          'revert',
-        ].contains(type);
-  }
-
-  // TODO(Salakar): this api should probably not be in this package
-  /// Returns the [SemverReleaseType] for this commit, e.g.
-  /// [SemverReleaseType.major].
-  SemverReleaseType get semverReleaseType {
-    if (isBreakingChange) {
-      return SemverReleaseType.major;
-    }
-
-    if (type == 'feat') {
-      return SemverReleaseType.minor;
-    }
-
-    return SemverReleaseType.patch;
-  }
-
   @override
   String toString() {
     return '''
-ConventionalCommit[
+ConventionalCommit(
   type="$type",
   scopes=$scopes,
   description="$description",
@@ -266,6 +225,6 @@ ConventionalCommit[
   isBreakingChange=$isBreakingChange,
   breakingChangeDescription=$breakingChangeDescription,
   footers=$footers
-]''';
+)''';
   }
 }
