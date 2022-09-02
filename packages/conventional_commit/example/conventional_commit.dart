@@ -2,7 +2,7 @@
 import 'package:conventional_commit/conventional_commit.dart';
 
 const commitMessageExample = '''
-feat(cool): An exciting new feature. 
+feat(cool): An exciting new feature.
 
 A body describing this commit in more detail.
 
@@ -37,17 +37,9 @@ void main() {
   print(parsedCommit.breakingChangeDescription);
   // : This is a breaking change because of X Y Z.
 
-  // Note this api may be removed in future.
-  print(parsedCommit.semverReleaseType);
-  // : SemverReleaseType.major
-
   print(parsedCommit.footers);
   // : ['Co-authored-by: @Salakar', 'Refs #123 #456']
 
   print(parsedCommit.isMergeCommit);
   // : false
-
-  // Note this api may be removed in future.
-  print(parsedCommit.isVersionableCommit);
-  // : true
 }

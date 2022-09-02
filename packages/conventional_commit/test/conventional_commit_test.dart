@@ -63,7 +63,6 @@ void main() {
       expect(ConventionalCommit.tryParse(': new feature'), isNull);
       expect(ConventionalCommit.tryParse(' (): new feature'), isNull);
       expect(ConventionalCommit.tryParse('feat()'), isNull);
-      expect(ConventionalCommit.tryParse('custom: new feature'), isNull);
     });
 
     test('accepts commit messages with or without a space before description',
@@ -98,6 +97,7 @@ void main() {
         expect(conventionalCommit?.type, 'feat');
         expect(conventionalCommit?.scopes, ['scope']);
         expect(conventionalCommit?.description, 'new feature');
+        expect(conventionalCommit?.isMergeCommit, true);
       },
     );
 
@@ -108,8 +108,6 @@ void main() {
       expect(commit.body, equals('This also fixes an issue something else.'));
       expect(commit.type, equals('feat'));
       expect(commit.scopes, equals(['*']));
-      expect(commit.isVersionableCommit, isTrue);
-      expect(commit.semverReleaseType, SemverReleaseType.minor);
     });
 
     test('header', () {
@@ -207,6 +205,10 @@ void main() {
       expect(
         ConventionalCommit.tryParse('test(scope)!: foo bar')!.type,
         equals('test'),
+      );
+      expect(
+        ConventionalCommit.tryParse('FIX: foo bar')!.type,
+        equals('fix'),
       );
     });
 
@@ -358,53 +360,6 @@ void main() {
       expect(
         ConventionalCommit.tryParse('docs(scope,dope)!: foo bar')!.description,
         equals('foo bar'),
-      );
-    });
-
-    test('isVersionableCommit', () {
-      expect(
-        ConventionalCommit.tryParse('chore!: foo bar')!.isVersionableCommit,
-        isTrue,
-      );
-      expect(
-        ConventionalCommit.tryParse('docs: foo bar')!.isVersionableCommit,
-        isTrue,
-      );
-      expect(
-        ConventionalCommit.tryParse('refactor(scope): foo bar')!
-            .isVersionableCommit,
-        isTrue,
-      );
-      expect(
-        ConventionalCommit.tryParse('revert(scope,dope)!: foo bar')!
-            .isVersionableCommit,
-        isTrue,
-      );
-      expect(
-        ConventionalCommit.tryParse('ci(scope,dope): foo bar')!
-            .isVersionableCommit,
-        isFalse,
-      );
-    });
-
-    test('semverReleaseType', () {
-      expect(
-        ConventionalCommit.tryParse('chore!: foo bar')!.semverReleaseType,
-        equals(SemverReleaseType.major),
-      );
-      expect(
-        ConventionalCommit.tryParse('docs: foo bar')!.semverReleaseType,
-        equals(SemverReleaseType.patch),
-      );
-      expect(
-        ConventionalCommit.tryParse('refactor(scope): foo bar')!
-            .semverReleaseType,
-        equals(SemverReleaseType.patch),
-      );
-      expect(
-        ConventionalCommit.tryParse('feat(scope,dope): foo bar')!
-            .semverReleaseType,
-        equals(SemverReleaseType.minor),
       );
     });
 
