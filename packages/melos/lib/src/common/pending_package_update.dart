@@ -17,7 +17,6 @@
 
 import 'dart:math' as math;
 
-import 'package:conventional_commit/conventional_commit.dart';
 import 'package:meta/meta.dart';
 import 'package:pub_semver/pub_semver.dart';
 
@@ -27,6 +26,7 @@ import '../workspace.dart';
 import 'changelog.dart';
 import 'git_commit.dart';
 import 'versioning.dart' as versioning;
+import 'versioning.dart';
 
 /// Enum representing why the version has been changed when running 'version'
 /// command.
