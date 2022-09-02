@@ -272,7 +272,7 @@ Generating IntelliJ IDE files...
 
     test(
       'bootstrap transitive dependencies',
-      () => dependencyResolutionTest({
+      () async => dependencyResolutionTest({
         'a': [],
         'b': ['a'],
         'c': ['b'],
@@ -281,7 +281,7 @@ Generating IntelliJ IDE files...
 
     test(
       'bootstrap cyclic dependencies',
-      () => dependencyResolutionTest({
+      () async => dependencyResolutionTest({
         'a': ['b'],
         'b': ['a'],
       }),
@@ -290,7 +290,7 @@ Generating IntelliJ IDE files...
     group('pubspec overrides', () {
       test(
         'bootstrap transitive dependencies',
-        () => dependencyResolutionTest(
+        () async => dependencyResolutionTest(
           {
             'a': [],
             'b': ['a'],
@@ -303,7 +303,7 @@ Generating IntelliJ IDE files...
 
       test(
         'bootstrap cyclic dependencies',
-        () => dependencyResolutionTest(
+        () async => dependencyResolutionTest(
           {
             'a': ['b'],
             'b': ['a'],
