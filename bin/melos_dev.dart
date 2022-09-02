@@ -2,7 +2,7 @@ import '../packages/melos/bin/melos.dart' as melos;
 
 // A copy of packages/melos/bin/melos.dart
 // This allows us to use melos on itself during development.
-void main(List<String> arguments) {
+void main(List<String> arguments) async {
   if (arguments.contains('--help')) {
     // ignore_for_file: avoid_print
     print('---------------------------------------------------------');
@@ -10,5 +10,5 @@ void main(List<String> arguments) {
     print('---------------------------------------------------------');
     print('');
   }
-  melos.main(arguments);
+  await melos.main(arguments);
 }

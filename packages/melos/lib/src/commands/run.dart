@@ -46,7 +46,7 @@ mixin _RunMixin on _Melos {
 
     final scriptChoices = scripts.map((script) {
       final styledName = AnsiStyles.cyan(script.name);
-      final styledDescription = script.description?.let((description) {
+      final styledDescription = script.description.let((description) {
             final formattedDescription = AnsiStyles.gray(
               description.trim().split('\n').join('\n       '),
             );

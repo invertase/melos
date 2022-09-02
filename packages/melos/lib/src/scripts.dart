@@ -393,7 +393,7 @@ class Script {
   final ExecOptions? exec;
 
   String _buildEffectiveCommand() {
-    String _quoteScript(String script) => '"${script.replaceAll('"', r'\"')}"';
+    String quoteScript(String script) => '"${script.replaceAll('"', r'\"')}"';
 
     final exec = this.exec;
     if (exec != null) {
@@ -408,7 +408,7 @@ class Script {
         parts.add('--fail-fast');
       }
 
-      parts.addAll(['--', _quoteScript(run)]);
+      parts.addAll(['--', quoteScript(run)]);
 
       return parts.join(' ');
     }

@@ -76,7 +76,7 @@ mixin _PublishMixin on _ExecMixin {
               AnsiStyles.dim(latestPublishedVersionForPackages[package.name]),
               AnsiStyles.green(package.version.toString()),
             ];
-          }).toList()
+          })
         ],
         paddingSize: 4,
       ),
