@@ -19,7 +19,6 @@ import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:collection/collection.dart';
-import 'package:conventional_commit/conventional_commit.dart';
 import 'package:glob/glob.dart';
 import 'package:pub_semver/pub_semver.dart';
 

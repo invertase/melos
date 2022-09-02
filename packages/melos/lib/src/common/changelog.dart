@@ -24,6 +24,7 @@ import 'git_commit.dart';
 import 'git_repository.dart';
 import 'io.dart';
 import 'pending_package_update.dart';
+import 'versioning.dart';
 
 class Changelog {
   Changelog(this.package, this.version, this.logger);

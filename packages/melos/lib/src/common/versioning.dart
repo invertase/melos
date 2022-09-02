@@ -18,6 +18,50 @@
 import 'package:conventional_commit/conventional_commit.dart';
 import 'package:pub_semver/pub_semver.dart';
 
+/// Indicates the semver release type this commit message creates.
+enum SemverReleaseType {
+  /// A patch release indicates non-breaking changes (e.g. bug fixes).
+  patch,
+
+  /// Indicates new API changes have been made (e.g. new features).
+  minor,
+
+  /// A major release is when the breaking changes have been introduced.
+  major,
+}
+
+extension ConventionalCommitVersioningExtension on ConventionalCommit {
+  /// Whether this commit should trigger a version bump in it's residing
+  /// package.
+  bool get isVersionableCommit {
+    if (isMergeCommit) return false;
+    return isBreakingChange ||
+        [
+          'docs',
+          'feat',
+          'fix',
+          'bug',
+          'perf',
+          'refactor',
+          'revert',
+        ].contains(type);
+  }
+
+  /// Returns the [SemverReleaseType] for this commit, e.g.
+  /// [SemverReleaseType.major].
+  SemverReleaseType get semverReleaseType {
+    if (isBreakingChange) {
+      return SemverReleaseType.major;
+    }
+
+    if (isFeature) {
+      return SemverReleaseType.minor;
+    }
+
+    return SemverReleaseType.patch;
+  }
+}
+
 bool isValidVersion(String version) {
   try {
     Version.parse(version);

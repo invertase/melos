@@ -15,7 +15,6 @@
  *
  */
 
-import 'package:conventional_commit/conventional_commit.dart';
 import 'package:melos/src/common/versioning.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
