@@ -277,8 +277,32 @@ bool isWorkspaceDirectory(String directory) =>
 bool isPackageDirectory(String directory) =>
     fileExists(pubspecPathForDirectory(directory));
 
-Future<int> startProcess(
-  List<String> execArgs, {
+Future<Process> startCommandRaw(
+  String command, {
+  String? workingDirectory,
+  Map<String, String> environment = const {},
+  bool includeParentEnvironment = true,
+}) {
+  final executable = currentPlatform.isWindows ? 'cmd.exe' : '/bin/sh';
+  workingDirectory ??= Directory.current.path;
+
+  return Process.start(
+    executable,
+    currentPlatform.isWindows
+        ? ['/C', '%MELOS_SCRIPT%']
+        : ['-c', r'eval "$MELOS_SCRIPT"'],
+    workingDirectory: workingDirectory,
+    environment: {
+      ...environment,
+      envKeyMelosTerminalWidth: terminalWidth.toString(),
+      'MELOS_SCRIPT': command,
+    },
+    includeParentEnvironment: includeParentEnvironment,
+  );
+}
+
+Future<int> startCommand(
+  List<String> command, {
   String? prefix,
   Map<String, String> environment = const {},
   String? workingDirectory,
@@ -286,50 +310,43 @@ Future<int> startProcess(
   bool includeParentEnvironment = true,
   required MelosLogger logger,
 }) async {
-  final workingDirectoryPath = workingDirectory ?? Directory.current.path;
-  final executable = currentPlatform.isWindows ? 'cmd' : '/bin/sh';
-  final filteredArgs = execArgs.map((arg) {
-    // Remove empty args.
-    if (arg.trim().isEmpty) {
-      return null;
-    }
+  final processedCommand = command
+      .map((arg) {
+        // Remove empty args.
+        if (arg.trim().isEmpty) {
+          return null;
+        }
 
-    // Attempt to make line continuations Windows & Linux compatible.
-    if (arg.trim() == r'\') {
-      return currentPlatform.isWindows ? arg.replaceAll(r'\', '^') : arg;
-    }
-    if (arg.trim() == '^') {
-      return currentPlatform.isWindows ? arg : arg.replaceAll('^', r'\');
-    }
+        // Attempt to make line continuations Windows & Linux compatible.
+        if (arg.trim() == r'\') {
+          return currentPlatform.isWindows ? arg.replaceAll(r'\', '^') : arg;
+        }
+        if (arg.trim() == '^') {
+          return currentPlatform.isWindows ? arg : arg.replaceAll('^', r'\');
+        }
 
-    // Inject MELOS_* variables if any.
-    environment.forEach((key, value) {
-      if (key.startsWith('MELOS_')) {
-        arg = arg.replaceAll('\$$key', value);
-        arg = arg.replaceAll(key, value);
-      }
-    });
+        // Inject MELOS_* variables if any.
+        environment.forEach((key, value) {
+          if (key.startsWith('MELOS_')) {
+            arg = arg.replaceAll('\$$key', value);
+            arg = arg.replaceAll(key, value);
+          }
+        });
 
-    return arg;
-  }).where((element) => element != null);
+        return arg;
+      })
+      .where((element) => element != null)
+      .join(' ');
 
-  final execProcess = await Process.start(
-    executable,
-    currentPlatform.isWindows
-        ? ['/C', '%MELOS_SCRIPT%']
-        : ['-c', r'eval "$MELOS_SCRIPT"'],
-    workingDirectory: workingDirectoryPath,
-    environment: {
-      ...environment,
-      envKeyMelosTerminalWidth: terminalWidth.toString(),
-      'MELOS_SCRIPT': filteredArgs.join(' '),
-    },
+  final process = await startCommandRaw(
+    processedCommand,
+    workingDirectory: workingDirectory,
+    environment: environment,
     includeParentEnvironment: includeParentEnvironment,
-    runInShell: true,
   );
 
-  var stdoutStream = execProcess.stdout;
-  var stderrStream = execProcess.stderr;
+  var stdoutStream = process.stdout;
+  var stderrStream = process.stderr;
 
   if (prefix != null && prefix.isNotEmpty) {
     final pluginPrefixTransformer =
@@ -344,12 +361,12 @@ Future<int> startProcess(
       },
     );
 
-    stdoutStream = execProcess.stdout
+    stdoutStream = process.stdout
         .transform<String>(utf8.decoder)
         .transform<String>(pluginPrefixTransformer)
         .transform<List<int>>(utf8.encoder);
 
-    stderrStream = execProcess.stderr
+    stderrStream = process.stderr
         .transform<String>(utf8.decoder)
         .transform<String>(pluginPrefixTransformer)
         .transform<List<int>>(utf8.encoder);
@@ -381,7 +398,7 @@ Future<int> startProcess(
 
   await processStdoutCompleter.future;
   await processStderrCompleter.future;
-  final exitCode = await execProcess.exitCode;
+  final exitCode = await process.exitCode;
 
   if (onlyOutputOnError && exitCode > 0) {
     logger.stdout(utf8.decode(processStdout, allowMalformed: true));

@@ -183,7 +183,7 @@ class MelosWorkspace {
       if (childProcessPath != null) 'PATH': childProcessPath!,
     };
 
-    return utils.startProcess(
+    return utils.startCommand(
       execArgs,
       logger: logger,
       environment: environment,
@@ -203,7 +203,7 @@ class MelosWorkspace {
       if (childProcessPath != null) 'PATH': childProcessPath!,
     };
 
-    return utils.startProcess(
+    return utils.startCommand(
       execArgs,
       logger: logger,
       environment: environment,

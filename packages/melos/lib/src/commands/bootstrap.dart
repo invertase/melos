@@ -173,36 +173,23 @@ mixin _BootstrapMixin on _CleanMixin {
     Package package, {
     bool inTemporaryProject = false,
   }) async {
-    final execArgs = [
+    final command = [
       ...pubCommandExecArgs(
         useFlutter: package.isFlutterPackage,
         workspace: workspace,
       ),
       'get',
       if (workspace.config.commands.bootstrap.runPubGetOffline) '--offline'
-    ];
+    ].join(' ');
 
-    final executable = currentPlatform.isWindows ? 'cmd' : '/bin/sh';
     final packagePath = inTemporaryProject
         ? join(workspace.melosToolPath, package.pathRelativeToWorkspace)
         : package.path;
-    final process = await Process.start(
-      executable,
-      currentPlatform.isWindows ? ['/C', '%MELOS_SCRIPT%'] : [],
-      workingDirectory: packagePath,
-      environment: {
-        utils.envKeyMelosTerminalWidth: utils.terminalWidth.toString(),
-        'MELOS_SCRIPT': execArgs.join(' '),
-      },
-      runInShell: true,
-    );
 
-    if (!currentPlatform.isWindows) {
-      // Pipe in the arguments to trigger the script to run.
-      process.stdin.writeln(execArgs.join(' '));
-      // Exit the process with the same exit code as the previous command.
-      process.stdin.writeln(r'exit $?');
-    }
+    final process = await startCommandRaw(
+      command,
+      workingDirectory: packagePath,
+    );
 
     const logTimeout = Duration(seconds: 10);
     final packagePrefix = '[${AnsiStyles.blue.bold(package.name)}]: ';

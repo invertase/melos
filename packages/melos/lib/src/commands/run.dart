@@ -158,7 +158,7 @@ mixin _RunMixin on _Melos {
         .child(runningLabel)
         .newLine();
 
-    return startProcess(
+    return startCommand(
       scriptParts..addAll(extraArgs),
       logger: logger,
       environment: environment,
