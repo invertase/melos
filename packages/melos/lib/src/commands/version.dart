@@ -180,6 +180,7 @@ mixin _VersionMixin on _RunMixin {
               promptForMessage = promptBool(
                 message: 'Do you want to provide an additional changelog entry '
                     'message?',
+                defaultsToWithoutPrompt: false,
               );
             }
 
