@@ -1,11 +1,14 @@
 import 'dart:io';
 
+import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
+import 'package:melos/src/logging.dart';
 import 'package:path/path.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 
+import 'matchers.dart';
 import 'utils.dart';
 
 void main() {
@@ -69,6 +72,32 @@ void main() {
           useFlutter: false,
         ),
         [join(sdkPath, 'bin', 'dart'), 'pub'],
+      );
+    });
+  });
+
+  group('startProcess', () {
+    test('runs command chain in single shell', () async {
+      final workspaceDir = createTemporaryWorkspaceDirectory();
+      final testDir = p.join(workspaceDir.path, 'test');
+
+      ensureDir(testDir);
+
+      final logger = TestLogger();
+      await startCommand(
+        [
+          'cd',
+          'test',
+          '&&',
+          if (Platform.isWindows) 'cd' else 'pwd',
+        ],
+        logger: logger.toMelosLogger(),
+        workingDirectory: workspaceDir.path,
+      );
+
+      expect(
+        logger.output.normalizeNewLines(),
+        ignoringAnsii('$testDir\n'),
       );
     });
   });

@@ -74,7 +74,7 @@ mixin _ExecMixin on _Melos {
       environment.remove(envKeyMelosTerminalWidth);
     }
 
-    return startProcess(
+    return startCommand(
       execArgs,
       logger: logger,
       environment: environment,
