@@ -29,6 +29,7 @@ Future<void> main(List<String> arguments) async {
         message: 'There is a new version of $packageName available '
             '($latestVersion). Would you like to update?',
         defaultsTo: true,
+        defaultsToWithoutPrompt: false,
       );
       if (shouldUpdate) {
         await pubUpdater.update(packageName: packageName);

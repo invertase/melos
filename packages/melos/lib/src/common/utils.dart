@@ -30,6 +30,7 @@ import 'package:yaml/yaml.dart';
 import '../logging.dart';
 import '../package.dart';
 import '../workspace.dart';
+import 'exception.dart';
 import 'io.dart';
 import 'platform.dart';
 
@@ -156,12 +157,91 @@ bool isPubspecOverridesSupported([String dartTool = 'dart']) =>
 bool canRunPubGetConcurrently([String dartTool = 'dart']) =>
     currentDartVersion(dartTool).compareTo(Version.parse('2.16.0')) >= 0;
 
-String promptInput(String message, {String? defaultsTo}) {
-  return prompts.get(message, defaultsTo: defaultsTo);
+T _promptWithTerminal<T>(
+  T Function() runPrompt, {
+  required String message,
+  T? defaultsTo,
+  T? defaultsToWithoutPrompt,
+  bool requirePrompt = false,
+}) {
+  if (stdin.hasTerminal) {
+    return runPrompt();
+  }
+
+  if (!requirePrompt) {
+    if (defaultsToWithoutPrompt is T) {
+      return defaultsToWithoutPrompt;
+    }
+
+    if (defaultsTo is T) {
+      return defaultsTo;
+    }
+  }
+
+  throw PromptException(message);
 }
 
-bool promptBool({String message = 'Continue?', bool defaultsTo = false}) {
-  return prompts.getBool(message, defaultsTo: defaultsTo);
+class PromptException extends MelosException {
+  PromptException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => 'Was unable to prompt for input:\n$message';
+}
+
+String promptInput(
+  String message, {
+  String? defaultsTo,
+  String? defaultsToWithoutPrompt,
+  bool requirePrompt = false,
+}) {
+  return _promptWithTerminal(
+    () => prompts.get(message, defaultsTo: defaultsTo),
+    message: message,
+    defaultsTo: defaultsTo,
+    defaultsToWithoutPrompt: defaultsToWithoutPrompt,
+    requirePrompt: requirePrompt,
+  );
+}
+
+bool promptBool({
+  String message = 'Continue?',
+  bool defaultsTo = false,
+  bool? defaultsToWithoutPrompt,
+  bool requirePrompt = false,
+}) {
+  return _promptWithTerminal(
+    () => prompts.getBool(message, defaultsTo: defaultsTo),
+    message: message,
+    defaultsTo: defaultsTo,
+    defaultsToWithoutPrompt: defaultsToWithoutPrompt,
+    requirePrompt: requirePrompt,
+  );
+}
+
+T? promptChoice<T>(
+  String message,
+  Iterable<T> options, {
+  T? defaultsTo,
+  T? defaultsToWithoutPrompt,
+  String prompt = 'Enter your choice',
+  bool interactive = true,
+  bool requirePrompt = false,
+}) {
+  return _promptWithTerminal(
+    () => prompts.choose(
+      message,
+      options,
+      defaultsTo: defaultsTo,
+      prompt: prompt,
+      interactive: interactive,
+    ),
+    message: message,
+    defaultsTo: defaultsTo,
+    defaultsToWithoutPrompt: defaultsToWithoutPrompt,
+    requirePrompt: requirePrompt,
+  );
 }
 
 bool get isCI {

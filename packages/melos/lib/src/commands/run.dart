@@ -15,7 +15,7 @@ mixin _RunMixin on _Melos {
 
     if (script == null) {
       throw ScriptNotFoundException._(
-        scriptName!,
+        scriptName,
         config.scripts.keys.toList(),
       );
     }
@@ -40,7 +40,7 @@ mixin _RunMixin on _Melos {
     resultLogger.child(successLabel);
   }
 
-  Future<String?> _pickScript(MelosWorkspaceConfig config) async {
+  Future<String> _pickScript(MelosWorkspaceConfig config) async {
     // using toList as Maps may be unordered
     final scripts = config.scripts.values.toList();
 
@@ -56,15 +56,14 @@ mixin _RunMixin on _Melos {
       return '$styledName$styledDescription';
     }).toList();
 
-    final selectedScript = prompts.choose(
+    final selectedScript = promptChoice(
       AnsiStyles.white('Select a script to run in this workspace'),
       scriptChoices,
       interactive: false,
+      requirePrompt: true,
     );
 
     final selectedScriptIndex = scriptChoices.indexOf(selectedScript!);
-
-    if (selectedScriptIndex == -1) return null;
 
     return scripts[selectedScriptIndex].name;
   }
@@ -124,7 +123,7 @@ mixin _RunMixin on _Melos {
         selectedPackage = choices[0];
       } else {
         // Prompt user to select a package.
-        selectedPackage = prompts.choose(
+        selectedPackage = promptChoice(
           [
             AnsiStyles.white('Select a package to run the '),
             AnsiStyles.cyan(script.name),
