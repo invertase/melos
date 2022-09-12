@@ -13,7 +13,7 @@ Your Git project must be using [Conventional Commits](https://www.conventionalco
 a widely used specification for commit messages which are readable by humans and machines. Melos parses
 messages and detects exactly what sort of version upgrade is required.
 
-Melos supports prefixes (like the `Merge ...` and `Merged ...` for example) before the conventional
+Melos supports prefixes (like `Merge ...` and `Merged ...` for example) before the conventional
 commit type, this is useful since some collaborative version control systems use these
 non-configurable prefixes when they merge pull requests.
 
@@ -22,7 +22,13 @@ non-configurable prefixes when they merge pull requests.
 If an existing Git project is already established and does not use Conventional Commits, it is still
 possible to adopt the convention and use Melos for future releases.
 
-TODO how to adopt conventional commits with melos docs
+Just start writing commit messages that follow Conventional Commits. When you are ready to release
+a package for the first time with Melos use [manual versioning][#manual-versioning]. This will ensure
+that the version increment is appropriate for all changes, including those that Melos cannot
+interpret.
+
+With manual versioning you have to version each package individually. Don't use automatic
+versioning until all packages have been manually versioned with Melos at least once.
 
 ## Versioning
 
@@ -33,7 +39,10 @@ TODO docs on:
 - build versions
 - dependency versioning
 - bad commit messages?
-- manual versioning
+
+### Manual versioning
+
+TODO
 
 ## Publishing
 
