@@ -4,7 +4,7 @@ description:
   (monorepo). Supports automated versioning via Conventional Commits. Inspired
   by JavaScripts Lerna package.
 version: 3.0.0
-homepage: https://melos.invertase.dev
+homepage: https://melos.invertase.dev/~melos-latest
 repository: https://github.com/invertase/melos/tree/main/packages/melos
 issue_tracker: https://github.com/invertase/melos/issues
 

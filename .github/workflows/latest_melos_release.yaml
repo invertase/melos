@@ -1,0 +1,13 @@
+# Updates the `melos-latest` branch to the latest Melos release.
+name: Latest Melos release
+
+on:
+  push:
+    tags:
+      - melos-v*
+
+jobs:
+  release_docs:
+    runs-on: ubuntu-latest
+    steps:
+      - run: git push -f origin HEAD:melos-latest
