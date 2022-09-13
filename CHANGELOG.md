@@ -3,6 +3,31 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2022-09-13
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v2.7.0`](#melos---v270)
+
+---
+
+#### `melos` - `v2.7.0`
+
+ - **REFACTOR**: fix a few analyzer issues ([#365](https://github.com/invertase/melos/issues/365)). ([74adb062](https://github.com/invertase/melos/commit/74adb062650687a9b7bc8c108a96fbfbb71d023a))
+ - **FIX**: handle prompts when no terminal is attached to stdio ([#370](https://github.com/invertase/melos/issues/370)). ([81e850e9](https://github.com/invertase/melos/commit/81e850e9d380e8474f76b813eafd887e50dddcd5))
+ - **FIX**: run commands in single shell ([#369](https://github.com/invertase/melos/issues/369)). ([1ab2e290](https://github.com/invertase/melos/commit/1ab2e2902aedda02aed8a6bc009703bf1b8c01e3))
+ - **FIX**: `scripts.*.exec.failFast` option in `melos.yaml` ([#359](https://github.com/invertase/melos/issues/359)). ([16fe6916](https://github.com/invertase/melos/commit/16fe691665466e81e34c87451e8b1ca32809bf95))
+ - **FEAT**: Add support for specifying an IntelliJ module name prefix ([#349](https://github.com/invertase/melos/issues/349)). ([1d2720fa](https://github.com/invertase/melos/commit/1d2720fa7e73fc07766d0a9acd621fdb7f7fb311))
+
+
 ## 2022-07-18
 
 ### Changes
