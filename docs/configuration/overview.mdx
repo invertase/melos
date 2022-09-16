@@ -12,7 +12,8 @@ all the configurable fields and their purpose.
 
 > required
 
-The name of this project, using for display purposes within IO environments and IDEs.
+The name of this project, using for display purposes within IO environments and
+IDEs.
 
 ```yaml
 name: My Awesome Project
@@ -20,7 +21,8 @@ name: My Awesome Project
 
 ## `repository`
 
-The URL of where the git repository, which contains this project, is centrally hosted.
+The URL of where the git repository, which contains this project, is centrally
+hosted.
 
 Supported hosts:
 
@@ -39,7 +41,8 @@ Relative paths are resolved relative to the `melos.yaml` file.
 
 To use the system-wide SDK, provide the special value "auto".
 
-If the SDK path is specified though multiple mechanisms, the precedence from highest to lowest is:
+If the SDK path is specified though multiple mechanisms, the precedence from
+highest to lowest is:
 
 1. `--sdk-path` global command line option
 2. `MELOS_SDK_PATH` environment variable
@@ -53,8 +56,8 @@ sdkPath: .fvm/flutter_sdk
 
 > required
 
-A list of paths to local packages that are included in the Melos workspace. Each entry can be
-specific path or a [glob] pattern.
+A list of paths to local packages that are included in the Melos workspace. Each
+entry can be specific path or a [glob] pattern.
 
 ```yaml
 packages:
@@ -66,46 +69,50 @@ packages:
   - .
 ```
 
-> You can also reduce the scope of packages on a per-command basis via the [`--scope` filter](/filters#scope) flag.
+> You can also reduce the scope of packages on a per-command basis via the
+> [`--scope` filter](/filters#scope) flag.
 
 ## `ignore`
 
-A list of paths to local packages that are excluded from the Melos workspace. Each entry can be
-specific path or a [glob] pattern.
+A list of paths to local packages that are excluded from the Melos workspace.
+Each entry can be specific path or a [glob] pattern.
 
 ```yaml
 ignore:
   # e.g. ignore example apps
-  - "packages/**/example"
+  - 'packages/**/example'
 ```
 
-> You can also expand the scope of ignored packages on a per-command basis via the [`--scope` filter](/filters#scope) flag.
+> You can also expand the scope of ignored packages on a per-command basis via
+> the [`--scope` filter](/filters#scope) flag.
 
 ## `ide/intellij/enabled`
 
-Whether to generate IntelliJ IDEA config files to improve the developer experience when working
-in a Melos workspace.
+Whether to generate IntelliJ IDEA config files to improve the developer
+experience when working in a Melos workspace.
 
 The default is `true`.
 
 ```yaml
 ide:
   intellij:
-    enabled: false           # set to false to override default and disable
+    enabled: false # set to false to override default and disable
 ```
 
 ## `ide/intellij/moduleNamePrefix`
 
-Used when generating IntelliJ project modules files, this value specifies a string to prepend to a package's IntelliJ
-module name. Use this to avoid name collisions with other IntelliJ modules you may already have in place.
+Used when generating IntelliJ project modules files, this value specifies a
+string to prepend to a package's IntelliJ module name. Use this to avoid name
+collisions with other IntelliJ modules you may already have in place.
 
-The default is 'melos_'.
+The default is 'melos\_'.
 
 ## `scripts`
 
 > optional
 
-Define custom scripts that can be executed in the workspace via the [`melos run`](/commands/run) command.
+Define custom scripts that can be executed in the workspace via the
+[`melos run`](/commands/run) command.
 
 Learn more about defining scripts [here](/configuration/scripts).
 
@@ -113,23 +120,30 @@ Learn more about defining scripts [here](/configuration/scripts).
 
 Configuration relating to specific Melos commands such as versioning.
 
+### `command/bootstrap`
+
+Options for the `bootstrap` command.
+
 ### `command/bootstrap/usePubspecOverrides`
 
-Whether to use `pubspec_overrides.yaml` for overriding workspace dependencies during development.
+Whether to use `pubspec_overrides.yaml` for overriding workspace dependencies
+during development.
 
 Enabling this option requires Dart **2.17.0** or greater.
 
-When this option is enabled, Melos will generate a `pubspec_overrides.yaml` file in the root of
-every package during bootstrapping. This file should not be tracked in version control and should
-be added to `.gitignore`.
+When this option is enabled, Melos will generate a `pubspec_overrides.yaml` file
+in the root of every package during bootstrapping. This file should not be
+tracked in version control and should be added to `.gitignore`.
 
-This mechanism has the advantage that it does not conflict with other tooling such as the `dart`
-and `flutter` tools and IDE plugins, compared to the original mechanism used to link local packages.
+This mechanism has the advantage that it does not conflict with other tooling
+such as the `dart` and `flutter` tools and IDE plugins, compared to the original
+mechanism used to link local packages.
 
-A caveat is that because of a bug in `pub`, whose fix is not yet in the stable channel, publishing
-of packages cannot be performed while `pubspec_overrides.yaml` exists. A workaround is to run
-`melos clean` before `melos publish`, which removes `pubspec_overrides.yaml`s if they were
-generated by Melos.
+A caveat is that because of a bug in `pub`, whose fix is not yet in the stable
+channel, publishing of packages cannot be performed while
+`pubspec_overrides.yaml` exists. A workaround is to run `melos clean` before
+`melos publish`, which removes `pubspec_overrides.yaml`s if they were generated
+by Melos.
 
 ### `command/bootstrap/runPubGetInParallel`
 
@@ -145,13 +159,18 @@ Useful in closed network environments with pre-populated pubcaches.
 
 The default is `false`.
 
+### `command/version`
+
+Options for the `version` command.
+
 ### `command/version/message`
 
 A template for the commit message, that is generated by `melos version`.
 
 Templates must use mustache syntax and have the following variables available:
 
-- `new_package_versions`: A list of the versioned packages and their new versions.
+- `new_package_versions`: A list of the versioned packages and their new
+  versions.
 
 The default is:
 
@@ -172,7 +191,8 @@ command:
 
 ### `command/version/branch`
 
-If specified, prevents `melos version` from being used inside branches other than the one specified.
+If specified, prevents `melos version` from being used inside branches other
+than the one specified.
 
 ```yaml
 command:
@@ -192,7 +212,8 @@ command:
 
 ### `command/version/includeCommitId`
 
-Whether to add short commit id (no links) in the CHANGELOG.md, that is generated by `melos version`.
+Whether to add short commit id (no links) in the CHANGELOG.md, that is generated
+by `melos version`.
 
 ```yaml
 command:
@@ -202,7 +223,8 @@ command:
 
 ### `command/version/linkToCommits`
 
-Whether to add links to commits in the CHANGELOG.md, that is generated by `melos version`.
+Whether to add links to commits in the CHANGELOG.md, that is generated by
+`melos version`.
 
 Enabling this option, requires [`repository`](#repository) to be specified.
 
@@ -214,7 +236,8 @@ command:
 
 ### `command/version/workspaceChangelog`
 
-Whether to additionally build a CHANGELOG.md at the root of the workspace when running `melos version`.
+Whether to additionally build a CHANGELOG.md at the root of the workspace when
+running `melos version`.
 
 ```yaml
 command:
@@ -224,7 +247,9 @@ command:
 
 ### `command/version/updateGitTagRefs`
 
-When running `melos version` this option will allow updates to `pubspec.yaml` for locally (git) hosted packages part of this melos workspace, see [here](/guides/automated-releases#git-hosted-packages)
+When running `melos version` this option will allow updates to `pubspec.yaml`
+for locally (git) hosted packages part of this melos workspace, see
+[here](/guides/automated-releases#git-hosted-packages)
 
 ```yaml
 command:

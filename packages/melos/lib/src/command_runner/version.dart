@@ -80,8 +80,7 @@ class VersionCommand extends MelosCommand {
       defaultsTo: true,
       help: 'Make a new patch version and changelog entry in packages that are '
           'updated due to "--dependent-constraints" changes. Only usable '
-          'with "--dependent-constraints" enabled and Conventional Commits '
-          'based versioning.',
+          'with "--dependent-constraints" enabled.',
     );
     argParser.addFlag(
       'git-tag-version',
@@ -105,8 +104,7 @@ class VersionCommand extends MelosCommand {
     argParser.addFlag(
       'yes',
       negatable: false,
-      help: 'Skip the Y/n confirmation prompt. Note that for manual versioning '
-          '--no-changelog must also be passed to avoid prompts.',
+      help: 'Skip the Y/n confirmation prompt.',
     );
     argParser.addFlag(
       'all',
