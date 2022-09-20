@@ -12,25 +12,30 @@ command:
     branch: main
     # Additionally build a changelog at the root of the workspace.
     workspaceChangelog: true
+  bootstrap:
+    usePubspecOverrides: true
 
 ide:
   intellij: true
 
 scripts:
   analyze:
-    run: melos exec -c 1 -- "dart analyze . --fatal-infos"
+    run: dart analyze . --fatal-infos
+    exec:
+      concurrency: 1
     description: Run dart analyzer in a specific package.
     select-package:
       ignore:
-        - "*monorepo*"
+        - '*monorepo*'
 
   test:
     description: Run tests in a specific package.
-    # TODO(Salakar) 'dart pub get' is necessary for the 'melos' package as we're using it on itself
-    run: melos exec --concurrency=1 -- "dart pub get && dart pub run test --reporter expanded"
+    run: dart test --reporter expanded
+    exec:
+      concurrency: 1
     select-package:
       dir-exists:
-        - "test/"
+        - 'test/'
     # This tells Melos tests to ignore env variables passed to tests from `melos run test`
     # as they could change the behaviour of how tests filter packages.
     env:
@@ -39,7 +44,7 @@ scripts:
   format: dart format -o write .
 
   format-check:
-    run: melos exec flutter format . --set-exit-if-changed
+    exec: flutter format . --set-exit-if-changed
     description: Run `flutter format` checks for all packages.
 
   version: dart run scripts/generate_version.dart
@@ -50,4 +55,4 @@ scripts:
 
   activate:pub:
     description: Activate the published version of melos.
-    run: dart pub global activate melos
+    run: dart pub global activate melos --overwrite
