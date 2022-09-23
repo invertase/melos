@@ -103,6 +103,7 @@ The following projects are using Melos:
 - [danvick/flutter_form_builder](https://github.com/danvick/flutter_form_builder)
 - [kmartins/groveman](https://github.com/kmartins/groveman)
 - [flutternetwork/WiFiFlutter](https://github.com/flutternetwork/WiFiFlutter)
+- [iapicca/yak_packages](https://github.com/iapicca/yak_packages)
 
 > Submit a PR if you'd like to add your project to the list.
 > Update the [README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md) and the
