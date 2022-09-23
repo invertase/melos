@@ -1,50 +1,177 @@
 ---
 title: Automated Releases
-description: Automate your workflow by versioning and publishing packages with Melos and Conventional Commits.
+description:
+  Automate your workflow by versioning and publishing packages with Melos and
+  Conventional Commits.
 ---
 
 # Automated Releases
 
-Melos is able to automatically version, generate changelogs and publish to [pub.dev](https://pub.dev)
-automatically. It's also intelligent enough to detect any package dependencies which require a new
-version too.
+Melos is able to automate **versioning** and **publishing** of your packages.
 
-Your Git project must be using [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/),
-a widely used specification for commit messages which are readable by humans and machines. Melos parses
-messages and detects exactly what sort of version upgrade is required.
+This includes:
 
-Melos supports prefixes (like the `Merge ...` and `Merged ...` for example) before the conventional
-commit type, this is useful since some collaborative version control systems use these
-non-configurable prefixes when they merge pull requests.
-
-### Not using Conventional Commits?
-
-If an existing Git project is already established and does not use Conventional Commits, it is still
-possible to adopt the convention and use Melos for future releases.
-
-TODO how to adopt conventional commits with melos docs
+- incrementing of versions based on commit messages.
+- updating version constraints of dependents.
+- generating of changelogs.
+- running versioning hook scripts.
+- update package version tags in git dependencies.
+- publishing of packages to [pub.dev](https://pub.dev).
 
 ## Versioning
 
-TODO docs on:
+Packages can be versioned automatically based on their commit history. For this
+to work, Melos needs to be able to parse commit messages and detect exactly what
+sort of version upgrade is required. Melos understands
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), a widely
+used specification for commit messages which are readable by humans and
+machines.
 
-- Scoping
-- Major/minor/patches
-- build versions
-- dependency versioning
-- bad commit messages?
-- manual versioning
+Alternatively, packages can be versioned manually by specifing a version
+increase (`major`, `minor`, `patch` or `build`) or an exact version.
+
+For customizing the versioning process, see the
+[configuration options](/configuration/overview#commandversion) for the
+`version` command.
+
+### Automatic Versioning
+
+To determine which packages to version and how, Melos performs the following
+steps:
+
+1. Apply [filters](/filters) to the list of workspace packages.
+2. Load the commit history for each package. If the `--since` option is
+   specified, Melos will only load commits since the specified commit. Otherwise
+   it will load all commits since the last version tag (e.g. `foo-v1.0.0`).
+3. Parse commit messages as Conventional Commits. If a commit message does not
+   follow the Conventional Commits specification, it will be ignored.
+4. Filter out commits with types that don't trigger a version bump. For example,
+   `chore` commits will be ignored.
+5. If at this point no commits remain, the package will not be versioned.
+6. Determine the version upgrade required for each package based on the commit
+   with the most significant version bump. For example, if a package has a
+   `feat` commit and a `fix` commit, the package will be versioned with a
+   `minor` upgrade.
+
+#### Conventional Commits
+
+Currently the following commit types trigger a version bump:
+
+- `docs` - A documentation change.
+- `feat` - A new feature.
+- `fix` - A bug fix.
+- `bug` - A bug fix.
+- `perf` - A change that improves performance.
+- `refactor` - A change that neither fixes a bug nor adds a feature.
+- `revert` - A change that reverts a previous commit.
+
+The first matching rule in the list below determines the version bump for a
+commit:
+
+1. A breaking change will trigger a **major** version bump.
+2. A feature will trigger a **minor** version bump.
+3. All other changes will trigger a **patch** version bump.
+
+Melos supports prefixes (like `Merge ...` and `Merged ...` for example) before
+the conventional commit type. This is useful since some collaborative version
+control systems use these non-configurable prefixes when they merge pull
+requests.
+
+#### Not using Conventional Commits?
+
+If an existing Git project is already established and does not use Conventional
+Commits, it is still possible to adopt the convention and use Melos for future
+releases.
+
+Just start writing commit messages that follow Conventional Commits. When you
+are ready to release a package for the first time with Melos use [manual
+versioning][#manual-versioning]. This will ensure that the version increment is
+appropriate for all commits, including those that Melos cannot interpret.
+
+Once you have manullay versioning every packages at least once, you can savely
+use automatic versioning.
+
+### Manual Versioning
+
+Manual versioning allows you to specify a version increment (`major`, `minor`,
+`patch` or `build`) or an exact version for one or more packages.
+
+If you only want to manually version a single package, you can use the following
+syntax:
+
+```sh
+melos version <package-name> <version-change>
+```
+
+To manually version multiple packages use the `--manual-version` (short `-V`)
+option:
+
+```sh
+melos version --manual-version <package-name>:<version-change>
+```
+
+Note that when using the `--manual-version` option, the automatic versioning
+process is executed normally, execpt for the packages that are manually
+versioned. This allows you to mix automatic and manual versioning. The
+[`--ignore`](/filters#--ignore) filter can be used to exclude all package from
+automatic versioning, by passing `--ignore '*'`.
+
+### Dependents Versioning
+
+By default, Melos also updates the constraints in the `pubspec.yaml` files of
+dependents of the packages that were versioned. This can be disabled by passing
+`--no-dependent-constraints`.
+
+If such a dependent is not already being versioned, a **patch** version bump
+will be created for it. This can be disabled by passing
+`--no-dependent-versions`.
+
+Note that dependents of versioned packages are not filtered by the specified
+package filters.
+
+### Commiting and Taging Version Changes
+
+After updating the `pubspec.yaml` files and changelogs of the versioned
+packages, Melos will commit the changes and add a package version tag for each
+package.
+
+Package version tags have the format `<package-name>-v<version>`.
+
+This behavior can be disabled by passing `--no-git-tag-version`.
+
+#### Hook
+
+After updating `pubspec.yaml` files and changelogs but before creating the
+version commit, the `version` script in `melos.yaml` is executed. This allows
+you to run custom code before the version commit is created.
+
+Note that you have to stage changes that you make in the hook and want to have
+included in the version commit yourself.
+
+### Changelog
+
+Melos updates the changelog for each package that is versioned by prepending a
+section for the new version. You can disable this behavior by passing
+`--no-changelog`.
+
+See the [configuration options](/configuration/overview#commandversion) for the
+`version` command for customizing changelog generation.
+
+Optionally, Melos can also write a
+[workspace changelog](/configuration/overview#commandversionworkspacechangelog).
+This is disabled by default.
 
 ## Publishing
 
 To publish packages on [pub.dev](https://pub.dev) you must:
 
 1. Have permission to publish all the packages.
-2. Be on a machine which is authenticated with Pub (read: not possible to publish via CIs).
+2. Be on a machine which is authenticated with Pub.
 
 > Internally, Melos uses `pub publish` to publish the packages.
 
-Once you have [versioned](#versioning) your packages, run the publish command to check everything is good to go:
+Once you have [versioned](#versioning) your packages, run the publish command to
+check everything is good to go:
 
 ```dart
 melos publish
@@ -52,24 +179,22 @@ melos publish
 
 By default, a dry-run is performed (nothing will be published).
 
-Once satisfied with your pending releases, release them to [pub.dev](https://pub.dev):
+Once satisfied with your pending releases, release them to
+[pub.dev](https://pub.dev):
 
 ```dart
 melos publish --no-dry-run
 ```
 
-## Git hosted packages
+## Git Hosted Packages
 
-To use this feature enable it in `melos.yaml`
-```yaml
-command:
-  version:
-    updateGitTagRefs: true # defaults to false
-```
-
-If your packages are private and don't publish to [pub.dev](https://pub.dev), you can use the tag generated as git reference in your `pubspec.yaml` file and Melos will ensure the versions are updated accordingly.
+If your packages are private and you don't publish them to
+[pub.dev](https://pub.dev), you can use package version tags as git reference in
+your `pubspec.yaml` files and Melos will ensure that the tags are updated
+accordingly.
 
 Example:
+
 ```yaml
 dependencies:
   internal_dep:
@@ -86,4 +211,12 @@ dependencies:
       url: git@github.com:org/repo.git
       path: packages/internal_dep
       ref: internal_dep-v0.0.2
+```
+
+To use this feature enable it in `melos.yaml`
+
+```yaml
+command:
+  version:
+    updateGitTagRefs: true # defaults to false
 ```
