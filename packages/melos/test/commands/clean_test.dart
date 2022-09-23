@@ -27,7 +27,8 @@ void main() {
           ),
         );
 
-        await createProject(workspaceDir, const PubSpec(name: 'a'));
+        final packageADir =
+            await createProject(workspaceDir, const PubSpec(name: 'a'));
         final packageBDir = await createProject(
           workspaceDir,
           PubSpec(
@@ -47,7 +48,7 @@ void main() {
           pubspecOverrides,
           yamlFile({
             'dependency_overrides': {
-              'a': {'path': '../a'}
+              'a': {'path': relativePath(packageADir.path, packageBDir.path)}
             }
           }),
         );

@@ -44,7 +44,7 @@ jobs:
       - name: "Install Tools"
         run: ./.github/workflows/scripts/install-tools.sh
       - name: "Check formatting"
-        run: melos run format-check
+        run: melos format-check
 
   test_linux:
     runs-on: ubuntu-latest
@@ -59,7 +59,7 @@ jobs:
       - name: "Install Tools"
         run: ./.github/workflows/scripts/install-tools.sh
       - name: "Run Tests"
-        run: melos run test --no-select
+        run: melos test --no-select
 
   test_macos:
     runs-on: macos-latest
@@ -74,7 +74,7 @@ jobs:
       - name: "Install Tools"
         run: ./.github/workflows/scripts/install-tools.sh
       - name: "Run Tests"
-        run: melos run test --no-select
+        run: melos test --no-select
 
   test_windows:
     runs-on: windows-latest
@@ -89,4 +89,8 @@ jobs:
       - name: "Install Tools"
         run: .\.github\workflows\scripts\install-tools.bat
       - name: "Run Tests"
-        run: cmd /K melos run test --no-select
+        # TODO: Figure out why invoking Melos via PowerShell doesn't work properly.
+        # When using PowerShell, the exit code is not propagated correctly.
+        # Even running `CMD /C melos ...` from PowerShell does not work.
+        shell: cmd
+        run: melos test --no-select
