@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2022-09-23
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - [`conventional_commit` - `v0.5.0`](#conventional_commit---v050)
+
+Packages with other changes:
+
+ - [`melos` - `v2.7.1`](#melos---v271)
+
+---
+
+#### `conventional_commit` - `v0.5.0`
+
+ - **BREAKING** **FEAT**: allow custom type. ([e55edb54](https://github.com/invertase/melos/commit/e55edb54ed2bfc8cb1e2e9205831930c35ce47d8))
+
+#### `melos` - `v2.7.1`
+
+ - **REFACTOR**: move over versioning logic from `conventional_commit`. ([75a6fda0](https://github.com/invertase/melos/commit/75a6fda09e2afdcea07d091e6cb48a2cbd2b7fac))
+ - **DOCS**: document versioning ([#377](https://github.com/invertase/melos/issues/377)). ([cc64f1f4](https://github.com/invertase/melos/commit/cc64f1f48c032a60f1d58057df8e08f517c76d33))
+
+
 ## 2022-09-13
 
 ### Changes

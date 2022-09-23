@@ -1,3 +1,8 @@
+## 2.7.1
+
+ - **REFACTOR**: move over versioning logic from `conventional_commit`. ([75a6fda0](https://github.com/invertase/melos/commit/75a6fda09e2afdcea07d091e6cb48a2cbd2b7fac))
+ - **DOCS**: document versioning ([#377](https://github.com/invertase/melos/issues/377)). ([cc64f1f4](https://github.com/invertase/melos/commit/cc64f1f48c032a60f1d58057df8e08f517c76d33))
+
 ## 2.7.0
 
  - **REFACTOR**: fix a few analyzer issues ([#365](https://github.com/invertase/melos/issues/365)). ([74adb062](https://github.com/invertase/melos/commit/74adb062650687a9b7bc8c108a96fbfbb71d023a))

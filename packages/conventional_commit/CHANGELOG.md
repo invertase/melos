@@ -1,3 +1,9 @@
+## 0.5.0
+
+> Note: This release has breaking changes.
+
+ - **BREAKING** **FEAT**: allow custom type. ([e55edb54](https://github.com/invertase/melos/commit/e55edb54ed2bfc8cb1e2e9205831930c35ce47d8))
+
 ## 0.4.3+1
 
  - **REFACTOR**: enable more lint rules ([#346](https://github.com/invertase/melos/issues/346)). ([70448bec](https://github.com/invertase/melos/commit/70448bec7d8cf5f8d0a8dc8c2660e70033936329))
