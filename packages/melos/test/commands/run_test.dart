@@ -1,6 +1,7 @@
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
+import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:melos/src/scripts.dart';
 import 'package:path/path.dart';
@@ -122,15 +123,15 @@ melos run test_script
       expect(
         logger.output.normalizeNewLines(),
         ignoringAnsii(
-          r'''
+          '''
 melos run test_script
-  └> echo $0 $1 $2
+  └> echo \$0 \$1 \$2
      └> RUNNING
 
-/bin/sh foo bar baz
+${currentPlatform.isWindows ? r'$0 $1 $2' : '/bin/sh'} foo bar baz
 
 melos run test_script
-  └> echo $0 $1 $2
+  └> echo \$0 \$1 \$2
      └> SUCCESS
 ''',
         ),
@@ -185,7 +186,7 @@ melos run test_script
 
 ${'-' * terminalWidth}
 a:
-hello
+${currentPlatform.isWindows ? '"hello"' : 'hello'}
 a: SUCCESS
 ${'-' * terminalWidth}
 
