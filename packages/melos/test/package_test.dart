@@ -77,6 +77,30 @@ void main() {
     );
   });
 
+  group('Package', () {
+    group('allTransitiveDependenciesInWorkspace', () {
+      test('does not included transitive dev dependencies', () {
+        final workspaceBuilder = VirtualWorkspaceBuilder('name: test');
+        workspaceBuilder.addPackage('''
+            name: a
+          ''');
+        workspaceBuilder.addPackage('''
+            name: b
+            dev_dependencies:
+              a: any
+          ''');
+        workspaceBuilder.addPackage('''
+            name: c
+            dependencies:
+              b: any
+          ''');
+        final workspace = workspaceBuilder.build();
+        final cPackage = workspace.allPackages['c']!;
+        expect(cPackage.allTransitiveDependenciesInWorkspace.keys, ['b']);
+      });
+    });
+  });
+
   group('PackageFilter', () {
     test('default', () {
       final filter = PackageFilter();
