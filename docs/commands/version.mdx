@@ -90,7 +90,17 @@ melos version -a
 When run with this option, `melos version` will increment prerelease versions using the specified prerelease identifier, e.g. using a "beta" preid along with the --prerelease flag would result in a version in the format "1.0.0-1.0.beta.0". Applies only to Conventional Commits based versioning.
 
 ```bash
-melos version --preid=beta
+melos version --prerelease --preid=beta
+```
+
+## --dependent-preid
+
+This option is the same as --preid, but only applies to packages that are versioned due to a
+change in a dependency version. When this option is not provided but the --preid option is, the
+value of the --preid option will be used instead.
+
+```bash
+melos version --prerelease --dependent-preid=beta
 ```
 
 ## --message (-m)

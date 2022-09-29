@@ -17,6 +17,7 @@ mixin _VersionMixin on _RunMixin {
     // all
     bool showPrivatePackages = false,
     String? preid,
+    String? dependentPreid,
     bool versionPrivatePackages = false,
     Map<String, versioning.ManualVersionChange> manualVersions = const {},
   }) async {
@@ -237,11 +238,7 @@ mixin _VersionMixin on _RunMixin {
             // specifically excluded.
             // graduate: false,
             prerelease: asPrerelease,
-            // TODO Should dependent packages also get the same preid, can we
-            // expose this as an option?
-            // TODO In the case of "nullsafety" it doesn't make sense for
-            // dependent packages to also become nullsafety preid versions.
-            // preid: preid,
+            preid: dependentPreid ?? preid,
             logger: logger,
           ),
         );
