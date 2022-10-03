@@ -220,7 +220,7 @@ bool promptBool({
   );
 }
 
-T? promptChoice<T>(
+T promptChoice<T>(
   String message,
   Iterable<T> options, {
   T? defaultsTo,
@@ -236,7 +236,7 @@ T? promptChoice<T>(
       defaultsTo: defaultsTo,
       prompt: prompt,
       interactive: interactive,
-    ),
+    )!,
     message: message,
     defaultsTo: defaultsTo,
     defaultsToWithoutPrompt: defaultsToWithoutPrompt,
