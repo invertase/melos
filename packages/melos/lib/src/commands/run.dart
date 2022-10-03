@@ -63,7 +63,7 @@ mixin _RunMixin on _Melos {
       requirePrompt: true,
     );
 
-    final selectedScriptIndex = scriptChoices.indexOf(selectedScript!);
+    final selectedScriptIndex = scriptChoices.indexOf(selectedScript);
 
     return scripts[selectedScriptIndex].name;
   }
@@ -133,7 +133,7 @@ mixin _RunMixin on _Melos {
           choices,
           interactive: false,
           defaultsTo: choices[0],
-        )!;
+        );
       }
 
       final selectedPackageIndex =
