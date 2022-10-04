@@ -755,17 +755,17 @@ class Package {
   };
 
   /// The dependencies listed in `dependencies:` inside the package's
-  /// `pubspec.yaml` that are part of the melos workspace
+  /// `pubspec.yaml` that are part of the melos workspace.
   late final Map<String, Package> dependenciesInWorkspace =
       _packagesInWorkspaceForNames(dependencies);
 
   /// The dependencies listed in `dev_dependencies:` inside the package's
-  /// `pubspec.yaml` that are part of the melos workspace
+  /// `pubspec.yaml` that are part of the melos workspace.
   late final Map<String, Package> devDependenciesInWorkspace =
       _packagesInWorkspaceForNames(devDependencies);
 
   /// The dependencies listed in `dependency_overrides:` inside the package's
-  /// `pubspec.yaml` that are part of the melos workspace
+  /// `pubspec.yaml` that are part of the melos workspace.
   late final Map<String, Package> dependencyOverridesInWorkspace =
       _packagesInWorkspaceForNames(dependencyOverrides);
 
@@ -776,7 +776,7 @@ class Package {
         entry.key: entry.value,
   };
 
-  /// The packages that depend on this package as a dev dependency..
+  /// The packages that depend on this package as a dev dependency.
   late final Map<String, Package> devDependentsInWorkspace = {
     for (final entry in _packageMap.entries)
       if (entry.value.devDependenciesInWorkspace.containsKey(name))
@@ -793,13 +793,15 @@ class Package {
   late final Map<String, Package> allTransitiveDependenciesInWorkspace =
       _transitivelyRelatedPackages(
     root: this,
-    directlyRelatedPackages: (package) => package.allDependenciesInWorkspace,
+    directlyRelatedPackages: (package, isRoot) => isRoot
+        ? package.allDependenciesInWorkspace
+        : package.dependenciesInWorkspace,
   );
 
   late final Map<String, Package> allTransitiveDependentsInWorkspace =
       _transitivelyRelatedPackages(
     root: this,
-    directlyRelatedPackages: (package) => package.allDependentsInWorkspace,
+    directlyRelatedPackages: (package, _) => package.allDependentsInWorkspace,
   );
 
   Map<String, Package> _packagesInWorkspaceForNames(List<String> names) {
@@ -1103,10 +1105,11 @@ class Package {
 /// related to it.
 Map<String, Package> _transitivelyRelatedPackages({
   required Package root,
-  required Map<String, Package> Function(Package) directlyRelatedPackages,
+  required Map<String, Package> Function(Package, bool isRoot)
+      directlyRelatedPackages,
 }) {
   final result = <String, Package>{};
-  final workingSet = directlyRelatedPackages(root).values.toList();
+  final workingSet = directlyRelatedPackages(root, true).values.toList();
 
   while (workingSet.isNotEmpty) {
     final current = workingSet.removeLast();
@@ -1120,7 +1123,7 @@ Map<String, Package> _transitivelyRelatedPackages({
       // Since `current` is a package that was not in the result, we are
       // seeing it for the first time and still need to traverse its related
       // packages.
-      workingSet.insertAll(0, directlyRelatedPackages(current).values);
+      workingSet.insertAll(0, directlyRelatedPackages(current, false).values);
 
       return current;
     });
