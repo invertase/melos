@@ -120,6 +120,13 @@ class VersionCommand extends MelosCommand {
           'result in a version in the format "1.0.0-1.0.nullsafety.0". '
           'Applies only to Conventional Commits based versioning.',
     );
+    argParser.addOption(
+      'dependent-preid',
+      help: 'This option is the same as --preid, but only applies to packages '
+          'that are versioned due to a change in a dependency version. '
+          'When this option is not provided but the --preid option is, the '
+          'value of the --preid option will be used instead.',
+    );
     argParser.addMultiOption(
       'manual-version',
       abbr: 'V',
@@ -194,6 +201,7 @@ class VersionCommand extends MelosCommand {
       var updateDependentsVersions = argResults!['dependent-versions'] as bool;
       final versionPrivatePackages = argResults!['all'] as bool;
       final preid = argResults!['preid'] as String?;
+      final dependentPreid = argResults!['dependent-preid'] as String?;
       final manualVersionArgs = argResults!['manual-version'] as List<String>;
 
       final manualVersions = _parseManualVersions(manualVersionArgs);
@@ -227,6 +235,7 @@ class VersionCommand extends MelosCommand {
         updateDependentsConstraints: updateDependentsConstraints,
         updateDependentsVersions: updateDependentsVersions,
         preid: preid,
+        dependentPreid: dependentPreid,
         asPrerelease: asPrerelease,
         asStableRelease: asStableRelease,
         message: commitMessage,
