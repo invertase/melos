@@ -1,4 +1,4 @@
-# Contribution Guidelines
+## Contribution Guidelines
 
 **Note:** If these contribution guidelines are not followed your issue or PR might be closed, so
 please read these instructions carefully.
@@ -9,15 +9,12 @@ _See also: [Flutter's code of conduct](https://flutter.dev/design-principles/#co
 
 Melos is a tool that optimizes the workflow around managing multi-package repositories with git and Pub.
 
-
 ## Contribution types
-
 
 ### Bug Report
 
 - If you find a bug, please first report it using [Github issues].
   - First check if there is not already an issue for it; duplicated issues will be closed.
-
 
 ### Bug Fix
 
@@ -26,14 +23,12 @@ Melos is a tool that optimizes the workflow around managing multi-package reposi
 - Write `Fix #xxxx` in your PR text, where xxxx is the issue number (if there is one).
 - Include a test that isolates the bug and verifies that it was fixed.
 
-
 ### New Features
 
 - If you'd like to add a feature to the library that doesn't already exist, feel free to describe the feature in a new [GitHub issue].
 - You can also join us on [Discord]() to discuss some initials thoughts.
 - If you'd like to implement the new feature, please wait for feedback from the project maintainers before spending too much time writing the code. In some cases, enhancements may not align well with the project future development direction.
 - If applicable, implement the code for the new feature and please read the [How To](#how-to-contribute).
-
 
 ### Documentation & Miscellaneous
 
@@ -43,8 +38,8 @@ Melos is a tool that optimizes the workflow around managing multi-package reposi
 
 ## How To Contribute
 
-
 ### Requirements
+
 - Linux, Mac OS X, or Windows.
 - [Git](https://git-scm.com) (used for source version control).
 - An IDE such as [Android Studio](https://developer.android.com/studio) or [Visual Studio Code](https://code.visualstudio.com/).
@@ -60,10 +55,9 @@ Melos is a tool that optimizes the workflow around managing multi-package reposi
 - `git remote add upstream git@github.com:invertase/melos.git` (So that you
   fetch from the main repository, not your clone, when running `git fetch` or `git pull`
 
+## Environment Setup
 
-### Environment Setup
-
-## Local development setup
+### Local development setup
 
 To setup and use this melos mono repo locally for the purposes of contributing, clone it and run the following commands from the root of the repository:
 
@@ -82,13 +76,13 @@ melos --help
 # ---------------------------------------------------------
 ```
 
-## Install
+### Install
 
 ```bash
 dart pub global activate melos
 ```
 
-### Performing changes
+## Performing changes
 
 - Create a new local branch from `main` (e.g. `git checkout -b my-new-feature`)
 - Make your changes (try to split them up with one PR per feature/fix).
