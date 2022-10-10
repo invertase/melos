@@ -1,4 +1,4 @@
-## Contribution Guidelines
+# Contribution Guidelines
 
 **Note:** If these contribution guidelines are not followed your issue or PR might be closed, so
 please read these instructions carefully.
@@ -13,7 +13,7 @@ Melos is a tool that optimizes the workflow around managing multi-package reposi
 
 ### Bug Report
 
-- If you find a bug, please first report it using [Github issues].
+- If you find a bug, please first report it using [Github issues](https://github.com/invertase/melos/issues/new?assignees=&labels=bug%2Ctriage&template=bug_report.yml&title=fix%3A++).
   - First check if there is not already an issue for it; duplicated issues will be closed.
 
 ### Bug Fix
@@ -25,8 +25,7 @@ Melos is a tool that optimizes the workflow around managing multi-package reposi
 
 ### New Features
 
-- If you'd like to add a feature to the library that doesn't already exist, feel free to describe the feature in a new [GitHub issue].
-- You can also join us on [Discord]() to discuss some initials thoughts.
+- If you'd like to add a feature to the library that doesn't already exist, feel free to describe the feature in a new [GitHub issue](https://github.com/invertase/melos/issues/new?assignees=&labels=bug%2Ctriage&template=bug_report.yml&title=fix%3A++).
 - If you'd like to implement the new feature, please wait for feedback from the project maintainers before spending too much time writing the code. In some cases, enhancements may not align well with the project future development direction.
 - If applicable, implement the code for the new feature and please read the [How To](#how-to-contribute).
 
@@ -55,8 +54,6 @@ Melos is a tool that optimizes the workflow around managing multi-package reposi
 - `git remote add upstream git@github.com:invertase/melos.git` (So that you
   fetch from the main repository, not your clone, when running `git fetch` or `git pull`
 
-## Environment Setup
-
 ### Local development setup
 
 To setup and use this melos mono repo locally for the purposes of contributing, clone it and run the following commands from the root of the repository:
@@ -82,16 +79,16 @@ melos --help
 dart pub global activate melos
 ```
 
-## Performing changes
+### Performing changes
 
 - Create a new local branch from `main` (e.g. `git checkout -b my-new-feature`)
 - Make your changes (try to split them up with one PR per feature/fix).
 - When committing your changes, make sure that each commit message is clear
- (e.g. `git commit -m 'Added CONTRIBUTING.md'`).
+ (e.g. `git commit -m 'docs: Added CONTRIBUTING.md'`).
 - Push your new branch to your own fork into the same remote branch
  (e.g. `git push origin my-username.my-new-feature`, replace `origin` if you use another remote.)
 
- ### Open a pull request
+### Open a pull request
 
 To send us a pull request:
 
