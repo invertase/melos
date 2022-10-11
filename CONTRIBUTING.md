@@ -13,26 +13,26 @@ Melos is a tool that optimizes the workflow around managing multi-package reposi
 
 ### Bug Report
 
-- If you find a bug, please first report it using [Github issues](https://github.com/invertase/melos/issues/new?assignees=&labels=bug%2Ctriage&template=bug_report.yml&title=fix%3A++).
+- If you find a bug, please first report it using [GitHub issues](https://github.com/invertase/melos/issues/new?assignees=&labels=bug%2Ctriage&template=bug_report.yml&title=fix%3A++).
   - First check if there is not already an issue for it; duplicated issues will be closed.
 
 ### Bug Fix
 
-- If you'd like to submit a fix for a bug, please read the [How To](#how-to-contribute) for how to send a Pull Request.
+- If you'd like to submit a fix for a bug, please read the [How To](#how-to-contribute) for how to send a pull request.
 - Indicate on the open issue that you are working on fixing the bug and the issue will be assigned to you.
 - Write `Fix #xxxx` in your PR text, where xxxx is the issue number (if there is one).
 - Include a test that isolates the bug and verifies that it was fixed.
 
 ### New Features
 
-- If you'd like to add a feature to the library that doesn't already exist, feel free to describe the feature in a new [GitHub issue](https://github.com/invertase/melos/issues/new?assignees=&labels=bug%2Ctriage&template=bug_report.yml&title=fix%3A++).
+- If you'd like to add a feature to the library that doesn't already exist, feel free to describe the feature in a new [GitHub issue](https://github.com/invertase/melos/issues/new?assignees=&labels=feature+request%2Ctriage&template=feature_request.yml&title=feature%3A++).
 - If you'd like to implement the new feature, please wait for feedback from the project maintainers before spending too much time writing the code. In some cases, enhancements may not align well with the project future development direction.
 - If applicable, implement the code for the new feature and please read the [How To](#how-to-contribute).
 
 ### Documentation & Miscellaneous
 
 - If you have suggestions for improvements to the documentation or examples (or something else), we would love to hear about it.
-- As always first file a [Github issue].
+- As always first file a [GitHub issue](https://github.com/invertase/melos/issues/new).
 - Implement the changes to the documentation, please read the [How To](#how-to-contribute).
 
 ## How To Contribute
@@ -53,26 +53,7 @@ Melos is a tool that optimizes the workflow around managing multi-package reposi
 - `git clone git@github.com:<your_name_here>/melos.git`
 - `git remote add upstream git@github.com:invertase/melos.git` (So that you
   fetch from the main repository, not your clone, when running `git fetch` or `git pull`
-
-### Local development setup
-
-To setup and use this melos mono repo locally for the purposes of contributing, clone it and run the following commands from the root of the repository:
-
-```bash
-# Install melos if it's not already installed:
-dart pub global activate melos
-
-# Activate 'melos' from path:
-melos activate
-
-# Confirm you now using a local development version:
-melos --help
-# You should now see a banner printed at the top of the help output similar to:
-# ---------------------------------------------------------
-# | You are running a local development version of melos. |
-# ---------------------------------------------------------
-```
-
+  
 ### Install
 
 ```bash
