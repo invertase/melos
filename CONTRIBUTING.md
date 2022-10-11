@@ -53,11 +53,22 @@ Melos is a tool that optimizes the workflow around managing multi-package reposi
 - `git clone git@github.com:<your_name_here>/melos.git`
 - `git remote add upstream git@github.com:invertase/melos.git` (So that you
   fetch from the main repository, not your clone, when running `git fetch` or `git pull`
-  
-### Install
+
+### Local development setup
+
+To setup and use this melos mono repo locally for the purposes of contributing, clone it and run the following commands from the root of the repository:
 
 ```bash
+# Install melos if it's not already installed:
 dart pub global activate melos
+# Activate 'melos' from path:
+melos activate
+# Confirm you now using a local development version:
+melos --help
+# You should now see a banner printed at the top of the help output similar to:
+# ---------------------------------------------------------
+# | You are running a local development version of melos. |
+# ---------------------------------------------------------
 ```
 
 ### Performing changes
