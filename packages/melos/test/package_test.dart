@@ -6,6 +6,7 @@ import 'package:melos/melos.dart';
 import 'package:melos/src/common/http.dart';
 import 'package:mockito/mockito.dart';
 import 'package:platform/platform.dart';
+import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 
 import 'mock_env.dart';
@@ -34,7 +35,12 @@ void main() {
 
       final config = await MelosWorkspaceConfig.fromDirectory(
         createMockWorkspaceFs(
-          packages: [MockPackageFs(name: 'melos')],
+          packages: [
+            MockPackageFs(
+              name: 'melos',
+              version: Version(0, 0, 0),
+            )
+          ],
         ),
       );
       workspace = await MelosWorkspace.fromConfig(
@@ -74,6 +80,33 @@ void main() {
         platform: FakePlatform.fromPlatform(const LocalPlatform())
           ..environment['PUB_HOSTED_URL'] = 'http://localhost:8080',
       ),
+    );
+
+    test(
+      'do not request published versions for private package',
+      () async {
+        final workspaceBuilder = VirtualWorkspaceBuilder('name: test');
+        workspaceBuilder.addPackage('''
+            name: a
+          ''');
+        workspaceBuilder.addPackage('''
+            name: b
+            version: 0.0.0
+            publish_to: none
+          ''');
+        final workspace = workspaceBuilder.build();
+
+        expect(
+          await workspace.allPackages['a']!.getPublishedVersions(),
+          isEmpty,
+        );
+        expect(
+          await workspace.allPackages['b']!.getPublishedVersions(),
+          isEmpty,
+        );
+
+        verifyNever(httpClientMock.get(any));
+      },
     );
   });
 
