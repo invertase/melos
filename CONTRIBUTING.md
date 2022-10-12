@@ -3,7 +3,7 @@
 **Note:** If these contribution guidelines are not followed your issue or PR might be closed, so
 please read these instructions carefully.
 
-_See also: [Flutter's code of conduct](https://flutter.dev/design-principles/#code-of-conduct)_
+_See also: [Invertases's code of conduct](https://github.com/invertase/meta/blob/main/CODE_OF_CONDUCT.md)_
 
 ## About
 
@@ -76,7 +76,7 @@ melos --help
 - Create a new local branch from `main` (e.g. `git checkout -b my-new-feature`)
 - Make your changes (try to split them up with one PR per feature/fix).
 - When committing your changes, make sure that each commit message is clear
- (e.g. `git commit -m 'docs: Added CONTRIBUTING.md'`).
+ (e.g. `git commit -m 'docs: Add CONTRIBUTING.md'`).
 - Push your new branch to your own fork into the same remote branch
  (e.g. `git push origin my-username.my-new-feature`, replace `origin` if you use another remote.)
 

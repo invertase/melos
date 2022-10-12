@@ -43,7 +43,7 @@ dart pub global activate melos
 
 ## How to Contribute
 
-To start making contributions in the project, please refer our  [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+To start making contributions please refer to [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
 ## README Badge
 
