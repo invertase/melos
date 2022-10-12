@@ -835,7 +835,11 @@ class Package {
   /// Queries the pub.dev registry for published versions of this package.
   /// Primarily used for publish filters and versioning.
   Future<List<String>> getPublishedVersions() async {
-    final pubHosted = pubSpec.publishTo ?? pubUrl;
+    if (isPrivate) {
+      return [];
+    }
+
+    final pubHosted = publishTo ?? pubUrl;
 
     final url = pubHosted.replace(path: '/packages/$name.json');
     final response = await http.get(url);
