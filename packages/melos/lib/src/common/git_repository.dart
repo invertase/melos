@@ -35,9 +35,19 @@ abstract class HostedGitRepository {
   Uri issueUrl(String id);
 }
 
+mixin SupportsManualRelease on HostedGitRepository {
+  /// The URL to create a prefilled release.
+  Uri releaseUrl({
+    String? tag,
+    String? title,
+    String? body,
+    bool? isPreRelease,
+  });
+}
+
 /// A git repository, hosted by GitHub.
 @immutable
-class GitHubRepository extends HostedGitRepository {
+class GitHubRepository extends HostedGitRepository with SupportsManualRelease {
   const GitHubRepository({
     required this.owner,
     required this.name,
@@ -71,6 +81,23 @@ class GitHubRepository extends HostedGitRepository {
 
   @override
   Uri issueUrl(String id) => url.resolve('issues/$id');
+
+  @override
+  Uri releaseUrl({
+    String? tag,
+    String? title,
+    String? body,
+    bool? isPreRelease,
+  }) {
+    return url.resolve('releases/new').replace(
+      queryParameters: <String, String>{
+        if (tag != null) 'tag': tag,
+        if (title != null) 'title': title,
+        if (body != null) 'body': body,
+        if (isPreRelease != null) 'prerelease': '$isPreRelease',
+      },
+    );
+  }
 
   @override
   String toString() {

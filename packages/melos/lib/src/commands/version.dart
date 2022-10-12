@@ -342,6 +342,33 @@ mixin _VersionMixin on _RunMixin {
         'Ensure you commit and push your changes (if applicable).',
       );
     }
+
+    // TODO Support for automatically creating a release,
+    // e.g. when GITHUB_TOKEN is present in CI or using `gh release create`
+    // from GitHub CLI.
+
+    final repository = workspace.config.repository;
+
+    if (repository == null) {
+      logger.trace(
+        'No repository configured in melos.yaml to generate a '
+        'release for.',
+      );
+    } else if (repository is! SupportsManualRelease) {
+      logger.trace('Repository does not support releases urls');
+    } else {
+      final pendingPackageReleases = pendingPackageUpdates.map((update) {
+        return link(
+          _gitCreateReleaseUrl(repository, update),
+          update.package.name,
+        );
+      }).join(', ');
+
+      logger.stdout(
+        'Make sure you create a release for each new package version:\n'
+        '$pendingPackageReleases',
+      );
+    }
   }
 
   Future<void> _setPubspecVersionForPackage(
@@ -782,6 +809,29 @@ mixin _VersionMixin on _RunMixin {
         );
       }
     });
+  }
+
+  Uri _gitCreateReleaseUrl(
+    SupportsManualRelease repository,
+    MelosPendingPackageUpdate pendingPackageUpdate,
+  ) {
+    final tag = gitTagForPackageVersion(
+      pendingPackageUpdate.package.name,
+      pendingPackageUpdate.nextVersion.toString(),
+    );
+    final title = gitReleaseTitleForPackageVersion(
+      pendingPackageUpdate.package.name,
+      pendingPackageUpdate.nextVersion.toString(),
+    );
+    final body = pendingPackageUpdate.changelog.markdown;
+    final isPreRelease = pendingPackageUpdate.nextVersion.isPreRelease;
+
+    return repository.releaseUrl(
+      tag: tag,
+      title: title,
+      body: body,
+      isPreRelease: isPreRelease,
+    );
   }
 }
 
