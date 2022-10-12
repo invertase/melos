@@ -35,30 +35,15 @@ To solve these (and many other) problems, some projects will organize their code
 - ♨️ Advanced support for IntelliJ IDEs with automatic creation of [run configurations for workspace defined scripts and more](https://github.com/invertase/melos/issues/9) on workspace bootstrap.
   - Vscode code doesn't require advanced integration to work.
 
-## Local development setup
-
-To setup and use this melos mono repo locally for the purposes of contributing, clone it and run the following commands from the root of the repository:
-
-```bash
-# Install melos if it's not already installed:
-dart pub global activate melos
-
-# Activate 'melos' from path:
-melos activate
-
-# Confirm you now using a local development version:
-melos --help
-# You should now see a banner printed at the top of the help output similar to:
-# ---------------------------------------------------------
-# | You are running a local development version of melos. |
-# ---------------------------------------------------------
-```
-
 ## Install
 
 ```bash
 dart pub global activate melos
 ```
+
+## How to Contribute
+
+To start making contributions please refer to [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
 ## README Badge
 
