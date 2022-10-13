@@ -40,7 +40,13 @@ Future<void> main(List<String> arguments) async {
     return;
   }
   try {
-    final config = await MelosWorkspaceConfig.fromDirectory(Directory.current);
+    var allowOutside = false;
+    if (arguments.contains('--help') || arguments.contains('-h')) {
+      allowOutside = true;
+    }
+    final config = allowOutside
+        ? MelosWorkspaceConfig.empty()
+        : await MelosWorkspaceConfig.fromDirectory(Directory.current);
     await MelosCommandRunner(config).run(arguments);
   } on MelosException catch (err) {
     stderr.writeln(err.toString());
