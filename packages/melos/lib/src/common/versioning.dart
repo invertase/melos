@@ -34,7 +34,6 @@ extension ConventionalCommitVersioningExtension on ConventionalCommit {
   /// Whether this commit should trigger a version bump in it's residing
   /// package.
   bool get isVersionableCommit {
-    if (isMergeCommit) return false;
     return isBreakingChange ||
         [
           'docs',
