@@ -56,6 +56,17 @@ melos version -t
 
 Use `--no-git-tag-version` to disable.
 
+## --[no-]git-release-url (-r)
+
+Generate a link to the release creation page for each package. Defaults to `false`.
+
+```bash
+melos version --git-release-url
+melos version -r
+```
+
+Use `--no-git-release-url` to disable.
+
 ## --[no-]dependent-constraints
 
 Update dependency version constraints of packages in this workspace that depend on any of the packages that will be updated with this versioning run. (defaults to on)
