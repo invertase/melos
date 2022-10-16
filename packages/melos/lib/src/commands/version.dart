@@ -361,7 +361,7 @@ mixin _VersionMixin on _RunMixin {
       } else {
         final pendingPackageReleases = pendingPackageUpdates.map((update) {
           return link(
-            _gitCreateReleaseUrl(repository, update),
+            repository.releaseUrlForUpdate(update),
             update.package.name,
           );
         }).join(ansiStylesDisabled ? '\n' : ', ');
@@ -813,29 +813,6 @@ mixin _VersionMixin on _RunMixin {
         );
       }
     });
-  }
-
-  Uri _gitCreateReleaseUrl(
-    SupportsManualRelease repository,
-    MelosPendingPackageUpdate pendingPackageUpdate,
-  ) {
-    final tag = gitTagForPackageVersion(
-      pendingPackageUpdate.package.name,
-      pendingPackageUpdate.nextVersion.toString(),
-    );
-    final title = gitReleaseTitleForPackageVersion(
-      pendingPackageUpdate.package.name,
-      pendingPackageUpdate.nextVersion.toString(),
-    );
-    final body = pendingPackageUpdate.changelog.markdown;
-    final isPreRelease = pendingPackageUpdate.nextVersion.isPreRelease;
-
-    return repository.releaseUrl(
-      tag: tag,
-      title: title,
-      body: body,
-      isPreRelease: isPreRelease,
-    );
   }
 }
 

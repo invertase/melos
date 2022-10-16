@@ -15,7 +15,10 @@
  *
  */
 
+import 'package:melos/src/common/pending_package_update.dart';
 import 'package:meta/meta.dart';
+
+import 'git.dart';
 
 /// A hosted git repository.
 @immutable
@@ -36,6 +39,26 @@ abstract class HostedGitRepository {
 }
 
 mixin SupportsManualRelease on HostedGitRepository {
+  /// The URL to create a prefilled release.
+  Uri releaseUrlForUpdate(
+    MelosPendingPackageUpdate pendingPackageUpdate,
+  ) {
+    final packageName = pendingPackageUpdate.package.name;
+    final packageVersion = pendingPackageUpdate.nextVersion.toString();
+
+    final tag = gitTagForPackageVersion(packageName, packageVersion);
+    final title = gitReleaseTitleForPackageVersion(packageName, packageVersion);
+    final body = pendingPackageUpdate.changelog.markdown;
+    final isPreRelease = pendingPackageUpdate.nextVersion.isPreRelease;
+
+    return releaseUrl(
+      tag: tag,
+      title: title,
+      body: body,
+      isPreRelease: isPreRelease,
+    );
+  }
+
   /// The URL to create a prefilled release.
   Uri releaseUrl({
     String? tag,
