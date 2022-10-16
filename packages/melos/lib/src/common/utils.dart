@@ -21,6 +21,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:ansi_styles/ansi_styles.dart';
+import 'package:args/args.dart';
 import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 import 'package:prompts/prompts.dart' as prompts;
@@ -625,3 +626,7 @@ extension Utf8StreamUtils on Stream<List<int>> {
 // Encodes a [value] as a JSON string with indentation.
 String prettyEncodeJson(Object? value) =>
     const JsonEncoder.withIndent('  ').convert(value);
+
+extension OptionalArgResults on ArgResults {
+  dynamic optional(String name) => wasParsed(name) ? this[name] : null;
+}

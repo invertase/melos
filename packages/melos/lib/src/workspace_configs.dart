@@ -114,23 +114,29 @@ class IntelliJConfig {
   final String moduleNamePrefix;
 
   Object? toJson() {
-    return enabled;
+    return {
+      'enabled': enabled,
+      'moduleNamePrefix': moduleNamePrefix,
+    };
   }
 
   @override
   bool operator ==(Object other) =>
       other is IntelliJConfig &&
       runtimeType == other.runtimeType &&
-      other.enabled == enabled;
+      other.enabled == enabled &&
+      other.moduleNamePrefix == moduleNamePrefix;
 
   @override
-  int get hashCode => runtimeType.hashCode ^ enabled.hashCode;
+  int get hashCode =>
+      runtimeType.hashCode ^ enabled.hashCode ^ moduleNamePrefix.hashCode;
 
   @override
   String toString() {
     return '''
 IntelliJConfig(
   enabled: $enabled,
+  moduleNamePrefix: $moduleNamePrefix,
 )
 ''';
   }
@@ -158,8 +164,8 @@ class CommandConfigs {
     );
 
     return CommandConfigs(
-      bootstrap: BootstrapCommandConfigs.fromYaml(bootstrapMap ?? {}),
-      version: VersionCommandConfigs.fromYaml(versionMap ?? {}),
+      bootstrap: BootstrapCommandConfigs.fromYaml(bootstrapMap ?? const {}),
+      version: VersionCommandConfigs.fromYaml(versionMap ?? const {}),
     );
   }
 
@@ -297,6 +303,7 @@ class VersionCommandConfigs {
     this.includeCommitId,
     this.workspaceChangelog = false,
     this.updateGitTagRefs = false,
+    this.release = ReleaseVersionCommandConfig.empty,
   });
 
   factory VersionCommandConfigs.fromYaml(Map<Object?, Object?> yaml) {
@@ -335,6 +342,11 @@ class VersionCommandConfigs {
       map: yaml,
       path: 'command/version',
     );
+    final releaseMap = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'release',
+      map: yaml,
+      path: 'command/version',
+    );
 
     return VersionCommandConfigs(
       branch: branch,
@@ -344,6 +356,7 @@ class VersionCommandConfigs {
       linkToCommits: linkToCommits,
       workspaceChangelog: workspaceChangelog ?? false,
       updateGitTagRefs: updateGitTagRefs ?? false,
+      release: ReleaseVersionCommandConfig.fromYaml(releaseMap ?? const {}),
     );
   }
 
@@ -373,6 +386,8 @@ class VersionCommandConfigs {
   /// Whether to also update pubspec with git referenced packages.
   final bool updateGitTagRefs;
 
+  final ReleaseVersionCommandConfig release;
+
   Map<String, Object?> toJson() {
     return {
       if (branch != null) 'branch': branch,
@@ -395,7 +410,8 @@ class VersionCommandConfigs {
       other.includeCommitId == includeCommitId &&
       other.linkToCommits == linkToCommits &&
       other.workspaceChangelog == workspaceChangelog &&
-      other.updateGitTagRefs == updateGitTagRefs;
+      other.updateGitTagRefs == updateGitTagRefs &&
+      other.release == release;
 
   @override
   int get hashCode =>
@@ -406,7 +422,8 @@ class VersionCommandConfigs {
       includeCommitId.hashCode ^
       linkToCommits.hashCode ^
       workspaceChangelog.hashCode ^
-      updateGitTagRefs.hashCode;
+      updateGitTagRefs.hashCode ^
+      release.hashCode;
 
   @override
   String toString() {
@@ -419,7 +436,59 @@ VersionCommandConfigs(
   linkToCommits: $linkToCommits,
   workspaceChangelog: $workspaceChangelog,
   updateGitTagRefs: $updateGitTagRefs,
+  release: $release,
 )''';
+  }
+}
+
+/// Release-specific configurations
+@immutable
+class ReleaseVersionCommandConfig {
+  const ReleaseVersionCommandConfig({
+    this.enabled = _defaultEnabled,
+  });
+
+  factory ReleaseVersionCommandConfig.fromYaml(Map<Object?, Object?> yaml) {
+    final enabled = yaml.containsKey('enabled')
+        ? assertKeyIsA<bool>(
+            key: 'enabled',
+            map: yaml,
+            path: 'command/version/release',
+          )
+        : _defaultEnabled;
+
+    return ReleaseVersionCommandConfig(
+      enabled: enabled,
+    );
+  }
+
+  static const empty = ReleaseVersionCommandConfig();
+  static const _defaultEnabled = false;
+
+  final bool enabled;
+
+  Object? toJson() {
+    return {
+      'enabled': enabled,
+    };
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is ReleaseVersionCommandConfig &&
+      runtimeType == other.runtimeType &&
+      other.enabled == enabled;
+
+  @override
+  int get hashCode => runtimeType.hashCode ^ enabled.hashCode;
+
+  @override
+  String toString() {
+    return '''
+ReleaseConfig(
+  enabled: $enabled,
+)
+''';
   }
 }
 

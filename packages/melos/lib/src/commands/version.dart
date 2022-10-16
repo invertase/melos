@@ -12,6 +12,7 @@ mixin _VersionMixin on _RunMixin {
     bool updateDependentsConstraints = true,
     bool updateDependentsVersions = true,
     bool gitTag = true,
+    bool? releaseUrl,
     String? message,
     bool force = false,
     // all
@@ -347,27 +348,30 @@ mixin _VersionMixin on _RunMixin {
     // e.g. when GITHUB_TOKEN is present in CI or using `gh release create`
     // from GitHub CLI.
 
-    final repository = workspace.config.repository;
+    if (releaseUrl ?? config.commands.version.release.enabled) {
+      final repository = workspace.config.repository;
 
-    if (repository == null) {
-      logger.trace(
-        'No repository configured in melos.yaml to generate a '
-        'release for.',
-      );
-    } else if (repository is! SupportsManualRelease) {
-      logger.trace('Repository does not support releases urls');
-    } else {
-      final pendingPackageReleases = pendingPackageUpdates.map((update) {
-        return link(
-          _gitCreateReleaseUrl(repository, update),
-          update.package.name,
+      if (repository == null) {
+        logger.warning(
+          'No repository configured in melos.yaml to generate a '
+          'release for.',
         );
-      }).join(', ');
+      } else if (repository is! SupportsManualRelease) {
+        logger.warning('Repository does not support releases urls');
+      } else {
+        final pendingPackageReleases = pendingPackageUpdates.map((update) {
+          return link(
+            _gitCreateReleaseUrl(repository, update),
+            update.package.name,
+          );
+        }).join(ansiStylesDisabled ? '\n' : ', ');
 
-      logger.stdout(
-        'Make sure you create a release for each new package version:\n'
-        '$pendingPackageReleases',
-      );
+        logger.success(
+          'Make sure you create a release for each new package version:'
+          '${ansiStylesDisabled ? '\n' : ' '}'
+          '${AnsiStyles.bgBlack.gray(pendingPackageReleases)}',
+        );
+      }
     }
   }
 
