@@ -40,11 +40,7 @@ Future<void> main(List<String> arguments) async {
     return;
   }
   try {
-    var allowOutside = false;
-    if (arguments.contains('--help') || arguments.contains('-h')) {
-      allowOutside = true;
-    }
-    final config = allowOutside
+    final config = shouldUseEmptyConfig(arguments)
         ? MelosWorkspaceConfig.empty()
         : await MelosWorkspaceConfig.fromDirectory(Directory.current);
     await MelosCommandRunner(config).run(arguments);
@@ -58,4 +54,10 @@ Future<void> main(List<String> arguments) async {
     exitCode = 1;
     rethrow;
   }
+}
+
+bool shouldUseEmptyConfig(List<String> arguments) {
+  final hasHelpArg = arguments.contains('--help') || arguments.contains('-h');
+  final shouldUseEmptyConfig = hasHelpArg;
+  return shouldUseEmptyConfig;
 }
