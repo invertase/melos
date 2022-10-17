@@ -297,6 +297,9 @@ String melosYamlPathForDirectory(String directory) =>
 String melosStatePathForDirectory(String directory) =>
     p.join(directory, '.melos');
 
+String melosOverridesYamlPathForDirectory(String directory) =>
+    p.join(directory, 'melos_overrides.yaml');
+
 String pubspecPathForDirectory(String directory) =>
     p.join(directory, 'pubspec.yaml');
 

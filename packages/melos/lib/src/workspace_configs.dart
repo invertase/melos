@@ -761,8 +761,12 @@ You must have one of the following to be a valid Melos workspace:
       throw MelosConfigException('Failed to parse the melos.yaml file');
     }
 
+    final melosOverridesYamlPath =
+        melosOverridesYamlPathForDirectory(melosWorkspaceDirectory.path);
+    final overridesYamlContents = await loadYamlFile(melosOverridesYamlPath);
+
     return MelosWorkspaceConfig.fromYaml(
-      yamlContents,
+      {...yamlContents, ...?overridesYamlContents},
       path: melosWorkspaceDirectory.path,
     )..validatePhysicalWorkspace();
   }
