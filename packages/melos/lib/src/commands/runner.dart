@@ -21,6 +21,7 @@ import '../command_runner/version.dart';
 import '../common/exception.dart';
 import '../common/git.dart';
 import '../common/git_commit.dart';
+import '../common/git_repository.dart';
 import '../common/glob.dart';
 import '../common/intellij_project.dart';
 import '../common/io.dart';

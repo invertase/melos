@@ -170,10 +170,10 @@ To publish packages on [pub.dev](https://pub.dev) you must:
 
 > Internally, Melos uses `pub publish` to publish the packages.
 
-Once you have [versioned](#versioning) your packages, run the publish command to
-check everything is good to go:
+Once you have [versioned](/guides/automated-releases#versioning) your packages,
+run the publish command to check everything is good to go:
 
-```dart
+```sh
 melos publish
 ```
 
@@ -182,8 +182,27 @@ By default, a dry-run is performed (nothing will be published).
 Once satisfied with your pending releases, release them to
 [pub.dev](https://pub.dev):
 
-```dart
+```sh
 melos publish --no-dry-run
+```
+
+## Releases
+
+Melos can generate a link to the prefilled release creation page.
+
+To enable this once use one of the following arguments to `melos version`:
+
+```sh
+melos version --release-url
+melos version -r
+```
+
+To enable this feature permanently, add the following to your `melos.yaml`:
+
+```yaml
+command:
+  version:
+    releaseUrl: true
 ```
 
 ## Git Hosted Packages

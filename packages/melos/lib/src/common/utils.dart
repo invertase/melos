@@ -21,6 +21,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:ansi_styles/ansi_styles.dart';
+import 'package:args/args.dart';
 import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 import 'package:prompts/prompts.dart' as prompts;
@@ -255,7 +256,7 @@ bool get isCI {
 String printablePath(String path) {
   return p.posix
       .prettyUri(p.posix.normalize(path))
-      .replaceAll(RegExp(r'[\/\\]+'), '/');
+      .replaceAll(RegExp(r'[/\\]+'), '/');
 }
 
 String get pathEnvVarSeparator => currentPlatform.isWindows ? ';' : ':';
@@ -348,6 +349,19 @@ String listAsPaddedTable(List<List<String>> table, {int paddingSize = 1}) {
   }
 
   return output.join('\n');
+}
+
+/// Generate a link for display in a terminal.
+///
+/// Similar to `<a href="$url">$text</a>` in HTML.
+/// If ANSI escape codes are not supported, the link will be displayed as plain
+/// text.
+String link(Uri url, String text) {
+  if (ansiStylesDisabled) {
+    return '$text $url';
+  } else {
+    return '\x1B]8;;$url\x07$text\x1B]8;;\x07';
+  }
 }
 
 /// Simple check to see if the [Directory] qualifies as a plugin repository.
@@ -613,3 +627,7 @@ extension Utf8StreamUtils on Stream<List<int>> {
 // Encodes a [value] as a JSON string with indentation.
 String prettyEncodeJson(Object? value) =>
     const JsonEncoder.withIndent('  ').convert(value);
+
+extension OptionalArgResults on ArgResults {
+  dynamic optional(String name) => wasParsed(name) ? this[name] : null;
+}

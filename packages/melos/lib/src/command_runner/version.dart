@@ -90,6 +90,12 @@ class VersionCommand extends MelosCommand {
           'and tag the release. Pass --no-git-tag-version to disable the '
           'behaviour.',
     );
+    argParser.addFlag(
+      'release-url',
+      abbr: 'r',
+      help: 'Generate and print a link to the prefilled release creation page '
+          'for each package after versioning',
+    );
     argParser.addOption(
       'message',
       abbr: 'm',
@@ -162,6 +168,7 @@ class VersionCommand extends MelosCommand {
     final updateDependentsConstraints =
         argResults!['dependent-constraints'] as bool;
     final tag = argResults!['git-tag-version'] as bool;
+    final releaseUrl = argResults!.optional('release-url') as bool?;
     final changelog = argResults!['changelog'] as bool;
     final commitMessage =
         (argResults!['message'] as String?)?.replaceAll(r'\n', '\n');
@@ -190,6 +197,7 @@ class VersionCommand extends MelosCommand {
         manualVersions: {packageName: versionChange},
         force: force,
         gitTag: tag,
+        releaseUrl: releaseUrl,
         updateChangelog: changelog,
         updateDependentsConstraints: updateDependentsConstraints,
         updateDependentsVersions: false,
@@ -231,6 +239,7 @@ class VersionCommand extends MelosCommand {
         filter: parsePackageFilter(config.path),
         force: force,
         gitTag: tag,
+        releaseUrl: releaseUrl,
         updateChangelog: changelog,
         updateDependentsConstraints: updateDependentsConstraints,
         updateDependentsVersions: updateDependentsVersions,

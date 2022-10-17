@@ -17,6 +17,9 @@
 
 import 'package:meta/meta.dart';
 
+import 'git.dart';
+import 'pending_package_update.dart';
+
 /// A hosted git repository.
 @immutable
 abstract class HostedGitRepository {
@@ -35,9 +38,38 @@ abstract class HostedGitRepository {
   Uri issueUrl(String id);
 }
 
+mixin SupportsManualRelease on HostedGitRepository {
+  /// Returns the URL to the prefilled release creation page for the release
+  /// of a package.
+  Uri releaseUrlForUpdate(MelosPendingPackageUpdate pendingPackageUpdate) {
+    final packageName = pendingPackageUpdate.package.name;
+    final packageVersion = pendingPackageUpdate.nextVersion.toString();
+
+    final tag = gitTagForPackageVersion(packageName, packageVersion);
+    final title = gitReleaseTitleForPackageVersion(packageName, packageVersion);
+    final body = pendingPackageUpdate.changelog.markdown;
+    final isPreRelease = pendingPackageUpdate.nextVersion.isPreRelease;
+
+    return releaseUrl(
+      tag: tag,
+      title: title,
+      body: body,
+      isPreRelease: isPreRelease,
+    );
+  }
+
+  /// Returns a URL to the release creation page with the given parameters.
+  Uri releaseUrl({
+    String? tag,
+    String? title,
+    String? body,
+    bool? isPreRelease,
+  });
+}
+
 /// A git repository, hosted by GitHub.
 @immutable
-class GitHubRepository extends HostedGitRepository {
+class GitHubRepository extends HostedGitRepository with SupportsManualRelease {
   const GitHubRepository({
     required this.owner,
     required this.name,
@@ -71,6 +103,23 @@ class GitHubRepository extends HostedGitRepository {
 
   @override
   Uri issueUrl(String id) => url.resolve('issues/$id');
+
+  @override
+  Uri releaseUrl({
+    String? tag,
+    String? title,
+    String? body,
+    bool? isPreRelease,
+  }) {
+    return url.resolve('releases/new').replace(
+      queryParameters: <String, String>{
+        if (tag != null) 'tag': tag,
+        if (title != null) 'title': title,
+        if (body != null) 'body': body,
+        if (isPreRelease != null) 'prerelease': '$isPreRelease',
+      },
+    );
+  }
 
   @override
   String toString() {

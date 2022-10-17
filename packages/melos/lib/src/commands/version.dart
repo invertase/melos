@@ -12,6 +12,7 @@ mixin _VersionMixin on _RunMixin {
     bool updateDependentsConstraints = true,
     bool updateDependentsVersions = true,
     bool gitTag = true,
+    bool? releaseUrl,
     String? message,
     bool force = false,
     // all
@@ -341,6 +342,36 @@ mixin _VersionMixin on _RunMixin {
         'Versioning successful. '
         'Ensure you commit and push your changes (if applicable).',
       );
+    }
+
+    // TODO Support for automatically creating a release,
+    // e.g. when GITHUB_TOKEN is present in CI or using `gh release create`
+    // from GitHub CLI.
+
+    if (releaseUrl ?? config.commands.version.releaseUrl) {
+      final repository = workspace.config.repository;
+
+      if (repository == null) {
+        logger.warning(
+          'No repository configured in melos.yaml to generate a '
+          'release for.',
+        );
+      } else if (repository is! SupportsManualRelease) {
+        logger.warning('Repository does not support releases urls');
+      } else {
+        final pendingPackageReleases = pendingPackageUpdates.map((update) {
+          return link(
+            repository.releaseUrlForUpdate(update),
+            update.package.name,
+          );
+        }).join(ansiStylesDisabled ? '\n' : ', ');
+
+        logger.success(
+          'Make sure you create a release for each new package version:'
+          '${ansiStylesDisabled ? '\n' : ' '}'
+          '${AnsiStyles.bgBlack.gray(pendingPackageReleases)}',
+        );
+      }
     }
   }
 

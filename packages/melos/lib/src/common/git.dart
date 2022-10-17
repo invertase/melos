@@ -49,6 +49,15 @@ String gitTagForPackageVersion(
   return '$packageName-$prefix$packageVersion';
 }
 
+/// Generate a git release title for the specified package name and version.
+String gitReleaseTitleForPackageVersion(
+  String packageName,
+  String packageVersion, {
+  String prefix = 'v',
+}) {
+  return '$packageName $prefix$packageVersion';
+}
+
 /// Execute a `git` CLI command with arguments.
 Future<ProcessResult> gitExecuteCommand({
   required List<String> arguments,
