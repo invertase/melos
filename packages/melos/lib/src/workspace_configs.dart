@@ -554,6 +554,14 @@ class MelosWorkspaceConfig {
               : CommandConfigs.empty,
         );
 
+  MelosWorkspaceConfig.empty()
+      : this(
+          name: 'Melos',
+          packages: [],
+          path: Directory.current.path,
+          commands: CommandConfigs.empty,
+        );
+
   static Directory? _searchForAncestorDirectoryWithMelosYaml(Directory from) {
     for (var testedDirectory = from;
         testedDirectory.path != testedDirectory.parent.path;

@@ -40,7 +40,9 @@ Future<void> main(List<String> arguments) async {
     return;
   }
   try {
-    final config = await MelosWorkspaceConfig.fromDirectory(Directory.current);
+    final config = shouldUseEmptyConfig(arguments)
+        ? MelosWorkspaceConfig.empty()
+        : await MelosWorkspaceConfig.fromDirectory(Directory.current);
     await MelosCommandRunner(config).run(arguments);
   } on MelosException catch (err) {
     stderr.writeln(err.toString());
@@ -52,4 +54,11 @@ Future<void> main(List<String> arguments) async {
     exitCode = 1;
     rethrow;
   }
+}
+
+bool shouldUseEmptyConfig(List<String> arguments) {
+  final willShowHelp = arguments.isEmpty ||
+      arguments.contains('--help') ||
+      arguments.contains('-h');
+  return willShowHelp;
 }
