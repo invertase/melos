@@ -57,7 +57,8 @@ Future<void> main(List<String> arguments) async {
 }
 
 bool shouldUseEmptyConfig(List<String> arguments) {
-  final hasHelpArg = arguments.contains('--help') || arguments.contains('-h');
-  final shouldUseEmptyConfig = hasHelpArg;
-  return shouldUseEmptyConfig;
+  final willShowHelp = arguments.isEmpty ||
+      arguments.contains('--help') ||
+      arguments.contains('-h');
+  return willShowHelp;
 }
