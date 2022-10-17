@@ -556,6 +556,7 @@ class MelosWorkspaceConfig {
     this.repository,
     required this.packages,
     this.ignore = const [],
+    this.dependencyOverrides = const [],
     this.scripts = Scripts.empty,
     this.ide = IDEConfigs.empty,
     this.commands = CommandConfigs.empty,
@@ -649,6 +650,16 @@ class MelosWorkspaceConfig {
         path: 'ignore',
       ),
     );
+    final dependencyOverrides = assertListIsA<String>(
+      key: 'dependency_overrides',
+      map: yaml,
+      isRequired: false,
+      assertItemIsA: (index, value) => assertIsA<String>(
+        value: value,
+        index: index,
+        path: 'dependency_overrides',
+      ),
+    );
 
     final scriptsMap = assertKeyIsA<Map<Object?, Object?>?>(
       key: 'scripts',
@@ -680,6 +691,9 @@ class MelosWorkspaceConfig {
           .toList(),
       ignore: ignore
           .map((ignore) => createGlob(ignore, currentDirectoryPath: path))
+          .toList(),
+      dependencyOverrides: dependencyOverrides
+          .map((override) => createGlob(override, currentDirectoryPath: path))
           .toList(),
       scripts: scriptsMap == null
           ? Scripts.empty
@@ -787,6 +801,10 @@ You must have one of the following to be a valid Melos workspace:
   /// packages.
   final List<Glob> ignore;
 
+  /// A list of [Glob]s for paths that contain packages to be used as dependency
+  /// overrides.
+  final List<Glob> dependencyOverrides;
+
   /// A list of scripts that can be executed with `melos run` or will be
   /// executed before/after some specific melos commands.
   final Scripts scripts;
@@ -839,6 +857,8 @@ You must have one of the following to be a valid Melos workspace:
       other.repository == repository &&
       const DeepCollectionEquality().equals(other.packages, packages) &&
       const DeepCollectionEquality().equals(other.ignore, ignore) &&
+      const DeepCollectionEquality()
+          .equals(other.dependencyOverrides, dependencyOverrides) &&
       other.scripts == scripts &&
       other.ide == ide &&
       other.commands == commands;
@@ -851,6 +871,7 @@ You must have one of the following to be a valid Melos workspace:
       repository.hashCode ^
       const DeepCollectionEquality().hash(packages) &
           const DeepCollectionEquality().hash(ignore) ^
+      const DeepCollectionEquality().hash(dependencyOverrides) ^
       scripts.hashCode ^
       ide.hashCode ^
       commands.hashCode;
@@ -862,6 +883,9 @@ You must have one of the following to be a valid Melos workspace:
       if (repository != null) 'repository': repository!,
       'packages': packages.map((p) => p.toString()).toList(),
       if (ignore.isNotEmpty) 'ignore': ignore.map((p) => p.toString()).toList(),
+      if (dependencyOverrides.isNotEmpty)
+        'dependency_overrides':
+            dependencyOverrides.map((p) => p.toString()).toList(),
       if (scripts.isNotEmpty) 'scripts': scripts.toJson(),
       'ide': ide.toJson(),
       'command': commands.toJson(),
@@ -877,6 +901,7 @@ MelosWorkspaceConfig(
   repository: $repository,
   packages: $packages,
   ignore: $ignore,
+  dependency_overrides: $dependencyOverrides,
   scripts: ${scripts.toString().indent('  ')},
   ide: ${ide.toString().indent('  ')},
   commands: ${commands.toString().indent('  ')},

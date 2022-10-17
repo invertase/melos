@@ -48,6 +48,7 @@ class MelosWorkspace {
     required this.config,
     required this.allPackages,
     required this.filteredPackages,
+    required this.dependencyOverrides,
     required this.sdkPath,
     required this.logger,
   });
@@ -65,6 +66,12 @@ class MelosWorkspace {
       ignore: workspaceConfig.ignore,
       logger: logger,
     );
+    final dependencyOverrides = await PackageMap.resolvePackages(
+      workspacePath: workspaceConfig.path,
+      packages: workspaceConfig.dependencyOverrides,
+      ignore: const [],
+      logger: logger,
+    );
 
     final filteredPackages = await allPackages.applyFilter(filter);
 
@@ -75,6 +82,7 @@ class MelosWorkspace {
       allPackages: allPackages,
       logger: logger,
       filteredPackages: filteredPackages,
+      dependencyOverrides: dependencyOverrides,
       sdkPath: resolveSdkPath(
         configSdkPath: workspaceConfig.sdkPath,
         envSdkPath: currentPlatform.environment[utils.envKeyMelosSdkPath],
@@ -102,6 +110,9 @@ class MelosWorkspace {
   final PackageMap allPackages;
 
   final PackageMap filteredPackages;
+
+  /// Packages to use as dependency overrides.
+  final PackageMap dependencyOverrides;
 
   late final IdeWorkspace ide = IdeWorkspace._(this);
 

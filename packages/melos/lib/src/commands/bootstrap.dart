@@ -113,6 +113,13 @@ mixin _BootstrapMixin on _CleanMixin {
       }
     }
 
+    // Add custom dependency overrides.
+    for (final dependencyOverride in workspace.dependencyOverrides.values) {
+      melosDependencyOverrides[dependencyOverride.name] = PathReference(
+        utils.relativePath(dependencyOverride.path, package.path),
+      );
+    }
+
     // Load current pubspec_overrides.yaml.
     final pubspecOverridesFile =
         utils.pubspecOverridesPathForDirectory(package.path);
