@@ -348,7 +348,7 @@ mixin _VersionMixin on _RunMixin {
     // e.g. when GITHUB_TOKEN is present in CI or using `gh release create`
     // from GitHub CLI.
 
-    if (releaseUrl ?? config.commands.version.release.enabled) {
+    if (releaseUrl ?? config.commands.version.releaseUrl) {
       final repository = workspace.config.repository;
 
       if (repository == null) {

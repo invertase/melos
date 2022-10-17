@@ -303,7 +303,7 @@ class VersionCommandConfigs {
     this.includeCommitId,
     this.workspaceChangelog = false,
     this.updateGitTagRefs = false,
-    this.release = ReleaseVersionCommandConfig.empty,
+    this.releaseUrl = false,
   });
 
   factory VersionCommandConfigs.fromYaml(Map<Object?, Object?> yaml) {
@@ -342,8 +342,8 @@ class VersionCommandConfigs {
       map: yaml,
       path: 'command/version',
     );
-    final releaseMap = assertKeyIsA<Map<Object?, Object?>?>(
-      key: 'release',
+    final releaseUrl = assertKeyIsA<bool?>(
+      key: 'releaseUrl',
       map: yaml,
       path: 'command/version',
     );
@@ -356,7 +356,7 @@ class VersionCommandConfigs {
       linkToCommits: linkToCommits,
       workspaceChangelog: workspaceChangelog ?? false,
       updateGitTagRefs: updateGitTagRefs ?? false,
-      release: ReleaseVersionCommandConfig.fromYaml(releaseMap ?? const {}),
+      releaseUrl: releaseUrl ?? false,
     );
   }
 
@@ -386,7 +386,9 @@ class VersionCommandConfigs {
   /// Whether to also update pubspec with git referenced packages.
   final bool updateGitTagRefs;
 
-  final ReleaseVersionCommandConfig release;
+  /// Whether to generate and print a link to the prefilled release creation
+  /// page for each package after versioning.
+  final bool releaseUrl;
 
   Map<String, Object?> toJson() {
     return {
@@ -411,7 +413,7 @@ class VersionCommandConfigs {
       other.linkToCommits == linkToCommits &&
       other.workspaceChangelog == workspaceChangelog &&
       other.updateGitTagRefs == updateGitTagRefs &&
-      other.release == release;
+      other.releaseUrl == releaseUrl;
 
   @override
   int get hashCode =>
@@ -423,7 +425,7 @@ class VersionCommandConfigs {
       linkToCommits.hashCode ^
       workspaceChangelog.hashCode ^
       updateGitTagRefs.hashCode ^
-      release.hashCode;
+      releaseUrl.hashCode;
 
   @override
   String toString() {
@@ -436,59 +438,8 @@ VersionCommandConfigs(
   linkToCommits: $linkToCommits,
   workspaceChangelog: $workspaceChangelog,
   updateGitTagRefs: $updateGitTagRefs,
-  release: $release,
+  releaseUrl: $releaseUrl,
 )''';
-  }
-}
-
-/// Release-specific configurations
-@immutable
-class ReleaseVersionCommandConfig {
-  const ReleaseVersionCommandConfig({
-    this.enabled = _defaultEnabled,
-  });
-
-  factory ReleaseVersionCommandConfig.fromYaml(Map<Object?, Object?> yaml) {
-    final enabled = yaml.containsKey('enabled')
-        ? assertKeyIsA<bool>(
-            key: 'enabled',
-            map: yaml,
-            path: 'command/version/release',
-          )
-        : _defaultEnabled;
-
-    return ReleaseVersionCommandConfig(
-      enabled: enabled,
-    );
-  }
-
-  static const empty = ReleaseVersionCommandConfig();
-  static const _defaultEnabled = false;
-
-  final bool enabled;
-
-  Object? toJson() {
-    return {
-      'enabled': enabled,
-    };
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      other is ReleaseVersionCommandConfig &&
-      runtimeType == other.runtimeType &&
-      other.enabled == enabled;
-
-  @override
-  int get hashCode => runtimeType.hashCode ^ enabled.hashCode;
-
-  @override
-  String toString() {
-    return '''
-ReleaseConfig(
-  enabled: $enabled,
-)
-''';
   }
 }
 

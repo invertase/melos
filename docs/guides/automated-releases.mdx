@@ -1,8 +1,8 @@
 ---
 title: Automated Releases
 description:
-Automate your workflow by versioning and publishing packages with Melos and
-Conventional Commits.
+  Automate your workflow by versioning and publishing packages with Melos and
+  Conventional Commits.
 ---
 
 # Automated Releases
@@ -41,17 +41,17 @@ steps:
 
 1. Apply [filters](/filters) to the list of workspace packages.
 2. Load the commit history for each package. If the `--since` option is
-specified, Melos will only load commits since the specified commit. Otherwise
-it will load all commits since the last version tag (e.g. `foo-v1.0.0`).
+   specified, Melos will only load commits since the specified commit. Otherwise
+   it will load all commits since the last version tag (e.g. `foo-v1.0.0`).
 3. Parse commit messages as Conventional Commits. If a commit message does not
-follow the Conventional Commits specification, it will be ignored.
+   follow the Conventional Commits specification, it will be ignored.
 4. Filter out commits with types that don't trigger a version bump. For example,
-`chore` commits will be ignored.
+   `chore` commits will be ignored.
 5. If at this point no commits remain, the package will not be versioned.
 6. Determine the version upgrade required for each package based on the commit
-with the most significant version bump. For example, if a package has a
-`feat` commit and a `fix` commit, the package will be versioned with a
-`minor` upgrade.
+   with the most significant version bump. For example, if a package has a
+   `feat` commit and a `fix` commit, the package will be versioned with a
+   `minor` upgrade.
 
 #### Conventional Commits
 
@@ -170,8 +170,8 @@ To publish packages on [pub.dev](https://pub.dev) you must:
 
 > Internally, Melos uses `pub publish` to publish the packages.
 
-Once you have [versioned](#versioning) your packages, run the publish command to
-check everything is good to go:
+Once you have [versioned](/guides/automated-releases#versioning) your packages,
+run the publish command to check everything is good to go:
 
 ```sh
 melos publish
@@ -193,7 +193,7 @@ Melos can generate a link to the prefilled release creation page.
 To enable this once use one of the following arguments to `melos version`:
 
 ```sh
-melos version --git-release-url
+melos version --release-url
 melos version -r
 ```
 
@@ -202,8 +202,7 @@ To enable this feature permanently, add the following to your `melos.yaml`:
 ```yaml
 command:
   version:
-    release:
-        enabled: true
+    releaseUrl: true
 ```
 
 ## Git Hosted Packages

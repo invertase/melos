@@ -352,6 +352,7 @@ String listAsPaddedTable(List<List<String>> table, {int paddingSize = 1}) {
 }
 
 /// Generate a link for display in a terminal.
+///
 /// Similar to `<a href="$url">$text</a>` in HTML.
 /// If ANSI escape codes are not supported, the link will be displayed as plain
 /// text.

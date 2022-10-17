@@ -56,16 +56,21 @@ melos version -t
 
 Use `--no-git-tag-version` to disable.
 
-## --[no-]git-release-url (-r)
+## --[no-]release-url (-r)
 
-Generate a link to the release creation page for each package. Defaults to `false`.
+Generate and print a link to the prefilled release creation page for each package after versioning.
+Defaults to `false`.
 
 ```bash
-melos version --git-release-url
+melos version --release-url
 melos version -r
 ```
 
-Use `--no-git-release-url` to disable.
+Use `--no-release-url` to disable.
+
+The default for this option can be configured in
+[command/version/releaseUrl](/configuration/overview#commandversionreleaseUrl) in your `melos.yaml`
+file.
 
 ## --[no-]dependent-constraints
 

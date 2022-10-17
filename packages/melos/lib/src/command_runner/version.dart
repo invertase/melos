@@ -91,9 +91,10 @@ class VersionCommand extends MelosCommand {
           'behaviour.',
     );
     argParser.addFlag(
-      'git-release-url',
+      'release-url',
       abbr: 'r',
-      help: 'Generate a link to the release creation page for each package.',
+      help: 'Generate and print a link to the prefilled release creation page '
+          'for each package after versioning',
     );
     argParser.addOption(
       'message',
@@ -167,7 +168,7 @@ class VersionCommand extends MelosCommand {
     final updateDependentsConstraints =
         argResults!['dependent-constraints'] as bool;
     final tag = argResults!['git-tag-version'] as bool;
-    final releaseUrl = argResults!.optional('git-release-url') as bool?;
+    final releaseUrl = argResults!.optional('release-url') as bool?;
     final changelog = argResults!['changelog'] as bool;
     final commitMessage =
         (argResults!['message'] as String?)?.replaceAll(r'\n', '\n');
