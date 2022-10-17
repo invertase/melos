@@ -170,20 +170,16 @@ extension ChangelogStringBufferExtension on StringBuffer {
           write(' ');
         }
 
-        if (parsedMessage.isMergeCommit) {
-          writePunctuated(processCommitHeader(parsedMessage.header));
-        } else {
-          writeBold(parsedMessage.type!.toUpperCase());
-          if (config.commands.version.includeScopes) {
-            if (parsedMessage.scopes.isNotEmpty) {
-              write('(');
-              write(parsedMessage.scopes.join(','));
-              write(')');
-            }
+        writeBold(parsedMessage.type!.toUpperCase());
+        if (config.commands.version.includeScopes) {
+          if (parsedMessage.scopes.isNotEmpty) {
+            write('(');
+            write(parsedMessage.scopes.join(','));
+            write(')');
           }
-          write(': ');
-          writePunctuated(processCommitHeader(parsedMessage.description!));
         }
+        write(': ');
+        writePunctuated(processCommitHeader(parsedMessage.description!));
 
         if (linkToCommits || includeCommitId) {
           final shortCommitId = commit.id.substring(0, 8);
@@ -208,11 +204,7 @@ List<RichGitCommit> _filteredAndSortedCommits(
   MelosPendingPackageUpdate update,
 ) {
   final commits = update.commits
-      .where(
-        (commit) =>
-            !commit.parsedMessage.isMergeCommit &&
-            commit.parsedMessage.isVersionableCommit,
-      )
+      .where((commit) => commit.parsedMessage.isVersionableCommit)
       .toList();
 
   // Sort so that Breaking Changes appear at the top.

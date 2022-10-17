@@ -32,16 +32,23 @@ void main() {
       isFalse,
     );
     expect(
-      ConventionalCommit.tryParse('Merged PR 1337: bar foo')!.isVersionableCommit,
+      ConventionalCommit.tryParse('Merged PR 1337: bar foo')!
+          .isVersionableCommit,
       isFalse,
     );
     expect(
-      ConventionalCommit.tryParse('Merged PR 1337: fix(1338): bar foo')!.isVersionableCommit,
+      ConventionalCommit.tryParse('Merged PR 1337: fix(1338): bar foo')!
+          .isVersionableCommit,
       isTrue,
     );
     expect(
-      ConventionalCommit.tryParse('Merged PR: fix(*): bar foo')!.isVersionableCommit,
+      ConventionalCommit.tryParse('Merged PR: fix(*): bar foo')!
+          .isVersionableCommit,
       isTrue,
+    );
+    expect(
+      ConventionalCommit.tryParse('Merged foo into bar')!.isVersionableCommit,
+      isFalse,
     );
   });
 
