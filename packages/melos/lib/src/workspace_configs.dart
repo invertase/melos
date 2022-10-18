@@ -778,9 +778,12 @@ You must have one of the following to be a valid Melos workspace:
     final melosOverridesYamlPath =
         melosOverridesYamlPathForDirectory(melosWorkspaceDirectory.path);
     final overridesYamlContents = await loadYamlFile(melosOverridesYamlPath);
+    if (overridesYamlContents != null) {
+      mergeYaml(yamlContents, overridesYamlContents);
+    }
 
     return MelosWorkspaceConfig.fromYaml(
-      {...yamlContents, ...?overridesYamlContents},
+      yamlContents,
       path: melosWorkspaceDirectory.path,
     )..validatePhysicalWorkspace();
   }

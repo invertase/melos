@@ -350,6 +350,30 @@ String listAsPaddedTable(List<List<String>> table, {int paddingSize = 1}) {
   return output.join('\n');
 }
 
+/// Merges two YAML maps together, overriding any values in [base] with those
+/// with the same key in [overlay].
+void mergeYaml(Map<Object?, Object?> base, Map<Object?, Object?> overlay) {
+  for (final entry in overlay.entries) {
+    final overlayValue = entry.value;
+    final baseValue = base[entry.key];
+    if (overlayValue is Map<Object?, Object?>) {
+      if (baseValue is Map<Object?, Object?>) {
+        mergeYaml(baseValue, overlayValue);
+      } else {
+        base[entry.key] = overlayValue;
+      }
+    } else if (overlayValue is List<Object?>) {
+      if (baseValue is List<Object?>) {
+        baseValue.addAll(overlayValue);
+      } else {
+        base[entry.key] = overlayValue;
+      }
+    } else {
+      base[entry.key] = overlayValue;
+    }
+  }
+}
+
 /// Generate a link for display in a terminal.
 ///
 /// Similar to `<a href="$url">$text</a>` in HTML.
