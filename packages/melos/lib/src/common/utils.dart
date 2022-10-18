@@ -350,15 +350,38 @@ String listAsPaddedTable(List<List<String>> table, {int paddingSize = 1}) {
   return output.join('\n');
 }
 
-/// Merges two YAML maps together, overriding any values in [base] with those
+extension YamlUtils on YamlNode {
+  /// Converts a YAML node to a regular mutable Dart object.
+  Object? unYaml() {
+    final node = this;
+    if (node is YamlScalar) {
+      return node.value;
+    }
+    if (node is YamlMap) {
+      return {
+        for (final entry in node.nodes.entries)
+          (entry.key as YamlNode).unYaml(): entry.value.unYaml(),
+      };
+    }
+    if (node is YamlList) {
+      return node.nodes.map((node) => node.unYaml()).toList();
+    }
+    throw FormatException(
+      'Unsupported YAML node type encountered: ${node.runtimeType}',
+      this,
+    );
+  }
+}
+
+/// Merges two maps together, overriding any values in [base] with those
 /// with the same key in [overlay].
-void mergeYaml(Map<Object?, Object?> base, Map<Object?, Object?> overlay) {
+void mergeMap(Map<Object?, Object?> base, Map<Object?, Object?> overlay) {
   for (final entry in overlay.entries) {
     final overlayValue = entry.value;
     final baseValue = base[entry.key];
     if (overlayValue is Map<Object?, Object?>) {
       if (baseValue is Map<Object?, Object?>) {
-        mergeYaml(baseValue, overlayValue);
+        mergeMap(baseValue, overlayValue);
       } else {
         base[entry.key] = overlayValue;
       }

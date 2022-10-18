@@ -119,7 +119,7 @@ void main() {
         'stu': ['another', 'different', 'type'],
         'yza': false,
       };
-      mergeYaml(base, overlay);
+      mergeMap(base, overlay);
       expect(base, const {
         'abc': 098,
         'def': [4, 5, 6, 7],
