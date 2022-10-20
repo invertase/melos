@@ -16,6 +16,7 @@
  */
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:meta/meta.dart';
@@ -230,6 +231,8 @@ class MelosWorkspace {
       ],
       runInShell: true,
       workingDirectory: melosToolPath,
+      stdoutEncoding: utf8,
+      stderrEncoding: utf8,
     );
 
     final pubDepList =

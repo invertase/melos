@@ -15,6 +15,7 @@
  *
  */
 
+import 'dart:convert';
 import 'dart:io';
 
 import '../logging.dart';
@@ -76,6 +77,8 @@ Future<ProcessResult> gitExecuteCommand({
     executable,
     arguments,
     workingDirectory: workingDirectory,
+    stdoutEncoding: utf8,
+    stderrEncoding: utf8,
   );
 
   if (throwOnExitCodeError && processResult.exitCode != 0) {
