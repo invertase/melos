@@ -59,6 +59,34 @@ void main() {
         contains('**FEAT**(a,b): c.'),
       );
     });
+
+    test('merge commit without conventional commit', () {
+      final workspace = buildWorkspaceWithRepository();
+      final package = workspace.allPackages['test_pkg']!;
+
+      expect(
+        renderCommitPackageUpdate(
+          workspace,
+          package,
+          testCommit(message: 'Merge foo into bar'),
+        ),
+        '## 0.0.0+1\n\n',
+      );
+    });
+
+    test('merge commit with conventional commit', () {
+      final workspace = buildWorkspaceWithRepository();
+      final package = workspace.allPackages['test_pkg']!;
+
+      expect(
+        renderCommitPackageUpdate(
+          workspace,
+          package,
+          testCommit(message: 'Merge PR #1: feat: a'),
+        ),
+        contains('**FEAT**: a.'),
+      );
+    });
   });
 
   group('linkToCommits', () {

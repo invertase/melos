@@ -93,13 +93,24 @@ void main() {
       'correctly parses commit with prefix before conventional commit type',
       () {
         const commitMessage = 'Merged PR 404: feat(scope): new feature';
-        final conventionalCommit = ConventionalCommit.tryParse(commitMessage);
-        expect(conventionalCommit?.type, 'feat');
-        expect(conventionalCommit?.scopes, ['scope']);
-        expect(conventionalCommit?.description, 'new feature');
-        expect(conventionalCommit?.isMergeCommit, true);
+        final conventionalCommit = ConventionalCommit.tryParse(commitMessage)!;
+        expect(conventionalCommit.type, 'feat');
+        expect(conventionalCommit.scopes, ['scope']);
+        expect(conventionalCommit.description, 'new feature');
+        expect(conventionalCommit.isMergeCommit, true);
       },
     );
+
+    test('parses merge commits which are not conventional commits', () {
+      const commitMessage = 'Merged foo into bar';
+      final conventionalCommit = ConventionalCommit.tryParse(commitMessage)!;
+      expect(conventionalCommit.type, isNull);
+      expect(conventionalCommit.scopes, isEmpty);
+      expect(conventionalCommit.description, isNull);
+      expect(conventionalCommit.body, isNull);
+      expect(conventionalCommit.header, commitMessage);
+      expect(conventionalCommit.isMergeCommit, true);
+    });
 
     test('correctly handles messages with a `*` scope', () {
       final commit = ConventionalCommit.tryParse(commitMessageStarScope);
@@ -326,6 +337,10 @@ void main() {
       expect(
         ConventionalCommit.tryParse("Merge branch 'main' of invertase/melos")!
             .isMergeCommit,
+        isTrue,
+      );
+      expect(
+        ConventionalCommit.tryParse('Merged PR #0: fix: foo')!.isMergeCommit,
         isTrue,
       );
       expect(
