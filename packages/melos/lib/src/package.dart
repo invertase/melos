@@ -615,6 +615,17 @@ The packages that caused the problem are:
       _logger,
     );
   }
+
+  /// Creates a new [PackageMap] containing the contents of the [overlay]
+  /// [PackageMap] combined with this [PackageMap]. Any entries in the original
+  /// with duplicate keys existing in the [overlay] will be overwritten.
+  ///
+  /// The [MelosLogger] from this [PackageMap] will be used in the resultant
+  /// [PackageMap].
+  PackageMap operator +(PackageMap overlay) => PackageMap(
+        {..._map, ...overlay._map},
+        _logger,
+      );
 }
 
 extension on Iterable<Package> {
