@@ -352,7 +352,7 @@ String listAsPaddedTable(List<List<String>> table, {int paddingSize = 1}) {
 
 extension YamlUtils on YamlNode {
   /// Converts a YAML node to a regular mutable Dart object.
-  Object? unYaml() {
+  Object? toPlainObject() {
     final node = this;
     if (node is YamlScalar) {
       return node.value;
@@ -360,11 +360,11 @@ extension YamlUtils on YamlNode {
     if (node is YamlMap) {
       return {
         for (final entry in node.nodes.entries)
-          (entry.key as YamlNode).unYaml(): entry.value.unYaml(),
+          (entry.key as YamlNode).toPlainObject(): entry.value.toPlainObject(),
       };
     }
     if (node is YamlList) {
-      return node.nodes.map((node) => node.unYaml()).toList();
+      return node.nodes.map((node) => node.toPlainObject()).toList();
     }
     throw FormatException(
       'Unsupported YAML node type encountered: ${node.runtimeType}',

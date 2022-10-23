@@ -769,8 +769,8 @@ You must have one of the following to be a valid Melos workspace:
 
     final melosYamlPath =
         melosYamlPathForDirectory(melosWorkspaceDirectory.path);
-    final yamlContents =
-        (await loadYamlFile(melosYamlPath))?.unYaml() as Map<Object?, Object?>?;
+    final yamlContents = (await loadYamlFile(melosYamlPath))?.toPlainObject()
+        as Map<Object?, Object?>?;
 
     if (yamlContents == null) {
       throw MelosConfigException('Failed to parse the melos.yaml file');
@@ -779,7 +779,7 @@ You must have one of the following to be a valid Melos workspace:
     final melosOverridesYamlPath =
         melosOverridesYamlPathForDirectory(melosWorkspaceDirectory.path);
     final overridesYamlContents = (await loadYamlFile(melosOverridesYamlPath))
-        ?.unYaml() as Map<Object?, Object?>?;
+        ?.toPlainObject() as Map<Object?, Object?>?;
     if (overridesYamlContents != null) {
       mergeMap(yamlContents, overridesYamlContents);
     }
