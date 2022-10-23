@@ -112,17 +112,19 @@ ignore:
 > You can also expand the scope of ignored packages on a per-command basis via
 > the [`--scope` filter](/filters#scope) flag.
 
-## `dependency_overrides`
+## `dependencyOverrides`
 
 > optional
 
 A list of extra packages in the workspace directory that should be added to each workspace package's dependency
 overrides. Each entry can be a specific path or a [glob] pattern.
 
+Note that this option has a camelCase key, unlike the snake_case key used in `pubspec.yaml`.
+
 Tip: External local packages can be symlinked into the workspace directory.
 
 ```yaml
-dependency_overrides:
+dependencyOverrides:
   - 'external_dependencies/**'
 ```
 

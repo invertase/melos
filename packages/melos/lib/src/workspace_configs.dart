@@ -651,13 +651,13 @@ class MelosWorkspaceConfig {
       ),
     );
     final dependencyOverrides = assertListIsA<String>(
-      key: 'dependency_overrides',
+      key: 'dependencyOverrides',
       map: yaml,
       isRequired: false,
       assertItemIsA: (index, value) => assertIsA<String>(
         value: value,
         index: index,
-        path: 'dependency_overrides',
+        path: 'dependencyOverrides',
       ),
     );
 
@@ -889,7 +889,7 @@ You must have one of the following to be a valid Melos workspace:
       'packages': packages.map((p) => p.toString()).toList(),
       if (ignore.isNotEmpty) 'ignore': ignore.map((p) => p.toString()).toList(),
       if (dependencyOverrides.isNotEmpty)
-        'dependency_overrides':
+        'dependencyOverrides':
             dependencyOverrides.map((p) => p.toString()).toList(),
       if (scripts.isNotEmpty) 'scripts': scripts.toJson(),
       'ide': ide.toJson(),
@@ -906,7 +906,7 @@ MelosWorkspaceConfig(
   repository: $repository,
   packages: $packages,
   ignore: $ignore,
-  dependency_overrides: $dependencyOverrides,
+  dependencyOverrides: $dependencyOverrides,
   scripts: ${scripts.toString().indent('  ')},
   ide: ${ide.toString().indent('  ')},
   commands: ${commands.toString().indent('  ')},
