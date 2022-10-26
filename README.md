@@ -1,5 +1,8 @@
+
 <p align="center">
+  <a href="https://melos.invertase.dev">
   <img src="https://static.invertase.io/assets/melos-logo.png" alt="Melos" /> <br /><br />
+  </a>
   <span>A tool for managing Dart projects with multiple packages, inspired by <a href="https://lerna.js.org">Lerna</a>.</span>
 </p>
 
