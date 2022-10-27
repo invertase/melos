@@ -473,22 +473,55 @@ class MelosWorkspaceConfig {
     }
 
     HostedGitRepository? repository;
-    final repositoryUrlString =
-        assertKeyIsA<String?>(key: 'repository', map: yaml);
-    if (repositoryUrlString != null) {
-      Uri repositoryUrl;
-      try {
-        repositoryUrl = Uri.parse(repositoryUrlString);
-      } on FormatException catch (e) {
-        throw MelosConfigException(
-          'The repository URL $repositoryUrlString is not a valid URL:\n $e',
-        );
-      }
+    if (yaml.containsKey('repository')) {
+      final repositoryYaml = yaml['repository'];
 
-      try {
-        repository = parseHostedGitRepositoryUrl(repositoryUrl);
-      } on FormatException catch (e) {
-        throw MelosConfigException(e.toString());
+      if (repositoryYaml is Map<Object?, Object?>) {
+        final type = assertKeyIsA<String>(
+          key: 'type',
+          map: repositoryYaml,
+          path: 'repository',
+        );
+        final base = assertKeyIsA<String>(
+          key: 'base',
+          map: repositoryYaml,
+          path: 'repository',
+        );
+        final owner = assertKeyIsA<String>(
+          key: 'owner',
+          map: repositoryYaml,
+          path: 'repository',
+        );
+        final name = assertKeyIsA<String>(
+          key: 'name',
+          map: repositoryYaml,
+          path: 'repository',
+        );
+
+        try {
+          repository = parseHostedGitRepositorySpec(type, base, owner, name);
+        } on FormatException catch (e) {
+          throw MelosConfigException(e.toString());
+        }
+      } else if (repositoryYaml is String) {
+        Uri repositoryUrl;
+        try {
+          repositoryUrl = Uri.parse(repositoryYaml);
+        } on FormatException catch (e) {
+          throw MelosConfigException(
+            'The repository URL $repositoryYaml is not a valid URL:\n $e',
+          );
+        }
+
+        try {
+          repository = parseHostedGitRepositoryUrl(repositoryUrl);
+        } on FormatException catch (e) {
+          throw MelosConfigException(e.toString());
+        }
+      } else if (repositoryYaml != null) {
+        throw MelosConfigException(
+          'The repository value must be a string or repository spec',
+        );
       }
     }
 

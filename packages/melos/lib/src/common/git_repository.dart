@@ -71,13 +71,14 @@ mixin SupportsManualRelease on HostedGitRepository {
 @immutable
 class GitHubRepository extends HostedGitRepository with SupportsManualRelease {
   const GitHubRepository({
+    this.base = kDefaultBase,
     required this.owner,
     required this.name,
   });
 
   factory GitHubRepository.fromUrl(Uri uri) {
     if (uri.scheme == 'https' && uri.host == 'github.com') {
-      final match = RegExp(r'^\/(.+)\/(.+)\/?$').firstMatch(uri.path);
+      final match = RegExp(r'^/(.+)/(.+)/?$').firstMatch(uri.path);
       if (match != null) {
         return GitHubRepository(
           owner: match.group(1)!,
@@ -89,6 +90,11 @@ class GitHubRepository extends HostedGitRepository with SupportsManualRelease {
     throw FormatException('The URL $uri is not a valid GitHub repository URL.');
   }
 
+  static const kDefaultBase = 'https://github.com';
+
+  /// The base of the GitHub server, defaults to `https://github.com`.
+  final String base;
+
   /// The username of the owner of this repository.
   final String owner;
 
@@ -96,7 +102,7 @@ class GitHubRepository extends HostedGitRepository with SupportsManualRelease {
   final String name;
 
   @override
-  Uri get url => Uri.parse('https://github.com/$owner/$name/');
+  Uri get url => Uri.parse('$base/$owner/$name/');
 
   @override
   Uri commitUrl(String id) => url.resolve('commit/$id');
@@ -146,13 +152,14 @@ GitHubRepository(
 @immutable
 class GitLabRepository extends HostedGitRepository {
   GitLabRepository({
+    String base = kDefaultBase,
     required this.owner,
     required this.name,
-  });
+  }) : base = base.endsWith('/') ? base.substring(0, base.length - 1) : base;
 
   factory GitLabRepository.fromUrl(Uri uri) {
     if (uri.scheme == 'https' && uri.host == 'gitlab.com') {
-      final match = RegExp(r'^\/((?:.+[\/]?))?\/(.+)\/?$').firstMatch(uri.path);
+      final match = RegExp(r'^/(.+)?/(.+)/?$').firstMatch(uri.path);
       if (match != null) {
         return GitLabRepository(
           owner: match.group(1)!,
@@ -164,6 +171,11 @@ class GitLabRepository extends HostedGitRepository {
     throw FormatException('The URL $uri is not a valid GitLab repository URL.');
   }
 
+  static const kDefaultBase = 'https://gitlab.com';
+
+  /// The base of the GitLab server, defaults to `https://gitlab.com`.
+  final String base;
+
   /// The username of the owner of this repository.
   final String owner;
 
@@ -171,7 +183,7 @@ class GitLabRepository extends HostedGitRepository {
   final String name;
 
   @override
-  Uri get url => Uri.parse('https://gitlab.com/$owner/$name/');
+  Uri get url => Uri.parse('$base/$owner/$name/');
 
   @override
   Uri commitUrl(String id) => url.resolve('-/commit/$id');
@@ -205,6 +217,15 @@ final _hostsToUrlParser = {
   'GitLab': (Uri url) => GitLabRepository.fromUrl(url),
 };
 
+final _hostsToSpecParser = {
+  'GitHub': (String base, String owner, String name) {
+    return GitHubRepository(base: base, owner: owner, name: name);
+  },
+  'GitLab': (String base, String owner, String name) {
+    return GitLabRepository(base: base, owner: owner, name: name);
+  },
+};
+
 /// Tries to parse [url] into a [HostedGitRepository].
 ///
 /// Throws a [FormatException] it the given [url] cannot be parsed into an URL
@@ -220,5 +241,27 @@ HostedGitRepository parseHostedGitRepositoryUrl(Uri url) {
   throw FormatException(
     'The URL $url is not a valid URL for a repository on any of the supported '
     'hosts: ${_hostsToUrlParser.keys.join(', ')}',
+  );
+}
+
+/// Tries to find a [HostedGitRepository] for [type].
+///
+/// Throws a [FormatException] it the given [type] is not one of the supported
+/// git repository host types.
+HostedGitRepository parseHostedGitRepositorySpec(
+  String type,
+  String base,
+  String owner,
+  String name,
+) {
+  for (final entry in _hostsToSpecParser.entries) {
+    if (entry.key.toLowerCase() == type.toLowerCase()) {
+      return entry.value(base, owner, name);
+    }
+  }
+
+  throw FormatException(
+    '$type is not a valid type for a repository on any of the supported '
+    'hosts: ${_hostsToSpecParser.keys.join(', ')}',
   );
 }
