@@ -1,3 +1,7 @@
+## 0.5.0+1
+
+ - **FIX**: Merge commits should be versioned ([#407](https://github.com/invertase/melos/issues/407)). ([01d4cd0d](https://github.com/invertase/melos/commit/01d4cd0d01e87fa836d0bb92949a8ccccb8f8027))
+
 ## 0.5.0
 
 > Note: This release has breaking changes.

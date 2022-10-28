@@ -1,3 +1,18 @@
+## 2.8.0
+
+ - **FIX**: Merge commits should be versioned ([#407](https://github.com/invertase/melos/issues/407)). ([01d4cd0d](https://github.com/invertase/melos/commit/01d4cd0d01e87fa836d0bb92949a8ccccb8f8027))
+ - **FIX**: unicode characters in commit titles ([#412](https://github.com/invertase/melos/issues/412)). ([bb6563af](https://github.com/invertase/melos/commit/bb6563af62336bf32d45f1da38246336aad38690))
+ - **FIX**: don't try to get published versions of private package ([#404](https://github.com/invertase/melos/issues/404)). ([9ea87a32](https://github.com/invertase/melos/commit/9ea87a3252ee07592f145bd2212b1015fd714168))
+ - **FIX**: only include normal dependencies of transitive dependencies ([#387](https://github.com/invertase/melos/issues/387)). ([e0659e97](https://github.com/invertase/melos/commit/e0659e976ad2d9eef90f611fa012a51e14880657))
+ - **FIX**: return type of `promptChoice` ([#391](https://github.com/invertase/melos/issues/391)). ([54004993](https://github.com/invertase/melos/commit/54004993c980a204533980508bb2c03b27fe45fc))
+ - **FEAT**: output URLs to prefilled GitHub release forms when executing `melos version` ([#406](https://github.com/invertase/melos/issues/406)). ([9c22cfbe](https://github.com/invertase/melos/commit/9c22cfbeab87fb91c8f2ba20c81d199af4232177))
+ - **FEAT**: allow help to be shown from anywhere ([#405](https://github.com/invertase/melos/issues/405)). ([d754055e](https://github.com/invertase/melos/commit/d754055e9da4cfbd6ea8fb860c1f175f9ddb1ca5))
+ - **FEAT**: add `--dependent-preid` option ([#388](https://github.com/invertase/melos/issues/388)). ([b6201364](https://github.com/invertase/melos/commit/b6201364dd951db39ab422b6baaa812cef8b83fd))
+ - **DOCS**: add `youtube_video` to projects using Melos ([#395](https://github.com/invertase/melos/issues/395)). ([2a8de822](https://github.com/invertase/melos/commit/2a8de82210a4b531243bfca8acb3c67a8e25c8bd))
+ - **DOCS**: Add Converter NOW to projects that are using melos ([#408](https://github.com/invertase/melos/issues/408)). ([ddf5655c](https://github.com/invertase/melos/commit/ddf5655cd4c919724f9f8900932ecacba255b049))
+ - **DOCS**: add `flutter_html` to projects using Melos ([#389](https://github.com/invertase/melos/issues/389)). ([4e3a4447](https://github.com/invertase/melos/commit/4e3a4447b41973eb4b779b096a0dbdfcf2a3188c))
+ - **DOCS**: add yak_packages reference to docs/index ([#381](https://github.com/invertase/melos/issues/381)). ([9b366fd9](https://github.com/invertase/melos/commit/9b366fd917792dbdde1ed59a51beefd46bb88c57))
+
 ## 2.7.1
 
  - **REFACTOR**: move over versioning logic from `conventional_commit`. ([75a6fda0](https://github.com/invertase/melos/commit/75a6fda09e2afdcea07d091e6cb48a2cbd2b7fac))
