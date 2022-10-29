@@ -71,7 +71,7 @@ mixin SupportsManualRelease on HostedGitRepository {
 @immutable
 class GitHubRepository extends HostedGitRepository with SupportsManualRelease {
   const GitHubRepository({
-    this.base = kDefaultBase,
+    this.base = defaultBase,
     required this.owner,
     required this.name,
   });
@@ -90,7 +90,7 @@ class GitHubRepository extends HostedGitRepository with SupportsManualRelease {
     throw FormatException('The URL $uri is not a valid GitHub repository URL.');
   }
 
-  static const kDefaultBase = 'https://github.com';
+  static const defaultBase = 'https://github.com';
 
   /// The base of the GitHub server, defaults to `https://github.com`.
   final String base;
@@ -152,7 +152,7 @@ GitHubRepository(
 @immutable
 class GitLabRepository extends HostedGitRepository {
   GitLabRepository({
-    String base = kDefaultBase,
+    String base = defaultBase,
     required this.owner,
     required this.name,
   }) : base = base.endsWith('/') ? base.substring(0, base.length - 1) : base;
@@ -171,7 +171,7 @@ class GitLabRepository extends HostedGitRepository {
     throw FormatException('The URL $uri is not a valid GitLab repository URL.');
   }
 
-  static const kDefaultBase = 'https://gitlab.com';
+  static const defaultBase = 'https://gitlab.com';
 
   /// The base of the GitLab server, defaults to `https://gitlab.com`.
   final String base;
