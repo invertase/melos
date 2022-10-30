@@ -482,8 +482,8 @@ class MelosWorkspaceConfig {
           map: repositoryYaml,
           path: 'repository',
         );
-        final base = assertKeyIsA<String>(
-          key: 'base',
+        final origin = assertKeyIsA<String>(
+          key: 'origin',
           map: repositoryYaml,
           path: 'repository',
         );
@@ -499,7 +499,7 @@ class MelosWorkspaceConfig {
         );
 
         try {
-          repository = parseHostedGitRepositorySpec(type, base, owner, name);
+          repository = parseHostedGitRepositorySpec(type, origin, owner, name);
         } on FormatException catch (e) {
           throw MelosConfigException(e.toString());
         }

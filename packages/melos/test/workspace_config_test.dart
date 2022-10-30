@@ -438,7 +438,7 @@ void main() {
       expect(
         () => MelosWorkspaceConfig(
           name: '',
-          repository: const GitHubRepository(owner: 'invertase', name: 'melos'),
+          repository: GitHubRepository(owner: 'invertase', name: 'melos'),
           packages: const [],
           commands: const CommandConfigs(
             version: VersionCommandConfigs(linkToCommits: true),
