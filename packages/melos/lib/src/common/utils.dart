@@ -631,3 +631,7 @@ String prettyEncodeJson(Object? value) =>
 extension OptionalArgResults on ArgResults {
   dynamic optional(String name) => wasParsed(name) ? this[name] : null;
 }
+
+String removeTrailingSlash(String url) {
+  return url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+}

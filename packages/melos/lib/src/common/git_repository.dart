@@ -19,6 +19,7 @@ import 'package:meta/meta.dart';
 
 import 'git.dart';
 import 'pending_package_update.dart';
+import 'utils.dart';
 
 /// A hosted git repository.
 @immutable
@@ -70,14 +71,15 @@ mixin SupportsManualRelease on HostedGitRepository {
 /// A git repository, hosted by GitHub.
 @immutable
 class GitHubRepository extends HostedGitRepository with SupportsManualRelease {
-  const GitHubRepository({
+  GitHubRepository({
+    String origin = defaultOrigin,
     required this.owner,
     required this.name,
-  });
+  }) : origin = removeTrailingSlash(origin);
 
   factory GitHubRepository.fromUrl(Uri uri) {
     if (uri.scheme == 'https' && uri.host == 'github.com') {
-      final match = RegExp(r'^\/(.+)\/(.+)\/?$').firstMatch(uri.path);
+      final match = RegExp(r'^/(.+)/(.+)/?$').firstMatch(uri.path);
       if (match != null) {
         return GitHubRepository(
           owner: match.group(1)!,
@@ -89,6 +91,11 @@ class GitHubRepository extends HostedGitRepository with SupportsManualRelease {
     throw FormatException('The URL $uri is not a valid GitHub repository URL.');
   }
 
+  static const defaultOrigin = 'https://github.com';
+
+  /// The origin of the GitHub server, defaults to `https://github.com`.
+  final String origin;
+
   /// The username of the owner of this repository.
   final String owner;
 
@@ -96,7 +103,7 @@ class GitHubRepository extends HostedGitRepository with SupportsManualRelease {
   final String name;
 
   @override
-  Uri get url => Uri.parse('https://github.com/$owner/$name/');
+  Uri get url => Uri.parse('$origin/$owner/$name/');
 
   @override
   Uri commitUrl(String id) => url.resolve('commit/$id');
@@ -125,6 +132,7 @@ class GitHubRepository extends HostedGitRepository with SupportsManualRelease {
   String toString() {
     return '''
 GitHubRepository(
+  origin: $origin,
   owner: $owner,
   name: $name,
 )''';
@@ -135,24 +143,26 @@ GitHubRepository(
       identical(this, other) ||
       other is GitHubRepository &&
           other.runtimeType == runtimeType &&
+          other.origin == origin &&
           other.owner == owner &&
           other.name == name;
 
   @override
-  int get hashCode => owner.hashCode ^ name.hashCode;
+  int get hashCode => origin.hashCode ^ owner.hashCode ^ name.hashCode;
 }
 
 /// A git repository, hosted by GitLab.
 @immutable
 class GitLabRepository extends HostedGitRepository {
   GitLabRepository({
+    String origin = defaultOrigin,
     required this.owner,
     required this.name,
-  });
+  }) : origin = removeTrailingSlash(origin);
 
   factory GitLabRepository.fromUrl(Uri uri) {
     if (uri.scheme == 'https' && uri.host == 'gitlab.com') {
-      final match = RegExp(r'^\/((?:.+[\/]?))?\/(.+)\/?$').firstMatch(uri.path);
+      final match = RegExp(r'^/(.+)?/(.+)/?$').firstMatch(uri.path);
       if (match != null) {
         return GitLabRepository(
           owner: match.group(1)!,
@@ -164,6 +174,11 @@ class GitLabRepository extends HostedGitRepository {
     throw FormatException('The URL $uri is not a valid GitLab repository URL.');
   }
 
+  static const defaultOrigin = 'https://gitlab.com';
+
+  /// The origin of the GitLab server, defaults to `https://gitlab.com`.
+  final String origin;
+
   /// The username of the owner of this repository.
   final String owner;
 
@@ -171,7 +186,7 @@ class GitLabRepository extends HostedGitRepository {
   final String name;
 
   @override
-  Uri get url => Uri.parse('https://gitlab.com/$owner/$name/');
+  Uri get url => Uri.parse('$origin/$owner/$name/');
 
   @override
   Uri commitUrl(String id) => url.resolve('-/commit/$id');
@@ -183,6 +198,7 @@ class GitLabRepository extends HostedGitRepository {
   String toString() {
     return '''
 GitLabRepository(
+  origin: $origin,
   owner: $owner,
   name: $name,
 )''';
@@ -193,16 +209,26 @@ GitLabRepository(
       identical(this, other) ||
       other is GitHubRepository &&
           other.runtimeType == runtimeType &&
+          other.origin == origin &&
           other.owner == owner &&
           other.name == name;
 
   @override
-  int get hashCode => owner.hashCode ^ name.hashCode;
+  int get hashCode => origin.hashCode ^ owner.hashCode ^ name.hashCode;
 }
 
 final _hostsToUrlParser = {
   'GitHub': (Uri url) => GitHubRepository.fromUrl(url),
   'GitLab': (Uri url) => GitLabRepository.fromUrl(url),
+};
+
+final _hostsToSpecParser = {
+  'GitHub': (String origin, String owner, String name) {
+    return GitHubRepository(origin: origin, owner: owner, name: name);
+  },
+  'GitLab': (String origin, String owner, String name) {
+    return GitLabRepository(origin: origin, owner: owner, name: name);
+  },
 };
 
 /// Tries to parse [url] into a [HostedGitRepository].
@@ -220,5 +246,27 @@ HostedGitRepository parseHostedGitRepositoryUrl(Uri url) {
   throw FormatException(
     'The URL $url is not a valid URL for a repository on any of the supported '
     'hosts: ${_hostsToUrlParser.keys.join(', ')}',
+  );
+}
+
+/// Tries to find a [HostedGitRepository] for [type].
+///
+/// Throws a [FormatException] it the given [type] is not one of the supported
+/// git repository host types.
+HostedGitRepository parseHostedGitRepositorySpec(
+  String type,
+  String origin,
+  String owner,
+  String name,
+) {
+  for (final entry in _hostsToSpecParser.entries) {
+    if (entry.key.toLowerCase() == type.toLowerCase()) {
+      return entry.value(origin, owner, name);
+    }
+  }
+
+  throw FormatException(
+    '$type is not a valid type for a repository on any of the supported '
+    'hosts: ${_hostsToSpecParser.keys.join(', ')}',
   );
 }

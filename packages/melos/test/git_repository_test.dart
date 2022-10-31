@@ -24,6 +24,8 @@ void main() {
       test('parse GitHub repository URL correctly', () {
         final url = Uri.parse('https://github.com/a/b');
         final repo = GitHubRepository.fromUrl(url);
+
+        expect(repo.origin, 'https://github.com');
         expect(repo.owner, 'a');
         expect(repo.name, 'b');
         expect(repo.url, Uri.parse('https://github.com/a/b/'));
@@ -50,8 +52,36 @@ void main() {
       });
     });
 
+    group('fromSpec', () {
+      test('parse GitHub repository spec correctly', () {
+        final repo = GitHubRepository(
+          origin: 'https://github.invertase.dev',
+          owner: 'a',
+          name: 'b',
+        );
+
+        expect(repo.origin, 'https://github.invertase.dev');
+        expect(repo.owner, 'a');
+        expect(repo.name, 'b');
+        expect(repo.url, Uri.parse('https://github.invertase.dev/a/b/'));
+      });
+
+      test('parse GitHub repository spec with sub-path correctly', () {
+        final repo = GitHubRepository(
+          origin: 'https://invertase.dev/github',
+          owner: 'a',
+          name: 'b',
+        );
+
+        expect(repo.origin, 'https://invertase.dev/github');
+        expect(repo.owner, 'a');
+        expect(repo.name, 'b');
+        expect(repo.url, Uri.parse('https://invertase.dev/github/a/b/'));
+      });
+    });
+
     test('commitUrl returns correct URL', () {
-      const repo = GitHubRepository(owner: 'a', name: 'b');
+      final repo = GitHubRepository(owner: 'a', name: 'b');
       const commitId = 'b2841394a48cd7d84a4966a788842690e543b2ef';
 
       expect(
@@ -63,7 +93,7 @@ void main() {
     });
 
     test('issueUrl returns correct URL', () {
-      const repo = GitHubRepository(owner: 'a', name: 'b');
+      final repo = GitHubRepository(owner: 'a', name: 'b');
       const issueId = '123';
 
       expect(
@@ -78,6 +108,8 @@ void main() {
       test('parse GitLab repository URL correctly', () {
         final url = Uri.parse('https://gitlab.com/a/b');
         final repo = GitLabRepository.fromUrl(url);
+
+        expect(repo.origin, 'https://gitlab.com');
         expect(repo.owner, 'a');
         expect(repo.name, 'b');
         expect(repo.url, Uri.parse('https://gitlab.com/a/b/'));
@@ -86,6 +118,8 @@ void main() {
       test('parse GitLab repository URL with nested groups correctly', () {
         final url = Uri.parse('https://gitlab.com/a/b/c');
         final repo = GitLabRepository.fromUrl(url);
+
+        expect(repo.origin, 'https://gitlab.com');
         expect(repo.owner, 'a/b');
         expect(repo.name, 'c');
         expect(repo.url, Uri.parse('https://gitlab.com/a/b/c/'));
@@ -109,6 +143,62 @@ void main() {
           'https://gitlab.com/',
           'https://gitlab.com',
         ].forEach(expectBadUrl);
+      });
+    });
+
+    group('fromSpec', () {
+      test('parse GitLab repository spec correctly', () {
+        final repo = GitLabRepository(
+          origin: 'https://gitlab.invertase.dev',
+          owner: 'a',
+          name: 'b',
+        );
+
+        expect(repo.origin, 'https://gitlab.invertase.dev');
+        expect(repo.owner, 'a');
+        expect(repo.name, 'b');
+        expect(repo.url, Uri.parse('https://gitlab.invertase.dev/a/b/'));
+      });
+
+      test('parse GitLab repository spec with sub-path correctly', () {
+        final repo = GitLabRepository(
+          origin: 'https://invertase.dev/gitlab',
+          owner: 'a',
+          name: 'b',
+        );
+
+        expect(repo.origin, 'https://invertase.dev/gitlab');
+        expect(repo.owner, 'a');
+        expect(repo.name, 'b');
+        expect(repo.url, Uri.parse('https://invertase.dev/gitlab/a/b/'));
+      });
+
+      test('parse GitLab repository spec with nested groups correctly', () {
+        final repo = GitLabRepository(
+          origin: 'https://gitlab.invertase.dev',
+          owner: 'a/b',
+          name: 'c',
+        );
+
+        expect(repo.origin, 'https://gitlab.invertase.dev');
+        expect(repo.owner, 'a/b');
+        expect(repo.name, 'c');
+        expect(repo.url, Uri.parse('https://gitlab.invertase.dev/a/b/c/'));
+      });
+
+      test(
+          'parse GitLab repository spec with sub-path and nested groups '
+          'correctly', () {
+        final repo = GitLabRepository(
+          origin: 'https://invertase.dev/gitlab',
+          owner: 'a/b',
+          name: 'c',
+        );
+
+        expect(repo.origin, 'https://invertase.dev/gitlab');
+        expect(repo.owner, 'a/b');
+        expect(repo.name, 'c');
+        expect(repo.url, Uri.parse('https://invertase.dev/gitlab/a/b/c/'));
       });
     });
 
@@ -151,6 +241,42 @@ void main() {
     test('throws if URL cannot be parsed as URL to one of known hosts', () {
       expect(
         () => parseHostedGitRepositoryUrl(Uri.parse('https://example.com')),
+        throwsFormatException,
+      );
+    });
+  });
+
+  group('parseHostedGitRepositorySpec', () {
+    test('parses GitHub repository spec', () {
+      final repo = parseHostedGitRepositorySpec(
+        'github',
+        'https://github.invertase.com',
+        'a',
+        'b',
+      );
+
+      expect(repo, isA<GitHubRepository>());
+    });
+
+    test('parses GitLab repository spec', () {
+      final repo = parseHostedGitRepositorySpec(
+        'gitlab',
+        'https://gitlab.invertase.com',
+        'a',
+        'b',
+      );
+
+      expect(repo, isA<GitLabRepository>());
+    });
+
+    test('throws if URL cannot be parsed as URL to one of known hosts', () {
+      expect(
+        () => parseHostedGitRepositorySpec(
+          'example',
+          'https://example.com',
+          'a',
+          'b',
+        ),
         throwsFormatException,
       );
     });
