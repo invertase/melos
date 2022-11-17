@@ -651,20 +651,29 @@ mixin _VersionMixin on _RunMixin {
     });
 
     // Build a workspace root changelog if enabled.
-    if (updateChangelog &&
-        workspace.config.commands.version.workspaceChangelog) {
-      final today = DateTime.now();
-      final dateSlug =
-          "${today.year.toString()}-${today.month.toString().padLeft(2, '0')}-"
-          "${today.day.toString().padLeft(2, '0')}";
-      final workspaceChangelog = WorkspaceChangelog(
-        workspace,
-        dateSlug,
-        pendingPackageUpdates,
-        logger,
-      );
+    if (updateChangelog) {
+      final writes =
+          workspace.config.commands.version.changelogs.map((e) async {
+        final today = DateTime.now();
+        final dateSlug = '${today.year.toString()}-'
+            "${today.month.toString().padLeft(2, '0')}-"
+            "${today.day.toString().padLeft(2, '0')}";
 
-      await workspaceChangelog.write();
+        final changelog = WorkspaceChangelog(
+          workspace,
+          dateSlug,
+          pendingPackageUpdates.where((element) {
+            final glob = Glob(e.scope ?? '**');
+            return glob.matches(element.package.name);
+          }).toList(),
+          logger,
+          e.isWorkspaceChangelog ? null : e.out,
+        );
+
+        await changelog.write();
+      });
+
+      await Future.wait(writes);
     }
   }
 
@@ -772,13 +781,14 @@ mixin _VersionMixin on _RunMixin {
     List<MelosPendingPackageUpdate> pendingPackageUpdates,
     MelosWorkspace workspace,
   ) async {
-    if (workspace.config.commands.version.workspaceChangelog) {
+    for (final changelog in workspace.config.commands.version.changelogs) {
       await gitAdd(
-        'CHANGELOG.md',
+        changelog.out,
         workingDirectory: workspace.path,
         logger: logger,
       );
     }
+
     await Future.forEach(pendingPackageUpdates,
         (MelosPendingPackageUpdate pendingPackageUpdate) async {
       await gitAdd(

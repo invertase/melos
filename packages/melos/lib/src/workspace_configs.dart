@@ -292,6 +292,43 @@ BootstrapCommandConfigs(
   }
 }
 
+class ChangelogConfig {
+  ChangelogConfig({
+    this.isWorkspaceChangelog = false,
+    required this.out,
+    this.scope,
+  });
+
+  factory ChangelogConfig.workspace() {
+    return ChangelogConfig(
+      isWorkspaceChangelog: true,
+      out: 'CHANGELOG.md',
+    );
+  }
+
+  final bool isWorkspaceChangelog;
+  final String out;
+  final String? scope;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'isWorkspaceChangelog': isWorkspaceChangelog,
+      'out': out,
+      'scope': scope,
+    };
+  }
+
+  @override
+  String toString() {
+    return '''
+ChangelogConfig(
+  isWorkspaceChangelog: $isWorkspaceChangelog,
+  out: $out,
+  scope: $scope,
+)''';
+  }
+}
+
 /// Configurations for `melos version`.
 @immutable
 class VersionCommandConfigs {
@@ -301,9 +338,9 @@ class VersionCommandConfigs {
     this.includeScopes = false,
     this.linkToCommits,
     this.includeCommitId,
-    this.workspaceChangelog = false,
     this.updateGitTagRefs = false,
     this.releaseUrl = false,
+    this.changelogs = const [],
   });
 
   factory VersionCommandConfigs.fromYaml(Map<Object?, Object?> yaml) {
@@ -332,11 +369,6 @@ class VersionCommandConfigs {
       map: yaml,
       path: 'command/version',
     );
-    final workspaceChangelog = assertKeyIsA<bool?>(
-      key: 'workspaceChangelog',
-      map: yaml,
-      path: 'command/version',
-    );
     final updateGitTagRefs = assertKeyIsA<bool?>(
       key: 'updateGitTagRefs',
       map: yaml,
@@ -348,15 +380,54 @@ class VersionCommandConfigs {
       path: 'command/version',
     );
 
+    final workspaceChangelog = assertKeyIsA<bool?>(
+      key: 'workspaceChangelog',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final changelogs = <ChangelogConfig>[];
+    if (workspaceChangelog ?? false) {
+      changelogs.add(ChangelogConfig.workspace());
+    }
+
+    final changelogsYaml = assertKeyIsA<List<dynamic>?>(
+      key: 'changelogs',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    for (var i = 0; i < (changelogsYaml?.length ?? 0); i++) {
+      final entry = changelogsYaml?[i] as Map;
+
+      final out = assertKeyIsA<String>(
+        map: entry,
+        path: 'command/version/changelogs[$i]',
+        key: 'out',
+      );
+      final scope = assertKeyIsA<String>(
+        map: entry,
+        path: 'command/version/changelogs[$i]',
+        key: 'scope',
+      );
+
+      final changelogConfig = ChangelogConfig(
+        out: out,
+        scope: scope,
+      );
+
+      changelogs.add(changelogConfig);
+    }
+
     return VersionCommandConfigs(
       branch: branch,
       message: message,
       includeScopes: includeScopes ?? false,
       includeCommitId: includeCommitId,
       linkToCommits: linkToCommits,
-      workspaceChangelog: workspaceChangelog ?? false,
       updateGitTagRefs: updateGitTagRefs ?? false,
       releaseUrl: releaseUrl ?? false,
+      changelogs: changelogs,
     );
   }
 
@@ -379,16 +450,16 @@ class VersionCommandConfigs {
   /// Whether to add links to commits in the generated CHANGELOG.md.
   final bool? linkToCommits;
 
-  /// Whether to also generate a CHANGELOG.md for the entire workspace at the
-  /// root.
-  final bool workspaceChangelog;
-
   /// Whether to also update pubspec with git referenced packages.
   final bool updateGitTagRefs;
 
   /// Whether to generate and print a link to the prefilled release creation
   /// page for each package after versioning.
   final bool releaseUrl;
+
+  /// A list of changelogs configurations that will be used to generate
+  /// changelogs in workspace root.
+  final List<ChangelogConfig> changelogs;
 
   Map<String, Object?> toJson() {
     return {
@@ -397,8 +468,8 @@ class VersionCommandConfigs {
       'includeScopes': includeScopes,
       if (includeCommitId != null) 'includeCommitId': includeCommitId,
       if (linkToCommits != null) 'linkToCommits': linkToCommits,
-      'workspaceChangelog': workspaceChangelog,
       'updateGitTagRefs': updateGitTagRefs,
+      'changelogs': [...changelogs.map((e) => e.toJson())]
     };
   }
 
@@ -411,9 +482,9 @@ class VersionCommandConfigs {
       other.includeScopes == includeScopes &&
       other.includeCommitId == includeCommitId &&
       other.linkToCommits == linkToCommits &&
-      other.workspaceChangelog == workspaceChangelog &&
       other.updateGitTagRefs == updateGitTagRefs &&
-      other.releaseUrl == releaseUrl;
+      other.releaseUrl == releaseUrl &&
+      Object.hashAll(other.changelogs) == Object.hashAll(changelogs);
 
   @override
   int get hashCode =>
@@ -423,9 +494,9 @@ class VersionCommandConfigs {
       includeScopes.hashCode ^
       includeCommitId.hashCode ^
       linkToCommits.hashCode ^
-      workspaceChangelog.hashCode ^
       updateGitTagRefs.hashCode ^
-      releaseUrl.hashCode;
+      releaseUrl.hashCode ^
+      Object.hashAll(changelogs);
 
   @override
   String toString() {
@@ -436,9 +507,9 @@ VersionCommandConfigs(
   includeScopes: $includeScopes,
   includeCommitId: $includeCommitId,
   linkToCommits: $linkToCommits,
-  workspaceChangelog: $workspaceChangelog,
   updateGitTagRefs: $updateGitTagRefs,
   releaseUrl: $releaseUrl,
+  changelogs: $changelogs,
 )''';
   }
 }

@@ -28,13 +28,15 @@ class WorkspaceChangelog {
     this.workspace,
     this.title,
     this.pendingPackageUpdates,
-    this.logger,
-  );
+    this.logger, [
+    this.filename,
+  ]);
 
   final MelosWorkspace workspace;
   final String title;
   final MelosLogger logger;
   final List<MelosPendingPackageUpdate> pendingPackageUpdates;
+  final String? filename;
 
   String get _changelogFileHeader => '''
 # Change Log
@@ -154,7 +156,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
   }
 
   String get path {
-    return joinAll([workspace.path, 'CHANGELOG.md']);
+    return joinAll([workspace.path, filename ?? 'CHANGELOG.md']);
   }
 
   @override
