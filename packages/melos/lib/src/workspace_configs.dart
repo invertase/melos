@@ -292,39 +292,64 @@ BootstrapCommandConfigs(
   }
 }
 
-class ChangelogConfig {
-  ChangelogConfig({
+@immutable
+class AggregateChangelogConfig {
+  const AggregateChangelogConfig({
     this.isWorkspaceChangelog = false,
-    required this.out,
+    required this.path,
     this.scope,
+    this.description,
   });
 
-  factory ChangelogConfig.workspace() {
-    return ChangelogConfig(
-      isWorkspaceChangelog: true,
-      out: 'CHANGELOG.md',
-    );
-  }
+  const AggregateChangelogConfig.workspace()
+      : this(
+          isWorkspaceChangelog: true,
+          path: 'CHANGELOG.md',
+          description: '''
+All notable changes to this project will be documented in this file.
+See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
+''',
+        );
 
   final bool isWorkspaceChangelog;
-  final String out;
+  final String path;
   final String? scope;
+  final String? description;
 
   Map<String, dynamic> toJson() {
     return {
       'isWorkspaceChangelog': isWorkspaceChangelog,
-      'out': out,
+      'path': path,
       'scope': scope,
+      'description': description,
     };
   }
 
   @override
+  bool operator ==(Object other) =>
+      other is AggregateChangelogConfig &&
+      runtimeType == other.runtimeType &&
+      other.isWorkspaceChangelog == isWorkspaceChangelog &&
+      other.path == path &&
+      other.scope == scope &&
+      other.description == description;
+
+  @override
+  int get hashCode =>
+      runtimeType.hashCode ^
+      isWorkspaceChangelog.hashCode ^
+      path.hashCode ^
+      scope.hashCode ^
+      description.hashCode;
+
+  @override
   String toString() {
     return '''
-ChangelogConfig(
+AggregateChangelogConfig(
   isWorkspaceChangelog: $isWorkspaceChangelog,
-  out: $out,
+  path: $path,
   scope: $scope,
+  description: $description,
 )''';
   }
 }
@@ -340,7 +365,7 @@ class VersionCommandConfigs {
     this.includeCommitId,
     this.updateGitTagRefs = false,
     this.releaseUrl = false,
-    this.changelogs = const [],
+    this.aggregateChangelogs = const [],
   });
 
   factory VersionCommandConfigs.fromYaml(Map<Object?, Object?> yaml) {
@@ -386,9 +411,9 @@ class VersionCommandConfigs {
       path: 'command/version',
     );
 
-    final changelogs = <ChangelogConfig>[];
+    final aggregateChangelogs = <AggregateChangelogConfig>[];
     if (workspaceChangelog ?? false) {
-      changelogs.add(ChangelogConfig.workspace());
+      aggregateChangelogs.add(const AggregateChangelogConfig.workspace());
     }
 
     final changelogsYaml = assertKeyIsA<List<dynamic>?>(
@@ -400,23 +425,28 @@ class VersionCommandConfigs {
     for (var i = 0; i < (changelogsYaml?.length ?? 0); i++) {
       final entry = changelogsYaml?[i] as Map;
 
-      final out = assertKeyIsA<String>(
+      final path = assertKeyIsA<String>(
         map: entry,
         path: 'command/version/changelogs[$i]',
-        key: 'out',
+        key: 'path',
       );
       final scope = assertKeyIsA<String>(
         map: entry,
         path: 'command/version/changelogs[$i]',
         key: 'scope',
       );
-
-      final changelogConfig = ChangelogConfig(
-        out: out,
+      final description = assertKeyIsA<String?>(
+        map: entry,
+        path: 'command/version/changelogs[$i]',
+        key: 'description',
+      );
+      final changelogConfig = AggregateChangelogConfig(
+        path: path,
         scope: scope,
+        description: description,
       );
 
-      changelogs.add(changelogConfig);
+      aggregateChangelogs.add(changelogConfig);
     }
 
     return VersionCommandConfigs(
@@ -427,7 +457,7 @@ class VersionCommandConfigs {
       linkToCommits: linkToCommits,
       updateGitTagRefs: updateGitTagRefs ?? false,
       releaseUrl: releaseUrl ?? false,
-      changelogs: changelogs,
+      aggregateChangelogs: aggregateChangelogs,
     );
   }
 
@@ -458,8 +488,8 @@ class VersionCommandConfigs {
   final bool releaseUrl;
 
   /// A list of changelogs configurations that will be used to generate
-  /// changelogs in workspace root.
-  final List<ChangelogConfig> changelogs;
+  /// changelogs which describe the changes in multiple packages.
+  final List<AggregateChangelogConfig> aggregateChangelogs;
 
   Map<String, Object?> toJson() {
     return {
@@ -469,7 +499,8 @@ class VersionCommandConfigs {
       if (includeCommitId != null) 'includeCommitId': includeCommitId,
       if (linkToCommits != null) 'linkToCommits': linkToCommits,
       'updateGitTagRefs': updateGitTagRefs,
-      'changelogs': [...changelogs.map((e) => e.toJson())]
+      'aggregateChangelogs':
+          aggregateChangelogs.map((config) => config.toJson()).toList(),
     };
   }
 
@@ -484,7 +515,8 @@ class VersionCommandConfigs {
       other.linkToCommits == linkToCommits &&
       other.updateGitTagRefs == updateGitTagRefs &&
       other.releaseUrl == releaseUrl &&
-      Object.hashAll(other.changelogs) == Object.hashAll(changelogs);
+      const DeepCollectionEquality()
+          .equals(other.aggregateChangelogs, aggregateChangelogs);
 
   @override
   int get hashCode =>
@@ -496,7 +528,7 @@ class VersionCommandConfigs {
       linkToCommits.hashCode ^
       updateGitTagRefs.hashCode ^
       releaseUrl.hashCode ^
-      Object.hashAll(changelogs);
+      const DeepCollectionEquality().hash(aggregateChangelogs);
 
   @override
   String toString() {
@@ -509,7 +541,7 @@ VersionCommandConfigs(
   linkToCommits: $linkToCommits,
   updateGitTagRefs: $updateGitTagRefs,
   releaseUrl: $releaseUrl,
-  changelogs: $changelogs,
+  aggregateChangelogs: $aggregateChangelogs,
 )''';
   }
 }

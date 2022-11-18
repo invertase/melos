@@ -22,27 +22,29 @@ import '../workspace.dart';
 import 'changelog.dart';
 import 'io.dart';
 import 'pending_package_update.dart';
+import 'utils.dart';
 
-class WorkspaceChangelog {
-  WorkspaceChangelog(
+class AggregateChangelog {
+  AggregateChangelog(
     this.workspace,
-    this.title,
+    this.description,
+    this.newEntryTitle,
     this.pendingPackageUpdates,
-    this.logger, [
-    this.filename,
-  ]);
+    this.logger,
+    this.path,
+  );
 
   final MelosWorkspace workspace;
-  final String title;
+  final String? description;
+  final String newEntryTitle;
   final MelosLogger logger;
   final List<MelosPendingPackageUpdate> pendingPackageUpdates;
-  final String? filename;
+  final String path;
 
   String get _changelogFileHeader => '''
 # Change Log
 
-All notable changes to this project will be documented in this file.
-See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
+${description?.withoutTrailing('\n') ?? ''}
 ''';
 
   String _packageVersionTitle(MelosPendingPackageUpdate update) {
@@ -69,7 +71,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
         pendingPackageUpdates.where((update) => !update.hasBreakingChanges);
 
     body.writeln(_changelogFileHeader);
-    body.writeln('## $title');
+    body.writeln('## $newEntryTitle');
     body.writeln();
     body.writeln('### Changes');
     body.writeln();
@@ -155,8 +157,8 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
     return body.toString();
   }
 
-  String get path {
-    return joinAll([workspace.path, filename ?? 'CHANGELOG.md']);
+  String get absolutePath {
+    return joinAll([workspace.path, path]);
   }
 
   @override
@@ -165,8 +167,8 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
   }
 
   Future<String> read() async {
-    if (fileExists(path)) {
-      final contents = await readTextFileAsync(path);
+    if (fileExists(absolutePath)) {
+      final contents = await readTextFileAsync(absolutePath);
       return contents.replaceFirst(_changelogFileHeader, '');
     }
     return '';
@@ -183,6 +185,6 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
     }
     contents = '$markdown$contents';
 
-    await writeTextFileAsync(path, contents);
+    await writeTextFileAsync(absolutePath, contents);
   }
 }

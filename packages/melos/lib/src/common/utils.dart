@@ -77,7 +77,7 @@ const envKeyMelosTerminalWidth = 'MELOS_TERMINAL_WIDTH';
 
 final melosPackageUri = Uri.parse('package:melos/melos.dart');
 
-extension Indent on String {
+extension StringUtils on String {
   String indent(String indent) {
     final split = this.split('\n');
 
@@ -96,6 +96,13 @@ extension Indent on String {
     }
 
     return buffer.toString();
+  }
+
+  String withoutTrailing(String trailer) {
+    if (endsWith(trailer)) {
+      return substring(0, length - trailer.length);
+    }
+    return this;
   }
 }
 

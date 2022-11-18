@@ -18,6 +18,7 @@ import 'package:melos/melos.dart';
 import 'package:melos/src/common/git_repository.dart';
 import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/scripts.dart';
+import 'package:melos/src/workspace_configs.dart';
 import 'package:test/test.dart';
 
 import 'matchers.dart';
@@ -91,7 +92,7 @@ void main() {
       expect(value.includeCommitId, null);
       expect(value.linkToCommits, null);
       expect(value.updateGitTagRefs, false);
-      expect(value.workspaceChangelog, false);
+      expect(value.aggregateChangelogs, isEmpty);
     });
 
     group('fromYaml', () {
@@ -141,6 +142,13 @@ void main() {
               'linkToCommits': true,
               'updateGitTagRefs': true,
               'workspaceChangelog': true,
+              'changelogs': [
+                {
+                  'path': 'FOO_CHANGELOG.md',
+                  'scope': 'foo_*',
+                  'description': 'Changelog for all foo packages.',
+                }
+              ]
             },
           ),
           const VersionCommandConfigs(
@@ -150,7 +158,14 @@ void main() {
             includeCommitId: true,
             linkToCommits: true,
             updateGitTagRefs: true,
-            workspaceChangelog: true,
+            aggregateChangelogs: [
+              AggregateChangelogConfig.workspace(),
+              AggregateChangelogConfig(
+                path: 'FOO_CHANGELOG.md',
+                scope: 'foo_*',
+                description: 'Changelog for all foo packages.',
+              ),
+            ],
           ),
         );
       });
