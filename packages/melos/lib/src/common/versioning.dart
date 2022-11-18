@@ -330,7 +330,7 @@ Version incrementBuildNumber(Version currentVersion) {
   if (build.isEmpty) {
     nextBuildNumber = 0;
   } else if (build.length == 1) {
-    final Object? buildNumber = build.first;
+    final buildNumber = build.first;
     if (buildNumber is int) {
       nextBuildNumber = buildNumber + 1;
     }
