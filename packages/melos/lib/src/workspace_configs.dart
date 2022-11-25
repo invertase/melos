@@ -22,6 +22,7 @@ import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 
+import '../melos.dart';
 import 'common/git_repository.dart';
 import 'common/glob.dart';
 import 'common/io.dart';
@@ -150,7 +151,10 @@ class CommandConfigs {
     this.version = VersionCommandConfigs.empty,
   });
 
-  factory CommandConfigs.fromYaml(Map<Object?, Object?> yaml) {
+  factory CommandConfigs.fromYaml(
+    Map<Object?, Object?> yaml, {
+    required String workspacePath,
+  }) {
     final bootstrapMap = assertKeyIsA<Map<Object?, Object?>?>(
       key: 'bootstrap',
       map: yaml,
@@ -165,7 +169,10 @@ class CommandConfigs {
 
     return CommandConfigs(
       bootstrap: BootstrapCommandConfigs.fromYaml(bootstrapMap ?? const {}),
-      version: VersionCommandConfigs.fromYaml(versionMap ?? const {}),
+      version: VersionCommandConfigs.fromYaml(
+        versionMap ?? const {},
+        workspacePath: workspacePath,
+      ),
     );
   }
 
@@ -294,17 +301,18 @@ BootstrapCommandConfigs(
 
 @immutable
 class AggregateChangelogConfig {
-  const AggregateChangelogConfig({
+  AggregateChangelogConfig({
     this.isWorkspaceChangelog = false,
     required this.path,
-    this.scope,
+    required this.packageFilter,
     this.description,
   });
 
-  const AggregateChangelogConfig.workspace()
+  AggregateChangelogConfig.workspace()
       : this(
           isWorkspaceChangelog: true,
           path: 'CHANGELOG.md',
+          packageFilter: PackageFilter(),
           description: '''
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
@@ -313,14 +321,14 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
   final bool isWorkspaceChangelog;
   final String path;
-  final String? scope;
+  final PackageFilter packageFilter;
   final String? description;
 
   Map<String, dynamic> toJson() {
     return {
       'isWorkspaceChangelog': isWorkspaceChangelog,
       'path': path,
-      'scope': scope,
+      'packageFilter': packageFilter,
       'description': description,
     };
   }
@@ -331,7 +339,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
       runtimeType == other.runtimeType &&
       other.isWorkspaceChangelog == isWorkspaceChangelog &&
       other.path == path &&
-      other.scope == scope &&
+      other.packageFilter == packageFilter &&
       other.description == description;
 
   @override
@@ -339,7 +347,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
       runtimeType.hashCode ^
       isWorkspaceChangelog.hashCode ^
       path.hashCode ^
-      scope.hashCode ^
+      packageFilter.hashCode ^
       description.hashCode;
 
   @override
@@ -348,7 +356,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 AggregateChangelogConfig(
   isWorkspaceChangelog: $isWorkspaceChangelog,
   path: $path,
-  scope: $scope,
+  packageFilter: $packageFilter,
   description: $description,
 )''';
   }
@@ -368,7 +376,10 @@ class VersionCommandConfigs {
     this.aggregateChangelogs = const [],
   });
 
-  factory VersionCommandConfigs.fromYaml(Map<Object?, Object?> yaml) {
+  factory VersionCommandConfigs.fromYaml(
+    Map<Object?, Object?> yaml, {
+    required String workspacePath,
+  }) {
     final branch = assertKeyIsA<String?>(
       key: 'branch',
       map: yaml,
@@ -413,7 +424,7 @@ class VersionCommandConfigs {
 
     final aggregateChangelogs = <AggregateChangelogConfig>[];
     if (workspaceChangelog ?? false) {
-      aggregateChangelogs.add(const AggregateChangelogConfig.workspace());
+      aggregateChangelogs.add(AggregateChangelogConfig.workspace());
     }
 
     final changelogsYaml = assertKeyIsA<List<dynamic>?>(
@@ -430,11 +441,18 @@ class VersionCommandConfigs {
         path: 'command/version/changelogs[$i]',
         key: 'path',
       );
-      final scope = assertKeyIsA<String>(
+
+      final packageFilterMap = assertKeyIsA<Map<Object?, Object?>>(
         map: entry,
+        key: 'packageFilters',
         path: 'command/version/changelogs[$i]',
-        key: 'scope',
       );
+      final packageFilter = PackageFilter.fromYaml(
+        packageFilterMap,
+        path: 'command/version/changelogs[$i]',
+        workspacePath: workspacePath,
+      );
+
       final description = assertKeyIsA<String?>(
         map: entry,
         path: 'command/version/changelogs[$i]',
@@ -442,7 +460,7 @@ class VersionCommandConfigs {
       );
       final changelogConfig = AggregateChangelogConfig(
         path: path,
-        scope: scope,
+        packageFilter: packageFilter,
         description: description,
       );
 
@@ -686,7 +704,7 @@ class MelosWorkspaceConfig {
       ide: ideMap == null ? IDEConfigs.empty : IDEConfigs.fromYaml(ideMap),
       commands: commandMap == null
           ? CommandConfigs.empty
-          : CommandConfigs.fromYaml(commandMap),
+          : CommandConfigs.fromYaml(commandMap, workspacePath: path),
     );
   }
 

@@ -676,14 +676,12 @@ mixin _VersionMixin on _RunMixin {
       today.day.toString().padLeft(2, '0')
     ].join('-');
 
-    final scope = config.scope;
-    if (scope != null) {
-      final glob = Glob(scope);
-      // ignore: parameter_assignments
-      pendingPackageUpdates = pendingPackageUpdates
-          .where((update) => glob.matches(update.package.name))
-          .toList();
-    }
+    final packages =
+        await workspace.allPackages.applyFilter(config.packageFilter);
+    // ignore: parameter_assignments
+    pendingPackageUpdates = pendingPackageUpdates
+        .where((update) => packages[update.package.name] != null)
+        .toList();
 
     final changelog = AggregateChangelog(
       workspace,

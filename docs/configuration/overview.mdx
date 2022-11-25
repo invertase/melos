@@ -271,18 +271,21 @@ command:
   version:
     changelogs:
       - path: FOO_CHANGELOG.md
-        scope: foo_*
         description: |
           All notable changes to foo packages will be documented in this file.
+        packageFilters:
+          scope: foo_*
 ```
 
 ### `command/version/changelogs/path`
 
 The path to the changelog file relative to the workspace root.
 
-### `command/version/changelogs/scope`
+### `command/version/changelogs/packageFilters`
 
-A [glob] pattern to match packages to include in the changelog.
+Package filters to match packages that should be included in the changelog.
+
+See [Filtering Packages](/filters) for all available filters.
 
 ### `command/version/changelogs/description`
 

@@ -154,6 +154,113 @@ class PackageFilter {
     _validate();
   }
 
+  factory PackageFilter.fromYaml(
+    Map<Object?, Object?> yaml, {
+    required String path,
+    required String workspacePath,
+  }) {
+    final scope = assertListOrString(
+      key: filterOptionScope,
+      map: yaml,
+      path: path,
+    );
+    final ignore = assertListOrString(
+      key: filterOptionIgnore,
+      map: yaml,
+      path: path,
+    );
+    final dirExists = assertListOrString(
+      key: filterOptionDirExists,
+      map: yaml,
+      path: path,
+    );
+    final fileExists = assertListOrString(
+      key: filterOptionFileExists,
+      map: yaml,
+      path: path,
+    );
+    final dependsOn = assertListOrString(
+      key: filterOptionDependsOn,
+      map: yaml,
+      path: path,
+    );
+    final noDependsOn = assertListOrString(
+      key: filterOptionNoDependsOn,
+      map: yaml,
+      path: path,
+    );
+
+    final updatedSince = assertIsA<String?>(
+      value: yaml[filterOptionSince],
+      key: filterOptionSince,
+      path: path,
+    );
+
+    final diff = assertIsA<String?>(
+      value: yaml[filterOptionDiff],
+      key: filterOptionDiff,
+      path: path,
+    );
+
+    final excludePrivatePackagesTmp = assertIsA<bool?>(
+      value: yaml[filterOptionNoPrivate],
+      key: filterOptionNoPrivate,
+      path: path,
+    );
+    final includePrivatePackagesTmp = assertIsA<bool?>(
+      value: yaml[filterOptionPrivate],
+      key: filterOptionNoPrivate,
+      path: path,
+    );
+    if (includePrivatePackagesTmp != null &&
+        excludePrivatePackagesTmp != null) {
+      throw MelosConfigException(
+        'Cannot specify both --private and --no-private at the same time',
+      );
+    }
+    bool? includePrivatePackages;
+    if (includePrivatePackagesTmp != null) {
+      includePrivatePackages = includePrivatePackagesTmp;
+    }
+    if (excludePrivatePackagesTmp != null) {
+      includePrivatePackages = !excludePrivatePackagesTmp;
+    }
+
+    final published = assertIsA<bool?>(
+      value: yaml[filterOptionPublished],
+      key: filterOptionPublished,
+      path: path,
+    );
+    final nullSafe = assertIsA<bool?>(
+      value: yaml[filterOptionNullsafety],
+      key: filterOptionNullsafety,
+      path: path,
+    );
+    final flutter = assertIsA<bool?>(
+      value: yaml[filterOptionFlutter],
+      key: filterOptionFlutter,
+      path: path,
+    );
+
+    Glob createPackageGlob(String pattern) =>
+        createGlob(pattern, currentDirectoryPath: workspacePath);
+
+    return PackageFilter(
+      scope: scope.map(createPackageGlob).toList(),
+      ignore: ignore.map(createPackageGlob).toList(),
+      dirExists: dirExists,
+      fileExists: fileExists,
+      dependsOn: dependsOn,
+      noDependsOn: noDependsOn,
+      updatedSince: updatedSince,
+      diff: diff,
+      includePrivatePackages: includePrivatePackages,
+      published: published,
+      nullSafe: nullSafe,
+      flutter: flutter,
+    );
+  }
+
   /// A default constructor with **all** properties as requires, to ensure that
   /// copyWith functions properly copy all properties.
   PackageFilter._({

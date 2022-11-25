@@ -20,7 +20,6 @@ import 'dart:collection';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
-import 'common/glob.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
 import 'package.dart';
@@ -197,9 +196,9 @@ class Script {
 
       packageFilter = packageFilterMap == null
           ? null
-          : packageFilterFromYaml(
+          : PackageFilter.fromYaml(
               packageFilterMap,
-              scriptName: name,
+              path: 'scripts/$name/select-package',
               workspacePath: workspacePath,
             );
 
@@ -227,120 +226,6 @@ class Script {
       env: env,
       filter: packageFilter,
       exec: exec,
-    );
-  }
-
-  /// Do not use
-  // this method is not inside PackageFilter as it is specific to Scripts
-  @visibleForTesting
-  static PackageFilter packageFilterFromYaml(
-    Map<Object?, Object?> yaml, {
-    required String scriptName,
-    // necessary for the glob workaround
-    required String workspacePath,
-  }) {
-    final filtersPath = 'scripts/$scriptName/select-package';
-
-    final scope = assertListOrString(
-      key: filterOptionScope,
-      map: yaml,
-      path: filtersPath,
-    );
-    final ignore = assertListOrString(
-      key: filterOptionIgnore,
-      map: yaml,
-      path: filtersPath,
-    );
-    final dirExists = assertListOrString(
-      key: filterOptionDirExists,
-      map: yaml,
-      path: filtersPath,
-    );
-    final fileExists = assertListOrString(
-      key: filterOptionFileExists,
-      map: yaml,
-      path: filtersPath,
-    );
-    final dependsOn = assertListOrString(
-      key: filterOptionDependsOn,
-      map: yaml,
-      path: filtersPath,
-    );
-    final noDependsOn = assertListOrString(
-      key: filterOptionNoDependsOn,
-      map: yaml,
-      path: filtersPath,
-    );
-
-    final updatedSince = assertIsA<String?>(
-      value: yaml[filterOptionSince],
-      key: filterOptionSince,
-      path: filtersPath,
-    );
-
-    final diff = assertIsA<String?>(
-      value: yaml[filterOptionDiff],
-      key: filterOptionDiff,
-      path: filtersPath,
-    );
-
-    final excludePrivatePackagesTmp = assertIsA<bool?>(
-      value: yaml[filterOptionNoPrivate],
-      key: filterOptionNoPrivate,
-      path: filtersPath,
-    );
-    final includePrivatePackagesTmp = assertIsA<bool?>(
-      value: yaml[filterOptionPrivate],
-      key: filterOptionNoPrivate,
-      path: filtersPath,
-    );
-    if (includePrivatePackagesTmp != null &&
-        excludePrivatePackagesTmp != null) {
-      throw MelosConfigException(
-        'Cannot specify both --private and --no-private at the same time',
-      );
-    }
-    bool? includePrivatePackages;
-    if (includePrivatePackagesTmp != null) {
-      includePrivatePackages = includePrivatePackagesTmp;
-    }
-    if (excludePrivatePackagesTmp != null) {
-      includePrivatePackages = !excludePrivatePackagesTmp;
-    }
-
-    final published = assertIsA<bool?>(
-      value: yaml[filterOptionPublished],
-      key: filterOptionPublished,
-      path: filtersPath,
-    );
-    final nullSafe = assertIsA<bool?>(
-      value: yaml[filterOptionNullsafety],
-      key: filterOptionNullsafety,
-      path: filtersPath,
-    );
-    final flutter = assertIsA<bool?>(
-      value: yaml[filterOptionFlutter],
-      key: filterOptionFlutter,
-      path: filtersPath,
-    );
-
-    return PackageFilter(
-      scope: scope
-          .map((e) => createGlob(e, currentDirectoryPath: workspacePath))
-          .toList(),
-      ignore: ignore
-          .map((e) => createGlob(e, currentDirectoryPath: workspacePath))
-          .toList(),
-      dirExists: dirExists,
-      fileExists: fileExists,
-      dependsOn: dependsOn,
-      noDependsOn: noDependsOn,
-      updatedSince: updatedSince,
-      diff: diff,
-      includePrivatePackages: includePrivatePackages,
-      published: published,
-      nullSafe: nullSafe,
-      flutter: flutter,
     );
   }
 

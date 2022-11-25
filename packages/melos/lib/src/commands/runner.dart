@@ -7,7 +7,6 @@ import 'package:ansi_styles/ansi_styles.dart';
 import 'package:cli_util/cli_logging.dart';
 import 'package:collection/collection.dart';
 import 'package:file/local.dart';
-import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 import 'package:mustache_template/mustache.dart';
 import 'package:path/path.dart' as p;

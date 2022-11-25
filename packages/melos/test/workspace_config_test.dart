@@ -98,35 +98,47 @@ void main() {
     group('fromYaml', () {
       test('accepts empty object', () {
         expect(
-          VersionCommandConfigs.fromYaml(const {}),
+          VersionCommandConfigs.fromYaml(const {}, workspacePath: '.'),
           VersionCommandConfigs.empty,
         );
       });
 
       test('throws if branch is not a string', () {
         expect(
-          () => VersionCommandConfigs.fromYaml(const {'branch': 42}),
+          () => VersionCommandConfigs.fromYaml(
+            const {'branch': 42},
+            workspacePath: '.',
+          ),
           throwsMelosConfigException(),
         );
       });
 
       test('throws if message is not a string', () {
         expect(
-          () => VersionCommandConfigs.fromYaml(const {'message': 42}),
+          () => VersionCommandConfigs.fromYaml(
+            const {'message': 42},
+            workspacePath: '.',
+          ),
           throwsMelosConfigException(),
         );
       });
 
       test('throws if includeScopes is not a bool', () {
         expect(
-          () => VersionCommandConfigs.fromYaml(const {'includeScopes': 42}),
+          () => VersionCommandConfigs.fromYaml(
+            const {'includeScopes': 42},
+            workspacePath: '.',
+          ),
           throwsMelosConfigException(),
         );
       });
 
       test('throws if linkToCommits is not a bool', () {
         expect(
-          () => VersionCommandConfigs.fromYaml(const {'linkToCommits': 42}),
+          () => VersionCommandConfigs.fromYaml(
+            const {'linkToCommits': 42},
+            workspacePath: '.',
+          ),
           throwsMelosConfigException(),
         );
       });
@@ -145,13 +157,14 @@ void main() {
               'changelogs': [
                 {
                   'path': 'FOO_CHANGELOG.md',
-                  'scope': 'foo_*',
+                  'packageFilters': {'flutter': true},
                   'description': 'Changelog for all foo packages.',
                 }
               ]
             },
+            workspacePath: '.',
           ),
-          const VersionCommandConfigs(
+          VersionCommandConfigs(
             branch: 'branch',
             message: 'message',
             includeScopes: true,
@@ -162,7 +175,7 @@ void main() {
               AggregateChangelogConfig.workspace(),
               AggregateChangelogConfig(
                 path: 'FOO_CHANGELOG.md',
-                scope: 'foo_*',
+                packageFilter: PackageFilter(flutter: true),
                 description: 'Changelog for all foo packages.',
               ),
             ],
@@ -194,18 +207,24 @@ void main() {
     group('fromYaml', () {
       test('supports `bootstrap` and `version` missing', () {
         expect(
-          CommandConfigs.fromYaml(const {}),
+          CommandConfigs.fromYaml(
+            const {},
+            workspacePath: '.',
+          ),
           CommandConfigs.empty,
         );
       });
 
       test('can decode `bootstrap`', () {
         expect(
-          CommandConfigs.fromYaml(const {
-            'bootstrap': {
-              'usePubspecOverrides': true,
-            }
-          }),
+          CommandConfigs.fromYaml(
+            const {
+              'bootstrap': {
+                'usePubspecOverrides': true,
+              }
+            },
+            workspacePath: '.',
+          ),
           const CommandConfigs(
             bootstrap: BootstrapCommandConfigs(
               usePubspecOverrides: true,
@@ -216,11 +235,14 @@ void main() {
 
       test('can decode `bootstrap` with pub get offline', () {
         expect(
-          CommandConfigs.fromYaml(const {
-            'bootstrap': {
-              'runPubGetOffline': true,
-            }
-          }),
+          CommandConfigs.fromYaml(
+            const {
+              'bootstrap': {
+                'runPubGetOffline': true,
+              }
+            },
+            workspacePath: '.',
+          ),
           const CommandConfigs(
             bootstrap: BootstrapCommandConfigs(
               runPubGetOffline: true,
@@ -231,13 +253,16 @@ void main() {
 
       test('can decode `version`', () {
         expect(
-          CommandConfigs.fromYaml(const {
-            'version': {
-              'message': 'Hello world',
-              'branch': 'main',
-              'linkToCommits': true,
-            }
-          }),
+          CommandConfigs.fromYaml(
+            const {
+              'version': {
+                'message': 'Hello world',
+                'branch': 'main',
+                'linkToCommits': true,
+              }
+            },
+            workspacePath: '.',
+          ),
           const CommandConfigs(
             version: VersionCommandConfigs(
               branch: 'main',
@@ -250,14 +275,20 @@ void main() {
 
       test('throws if `bootstrap` is not a map', () {
         expect(
-          () => CommandConfigs.fromYaml(const {'bootstrap': 42}),
+          () => CommandConfigs.fromYaml(
+            const {'bootstrap': 42},
+            workspacePath: '.',
+          ),
           throwsMelosConfigException(),
         );
       });
 
       test('throws if `version` is not a map', () {
         expect(
-          () => CommandConfigs.fromYaml(const {'version': 42}),
+          () => CommandConfigs.fromYaml(
+            const {'version': 42},
+            workspacePath: '.',
+          ),
           throwsMelosConfigException(),
         );
       });
