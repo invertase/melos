@@ -650,22 +650,49 @@ mixin _VersionMixin on _RunMixin {
       }
     });
 
-    // Build a workspace root changelog if enabled.
-    if (updateChangelog &&
-        workspace.config.commands.version.workspaceChangelog) {
-      final today = DateTime.now();
-      final dateSlug =
-          "${today.year.toString()}-${today.month.toString().padLeft(2, '0')}-"
-          "${today.day.toString().padLeft(2, '0')}";
-      final workspaceChangelog = WorkspaceChangelog(
-        workspace,
-        dateSlug,
-        pendingPackageUpdates,
-        logger,
+    if (updateChangelog) {
+      await Future.wait(
+        workspace.config.commands.version.aggregateChangelogs
+            .map((changelogConfig) {
+          return writeAggregateChangelog(
+            workspace,
+            changelogConfig,
+            pendingPackageUpdates,
+          );
+        }),
       );
-
-      await workspaceChangelog.write();
     }
+  }
+
+  Future<void> writeAggregateChangelog(
+    MelosWorkspace workspace,
+    AggregateChangelogConfig config,
+    List<MelosPendingPackageUpdate> pendingPackageUpdates,
+  ) async {
+    final today = DateTime.now();
+    final dateSlug = [
+      today.year.toString(),
+      today.month.toString().padLeft(2, '0'),
+      today.day.toString().padLeft(2, '0')
+    ].join('-');
+
+    final packages =
+        await workspace.allPackages.applyFilter(config.packageFilter);
+    // ignore: parameter_assignments
+    pendingPackageUpdates = pendingPackageUpdates
+        .where((update) => packages[update.package.name] != null)
+        .toList();
+
+    final changelog = AggregateChangelog(
+      workspace,
+      config.description,
+      dateSlug,
+      pendingPackageUpdates,
+      logger,
+      config.path,
+    );
+
+    await changelog.write();
   }
 
   Set<String> _getPackagesWithVersionableCommits(
@@ -772,13 +799,15 @@ mixin _VersionMixin on _RunMixin {
     List<MelosPendingPackageUpdate> pendingPackageUpdates,
     MelosWorkspace workspace,
   ) async {
-    if (workspace.config.commands.version.workspaceChangelog) {
+    for (final changelog
+        in workspace.config.commands.version.aggregateChangelogs) {
       await gitAdd(
-        'CHANGELOG.md',
+        changelog.path,
         workingDirectory: workspace.path,
         logger: logger,
       );
     }
+
     await Future.forEach(pendingPackageUpdates,
         (MelosPendingPackageUpdate pendingPackageUpdate) async {
       await gitAdd(

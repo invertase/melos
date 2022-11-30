@@ -22,6 +22,7 @@ import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 
+import '../melos.dart';
 import 'common/git_repository.dart';
 import 'common/glob.dart';
 import 'common/io.dart';
@@ -150,7 +151,10 @@ class CommandConfigs {
     this.version = VersionCommandConfigs.empty,
   });
 
-  factory CommandConfigs.fromYaml(Map<Object?, Object?> yaml) {
+  factory CommandConfigs.fromYaml(
+    Map<Object?, Object?> yaml, {
+    required String workspacePath,
+  }) {
     final bootstrapMap = assertKeyIsA<Map<Object?, Object?>?>(
       key: 'bootstrap',
       map: yaml,
@@ -165,7 +169,10 @@ class CommandConfigs {
 
     return CommandConfigs(
       bootstrap: BootstrapCommandConfigs.fromYaml(bootstrapMap ?? const {}),
-      version: VersionCommandConfigs.fromYaml(versionMap ?? const {}),
+      version: VersionCommandConfigs.fromYaml(
+        versionMap ?? const {},
+        workspacePath: workspacePath,
+      ),
     );
   }
 
@@ -292,6 +299,69 @@ BootstrapCommandConfigs(
   }
 }
 
+@immutable
+class AggregateChangelogConfig {
+  AggregateChangelogConfig({
+    this.isWorkspaceChangelog = false,
+    required this.path,
+    required this.packageFilter,
+    this.description,
+  });
+
+  AggregateChangelogConfig.workspace()
+      : this(
+          isWorkspaceChangelog: true,
+          path: 'CHANGELOG.md',
+          packageFilter: PackageFilter(),
+          description: '''
+All notable changes to this project will be documented in this file.
+See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
+''',
+        );
+
+  final bool isWorkspaceChangelog;
+  final String path;
+  final PackageFilter packageFilter;
+  final String? description;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'isWorkspaceChangelog': isWorkspaceChangelog,
+      'path': path,
+      'packageFilter': packageFilter,
+      'description': description,
+    };
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is AggregateChangelogConfig &&
+      runtimeType == other.runtimeType &&
+      other.isWorkspaceChangelog == isWorkspaceChangelog &&
+      other.path == path &&
+      other.packageFilter == packageFilter &&
+      other.description == description;
+
+  @override
+  int get hashCode =>
+      runtimeType.hashCode ^
+      isWorkspaceChangelog.hashCode ^
+      path.hashCode ^
+      packageFilter.hashCode ^
+      description.hashCode;
+
+  @override
+  String toString() {
+    return '''
+AggregateChangelogConfig(
+  isWorkspaceChangelog: $isWorkspaceChangelog,
+  path: $path,
+  packageFilter: $packageFilter,
+  description: $description,
+)''';
+  }
+}
+
 /// Configurations for `melos version`.
 @immutable
 class VersionCommandConfigs {
@@ -301,12 +371,15 @@ class VersionCommandConfigs {
     this.includeScopes = false,
     this.linkToCommits,
     this.includeCommitId,
-    this.workspaceChangelog = false,
     this.updateGitTagRefs = false,
     this.releaseUrl = false,
+    this.aggregateChangelogs = const [],
   });
 
-  factory VersionCommandConfigs.fromYaml(Map<Object?, Object?> yaml) {
+  factory VersionCommandConfigs.fromYaml(
+    Map<Object?, Object?> yaml, {
+    required String workspacePath,
+  }) {
     final branch = assertKeyIsA<String?>(
       key: 'branch',
       map: yaml,
@@ -332,11 +405,6 @@ class VersionCommandConfigs {
       map: yaml,
       path: 'command/version',
     );
-    final workspaceChangelog = assertKeyIsA<bool?>(
-      key: 'workspaceChangelog',
-      map: yaml,
-      path: 'command/version',
-    );
     final updateGitTagRefs = assertKeyIsA<bool?>(
       key: 'updateGitTagRefs',
       map: yaml,
@@ -348,15 +416,66 @@ class VersionCommandConfigs {
       path: 'command/version',
     );
 
+    final workspaceChangelog = assertKeyIsA<bool?>(
+      key: 'workspaceChangelog',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final aggregateChangelogs = <AggregateChangelogConfig>[];
+    if (workspaceChangelog ?? false) {
+      aggregateChangelogs.add(AggregateChangelogConfig.workspace());
+    }
+
+    final changelogsYaml = assertKeyIsA<List<dynamic>?>(
+      key: 'changelogs',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    for (var i = 0; i < (changelogsYaml?.length ?? 0); i++) {
+      final entry = changelogsYaml?[i] as Map;
+
+      final path = assertKeyIsA<String>(
+        map: entry,
+        path: 'command/version/changelogs[$i]',
+        key: 'path',
+      );
+
+      final packageFilterMap = assertKeyIsA<Map<Object?, Object?>>(
+        map: entry,
+        key: 'packageFilters',
+        path: 'command/version/changelogs[$i]',
+      );
+      final packageFilter = PackageFilter.fromYaml(
+        packageFilterMap,
+        path: 'command/version/changelogs[$i]',
+        workspacePath: workspacePath,
+      );
+
+      final description = assertKeyIsA<String?>(
+        map: entry,
+        path: 'command/version/changelogs[$i]',
+        key: 'description',
+      );
+      final changelogConfig = AggregateChangelogConfig(
+        path: path,
+        packageFilter: packageFilter,
+        description: description,
+      );
+
+      aggregateChangelogs.add(changelogConfig);
+    }
+
     return VersionCommandConfigs(
       branch: branch,
       message: message,
       includeScopes: includeScopes ?? false,
       includeCommitId: includeCommitId,
       linkToCommits: linkToCommits,
-      workspaceChangelog: workspaceChangelog ?? false,
       updateGitTagRefs: updateGitTagRefs ?? false,
       releaseUrl: releaseUrl ?? false,
+      aggregateChangelogs: aggregateChangelogs,
     );
   }
 
@@ -379,16 +498,16 @@ class VersionCommandConfigs {
   /// Whether to add links to commits in the generated CHANGELOG.md.
   final bool? linkToCommits;
 
-  /// Whether to also generate a CHANGELOG.md for the entire workspace at the
-  /// root.
-  final bool workspaceChangelog;
-
   /// Whether to also update pubspec with git referenced packages.
   final bool updateGitTagRefs;
 
   /// Whether to generate and print a link to the prefilled release creation
   /// page for each package after versioning.
   final bool releaseUrl;
+
+  /// A list of changelogs configurations that will be used to generate
+  /// changelogs which describe the changes in multiple packages.
+  final List<AggregateChangelogConfig> aggregateChangelogs;
 
   Map<String, Object?> toJson() {
     return {
@@ -397,8 +516,9 @@ class VersionCommandConfigs {
       'includeScopes': includeScopes,
       if (includeCommitId != null) 'includeCommitId': includeCommitId,
       if (linkToCommits != null) 'linkToCommits': linkToCommits,
-      'workspaceChangelog': workspaceChangelog,
       'updateGitTagRefs': updateGitTagRefs,
+      'aggregateChangelogs':
+          aggregateChangelogs.map((config) => config.toJson()).toList(),
     };
   }
 
@@ -411,9 +531,10 @@ class VersionCommandConfigs {
       other.includeScopes == includeScopes &&
       other.includeCommitId == includeCommitId &&
       other.linkToCommits == linkToCommits &&
-      other.workspaceChangelog == workspaceChangelog &&
       other.updateGitTagRefs == updateGitTagRefs &&
-      other.releaseUrl == releaseUrl;
+      other.releaseUrl == releaseUrl &&
+      const DeepCollectionEquality()
+          .equals(other.aggregateChangelogs, aggregateChangelogs);
 
   @override
   int get hashCode =>
@@ -423,9 +544,9 @@ class VersionCommandConfigs {
       includeScopes.hashCode ^
       includeCommitId.hashCode ^
       linkToCommits.hashCode ^
-      workspaceChangelog.hashCode ^
       updateGitTagRefs.hashCode ^
-      releaseUrl.hashCode;
+      releaseUrl.hashCode ^
+      const DeepCollectionEquality().hash(aggregateChangelogs);
 
   @override
   String toString() {
@@ -436,9 +557,9 @@ VersionCommandConfigs(
   includeScopes: $includeScopes,
   includeCommitId: $includeCommitId,
   linkToCommits: $linkToCommits,
-  workspaceChangelog: $workspaceChangelog,
   updateGitTagRefs: $updateGitTagRefs,
   releaseUrl: $releaseUrl,
+  aggregateChangelogs: $aggregateChangelogs,
 )''';
   }
 }
@@ -583,7 +704,7 @@ class MelosWorkspaceConfig {
       ide: ideMap == null ? IDEConfigs.empty : IDEConfigs.fromYaml(ideMap),
       commands: commandMap == null
           ? CommandConfigs.empty
-          : CommandConfigs.fromYaml(commandMap),
+          : CommandConfigs.fromYaml(commandMap, workspacePath: path),
     );
   }
 
