@@ -142,66 +142,6 @@ extension FileSystemEntityUtils on FileSystemEntity {
   }
 }
 
-extension DirectoryUtils on Directory {
-  /// Lists the sub-directories and files of this [Directory] similar to [list].
-  ///
-  /// However instead of just having a `recursive` parameter that decides
-  /// whether to recurse into all or no subdirectories, a function
-  /// [recurseCondition] can be given that can decide for a given directory
-  /// whether to recurse into it or not. The contents of this directory are
-  /// always listed and the function is not called with `this` as argument.
-  Stream<FileSystemEntity> listConditionallyRecursive({
-    required bool Function(Directory directory) recurseCondition,
-    bool followLinks = true,
-  }) {
-    Stream<FileSystemEntity> recurse(
-      Directory directory,
-      Set<String> visitedLinks,
-    ) async* {
-      await for (final entity in directory.list(followLinks: false)) {
-        if (entity is File) {
-          yield entity;
-        } else if (entity is Directory) {
-          yield entity;
-          if (recurseCondition(entity)) {
-            yield* recurse(entity, visitedLinks);
-          }
-        } else if (entity is Link) {
-          if (!followLinks ||
-              visitedLinks.contains(await entity.tryResolveSymbolicLinks())) {
-            yield entity;
-            break;
-          }
-
-          // We can ignore the link case here because
-          // [FileSystemEntity.typeSync] resolves links by default.
-          // ignore: exhaustive_cases
-          switch (FileSystemEntity.typeSync(entity.path)) {
-            case FileSystemEntityType.directory:
-              final directory = Directory(entity.path);
-              yield directory;
-              if (recurseCondition(directory)) {
-                yield* recurse(
-                  directory,
-                  {...visitedLinks, await entity.resolveSymbolicLinks()},
-                );
-              }
-              break;
-            case FileSystemEntityType.file:
-              yield File(entity.path);
-              break;
-            case FileSystemEntityType.notFound:
-              yield entity;
-              break;
-          }
-        }
-      }
-    }
-
-    return recurse(this, {});
-  }
-}
-
 /// Tries to resiliently perform [operation].
 ///
 /// Some file system operations can intermittently fail on Windows because other
