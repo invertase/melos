@@ -570,7 +570,7 @@ The packages that caused the problem are:
 
   static Glob _createPubspecGlob(Glob event) {
     return createGlob(
-      '${event.pattern}/pubspec.yaml',
+      p.posix.normalize('${event.pattern}/pubspec.yaml'),
       caseSensitive: event.caseSensitive,
       context: event.context,
       recursive: event.recursive,

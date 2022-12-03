@@ -194,7 +194,8 @@ packages/c
             packages: packages,
           );
           final packagePaths = packages
-              .map((package) => p.join(workspaceDir.path, package.path));
+              .map((package) => p.join(workspaceDir.path, package.path))
+              .map(p.canonicalize);
 
           final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
           final melos = Melos(logger: logger, config: config);
