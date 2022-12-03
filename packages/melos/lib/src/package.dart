@@ -565,7 +565,7 @@ The packages that caused the problem are:
         .map((file) => p.canonicalize(file.absolute.path))
         .toSet();
 
-    return paths.map((path) => File(path)).toList();
+    return paths.map(File.new).toList();
   }
 
   static Glob _createPubspecGlob(Glob event) {
