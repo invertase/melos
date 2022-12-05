@@ -71,12 +71,35 @@ mixin _BootstrapMixin on _CleanMixin {
       );
     }
 
-    await Stream.fromIterable(workspace.filteredPackages.values).parallel(
+    final filteredPackages = workspace.filteredPackages.values;
+
+    await Stream.fromIterable(filteredPackages).parallel(
       (package) async {
+        if (package.isExample) {
+          final enclosingPackage = package.enclosingPackage!;
+          if (enclosingPackage.isFlutterPackage &&
+              filteredPackages.contains(enclosingPackage)) {
+            // This package will be bootstrapped as part of bootstrapping
+            // the enclosing package.
+            return;
+          }
+        }
+
+        final bootstrappedPackages = [package];
         await _generatePubspecOverrides(workspace, package);
+        if (package.isFlutterPackage) {
+          final example = package.examplePackage;
+          if (example != null && filteredPackages.contains(example)) {
+            // The flutter tool bootstraps the example package as part of
+            // bootstrapping the enclosing package, so we need to generate
+            // the pubspec overrides for the example package as well.
+            await _generatePubspecOverrides(workspace, example);
+            bootstrappedPackages.add(example);
+          }
+        }
         await _runPubGetForPackage(workspace, package);
 
-        _logBootstrapSuccess(package);
+        bootstrappedPackages.forEach(_logBootstrapSuccess);
       },
       parallelism: workspace.config.commands.bootstrap.runPubGetInParallel &&
               workspace.canRunPubGetConcurrently
