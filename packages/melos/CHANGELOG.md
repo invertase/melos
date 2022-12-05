@@ -1,3 +1,9 @@
+## 2.9.0
+
+ - **FIX**: support bootstrapping Flutter example packages ([#428](https://github.com/invertase/melos/issues/428)). ([53873682](https://github.com/invertase/melos/commit/538736827f4fdcd2ec0b2d2b33168a8d1397a319))
+ - **FEAT**: implement scoped changelogs ([#421](https://github.com/invertase/melos/issues/421)). ([f0eca8db](https://github.com/invertase/melos/commit/f0eca8dbd06831256733d5bf38cfe171ac1ca30d))
+ - **FEAT**: support self-hosted git repositories ([#417](https://github.com/invertase/melos/issues/417)). ([ce6e4efc](https://github.com/invertase/melos/commit/ce6e4efcff062c19e8bd35ef2cf7976a53aaae4c))
+
 ## 2.8.0
 
  - **FIX**: Merge commits should be versioned ([#407](https://github.com/invertase/melos/issues/407)). ([01d4cd0d](https://github.com/invertase/melos/commit/01d4cd0d01e87fa836d0bb92949a8ccccb8f8027))
