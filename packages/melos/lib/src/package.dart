@@ -523,7 +523,7 @@ class PackageMap {
       late final isIncluded = packages.any((glob) => glob.matches(path)) &&
           !ignore.any((glob) => glob.matches(path));
 
-      if (entity is File && basename(path) == 'pubspec.yaml' && isIncluded) {
+      if (entity is File && p.basename(path) == 'pubspec.yaml' && isIncluded) {
         final resolvedPath = await entity.resolveSymbolicLinks();
         pubspecsByResolvedPath[resolvedPath] = entity;
       } else if (entity is Directory &&
