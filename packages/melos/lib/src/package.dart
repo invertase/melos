@@ -23,7 +23,6 @@ import 'dart:io';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
-import 'package:path/path.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 import 'package:pub_semver/pub_semver.dart';
@@ -524,7 +523,7 @@ class PackageMap {
       late final isIncluded = packages.any((glob) => glob.matches(path)) &&
           !ignore.any((glob) => glob.matches(path));
 
-      if (entity is File && basename(path) == 'pubspec.yaml' && isIncluded) {
+      if (entity is File && p.basename(path) == 'pubspec.yaml' && isIncluded) {
         final resolvedPath = await entity.resolveSymbolicLinks();
         pubspecsByResolvedPath[resolvedPath] = entity;
       } else if (entity is Directory &&
@@ -645,7 +644,7 @@ extension on Iterable<Package> {
     return where((package) {
       return directoryPaths.every((dirExistsPath) {
         // TODO(rrousselGit): should support environment variables
-        return dirExists(join(package.path, dirExistsPath));
+        return dirExists(p.join(package.path, dirExistsPath));
       });
     });
   }
@@ -662,7 +661,7 @@ extension on Iterable<Package> {
         final expandedFileExistsPath =
             fileExistsPath.replaceAll(r'$MELOS_PACKAGE_NAME', package.name);
 
-        return fileExists(join(package.path, expandedFileExistsPath));
+        return fileExists(p.join(package.path, expandedFileExistsPath));
       });
       return fileExistsMatched;
     });
@@ -831,7 +830,7 @@ class Package {
     required this.publishTo,
     required this.pubSpec,
   })  : _packageMap = packageMap,
-        assert(isAbsolute(path));
+        assert(p.isAbsolute(path));
 
   final Map<String, Package> _packageMap;
 
@@ -977,10 +976,10 @@ class Package {
   /// pubspec.lock.
   Future<void> linkPackages(MelosWorkspace workspace) async {
     final pluginTemporaryPath =
-        join(workspace.melosToolPath, pathRelativeToWorkspace);
+        p.join(workspace.melosToolPath, pathRelativeToWorkspace);
 
     await Future.forEach(generatedPubFilePaths, (String tempFilePath) async {
-      final fileToCopy = join(pluginTemporaryPath, tempFilePath);
+      final fileToCopy = p.join(pluginTemporaryPath, tempFilePath);
       if (!fileExists(fileToCopy)) {
         return;
       }
@@ -1012,12 +1011,36 @@ class Package {
           temporaryFileContents.replaceAll(melosToolPathRegExp, '');
 
       await writeTextFileAsync(
-        join(path, tempFilePath),
+        p.join(path, tempFilePath),
         temporaryFileContents,
         recursive: true,
       );
     });
   }
+
+  /// The example [Package] contained within this package, if any.
+  ///
+  /// A package is considered to be an example if it is located in the `example`
+  /// directory of the [enclosingPackage].
+  late final Package? examplePackage = () {
+    final examplePath = p.join(path, 'example');
+    return _packageMap.values
+        .firstWhereOrNull((package) => p.equals(package.path, examplePath));
+  }();
+
+  /// The [Package] that encloses this package, if any.
+  ///
+  /// A package is considered to be the enclosing package if this package is
+  /// located in a direct child directory of the enclosing package.
+  late final Package? enclosingPackage = () {
+    final enclosingPackagePath = p.dirname(path);
+    return _packageMap.values.firstWhereOrNull(
+      (package) => p.equals(package.path, enclosingPackagePath),
+    );
+  }();
+
+  /// Whether this package is an example package as defined by [examplePackage].
+  bool get isExample => enclosingPackage?.examplePackage == this;
 
   /// Returns whether this package is a Flutter app.
   ///
@@ -1034,7 +1057,7 @@ class Package {
     // Must not have a Flutter plugin definition in it's pubspec.yaml.
     if (pubSpec.flutter?.plugin != null) return false;
 
-    return fileExists(joinAll([path, 'lib', 'main.dart']));
+    return fileExists(p.join(path, 'lib', 'main.dart'));
   }
 
   bool get isAddToApp {
@@ -1113,7 +1136,7 @@ class Package {
   String? get javaPluginClassPath {
     if (androidPackage == null || androidPluginClass == null) return null;
 
-    final javaPluginClassPath = joinAll([
+    final javaPluginClassPath = p.joinAll([
       path,
       'android/src/main/java',
       ...androidPackage!.split('.'),
@@ -1127,7 +1150,7 @@ class Package {
   String? get kotlinPluginClassPath {
     if (androidPackage == null || androidPluginClass == null) return null;
 
-    final kotlinPluginClassPath = joinAll([
+    final kotlinPluginClassPath = p.joinAll([
       path,
       'android/src/main/kotlin',
       ...androidPackage!.split('.'),
@@ -1175,7 +1198,7 @@ class Package {
   }
 
   /// Returns whether this package contains a test directory.
-  bool get hasTests => dirExists(joinAll([path, 'test']));
+  bool get hasTests => dirExists(p.join(path, 'test'));
 
   bool _flutterAppSupportsPlatform(String platform) {
     assert(

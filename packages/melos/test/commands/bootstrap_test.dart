@@ -259,7 +259,7 @@ Generating IntelliJ IDE files...
         config: config,
       );
 
-      await melos.bootstrap();
+      await runMelosBootstrap(melos, logger);
 
       final packageConfig = packageConfigForPackageAt(pkgA);
       expect(
@@ -348,7 +348,7 @@ Generating IntelliJ IDE files...
             config: config,
           );
 
-          await melos.bootstrap();
+          await runMelosBootstrap(melos, logger);
 
           final packageConfig = packageConfigForPackageAt(pkgA);
           expect(
@@ -360,6 +360,51 @@ Generating IntelliJ IDE files...
         },
         skip: !isPubspecOverridesSupported(),
       );
+
+      test('bootstrap flutter example packages', () async {
+        final workspaceDir = createTemporaryWorkspaceDirectory(
+          configBuilder: (path) => MelosWorkspaceConfig.fallback(
+            path: path,
+            usePubspecOverrides: true,
+          ),
+        );
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(
+            name: 'a',
+            dependencies: {
+              'flutter': SdkReference('flutter'),
+            },
+          ),
+          path: 'packages/a',
+        );
+
+        final examplePkg = await createProject(
+          workspaceDir,
+          PubSpec(
+            name: 'example',
+            dependencies: {
+              'a': HostedReference(VersionConstraint.any),
+            },
+          ),
+          path: 'packages/a/example',
+        );
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        await runMelosBootstrap(melos, logger);
+
+        final examplePkgConfig = packageConfigForPackageAt(examplePkg);
+        final aPkgDependencyConfig = examplePkgConfig.packages
+            .firstWhere((package) => package.name == 'a');
+        expect(aPkgDependencyConfig.rootUri, '../../');
+      });
 
       group('mergeMelosPubspecOverrides', () {
         void expectMergedMelosPubspecOverrides({
@@ -628,10 +673,6 @@ Generating IntelliJ IDE files...
         ),
       );
     });
-
-    test('can disable IDE generation using melos config', () {}, skip: true);
-
-    test('can supports package filter', () {}, skip: true);
   });
 }
 
