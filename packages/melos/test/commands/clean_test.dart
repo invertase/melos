@@ -11,56 +11,52 @@ import '../utils.dart';
 
 void main() {
   group('clean', () {
-    test(
-      'removes dependency overrides from pubspec_overrides.yaml',
-      () async {
-        final workspaceDir = createTemporaryWorkspaceDirectory(
-          configBuilder: (path) => MelosWorkspaceConfig(
-            path: path,
-            name: 'test_workspace',
-            packages: [Glob('packages/**')],
-            commands: const CommandConfigs(
-              bootstrap: BootstrapCommandConfigs(
-                usePubspecOverrides: true,
-              ),
+    test('removes dependency overrides from pubspec_overrides.yaml', () async {
+      final workspaceDir = createTemporaryWorkspaceDirectory(
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_workspace',
+          packages: [Glob('packages/**')],
+          commands: const CommandConfigs(
+            bootstrap: BootstrapCommandConfigs(
+              usePubspecOverrides: true,
             ),
           ),
-        );
+        ),
+      );
 
-        final packageADir =
-            await createProject(workspaceDir, const PubSpec(name: 'a'));
-        final packageBDir = await createProject(
-          workspaceDir,
-          PubSpec(
-            name: 'b',
-            dependencies: {'a': HostedReference(VersionConstraint.any)},
-          ),
-        );
-        final pubspecOverrides =
-            p.join(packageBDir.path, 'pubspec_overrides.yaml');
+      final packageADir =
+          await createProject(workspaceDir, const PubSpec(name: 'a'));
+      final packageBDir = await createProject(
+        workspaceDir,
+        PubSpec(
+          name: 'b',
+          dependencies: {'a': HostedReference(VersionConstraint.any)},
+        ),
+      );
+      final pubspecOverrides =
+          p.join(packageBDir.path, 'pubspec_overrides.yaml');
 
-        final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
-        final logger = TestLogger();
-        final melos = Melos(config: config, logger: logger);
-        await melos.bootstrap();
+      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final logger = TestLogger();
+      final melos = Melos(config: config, logger: logger);
+      await melos.bootstrap();
 
-        expect(
-          pubspecOverrides,
-          yamlFile({
-            'dependency_overrides': {
-              'a': {'path': relativePath(packageADir.path, packageBDir.path)}
-            }
-          }),
-        );
+      expect(
+        pubspecOverrides,
+        yamlFile({
+          'dependency_overrides': {
+            'a': {'path': relativePath(packageADir.path, packageBDir.path)}
+          }
+        }),
+      );
 
-        await melos.clean();
+      await melos.clean();
 
-        expect(
-          pubspecOverrides,
-          isNot(fileExists),
-        );
-      },
-      skip: !isPubspecOverridesSupported(),
-    );
+      expect(
+        pubspecOverrides,
+        isNot(fileExists),
+      );
+    });
   });
 }

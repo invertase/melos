@@ -16,11 +16,10 @@
  */
 
 import '../commands/runner.dart';
-import '../workspace_configs.dart';
 import 'base.dart';
 
 class PublishCommand extends MelosCommand {
-  PublishCommand(MelosWorkspaceConfig config) : super(config) {
+  PublishCommand(super.config) {
     setupPackageFilterParser();
     argParser.addFlag(
       'dry-run',

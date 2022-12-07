@@ -22,10 +22,10 @@ import 'package:string_scanner/string_scanner.dart';
 
 class PubDependencyList extends VersionedEntry {
   PubDependencyList._(
-    VersionedEntry entry,
+    super.entry,
     this.sdks,
     this.sections,
-  ) : super.copy(entry);
+  ) : super.copy();
 
   factory PubDependencyList.parse(String input) {
     final scanner = StringScanner(input);

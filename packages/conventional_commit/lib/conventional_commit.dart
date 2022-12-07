@@ -68,7 +68,7 @@ class ConventionalCommit {
     final mergeCommitPrefixMatch = _mergeCommitPrefixRegex.firstMatch(header);
     final isMergeCommit = mergeCommitPrefixMatch != null;
     final headerMatch = _conventionalCommitHeaderRegex.firstMatch(
-      isMergeCommit ? header.substring(mergeCommitPrefixMatch!.end) : header,
+      isMergeCommit ? header.substring(mergeCommitPrefixMatch.end) : header,
     );
 
     if (headerMatch == null) {

@@ -21,10 +21,9 @@ import 'base.dart';
 
 class ScriptCommand extends MelosCommand {
   ScriptCommand._(
-    MelosWorkspaceConfig config, {
+    super.config, {
     required this.scripts,
-  })  : assert(scripts.isNotEmpty),
-        super(config) {
+  }) : assert(scripts.isNotEmpty) {
     argParser.addFlag(
       'no-select',
       negatable: false,

@@ -18,11 +18,10 @@
 import 'dart:async';
 
 import '../commands/runner.dart';
-import '../workspace_configs.dart';
 import 'base.dart';
 
 class BootstrapCommand extends MelosCommand {
-  BootstrapCommand(MelosWorkspaceConfig config) : super(config) {
+  BootstrapCommand(super.config) {
     setupPackageFilterParser();
   }
 

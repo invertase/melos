@@ -51,13 +51,10 @@ class TestCase {
 
 class NullSafetyTestCase extends TestCase {
   const NullSafetyTestCase(
-    String currentVersion,
-    String expectedVersion,
-    SemverReleaseType requestedReleaseType,
+    super.currentVersion,
+    super.expectedVersion,
+    super.requestedReleaseType,
   ) : super(
-          currentVersion,
-          expectedVersion,
-          requestedReleaseType,
           requestedPreId: 'nullsafety',
           shouldMakePrereleaseVersion: true,
         );

@@ -16,11 +16,10 @@
  */
 
 import '../commands/runner.dart';
-import '../workspace_configs.dart';
 import 'base.dart';
 
 class RunCommand extends MelosCommand {
-  RunCommand(MelosWorkspaceConfig config) : super(config) {
+  RunCommand(super.config) {
     argParser.addFlag(
       'no-select',
       negatable: false,

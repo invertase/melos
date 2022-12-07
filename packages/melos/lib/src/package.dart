@@ -1267,8 +1267,8 @@ Map<String, Package> _transitivelyRelatedPackages({
 }
 
 extension on PubSpec {
-  Flutter? get flutter => (unParsedYaml?['flutter'] as Map<Object?, Object?>?)
-      .let((value) => Flutter(value));
+  Flutter? get flutter =>
+      (unParsedYaml?['flutter'] as Map<Object?, Object?>?).let(Flutter.new);
 }
 
 class Flutter {
@@ -1276,11 +1276,11 @@ class Flutter {
 
   final Map<Object?, Object?> _flutter;
 
-  Plugin? get plugin => (_flutter['plugin'] as Map<Object?, Object?>?)
-      .let((value) => Plugin(value));
+  Plugin? get plugin =>
+      (_flutter['plugin'] as Map<Object?, Object?>?).let(Plugin.new);
 
-  Module? get module => (_flutter['module'] as Map<Object?, Object?>?)
-      .let((value) => Module(value));
+  Module? get module =>
+      (_flutter['module'] as Map<Object?, Object?>?).let(Module.new);
 }
 
 class Module {

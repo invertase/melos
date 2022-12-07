@@ -36,7 +36,7 @@ class LifecycleHook {
 }
 
 class Scripts extends MapView<String, Script> {
-  const Scripts(Map<String, Script> map) : super(map);
+  const Scripts(super.map);
 
   factory Scripts.fromYaml(
     Map<Object?, Object?> yaml, {
