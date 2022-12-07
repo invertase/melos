@@ -83,9 +83,9 @@ packages:
 > You can also reduce the scope of packages on a per-command basis via the
 > [`--scope` filter](/filters#scope) flag.
 
-Avoid recursive whildcard patterns like `**` as they require walking large parts
-of the file system and can be slow. If you have packages at multiple levels of
-depth, consider using multiple patterns instead:
+Avoid recursive whildcards (`**`) as they require walking large parts of the
+file system and can be slow. If you have packages at multiple levels of depth,
+consider using multiple patterns instead:
 
 ```yaml
 packages:

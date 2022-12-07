@@ -495,7 +495,11 @@ class PackageMap {
     final pubspecFiles = await _resolvePubspecFiles(
       workspacePath: workspacePath,
       packages: packages,
-      ignore: ignore,
+      ignore: [
+        ...ignore,
+        for (final pattern in _commonIgnorePatterns)
+          createGlob(pattern, currentDirectoryPath: workspacePath)
+      ],
     );
 
     final packageMap = <String, Package>{};
@@ -548,16 +552,9 @@ The packages that caused the problem are:
         .asyncExpand((pubspecGlob) => pubspecGlob.list(root: workspacePath))
         .toList();
 
-    final commonIgnoreGlobs = _commonIgnorePatterns
-        .map(
-          (pattern) => createGlob(pattern, currentDirectoryPath: workspacePath),
-        )
-        .map(_createPubspecGlob)
-        .toList();
-    final customIgnoreGlobs = ignore.map(_createPubspecGlob).toList();
-    final ignoredGlobs = [...commonIgnoreGlobs, ...customIgnoreGlobs];
+    final pubspecIgnoreGlobs = ignore.map(_createPubspecGlob).toList();
     bool isIgnored(File file) =>
-        ignoredGlobs.any((glob) => glob.matches(file.path));
+        pubspecIgnoreGlobs.any((glob) => glob.matches(file.path));
 
     final paths = pubspecEntities
         .whereType<File>()
