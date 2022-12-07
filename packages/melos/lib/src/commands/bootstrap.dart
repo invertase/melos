@@ -31,11 +31,7 @@ mixin _BootstrapMixin on _CleanMixin {
         }
 
         try {
-          if (workspace.config.commands.bootstrap.usePubspecOverrides) {
-            await _linkPackagesWithPubspecOverrides(workspace);
-          } else {
-            await _linkPackagesWithPubFiles(workspace);
-          }
+          await _linkPackagesWithPubspecOverrides(workspace);
         } on BootstrapException catch (exception) {
           _logBootstrapException(exception, workspace);
           rethrow;
@@ -141,50 +137,10 @@ mixin _BootstrapMixin on _CleanMixin {
     }
   }
 
-  Future<void> _linkPackagesWithPubFiles(MelosWorkspace workspace) async {
-    await _generateTemporaryProjects(workspace);
-
-    try {
-      // ignore: prefer_foreach
-      await for (final package in _runPubGet(workspace)) {
-        _logBootstrapSuccess(package);
-      }
-    } catch (err) {
-      cleanWorkspace(workspace);
-      rethrow;
-    }
-
-    logger
-      ..newLine()
-      ..log('Linking workspace packages...');
-
-    for (final package in workspace.filteredPackages.values) {
-      await package.linkPackages(workspace);
-    }
-
-    cleanWorkspace(workspace);
-  }
-
-  // Return a stream of package that completed.
-  Stream<Package> _runPubGet(MelosWorkspace workspace) =>
-      Stream.fromIterable(workspace.filteredPackages.values).parallel(
-        (package) async {
-          await _runPubGetForPackage(
-            workspace,
-            package,
-            inTemporaryProject: true,
-          );
-          return package;
-        },
-        parallelism:
-            workspace.config.commands.bootstrap.runPubGetInParallel ? null : 1,
-      );
-
   Future<void> _runPubGetForPackage(
     MelosWorkspace workspace,
-    Package package, {
-    bool inTemporaryProject = false,
-  }) async {
+    Package package,
+  ) async {
     final command = [
       ...pubCommandExecArgs(
         useFlutter: package.isFlutterPackage,
@@ -194,13 +150,9 @@ mixin _BootstrapMixin on _CleanMixin {
       if (workspace.config.commands.bootstrap.runPubGetOffline) '--offline'
     ].join(' ');
 
-    final packagePath = inTemporaryProject
-        ? join(workspace.melosToolPath, package.pathRelativeToWorkspace)
-        : package.path;
-
     final process = await startCommandRaw(
       command,
-      workingDirectory: packagePath,
+      workingDirectory: package.path,
     );
 
     const logTimeout = Duration(seconds: 10);
@@ -294,126 +246,6 @@ mixin _BootstrapMixin on _CleanMixin {
     }
     if (processStdErrString != null) {
       logger.stderr(processStdErrString);
-    }
-  }
-}
-
-Future<void> _generateTemporaryProjects(MelosWorkspace workspace) async {
-  // Traversing all packages so that transitive dependencies for the bootstraped
-  // packages are setup properly.
-  for (final package in workspace.allPackages.values) {
-    final packageTemporaryPath =
-        join(workspace.melosToolPath, package.pathRelativeToWorkspace);
-    var pubspec = package.pubSpec;
-
-    // Since the generated temporary package is located at a different path
-    // than the original package, this may break path dependencies that this
-    // package uses.
-    // As such, we're updating the path dependencies to match the new location
-    // by converting paths to absolute ones.
-    Map<String, DependencyReference> transformPathDependenciesToAbsolute(
-      Map<String, DependencyReference> dependencies,
-    ) {
-      final result = {...dependencies};
-
-      for (final entry in dependencies.entries) {
-        final dependency = entry.value;
-        if (dependency is PathReference && dependency.path != null) {
-          final absolutePath = absolute(package.path, dependency.path);
-
-          if (currentPlatform.isWindows) {
-            result[entry.key] = PathReference(
-              windows.normalize(absolutePath).replaceAll(r'\', r'\\'),
-            );
-          } else {
-            result[entry.key] = PathReference(absolutePath);
-          }
-        }
-      }
-
-      return result;
-    }
-
-    pubspec = pubspec.copy(
-      dependencies: transformPathDependenciesToAbsolute(pubspec.dependencies),
-      devDependencies:
-          transformPathDependenciesToAbsolute(pubspec.devDependencies),
-      dependencyOverrides:
-          transformPathDependenciesToAbsolute(pubspec.dependencyOverrides),
-    );
-
-    // Traversing all packages so that transitive dependencies for the
-    // bootstraped packages are setup properly.
-    for (final otherPackage in workspace.allPackages.values) {
-      final otherPackagePath = utils.relativePath(
-        join(workspace.melosToolPath, otherPackage.pathRelativeToWorkspace),
-        packageTemporaryPath,
-      );
-
-      if (package.allTransitiveDependenciesInWorkspace
-              .containsKey(otherPackage.name) &&
-          !package.dependencyOverrides.contains(otherPackage.name)) {
-        pubspec = pubspec.copy(
-          dependencyOverrides: {
-            ...pubspec.dependencyOverrides,
-            otherPackage.name: PathReference(otherPackagePath),
-          },
-        );
-
-        // If this package is an an add-to-app module, all plugins that are
-        // dependencies of the package must have their android main classes
-        // copied to the temporary workspace, otherwise pub get fails.
-        if (package.isAddToApp &&
-            otherPackage.isFlutterPlugin &&
-            otherPackage.flutterPluginSupportsAndroid &&
-            otherPackage.androidPackage != null &&
-            (otherPackage.javaPluginClassPath != null ||
-                otherPackage.kotlinPluginClassPath != null)) {
-          // A plugin should only have one main class, written in java
-          // or kotlin. We want to copy that class to the temporary workspace
-          // at the same relative location, so pub get can find it
-          final hasJavaPluginClass = otherPackage.javaPluginClassPath != null;
-          final hasKotlinPluginClass =
-              otherPackage.kotlinPluginClassPath != null;
-          final pathParts = otherPackage.androidPackage!.split('.');
-          final mainClassDirectoryName = hasJavaPluginClass ? 'java' : 'kotlin';
-          final mainClassFileSuffix = hasJavaPluginClass ? '.java' : '.kt';
-          final destinationMainClassPath = joinAll([
-            join(workspace.melosToolPath, otherPackage.pathRelativeToWorkspace),
-            'android/src/main/$mainClassDirectoryName',
-            ...pathParts,
-            '${otherPackage.androidPluginClass!}$mainClassFileSuffix',
-          ]);
-          String? classPath;
-          if (hasJavaPluginClass) {
-            classPath = otherPackage.javaPluginClassPath;
-          } else if (hasKotlinPluginClass) {
-            classPath = otherPackage.kotlinPluginClassPath;
-          }
-          copyFile(classPath!, destinationMainClassPath, recursive: true);
-        }
-      }
-    }
-
-    const header = '# Generated file - do not commit this file.';
-    final generatedPubspecYamlString =
-        '$header\n${prettyEncodeJson(pubspec.toJson())}';
-
-    await writeTextFileAsync(
-      utils.pubspecPathForDirectory(packageTemporaryPath),
-      generatedPubspecYamlString,
-      recursive: true,
-    );
-
-    // Original pubspec.lock files should also be preserved in our packages
-    // mirror, if we don't then this makes melos bootstrap function the same
-    // as `dart pub upgrade` every time - which we don't want.
-    // See https://github.com/invertase/melos/issues/68
-    final originalPubspecLock = join(package.path, 'pubspec.lock');
-    if (fileExists(originalPubspecLock)) {
-      final pubspecLockContents = await readTextFileAsync(originalPubspecLock);
-      final copiedPubspecLock = join(packageTemporaryPath, 'pubspec.lock');
-      await writeTextFileAsync(copiedPubspecLock, pubspecLockContents);
     }
   }
 }

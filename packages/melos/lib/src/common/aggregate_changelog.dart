@@ -15,7 +15,7 @@
  *
  */
 
-import 'package:path/path.dart';
+import 'package:path/path.dart' as p;
 
 import '../logging.dart';
 import '../workspace.dart';
@@ -158,7 +158,7 @@ ${description?.withoutTrailing('\n') ?? ''}
   }
 
   String get absolutePath {
-    return joinAll([workspace.path, path]);
+    return p.join(workspace.path, path);
   }
 
   @override

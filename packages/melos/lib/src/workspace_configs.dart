@@ -20,7 +20,7 @@ import 'dart:io';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
-import 'package:path/path.dart';
+import 'package:path/path.dart' as p;
 
 import '../melos.dart';
 import 'common/git_repository.dart';
@@ -214,19 +214,11 @@ CommandConfigs(
 @immutable
 class BootstrapCommandConfigs {
   const BootstrapCommandConfigs({
-    this.usePubspecOverrides = false,
     this.runPubGetInParallel = true,
     this.runPubGetOffline = false,
   });
 
   factory BootstrapCommandConfigs.fromYaml(Map<Object?, Object?> yaml) {
-    final usePubspecOverrides = assertKeyIsA<bool?>(
-          key: 'usePubspecOverrides',
-          map: yaml,
-          path: 'command/bootstrap',
-        ) ??
-        false;
-
     final runPubGetInParallel = assertKeyIsA<bool?>(
           key: 'runPubGetInParallel',
           map: yaml,
@@ -242,17 +234,12 @@ class BootstrapCommandConfigs {
         false;
 
     return BootstrapCommandConfigs(
-      usePubspecOverrides: usePubspecOverrides,
       runPubGetInParallel: runPubGetInParallel,
       runPubGetOffline: runPubGetOffline,
     );
   }
 
   static const BootstrapCommandConfigs empty = BootstrapCommandConfigs();
-
-  /// Whether to use `pubspec_overrides.yaml` for overriding workspace
-  /// dependencies during development.
-  final bool usePubspecOverrides;
 
   /// Whether to run `pub get` in parallel during bootstrapping.
   ///
@@ -267,7 +254,6 @@ class BootstrapCommandConfigs {
 
   Map<String, Object?> toJson() {
     return {
-      'usePubspecOverrides': usePubspecOverrides,
       'runPubGetInParallel': runPubGetInParallel,
       'runPubGetOffline': runPubGetOffline,
     };
@@ -277,14 +263,12 @@ class BootstrapCommandConfigs {
   bool operator ==(Object other) =>
       other is BootstrapCommandConfigs &&
       runtimeType == other.runtimeType &&
-      other.usePubspecOverrides == usePubspecOverrides &&
       other.runPubGetInParallel == runPubGetInParallel &&
       other.runPubGetOffline == runPubGetOffline;
 
   @override
   int get hashCode =>
       runtimeType.hashCode ^
-      usePubspecOverrides.hashCode ^
       runPubGetInParallel.hashCode ^
       runPubGetOffline.hashCode;
 
@@ -292,7 +276,6 @@ class BootstrapCommandConfigs {
   String toString() {
     return '''
 BootstrapCommandConfigs(
-  usePubspecOverrides: $usePubspecOverrides,
   runPubGetInParallel: $runPubGetInParallel,
   runPubGetOffline: $runPubGetOffline,
 )''';
@@ -708,24 +691,16 @@ class MelosWorkspaceConfig {
     );
   }
 
-  MelosWorkspaceConfig.fallback({
-    required String path,
-    bool usePubspecOverrides = false,
-  }) : this(
+  MelosWorkspaceConfig.fallback({required String path})
+      : this(
           name: 'Melos',
           packages: [
             createGlob('packages/**', currentDirectoryPath: path),
           ],
           path: currentPlatform.isWindows
-              ? windows.normalize(path).replaceAll(r'\', r'\\')
+              ? p.windows.normalize(path).replaceAll(r'\', r'\\')
               : path,
-          commands: usePubspecOverrides
-              ? const CommandConfigs(
-                  bootstrap: BootstrapCommandConfigs(
-                    usePubspecOverrides: true,
-                  ),
-                )
-              : CommandConfigs.empty,
+          commands: CommandConfigs.empty,
         );
 
   MelosWorkspaceConfig.empty()
@@ -760,7 +735,7 @@ class MelosWorkspaceConfig {
     if (melosWorkspaceDirectory == null) {
       // Allow melos to use a project without a `melos.yaml` file if a
       // `packages` directory exists.
-      final packagesDirectory = joinAll([directory.path, 'packages']);
+      final packagesDirectory = p.joinAll([directory.path, 'packages']);
 
       if (dirExists(packagesDirectory)) {
         return MelosWorkspaceConfig.fallback(path: directory.path)

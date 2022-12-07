@@ -17,11 +17,6 @@ void main() {
           path: path,
           name: 'test_workspace',
           packages: [Glob('packages/**')],
-          commands: const CommandConfigs(
-            bootstrap: BootstrapCommandConfigs(
-              usePubspecOverrides: true,
-            ),
-          ),
         ),
       );
 

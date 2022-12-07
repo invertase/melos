@@ -4,7 +4,7 @@ import 'package:melos/melos.dart';
 import 'package:melos/src/commands/runner.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
-import 'package:path/path.dart';
+import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
 import 'package:test/test.dart';
@@ -52,7 +52,7 @@ void main() {
 
       final workspaceDir = createTemporaryWorkspaceDirectory();
 
-      final aPath = join(workspaceDir.path, 'packages', 'a');
+      final aPath = p.join(workspaceDir.path, 'packages', 'a');
 
       final aDir = await createProject(
         workspaceDir,
@@ -101,8 +101,6 @@ melos bootstrap
 Running "${pubExecArgs.join(' ')} get" in workspace packages...
   ✓ a
     └> packages/a
-
-Linking workspace packages...
   > SUCCESS
 
 Generating IntelliJ IDE files...
@@ -113,41 +111,44 @@ Generating IntelliJ IDE files...
         ),
       );
 
+      final aPackageConfigPath = packageConfigPath(aDir.path);
+      String resolvePathRelativeToPackageConfig(String path) =>
+          p.canonicalize(p.join(p.dirname(aPackageConfigPath), path));
+
       final aConfig = packageConfigForPackageAt(aDir);
-      final actualAbsolutePath = prettyUri(
+      final actualAbsolutePath = p.prettyUri(
         aConfig.packages.firstWhere((p) => p.name == 'absolute').rootUri,
       );
       expect(
-        actualAbsolutePath,
+        resolvePathRelativeToPackageConfig(actualAbsolutePath),
         absoluteProject.path,
       );
 
-      final actualRelativePath = prettyUri(
+      final actualRelativePath = p.prettyUri(
         aConfig.packages.firstWhere((p) => p.name == 'relative').rootUri,
       );
       expect(
-        actualRelativePath,
+        resolvePathRelativeToPackageConfig(actualRelativePath),
         relativeProject.path,
       );
 
-      final actualRelativeDevPath = prettyUri(
+      final actualRelativeDevPath = p.prettyUri(
         aConfig.packages.firstWhere((p) => p.name == 'relative_dev').rootUri,
       );
       expect(
-        actualRelativeDevPath,
+        resolvePathRelativeToPackageConfig(actualRelativeDevPath),
         relativeDevProject.path,
       );
 
-      final actualRelativeOverridePath = prettyUri(
+      final actualRelativeOverridePath = p.prettyUri(
         aConfig.packages
             .firstWhere((p) => p.name == 'relative_override')
             .rootUri,
       );
       expect(
-        actualRelativeOverridePath,
+        resolvePathRelativeToPackageConfig(actualRelativeOverridePath),
         relativeOverrideProject.path,
       );
-      expect(aConfig.generator, 'melos');
     });
 
     test('resolves workspace packages with path dependency', () async {
@@ -211,7 +212,6 @@ Running "flutter pub get" in workspace packages...''',
     └> packages/d
 ''',
               '''
-Linking workspace packages...
   > SUCCESS
 
 Generating IntelliJ IDE files...
@@ -230,11 +230,33 @@ Generating IntelliJ IDE files...
         aConfig.packages.firstWhere((p) => p.name == 'b').rootUri,
         '../../b',
       );
-      expect(aConfig.generator, 'melos');
     });
 
+    test(
+      'bootstrap transitive dependencies',
+      () async => dependencyResolutionTest(
+        {
+          'a': [],
+          'b': ['a'],
+          'c': ['b'],
+        },
+      ),
+    );
+
+    test(
+      'bootstrap cyclic dependencies',
+      () async => dependencyResolutionTest(
+        {
+          'a': ['b'],
+          'b': ['a'],
+        },
+      ),
+    );
+
     test('respects user dependency_overrides', () async {
-      final workspaceDir = createTemporaryWorkspaceDirectory();
+      final workspaceDir = createTemporaryWorkspaceDirectory(
+        configBuilder: (path) => MelosWorkspaceConfig.fallback(path: path),
+      );
 
       final pkgA = await createProject(
         workspaceDir,
@@ -270,230 +292,142 @@ Generating IntelliJ IDE files...
       );
     });
 
-    test(
-      'bootstrap transitive dependencies',
-      () async => dependencyResolutionTest({
-        'a': [],
-        'b': ['a'],
-        'c': ['b'],
-      }),
-    );
-
-    test(
-      'bootstrap cyclic dependencies',
-      () async => dependencyResolutionTest({
-        'a': ['b'],
-        'b': ['a'],
-      }),
-    );
-
-    group('pubspec overrides', () {
-      test(
-        'bootstrap transitive dependencies',
-        () async => dependencyResolutionTest(
-          {
-            'a': [],
-            'b': ['a'],
-            'c': ['b'],
-          },
-          usePubspecOverrides: true,
-        ),
+    test('bootstrap flutter example packages', () async {
+      final workspaceDir = createTemporaryWorkspaceDirectory(
+        configBuilder: (path) => MelosWorkspaceConfig.fallback(path: path),
       );
 
-      test(
-        'bootstrap cyclic dependencies',
-        () async => dependencyResolutionTest(
-          {
-            'a': ['b'],
-            'b': ['a'],
+      await createProject(
+        workspaceDir,
+        const PubSpec(
+          name: 'a',
+          dependencies: {
+            'flutter': SdkReference('flutter'),
           },
-          usePubspecOverrides: true,
         ),
+        path: 'packages/a',
       );
 
-      test('respects user dependency_overrides', () async {
-        final workspaceDir = createTemporaryWorkspaceDirectory(
-          configBuilder: (path) => MelosWorkspaceConfig.fallback(
-            path: path,
-            usePubspecOverrides: true,
-          ),
-        );
+      final examplePkg = await createProject(
+        workspaceDir,
+        PubSpec(
+          name: 'example',
+          dependencies: {
+            'a': HostedReference(VersionConstraint.any),
+          },
+        ),
+        path: 'packages/a/example',
+      );
 
-        final pkgA = await createProject(
-          workspaceDir,
-          PubSpec(
-            name: 'a',
-            dependencies: {'path': HostedReference(VersionConstraint.any)},
-            dependencyOverrides: {
-              'path': HostedReference(VersionConstraint.any)
-            },
-          ),
-        );
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
 
-        await createProject(
-          workspaceDir,
-          const PubSpec(
-            name: 'path',
-          ),
-        );
+      await runMelosBootstrap(melos, logger);
 
-        final logger = TestLogger();
-        final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
-        final melos = Melos(
-          logger: logger,
-          config: config,
-        );
+      final examplePkgConfig = packageConfigForPackageAt(examplePkg);
+      final aPkgDependencyConfig = examplePkgConfig.packages
+          .firstWhere((package) => package.name == 'a');
+      expect(aPkgDependencyConfig.rootUri, '../../');
+    });
 
-        await runMelosBootstrap(melos, logger);
-
-        final packageConfig = packageConfigForPackageAt(pkgA);
+    group('mergeMelosPubspecOverrides', () {
+      void expectMergedMelosPubspecOverrides({
+        required Map<String, String> melosDependencyOverrides,
+        required String? currentPubspecOverrides,
+        required String? updatedPubspecOverrides,
+      }) {
         expect(
-          packageConfig.packages
-              .firstWhere((package) => package.name == 'path')
-              .rootUri,
-          contains('hosted/pub.dartlang.org/path'),
-        );
-      });
-
-      test('bootstrap flutter example packages', () async {
-        final workspaceDir = createTemporaryWorkspaceDirectory(
-          configBuilder: (path) => MelosWorkspaceConfig.fallback(
-            path: path,
-            usePubspecOverrides: true,
-          ),
-        );
-
-        await createProject(
-          workspaceDir,
-          const PubSpec(
-            name: 'a',
-            dependencies: {
-              'flutter': SdkReference('flutter'),
+          mergeMelosPubspecOverrides(
+            {
+              for (final entry in melosDependencyOverrides.entries)
+                entry.key: PathReference(entry.value)
             },
+            currentPubspecOverrides,
           ),
-          path: 'packages/a',
+          updatedPubspecOverrides,
         );
+      }
 
-        final examplePkg = await createProject(
-          workspaceDir,
-          PubSpec(
-            name: 'example',
-            dependencies: {
-              'a': HostedReference(VersionConstraint.any),
-            },
-          ),
-          path: 'packages/a/example',
+      test('pubspec_overrides.yaml does not exist', () {
+        expectMergedMelosPubspecOverrides(
+          melosDependencyOverrides: {},
+          currentPubspecOverrides: null,
+          updatedPubspecOverrides: null,
         );
-
-        final logger = TestLogger();
-        final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
-        final melos = Melos(
-          logger: logger,
-          config: config,
-        );
-
-        await runMelosBootstrap(melos, logger);
-
-        final examplePkgConfig = packageConfigForPackageAt(examplePkg);
-        final aPkgDependencyConfig = examplePkgConfig.packages
-            .firstWhere((package) => package.name == 'a');
-        expect(aPkgDependencyConfig.rootUri, '../../');
-      });
-
-      group('mergeMelosPubspecOverrides', () {
-        void expectMergedMelosPubspecOverrides({
-          required Map<String, String> melosDependencyOverrides,
-          required String? currentPubspecOverrides,
-          required String? updatedPubspecOverrides,
-        }) {
-          expect(
-            mergeMelosPubspecOverrides(
-              {
-                for (final entry in melosDependencyOverrides.entries)
-                  entry.key: PathReference(entry.value)
-              },
-              currentPubspecOverrides,
-            ),
-            updatedPubspecOverrides,
-          );
-        }
-
-        test('pubspec_overrides.yaml does not exist', () {
-          expectMergedMelosPubspecOverrides(
-            melosDependencyOverrides: {},
-            currentPubspecOverrides: null,
-            updatedPubspecOverrides: null,
-          );
-          expectMergedMelosPubspecOverrides(
-            melosDependencyOverrides: {'a': '../a'},
-            currentPubspecOverrides: null,
-            updatedPubspecOverrides: '''
+        expectMergedMelosPubspecOverrides(
+          melosDependencyOverrides: {'a': '../a'},
+          currentPubspecOverrides: null,
+          updatedPubspecOverrides: '''
 # melos_managed_dependency_overrides: a
 dependency_overrides:
   a:
     path: ../a
 ''',
-          );
-        });
+        );
+      });
 
-        test('existing pubspec_overrides.yaml is empty', () {
-          expectMergedMelosPubspecOverrides(
-            melosDependencyOverrides: {},
-            currentPubspecOverrides: '',
-            updatedPubspecOverrides: null,
-          );
-          expectMergedMelosPubspecOverrides(
-            melosDependencyOverrides: {'a': '../a'},
-            currentPubspecOverrides: '',
-            updatedPubspecOverrides: '''
+      test('existing pubspec_overrides.yaml is empty', () {
+        expectMergedMelosPubspecOverrides(
+          melosDependencyOverrides: {},
+          currentPubspecOverrides: '',
+          updatedPubspecOverrides: null,
+        );
+        expectMergedMelosPubspecOverrides(
+          melosDependencyOverrides: {'a': '../a'},
+          currentPubspecOverrides: '',
+          updatedPubspecOverrides: '''
 # melos_managed_dependency_overrides: a
 dependency_overrides:
   a:
     path: ../a
 ''',
-          );
-        });
+        );
+      });
 
-        test('existing pubspec_overrides.yaml has dependency_overrides', () {
-          expectMergedMelosPubspecOverrides(
-            melosDependencyOverrides: {'a': '../a'},
-            currentPubspecOverrides: '''
+      test('existing pubspec_overrides.yaml has dependency_overrides', () {
+        expectMergedMelosPubspecOverrides(
+          melosDependencyOverrides: {'a': '../a'},
+          currentPubspecOverrides: '''
 dependency_overrides: null
 ''',
-            updatedPubspecOverrides: '''
+          updatedPubspecOverrides: '''
 # melos_managed_dependency_overrides: a
 dependency_overrides: 
   a:
     path: ../a
 ''',
-          );
+        );
 
-          expectMergedMelosPubspecOverrides(
-            melosDependencyOverrides: {'a': '../a'},
-            currentPubspecOverrides: '''
+        expectMergedMelosPubspecOverrides(
+          melosDependencyOverrides: {'a': '../a'},
+          currentPubspecOverrides: '''
 dependency_overrides:
   x: any
 ''',
-            updatedPubspecOverrides: '''
+          updatedPubspecOverrides: '''
 # melos_managed_dependency_overrides: a
 dependency_overrides:
   a:
     path: ../a
   x: any
 ''',
-          );
-        });
+        );
+      });
 
-        test('add melos managed dependency', () {
-          expectMergedMelosPubspecOverrides(
-            melosDependencyOverrides: {'a': '../a', 'b': '../b'},
-            currentPubspecOverrides: '''
+      test('add melos managed dependency', () {
+        expectMergedMelosPubspecOverrides(
+          melosDependencyOverrides: {'a': '../a', 'b': '../b'},
+          currentPubspecOverrides: '''
 # melos_managed_dependency_overrides: a
 dependency_overrides:
   a:
     path: ../a
 ''',
-            updatedPubspecOverrides: '''
+          updatedPubspecOverrides: '''
 # melos_managed_dependency_overrides: a,b
 dependency_overrides:
   a:
@@ -501,44 +435,44 @@ dependency_overrides:
   b:
     path: ../b
 ''',
-          );
-        });
+        );
+      });
 
-        test('remove melos managed dependency', () {
-          expectMergedMelosPubspecOverrides(
-            melosDependencyOverrides: {},
-            currentPubspecOverrides: '''
+      test('remove melos managed dependency', () {
+        expectMergedMelosPubspecOverrides(
+          melosDependencyOverrides: {},
+          currentPubspecOverrides: '''
 # melos_managed_dependency_overrides: a
 dependency_overrides:
   a:
     path: ../a
 ''',
-            updatedPubspecOverrides: '',
-          );
-        });
+          updatedPubspecOverrides: '',
+        );
+      });
 
-        test('update melos managed dependency', () {
-          expectMergedMelosPubspecOverrides(
-            melosDependencyOverrides: {'a': '../aa'},
-            currentPubspecOverrides: '''
+      test('update melos managed dependency', () {
+        expectMergedMelosPubspecOverrides(
+          melosDependencyOverrides: {'a': '../aa'},
+          currentPubspecOverrides: '''
 # melos_managed_dependency_overrides: a
 dependency_overrides:
   a: 
     path: ../a
 ''',
-            updatedPubspecOverrides: '''
+          updatedPubspecOverrides: '''
 # melos_managed_dependency_overrides: a
 dependency_overrides:
   a: 
     path: ../aa
 ''',
-          );
-        });
+        );
+      });
 
-        test('add, update and remove melos managed dependency', () {
-          expectMergedMelosPubspecOverrides(
-            melosDependencyOverrides: {'b': '../bb', 'c': '../c'},
-            currentPubspecOverrides: '''
+      test('add, update and remove melos managed dependency', () {
+        expectMergedMelosPubspecOverrides(
+          melosDependencyOverrides: {'b': '../bb', 'c': '../c'},
+          currentPubspecOverrides: '''
 # melos_managed_dependency_overrides: a,b
 dependency_overrides:
   a:
@@ -546,7 +480,7 @@ dependency_overrides:
   b:
     path: ../b
 ''',
-            updatedPubspecOverrides: '''
+          updatedPubspecOverrides: '''
 # melos_managed_dependency_overrides: b,c
 dependency_overrides:
   b: 
@@ -554,8 +488,7 @@ dependency_overrides:
   c:
     path: ../c
 ''',
-          );
-        });
+        );
       });
     });
 
@@ -655,8 +588,6 @@ melos bootstrap
   └> ${workspaceDir.path}
 
 Running "${pubExecArgs.join(' ')} get --offline" in workspace packages...
-
-Linking workspace packages...
   > SUCCESS
 
 Generating IntelliJ IDE files...
@@ -702,14 +633,10 @@ Future<void> runMelosBootstrap(Melos melos, TestLogger logger) async {
 /// direct and transitive dependencies are path dependencies with the correct
 /// path.
 Future<void> dependencyResolutionTest(
-  Map<String, List<String>> packages, {
-  bool usePubspecOverrides = false,
-}) async {
+  Map<String, List<String>> packages,
+) async {
   final workspaceDir = createTemporaryWorkspaceDirectory(
-    configBuilder: (path) => MelosWorkspaceConfig.fallback(
-      path: path,
-      usePubspecOverrides: usePubspecOverrides,
-    ),
+    configBuilder: (path) => MelosWorkspaceConfig.fallback(path: path),
   );
 
   Future<MapEntry<String, io.Directory>> createPackage(

@@ -25,13 +25,6 @@ import 'matchers.dart';
 
 void main() {
   group('BootstrapCommandConfigs', () {
-    test('usePubspecOverrides is optional', () {
-      // ignore: use_named_constants
-      const value = BootstrapCommandConfigs();
-
-      expect(value.usePubspecOverrides, false);
-    });
-
     test('runPubGetInParallel is optional', () {
       // ignore: use_named_constants
       const value = BootstrapCommandConfigs();
@@ -44,15 +37,6 @@ void main() {
         expect(
           BootstrapCommandConfigs.fromYaml(const {}),
           BootstrapCommandConfigs.empty,
-        );
-      });
-
-      test('throws if usePubspecOverrides is not a bool', () {
-        expect(
-          () => BootstrapCommandConfigs.fromYaml(const {
-            'usePubspecOverrides': 42,
-          }),
-          throwsMelosConfigException(),
         );
       });
 
@@ -69,12 +53,10 @@ void main() {
         expect(
           BootstrapCommandConfigs.fromYaml(
             const {
-              'usePubspecOverrides': true,
               'runPubGetInParallel': false,
             },
           ),
           const BootstrapCommandConfigs(
-            usePubspecOverrides: true,
             runPubGetInParallel: false,
           ),
         );
@@ -220,14 +202,17 @@ void main() {
           CommandConfigs.fromYaml(
             const {
               'bootstrap': {
-                'usePubspecOverrides': true,
+                'runPubGetInParallel': true,
               }
             },
             workspacePath: '.',
           ),
+          // ignore: use_named_constants
           const CommandConfigs(
+            // ignore: avoid_redundant_argument_values, use_named_constants
             bootstrap: BootstrapCommandConfigs(
-              usePubspecOverrides: true,
+              // ignore: avoid_redundant_argument_values
+              runPubGetInParallel: true,
             ),
           ),
         );
