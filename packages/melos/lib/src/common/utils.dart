@@ -364,9 +364,6 @@ String link(Uri url, String text) {
 bool isWorkspaceDirectory(String directory) =>
     fileExists(melosYamlPathForDirectory(directory));
 
-bool isPackageDirectory(String directory) =>
-    fileExists(pubspecPathForDirectory(directory));
-
 Future<Process> startCommandRaw(
   String command, {
   String? workingDirectory,

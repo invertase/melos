@@ -16,12 +16,12 @@
  */
 
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
+import 'package:glob/list_local_fs.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
@@ -460,6 +460,18 @@ class PackageMap {
   PackageMap(Map<String, Package> packages, this._logger)
       : _map = _packagesSortedByName(packages);
 
+  static const _commonIgnorePatterns = [
+    '**/.dart_tool/**',
+    // Flutter symlinked plugins for iOS/macOS should not be included in the
+    // package list.
+    '**/.symlinks/plugins/**',
+    // Flutter version manager should not be included in the package list.
+    '**/.fvm/**',
+    // Ephemeral plugin symlinked packages should not be included in the
+    // package list.
+    '**/.plugin_symlinks/**',
+  ];
+
   static Map<String, Package> _packagesSortedByName(
     Map<String, Package> packages,
   ) {
@@ -480,64 +492,20 @@ class PackageMap {
     required List<Glob> ignore,
     required MelosLogger logger,
   }) async {
+    final pubspecFiles = await _resolvePubspecFiles(
+      workspacePath: workspacePath,
+      packages: packages,
+      ignore: [
+        ...ignore,
+        for (final pattern in _commonIgnorePatterns)
+          createGlob(pattern, currentDirectoryPath: workspacePath)
+      ],
+    );
+
     final packageMap = <String, Package>{};
 
-    final dartToolGlob =
-        createGlob('**/.dart_tool', currentDirectoryPath: workspacePath);
-    // Flutter symlinked plugins for iOS/macOS should not be included in the package list.
-    final symlinksPluginsGlob = createGlob(
-      '**/.symlinks/plugins',
-      currentDirectoryPath: workspacePath,
-    );
-    // Flutter version manager should not be included in the package list.
-    final fvmGlob = createGlob(
-      '**/.fvm',
-      currentDirectoryPath: workspacePath,
-    );
-    // Ephemeral plugin symlinked packages should not be included in the package
-    // list.
-    final pluginSymlinksGlob = createGlob(
-      '**/.plugin_symlinks',
-      currentDirectoryPath: workspacePath,
-    );
-
-    final pubspecsByResolvedPath =
-        HashMap<String, File>(equals: p.equals, hashCode: p.hash);
-
-    Stream<FileSystemEntity> allWorkspaceEntities() async* {
-      final workspaceDir = Directory(workspacePath);
-      yield workspaceDir;
-      yield* workspaceDir.listConditionallyRecursive(
-        recurseCondition: (dir) {
-          final path = dir.path;
-          return !dartToolGlob.matches(path) &&
-              !symlinksPluginsGlob.matches(path) &&
-              !fvmGlob.matches(path) &&
-              !pluginSymlinksGlob.matches(path);
-        },
-      );
-    }
-
-    await for (final entity in allWorkspaceEntities()) {
-      final path = entity.path;
-      late final isIncluded = packages.any((glob) => glob.matches(path)) &&
-          !ignore.any((glob) => glob.matches(path));
-
-      if (entity is File && p.basename(path) == 'pubspec.yaml' && isIncluded) {
-        final resolvedPath = await entity.resolveSymbolicLinks();
-        pubspecsByResolvedPath[resolvedPath] = entity;
-      } else if (entity is Directory &&
-          isPackageDirectory(entity.path) &&
-          isIncluded) {
-        final pubspecPath = p.join(path, 'pubspec.yaml');
-        pubspecsByResolvedPath[pubspecPath] = File(pubspecPath);
-      }
-    }
-
-    final allPubspecs = pubspecsByResolvedPath.values;
-
     await Future.wait<void>(
-      allPubspecs.map((pubspecFile) async {
+      pubspecFiles.map((pubspecFile) async {
         final pubspecDirPath = pubspecFile.parent.path;
         final pubSpec = await PubSpec.load(pubspecFile.parent);
 
@@ -572,6 +540,39 @@ The packages that caused the problem are:
     );
 
     return PackageMap(packageMap, logger);
+  }
+
+  static Future<List<File>> _resolvePubspecFiles({
+    required String workspacePath,
+    required List<Glob> packages,
+    required List<Glob> ignore,
+  }) async {
+    final pubspecEntities = await Stream.fromIterable(packages)
+        .map(_createPubspecGlob)
+        .asyncExpand((pubspecGlob) => pubspecGlob.list(root: workspacePath))
+        .toList();
+
+    final pubspecIgnoreGlobs = ignore.map(_createPubspecGlob).toList();
+    bool isIgnored(File file) =>
+        pubspecIgnoreGlobs.any((glob) => glob.matches(file.path));
+
+    final paths = pubspecEntities
+        .whereType<File>()
+        .whereNot(isIgnored)
+        .map((file) => p.canonicalize(file.absolute.path))
+        .toSet();
+
+    return paths.map(File.new).toList();
+  }
+
+  static Glob _createPubspecGlob(Glob event) {
+    return createGlob(
+      p.posix.normalize('${event.pattern}/pubspec.yaml'),
+      caseSensitive: event.caseSensitive,
+      context: event.context,
+      recursive: event.recursive,
+      currentDirectoryPath: event.context.current,
+    );
   }
 
   final Map<String, Package> _map;

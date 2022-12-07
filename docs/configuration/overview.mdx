@@ -72,16 +72,26 @@ entry can be a specific path or a [glob] pattern.
 
 ```yaml
 packages:
-  # e.g. include all packages inside the `packages` directory at any level
-  - packages/**
-  # e.g. include all packages inside the `packages` directory that are direct children
-  - packages/*
-  # e.g. include the package in the workspace root
+  # Include the package in the workspace root.
   - .
+  # Include all packages inside the `packages` directory that are direct children.
+  - packages/*
+  # Include all packages inside the `packages` directory and all descendants.
+  - packages/**
 ```
 
 > You can also reduce the scope of packages on a per-command basis via the
 > [`--scope` filter](/filters#scope) flag.
+
+Avoid recursive whildcards (`**`) as they require walking large parts of the
+file system and can be slow. If you have packages at multiple levels of depth,
+consider using multiple patterns instead:
+
+```yaml
+packages:
+  - packages/*
+  - packages/*/example
+```
 
 ## `ignore`
 

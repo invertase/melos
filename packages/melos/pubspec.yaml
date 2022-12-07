@@ -21,7 +21,7 @@ dependencies:
   collection: ^1.14.12
   conventional_commit: ^0.5.0+1
   file: ^6.1.0
-  glob: ^2.0.1
+  glob: ^2.1.0
   graphs: ^2.1.0
   http: ^0.13.1
   meta: ^1.1.8
