@@ -47,12 +47,12 @@ GitCommit[
 
 class RichGitCommit extends GitCommit {
   RichGitCommit({
-    required String author,
-    required String id,
-    required DateTime date,
-    required String message,
+    required super.author,
+    required super.id,
+    required super.date,
+    required super.message,
     required this.parsedMessage,
-  }) : super(author: author, id: id, date: date, message: message);
+  });
 
   static RichGitCommit? tryParse(GitCommit commit) {
     final parsedMessage = ConventionalCommit.tryParse(commit.message);

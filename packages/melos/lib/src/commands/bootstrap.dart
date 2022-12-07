@@ -64,13 +64,6 @@ mixin _BootstrapMixin on _CleanMixin {
   Future<void> _linkPackagesWithPubspecOverrides(
     MelosWorkspace workspace,
   ) async {
-    if (!workspace.isPubspecOverridesSupported) {
-      logger.warning(
-        'Dart 2.17.0 or greater is required to use Melos with '
-        'pubspec overrides.',
-      );
-    }
-
     final filteredPackages = workspace.filteredPackages.values;
 
     await Stream.fromIterable(filteredPackages).parallel(
@@ -101,10 +94,8 @@ mixin _BootstrapMixin on _CleanMixin {
 
         bootstrappedPackages.forEach(_logBootstrapSuccess);
       },
-      parallelism: workspace.config.commands.bootstrap.runPubGetInParallel &&
-              workspace.canRunPubGetConcurrently
-          ? null
-          : 1,
+      parallelism:
+          workspace.config.commands.bootstrap.runPubGetInParallel ? null : 1,
     ).drain<void>();
   }
 
@@ -185,10 +176,8 @@ mixin _BootstrapMixin on _CleanMixin {
           );
           return package;
         },
-        parallelism: workspace.config.commands.bootstrap.runPubGetInParallel &&
-                workspace.canRunPubGetConcurrently
-            ? null
-            : 1,
+        parallelism:
+            workspace.config.commands.bootstrap.runPubGetInParallel ? null : 1,
       );
 
   Future<void> _runPubGetForPackage(

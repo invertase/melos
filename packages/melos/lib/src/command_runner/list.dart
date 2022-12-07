@@ -16,11 +16,10 @@
  */
 
 import '../commands/runner.dart';
-import '../workspace_configs.dart';
 import 'base.dart';
 
 class ListCommand extends MelosCommand {
-  ListCommand(MelosWorkspaceConfig config) : super(config) {
+  ListCommand(super.config) {
     setupPackageFilterParser();
     argParser.addFlag(
       'long',

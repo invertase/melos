@@ -1,5 +1,8 @@
-name: "melos_monorepo"
+name: 'melos_monorepo'
 publish_to: none
+
+environment:
+  sdk: '>=2.18.0 <3.0.0'
 
 # This allows us to use melos on itself during development.
 executables:
@@ -20,6 +23,3 @@ dependency_overrides:
     path: ./packages/conventional_commit
   melos:
     path: ./packages/melos
-
-environment:
-  sdk: ">=2.2.2 <3.0.0"

@@ -154,17 +154,6 @@ Version currentDartVersion(String dartTool) {
   return Version.parse(versionString);
 }
 
-String nextDartMajorVersion([String dartTool = 'dart']) {
-  return currentDartVersion(dartTool).nextMajor.toString();
-}
-
-bool isPubspecOverridesSupported([String dartTool = 'dart']) =>
-    currentDartVersion(dartTool).compareTo(Version.parse('2.17.0-266.0.dev')) >=
-    0;
-
-bool canRunPubGetConcurrently([String dartTool = 'dart']) =>
-    currentDartVersion(dartTool).compareTo(Version.parse('2.16.0')) >= 0;
-
 T _promptWithTerminal<T>(
   T Function() runPrompt, {
   required String message,

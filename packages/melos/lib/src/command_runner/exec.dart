@@ -18,11 +18,10 @@
 import 'dart:io';
 
 import '../commands/runner.dart';
-import '../workspace_configs.dart';
 import 'base.dart';
 
 class ExecCommand extends MelosCommand {
-  ExecCommand(MelosWorkspaceConfig config) : super(config) {
+  ExecCommand(super.config) {
     setupPackageFilterParser();
     argParser.addOption('concurrency', defaultsTo: '5', abbr: 'c');
     argParser.addFlag(

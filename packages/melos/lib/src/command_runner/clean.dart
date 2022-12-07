@@ -16,11 +16,10 @@
  */
 
 import '../commands/runner.dart';
-import '../workspace_configs.dart';
 import 'base.dart';
 
 class CleanCommand extends MelosCommand {
-  CleanCommand(MelosWorkspaceConfig config) : super(config) {
+  CleanCommand(super.config) {
     setupPackageFilterParser();
   }
 

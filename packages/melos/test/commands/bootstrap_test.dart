@@ -298,7 +298,6 @@ Generating IntelliJ IDE files...
           },
           usePubspecOverrides: true,
         ),
-        skip: !isPubspecOverridesSupported(),
       );
 
       test(
@@ -310,56 +309,51 @@ Generating IntelliJ IDE files...
           },
           usePubspecOverrides: true,
         ),
-        skip: !isPubspecOverridesSupported(),
       );
 
-      test(
-        'respects user dependency_overrides',
-        () async {
-          final workspaceDir = createTemporaryWorkspaceDirectory(
-            configBuilder: (path) => MelosWorkspaceConfig.fallback(
-              path: path,
-              usePubspecOverrides: true,
-            ),
-          );
+      test('respects user dependency_overrides', () async {
+        final workspaceDir = createTemporaryWorkspaceDirectory(
+          configBuilder: (path) => MelosWorkspaceConfig.fallback(
+            path: path,
+            usePubspecOverrides: true,
+          ),
+        );
 
-          final pkgA = await createProject(
-            workspaceDir,
-            PubSpec(
-              name: 'a',
-              dependencies: {'path': HostedReference(VersionConstraint.any)},
-              dependencyOverrides: {
-                'path': HostedReference(VersionConstraint.any)
-              },
-            ),
-          );
+        final pkgA = await createProject(
+          workspaceDir,
+          PubSpec(
+            name: 'a',
+            dependencies: {'path': HostedReference(VersionConstraint.any)},
+            dependencyOverrides: {
+              'path': HostedReference(VersionConstraint.any)
+            },
+          ),
+        );
 
-          await createProject(
-            workspaceDir,
-            const PubSpec(
-              name: 'path',
-            ),
-          );
+        await createProject(
+          workspaceDir,
+          const PubSpec(
+            name: 'path',
+          ),
+        );
 
-          final logger = TestLogger();
-          final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
-          final melos = Melos(
-            logger: logger,
-            config: config,
-          );
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
 
-          await runMelosBootstrap(melos, logger);
+        await runMelosBootstrap(melos, logger);
 
-          final packageConfig = packageConfigForPackageAt(pkgA);
-          expect(
-            packageConfig.packages
-                .firstWhere((package) => package.name == 'path')
-                .rootUri,
-            contains('hosted/pub.dartlang.org/path'),
-          );
-        },
-        skip: !isPubspecOverridesSupported(),
-      );
+        final packageConfig = packageConfigForPackageAt(pkgA);
+        expect(
+          packageConfig.packages
+              .firstWhere((package) => package.name == 'path')
+              .rootUri,
+          contains('hosted/pub.dartlang.org/path'),
+        );
+      });
 
       test('bootstrap flutter example packages', () async {
         final workspaceDir = createTemporaryWorkspaceDirectory(

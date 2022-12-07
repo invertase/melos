@@ -96,7 +96,7 @@ Future<Directory> createProject(
       ? partialPubSpec
       : partialPubSpec.copy(
           environment: Environment.fromJson(<Object?, Object?>{
-            'sdk': '>=2.10.0 <3.0.0',
+            'sdk': '>=2.18.0 <3.0.0',
           }),
         );
 
@@ -175,7 +175,7 @@ class PackageConfig {
           generator: json['generator']! as String,
           packages: (json['packages']! as List)
               .cast<Map<String, Object?>>()
-              .map((e) => PackageDependencyConfig.fromJson(e))
+              .map(PackageDependencyConfig.fromJson)
               .toList(),
         );
 
