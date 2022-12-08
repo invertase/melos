@@ -8,7 +8,7 @@ import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:mockito/mockito.dart';
-import 'package:path/path.dart';
+import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
 import 'package:test/scaffolding.dart';
@@ -75,14 +75,14 @@ Directory createTemporaryWorkspaceDirectory({
 }) {
   configBuilder ??= (path) => MelosWorkspaceConfig.fallback(path: path);
 
-  final dir = createTempDir(join(Directory.current.path, '.dart_tool'));
+  final dir = createTempDir(p.join(Directory.current.path, '.dart_tool'));
   addTearDown(() => deleteEntry(dir));
   final path = currentPlatform.isWindows
-      ? windows.normalize(dir).replaceAll(r'\', r'\\')
+      ? p.windows.normalize(dir).replaceAll(r'\', r'\\')
       : dir;
   final config = (configBuilder(path)..validatePhysicalWorkspace()).toJson();
 
-  writeTextFile(join(path, 'melos.yaml'), prettyEncodeJson(config));
+  writeTextFile(p.join(path, 'melos.yaml'), prettyEncodeJson(config));
 
   return Directory(dir);
 }
@@ -106,7 +106,7 @@ Future<Directory> createProject(
   );
 
   final projectDirectory = Directory(
-    joinAll([
+    p.joinAll([
       workspace.path,
       if (path != null)
         path
@@ -135,7 +135,7 @@ Future<Directory> createProject(
     final pluginClass = androidPluginNode['pluginClass'] as String?;
 
     if (package != null && pluginClass != null) {
-      final javaMainClassFile = joinAll([
+      final javaMainClassFile = p.joinAll([
         projectDirectory.path,
         'android/src/main/java',
         ...package.split('.'),
@@ -150,15 +150,16 @@ Future<Directory> createProject(
   return projectDirectory;
 }
 
-PackageConfig packageConfigForPackageAt(Directory dir) {
-  final source = readTextFile(
-    join(
-      dir.path,
-      '.dart_tool',
-      'package_config.json',
-    ),
+String packageConfigPath(String packageRoot) {
+  return p.join(
+    packageRoot,
+    '.dart_tool',
+    'package_config.json',
   );
+}
 
+PackageConfig packageConfigForPackageAt(Directory dir) {
+  final source = readTextFile(packageConfigPath(dir.path));
   return PackageConfig.fromJson(json.decode(source) as Map<String, Object?>);
 }
 

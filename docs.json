@@ -37,7 +37,8 @@
           "Manage multi-package Flutter projects",
           "https://sagarsuri56.medium.com/managing-multi-package-flutter-projects-with-melos-c8ce96fa7c82"
         ],
-        ["Automated Releases", "/guides/automated-releases"]
+        ["Automated Releases", "/guides/automated-releases"],
+        ["Migrations", "/guides/migrations"]
       ]
     ]
   ]

@@ -13,7 +13,7 @@
 
 
 <p align="center">
-  <a href="https://melos.invertase.dev">Documentation</a> &bull; 
+  <a href="https://melos.invertase.dev">Documentation</a> &bull;
   <a href="https://github.com/invertase/melos/blob/main/LICENSE">License</a>
 </p>
 
@@ -36,7 +36,7 @@ To solve these (and many other) problems, some projects will organize their code
   - Can be combined with all package filters.
 - 🎯 Many advanced package filtering options allowing you to target specific packages or groups of packages in your workspace.
 - ♨️ Advanced support for IntelliJ IDEs with automatic creation of [run configurations for workspace defined scripts and more](https://github.com/invertase/melos/issues/9) on workspace bootstrap.
-  - Vscode code doesn't require advanced integration to work.
+  - Integration with VS Code through an [extension][melos-code].
 
 ## Install
 
@@ -68,3 +68,5 @@ Using Melos? Add a README badge to show it off:
     Built and maintained by <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=melos">Invertase</a>.
   </p>
 </p>
+
+[melos-code]: https://marketplace.visualstudio.com/items?itemName=blaugold.melos-code

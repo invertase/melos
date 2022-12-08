@@ -17,7 +17,7 @@
 
 import 'dart:io';
 
-import 'package:path/path.dart' show join, joinAll;
+import 'package:path/path.dart' as p;
 
 import '../common/utils.dart' as utils;
 import '../package.dart';
@@ -44,21 +44,21 @@ class IntellijProject {
 
   /// Fully qualified path to the intellij templates shipped as part of Melos.
   Future<String> get pathTemplates async {
-    return joinAll([
+    return p.join(
       await utils.getMelosRoot(),
       _kTemplatesDirName,
       _kIntellijDirName,
-    ]);
+    );
   }
 
   Directory get runConfigurationsDir =>
-      Directory(join(dotIdeaDir.path, 'runConfigurations'));
+      Directory(p.join(dotIdeaDir.path, 'runConfigurations'));
 
-  Directory get dotIdeaDir => Directory(join(_workspace.path, '.idea'));
+  Directory get dotIdeaDir => Directory(p.join(_workspace.path, '.idea'));
 
   /// Path to the .idea folder in the current workspace.
   String get pathDotIdea {
-    return joinAll([_workspace.path, _kDotIdeaDirName]);
+    return p.join(_workspace.path, _kDotIdeaDirName);
   }
 
   /// Path to the .idea/.name file in the current workspace.
@@ -66,7 +66,7 @@ class IntellijProject {
   /// This file generated with the workspace name as its contents. IntelliJ uses
   /// this to change the project display name the IDE.
   String get pathDotName {
-    return joinAll([pathDotIdea, '.name']);
+    return p.join(pathDotIdea, '.name');
   }
 
   /// Path to the .idea/modules.xml file in the current workspace.
@@ -74,7 +74,7 @@ class IntellijProject {
   /// This file is generated with a module for each discovered package in the
   /// current workspace.
   String get pathModulesXml {
-    return joinAll([pathDotIdea, 'modules.xml']);
+    return p.join(pathDotIdea, 'modules.xml');
   }
 
   String _fullModuleName(String name) {
@@ -90,15 +90,15 @@ class IntellijProject {
   }
 
   String get pathWorkspaceModuleIml {
-    return joinAll([_workspace.path, '$workspaceModuleName.iml']);
+    return p.join(_workspace.path, '$workspaceModuleName.iml');
   }
 
   String pathPackageModuleIml(Package package) {
-    return joinAll([package.path, '${packageModuleName(package)}.iml']);
+    return p.join(package.path, '${packageModuleName(package)}.iml');
   }
 
   Future<String> pathTemplatesForDirectory(String directory) async {
-    return joinAll([await pathTemplates, directory]);
+    return p.join(await pathTemplates, directory);
   }
 
   String injectTemplateVariable({
@@ -140,7 +140,7 @@ class IntellijProject {
       templatesRootPath = await pathTemplates;
     }
 
-    final templateFile = join(templatesRootPath, '$fileName$_kTmplExtension');
+    final templateFile = p.join(templatesRootPath, '$fileName$_kTmplExtension');
     final template = await readTextFileAsync(templateFile);
 
     _cacheTemplates[fileName] = template;
@@ -280,11 +280,11 @@ class IntellijProject {
         'scriptPath': getMelosBinForIde(),
       });
 
-      final outputFile = joinAll([
+      final outputFile = p.join(
         pathDotIdea,
         'runConfigurations',
-        '$kRunConfigurationPrefix$pathSafeScriptArgs.xml'
-      ]);
+        '$kRunConfigurationPrefix$pathSafeScriptArgs.xml',
+      );
 
       await forceWriteToFile(outputFile, generatedRunConfiguration);
     });
@@ -304,13 +304,13 @@ class IntellijProject {
           injectTemplateVariables(flutterTestTemplate, {
         'flutterRunName': "Flutter Run -&gt; '${package.name}'",
         'flutterRunMainDartPathRelative':
-            joinAll([package.pathRelativeToWorkspace, 'lib', 'main.dart']),
+            p.join(package.pathRelativeToWorkspace, 'lib', 'main.dart'),
       });
-      final outputFile = joinAll([
+      final outputFile = p.join(
         pathDotIdea,
         'runConfigurations',
-        'melos_flutter_run_${package.name}.xml'
-      ]);
+        'melos_flutter_run_${package.name}.xml',
+      );
 
       await forceWriteToFile(outputFile, generatedRunConfiguration);
     });
@@ -334,13 +334,13 @@ class IntellijProject {
           injectTemplateVariables(flutterTestTemplate, {
         'flutterTestsName': "Flutter Test -&gt; '${package.name}'",
         'flutterTestsRelativePath':
-            joinAll([package.pathRelativeToWorkspace, 'test']),
+            p.join(package.pathRelativeToWorkspace, 'test'),
       });
-      final outputFile = joinAll([
+      final outputFile = p.join(
         pathDotIdea,
         'runConfigurations',
-        'melos_flutter_test_${package.name}.xml'
-      ]);
+        'melos_flutter_test_${package.name}.xml',
+      );
 
       await forceWriteToFile(outputFile, generatedRunConfiguration);
     });

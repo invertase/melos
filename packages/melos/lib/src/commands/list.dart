@@ -231,7 +231,7 @@ mixin _ListMixin on _Melos {
 
     final groupedPackages = workspace.filteredPackages.values
         .fold<Map<String, List<Package>>>({}, (grouped, package) {
-      final namespace = dirname(package.pathRelativeToWorkspace);
+      final namespace = p.dirname(package.pathRelativeToWorkspace);
 
       grouped.putIfAbsent(namespace, () => []);
       grouped[namespace]!.add(package);

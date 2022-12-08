@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:melos/src/logging.dart';
-import 'package:path/path.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
@@ -56,7 +55,7 @@ void main() {
     });
 
     test('with sdk path specified', () {
-      final sdkPath = join('flutter_sdks', 'stable');
+      final sdkPath = p.join('flutter_sdks', 'stable');
       final workspace = VirtualWorkspaceBuilder('', sdkPath: sdkPath).build();
 
       expect(
@@ -64,14 +63,14 @@ void main() {
           workspace: workspace,
           useFlutter: true,
         ),
-        [join(sdkPath, 'bin', 'flutter'), 'pub'],
+        [p.join(sdkPath, 'bin', 'flutter'), 'pub'],
       );
       expect(
         pubCommandExecArgs(
           workspace: workspace,
           useFlutter: false,
         ),
-        [join(sdkPath, 'bin', 'dart'), 'pub'],
+        [p.join(sdkPath, 'bin', 'dart'), 'pub'],
       );
     });
   });

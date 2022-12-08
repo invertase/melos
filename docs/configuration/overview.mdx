@@ -155,19 +155,6 @@ Configuration relating to specific Melos commands such as versioning.
 
 Configuration for the `bootstrap` command.
 
-### `command/bootstrap/usePubspecOverrides`
-
-Whether to use `pubspec_overrides.yaml` for overriding workspace dependencies
-during development.
-
-When this option is enabled, Melos will generate a `pubspec_overrides.yaml` file
-in the root of every package during bootstrapping. This file should not be
-tracked in version control and should be added to `.gitignore`.
-
-This mechanism has the advantage that it does not conflict with other tooling
-such as the `dart` and `flutter` tools and IDE plugins, when compared to the
-original mechanism used to link local packages.
-
 ### `command/bootstrap/runPubGetInParallel`
 
 Whether to run `pub get` in parallel during bootstrapping.

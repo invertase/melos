@@ -28,7 +28,6 @@ import 'package:pool/pool.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
 
-import '../version.g.dart';
 import 'common/exception.dart';
 import 'common/git.dart';
 import 'common/glob.dart';
@@ -38,7 +37,6 @@ import 'common/platform.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
 import 'logging.dart';
-import 'workspace.dart';
 
 /// Key for windows platform.
 const String kWindows = 'windows';
@@ -57,16 +55,6 @@ const String kAndroid = 'android';
 
 /// Key for Web platform.
 const String kWeb = 'web';
-
-final List<String> generatedPubFilePaths = [
-  'pubspec.lock',
-  '.packages',
-  '.flutter-plugins',
-  '.flutter-plugins-dependencies',
-  '.dart_tool${currentPlatform.pathSeparator}package_config.json',
-  '.dart_tool${currentPlatform.pathSeparator}package_config_subset',
-  '.dart_tool${currentPlatform.pathSeparator}version',
-];
 
 /// Paths that are safe to delete when running `melos clean`.
 final List<String> cleanablePubFilePaths = [
@@ -973,52 +961,6 @@ class Package {
     return versions.reversed.toList();
   }
 
-  /// Generates Pub/Flutter related temporary files such as .packages or
-  /// pubspec.lock.
-  Future<void> linkPackages(MelosWorkspace workspace) async {
-    final pluginTemporaryPath =
-        p.join(workspace.melosToolPath, pathRelativeToWorkspace);
-
-    await Future.forEach(generatedPubFilePaths, (String tempFilePath) async {
-      final fileToCopy = p.join(pluginTemporaryPath, tempFilePath);
-      if (!fileExists(fileToCopy)) {
-        return;
-      }
-      var temporaryFileContents = await readTextFileAsync(fileToCopy);
-
-      // Ensure the file generator tool name and version is for 'melos'.
-      if (tempFilePath.endsWith('package_config.json')) {
-        final packageConfig = jsonDecode(temporaryFileContents) as Map;
-
-        packageConfig.addAll(<String, String>{
-          'generator': 'melos',
-          'generatorVersion': melosVersion,
-        });
-
-        temporaryFileContents =
-            const JsonEncoder.withIndent('  ').convert(packageConfig);
-      }
-
-      final regexPathSeparator = '${currentPlatform.isWindows ? r'\' : ''}'
-          '${currentPlatform.pathSeparator}';
-      final melosToolPathRegExp = RegExp(
-        '\\.dart_tool${regexPathSeparator}melos_tool$regexPathSeparator',
-      );
-
-      // Remove the `.dart_tool\melos_tool` path from any relative file paths
-      // in any of the generated files as since we mirrored the pub files to the
-      // melos_tool directory for mutations they now contain this path.
-      temporaryFileContents =
-          temporaryFileContents.replaceAll(melosToolPathRegExp, '');
-
-      await writeTextFileAsync(
-        p.join(path, tempFilePath),
-        temporaryFileContents,
-        recursive: true,
-      );
-    });
-  }
-
   /// The example [Package] contained within this package, if any.
   ///
   /// A package is considered to be an example if it is located in the `example`
@@ -1059,13 +1001,6 @@ class Package {
     if (pubSpec.flutter?.plugin != null) return false;
 
     return fileExists(p.join(path, 'lib', 'main.dart'));
-  }
-
-  bool get isAddToApp {
-    // Must directly depend on the Flutter SDK.
-    if (!isFlutterPackage) return false;
-
-    return pubSpec.flutter?.module != null;
   }
 
   /// Returns whether this package supports Flutter for Android.
@@ -1109,58 +1044,6 @@ class Package {
   /// This is determined by whether the pubspec contains a flutter.plugin
   /// definition.
   bool get isFlutterPlugin => pubSpec.flutter?.plugin != null;
-
-  String? get androidPackage {
-    final platforms = pubSpec.flutter?.plugin?.platforms;
-    if (platforms == null) {
-      return null;
-    }
-    final android = platforms['android'] as Map<Object?, Object?>?;
-    if (android != null && android['package'] != null) {
-      return android['package']! as String;
-    }
-    return null;
-  }
-
-  String? get androidPluginClass {
-    final platforms = pubSpec.flutter?.plugin?.platforms;
-    if (platforms == null) {
-      return null;
-    }
-    final android = platforms['android'] as Map<Object?, Object?>?;
-    if (android != null && android['pluginClass'] != null) {
-      return android['pluginClass']! as String;
-    }
-    return null;
-  }
-
-  String? get javaPluginClassPath {
-    if (androidPackage == null || androidPluginClass == null) return null;
-
-    final javaPluginClassPath = p.joinAll([
-      path,
-      'android/src/main/java',
-      ...androidPackage!.split('.'),
-      '${androidPluginClass!}.java',
-    ]);
-
-    if (fileExists(javaPluginClassPath)) return javaPluginClassPath;
-    return null;
-  }
-
-  String? get kotlinPluginClassPath {
-    if (androidPackage == null || androidPluginClass == null) return null;
-
-    final kotlinPluginClassPath = p.joinAll([
-      path,
-      'android/src/main/kotlin',
-      ...androidPackage!.split('.'),
-      '${androidPluginClass!}.kt',
-    ]);
-
-    if (fileExists(kotlinPluginClassPath)) return kotlinPluginClassPath;
-    return null;
-  }
 
   /// Returns whether this package supports Flutter for Android.
   bool get flutterPluginSupportsAndroid {
@@ -1279,21 +1162,6 @@ class Flutter {
 
   Plugin? get plugin =>
       (_flutter['plugin'] as Map<Object?, Object?>?).let(Plugin.new);
-
-  Module? get module =>
-      (_flutter['module'] as Map<Object?, Object?>?).let(Module.new);
-}
-
-class Module {
-  Module(this._module);
-
-  final Map<Object?, Object?> _module;
-
-  String? get androidPackage => _module['androidPackage'] as String?;
-
-  String? get iosBundleIdentifier => _module['iosBundleIdentifier'] as String?;
-
-  bool get androidX => _module['androidX'] == true;
 }
 
 class Plugin {

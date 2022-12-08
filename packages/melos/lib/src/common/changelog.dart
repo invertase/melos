@@ -15,7 +15,7 @@
  *
  */
 
-import 'package:path/path.dart';
+import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
 import '../logging.dart';
@@ -38,7 +38,7 @@ class Changelog {
   }
 
   String get path {
-    return joinAll([package.path, 'CHANGELOG.md']);
+    return p.join(package.path, 'CHANGELOG.md');
   }
 
   @override
