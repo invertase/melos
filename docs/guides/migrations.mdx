@@ -1,0 +1,31 @@
+---
+title: Migrations
+description: How to migrate between major versions of Melos.
+---
+
+# Migrations
+
+## 2.0.0 to 3.0.0
+
+### Local package linking with `pubspec_overrides.yaml`
+
+The initial mechanism used by Melos to link local packages for development had
+some issues when interacting with other tooling. An often-encountered error is
+"The pubspec.yaml file has changed since the pubspec.lock file was generated"
+([#117](https://github.com/invertase/melos/issues/117)).
+
+To resolve this issue, an alternative mechanism has been implemented which
+generates `pubspec_overrides.yaml` files in the root of each package, for which
+dependencies need to be overridden. Before Melos 3.0.0, this mechanism had to
+be opted into by setting `command/bootstrap/usePubspecOverrides` in `melos.yaml`
+to `true`.
+
+This is now the only mechanism used by Melos and the `usePubspecOverrides`
+configuration option has been removed.
+
+Typically `pubspec_overrides.yaml` files should be ignored by git. To ignore
+these files, add the following to your `.gitignore` file:
+
+```gitignore
+pubspec_overrides.yaml
+```

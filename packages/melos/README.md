@@ -7,15 +7,17 @@
 
 ## About
 
-Splitting up large code bases into separate independently versioned packages is extremely useful for code sharing.
-However, making changes across many repositories is _messy_ and difficult to track, and testing across repositories gets
-complicated really fast.
+Splitting up large code bases into separate independently versioned packages is
+extremely useful for code sharing. However, making changes across many
+repositories is _messy_ and difficult to track, and testing across repositories
+gets complicated really fast.
 
 To solve these (and many other) problems, some projects will organize their code
 bases into multi-package repositories (sometimes called
 [monorepos](https://en.wikipedia.org/wiki/Monorepo))
 
-**Melos is a tool that optimizes the workflow around managing multi-package repositories with git and Pub.**
+**Melos is a tool that optimizes the workflow around managing multi-package
+repositories with git and Pub.**
 
 ---
 
@@ -33,56 +35,66 @@ my-melos-repo/
       pubspec.yaml
 ```
 
-The location of your packages can be configured via the `melos.yaml` configuration file if the default is unsuitable.
+The location of your packages can be configured via the `melos.yaml`
+configuration file if the default is unsuitable.
 
 ---
 
 ### What can Melos do?
 
-- 🔗 Link local packages in your workspace together without adding dependency overrides.
-- 📦 Automatically version, create changelogs and publish your packages
-  using [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
-- 📜 Pre-define advanced custom scripts for your workspace in your `melos.yaml` configuration to use
-  via `melos run [scriptName]`. Anyone contributing to your workspace can just run `melos run` to be prompted to select
-  a script from a list with descriptions of each script.
-    - Scripts can even [prompt to select a package](https://github.com/invertase/melos/pull/34) to run against with
-      pre-defined filters.
-- ⚡ Execute commands across your packages easily with `melos exec -- command here` with additional concurrency and
-  fail-fast options.
-    - [Environment variables](https://github.com/invertase/melos/issues/3) containing various information about the
-      current package and the workspace are available in each execution.
-    - Can be combined with all package filters.
-- 🎯 Many advanced package filtering options allowing you to target specific packages or groups of packages in your
-  workspace.
-    - `--no-private`
-        - Exclude private packages (`publish_to: none`).
-    - `--[no-]published`
-        - Filter packages where the current local package version exists on pub.dev. Or "-no-published" to filter
-          packages that have not had their current version published yet.
-    - `--[no-]nullsafety`
-        - Filter packages where the current local version uses a "nullsafety" prerelease preid. Or "-no-nullsafety" to
-          filter packages where their current version does not have a "nullsafety" preid.
-    - `--[no-]flutter`
-        - Filter packages where the package depends on the Flutter SDK. Or "-no-flutter" to filter packages that do not
-          depend on the Flutter SDK.
-    - `--scope=<glob>`
-        - Include only packages with names matching the given glob.
-    - `--ignore=<glob>`
-        - Exclude packages with names matching the given glob.
-    - `--since=<ref>`
-        - Only include packages that have been changed since the specified `ref`, e.g. a commit sha or git tag.
-    - `--dir-exists=<dirRelativeToPackageRoot>`
-        - Include only packages where a specific directory exists inside the package.
-    - `--file-exists=<fileRelativeToPackageRoot>`
-        - Include only packages where a specific file exists in the package.
-    - `--depends-on=<dependantPackageName>`
-        - Include only packages that depend on a specific package.
-    - `--no-depends-on=<noDependantPackageName>`
-        - Include only packages that *don't* depend on a specific package.
-- ♨️ Advanced support for IntelliJ IDEs with automatic creation
-  of [run configurations for workspace defined scripts and more](https://github.com/invertase/melos/issues/9) on
-  workspace boostrap.
-    - Vscode code doesn't require advanced integration to work.
+- 🔗 Link local packages in your workspace together without adding dependency
+  overrides.
+- 📦 Automatically version, create changelogs and publish your packages using
+  [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+- 📜 Pre-define advanced custom scripts for your workspace in your `melos.yaml`
+  configuration to use via `melos run [scriptName]`. Anyone contributing to your
+  workspace can just run `melos run` to be prompted to select a script from a
+  list with descriptions of each script.
+  - Scripts can even
+    [prompt to select a package](https://github.com/invertase/melos/pull/34) to
+    run against with pre-defined filters.
+- ⚡ Execute commands across your packages easily with
+  `melos exec -- command here` with additional concurrency and fail-fast
+  options.
+  - [Environment variables](https://github.com/invertase/melos/issues/3)
+    containing various information about the current package and the workspace
+    are available in each execution.
+  - Can be combined with all package filters.
+- 🎯 Many advanced package filtering options allowing you to target specific
+  packages or groups of packages in your workspace.
+  - `--no-private`
+    - Exclude private packages (`publish_to: none`).
+  - `--[no-]published`
+    - Filter packages where the current local package version exists on pub.dev.
+      Or "-no-published" to filter packages that have not had their current
+      version published yet.
+  - `--[no-]nullsafety`
+    - Filter packages where the current local version uses a "nullsafety"
+      prerelease preid. Or "-no-nullsafety" to filter packages where their
+      current version does not have a "nullsafety" preid.
+  - `--[no-]flutter`
+    - Filter packages where the package depends on the Flutter SDK. Or
+      "-no-flutter" to filter packages that do not depend on the Flutter SDK.
+  - `--scope=<glob>`
+    - Include only packages with names matching the given glob.
+  - `--ignore=<glob>`
+    - Exclude packages with names matching the given glob.
+  - `--since=<ref>`
+    - Only include packages that have been changed since the specified `ref`,
+      e.g. a commit sha or git tag.
+  - `--dir-exists=<dirRelativeToPackageRoot>`
+    - Include only packages where a specific directory exists inside the
+      package.
+  - `--file-exists=<fileRelativeToPackageRoot>`
+    - Include only packages where a specific file exists in the package.
+  - `--depends-on=<dependantPackageName>`
+    - Include only packages that depend on a specific package.
+  - `--no-depends-on=<noDependantPackageName>`
+    - Include only packages that _don't_ depend on a specific package.
+- ♨️ Advanced support for IntelliJ IDEs with automatic creation of
+  [run configurations for workspace defined scripts and more](https://github.com/invertase/melos/issues/9)
+  on workspace bootstrap.
+  - Integration with VS Code through an [extension][melos-code].
 
 ---
 
@@ -109,16 +121,18 @@ The following projects are using Melos:
 - [ferraridamiano/ConverterNOW](https://github.com/ferraridamiano/ConverterNOW)
 - [rrifafauzikomara/youtube_video](https://github.com/rrifafauzikomara/youtube_video)
 
-> Submit a PR if you'd like to add your project to the list.
-> Update the [README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md) and the
-> [docs](https://github.com/invertase/melos/edit/main/docs/index.mdx).
-> You can also add a [readme badge](#readme-badge) to your projects readme to let others know about Melos 💙.
+> Submit a PR if you'd like to add your project to the list. Update the
+> [README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md)
+> and the [docs](https://github.com/invertase/melos/edit/main/docs/index.mdx).
+> You can also add a [readme badge](#readme-badge) to your projects readme to
+> let others know about Melos 💙.
 
 ---
 
 ## Getting Started
 
-Install the latest Melos version as a global package via [Pub](https://pub.dev/).
+Install the latest Melos version as a global package via
+[Pub](https://pub.dev/).
 
 ```bash
 dart pub global activate melos
@@ -131,7 +145,15 @@ dart pub global activate melos
 
 ### Documentation
 
-Documentation is available at [https://docs.page/invertase/melos](https://docs.page/invertase/melos).
+Documentation is available at
+[https://melos.invertase.dev](https://melos.invertase.dev).
+
+---
+
+### Migrations
+
+When migrating between major versions of Melos, please read the
+[migration guide](https://melos.invertase.dev/guides/migrations).
 
 ---
 
@@ -147,18 +169,9 @@ A CLI tool for managing Dart & Flutter projects with multiple packages.
 Usage: melos <command> [arguments]
 
 Global options:
--h, --help                                       Print this usage information.
-    --verbose                                    Enable verbose logging.
-    --no-private                                 Exclude private packages (`publish_to: none`). They are included by default.
-    --[no-]published                             Filter packages where the current local package version exists on pub.dev. Or "-no-published" to filter packages that have not had their current version published yet.
-    --[no-]flutter                               Filter packages where the package depends on the Flutter SDK. Or "-no-flutter" to filter packages that do not depend on the Flutter SDK.
-    --scope=<glob>                               Include only packages with names matching the given glob. This option can be repeated.
-    --ignore=<glob>                              Exclude packages with names matching the given glob. This option can be repeated.
-    --since=<ref>                                Only include packages that have been changed since the specified `ref`, e.g. a commit sha or git tag.
-    --dir-exists=<dirRelativeToPackageRoot>      Include only packages where a specific directory exists inside the package.
-    --file-exists=<fileRelativeToPackageRoot>    Include only packages where a specific file exists in the package.
-    --depends-on=<dependantPackageName>          Include only packages that depend on a specific package. This option can be repeated.
-    --no-depends-on=<noDependantPackageName>     Include only packages that *don't* depend on a specific package. This option can be repeated.
+-h, --help        Print this usage information.
+    --verbose     Enable verbose logging.
+    --sdk-path    Path to the Dart/Flutter SDK that should be used. This command line option has precedence over the `sdkPath` option in the `melos.yaml` configuration file and the `MELOS_SDK_PATH` environment variable. To use the system-wide SDK, provide the special value "auto".
 
 Available commands:
   bootstrap   Initialize the workspace, link local packages together and install remaining package dependencies. Supports all package filtering options.
@@ -209,3 +222,6 @@ Using Melos? Add a README badge to show it off:
 </p>
 
 ---
+
+[melos-code]:
+  https://marketplace.visualstudio.com/items?itemName=blaugold.melos-code
