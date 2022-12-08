@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:cli_util/cli_logging.dart';
 import 'package:http/http.dart' as http;
 import 'package:melos/melos.dart';
+import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/common/utils.dart';
@@ -11,7 +12,7 @@ import 'package:mockito/mockito.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
-import 'package:test/scaffolding.dart';
+import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 
 class TestLogger extends StandardLogger {
@@ -70,21 +71,72 @@ class TestLogger extends StandardLogger {
   }
 }
 
-Directory createTemporaryWorkspaceDirectory({
-  MelosWorkspaceConfig Function(String path)? configBuilder,
-}) {
-  configBuilder ??= (path) => MelosWorkspaceConfig.fallback(path: path);
+Future<void> runPubGet(String workspacePath) async {
+  final result = await Process.run(
+    'dart',
+    ['pub', 'get'],
+    runInShell: Platform.isWindows,
+    workingDirectory: workspacePath,
+    stdoutEncoding: utf8,
+    stderrEncoding: utf8,
+  );
+  if (result.exitCode != 0) {
+    throw Exception(
+      'Failed to run pub get:\n${result.stdout}\n${result.stderr}',
+    );
+  }
+}
 
-  final dir = createTempDir(p.join(Directory.current.path, '.dart_tool'));
-  addTearDown(() => deleteEntry(dir));
-  final path = currentPlatform.isWindows
-      ? p.windows.normalize(dir).replaceAll(r'\', r'\\')
-      : dir;
-  final config = (configBuilder(path)..validatePhysicalWorkspace()).toJson();
+const _runPubGet = runPubGet;
 
-  writeTextFile(p.join(path, 'melos.yaml'), prettyEncodeJson(config));
+typedef TestWorkspaceConfigBuilder = MelosWorkspaceConfig Function(String path);
 
-  return Directory(dir);
+MelosWorkspaceConfig _defaultWorkspaceConfigBuilder(String path) =>
+    MelosWorkspaceConfig(
+      name: 'Melos',
+      packages: [
+        createGlob('packages/**', currentDirectoryPath: path),
+      ],
+      path: currentPlatform.isWindows
+          ? p.windows.normalize(path).replaceAll(r'\', r'\\')
+          : path,
+    );
+
+Future<Directory> createTemporaryWorkspace({
+  TestWorkspaceConfigBuilder configBuilder = _defaultWorkspaceConfigBuilder,
+  bool runPubGet = false,
+}) async {
+  final tempDir = createTempDir(p.join(Directory.current.path, '.dart_tool'));
+  addTearDown(() => deleteEntry(tempDir));
+
+  final workspacePath = currentPlatform.isWindows
+      ? p.windows.normalize(tempDir).replaceAll(r'\', r'\\')
+      : tempDir;
+
+  await createProject(
+    Directory(workspacePath),
+    PubSpec(
+      name: 'workspace',
+      devDependencies: {
+        'melos': PathReference(Directory.current.path),
+      },
+    ),
+    path: '.',
+  );
+
+  if (runPubGet) {
+    await _runPubGet(workspacePath);
+  }
+
+  final config =
+      (configBuilder(workspacePath)..validatePhysicalWorkspace()).toJson();
+
+  writeTextFile(
+    p.join(workspacePath, 'melos.yaml'),
+    prettyEncodeJson(config),
+  );
+
+  return Directory(tempDir);
 }
 
 Future<Directory> createProject(

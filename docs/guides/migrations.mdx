@@ -7,6 +7,38 @@ description: How to migrate between major versions of Melos.
 
 ## 2.0.0 to 3.0.0
 
+### Versioning of Melos in workspaces
+
+From Melos 3.0.0, the version of Melos to use in any given workspace must be
+specified in a `pubspec.yaml` file next to the `melos.yaml` file, in the
+workspace root directory.
+
+Different Melos workspaces might use different versions of Melos. To ensure
+everyone working in the workspace (as well as CI jobs) is using the same version
+of Melos, a dependency on the `melos` package has to be added to the
+`pubspec.yaml` file at the workspace root directory. The globally installed
+version of Melos will switch to the version specified in the `pubspec.yaml`
+file, if both versions are not the same.
+
+If you don't have a `pubspec.yaml` file at the workspace root yet, create one
+now:
+
+```yaml
+name: <project>_workspace
+
+environment:
+  sdk: '>=2.18.0 <3.0.0'
+```
+
+The corresponding `pubspec.lock` file should also be committed. Make sure to
+exclude it from the `.gitignore` file.
+
+Add Melos as a development dependency by running the following command:
+
+```bash
+dart pub add melos --dev
+```
+
 ### Local package linking with `pubspec_overrides.yaml`
 
 The initial mechanism used by Melos to link local packages for development had

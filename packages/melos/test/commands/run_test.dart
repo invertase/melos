@@ -16,7 +16,8 @@ void main() {
     test(
       'supports passing package filter options to "melos exec" scripts',
       () async {
-        final workspaceDir = createTemporaryWorkspaceDirectory(
+        final workspaceDir = await createTemporaryWorkspace(
+          runPubGet: true,
           configBuilder: (path) => MelosWorkspaceConfig(
             path: path,
             name: 'test_package',
@@ -47,7 +48,8 @@ void main() {
         );
 
         final logger = TestLogger();
-        final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+        final config =
+            await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
         final melos = Melos(
           logger: logger,
           config: config,
@@ -87,7 +89,7 @@ melos run test_script
     );
 
     test('supports passing additional arguments to run scripts', () async {
-      final workspaceDir = createTemporaryWorkspaceDirectory(
+      final workspaceDir = await createTemporaryWorkspace(
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
           name: 'test_package',
@@ -104,7 +106,7 @@ melos run test_script
       );
 
       final logger = TestLogger();
-      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
       final melos = Melos(
         logger: logger,
         config: config,
@@ -139,7 +141,8 @@ melos run test_script
     });
 
     test('supports running "melos exec" script with "exec" options', () async {
-      final workspaceDir = createTemporaryWorkspaceDirectory(
+      final workspaceDir = await createTemporaryWorkspace(
+        runPubGet: true,
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
           name: 'test_package',
@@ -164,7 +167,7 @@ melos run test_script
       );
 
       final logger = TestLogger();
-      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
       final melos = Melos(
         logger: logger,
         config: config,

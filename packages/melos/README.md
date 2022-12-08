@@ -131,15 +131,8 @@ The following projects are using Melos:
 
 ## Getting Started
 
-Install the latest Melos version as a global package via
-[Pub](https://pub.dev/).
-
-```bash
-dart pub global activate melos
-
-# Or alternatively to specify a specific version:
-# pub global activate melos 0.4.1
-```
+Go to the [Getting Started](https://melos.invertase.dev/getting-started) page of
+the [documentation](https://docs.page/invertase/melos) to start using Melos.
 
 ---
 

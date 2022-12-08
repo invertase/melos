@@ -36,7 +36,7 @@ scripts:
       concurrency: 1
     packageFilters:
       dirExists:
-        - 'test/'
+        - test
     # This tells Melos tests to ignore env variables passed to tests from `melos run test`
     # as they could change the behaviour of how tests filter packages.
     env:

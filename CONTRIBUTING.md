@@ -61,6 +61,8 @@ To setup and use this melos mono repo locally for the purposes of contributing, 
 ```bash
 # Install melos if it's not already installed:
 dart pub global activate melos
+# Bootstrap the workspace.
+melos bootstrap
 # Activate 'melos' from path:
 melos activate
 # Confirm you now using a local development version:
@@ -90,7 +92,7 @@ To send us a pull request:
 Please make sure all your check-ins have detailed commit messages explaining the patch.
 
 When naming the title of your pull request, please follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0-beta.4/)
-guide. 
+guide.
 
 Please also enable **“Allow edits by maintainers”**, this will help to speed-up the review
 process as well.

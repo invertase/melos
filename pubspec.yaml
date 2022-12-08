@@ -1,5 +1,4 @@
-name: 'melos_monorepo'
-publish_to: none
+name: melos_workspace
 
 environment:
   sdk: '>=2.18.0 <3.0.0'
@@ -10,16 +9,6 @@ executables:
 
 dev_dependencies:
   melos:
-    path: ./packages/melos
+    path: packages/melos
   path: ^1.7.0
   yaml: ^3.1.0
-
-# These allow us to use melos on itself during development.
-# If you make a new local package in this repo that the melos package
-# will depend on, then make sure to add it here otherwise you'll face
-# "'pubspec.yaml' has been modified since".. issues.
-dependency_overrides:
-  conventional_commit:
-    path: ./packages/conventional_commit
-  melos:
-    path: ./packages/melos

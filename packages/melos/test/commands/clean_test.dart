@@ -12,7 +12,7 @@ import '../utils.dart';
 void main() {
   group('clean', () {
     test('removes dependency overrides from pubspec_overrides.yaml', () async {
-      final workspaceDir = createTemporaryWorkspaceDirectory(
+      final workspaceDir = await createTemporaryWorkspace(
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
           name: 'test_workspace',
@@ -32,7 +32,7 @@ void main() {
       final pubspecOverrides =
           p.join(packageBDir.path, 'pubspec_overrides.yaml');
 
-      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
       final logger = TestLogger();
       final melos = Melos(config: config, logger: logger);
       await melos.bootstrap();

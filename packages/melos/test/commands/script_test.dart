@@ -9,7 +9,7 @@ import '../utils.dart';
 void main() {
   group('Script', () {
     test('fromConfig creates aliases for all scripts', () async {
-      final workspaceDir = createTemporaryWorkspaceDirectory(
+      final workspaceDir = await createTemporaryWorkspace(
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
           name: 'test_package',
@@ -24,7 +24,7 @@ void main() {
         ),
       );
 
-      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
       final command = ScriptCommand.fromConfig(config);
       expect(command, isNotNull);
       expect(
@@ -34,7 +34,7 @@ void main() {
     });
 
     test('fromConfig excludes given commands', () async {
-      final workspaceDir = createTemporaryWorkspaceDirectory(
+      final workspaceDir = await createTemporaryWorkspace(
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
           name: 'test_package',
@@ -50,14 +50,14 @@ void main() {
         ),
       );
 
-      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
       final command = ScriptCommand.fromConfig(config, exclude: ['run']);
       expect(command, isNotNull);
       expect([command!.name, ...command.aliases], isNot(contains('run')));
     });
 
     test('fromConfig does not create an empty command', () async {
-      final workspaceDir = createTemporaryWorkspaceDirectory(
+      final workspaceDir = await createTemporaryWorkspace(
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
           name: 'test_package',
@@ -70,7 +70,7 @@ void main() {
         ),
       );
 
-      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
       final command = ScriptCommand.fromConfig(config, exclude: ['clean']);
       expect(command, isNull);
     });
