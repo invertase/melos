@@ -16,9 +16,9 @@ some issues when interacting with other tooling. An often-encountered error is
 
 To resolve this issue, an alternative mechanism has been implemented which
 generates `pubspec_overrides.yaml` files in the root of each package, for which
-dependencies need to be overridden. Before Melos 3.0.0, this mechanism had to
-be opted into by setting `command/bootstrap/usePubspecOverrides` in `melos.yaml`
-to `true`.
+dependencies need to be overridden. Before Melos 3.0.0, this mechanism had to be
+opted into by setting `command/bootstrap/usePubspecOverrides` in `melos.yaml` to
+`true`.
 
 This is now the only mechanism used by Melos and the `usePubspecOverrides`
 configuration option has been removed.
@@ -26,6 +26,6 @@ configuration option has been removed.
 Typically `pubspec_overrides.yaml` files should be ignored by git. To ignore
 these files, add the following to your `.gitignore` file:
 
-```gitignore
+```
 pubspec_overrides.yaml
 ```
