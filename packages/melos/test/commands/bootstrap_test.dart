@@ -121,7 +121,7 @@ Generating IntelliJ IDE files...
       );
       expect(
         resolvePathRelativeToPackageConfig(actualAbsolutePath),
-        absoluteProject.path,
+        p.canonicalize(absoluteProject.path),
       );
 
       final actualRelativePath = p.prettyUri(
@@ -129,7 +129,7 @@ Generating IntelliJ IDE files...
       );
       expect(
         resolvePathRelativeToPackageConfig(actualRelativePath),
-        relativeProject.path,
+        p.canonicalize(relativeProject.path),
       );
 
       final actualRelativeDevPath = p.prettyUri(
@@ -137,7 +137,7 @@ Generating IntelliJ IDE files...
       );
       expect(
         resolvePathRelativeToPackageConfig(actualRelativeDevPath),
-        relativeDevProject.path,
+        p.canonicalize(relativeDevProject.path),
       );
 
       final actualRelativeOverridePath = p.prettyUri(
@@ -147,7 +147,7 @@ Generating IntelliJ IDE files...
       );
       expect(
         resolvePathRelativeToPackageConfig(actualRelativeOverridePath),
-        relativeOverrideProject.path,
+        p.canonicalize(relativeOverrideProject.path),
       );
     });
 
