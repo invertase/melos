@@ -4,6 +4,7 @@
   "logoDark": "/assets/logo-dark.png",
   "twitter": "invertaseio",
   "theme": "#FFA03F",
+  "favicon": "/assets/logo.png",
   "googleAnalytics": "G-Q7ME6WLFEJ",
   "sidebar": [
     ["Overview", "/"],
