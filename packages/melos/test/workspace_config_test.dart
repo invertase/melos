@@ -16,6 +16,7 @@
 
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/git_repository.dart';
+import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/scripts.dart';
 import 'package:melos/src/workspace_configs.dart';
@@ -35,16 +36,19 @@ void main() {
     group('fromYaml', () {
       test('accepts empty object', () {
         expect(
-          BootstrapCommandConfigs.fromYaml(const {}),
+          BootstrapCommandConfigs.fromYaml(const {}, workspacePath: '.'),
           BootstrapCommandConfigs.empty,
         );
       });
 
       test('throws if runPubGetInParallel is not a bool', () {
         expect(
-          () => BootstrapCommandConfigs.fromYaml(const {
-            'runPubGetInParallel': 42,
-          }),
+          () => BootstrapCommandConfigs.fromYaml(
+            const {
+              'runPubGetInParallel': 42,
+            },
+            workspacePath: '.',
+          ),
           throwsMelosConfigException(),
         );
       });
@@ -54,10 +58,17 @@ void main() {
           BootstrapCommandConfigs.fromYaml(
             const {
               'runPubGetInParallel': false,
+              'runPubGetOffline': true,
+              'dependencyOverridePaths': ['a'],
             },
+            workspacePath: '.',
           ),
-          const BootstrapCommandConfigs(
+          BootstrapCommandConfigs(
             runPubGetInParallel: false,
+            runPubGetOffline: true,
+            dependencyOverridePaths: [
+              createGlob('a', currentDirectoryPath: '.')
+            ],
           ),
         );
       });

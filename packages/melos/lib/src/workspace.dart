@@ -48,6 +48,7 @@ class MelosWorkspace {
     required this.config,
     required this.allPackages,
     required this.filteredPackages,
+    required this.dependencyOverridePackages,
     required this.sdkPath,
     required this.logger,
   });
@@ -65,6 +66,12 @@ class MelosWorkspace {
       ignore: workspaceConfig.ignore,
       logger: logger,
     );
+    final dependencyOverridePackages = await PackageMap.resolvePackages(
+      workspacePath: workspaceConfig.path,
+      packages: workspaceConfig.commands.bootstrap.dependencyOverridePaths,
+      ignore: const [],
+      logger: logger,
+    );
 
     final filteredPackages = await allPackages.applyFilter(filter);
 
@@ -75,6 +82,7 @@ class MelosWorkspace {
       allPackages: allPackages,
       logger: logger,
       filteredPackages: filteredPackages,
+      dependencyOverridePackages: dependencyOverridePackages,
       sdkPath: resolveSdkPath(
         configSdkPath: workspaceConfig.sdkPath,
         envSdkPath: currentPlatform.environment[utils.envKeyMelosSdkPath],
@@ -96,12 +104,20 @@ class MelosWorkspace {
   /// Configuration as defined in the "melos.yaml" file if it exists.
   final MelosWorkspaceConfig config;
 
-  /// All packages according to [MelosWorkspaceConfig].
+  /// All packages managed in this Melos workspace.
   ///
-  /// Packages filtered by [MelosWorkspaceConfig.ignore] are not included.
+  /// Packages specified in [MelosWorkspaceConfig.packages] are included,
+  /// except for those specified in [MelosWorkspaceConfig.ignore].
   final PackageMap allPackages;
 
+  /// The packages in this Melos workspace after applying filters.
+  ///
+  /// Filters are typically specified on the command line.
   final PackageMap filteredPackages;
+
+  /// The packages specified in
+  /// [BootstrapCommandConfigs.dependencyOverridePaths].
+  final PackageMap dependencyOverridePackages;
 
   late final IdeWorkspace ide = IdeWorkspace._(this);
 

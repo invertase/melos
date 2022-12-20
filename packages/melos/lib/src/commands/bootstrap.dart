@@ -101,17 +101,29 @@ mixin _BootstrapMixin on _CleanMixin {
   ) async {
     final allTransitiveDependencies =
         package.allTransitiveDependenciesInWorkspace;
-    final melosDependencyOverrides = {...package.pubSpec.dependencyOverrides};
+    final melosDependencyOverrides = <String, DependencyReference>{};
 
     // Traversing all packages so that transitive dependencies for the
-    // bootstraped packages are setup properly.
+    // bootstrapped packages are setup properly.
     for (final otherPackage in workspace.allPackages.values) {
-      if (allTransitiveDependencies.containsKey(otherPackage.name) &&
-          !melosDependencyOverrides.containsKey(otherPackage.name)) {
+      if (allTransitiveDependencies.containsKey(otherPackage.name)) {
         melosDependencyOverrides[otherPackage.name] =
             PathReference(utils.relativePath(otherPackage.path, package.path));
       }
     }
+
+    // Add custom workspace overrides.
+    for (final dependencyOverride
+        in workspace.dependencyOverridePackages.values) {
+      melosDependencyOverrides[dependencyOverride.name] = PathReference(
+        utils.relativePath(dependencyOverride.path, package.path),
+      );
+    }
+
+    // Add existing dependency overrides from pubspec.yaml last, overwriting
+    // overrides that would be made by Melos, to provide granular control at a
+    // package level.
+    melosDependencyOverrides.addAll(package.pubSpec.dependencyOverrides);
 
     // Load current pubspec_overrides.yaml.
     final pubspecOverridesFile =

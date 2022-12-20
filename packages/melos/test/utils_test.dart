@@ -100,4 +100,35 @@ void main() {
       );
     });
   });
+
+  group('mergeYaml', () {
+    test('correctly handles value overriding', () {
+      final base = {
+        'abc': 123,
+        'def': [4, 5, 6],
+        'ghi': {'j': 'k', 'l': 'm', 'n': 'o'},
+        'pqr': ['1', '2', '3'],
+        'stu': 'aStringValue',
+        'vwx': true,
+      };
+      const overlay = {
+        'abc': 098,
+        'def': [7],
+        'ghi': {'j': 'i', 'l': 'm', 'n': 'o', 'p': 'q'},
+        'pqr': 'differentType',
+        'stu': ['another', 'different', 'type'],
+        'yza': false,
+      };
+      mergeMap(base, overlay);
+      expect(base, const {
+        'abc': 098,
+        'def': [4, 5, 6, 7],
+        'ghi': {'j': 'i', 'l': 'm', 'n': 'o', 'p': 'q'},
+        'pqr': 'differentType',
+        'stu': ['another', 'different', 'type'],
+        'vwx': true,
+        'yza': false,
+      });
+    });
+  });
 }

@@ -297,6 +297,9 @@ String melosYamlPathForDirectory(String directory) =>
 String melosStatePathForDirectory(String directory) =>
     p.join(directory, '.melos');
 
+String melosOverridesYamlPathForDirectory(String directory) =>
+    p.join(directory, 'melos_overrides.yaml');
+
 String pubspecPathForDirectory(String directory) =>
     p.join(directory, 'pubspec.yaml');
 
@@ -345,6 +348,53 @@ String listAsPaddedTable(List<List<String>> table, {int paddingSize = 1}) {
   }
 
   return output.join('\n');
+}
+
+extension YamlUtils on YamlNode {
+  /// Converts a YAML node to a regular mutable Dart object.
+  Object? toPlainObject() {
+    final node = this;
+    if (node is YamlScalar) {
+      return node.value;
+    }
+    if (node is YamlMap) {
+      return {
+        for (final entry in node.nodes.entries)
+          (entry.key as YamlNode).toPlainObject(): entry.value.toPlainObject(),
+      };
+    }
+    if (node is YamlList) {
+      return node.nodes.map((node) => node.toPlainObject()).toList();
+    }
+    throw FormatException(
+      'Unsupported YAML node type encountered: ${node.runtimeType}',
+      this,
+    );
+  }
+}
+
+/// Merges two maps together, overriding any values in [base] with those
+/// with the same key in [overlay].
+void mergeMap(Map<Object?, Object?> base, Map<Object?, Object?> overlay) {
+  for (final entry in overlay.entries) {
+    final overlayValue = entry.value;
+    final baseValue = base[entry.key];
+    if (overlayValue is Map<Object?, Object?>) {
+      if (baseValue is Map<Object?, Object?>) {
+        mergeMap(baseValue, overlayValue);
+      } else {
+        base[entry.key] = overlayValue;
+      }
+    } else if (overlayValue is List<Object?>) {
+      if (baseValue is List<Object?>) {
+        baseValue.addAll(overlayValue);
+      } else {
+        base[entry.key] = overlayValue;
+      }
+    } else {
+      base[entry.key] = overlayValue;
+    }
+  }
 }
 
 /// Generate a link for display in a terminal.
