@@ -8,8 +8,9 @@ description: Configure Melos using the `melos.yaml` file.
 Every project requires a `melos.yaml` project in the root. The below outlines
 all the configurable fields and their purpose.
 
-Additionally, projects may include a `melos_overrides.yaml` file to override any `melos.yaml` field. This is useful for
-making untracked customizations to a project.
+Additionally, projects may include a `melos_overrides.yaml` file to override any
+`melos.yaml` field. This is useful for making untracked customizations to a
+project.
 
 ## `name`
 
@@ -112,22 +113,6 @@ ignore:
 > You can also expand the scope of ignored packages on a per-command basis via
 > the [`--scope` filter](/filters#scope) flag.
 
-## `dependencyOverrides`
-
-> optional
-
-A list of extra packages in the workspace directory that should be added to each workspace package's dependency
-overrides. Each entry can be a specific path or a [glob] pattern.
-
-Note that this option has a camelCase key, unlike the snake_case key used in `pubspec.yaml`.
-
-Tip: External local packages can be symlinked into the workspace directory.
-
-```yaml
-dependencyOverrides:
-  - 'external_dependencies/**'
-```
-
 ## `ide`
 
 > optional
@@ -173,6 +158,22 @@ Configuration relating to specific Melos commands such as versioning.
 ### `command/bootstrap`
 
 Configuration for the `bootstrap` command.
+
+### `command/bootstrap/dependencyOverridePaths`
+
+> optional
+
+A list of paths to local packages realtive to the workspace directory that
+should be added to each workspace package's dependency overrides. Each entry can
+be a specific path or a [glob] pattern.
+
+**Tip:** External local packages can be referenced using paths relative to the
+workspace root.
+
+```yaml
+dependencyOverridePaths:
+  - '../external_project/packages/**'
+```
 
 ### `command/bootstrap/runPubGetInParallel`
 

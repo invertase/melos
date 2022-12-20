@@ -113,7 +113,8 @@ mixin _BootstrapMixin on _CleanMixin {
     }
 
     // Add custom workspace overrides.
-    for (final dependencyOverride in workspace.dependencyOverrides.values) {
+    for (final dependencyOverride
+        in workspace.dependencyOverridePackages.values) {
       melosDependencyOverrides[dependencyOverride.name] = PathReference(
         utils.relativePath(dependencyOverride.path, package.path),
       );

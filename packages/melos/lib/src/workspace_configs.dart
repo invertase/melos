@@ -168,7 +168,10 @@ class CommandConfigs {
     );
 
     return CommandConfigs(
-      bootstrap: BootstrapCommandConfigs.fromYaml(bootstrapMap ?? const {}),
+      bootstrap: BootstrapCommandConfigs.fromYaml(
+        bootstrapMap ?? const {},
+        workspacePath: workspacePath,
+      ),
       version: VersionCommandConfigs.fromYaml(
         versionMap ?? const {},
         workspacePath: workspacePath,
@@ -216,9 +219,13 @@ class BootstrapCommandConfigs {
   const BootstrapCommandConfigs({
     this.runPubGetInParallel = true,
     this.runPubGetOffline = false,
+    this.dependencyOverridePaths = const [],
   });
 
-  factory BootstrapCommandConfigs.fromYaml(Map<Object?, Object?> yaml) {
+  factory BootstrapCommandConfigs.fromYaml(
+    Map<Object?, Object?> yaml, {
+    required String workspacePath,
+  }) {
     final runPubGetInParallel = assertKeyIsA<bool?>(
           key: 'runPubGetInParallel',
           map: yaml,
@@ -233,9 +240,26 @@ class BootstrapCommandConfigs {
         ) ??
         false;
 
+    final dependencyOverridePaths = assertListIsA<String>(
+      key: 'dependencyOverridePaths',
+      map: yaml,
+      isRequired: false,
+      assertItemIsA: (index, value) => assertIsA<String>(
+        value: value,
+        index: index,
+        path: 'dependencyOverridePaths',
+      ),
+    );
+
     return BootstrapCommandConfigs(
       runPubGetInParallel: runPubGetInParallel,
       runPubGetOffline: runPubGetOffline,
+      dependencyOverridePaths: dependencyOverridePaths
+          .map(
+            (override) =>
+                createGlob(override, currentDirectoryPath: workspacePath),
+          )
+          .toList(),
     );
   }
 
@@ -252,10 +276,17 @@ class BootstrapCommandConfigs {
   /// The default is `false`.
   final bool runPubGetOffline;
 
+  /// A list of [Glob]s for paths that contain packages to be used as dependency
+  /// overrides for all packages managed in the Melos workspace.
+  final List<Glob> dependencyOverridePaths;
+
   Map<String, Object?> toJson() {
     return {
       'runPubGetInParallel': runPubGetInParallel,
       'runPubGetOffline': runPubGetOffline,
+      if (dependencyOverridePaths.isNotEmpty)
+        'dependencyOverridePaths':
+            dependencyOverridePaths.map((path) => path.toString()).toList(),
     };
   }
 
@@ -264,13 +295,17 @@ class BootstrapCommandConfigs {
       other is BootstrapCommandConfigs &&
       runtimeType == other.runtimeType &&
       other.runPubGetInParallel == runPubGetInParallel &&
-      other.runPubGetOffline == runPubGetOffline;
+      other.runPubGetOffline == runPubGetOffline &&
+      const DeepCollectionEquality(_GlobEquality())
+          .equals(other.dependencyOverridePaths, dependencyOverridePaths);
 
   @override
   int get hashCode =>
       runtimeType.hashCode ^
       runPubGetInParallel.hashCode ^
-      runPubGetOffline.hashCode;
+      runPubGetOffline.hashCode ^
+      const DeepCollectionEquality(_GlobEquality())
+          .hash(dependencyOverridePaths);
 
   @override
   String toString() {
@@ -278,6 +313,7 @@ class BootstrapCommandConfigs {
 BootstrapCommandConfigs(
   runPubGetInParallel: $runPubGetInParallel,
   runPubGetOffline: $runPubGetOffline,
+  dependencyOverridePaths: $dependencyOverridePaths,
 )''';
   }
 }
@@ -556,7 +592,6 @@ class MelosWorkspaceConfig {
     this.repository,
     required this.packages,
     this.ignore = const [],
-    this.dependencyOverrides = const [],
     this.scripts = Scripts.empty,
     this.ide = IDEConfigs.empty,
     this.commands = CommandConfigs.empty,
@@ -650,16 +685,6 @@ class MelosWorkspaceConfig {
         path: 'ignore',
       ),
     );
-    final dependencyOverrides = assertListIsA<String>(
-      key: 'dependencyOverrides',
-      map: yaml,
-      isRequired: false,
-      assertItemIsA: (index, value) => assertIsA<String>(
-        value: value,
-        index: index,
-        path: 'dependencyOverrides',
-      ),
-    );
 
     final scriptsMap = assertKeyIsA<Map<Object?, Object?>?>(
       key: 'scripts',
@@ -691,9 +716,6 @@ class MelosWorkspaceConfig {
           .toList(),
       ignore: ignore
           .map((ignore) => createGlob(ignore, currentDirectoryPath: path))
-          .toList(),
-      dependencyOverrides: dependencyOverrides
-          .map((override) => createGlob(override, currentDirectoryPath: path))
           .toList(),
       scripts: scriptsMap == null
           ? Scripts.empty
@@ -806,10 +828,6 @@ You must have one of the following to be a valid Melos workspace:
   /// packages.
   final List<Glob> ignore;
 
-  /// A list of [Glob]s for paths that contain packages to be used as dependency
-  /// overrides.
-  final List<Glob> dependencyOverrides;
-
   /// A list of scripts that can be executed with `melos run` or will be
   /// executed before/after some specific melos commands.
   final Scripts scripts;
@@ -860,10 +878,10 @@ You must have one of the following to be a valid Melos workspace:
       other.path == path &&
       other.name == name &&
       other.repository == repository &&
-      const DeepCollectionEquality().equals(other.packages, packages) &&
-      const DeepCollectionEquality().equals(other.ignore, ignore) &&
-      const DeepCollectionEquality()
-          .equals(other.dependencyOverrides, dependencyOverrides) &&
+      const DeepCollectionEquality(_GlobEquality())
+          .equals(other.packages, packages) &&
+      const DeepCollectionEquality(_GlobEquality())
+          .equals(other.ignore, ignore) &&
       other.scripts == scripts &&
       other.ide == ide &&
       other.commands == commands;
@@ -874,9 +892,8 @@ You must have one of the following to be a valid Melos workspace:
       path.hashCode ^
       name.hashCode ^
       repository.hashCode ^
-      const DeepCollectionEquality().hash(packages) &
-          const DeepCollectionEquality().hash(ignore) ^
-      const DeepCollectionEquality().hash(dependencyOverrides) ^
+      const DeepCollectionEquality(_GlobEquality()).hash(packages) &
+          const DeepCollectionEquality(_GlobEquality()).hash(ignore) ^
       scripts.hashCode ^
       ide.hashCode ^
       commands.hashCode;
@@ -888,9 +905,6 @@ You must have one of the following to be a valid Melos workspace:
       if (repository != null) 'repository': repository!,
       'packages': packages.map((p) => p.toString()).toList(),
       if (ignore.isNotEmpty) 'ignore': ignore.map((p) => p.toString()).toList(),
-      if (dependencyOverrides.isNotEmpty)
-        'dependencyOverrides':
-            dependencyOverrides.map((p) => p.toString()).toList(),
       if (scripts.isNotEmpty) 'scripts': scripts.toJson(),
       'ide': ide.toJson(),
       'command': commands.toJson(),
@@ -906,10 +920,23 @@ MelosWorkspaceConfig(
   repository: $repository,
   packages: $packages,
   ignore: $ignore,
-  dependencyOverrides: $dependencyOverrides,
   scripts: ${scripts.toString().indent('  ')},
   ide: ${ide.toString().indent('  ')},
   commands: ${commands.toString().indent('  ')},
 )''';
   }
+}
+
+class _GlobEquality implements Equality<Glob> {
+  const _GlobEquality();
+
+  @override
+  bool equals(Glob e1, Glob e2) =>
+      e1.pattern == e2.pattern && e1.context.current == e2.context.current;
+
+  @override
+  int hash(Glob e) => e.pattern.hashCode ^ e.context.current.hashCode;
+
+  @override
+  bool isValidKey(Object? o) => true;
 }

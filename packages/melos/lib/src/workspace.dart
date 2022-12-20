@@ -48,7 +48,7 @@ class MelosWorkspace {
     required this.config,
     required this.allPackages,
     required this.filteredPackages,
-    required this.dependencyOverrides,
+    required this.dependencyOverridePackages,
     required this.sdkPath,
     required this.logger,
   });
@@ -66,9 +66,9 @@ class MelosWorkspace {
       ignore: workspaceConfig.ignore,
       logger: logger,
     );
-    final dependencyOverrides = await PackageMap.resolvePackages(
+    final dependencyOverridePackages = await PackageMap.resolvePackages(
       workspacePath: workspaceConfig.path,
-      packages: workspaceConfig.dependencyOverrides,
+      packages: workspaceConfig.commands.bootstrap.dependencyOverridePaths,
       ignore: const [],
       logger: logger,
     );
@@ -82,7 +82,7 @@ class MelosWorkspace {
       allPackages: allPackages,
       logger: logger,
       filteredPackages: filteredPackages,
-      dependencyOverrides: dependencyOverrides,
+      dependencyOverridePackages: dependencyOverridePackages,
       sdkPath: resolveSdkPath(
         configSdkPath: workspaceConfig.sdkPath,
         envSdkPath: currentPlatform.environment[utils.envKeyMelosSdkPath],
@@ -104,15 +104,20 @@ class MelosWorkspace {
   /// Configuration as defined in the "melos.yaml" file if it exists.
   final MelosWorkspaceConfig config;
 
-  /// All packages according to [MelosWorkspaceConfig].
+  /// All packages managed in this Melos workspace.
   ///
-  /// Packages filtered by [MelosWorkspaceConfig.ignore] are not included.
+  /// Packages specified in [MelosWorkspaceConfig.packages] are included,
+  /// except for those specified in [MelosWorkspaceConfig.ignore].
   final PackageMap allPackages;
 
+  /// The packages in this Melos workspace after applying filters.
+  ///
+  /// Filters are typically specified on the command line.
   final PackageMap filteredPackages;
 
-  /// Packages to use as dependency overrides.
-  final PackageMap dependencyOverrides;
+  /// The packages specified in
+  /// [BootstrapCommandConfigs.dependencyOverridePaths].
+  final PackageMap dependencyOverridePackages;
 
   late final IdeWorkspace ide = IdeWorkspace._(this);
 
