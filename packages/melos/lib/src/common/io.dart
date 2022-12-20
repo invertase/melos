@@ -195,7 +195,8 @@ void _attempt(
         throw IOException(
           'Melos failed to $description because $reason.\n'
           'This may be caused by a virus scanner or having a file\n'
-          'in the directory open in another application.',
+          'in the directory open in another application.\n'
+          'Path: ${error.path}\n',
         );
       }
     }
