@@ -97,6 +97,13 @@ mixin _ExecMixin on _Melos {
     final execArgsString = execArgs.join(' ');
     final prefixLogs = concurrency != 1 && packages.length != 1;
 
+    if (execArgsString.contains('melos exec')) {
+      throw InvalidScriptConfigException(
+        execArgsString,
+        'Do not use "melos exec" in "run" when also defining "exec"',
+      );
+    }
+
     logger.command('melos exec', withDollarSign: true);
     logger
         .child(targetStyle(execArgsString))

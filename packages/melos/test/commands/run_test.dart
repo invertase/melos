@@ -201,5 +201,63 @@ melos run test_script
         ),
       );
     });
+
+    test('throw exception when "melos exec" with "exec" options', () async {
+      final workspaceDir = createTemporaryWorkspaceDirectory(
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: Scripts({
+            'test_script': Script(
+              name: 'test_script',
+              run: 'melos exec "echo hello"',
+              exec: ExecOptions(
+                concurrency: 1,
+              ),
+            )
+          }),
+        ),
+      );
+
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'a'),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      try {
+        await melos.run(scriptName: 'test_script', noSelect: true);
+        fail('Using "melos exec" in "run" with "exec" should fail.');
+      } on Exception {
+        expect(
+          logger.output.normalizeNewLines(),
+          ignoringAnsii(
+            '''
+melos run test_script
+  └> melos exec --concurrency 1 -- "melos exec \\"echo hello\\""
+     └> RUNNING
+
+e-InvalidScriptConfigException: Do not use "melos exec" in "run" when also defining "exec"
+e-\trun: "melos exec "echo hello""
+e-
+e-
+
+melos run test_script
+  └> melos exec --concurrency 1 -- "melos exec \\"echo hello\\""
+     └> FAILED
+''',
+          ),
+        );
+      }
+    });
   });
 }
