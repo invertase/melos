@@ -91,6 +91,12 @@ Whether `exec` should fail fast and not execute the script in further packages i
 in an individual package.
 Defaults to `false`.
 
+## `scripts/*/exec/requireDependencies`
+
+Whether `exec` should require the dependencies of this package to be completed first. Only applies
+to dependencies that would normally be part of this command.
+Defaults to `false`.
+
 ## `scripts/*/env`
 
 A map of environment variables that will be passed to the executed command.

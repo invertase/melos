@@ -31,6 +31,13 @@ class ExecCommand extends MelosCommand {
           'Whether exec should fail fast and not execute the script in further '
           'packages if the script fails in a individual package.',
     );
+    argParser.addFlag(
+      'require-dependencies',
+      abbr: 'd',
+      help: 'Whether `exec` should require the dependencies of this package to '
+          'be completed first. Only applies to dependencies that would '
+          'normally be part of this command.',
+    );
   }
 
   @override
@@ -59,11 +66,14 @@ class ExecCommand extends MelosCommand {
     final packageFilter = parsePackageFilter(config.path);
     final concurrency = int.parse(argResults!['concurrency'] as String);
     final failFast = argResults!['fail-fast'] as bool;
+    final requireDependencies =
+        argResults?['require-dependencies'] as bool? ?? false;
 
     return melos.exec(
       execArgs,
       concurrency: concurrency,
       failFast: failFast,
+      requireDependencies: requireDependencies,
       global: global,
       filter: packageFilter,
     );

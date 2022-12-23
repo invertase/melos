@@ -7,6 +7,7 @@ mixin _ExecMixin on _Melos {
     PackageFilter? filter,
     int concurrency = 5,
     bool failFast = false,
+    bool requireDependencies = false,
   }) async {
     final workspace = await createWorkspace(global: global, filter: filter);
     final packages = workspace.filteredPackages.values;
@@ -17,6 +18,7 @@ mixin _ExecMixin on _Melos {
       execArgs,
       failFast: failFast,
       concurrency: concurrency,
+      requireDependencies: requireDependencies,
     );
   }
 
@@ -39,9 +41,7 @@ mixin _ExecMixin on _Melos {
       if (workspace.childProcessPath != null)
         'PATH': workspace.childProcessPath!,
     };
-
-    // TODO what if it's not called 'example'?
-    if (package.path.endsWith('example')) {
+    if (package.isExample) {
       final exampleParentPackagePath = p.normalize('${package.path}/..');
       final exampleParentPubspecPath =
           p.normalize('$exampleParentPackagePath/pubspec.yaml');
@@ -91,8 +91,9 @@ mixin _ExecMixin on _Melos {
     List<String> execArgs, {
     required int concurrency,
     required bool failFast,
+    required bool requireDependencies,
   }) async {
-    final failures = <String, int>{};
+    final failures = <String, int?>{};
     final pool = Pool(concurrency);
     final execArgsString = execArgs.join(' ');
     final prefixLogs = concurrency != 1 && packages.length != 1;
@@ -106,9 +107,34 @@ mixin _ExecMixin on _Melos {
       logger.horizontalLine();
     }
 
-    await pool.forEach<Package, void>(packages, (package) async {
+    final sortedPackages = packages.toList(growable: false);
+
+    if (requireDependencies) {
+      sortPackagesTopologically(sortedPackages);
+    }
+
+    final packageResults = Map.fromEntries(
+      packages.map((e) => MapEntry(e.name, Completer<int?>())),
+    );
+
+    await pool.forEach<Package, void>(sortedPackages, (package) async {
       if (failFast && failures.isNotEmpty) {
-        return Future.value();
+        return;
+      }
+
+      if (requireDependencies) {
+        final dependenciesResults = await Future.wait(
+          package.allDependenciesInWorkspace.values
+              .map((e) => packageResults[e.name]?.future)
+              .whereNotNull(),
+        );
+
+        if (dependenciesResults
+            .any((exitCode) => exitCode == null || exitCode > 0)) {
+          packageResults[package.name]?.complete();
+          failures[package.name] = null;
+          return;
+        }
       }
 
       if (!prefixLogs) {
@@ -123,6 +149,8 @@ mixin _ExecMixin on _Melos {
         execArgs,
         prefixLogs: prefixLogs,
       );
+
+      packageResults[package.name]?.complete(packageExitCode);
 
       if (packageExitCode > 0) {
         failures[package.name] = packageExitCode;
@@ -147,7 +175,8 @@ mixin _ExecMixin on _Melos {
       for (final packageName in failures.keys) {
         failuresLogger.child(
           '${errorPackageNameStyle(packageName)} '
-          '(with exit code ${failures[packageName]})',
+          '${failures[packageName] == null ? '(dependency failed)' : '('
+              'with exit code ${failures[packageName]})'}',
         );
       }
       exitCode = 1;
