@@ -430,13 +430,21 @@ void main() {
               'exec': {
                 'concurrency': 1,
                 'failFast': true,
+                'requireDependencies': true
               },
             },
           }),
           workspacePath: testWorkspacePath,
         );
         expect(scripts['a']!.run, 'b');
-        expect(scripts['a']!.exec, ExecOptions(concurrency: 1, failFast: true));
+        expect(
+          scripts['a']!.exec,
+          ExecOptions(
+            concurrency: 1,
+            failFast: true,
+            requireDependencies: true,
+          ),
+        );
       });
 
       test('throws when specifying command in "run" and "exec"', () {

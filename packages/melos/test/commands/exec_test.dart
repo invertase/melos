@@ -2,6 +2,7 @@ import 'package:melos/melos.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
+import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
 import 'package:test/test.dart';
 
@@ -71,6 +72,190 @@ ${'-' * terminalWidth}
       );
     });
 
-    // TODO test that environemnt variables are injected
+    group('requires dependencies', () {
+      test("orders exec's topilogically", () async {
+        final workspaceDir = createTemporaryWorkspaceDirectory();
+
+        await createProject(
+          workspaceDir,
+          PubSpec(
+            name: 'a',
+            dependencies: {'c': HostedReference(VersionConstraint.any)},
+          ),
+        );
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'b'),
+        );
+
+        await createProject(
+          workspaceDir,
+          PubSpec(
+            name: 'c',
+            dependencies: {'b': HostedReference(VersionConstraint.any)},
+          ),
+        );
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        await melos.exec(
+          ['echo', 'hello', 'world'],
+          concurrency: 2,
+          requireDependencies: true,
+        );
+
+        expect(
+          logger.output.normalizeNewLines(),
+          ignoringAnsii(
+            '''
+\$ melos exec
+  └> echo hello world
+     └> RUNNING (in 3 packages)
+
+${'-' * terminalWidth}
+[b]: hello world
+[c]: hello world
+[a]: hello world
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> echo hello world
+     └> SUCCESS
+''',
+          ),
+        );
+      });
+      test('fails fast if dependencies fail', () async {
+        final workspaceDir = createTemporaryWorkspaceDirectory();
+
+        await createProject(
+          workspaceDir,
+          PubSpec(
+            name: 'a',
+            dependencies: {'c': HostedReference(VersionConstraint.any)},
+          ),
+        );
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'b'),
+        );
+
+        await createProject(
+          workspaceDir,
+          PubSpec(
+            name: 'c',
+            dependencies: {'b': HostedReference(VersionConstraint.any)},
+          ),
+        );
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        await melos.exec(
+          ['unrecognised'],
+          concurrency: 2,
+          requireDependencies: true,
+        );
+
+        expect(
+          logger.output.normalizeNewLines(),
+          ignoringAnsii(
+            '''
+\$ melos exec
+  └> unrecognised
+     └> RUNNING (in 3 packages)
+
+${'-' * terminalWidth}
+e-[b]: /bin/sh: unrecognised: command not found
+e-
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> unrecognised
+     └> FAILED (in 3 packages)
+        └> b (with exit code 127)
+        └> c (dependency failed)
+        └> a (dependency failed)
+''',
+          ),
+        );
+      });
+
+      test('does not fail fast if dependencies is not run', () async {
+        final workspaceDir = createTemporaryWorkspaceDirectory();
+
+        final aDir = await createProject(
+          workspaceDir,
+          PubSpec(
+            name: 'a',
+            dependencies: {'c': HostedReference(VersionConstraint.any)},
+          ),
+        );
+        writeTextFile(p.join(aDir.path, 'log.txt'), '');
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'b'),
+        );
+
+        final cDir = await createProject(
+          workspaceDir,
+          PubSpec(
+            name: 'c',
+            dependencies: {'b': HostedReference(VersionConstraint.any)},
+          ),
+        );
+        writeTextFile(p.join(cDir.path, 'log.txt'), '');
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        await melos.exec(
+          ['echo', 'hello', 'world'],
+          concurrency: 2,
+          requireDependencies: true,
+          filter: PackageFilter(
+            fileExists: const ['log.txt'],
+          ),
+        );
+
+        expect(
+          logger.output.normalizeNewLines(),
+          ignoringAnsii(
+            '''
+\$ melos exec
+  └> echo hello world
+     └> RUNNING (in 2 packages)
+
+${'-' * terminalWidth}
+[c]: hello world
+[a]: hello world
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> echo hello world
+     └> SUCCESS
+''',
+          ),
+        );
+      });
+    });
+
+    // TODO test that environment variables are injected
   });
 }
