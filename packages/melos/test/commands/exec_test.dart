@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
@@ -168,6 +170,20 @@ ${'-' * terminalWidth}
           requireDependencies: true,
         );
 
+        late final String platformExitString;
+
+        if (Platform.isWindows) {
+          platformExitString = '''
+e-[b]: 'unrecognised' is not recognized as an internal or external command,
+e-[b]: operable program or batch file.''';
+        } else if (Platform.isMacOS) {
+          platformExitString = '''
+e-[b]: /bin/sh: unrecognised: command not found''';
+        } else {
+          platformExitString = '''
+e-[b]: /bin/sh: 1: eval: unrecognised: not found''';
+        }
+
         expect(
           logger.output.normalizeNewLines(),
           ignoringAnsii(
@@ -177,14 +193,14 @@ ${'-' * terminalWidth}
      └> RUNNING (in 3 packages)
 
 ${'-' * terminalWidth}
-e-[b]: /bin/sh: unrecognised: command not found
+$platformExitString
 e-
 ${'-' * terminalWidth}
 
 \$ melos exec
   └> unrecognised
      └> FAILED (in 3 packages)
-        └> b (with exit code 127)
+        └> b (with exit code ${Platform.isWindows ? 1 : 127})
         └> c (dependency failed)
         └> a (dependency failed)
 ''',
