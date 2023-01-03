@@ -24,6 +24,9 @@ import 'common/utils.dart';
 import 'common/validation.dart';
 import 'package.dart';
 
+// https://regex101.com/r/44dzaz/1
+final _leadingMelosExecRegExp = RegExp(r'^\s*melos\s+exec');
+
 /// Scripts to be executed before/after a melos command.
 class LifecycleHook {
   LifecycleHook._({required this.pre, required this.post});
@@ -81,6 +84,14 @@ class Scripts extends MapView<String, Script> {
       pre: this[name],
       post: this['post$name'],
     );
+  }
+
+  /// Validates the scripts. Throws a [MelosConfigException] if any script is
+  /// invalid.
+  void validate() {
+    for (final script in values) {
+      script.validate();
+    }
   }
 
   Map<Object?, Object?> toJson() {
@@ -298,6 +309,21 @@ class Script {
       return parts.join(' ');
     }
     return run;
+  }
+
+  /// Validates the script. Throws a [MelosConfigException] if the script is
+  /// invalid.
+  void validate() {
+    if (exec != null && run.startsWith(_leadingMelosExecRegExp)) {
+      throw MelosConfigException(
+        'Do not use "melos exec" in "run" when also providing options in '
+        '"exec". In this case the script in "run" is already being executed by '
+        '"melos exec".\n'
+        'For more information, see https://melos.invertase.dev/configuration/scripts#scriptsexec.\n'
+        '\n'
+        '    run: $run',
+      );
+    }
   }
 
   Map<Object?, Object?> toJson() {

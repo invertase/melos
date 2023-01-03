@@ -860,6 +860,8 @@ You must have one of the following to be a valid Melos workspace:
         'repository must be specified if commands/version/linkToCommits is true',
       );
     }
+
+    scripts.validate();
   }
 
   /// Validates the physical workspace on the file system.

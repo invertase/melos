@@ -20,18 +20,3 @@ class RestrictedBranchException implements MelosException {
       'to only be allowed to run on the "$allowedBranch" but the current '
       'branch is "$currentBranch".';
 }
-
-class InvalidScriptConfigException implements MelosException {
-  InvalidScriptConfigException(this.execArgsString, this.message);
-
-  final String execArgsString;
-
-  final String message;
-
-  @override
-  String toString() {
-    return 'InvalidScriptConfigException: '
-        '$message\n'
-        '\trun: "$execArgsString"';
-  }
-}

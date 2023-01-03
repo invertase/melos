@@ -453,6 +453,23 @@ void main() {
           throwsA(isA<MelosConfigException>()),
         );
       });
+
+      test('throws when using "melos exec" in "run" and specifying "exec"', () {
+        expect(
+          () => Scripts.fromYaml(
+            createYamlMap({
+              'a': {
+                'run': 'melos exec a',
+                'exec': {
+                  'concurrency': 1,
+                },
+              },
+            }),
+            workspacePath: testWorkspacePath,
+          ).validate(),
+          throwsA(isA<MelosConfigException>()),
+        );
+      });
     });
   });
 
