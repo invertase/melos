@@ -31,6 +31,16 @@ class ExecCommand extends MelosCommand {
           'Whether exec should fail fast and not execute the script in further '
           'packages if the script fails in a individual package.',
     );
+    argParser.addFlag(
+      'order-dependents',
+      abbr: 'o',
+      help: 'Whether exec should order the execution of the script in multiple '
+          'packages based on the dependency graph of the packages. The script '
+          'will be executed in leaf packages first and then in packages that '
+          'depend on them and so on. This is useful for example, for a script '
+          'that generates code in multiple packages, which depend on each '
+          'other.',
+    );
   }
 
   @override
@@ -59,11 +69,13 @@ class ExecCommand extends MelosCommand {
     final packageFilter = parsePackageFilter(config.path);
     final concurrency = int.parse(argResults!['concurrency'] as String);
     final failFast = argResults!['fail-fast'] as bool;
+    final orderDependents = argResults!['order-dependents'] as bool;
 
     return melos.exec(
       execArgs,
       concurrency: concurrency,
       failFast: failFast,
+      orderDependents: orderDependents,
       global: global,
       filter: packageFilter,
     );

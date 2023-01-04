@@ -106,14 +106,17 @@ class ExecOptions {
   ExecOptions({
     this.concurrency,
     this.failFast,
+    this.orderDependents,
   });
 
   final int? concurrency;
   final bool? failFast;
+  final bool? orderDependents;
 
   Map<String, Object?> toJson() => {
         if (concurrency != null) 'concurrency': concurrency,
         if (failFast != null) 'failFast': failFast,
+        if (orderDependents != null) 'orderDependents': orderDependents,
       };
 
   @override
@@ -121,17 +124,22 @@ class ExecOptions {
       other is ExecOptions &&
       runtimeType == other.runtimeType &&
       concurrency == other.concurrency &&
-      failFast == other.failFast;
+      failFast == other.failFast &&
+      orderDependents == other.orderDependents;
 
   @override
   int get hashCode =>
-      runtimeType.hashCode ^ concurrency.hashCode ^ failFast.hashCode;
+      runtimeType.hashCode ^
+      concurrency.hashCode ^
+      failFast.hashCode ^
+      orderDependents.hashCode;
 
   @override
   String toString() => '''
 ExecOptions(
   concurrency: $concurrency,
   failFast: $failFast,
+  orderDependents: $orderDependents,
 )''';
 }
 
@@ -259,9 +267,16 @@ class Script {
       path: execPath,
     );
 
+    final orderDependents = assertKeyIsA<bool?>(
+      key: 'orderDependents',
+      map: yaml,
+      path: execPath,
+    );
+
     return ExecOptions(
       concurrency: concurrency,
       failFast: failFast,
+      orderDependents: orderDependents,
     );
   }
 
@@ -299,9 +314,12 @@ class Script {
         parts.addAll(['--concurrency', '${exec.concurrency}']);
       }
 
-      // --fail-fast is a flag and as such does not accept any value
       if (exec.failFast ?? false) {
         parts.add('--fail-fast');
+      }
+
+      if (exec.orderDependents ?? false) {
+        parts.add('--order-dependents');
       }
 
       parts.addAll(['--', quoteScript(run)]);
