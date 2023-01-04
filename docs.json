@@ -3,6 +3,7 @@
   "logo": "/assets/logo.png",
   "logoDark": "/assets/logo-dark.png",
   "twitter": "invertaseio",
+  "anchors": [{ "title": "Discord", "icon": "discord", "link": "https://invertase.link/discord" }],
   "theme": "#FFA03F",
   "favicon": "/assets/logo.png",
   "googleAnalytics": "G-Q7ME6WLFEJ",
