@@ -7,7 +7,7 @@ mixin _ExecMixin on _Melos {
     PackageFilter? filter,
     int concurrency = 5,
     bool failFast = false,
-    bool requireDependencies = false,
+    bool orderDependents = false,
   }) async {
     final workspace = await createWorkspace(global: global, filter: filter);
     final packages = workspace.filteredPackages.values;
@@ -18,7 +18,7 @@ mixin _ExecMixin on _Melos {
       execArgs,
       failFast: failFast,
       concurrency: concurrency,
-      requireDependencies: requireDependencies,
+      orderDependents: orderDependents,
     );
   }
 
@@ -41,6 +41,7 @@ mixin _ExecMixin on _Melos {
       if (workspace.childProcessPath != null)
         'PATH': workspace.childProcessPath!,
     };
+
     if (package.isExample) {
       final exampleParentPackagePath = p.normalize('${package.path}/..');
       final exampleParentPubspecPath =
@@ -91,7 +92,7 @@ mixin _ExecMixin on _Melos {
     List<String> execArgs, {
     required int concurrency,
     required bool failFast,
-    required bool requireDependencies,
+    required bool orderDependents,
   }) async {
     final failures = <String, int?>{};
     final pool = Pool(concurrency);
@@ -109,12 +110,12 @@ mixin _ExecMixin on _Melos {
 
     final sortedPackages = packages.toList(growable: false);
 
-    if (requireDependencies) {
+    if (orderDependents) {
       sortPackagesTopologically(sortedPackages);
     }
 
     final packageResults = Map.fromEntries(
-      packages.map((e) => MapEntry(e.name, Completer<int?>())),
+      packages.map((package) => MapEntry(package.name, Completer<int?>())),
     );
 
     await pool.forEach<Package, void>(sortedPackages, (package) async {
@@ -122,15 +123,16 @@ mixin _ExecMixin on _Melos {
         return;
       }
 
-      if (requireDependencies) {
+      if (orderDependents) {
         final dependenciesResults = await Future.wait(
           package.allDependenciesInWorkspace.values
-              .map((e) => packageResults[e.name]?.future)
+              .map((package) => packageResults[package.name]?.future)
               .whereNotNull(),
         );
 
-        if (dependenciesResults
-            .any((exitCode) => exitCode == null || exitCode > 0)) {
+        final dependencyFailed = dependenciesResults
+            .any((exitCode) => exitCode == null || exitCode > 0);
+        if (dependencyFailed) {
           packageResults[package.name]?.complete();
           failures[package.name] = null;
           return;

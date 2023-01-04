@@ -157,7 +157,7 @@ mixin _PublishMixin on _ExecMixin {
       execArgs,
       concurrency: 1,
       failFast: true,
-      requireDependencies: false,
+      orderDependents: false,
     );
 
     if (exitCode != 1) {

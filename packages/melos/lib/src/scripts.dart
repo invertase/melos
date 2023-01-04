@@ -95,18 +95,17 @@ class ExecOptions {
   ExecOptions({
     this.concurrency,
     this.failFast,
-    this.requireDependencies,
+    this.orderDependents,
   });
 
   final int? concurrency;
   final bool? failFast;
-  final bool? requireDependencies;
+  final bool? orderDependents;
 
   Map<String, Object?> toJson() => {
         if (concurrency != null) 'concurrency': concurrency,
         if (failFast != null) 'failFast': failFast,
-        if (requireDependencies != null)
-          'requireDependencies': requireDependencies,
+        if (orderDependents != null) 'orderDependents': orderDependents,
       };
 
   @override
@@ -115,21 +114,21 @@ class ExecOptions {
       runtimeType == other.runtimeType &&
       concurrency == other.concurrency &&
       failFast == other.failFast &&
-      requireDependencies == other.requireDependencies;
+      orderDependents == other.orderDependents;
 
   @override
   int get hashCode =>
       runtimeType.hashCode ^
       concurrency.hashCode ^
       failFast.hashCode ^
-      requireDependencies.hashCode;
+      orderDependents.hashCode;
 
   @override
   String toString() => '''
 ExecOptions(
   concurrency: $concurrency,
   failFast: $failFast,
-  requireDependencies: $requireDependencies,
+  orderDependents: $orderDependents,
 )''';
 }
 
@@ -257,8 +256,8 @@ class Script {
       path: execPath,
     );
 
-    final requireDependencies = assertKeyIsA<bool?>(
-      key: 'requireDependencies',
+    final orderDependents = assertKeyIsA<bool?>(
+      key: 'orderDependents',
       map: yaml,
       path: execPath,
     );
@@ -266,7 +265,7 @@ class Script {
     return ExecOptions(
       concurrency: concurrency,
       failFast: failFast,
-      requireDependencies: requireDependencies,
+      orderDependents: orderDependents,
     );
   }
 
@@ -304,13 +303,12 @@ class Script {
         parts.addAll(['--concurrency', '${exec.concurrency}']);
       }
 
-      // --fail-fast is a flag and as such does not accept any value
       if (exec.failFast ?? false) {
         parts.add('--fail-fast');
       }
 
-      if (exec.requireDependencies ?? false) {
-        parts.add('--require-dependencies');
+      if (exec.orderDependents ?? false) {
+        parts.add('--order-dependents');
       }
 
       parts.addAll(['--', quoteScript(run)]);

@@ -91,10 +91,12 @@ Whether `exec` should fail fast and not execute the script in further packages i
 in an individual package.
 Defaults to `false`.
 
-## `scripts/*/exec/requireDependencies`
+## `scripts/*/exec/orderDependents`
 
-Whether `exec` should require the dependencies of this package to be completed first. Only applies
-to dependencies that would normally be part of this command.
+Whether `exec` should order the execution of the script in multiple packages based on the
+dependency graph of the packages. The script will be executed in leaf packages first and then
+in packages that depend on them and so on. This is useful for example, for a script that generates
+code in multiple packages, which depend on each other.
 Defaults to `false`.
 
 ## `scripts/*/env`

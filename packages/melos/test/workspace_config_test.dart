@@ -430,7 +430,7 @@ void main() {
               'exec': {
                 'concurrency': 1,
                 'failFast': true,
-                'requireDependencies': true
+                'orderDependents': true
               },
             },
           }),
@@ -442,7 +442,7 @@ void main() {
           ExecOptions(
             concurrency: 1,
             failFast: true,
-            requireDependencies: true,
+            orderDependents: true,
           ),
         );
       });

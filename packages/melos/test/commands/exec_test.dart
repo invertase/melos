@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
@@ -74,8 +72,8 @@ ${'-' * terminalWidth}
       );
     });
 
-    group('requires dependencies', () {
-      test("orders exec's topilogically", () async {
+    group('order dependents', () {
+      test('sorts execution order topologically', () async {
         final workspaceDir = createTemporaryWorkspaceDirectory();
 
         await createProject(
@@ -109,7 +107,7 @@ ${'-' * terminalWidth}
         await melos.exec(
           ['echo', 'hello', 'world'],
           concurrency: 2,
-          requireDependencies: true,
+          orderDependents: true,
         );
 
         expect(
@@ -133,6 +131,7 @@ ${'-' * terminalWidth}
           ),
         );
       });
+
       test('fails fast if dependencies fail', () async {
         final workspaceDir = createTemporaryWorkspaceDirectory();
 
@@ -165,42 +164,26 @@ ${'-' * terminalWidth}
         );
 
         await melos.exec(
-          ['unrecognised'],
+          ['exit', '1'],
           concurrency: 2,
-          requireDependencies: true,
+          orderDependents: true,
         );
-
-        late final String platformExitString;
-
-        if (Platform.isWindows) {
-          platformExitString = '''
-e-[b]: 'unrecognised' is not recognized as an internal or external command,
-e-[b]: operable program or batch file.''';
-        } else if (Platform.isMacOS) {
-          platformExitString = '''
-e-[b]: /bin/sh: unrecognised: command not found''';
-        } else {
-          platformExitString = '''
-e-[b]: /bin/sh: 1: eval: unrecognised: not found''';
-        }
 
         expect(
           logger.output.normalizeNewLines(),
           ignoringAnsii(
             '''
 \$ melos exec
-  └> unrecognised
+  └> exit 1
      └> RUNNING (in 3 packages)
 
 ${'-' * terminalWidth}
-$platformExitString
-e-
 ${'-' * terminalWidth}
 
 \$ melos exec
-  └> unrecognised
+  └> exit 1
      └> FAILED (in 3 packages)
-        └> b (with exit code ${Platform.isWindows ? 1 : 127})
+        └> b (with exit code 1)
         └> c (dependency failed)
         └> a (dependency failed)
 ''',
@@ -244,7 +227,7 @@ ${'-' * terminalWidth}
         await melos.exec(
           ['echo', 'hello', 'world'],
           concurrency: 2,
-          requireDependencies: true,
+          orderDependents: true,
           filter: PackageFilter(
             fileExists: const ['log.txt'],
           ),
