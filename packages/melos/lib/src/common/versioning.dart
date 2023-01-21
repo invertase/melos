@@ -162,7 +162,8 @@ Version nextVersion(
   var requestedPreidOrDefault = preid ?? 'dev';
   final shouldGraduate = graduate;
   var shouldMakePreRelease = prerelease;
-  if (currentVersion.preRelease.isNotEmpty) {
+  final preReleaseComponents = currentVersion.preRelease;
+  if (preReleaseComponents.isNotEmpty) {
     // If the current version then we should make a prerelease, unless
     // graduating the version is explicitly requested.
     shouldMakePreRelease = !shouldGraduate;
@@ -172,11 +173,42 @@ Version nextVersion(
     if (preid == null) {
       //  - Versions in the format `0.8.0-nullsafety.1` have 2 pre release
       //    items, so we extract 'nullsafety' preid.
-      //  - Versions in the format `0.2.0-1.2.nullsafety.4` have 2 pre release
+      //  - Versions in the format `0.2.0-1.2.nullsafety.4` have 4 pre release
       //    items, so we extract 'nullsafety' preid.
-      requestedPreidOrDefault = currentVersion.preRelease.length == 2
-          ? currentVersion.preRelease[0] as String
-          : currentVersion.preRelease[2] as String;
+
+      T preReleaseComponent<T>(int index) {
+        final item = preReleaseComponents[index];
+        if (item is T) {
+          return item as T;
+        } else {
+          throw UnsupportedError(
+            'Unexpected prerelease component in version $currentVersion. '
+            'Expected a $T, at index $index but got $item.',
+          );
+        }
+      }
+
+      if (preReleaseComponents.length == 2) {
+        requestedPreidOrDefault = preReleaseComponent<String>(0);
+        preReleaseComponent<int>(1);
+      } else if (preReleaseComponents.length == 4) {
+        preReleaseComponent<int>(0);
+        preReleaseComponent<int>(1);
+        requestedPreidOrDefault = preReleaseComponent<String>(2);
+        preReleaseComponent<int>(3);
+        if (requestedPreidOrDefault != 'nullsafety') {
+          throw UnsupportedError(
+            'Unsupported prerelease format in version $currentVersion. '
+            'Expected a "nullsafety" preid, but got $requestedPreidOrDefault.',
+          );
+        }
+      } else {
+        throw UnsupportedError(
+          'Unsupported prerelease format in version $currentVersion. '
+          'Expected 2 or 4 prerelease components, but got '
+          '$preReleaseComponents.',
+        );
+      }
     }
   }
 
