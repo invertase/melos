@@ -86,18 +86,12 @@ abstract class MelosCommand extends Command<void> {
     );
 
     argParser.addOption(
-      filterOptionSince,
-      valueHelp: 'ref',
-      help: 'Only include packages that have been changed since the specified '
-          '`ref`, e.g. a commit sha or git tag. Cannot be used with --diff.',
-    );
-
-    argParser.addOption(
       filterOptionDiff,
       valueHelp: 'ref',
-      help: 'Only include packages that are different between current working '
-          'tree and the specified `ref`, e.g. a commit sha or git tag, '
-          'or between two different refs. Cannot be used with --since.',
+      help: 'Filter packages based on whether there were changes between a '
+          'commit and the current HEAD or within a range of commits. A range '
+          'of commits can be specified using the git short hand syntax '
+          '`<start-commit>..<end-commit>` and `<start-commit>...<end-commit>`',
     );
 
     argParser.addMultiOption(
@@ -133,7 +127,7 @@ abstract class MelosCommand extends Command<void> {
       negatable: false,
       help: 'Include all transitive dependents for each package that matches '
           'the other filters. The included packages skip --ignore and '
-          '--since checks.',
+          '--diff checks.',
     );
 
     argParser.addFlag(
@@ -141,13 +135,13 @@ abstract class MelosCommand extends Command<void> {
       negatable: false,
       help: 'Include all transitive dependencies for each package that '
           'matches the other filters. The included packages skip --ignore '
-          'and --since checks.',
+          'and --diff checks.',
     );
   }
 
   PackageFilter parsePackageFilter(
     String workingDirPath, {
-    bool sinceEnabled = true,
+    bool diffEnabled = true,
   }) {
     assert(
       argResults?.command?.name != 'version' &&
@@ -155,9 +149,7 @@ abstract class MelosCommand extends Command<void> {
       'unimplemented',
     );
 
-    final since =
-        sinceEnabled ? argResults![filterOptionSince] as String? : null;
-    final diff = argResults![filterOptionDiff] as String?;
+    final diff = diffEnabled ? argResults![filterOptionDiff] as String? : null;
     final scope = argResults![filterOptionScope] as List<String>? ?? [];
     final ignore = argResults![filterOptionIgnore] as List<String>? ?? [];
 
@@ -169,7 +161,6 @@ abstract class MelosCommand extends Command<void> {
           .map((e) => createGlob(e, currentDirectoryPath: workingDirPath))
           .toList()
         ..addAll(config.ignore),
-      updatedSince: since,
       diff: diff,
       includePrivatePackages: argResults![filterOptionPrivate] as bool?,
       published: argResults![filterOptionPublished] as bool?,

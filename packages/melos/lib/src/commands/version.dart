@@ -41,11 +41,11 @@ mixin _VersionMixin on _RunMixin {
 
     final workspace = await createWorkspace(
       global: global,
-      // We ignore `since` package list filtering on the 'version' command as it
+      // We ignore `diff` package list filtering on the 'version' command as it
       // already filters it itself, filtering here would map dependant version
       // fail as it won't be aware of any packages that have been filtered out
-      // here because of the 'since' filter.
-      filter: filter?.copyWithUpdatedSince(null),
+      // here because of the 'diff' filter.
+      filter: filter?.copyWithDiff(null),
     );
 
     if (workspace.config.commands.version.branch != null) {
@@ -74,7 +74,7 @@ mixin _VersionMixin on _RunMixin {
     final packageCommits = await _getPackageCommits(
       workspace,
       versionPrivatePackages: versionPrivatePackages,
-      since: filter?.updatedSince,
+      diff: filter?.diff,
     );
 
     final packagesWithVersionableCommits =
@@ -716,7 +716,7 @@ mixin _VersionMixin on _RunMixin {
   Future<Map<String, List<RichGitCommit>>> _getPackageCommits(
     MelosWorkspace workspace, {
     required bool versionPrivatePackages,
-    required String? since,
+    required String? diff,
   }) async {
     final packageCommits = <String, List<RichGitCommit>>{};
     await Pool(10).forEach<Package, void>(workspace.filteredPackages.values,
@@ -725,7 +725,7 @@ mixin _VersionMixin on _RunMixin {
 
       final commits = await gitCommitsForPackage(
         package,
-        since: since,
+        diff: diff,
         logger: logger,
       );
 

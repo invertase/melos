@@ -29,3 +29,10 @@ these files, add the following to your `.gitignore` file:
 ```
 pubspec_overrides.yaml
 ```
+
+### `--since` was removed in favour of `--diff`
+
+The `--since` flag was removed in favour of `--diff`, which is more flexible and
+can be used to specify a range of commits in addition to a single commit.
+
+To migrate from `--since` to `--diff` simply replace `--since` with `--diff`.

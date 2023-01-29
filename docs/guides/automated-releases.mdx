@@ -40,8 +40,8 @@ To determine which packages to version and how, Melos performs the following
 steps:
 
 1. Apply [filters](/filters) to the list of workspace packages.
-2. Load the commit history for each package. If the `--since` option is
-   specified, Melos will only load commits since the specified commit. Otherwise
+2. Load the commit history for each package. If the `--diff` option is
+   specified, Melos will only load the specified commit. Otherwise
    it will load all commits since the last version tag (e.g. `foo-v1.0.0`).
 3. Parse commit messages as Conventional Commits. If a commit message does not
    follow the Conventional Commits specification, it will be ignored.

@@ -121,7 +121,6 @@ class PackageFilter {
     this.fileExists = const [],
     List<String> dependsOn = const [],
     List<String> noDependsOn = const [],
-    this.updatedSince,
     this.diff,
     this.includePrivatePackages,
     this.published,
@@ -137,9 +136,7 @@ class PackageFilter {
         noDependsOn = [
           ...noDependsOn,
           if (flutter == false) 'flutter',
-        ] {
-    _validate();
-  }
+        ];
 
   factory PackageFilter.fromYaml(
     Map<Object?, Object?> yaml, {
@@ -174,12 +171,6 @@ class PackageFilter {
     final noDependsOn = assertListOrString(
       key: filterOptionNoDependsOn,
       map: yaml,
-      path: path,
-    );
-
-    final updatedSince = assertIsA<String?>(
-      value: yaml[filterOptionSince],
-      key: filterOptionSince,
       path: path,
     );
 
@@ -239,7 +230,6 @@ class PackageFilter {
       fileExists: fileExists,
       dependsOn: dependsOn,
       noDependsOn: noDependsOn,
-      updatedSince: updatedSince,
       diff: diff,
       includePrivatePackages: includePrivatePackages,
       published: published,
@@ -257,16 +247,13 @@ class PackageFilter {
     required this.fileExists,
     required this.dependsOn,
     required this.noDependsOn,
-    required this.updatedSince,
     required this.diff,
     required this.includePrivatePackages,
     required this.published,
     required this.nullSafe,
     required this.includeDependencies,
     required this.includeDependents,
-  }) {
-    _validate();
-  }
+  });
 
   /// Patterns for filtering packages by name.
   final List<Glob> scope;
@@ -286,12 +273,11 @@ class PackageFilter {
   /// Include only packages that do not depend on a specific package.
   final List<String> noDependsOn;
 
-  /// Filter package based on whether they received changed since a specific git
-  /// commit/tag ID.
-  final String? updatedSince;
-
-  /// Filter package based on whether they are different between specific git
-  /// commit/tag ID.
+  /// Filter packages based on whether there were changes between a commit and
+  /// the current HEAD or within a range of commits.
+  ///
+  /// A range of commits can be specified using the git short hand syntax
+  /// `<start-commit>..<end-commit>` and `<start-commit>...<end-commit>`.
   final String? diff;
 
   /// Include/Exclude packages with `publish_to: none`.
@@ -313,14 +299,6 @@ class PackageFilter {
   /// This supersede other filters.
   final bool includeDependencies;
 
-  void _validate() {
-    if (updatedSince != null && diff != null) {
-      throw InvalidPackageFilterException(
-        'Cannot specify both updatedSince and diff.',
-      );
-    }
-  }
-
   Map<String, Object?> toJson() {
     return {
       if (scope.isNotEmpty)
@@ -331,7 +309,6 @@ class PackageFilter {
       if (fileExists.isNotEmpty) filterOptionFileExists: fileExists,
       if (dependsOn.isNotEmpty) filterOptionDependsOn: dependsOn,
       if (noDependsOn.isNotEmpty) filterOptionNoDependsOn: noDependsOn,
-      if (updatedSince != null) filterOptionSince: updatedSince,
       if (diff != null) filterOptionDiff: diff,
       if (includePrivatePackages != null)
         filterOptionPrivate: includePrivatePackages,
@@ -342,7 +319,7 @@ class PackageFilter {
     };
   }
 
-  PackageFilter copyWithUpdatedSince(String? since) {
+  PackageFilter copyWithDiff(String? diff) {
     return PackageFilter._(
       dependsOn: dependsOn,
       dirExists: dirExists,
@@ -353,25 +330,23 @@ class PackageFilter {
       nullSafe: nullSafe,
       published: published,
       scope: scope,
-      updatedSince: since,
       diff: diff,
       includeDependencies: includeDependencies,
       includeDependents: includeDependents,
     );
   }
 
-  PackageFilter copyWithUpdatedIgnore(List<Glob> updatedIgnore) {
+  PackageFilter copyWithUpdatedIgnore(List<Glob> ignore) {
     return PackageFilter._(
       dependsOn: dependsOn,
       dirExists: dirExists,
       fileExists: fileExists,
-      ignore: updatedIgnore,
+      ignore: ignore,
       includePrivatePackages: includePrivatePackages,
       noDependsOn: noDependsOn,
       nullSafe: nullSafe,
       published: published,
       scope: scope,
-      updatedSince: updatedSince,
       diff: diff,
       includeDependencies: includeDependencies,
       includeDependents: includeDependents,
@@ -393,7 +368,6 @@ class PackageFilter {
       const DeepCollectionEquality().equals(other.fileExists, fileExists) &&
       const DeepCollectionEquality().equals(other.dependsOn, dependsOn) &&
       const DeepCollectionEquality().equals(other.noDependsOn, noDependsOn) &&
-      other.updatedSince == updatedSince &&
       other.diff == diff;
 
   @override
@@ -410,7 +384,6 @@ class PackageFilter {
       const DeepCollectionEquality().hash(fileExists) ^
       const DeepCollectionEquality().hash(dependsOn) ^
       const DeepCollectionEquality().hash(noDependsOn) ^
-      updatedSince.hashCode ^
       diff.hashCode;
 
   @override
@@ -428,7 +401,6 @@ PackageFilter(
   fileExists: $fileExists,
   dependsOn: $dependsOn,
   noDependsOn: $noDependsOn,
-  updatedSince: $updatedSince,
   diff: $diff,
 )''';
   }
@@ -572,9 +544,7 @@ The packages that caused the problem are:
 
   int get length => _map.length;
 
-  Package? operator [](String key) {
-    return _map[key];
-  }
+  Package? operator [](String key) => _map[key];
 
   /// Detect packages in the workspace with the provided filters.
   ///
@@ -592,11 +562,6 @@ The packages that caused the problem are:
         .applyNoDependsOn(filter.noDependsOn)
         .filterNullSafe(nullSafe: filter.nullSafe)
         .filterPublishedPackages(published: filter.published);
-
-    final updatedSince = filter.updatedSince;
-    if (updatedSince != null) {
-      packageList = await packageList.applySince(updatedSince, _logger);
-    }
 
     final diff = filter.diff;
     if (diff != null) {
@@ -694,46 +659,21 @@ extension on Iterable<Package> {
     return packagesFilteredWithPublishStatus;
   }
 
-  Future<Iterable<Package>> applySince(
-    String? since,
-    MelosLogger logger,
-  ) async {
-    if (since == null) return this;
-
-    final pool = Pool(10);
-    final packagesFilteredWithGitCommitsSince = <Package>[];
-
-    await pool.forEach<Package, void>(this, (package) {
-      return gitCommitsForPackage(package, since: since, logger: logger)
-          .then((commits) async {
-        if (commits.isNotEmpty) {
-          packagesFilteredWithGitCommitsSince.add(package);
-        }
-      });
-    }).drain<void>();
-
-    return packagesFilteredWithGitCommitsSince;
-  }
-
   Future<Iterable<Package>> applyDiff(
     String? diff,
     MelosLogger logger,
   ) async {
     if (diff == null) return this;
 
-    final pool = Pool(10);
-    final packagesFilteredWithGitCommitsSince = <Package>[];
-
-    await pool.forEach<Package, void>(this, (package) {
-      return gitHasDiffInPackage(package, diff: diff, logger: logger)
-          .then((commits) async {
-        if (commits) {
-          packagesFilteredWithGitCommitsSince.add(package);
-        }
-      });
-    }).drain<void>();
-
-    return packagesFilteredWithGitCommitsSince;
+    return Pool(10)
+        .forEach(this, (package) async {
+          final commits =
+              await gitCommitsForPackage(package, diff: diff, logger: logger);
+          return MapEntry(package, commits.isNotEmpty);
+        })
+        .where((event) => event.value)
+        .map((event) => event.key)
+        .toList();
   }
 
   /// Whether to include/exclude packages that are null-safe.
