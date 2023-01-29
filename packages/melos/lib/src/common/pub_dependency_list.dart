@@ -91,7 +91,7 @@ MapEntry<String, Map<VersionedEntry, Map<String, VersionConstraint>>>
   void scanUsage() {
     scanner.expect(_usageLine, name: 'dependency');
     final entry = VersionedEntry.fromMatch(scanner.lastMatch!);
-    assert(!entries.containsKey(entry.name));
+    assert(!entries.containsKey(entry));
 
     final deps = entries[entry] = {};
 

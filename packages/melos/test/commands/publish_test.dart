@@ -1,12 +1,9 @@
-import 'package:graphs/graphs.dart';
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
 import 'package:test/expect.dart';
 import 'package:test/scaffolding.dart';
-
-final throwsCyclicError = throwsA(isA<CycleException<String>>());
 
 void main() {
   group('publish', () {

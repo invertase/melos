@@ -771,14 +771,14 @@ mixin _VersionMixin on _RunMixin {
     required bool updateDependentsVersions,
   }) async {
     final publishedPackagesMessage = pendingPackageUpdates
-        .where((pendingUpdate) {
-          if (pendingUpdate.reason == PackageUpdateReason.dependency &&
+        .where((update) {
+          if (update.reason == PackageUpdateReason.dependency &&
               !updateDependentsVersions) {
             return false;
           }
           return true;
         })
-        .map((e) => ' - ${e.package.name}@${e.nextVersion.toString()}')
+        .map((update) => ' - ${update.package.name}@${update.nextVersion}')
         .join('\n');
 
     // Render our commit message template into the final string

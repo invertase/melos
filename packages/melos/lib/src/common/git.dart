@@ -203,7 +203,7 @@ Future<String?> gitLatestTagForPackage(
   )) {
     logger.trace(
       '[GIT] Found a git tag for the latest ${package.name} version '
-      '(${package.version.toString()}).',
+      '(${package.version}).',
     );
     return currentVersionTag;
   }
