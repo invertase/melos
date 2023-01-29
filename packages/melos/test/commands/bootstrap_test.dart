@@ -288,7 +288,7 @@ Generating IntelliJ IDE files...
         packageConfig.packages
             .firstWhere((package) => package.name == 'path')
             .rootUri,
-        contains('hosted/pub.dartlang.org/path'),
+        contains('hosted/pub.dev/path'),
       );
     });
 
@@ -543,7 +543,7 @@ Running "${pubExecArgs.join(' ')} get" in workspace packages...
 e-       └> Failed to install.
 
 Resolving dependencies...
-e-Because a depends on package_that_does_not_exists any which doesn't exist (could not find package package_that_does_not_exists at https://pub.dartlang.org), version solving failed.
+e-Because a depends on package_that_does_not_exists any which doesn't exist (could not find package package_that_does_not_exists at https://pub.dev), version solving failed.
 ''',
         ),
       );
