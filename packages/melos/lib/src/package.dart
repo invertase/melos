@@ -107,7 +107,7 @@ RegExp hostedDependencyVersionReplaceRegex(String dependencyName) {
 
 RegExp dependencyTagReplaceRegex(String dependencyName) {
   return RegExp(
-    '''(?<tag_ref>^\\s+ref\\s?:\\s?)(?<opening_quote>["']?)(?<tag>$dependencyName-v[\\d]+\\.[\\d]+\\.[\\d]+)(?<closing_quote>['"]?)\$''',
+    '''(?<tag_ref>^\\s+ref\\s?:\\s?)(?<opening_quote>["']?)(?<tag>$dependencyName-v[\\d]+\\.[\\d]+\\.[\\d]+(?:\\+.*)?)(?<closing_quote>['"]?)\$''',
     multiLine: true,
   );
 }
