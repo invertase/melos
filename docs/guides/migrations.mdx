@@ -36,3 +36,12 @@ The `--since` flag was removed in favour of `--diff`, which is more flexible and
 can be used to specify a range of commits in addition to a single commit.
 
 To migrate from `--since` to `--diff` simply replace `--since` with `--diff`.
+
+### Options that are now enabled by default
+
+The following options which were previously set to `false` by default are now
+set to `true` by default:
+
+- `command/version/includeScopes`
+- `command/version/linkToCommits`, if `repository` is configured
+- `command/version/workspaceChangelog`

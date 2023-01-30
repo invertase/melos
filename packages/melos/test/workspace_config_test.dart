@@ -81,11 +81,13 @@ void main() {
 
       expect(value.branch, null);
       expect(value.message, null);
-      expect(value.includeScopes, false);
-      expect(value.includeCommitId, null);
-      expect(value.linkToCommits, null);
+      expect(value.includeScopes, true);
+      expect(value.includeCommitId, false);
+      expect(value.linkToCommits, false);
       expect(value.updateGitTagRefs, false);
-      expect(value.aggregateChangelogs, isEmpty);
+      expect(value.aggregateChangelogs, [
+        AggregateChangelogConfig.workspace(),
+      ]);
     });
 
     group('fromYaml', () {
@@ -160,7 +162,6 @@ void main() {
           VersionCommandConfigs(
             branch: 'branch',
             message: 'message',
-            includeScopes: true,
             includeCommitId: true,
             linkToCommits: true,
             updateGitTagRefs: true,
