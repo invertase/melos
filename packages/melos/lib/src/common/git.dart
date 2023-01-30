@@ -270,7 +270,7 @@ Future<List<GitCommit>> gitCommitsForPackage(
     if (revisionRange.isEmpty) {
       revisionRange = null;
     } else if (!_gitVersionRangeShortHandRegExp.hasMatch(revisionRange)) {
-      // If the revision range is not a valid git range short hand then we
+      // If the revision range is not a valid revision range short hand then we
       // assume it's a commit or tag and default to the range from that
       // commit/tag to HEAD.
       revisionRange = '$revisionRange...HEAD';
