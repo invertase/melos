@@ -145,8 +145,8 @@ extension ChangelogStringBufferExtension on StringBuffer {
   void writePackageUpdateChanges(MelosPendingPackageUpdate update) {
     final config = update.workspace.config;
     final repository = config.repository;
-    final linkToCommits = config.commands.version.linkToCommits ?? false;
-    final includeCommitId = config.commands.version.includeCommitId ?? false;
+    final linkToCommits = config.commands.version.linkToCommits;
+    final includeCommitId = config.commands.version.includeCommitId;
 
     String processCommitHeader(String header) =>
         repository != null ? header.withIssueLinks(repository) : header;

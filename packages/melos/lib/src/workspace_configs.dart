@@ -154,6 +154,7 @@ class CommandConfigs {
   factory CommandConfigs.fromYaml(
     Map<Object?, Object?> yaml, {
     required String workspacePath,
+    bool repositoryIsConfigured = false,
   }) {
     final bootstrapMap = assertKeyIsA<Map<Object?, Object?>?>(
       key: 'bootstrap',
@@ -175,6 +176,7 @@ class CommandConfigs {
       version: VersionCommandConfigs.fromYaml(
         versionMap ?? const {},
         workspacePath: workspacePath,
+        repositoryIsConfigured: repositoryIsConfigured,
       ),
     );
   }
@@ -387,17 +389,18 @@ class VersionCommandConfigs {
   const VersionCommandConfigs({
     this.branch,
     this.message,
-    this.includeScopes = false,
-    this.linkToCommits,
-    this.includeCommitId,
+    this.includeScopes = true,
+    this.linkToCommits = false,
+    this.includeCommitId = false,
     this.updateGitTagRefs = false,
     this.releaseUrl = false,
-    this.aggregateChangelogs = const [],
-  });
+    List<AggregateChangelogConfig>? aggregateChangelogs,
+  }) : _aggregateChangelogs = aggregateChangelogs;
 
   factory VersionCommandConfigs.fromYaml(
     Map<Object?, Object?> yaml, {
     required String workspacePath,
+    bool repositoryIsConfigured = false,
   }) {
     final branch = assertKeyIsA<String?>(
       key: 'branch',
@@ -442,7 +445,7 @@ class VersionCommandConfigs {
     );
 
     final aggregateChangelogs = <AggregateChangelogConfig>[];
-    if (workspaceChangelog ?? false) {
+    if (workspaceChangelog ?? true) {
       aggregateChangelogs.add(AggregateChangelogConfig.workspace());
     }
 
@@ -489,9 +492,9 @@ class VersionCommandConfigs {
     return VersionCommandConfigs(
       branch: branch,
       message: message,
-      includeScopes: includeScopes ?? false,
-      includeCommitId: includeCommitId,
-      linkToCommits: linkToCommits,
+      includeScopes: includeScopes ?? true,
+      includeCommitId: includeCommitId ?? false,
+      linkToCommits: linkToCommits ?? repositoryIsConfigured,
       updateGitTagRefs: updateGitTagRefs ?? false,
       releaseUrl: releaseUrl ?? false,
       aggregateChangelogs: aggregateChangelogs,
@@ -512,10 +515,10 @@ class VersionCommandConfigs {
   final bool includeScopes;
 
   /// Whether to add commits ids in the generated CHANGELOG.md.
-  final bool? includeCommitId;
+  final bool includeCommitId;
 
   /// Whether to add links to commits in the generated CHANGELOG.md.
-  final bool? linkToCommits;
+  final bool linkToCommits;
 
   /// Whether to also update pubspec with git referenced packages.
   final bool updateGitTagRefs;
@@ -526,15 +529,18 @@ class VersionCommandConfigs {
 
   /// A list of changelogs configurations that will be used to generate
   /// changelogs which describe the changes in multiple packages.
-  final List<AggregateChangelogConfig> aggregateChangelogs;
+  List<AggregateChangelogConfig> get aggregateChangelogs =>
+      _aggregateChangelogs ?? [AggregateChangelogConfig.workspace()];
+
+  final List<AggregateChangelogConfig>? _aggregateChangelogs;
 
   Map<String, Object?> toJson() {
     return {
       if (branch != null) 'branch': branch,
       if (message != null) 'message': message,
       'includeScopes': includeScopes,
-      if (includeCommitId != null) 'includeCommitId': includeCommitId,
-      if (linkToCommits != null) 'linkToCommits': linkToCommits,
+      'includeCommitId': includeCommitId,
+      'linkToCommits': linkToCommits,
       'updateGitTagRefs': updateGitTagRefs,
       'aggregateChangelogs':
           aggregateChangelogs.map((config) => config.toJson()).toList(),
@@ -723,7 +729,11 @@ class MelosWorkspaceConfig {
       ide: ideMap == null ? IDEConfigs.empty : IDEConfigs.fromYaml(ideMap),
       commands: commandMap == null
           ? CommandConfigs.empty
-          : CommandConfigs.fromYaml(commandMap, workspacePath: path),
+          : CommandConfigs.fromYaml(
+              commandMap,
+              workspacePath: path,
+              repositoryIsConfigured: repository != null,
+            ),
     );
   }
 
@@ -855,7 +865,7 @@ You must have one of the following to be a valid Melos workspace:
     }
 
     final linkToCommits = commands.version.linkToCommits;
-    if (linkToCommits != null && linkToCommits == true && repository == null) {
+    if (linkToCommits == true && repository == null) {
       throw MelosConfigException(
         'repository must be specified if commands/version/linkToCommits is true',
       );
