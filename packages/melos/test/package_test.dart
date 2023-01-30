@@ -149,20 +149,17 @@ void main() {
       expect(filter.includePrivatePackages, null);
       expect(filter.nullSafe, null);
       expect(filter.published, null);
-      expect(filter.updatedSince, null);
+      expect(filter.diff, null);
     });
 
-    group('copyWithUpdatedSince', () {
+    group('copyWithWithDiff', () {
       test('can assign null', () {
-        final filter = PackageFilter(updatedSince: '123');
+        final filter = PackageFilter(diff: '123');
 
-        expect(
-          filter.copyWithUpdatedSince(null).updatedSince,
-          null,
-        );
+        expect(filter.copyWithDiff(null).diff, null);
       });
 
-      test('clone properties besides updatedSince', () {
+      test('clone properties besides diff', () {
         final filter = PackageFilter(
           dependsOn: const ['a'],
           dirExists: const ['a'],
@@ -176,12 +173,12 @@ void main() {
           noDependsOn: const ['a'],
           nullSafe: true,
           published: true,
-          updatedSince: '123',
+          diff: '123',
         );
 
-        final copy = filter.copyWithUpdatedSince('456');
+        final copy = filter.copyWithDiff('456');
 
-        expect(copy.updatedSince, '456');
+        expect(copy.diff, '456');
         expect(copy.dependsOn, filter.dependsOn);
         expect(copy.dirExists, filter.dirExists);
         expect(copy.fileExists, filter.fileExists);

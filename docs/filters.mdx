@@ -1,6 +1,6 @@
 ---
 title: Filtering Packages
-description: "Learn more about all the package filtering flags in Melos."
+description: 'Learn more about all the package filtering flags in Melos.'
 ---
 
 # Filtering Packages
@@ -23,11 +23,13 @@ Filter packages where the current local package version exists on pub.dev.
 melos bootstrap --published
 ```
 
-Use `--no-published` to filter packages that have not had their current version published yet.
+Use `--no-published` to filter packages that have not had their current version
+published yet.
 
 ## --scope
 
-Include only packages with names matching the given glob. This option can be repeated.
+Include only packages with names matching the given glob. This option can be
+repeated.
 
 ```bash
 # Run `flutter build ios` on all packages with "example" in the package name
@@ -36,31 +38,29 @@ melos exec --scope="*example*" -- flutter build ios
 
 ## --ignore
 
-Exclude packages with names matching the given glob. This option can be repeated.
+Exclude packages with names matching the given glob. This option can be
+repeated.
 
 ```bash
 # Run `flutter build ios` on all packages but ignore those whose packages names contain "internal"
 melos exec --ignore="*internal*" -- flutter build ios
 ```
 
-## --since
-
-Only include packages that have been changed since the specified `ref`, e.g. a commit sha or git tag.
-
-```bash
-# Run `flutter build ios` on all packages that have been changed since the specified commit hash
-melos exec --since=<commit hash> -- flutter build ios
-```
-
 ## --diff
 
-Only include packages that are different between the current working tree and the specified `ref`, e.g. a commit sha or git tag, or between two different refs.
+Filter packages based on whether there were changes between a commit and the
+current HEAD or within a range of commits.
+
+A range of commits can be specified using the git short hand syntax
+`<start-commit>..<end-commit>` and `<start-commit>...<end-commit>`.
 
 ```bash
-# Run `flutter build ios` on all packages that are different between current branch and the specified commit hash
+# Run `flutter build ios` on all packages that are different between current
+# branch and the specified commit hash.
 melos exec --diff=<commit hash> -- flutter build ios
 
-# Run `flutter build ios` on all packages that are different between remote `main` branch and HEAD
+# Run `flutter build ios` on all packages that are different between remote
+# `main` branch and HEAD.
 melos exec --diff=origin/main...HEAD -- flutter build ios
 ```
 
@@ -100,4 +100,5 @@ Include only packages that depend on specific dependencies.
 melos exec --depends-on="flutter" --depends-on="firebase_core" -- flutter test
 ```
 
-Use `--no-depends-on` to filter packages that do not depend on the given dependencies.
+Use `--no-depends-on` to filter packages that do not depend on the given
+dependencies.

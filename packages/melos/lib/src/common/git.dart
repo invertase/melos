@@ -252,32 +252,47 @@ Future<void> gitCommit(
   );
 }
 
+/// RegExp that matches `<commit1>..<commit2>` or `<commit1>...<commit2>`.
+final _gitVersionRangeShortHandRegExp = RegExp(r'^.+\.{2,3}.+$');
+
 /// Returns a list of [GitCommit]s for a Melos package.
 ///
-/// Optionally specify [since] to start after a specified commit or tag.
+/// Optionally specify [diff] to start after a specified commit or tag.
 /// Defaults to the latest release tag.
+/// Diff also supports specifying a range of commits, e.g. `HEAD~5..HEAD`.
 Future<List<GitCommit>> gitCommitsForPackage(
   Package package, {
-  String? since,
-  String preid = 'dev',
+  String? diff,
   required MelosLogger logger,
 }) async {
-  var sinceOrLatestTag = since;
-  if (sinceOrLatestTag != null && sinceOrLatestTag.isEmpty) {
-    sinceOrLatestTag = null;
+  var revisionRange = diff?.trim();
+  if (revisionRange != null) {
+    if (revisionRange.isEmpty) {
+      revisionRange = null;
+    } else if (!_gitVersionRangeShortHandRegExp.hasMatch(revisionRange)) {
+      // If the revision range is not a valid revision range short hand then we
+      // assume it's a commit or tag and default to the range from that
+      // commit/tag to HEAD.
+      revisionRange = '$revisionRange...HEAD';
+    }
   }
-  sinceOrLatestTag ??= await gitLatestTagForPackage(package, logger: logger);
+
+  if (revisionRange == null) {
+    final latestTag = await gitLatestTagForPackage(package, logger: logger);
+    // If no latest tag is found then we default to the entire git history.
+    revisionRange = latestTag != null ? '$latestTag...HEAD' : 'HEAD';
+  }
 
   logger.trace(
-    '[GIT] Getting commits for package ${package.name} since '
-    '"${sinceOrLatestTag ?? '@'}".',
+    '[GIT] Getting commits for package ${package.name} for revision range '
+    '"$revisionRange".',
   );
 
   final processResult = await gitExecuteCommand(
     arguments: [
       '--no-pager',
       'log',
-      if (sinceOrLatestTag != null) '$sinceOrLatestTag...@' else '@',
+      revisionRange,
       '--pretty=format:%H|||%aN <%aE>|||%ai|||%B||||',
       '--',
       '.',
@@ -369,28 +384,4 @@ Future<bool> gitIsBehindUpstream({
   );
 
   return isBehind;
-}
-
-Future<bool> gitHasDiffInPackage(
-  Package package, {
-  required String diff,
-  required MelosLogger logger,
-}) async {
-  logger.trace(
-    '[GIT] Getting $diff diff for package ${package.name}.',
-  );
-
-  final processResult = await gitExecuteCommand(
-    arguments: [
-      '--no-pager',
-      'diff',
-      '--name-status',
-      diff,
-      '--',
-      '.',
-    ],
-    workingDirectory: package.path,
-    logger: logger,
-  );
-  return (processResult.stdout as String).isNotEmpty;
 }

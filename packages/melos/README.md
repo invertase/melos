@@ -79,7 +79,7 @@ configuration file if the default is unsuitable.
     - Include only packages with names matching the given glob.
   - `--ignore=<glob>`
     - Exclude packages with names matching the given glob.
-  - `--since=<ref>`
+  - `--diff=<ref>`
     - Only include packages that have been changed since the specified `ref`,
       e.g. a commit sha or git tag.
   - `--dir-exists=<dirRelativeToPackageRoot>`
