@@ -4,6 +4,7 @@ import 'package:glob/glob.dart';
 import 'package:http/http.dart' as http;
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/http.dart';
+import 'package:melos/src/package.dart';
 import 'package:mockito/mockito.dart';
 import 'package:platform/platform.dart';
 import 'package:pub_semver/pub_semver.dart';
@@ -23,6 +24,36 @@ const pubPackageJson = '''
 ''';
 
 void main() {
+  group('replace version RegExp', () {
+    const testedVersions = [
+      '0.1.2+3',
+      '1.2.3+4',
+      '1.2.3-dev',
+      '1.2.3-dev.4',
+      '0.1.2',
+      '1.2.3',
+      '10.0.0',
+      '0.10.0',
+      '0.0.10',
+    ];
+    final testedVersionRanges =
+        testedVersions.map((version) => '^$version').toList();
+
+    group('dependencyVersion', () {
+      testedVersions.forEach(testDependencyVersionReplaceRegex);
+      testedVersionRanges.forEach(testDependencyVersionReplaceRegex);
+    });
+
+    group('hostedDependencyVersion', () {
+      testedVersions.forEach(testHostedDependencyVersionReplaceRegex);
+      testedVersionRanges.forEach(testHostedDependencyVersionReplaceRegex);
+    });
+
+    group('dependencyTag', () {
+      testedVersions.forEach(testDependencyTagReplaceRegex);
+    });
+  });
+
   group('MelosPackage', () {
     final httpClientMock = HttpClientMock();
     late MelosWorkspace workspace;
@@ -195,5 +226,80 @@ void main() {
         expect(copy.published, filter.published);
       });
     });
+  });
+}
+
+void testDependencyVersionReplaceRegex(String version) {
+  test(version, () {
+    const dependencyName = 'foo';
+    const newVersion = '9.9.9';
+
+    final regExp = dependencyVersionReplaceRegex(dependencyName);
+
+    final input = '''
+dependencies:
+  $dependencyName: $version
+''';
+    final output = input.replaceAllMapped(
+      regExp,
+      (match) => '${match.group(1)}$newVersion',
+    );
+
+    expect(output, '''
+dependencies:
+  $dependencyName: $newVersion
+''');
+  });
+}
+
+void testHostedDependencyVersionReplaceRegex(String version) {
+  test(version, () {
+    const dependencyName = 'foo';
+    const newVersion = '9.9.9';
+
+    final regExp = hostedDependencyVersionReplaceRegex(dependencyName);
+
+    final input = '''
+dependencies:
+  $dependencyName:
+    version: $version
+''';
+    final output = input.replaceAllMapped(
+      regExp,
+      (match) => '${match.group(1)}$newVersion',
+    );
+
+    expect(output, '''
+dependencies:
+  $dependencyName:
+    version: $newVersion
+''');
+  });
+}
+
+void testDependencyTagReplaceRegex(String version) {
+  test(version, () {
+    const dependencyName = 'foo';
+    const newVersion = '9.9.9';
+
+    final regExp = dependencyTagReplaceRegex(dependencyName);
+
+    final input = '''
+dependencies:
+  $dependencyName:
+    git:
+      ref: $dependencyName-v$version
+''';
+    final output = input.replaceAllMapped(
+      regExp,
+      (match) => '${match.group(1)}$dependencyName-v$newVersion',
+    );
+
+    expect(output, '''
+dependencies:
+  $dependencyName:
+    git:
+      ref: $dependencyName-v$newVersion
+''');
   });
 }
