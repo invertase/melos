@@ -83,31 +83,33 @@ enum PackageType {
   flutterApp,
 }
 
-// https://regex101.com/r/RAdBOn/3
 RegExp versionReplaceRegex = RegExp(
-  r'''^(version\s?:\s*?['"]?)(?<version>[-\d\.+\w_]{5,})(.*$)''',
+  r'''^(version\s?:\s*?['"]?)(?<version>[\w\-.+_]{5,})(.*$)''',
   multiLine: true,
 );
 
-// https://regex101.com/r/sY3jXt/2/
+const _versionRegExp = r'''\d+\.\d+\.\d+[\w\-.+_]*''';
+
+const _versionConstraintRegExp =
+    r"""(?<version>any|["'^<>=]*\d+\.\d+\.\d+['"<>=\w\-.+_]*)""";
+
 RegExp dependencyVersionReplaceRegex(String dependencyName) {
   return RegExp(
-    '''(?<dependency>^\\s+$dependencyName\\s?:\\s?)(?!\$)(?<version>any|["'^<>=]*\\d\\.\\d\\.\\d['"._\\s<>=\\d-\\w+]*)\$''',
+    '''(?<dependency>^\\s+$dependencyName\\s?:\\s?)(?!\$)$_versionConstraintRegExp''',
     multiLine: true,
   );
 }
 
-// https://regex101.com/r/HIeQaI/1
 RegExp hostedDependencyVersionReplaceRegex(String dependencyName) {
   return RegExp(
-    '''(^[ \t]*?(?<dependency>$dependencyName)[ \\t]*?:[ \\t]*?[\\s\\S]*?[ \\t]*?version:[ \\t]*?)(?<version>any|\\^.*|["'^<>=]*\\d\\.\\d\\.\\d['"._ \\t<>=\\d-\\w+]*|\$)\$''',
+    '''(^[ \t]*?(?<dependency>$dependencyName)[ \\t]*?:[ \\t]*?[\\s\\S]*?[ \\t]*?version:[ \\t]*?)$_versionConstraintRegExp''',
     multiLine: true,
   );
 }
 
 RegExp dependencyTagReplaceRegex(String dependencyName) {
   return RegExp(
-    '''(?<tag_ref>^\\s+ref\\s?:\\s?)(?<opening_quote>["']?)(?<tag>$dependencyName-v[\\d]+\\.[\\d]+\\.[\\d]+)(?<closing_quote>['"]?)\$''',
+    '''(?<tag_ref>^\\s+ref\\s?:\\s?)(?<opening_quote>["']?)(?<tag>$dependencyName-v$_versionRegExp)(?<closing_quote>['"]?)''',
     multiLine: true,
   );
 }

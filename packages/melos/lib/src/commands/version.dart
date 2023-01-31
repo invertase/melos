@@ -401,7 +401,7 @@ mixin _VersionMixin on _RunMixin {
     await writeTextFileAsync(pubspec, updatedContents);
   }
 
-  Future<void> _setDependentPackageVersionConstraint(
+  Future<void> _setDependencyVersionForDependentPackage(
     Package package,
     String dependencyName,
     Version version,
@@ -429,7 +429,8 @@ mixin _VersionMixin on _RunMixin {
     // specified version.
     // For example, ^1.2.3 is equivalent to '>=1.2.3 <2.0.0', and ^0.1.2 is
     // equivalent to '>=0.1.2 <0.2.0'.
-    var versionConstraint = VersionConstraint.compatibleWith(version);
+    var versionConstraint =
+        VersionConstraint.compatibleWith(version) as VersionRange;
 
     // For nullsafety releases we use a >=currentVersion <nextMajorVersion
     // constraint to allow nullsafety prerelease id versions to function similar
@@ -457,15 +458,18 @@ mixin _VersionMixin on _RunMixin {
   Future<void> _setDependencyVersionForPackage(
     Package package,
     String dependencyName,
-    VersionConstraint dependencyVersion,
+    VersionRange dependencyVersion,
     MelosWorkspace workspace,
   ) async {
-    if (package.pubSpec.dependencies.containsKey(dependencyName) &&
-        package.pubSpec.dependencies[dependencyName] is! GitReference &&
-        package.pubSpec.dependencies[dependencyName] is! HostedReference &&
-        package.pubSpec.dependencies[dependencyName]
-            is! ExternalHostedReference) {
-      logger.trace(
+    final dependencyReference = package.pubSpec.dependencies[dependencyName];
+    final devDependencyReference =
+        package.pubSpec.devDependencies[dependencyName];
+
+    if (dependencyReference != null &&
+        dependencyReference is! GitReference &&
+        dependencyReference is! HostedReference &&
+        dependencyReference is! ExternalHostedReference) {
+      logger.warning(
         'Skipping updating dependency $dependencyName for package '
         '${package.name} - '
         'the version is a Map definition and is most likely a dependency that '
@@ -473,12 +477,11 @@ mixin _VersionMixin on _RunMixin {
       );
       return;
     }
-    if (package.pubSpec.devDependencies.containsKey(dependencyName) &&
-        package.pubSpec.devDependencies[dependencyName] is! GitReference &&
-        package.pubSpec.devDependencies[dependencyName] is! HostedReference &&
-        package.pubSpec.devDependencies[dependencyName]
-            is! ExternalHostedReference) {
-      logger.trace(
+    if (devDependencyReference != null &&
+        devDependencyReference is! GitReference &&
+        devDependencyReference is! HostedReference &&
+        devDependencyReference is! ExternalHostedReference) {
+      logger.warning(
         'Skipping updating dev dependency $dependencyName for package '
         '${package.name} - '
         'the version is a Map definition and is most likely a dependency that '
@@ -490,38 +493,35 @@ mixin _VersionMixin on _RunMixin {
     final pubspec = pubspecPathForDirectory(package.path);
     final contents = await readTextFileAsync(pubspec);
 
-    final isExternalHostedReference = package
-            .pubSpec.dependencies[dependencyName] is ExternalHostedReference ||
-        package.pubSpec.devDependencies[dependencyName]
-            is ExternalHostedReference;
-
-    final gitReference =
-        package.pubSpec.dependencies[dependencyName] is GitReference ||
-            package.pubSpec.devDependencies[dependencyName] is GitReference;
+    final isExternalHostedReference =
+        dependencyReference is ExternalHostedReference ||
+            devDependencyReference is ExternalHostedReference;
+    final isGitReference = dependencyReference is GitReference ||
+        devDependencyReference is GitReference;
 
     var updatedContents = contents;
     if (isExternalHostedReference) {
       updatedContents = contents.replaceAllMapped(
-          hostedDependencyVersionReplaceRegex(dependencyName), (Match match) {
-        return '${match.group(1)}$dependencyVersion';
-      });
-    } else if (gitReference &&
+        hostedDependencyVersionReplaceRegex(dependencyName),
+        (match) => '${match.group(1)}$dependencyVersion',
+      );
+    } else if (isGitReference &&
         workspace.config.commands.version.updateGitTagRefs) {
       updatedContents = contents.replaceAllMapped(
-          dependencyTagReplaceRegex(dependencyName), (Match match) {
-        return '${match.group(1)}$dependencyName-'
-            'v${dependencyVersion.toString().substring(1)}';
-      });
+        dependencyTagReplaceRegex(dependencyName),
+        (match) => '${match.group(1)}$dependencyName-'
+            'v${dependencyVersion.min ?? dependencyVersion.max!}',
+      );
     } else {
       updatedContents = contents.replaceAllMapped(
-          dependencyVersionReplaceRegex(dependencyName), (Match match) {
-        return '${match.group(1)}$dependencyVersion';
-      });
+        dependencyVersionReplaceRegex(dependencyName),
+        (match) => '${match.group(1)}$dependencyVersion',
+      );
     }
 
     // Sanity check that contents actually changed.
     if (contents == updatedContents) {
-      logger.trace(
+      logger.warning(
         'Failed to update dependency $dependencyName version to '
         '$dependencyVersion for package ${package.name}, '
         'you should probably report this issue with a copy of your '
@@ -625,7 +625,7 @@ mixin _VersionMixin on _RunMixin {
           ...pendingPackageUpdate.package.dependentsInWorkspace.values,
           ...pendingPackageUpdate.package.devDependentsInWorkspace.values
         ], (Package package) {
-          return _setDependentPackageVersionConstraint(
+          return _setDependencyVersionForDependentPackage(
             package,
             pendingPackageUpdate.package.name,
             // Note if we're not updating dependent versions then we use the
@@ -654,7 +654,7 @@ mixin _VersionMixin on _RunMixin {
       await Future.wait(
         workspace.config.commands.version.aggregateChangelogs
             .map((changelogConfig) {
-          return writeAggregateChangelog(
+          return _writeAggregateChangelog(
             workspace,
             changelogConfig,
             pendingPackageUpdates,
@@ -664,7 +664,7 @@ mixin _VersionMixin on _RunMixin {
     }
   }
 
-  Future<void> writeAggregateChangelog(
+  Future<void> _writeAggregateChangelog(
     MelosWorkspace workspace,
     AggregateChangelogConfig config,
     List<MelosPendingPackageUpdate> pendingPackageUpdates,
