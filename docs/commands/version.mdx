@@ -16,6 +16,15 @@ melos version
 
 > To learn more, visit the [Automated Releases](/guides/automated-releases) documentation.
 
+## Hooks
+
+The `version` command supports the following hooks in addition to the [default hooks](/configuration/scripts#hooks):
+
+- `preVersionCommit`: Runs before the version commit is created.
+  Allows you to make your own changes as part of versioning.
+  You need to stage any changes you make yourself.
+
+
 ## --prerelease (-p)
 
 Version any packages with changes as a prerelease. Cannot be combined with graduate flag. Defaults to `false`.

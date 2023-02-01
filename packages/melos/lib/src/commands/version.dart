@@ -48,6 +48,49 @@ mixin _VersionMixin on _RunMixin {
       filter: filter?.copyWithDiff(null),
     );
 
+    return _runLifecycle(workspace, ScriptLifecycle.version, () {
+      return _version(
+        workspace: workspace,
+        global: global,
+        filter: filter,
+        asPrerelease: asPrerelease,
+        asStableRelease: asStableRelease,
+        updateChangelog: updateChangelog,
+        updateDependentsConstraints: updateDependentsConstraints,
+        updateDependentsVersions: updateDependentsVersions,
+        gitTag: gitTag,
+        releaseUrl: releaseUrl,
+        message: message,
+        force: force,
+        showPrivatePackages: showPrivatePackages,
+        preid: preid,
+        dependentPreid: dependentPreid,
+        versionPrivatePackages: versionPrivatePackages,
+        manualVersions: manualVersions,
+      );
+    });
+  }
+
+  Future<void> _version({
+    required MelosWorkspace workspace,
+    GlobalOptions? global,
+    PackageFilter? filter,
+    bool asPrerelease = false,
+    bool asStableRelease = false,
+    bool updateChangelog = true,
+    bool updateDependentsConstraints = true,
+    bool updateDependentsVersions = true,
+    bool gitTag = true,
+    bool? releaseUrl,
+    String? message,
+    bool force = false,
+    // all
+    bool showPrivatePackages = false,
+    String? preid,
+    String? dependentPreid,
+    bool versionPrivatePackages = false,
+    Map<String, versioning.ManualVersionChange> manualVersions = const {},
+  }) async {
     if (workspace.config.commands.version.branch != null) {
       final currentBranchName = await gitGetCurrentBranchName(
         workingDirectory: workspace.path,
@@ -304,10 +347,12 @@ mixin _VersionMixin on _RunMixin {
       workspace: workspace,
     );
 
-    // TODO allow support for individual package lifecycle version scripts
-    if (workspace.config.scripts.containsKey('version')) {
-      logger.log('Running "version" lifecycle script...\n');
-      await run(scriptName: 'version');
+    final preCommit = workspace.config.scripts.version.preCommit;
+    if (preCommit != null) {
+      logger
+        ..log('Running ${preCommit.name} lifecycle script...')
+        ..newLine();
+      await run(scriptName: preCommit.name);
     }
 
     if (gitTag) {
@@ -324,14 +369,7 @@ mixin _VersionMixin on _RunMixin {
       );
     }
 
-    // TODO allow support for individual package lifecycle postversion scripts
-    if (workspace.config.scripts.containsKey('postversion')) {
-      logger.log('Running "postversion" lifecycle script...\n');
-      await run(scriptName: 'postversion');
-    }
-
     if (gitTag) {
-      // TODO automatic push support
       logger.success(
         'Versioning successful. '
         'Ensure you push your git changes and tags (if applicable) via '
