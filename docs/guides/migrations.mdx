@@ -45,3 +45,24 @@ set to `true` by default:
 - `command/version/includeScopes`
 - `command/version/linkToCommits`, if `repository` is configured
 - `command/version/workspaceChangelog`
+
+### Lifecycle hooks
+
+The lifecycle `pre` and `post` hooks have been renamed. Previously, the `pre`
+hook had the same name as the command, and the `post` hook had the name of the
+command with `post` appended. Now, both the `pre` and `post` hook names are the
+capitalized name of the command, prefixed with `pre` or `post` respectively.
+
+- `bootstrap` -> `preBootstrap`
+- `postbootstrap` -> `postBootstrap`
+- `clean` -> `preClean`
+- `postclean` -> `postClean`
+- `version` -> `preVersion`
+- `postversion` -> `postVersion`
+
+The `version` hook was previously executed during versioning, before the version
+commit was created. The `preVersion` hook is now executed before the `version`
+command, like for all other commands.
+
+The new `preVersionCommmit` hook is executed before the version commit is
+created and is the equivalent of the previous `version` hook.

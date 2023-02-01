@@ -20,6 +20,7 @@ import 'dart:collection';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
+import 'commands/runner.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
 import 'package.dart';
@@ -28,14 +29,26 @@ import 'package.dart';
 final _leadingMelosExecRegExp = RegExp(r'^\s*melos\s+exec');
 
 /// Scripts to be executed before/after a melos command.
-class LifecycleHook {
-  LifecycleHook._({required this.pre, required this.post});
+class LifecycleHooks {
+  LifecycleHooks._({required this.pre, required this.post});
 
   /// A script to execute before the melos command starts.
   final Script? pre;
 
   /// A script to execute before the melos command completed.
   final Script? post;
+}
+
+class VersionLifecycleHooks extends LifecycleHooks {
+  VersionLifecycleHooks._({
+    required super.pre,
+    required super.post,
+    required this.preCommit,
+  }) : super._();
+
+  /// A script to execute before the version command commits the the changes
+  /// made during versioning.
+  final Script? preCommit;
 }
 
 class Scripts extends MapView<String, Script> {
@@ -66,11 +79,12 @@ class Scripts extends MapView<String, Script> {
 
   static const Scripts empty = Scripts({});
 
-  LifecycleHook get bootstrap => _lifecycleHookFor('bootstrap');
-  LifecycleHook get version => _lifecycleHookFor('version');
-  LifecycleHook get clean => _lifecycleHookFor('clean');
+  LifecycleHooks get bootstrap => _lifecycleHooksFor(ScriptLifecycle.bootstrap);
+  VersionLifecycleHooks get version =>
+      _lifecycleHooksFor(ScriptLifecycle.version) as VersionLifecycleHooks;
+  LifecycleHooks get clean => _lifecycleHooksFor(ScriptLifecycle.clean);
 
-  Set<Script> lifecycles() {
+  Set<Script> get allLifecycleScripts {
     return {
       for (final lifecycle in [bootstrap, version, clean]) ...[
         if (lifecycle.pre != null) lifecycle.pre!,
@@ -79,11 +93,37 @@ class Scripts extends MapView<String, Script> {
     };
   }
 
-  LifecycleHook _lifecycleHookFor(String name) {
-    return LifecycleHook._(
-      pre: this[name],
-      post: this['post$name'],
-    );
+  LifecycleHooks lifecycleHooksFor(ScriptLifecycle lifecycle) {
+    switch (lifecycle) {
+      case ScriptLifecycle.bootstrap:
+        return bootstrap;
+      case ScriptLifecycle.clean:
+        return clean;
+      case ScriptLifecycle.version:
+        return version;
+    }
+  }
+
+  LifecycleHooks _lifecycleHooksFor(ScriptLifecycle lifecycle) {
+    final name = lifecycle.name.capitalized;
+    final pre = this['pre$name'];
+    final post = this['post$name'];
+
+    switch (lifecycle) {
+      case ScriptLifecycle.bootstrap:
+      case ScriptLifecycle.clean:
+        return LifecycleHooks._(
+          pre: pre,
+          post: post,
+        );
+      case ScriptLifecycle.version:
+        final preCommit = this['pre${name}Commit'];
+        return VersionLifecycleHooks._(
+          pre: pre,
+          post: post,
+          preCommit: preCommit,
+        );
+    }
   }
 
   /// Validates the scripts. Throws a [MelosConfigException] if any script is

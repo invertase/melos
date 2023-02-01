@@ -1,14 +1,16 @@
 ---
 title: Defining workspace scripts
-description: Defining workspace scripts in Melos via the `melos.yaml` scripts definition.
+description:
+  Defining workspace scripts in Melos via the `melos.yaml` scripts definition.
 ---
 
 # Workspace Scripts
 
-Workspace scripts can be executed with `melos run` or will be executed as hooks before/after some
-specific Melos commands.
+Workspace scripts can be executed with `melos run` or will be executed as hooks
+before/after some specific Melos commands.
 
-With the simple syntax, only the name of the script and the command to execute needs to be specified:
+With the simple syntax, only the name of the script and the command to execute
+needs to be specified:
 
 ```yaml
 scripts:
@@ -27,11 +29,11 @@ scripts:
       GREETING: 'Hey'
 ```
 
-Scripts are executed in a shell. On Windows the shell is `cmd.exe` and on all other platforms
-it is `sh`.
+Scripts are executed in a shell. On Windows the shell is `cmd.exe` and on all
+other platforms it is `sh`.
 
-If multiple commands are being executed in a script and no further commands should be executed
-after a command has failed, connect the commands with `&&`:
+If multiple commands are being executed in a script and no further commands
+should be executed after a command has failed, connect the commands with `&&`:
 
 ```yaml
 scripts:
@@ -54,11 +56,11 @@ The command to execute.
 
 Execute a script in multiple packages through `melos exec`.
 
-This options must either contain the command to execute in multiple packages or the options for the
-`melos exec` command.
+This options must either contain the command to execute in multiple packages or
+the options for the `melos exec` command.
 
-When using the default options for `melos exec`, it's easiest to specify the command in the `exec`
-option:
+When using the default options for `melos exec`, it's easiest to specify the
+command in the `exec` option:
 
 ```yaml
 scripts:
@@ -66,8 +68,8 @@ scripts:
     exec: echo 'Hello $(dirname $PWD)'
 ```
 
-If you need to provide options for the `exec` command, specify them in the `exec` option and
-specify the command in the `run` option:
+If you need to provide options for the `exec` command, specify them in the
+`exec` option and specify the command in the `run` option:
 
 ```yaml
 scripts:
@@ -77,27 +79,26 @@ scripts:
       concurrency: 1
 ```
 
-See the [`select-package`](/configuration/scripts#scriptsselect-package) option for filtering the packages to execute
-the command in.
+See the [`select-package`](/configuration/scripts#scriptsselect-package) option
+for filtering the packages to execute the command in.
 
 ## `scripts/*/exec/concurrency`
 
-Defines the max concurrency value of how many packages will execute the command in at any one time.
-Defaults to `5`.
+Defines the max concurrency value of how many packages will execute the command
+in at any one time. Defaults to `5`.
 
 ## `scripts/*/exec/failFast`
 
-Whether `exec` should fail fast and not execute the script in further packages if the script fails
-in an individual package.
-Defaults to `false`.
+Whether `exec` should fail fast and not execute the script in further packages
+if the script fails in an individual package. Defaults to `false`.
 
 ## `scripts/*/exec/orderDependents`
 
-Whether `exec` should order the execution of the script in multiple packages based on the
-dependency graph of the packages. The script will be executed in leaf packages first and then
-in packages that depend on them and so on. This is useful for example, for a script that generates
-code in multiple packages, which depend on each other.
-Defaults to `false`.
+Whether `exec` should order the execution of the script in multiple packages
+based on the dependency graph of the packages. The script will be executed in
+leaf packages first and then in packages that depend on them and so on. This is
+useful for example, for a script that generates code in multiple packages, which
+depend on each other. Defaults to `false`.
 
 ## `scripts/*/env`
 
@@ -105,8 +106,9 @@ A map of environment variables that will be passed to the executed command.
 
 ## `scripts/*/select-package`
 
-The [`melos exec`](/commands/exec) command allows you to execute a command for multiple packages.
-When used in a script, you can declare filter options in the `select-packages` section.
+The [`melos exec`](/commands/exec) command allows you to execute a command for
+multiple packages. When used in a script, you can declare filter options in the
+`select-packages` section.
 
 The `hello_flutter` script below is only executed in Flutter packages:
 
@@ -121,20 +123,24 @@ scripts:
 See the [global options](/filters) for a list of supported filters.
 
 When running a script that uses `select-package`, you will be prompted to select
-the package to execute the script in. If you want to skip this prompt and run the script in all
-packages, use the `--no-select` option.
+the package to execute the script in. If you want to skip this prompt and run
+the script in all packages, use the `--no-select` option.
 
-----
+---
 
 # Hooks
 
-Certain Melos commands support running scripts before and after the command is executed.
-Before hooks have the same name as the command. Post hooks have the name of the command prefixed with `post`:
+Certain Melos commands support running scripts before and after the command is
+executed, as well as at other interstring points in the command's execution.
+
+All commands that support hooks at least support `pre` and `post` hook. Pre
+hooks have the captialized name of the command prefixed with `pre`. Post hooks
+have the captialized name of the command prefixed with `post`:
 
 ```yaml
 scripts:
-  bootstrap: echo `bootstrap command is running...`
-  postbootstrap: echo `bootstrap command is done`
+  preBootstrap: echo `bootstrap command is running...`
+  postBootstrap: echo `bootstrap command is done`
 ```
 
 Currently, the following Melos commands support hooks:

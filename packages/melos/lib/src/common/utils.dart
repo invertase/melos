@@ -103,6 +103,11 @@ extension StringUtils on String {
     }
     return this;
   }
+
+  String get capitalized {
+    if (isEmpty) return this;
+    return '${this[0].toUpperCase()}${substring(1)}';
+  }
 }
 
 int get terminalWidth {

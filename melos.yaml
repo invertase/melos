@@ -42,7 +42,7 @@ scripts:
     env:
       MELOS_TEST: true
 
-  version: dart run scripts/generate_version.dart
+  preVersionCommit: dart run scripts/generate_version.dart
 
   activate:
     description: Activate the local version of melos for development.

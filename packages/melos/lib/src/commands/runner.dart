@@ -49,6 +49,7 @@ part 'version.dart';
 enum ScriptLifecycle {
   bootstrap,
   clean,
+  version,
 }
 
 class Melos extends _Melos
@@ -110,34 +111,27 @@ abstract class _Melos {
     ScriptLifecycle lifecycle,
     FutureOr<void> Function() cb,
   ) async {
-    String scriptName;
-    switch (lifecycle) {
-      case ScriptLifecycle.bootstrap:
-        scriptName = 'bootstrap';
-        break;
-      case ScriptLifecycle.clean:
-        scriptName = 'clean';
-        break;
-    }
+    final hooks = workspace.config.scripts.lifecycleHooksFor(lifecycle);
+    final preScript = hooks.pre;
+    final postScript = hooks.post;
 
-    if (workspace.config.scripts.containsKey(scriptName)) {
+    if (preScript != null) {
       logger
-        ..log('Running $scriptName script...')
+        ..log('Running ${preScript.name} lifecycle script...')
         ..newLine();
 
-      await run(scriptName: scriptName);
+      await run(scriptName: preScript.name);
     }
 
     try {
       await cb();
     } finally {
-      final postScript = 'post$scriptName';
-      if (workspace.config.scripts.containsKey(postScript)) {
+      if (postScript != null) {
         logger
-          ..log('Running $postScript script...')
+          ..log('Running ${postScript.name} lifecycle script...')
           ..newLine();
 
-        await run(scriptName: postScript);
+        await run(scriptName: postScript.name);
       }
     }
   }
