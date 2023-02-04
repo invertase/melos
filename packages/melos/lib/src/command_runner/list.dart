@@ -93,7 +93,7 @@ class ListCommand extends MelosCommand {
     return melos.list(
       long: long,
       global: global,
-      filter: parsePackageFilter(config.path),
+      packageFilters: parsePackageFilters(config.path),
       relativePaths: relative,
       kind: kind,
     );

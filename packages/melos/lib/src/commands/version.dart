@@ -5,7 +5,7 @@ mixin _VersionMixin on _RunMixin {
   /// specified versions.
   Future<void> version({
     GlobalOptions? global,
-    PackageFilter? filter,
+    PackageFilters? packageFilters,
     bool asPrerelease = false,
     bool asStableRelease = false,
     bool updateChangelog = true,
@@ -45,14 +45,14 @@ mixin _VersionMixin on _RunMixin {
       // already filters it itself, filtering here would map dependant version
       // fail as it won't be aware of any packages that have been filtered out
       // here because of the 'diff' filter.
-      filter: filter?.copyWithDiff(null),
+      packageFilters: packageFilters?.copyWithDiff(null),
     );
 
     return _runLifecycle(workspace, ScriptLifecycle.version, () {
       return _version(
         workspace: workspace,
         global: global,
-        filter: filter,
+        packageFilters: packageFilters,
         asPrerelease: asPrerelease,
         asStableRelease: asStableRelease,
         updateChangelog: updateChangelog,
@@ -74,7 +74,7 @@ mixin _VersionMixin on _RunMixin {
   Future<void> _version({
     required MelosWorkspace workspace,
     GlobalOptions? global,
-    PackageFilter? filter,
+    PackageFilters? packageFilters,
     bool asPrerelease = false,
     bool asStableRelease = false,
     bool updateChangelog = true,
@@ -117,7 +117,7 @@ mixin _VersionMixin on _RunMixin {
     final packageCommits = await _getPackageCommits(
       workspace,
       versionPrivatePackages: versionPrivatePackages,
-      diff: filter?.diff,
+      diff: packageFilters?.diff,
     );
 
     final packagesWithVersionableCommits =
@@ -716,7 +716,7 @@ mixin _VersionMixin on _RunMixin {
     ].join('-');
 
     final packages =
-        await workspace.allPackages.applyFilter(config.packageFilter);
+        await workspace.allPackages.applyFilters(config.packageFilters);
     // ignore: parameter_assignments
     pendingPackageUpdates = pendingPackageUpdates
         .where((update) => packages[update.package.name] != null)

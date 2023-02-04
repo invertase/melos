@@ -28,7 +28,7 @@ class ScriptCommand extends MelosCommand {
       'no-select',
       negatable: false,
       help: 'Skips the prompt to select a package (if defined in the script '
-          'configuration). Filters defined in the scripts "select-package" '
+          """configuration). Filters defined in the script's "packageFilters" """
           'options will however still be applied.',
     );
   }

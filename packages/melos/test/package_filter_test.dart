@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 import 'utils.dart';
 
 void main() {
-  group('PackageFilter', () {
+  group('PackageFilters', () {
     test('dirExists', () async {
       final workspaceDir = createTemporaryWorkspaceDirectory();
 
@@ -26,7 +26,7 @@ void main() {
       final workspace = await MelosWorkspace.fromConfig(
         config,
         logger: TestLogger().toMelosLogger(),
-        filter: PackageFilter(
+        packageFilters: PackageFilters(
           dirExists: const ['test'],
         ),
       );
@@ -62,7 +62,7 @@ void main() {
       final workspace = await MelosWorkspace.fromConfig(
         config,
         logger: TestLogger().toMelosLogger(),
-        filter: PackageFilter(
+        packageFilters: PackageFilters(
           fileExists: const ['log.txt'],
         ),
       );

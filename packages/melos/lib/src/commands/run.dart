@@ -78,8 +78,8 @@ mixin _RunMixin on _Melos {
     final workspace = await MelosWorkspace.fromConfig(
       config,
       global: global,
-      filter: script.filter?.copyWithUpdatedIgnore([
-        ...script.filter!.ignore,
+      packageFilters: script.packageFilters?.copyWithUpdatedIgnore([
+        ...script.packageFilters!.ignore,
         ...config.ignore,
       ]),
       logger: logger,
@@ -94,14 +94,14 @@ mixin _RunMixin on _Melos {
       ...script.env,
     };
 
-    if (script.filter != null) {
+    if (script.packageFilters != null) {
       final packages = workspace.filteredPackages.values.toList();
 
       var choices = packages.map((e) => AnsiStyles.cyan(e.name)).toList();
 
       if (choices.isEmpty) {
         throw NoPackageFoundScriptException._(
-          script.filter,
+          script.packageFilters,
           script.name,
         );
       }
@@ -167,9 +167,9 @@ mixin _RunMixin on _Melos {
 }
 
 class NoPackageFoundScriptException implements MelosException {
-  NoPackageFoundScriptException._(this.filter, this.scriptName);
+  NoPackageFoundScriptException._(this.filters, this.scriptName);
 
-  final PackageFilter? filter;
+  final PackageFilters? filters;
   final String? scriptName;
 
   @override

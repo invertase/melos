@@ -1,8 +1,12 @@
 part of 'runner.dart';
 
 mixin _CleanMixin on _Melos {
-  Future<void> clean({GlobalOptions? global, PackageFilter? filter}) async {
-    final workspace = await createWorkspace(global: global, filter: filter);
+  Future<void> clean({
+    GlobalOptions? global,
+    PackageFilters? packageFilters,
+  }) async {
+    final workspace =
+        await createWorkspace(global: global, packageFilters: packageFilters);
 
     return _runLifecycle(
       workspace,

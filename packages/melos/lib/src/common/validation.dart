@@ -29,8 +29,7 @@ T assertKeyIsA<T>({
     throw MelosConfigException.missingKey(key: key, path: path);
   }
 
-  final value = map[key];
-  return assertIsA<T>(value: value, key: key);
+  return assertIsA<T>(value: map[key], key: key);
 }
 
 List<String> assertListOrString({

@@ -78,16 +78,16 @@ abstract class _Melos {
 
   Future<MelosWorkspace> createWorkspace({
     GlobalOptions? global,
-    PackageFilter? filter,
+    PackageFilters? packageFilters,
   }) async {
-    var filterWithEnv = filter;
+    var filterWithEnv = packageFilters;
 
     if (currentPlatform.environment.containsKey(envKeyMelosPackages)) {
       // MELOS_PACKAGES environment variable is a comma delimited list of
       // package names - used instead of filters if it is present.
       // This can be user defined or can come from package selection in
       // `melos run`.
-      filterWithEnv = PackageFilter(
+      filterWithEnv = PackageFilters(
         scope: currentPlatform.environment[envKeyMelosPackages]!
             .split(',')
             .map(
@@ -100,7 +100,7 @@ abstract class _Melos {
     return (await MelosWorkspace.fromConfig(
       config,
       global: global,
-      filter: filterWithEnv,
+      packageFilters: filterWithEnv,
       logger: logger,
     ))
       ..validate();

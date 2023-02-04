@@ -1,8 +1,12 @@
 part of 'runner.dart';
 
 mixin _BootstrapMixin on _CleanMixin {
-  Future<void> bootstrap({GlobalOptions? global, PackageFilter? filter}) async {
-    final workspace = await createWorkspace(global: global, filter: filter);
+  Future<void> bootstrap({
+    GlobalOptions? global,
+    PackageFilters? packageFilters,
+  }) async {
+    final workspace =
+        await createWorkspace(global: global, packageFilters: packageFilters);
 
     return _runLifecycle(
       workspace,

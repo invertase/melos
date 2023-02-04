@@ -1,11 +1,12 @@
 ---
 title: Run Command
-description: "Learn more about the `run` command in Melos."
+description: 'Learn more about the `run` command in Melos.'
 ---
 
 # Run Command
 
-Run a [script](/configuration/scripts) by name defined in the workspace `melos.yaml` config file.
+Run a [script](/configuration/scripts) by name defined in the workspace
+`melos.yaml` config file.
 
 ```bash
 melos run <name>
@@ -13,7 +14,9 @@ melos run <name>
 
 ## --no-select
 
-Skips the prompt to select a package (if defined in the script configuration). Filters defined in the scripts "select-package" options will however still be applied.
+Skips the prompt to select a package (if defined in the script configuration).
+Filters defined in the script's "packageFilters" options will however still be
+applied.
 
 ```bash
 melos run <name> --no-select

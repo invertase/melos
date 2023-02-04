@@ -27,7 +27,7 @@ void main() {
               'test_script': Script(
                 name: 'test_script',
                 run: 'melos exec -- "echo hello"',
-                filter: PackageFilter(
+                packageFilters: PackageFilters(
                   fileExists: const ['log.txt'],
                 ),
               )

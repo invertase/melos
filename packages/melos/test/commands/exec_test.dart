@@ -11,7 +11,7 @@ import '../utils.dart';
 
 void main() {
   group('exec', () {
-    test('supports package filter', () async {
+    test('supports package filters', () async {
       final workspaceDir = createTemporaryWorkspaceDirectory();
 
       final aDir = await createProject(
@@ -41,7 +41,7 @@ void main() {
       await melos.exec(
         ['echo', 'hello', 'world'],
         concurrency: 1,
-        filter: PackageFilter(
+        packageFilters: PackageFilters(
           fileExists: const ['log.txt'],
         ),
       );
@@ -228,7 +228,7 @@ ${'-' * terminalWidth}
           ['echo', 'hello', 'world'],
           concurrency: 2,
           orderDependents: true,
-          filter: PackageFilter(
+          packageFilters: PackageFilters(
             fileExists: const ['log.txt'],
           ),
         );

@@ -190,7 +190,7 @@ class Script {
     required this.run,
     this.description,
     this.env = const {},
-    this.filter,
+    this.packageFilters,
     this.exec,
   });
 
@@ -203,7 +203,7 @@ class Script {
     String run;
     String? description;
     var env = <String, String>{};
-    PackageFilter? packageFilter;
+    PackageFilters? packageFilters;
     ExecOptions? exec;
 
     if (yaml is String) {
@@ -247,17 +247,17 @@ class Script {
             ): entry.value.toString(),
       };
 
-      final packageFilterMap = assertKeyIsA<Map<Object?, Object?>?>(
-        key: 'select-package',
+      final packageFiltersMap = assertKeyIsA<Map<Object?, Object?>?>(
+        key: 'packageFilters',
         map: yaml,
         path: scriptPath,
       );
 
-      packageFilter = packageFilterMap == null
+      packageFilters = packageFiltersMap == null
           ? null
-          : PackageFilter.fromYaml(
-              packageFilterMap,
-              path: 'scripts/$name/select-package',
+          : PackageFilters.fromYaml(
+              packageFiltersMap,
+              path: 'scripts/$name/packageFilters',
               workspacePath: workspacePath,
             );
 
@@ -283,7 +283,7 @@ class Script {
       run: run,
       description: description,
       env: env,
-      filter: packageFilter,
+      packageFilters: packageFilters,
       exec: exec,
     );
   }
@@ -337,7 +337,7 @@ class Script {
 
   /// If the [run] command is a melos command, allows filtering packages that
   /// will execute the command.
-  final PackageFilter? filter;
+  final PackageFilters? packageFilters;
 
   /// The options for `melos exec`, if [run] should be executed in multiple
   /// packages.
@@ -390,7 +390,7 @@ class Script {
       'run': run,
       if (description != null) 'description': description,
       if (env.isNotEmpty) 'env': env,
-      if (filter != null) 'select-package': filter!.toJson(),
+      if (packageFilters != null) 'packageFilters': packageFilters!.toJson(),
       if (exec != null) 'exec': exec!.toJson(),
     };
   }
@@ -403,7 +403,7 @@ class Script {
       other.run == run &&
       other.description == description &&
       const DeepCollectionEquality().equals(other.env, env) &&
-      other.filter == filter &&
+      other.packageFilters == packageFilters &&
       other.exec == exec;
 
   @override
@@ -413,7 +413,7 @@ class Script {
       run.hashCode ^
       description.hashCode ^
       const DeepCollectionEquality().hash(env) ^
-      filter.hashCode ^
+      packageFilters.hashCode ^
       exec.hashCode;
 
   @override
@@ -424,7 +424,7 @@ Script(
   run: $run,
   description: $description,
   env: $env,
-  packageFilter: ${filter.toString().indent('  ')},
+  packageFilters: ${packageFilters.toString().indent('  ')},
   exec: ${exec.toString().indent('  ')},
 )''';
   }

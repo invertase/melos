@@ -47,7 +47,7 @@ jobs:
       - name: Install Tools
         run: ./.github/workflows/scripts/install-tools.sh
       - name: Check formatting
-        run: melos format-check
+        run: melos format:check
 
   test_linux:
     runs-on: ubuntu-latest

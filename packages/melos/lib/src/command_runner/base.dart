@@ -139,7 +139,7 @@ abstract class MelosCommand extends Command<void> {
     );
   }
 
-  PackageFilter parsePackageFilter(
+  PackageFilters parsePackageFilters(
     String workingDirPath, {
     bool diffEnabled = true,
   }) {
@@ -153,7 +153,7 @@ abstract class MelosCommand extends Command<void> {
     final scope = argResults![filterOptionScope] as List<String>? ?? [];
     final ignore = argResults![filterOptionIgnore] as List<String>? ?? [];
 
-    return PackageFilter(
+    return PackageFilters(
       scope: scope
           .map((e) => createGlob(e, currentDirectoryPath: workingDirPath))
           .toList(),

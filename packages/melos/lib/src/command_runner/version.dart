@@ -192,7 +192,7 @@ class VersionCommand extends MelosCommand {
       return melos.version(
         // We only want to version the specified package and not all packages
         // that could be versioned.
-        filter: PackageFilter(scope: [Glob(packageName)]),
+        packageFilters: PackageFilters(scope: [Glob(packageName)]),
         manualVersions: {packageName: versionChange},
         force: force,
         gitTag: tag,
@@ -235,7 +235,7 @@ class VersionCommand extends MelosCommand {
 
       await melos.version(
         global: global,
-        filter: parsePackageFilter(config.path),
+        packageFilters: parsePackageFilters(config.path),
         force: force,
         gitTag: tag,
         releaseUrl: releaseUrl,

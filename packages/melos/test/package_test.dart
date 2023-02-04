@@ -165,33 +165,33 @@ void main() {
     });
   });
 
-  group('PackageFilter', () {
+  group('PackageFilters', () {
     test('default', () {
-      final filter = PackageFilter();
+      final filters = PackageFilters();
 
-      expect(filter.dependsOn, isEmpty);
-      expect(filter.noDependsOn, isEmpty);
-      expect(filter.dirExists, isEmpty);
-      expect(filter.fileExists, isEmpty);
-      expect(filter.ignore, isEmpty);
-      expect(filter.scope, isEmpty);
-      expect(filter.includeDependencies, false);
-      expect(filter.includeDependents, false);
-      expect(filter.includePrivatePackages, null);
-      expect(filter.nullSafe, null);
-      expect(filter.published, null);
-      expect(filter.diff, null);
+      expect(filters.dependsOn, isEmpty);
+      expect(filters.noDependsOn, isEmpty);
+      expect(filters.dirExists, isEmpty);
+      expect(filters.fileExists, isEmpty);
+      expect(filters.ignore, isEmpty);
+      expect(filters.scope, isEmpty);
+      expect(filters.includeDependencies, false);
+      expect(filters.includeDependents, false);
+      expect(filters.includePrivatePackages, null);
+      expect(filters.nullSafe, null);
+      expect(filters.published, null);
+      expect(filters.diff, null);
     });
 
     group('copyWithWithDiff', () {
       test('can assign null', () {
-        final filter = PackageFilter(diff: '123');
+        final filters = PackageFilters(diff: '123');
 
-        expect(filter.copyWithDiff(null).diff, null);
+        expect(filters.copyWithDiff(null).diff, null);
       });
 
       test('clone properties besides diff', () {
-        final filter = PackageFilter(
+        final filters = PackageFilters(
           dependsOn: const ['a'],
           dirExists: const ['a'],
           fileExists: const ['a'],
@@ -207,20 +207,20 @@ void main() {
           diff: '123',
         );
 
-        final copy = filter.copyWithDiff('456');
+        final copy = filters.copyWithDiff('456');
 
         expect(copy.diff, '456');
-        expect(copy.dependsOn, filter.dependsOn);
-        expect(copy.dirExists, filter.dirExists);
-        expect(copy.fileExists, filter.fileExists);
-        expect(copy.scope, filter.scope);
-        expect(copy.ignore, filter.ignore);
-        expect(copy.includeDependencies, filter.includeDependencies);
-        expect(copy.includeDependents, filter.includeDependents);
-        expect(copy.includePrivatePackages, filter.includePrivatePackages);
-        expect(copy.noDependsOn, filter.noDependsOn);
-        expect(copy.nullSafe, filter.nullSafe);
-        expect(copy.published, filter.published);
+        expect(copy.dependsOn, filters.dependsOn);
+        expect(copy.dirExists, filters.dirExists);
+        expect(copy.fileExists, filters.fileExists);
+        expect(copy.scope, filters.scope);
+        expect(copy.ignore, filters.ignore);
+        expect(copy.includeDependencies, filters.includeDependencies);
+        expect(copy.includeDependents, filters.includeDependents);
+        expect(copy.includePrivatePackages, filters.includePrivatePackages);
+        expect(copy.noDependsOn, filters.noDependsOn);
+        expect(copy.nullSafe, filters.nullSafe);
+        expect(copy.published, filters.published);
       });
     });
   });

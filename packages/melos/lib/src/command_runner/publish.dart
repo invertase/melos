@@ -57,11 +57,11 @@ class PublishCommand extends MelosCommand {
     final yes = argResults!['yes'] as bool || false;
 
     final melos = Melos(logger: logger, config: config);
-    final filter = parsePackageFilter(config.path);
+    final packageFilters = parsePackageFilters(config.path);
 
     return melos.publish(
       global: global,
-      filter: filter,
+      packageFilters: packageFilters,
       dryRun: dryRun,
       force: yes,
       gitTagVersion: gitTagVersion,

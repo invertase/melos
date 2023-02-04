@@ -4,12 +4,13 @@ mixin _ExecMixin on _Melos {
   Future<void> exec(
     List<String> execArgs, {
     GlobalOptions? global,
-    PackageFilter? filter,
+    PackageFilters? packageFilters,
     int concurrency = 5,
     bool failFast = false,
     bool orderDependents = false,
   }) async {
-    final workspace = await createWorkspace(global: global, filter: filter);
+    final workspace =
+        await createWorkspace(global: global, packageFilters: packageFilters);
     final packages = workspace.filteredPackages.values;
 
     await _execForAllPackages(

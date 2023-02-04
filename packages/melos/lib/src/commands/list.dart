@@ -8,10 +8,11 @@ mixin _ListMixin on _Melos {
     GlobalOptions? global,
     bool long = false,
     bool relativePaths = false,
-    PackageFilter? filter,
+    PackageFilters? packageFilters,
     ListOutputKind kind = ListOutputKind.column,
   }) async {
-    final workspace = await createWorkspace(global: global, filter: filter);
+    final workspace =
+        await createWorkspace(global: global, packageFilters: packageFilters);
 
     switch (kind) {
       case ListOutputKind.graph:

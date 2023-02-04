@@ -115,8 +115,8 @@ RegExp dependencyTagReplaceRegex(String dependencyName) {
 }
 
 @immutable
-class PackageFilter {
-  PackageFilter({
+class PackageFilters {
+  PackageFilters({
     this.scope = const [],
     this.ignore = const [],
     this.dirExists = const [],
@@ -140,62 +140,72 @@ class PackageFilter {
           if (flutter == false) 'flutter',
         ];
 
-  factory PackageFilter.fromYaml(
+  factory PackageFilters.fromYaml(
     Map<Object?, Object?> yaml, {
     required String path,
     required String workspacePath,
   }) {
     final scope = assertListOrString(
-      key: filterOptionScope,
+      key: filterOptionScope.camelCased,
       map: yaml,
       path: path,
     );
+
     final ignore = assertListOrString(
-      key: filterOptionIgnore,
+      key: filterOptionIgnore.camelCased,
       map: yaml,
       path: path,
     );
+
     final dirExists = assertListOrString(
-      key: filterOptionDirExists,
+      key: filterOptionDirExists.camelCased,
       map: yaml,
       path: path,
     );
+
     final fileExists = assertListOrString(
-      key: filterOptionFileExists,
+      key: filterOptionFileExists.camelCased,
       map: yaml,
       path: path,
     );
+
     final dependsOn = assertListOrString(
-      key: filterOptionDependsOn,
+      key: filterOptionDependsOn.camelCased,
       map: yaml,
       path: path,
     );
+
     final noDependsOn = assertListOrString(
-      key: filterOptionNoDependsOn,
+      key: filterOptionNoDependsOn.camelCased,
       map: yaml,
       path: path,
     );
 
-    final diff = assertIsA<String?>(
-      value: yaml[filterOptionDiff],
-      key: filterOptionDiff,
+    final diff = assertKeyIsA<String?>(
+      key: filterOptionDiff.camelCased,
+      map: yaml,
       path: path,
     );
 
-    final excludePrivatePackagesTmp = assertIsA<bool?>(
-      value: yaml[filterOptionNoPrivate],
-      key: filterOptionNoPrivate,
+    final noPrivateOptionKey = filterOptionNoPrivate.camelCased;
+    final excludePrivatePackagesTmp = assertKeyIsA<bool?>(
+      key: noPrivateOptionKey,
+      map: yaml,
       path: path,
     );
-    final includePrivatePackagesTmp = assertIsA<bool?>(
-      value: yaml[filterOptionPrivate],
-      key: filterOptionNoPrivate,
+
+    final privateOptionKey = filterOptionPrivate.camelCased;
+    final includePrivatePackagesTmp = assertKeyIsA<bool?>(
+      key: privateOptionKey,
+      map: yaml,
       path: path,
     );
+
     if (includePrivatePackagesTmp != null &&
         excludePrivatePackagesTmp != null) {
       throw MelosConfigException(
-        'Cannot specify both --private and --no-private at the same time',
+        'Cannot specify both "$noPrivateOptionKey" and '
+        '"$excludePrivatePackagesTmp" at the same time in "$path".',
       );
     }
     bool? includePrivatePackages;
@@ -206,26 +216,28 @@ class PackageFilter {
       includePrivatePackages = !excludePrivatePackagesTmp;
     }
 
-    final published = assertIsA<bool?>(
-      value: yaml[filterOptionPublished],
-      key: filterOptionPublished,
+    final published = assertKeyIsA<bool?>(
+      key: filterOptionPublished.camelCased,
+      map: yaml,
       path: path,
     );
-    final nullSafe = assertIsA<bool?>(
-      value: yaml[filterOptionNullsafety],
-      key: filterOptionNullsafety,
+
+    final nullSafe = assertKeyIsA<bool?>(
+      key: filterOptionNullsafety.camelCased,
+      map: yaml,
       path: path,
     );
-    final flutter = assertIsA<bool?>(
-      value: yaml[filterOptionFlutter],
-      key: filterOptionFlutter,
+
+    final flutter = assertKeyIsA<bool?>(
+      key: filterOptionFlutter.camelCased,
+      map: yaml,
       path: path,
     );
 
     Glob createPackageGlob(String pattern) =>
         createGlob(pattern, currentDirectoryPath: workspacePath);
 
-    return PackageFilter(
+    return PackageFilters(
       scope: scope.map(createPackageGlob).toList(),
       ignore: ignore.map(createPackageGlob).toList(),
       dirExists: dirExists,
@@ -242,7 +254,7 @@ class PackageFilter {
 
   /// A default constructor with **all** properties as requires, to ensure that
   /// copyWith functions properly copy all properties.
-  PackageFilter._({
+  PackageFilters._({
     required this.scope,
     required this.ignore,
     required this.dirExists,
@@ -304,25 +316,26 @@ class PackageFilter {
   Map<String, Object?> toJson() {
     return {
       if (scope.isNotEmpty)
-        filterOptionScope: scope.map((e) => e.toString()).toList(),
+        filterOptionScope.camelCased: scope.map((e) => e.toString()).toList(),
       if (ignore.isNotEmpty)
-        filterOptionIgnore: ignore.map((e) => e.toString()).toList(),
-      if (dirExists.isNotEmpty) filterOptionDirExists: dirExists,
-      if (fileExists.isNotEmpty) filterOptionFileExists: fileExists,
-      if (dependsOn.isNotEmpty) filterOptionDependsOn: dependsOn,
-      if (noDependsOn.isNotEmpty) filterOptionNoDependsOn: noDependsOn,
-      if (diff != null) filterOptionDiff: diff,
+        filterOptionIgnore.camelCased: ignore.map((e) => e.toString()).toList(),
+      if (dirExists.isNotEmpty) filterOptionDirExists.camelCased: dirExists,
+      if (fileExists.isNotEmpty) filterOptionFileExists.camelCased: fileExists,
+      if (dependsOn.isNotEmpty) filterOptionDependsOn.camelCased: dependsOn,
+      if (noDependsOn.isNotEmpty)
+        filterOptionNoDependsOn.camelCased: noDependsOn,
+      if (diff != null) filterOptionDiff.camelCased: diff,
       if (includePrivatePackages != null)
-        filterOptionPrivate: includePrivatePackages,
-      if (published != null) filterOptionPublished: published,
-      if (nullSafe != null) filterOptionNullsafety: nullSafe,
-      if (includeDependents) filterOptionIncludeDependents: true,
-      if (includeDependencies) filterOptionIncludeDependencies: true,
+        filterOptionPrivate.camelCased: includePrivatePackages,
+      if (published != null) filterOptionPublished.camelCased: published,
+      if (nullSafe != null) filterOptionNullsafety.camelCased: nullSafe,
+      if (includeDependents) filterOptionIncludeDependents.camelCased: true,
+      if (includeDependencies) filterOptionIncludeDependencies.camelCased: true,
     };
   }
 
-  PackageFilter copyWithDiff(String? diff) {
-    return PackageFilter._(
+  PackageFilters copyWithDiff(String? diff) {
+    return PackageFilters._(
       dependsOn: dependsOn,
       dirExists: dirExists,
       fileExists: fileExists,
@@ -338,8 +351,8 @@ class PackageFilter {
     );
   }
 
-  PackageFilter copyWithUpdatedIgnore(List<Glob> ignore) {
-    return PackageFilter._(
+  PackageFilters copyWithUpdatedIgnore(List<Glob> ignore) {
+    return PackageFilters._(
       dependsOn: dependsOn,
       dirExists: dirExists,
       fileExists: fileExists,
@@ -357,7 +370,7 @@ class PackageFilter {
 
   @override
   bool operator ==(Object other) =>
-      other is PackageFilter &&
+      other is PackageFilters &&
       runtimeType == other.runtimeType &&
       other.nullSafe == nullSafe &&
       other.published == published &&
@@ -391,7 +404,7 @@ class PackageFilter {
   @override
   String toString() {
     return '''
-PackageFilter(
+PackageFilters(
   nullSafe: $nullSafe,
   published: $published,
   includeDependencies: $includeDependencies,
@@ -408,8 +421,8 @@ PackageFilter(
   }
 }
 
-class InvalidPackageFilterException extends MelosException {
-  InvalidPackageFilterException(this.message);
+class InvalidPackageFiltersException extends MelosException {
+  InvalidPackageFiltersException(this.message);
 
   final String message;
 
@@ -551,28 +564,28 @@ The packages that caused the problem are:
   /// Detect packages in the workspace with the provided filters.
   ///
   /// This is the default packages behaviour when a workspace is loaded.
-  Future<PackageMap> applyFilter(PackageFilter? filter) async {
-    if (filter == null) return this;
+  Future<PackageMap> applyFilters(PackageFilters? filters) async {
+    if (filters == null) return this;
 
     var packageList = await values
-        .applyIgnore(filter.ignore)
-        .applyDirExists(filter.dirExists)
-        .applyFileExists(filter.fileExists)
-        .filterPrivatePackages(include: filter.includePrivatePackages)
-        .applyScope(filter.scope)
-        .applyDependsOn(filter.dependsOn)
-        .applyNoDependsOn(filter.noDependsOn)
-        .filterNullSafe(nullSafe: filter.nullSafe)
-        .filterPublishedPackages(published: filter.published);
+        .applyIgnore(filters.ignore)
+        .applyDirExists(filters.dirExists)
+        .applyFileExists(filters.fileExists)
+        .filterPrivatePackages(include: filters.includePrivatePackages)
+        .applyScope(filters.scope)
+        .applyDependsOn(filters.dependsOn)
+        .applyNoDependsOn(filters.noDependsOn)
+        .filterNullSafe(nullSafe: filters.nullSafe)
+        .filterPublishedPackages(published: filters.published);
 
-    final diff = filter.diff;
+    final diff = filters.diff;
     if (diff != null) {
       packageList = await packageList.applyDiff(diff, _logger);
     }
 
     packageList = packageList.applyIncludeDependentsOrDependencies(
-      includeDependents: filter.includeDependents,
-      includeDependencies: filter.includeDependencies,
+      includeDependents: filters.includeDependents,
+      includeDependencies: filters.includeDependencies,
     );
 
     return PackageMap(

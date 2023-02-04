@@ -169,7 +169,7 @@ void main() {
               AggregateChangelogConfig.workspace(),
               AggregateChangelogConfig(
                 path: 'FOO_CHANGELOG.md',
-                packageFilter: PackageFilter(flutter: true),
+                packageFilters: PackageFilters(flutter: true),
                 description: 'Changelog for all foo packages.',
               ),
             ],

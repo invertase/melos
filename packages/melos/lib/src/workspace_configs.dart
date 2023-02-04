@@ -325,7 +325,7 @@ class AggregateChangelogConfig {
   AggregateChangelogConfig({
     this.isWorkspaceChangelog = false,
     required this.path,
-    required this.packageFilter,
+    required this.packageFilters,
     this.description,
   });
 
@@ -333,7 +333,7 @@ class AggregateChangelogConfig {
       : this(
           isWorkspaceChangelog: true,
           path: 'CHANGELOG.md',
-          packageFilter: PackageFilter(),
+          packageFilters: PackageFilters(),
           description: '''
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
@@ -342,14 +342,14 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
   final bool isWorkspaceChangelog;
   final String path;
-  final PackageFilter packageFilter;
+  final PackageFilters packageFilters;
   final String? description;
 
   Map<String, dynamic> toJson() {
     return {
       'isWorkspaceChangelog': isWorkspaceChangelog,
       'path': path,
-      'packageFilter': packageFilter,
+      'packageFilters': packageFilters,
       'description': description,
     };
   }
@@ -360,7 +360,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
       runtimeType == other.runtimeType &&
       other.isWorkspaceChangelog == isWorkspaceChangelog &&
       other.path == path &&
-      other.packageFilter == packageFilter &&
+      other.packageFilters == packageFilters &&
       other.description == description;
 
   @override
@@ -368,7 +368,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
       runtimeType.hashCode ^
       isWorkspaceChangelog.hashCode ^
       path.hashCode ^
-      packageFilter.hashCode ^
+      packageFilters.hashCode ^
       description.hashCode;
 
   @override
@@ -377,7 +377,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 AggregateChangelogConfig(
   isWorkspaceChangelog: $isWorkspaceChangelog,
   path: $path,
-  packageFilter: $packageFilter,
+  packageFilters: $packageFilters,
   description: $description,
 )''';
   }
@@ -464,13 +464,13 @@ class VersionCommandConfigs {
         key: 'path',
       );
 
-      final packageFilterMap = assertKeyIsA<Map<Object?, Object?>>(
+      final packageFiltersMap = assertKeyIsA<Map<Object?, Object?>>(
         map: entry,
         key: 'packageFilters',
         path: 'command/version/changelogs[$i]',
       );
-      final packageFilter = PackageFilter.fromYaml(
-        packageFilterMap,
+      final packageFilters = PackageFilters.fromYaml(
+        packageFiltersMap,
         path: 'command/version/changelogs[$i]',
         workspacePath: workspacePath,
       );
@@ -482,7 +482,7 @@ class VersionCommandConfigs {
       );
       final changelogConfig = AggregateChangelogConfig(
         path: path,
-        packageFilter: packageFilter,
+        packageFilters: packageFilters,
         description: description,
       );
 

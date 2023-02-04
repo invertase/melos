@@ -76,6 +76,8 @@ const envKeyMelosTerminalWidth = 'MELOS_TERMINAL_WIDTH';
 
 final melosPackageUri = Uri.parse('package:melos/melos.dart');
 
+final _camelCasedDelimiterRegExp = RegExp(r'[_\s-]+');
+
 extension StringUtils on String {
   String indent(String indent) {
     final split = this.split('\n');
@@ -107,6 +109,22 @@ extension StringUtils on String {
   String get capitalized {
     if (isEmpty) return this;
     return '${this[0].toUpperCase()}${substring(1)}';
+  }
+
+  String get camelCased {
+    if (isEmpty) return this;
+    var isFirstWord = true;
+    return splitMapJoin(
+      _camelCasedDelimiterRegExp,
+      onMatch: (m) => '',
+      onNonMatch: (n) {
+        if (isFirstWord) {
+          isFirstWord = false;
+          return n;
+        }
+        return n.capitalized;
+      },
+    );
   }
 }
 

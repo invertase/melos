@@ -66,3 +66,31 @@ command, like for all other commands.
 
 The new `preVersionCommmit` hook is executed before the version commit is
 created and is the equivalent of the previous `version` hook.
+
+### Package filters
+
+The `select-package` option for scripts has been renamed to `packageFilters`.
+This brings it in line with `command/version/changelogs/packageFilters`.
+
+The names of filters specified in `packageFilters` are now camel cased instead
+of kebab cased.
+
+For example, take the following `test` script configuration:
+
+```yaml
+scripts:
+  test:
+    exec: dart test
+    packageFilters:
+      dirExists: test
+```
+
+This would previously have been written as:
+
+```yaml
+scripts:
+  test:
+    exec: dart test
+    select-package:
+      dir-exists: test
+```

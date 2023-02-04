@@ -3,13 +3,14 @@ part of 'runner.dart';
 mixin _PublishMixin on _ExecMixin {
   Future<void> publish({
     GlobalOptions? global,
-    PackageFilter? filter,
+    PackageFilters? packageFilters,
     bool dryRun = true,
     bool gitTagVersion = true,
     // yes
     bool force = false,
   }) async {
-    final workspace = await createWorkspace(global: global, filter: filter);
+    final workspace =
+        await createWorkspace(global: global, packageFilters: packageFilters);
 
     logger.command('melos publish${dryRun ? " --dry-run" : ''}');
     logger.child(targetStyle(workspace.path)).newLine();
