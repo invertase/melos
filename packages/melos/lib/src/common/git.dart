@@ -224,6 +224,17 @@ Future<String?> gitLatestTagForPackage(
   return tags.first;
 }
 
+Future<void> gitFetchTags({
+  required String workingDirectory,
+  required MelosLogger logger,
+}) async {
+  await gitExecuteCommand(
+    arguments: ['fetch', '--tags'],
+    workingDirectory: workingDirectory,
+    logger: logger,
+  );
+}
+
 /// Stage files matching the specified file pattern for committing.
 Future<void> gitAdd(
   String filePattern, {

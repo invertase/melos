@@ -395,6 +395,7 @@ class VersionCommandConfigs {
     this.updateGitTagRefs = false,
     this.releaseUrl = false,
     List<AggregateChangelogConfig>? aggregateChangelogs,
+    this.fetchTags = true,
   }) : _aggregateChangelogs = aggregateChangelogs;
 
   factory VersionCommandConfigs.fromYaml(
@@ -489,6 +490,12 @@ class VersionCommandConfigs {
       aggregateChangelogs.add(changelogConfig);
     }
 
+    final fetchTags = assertKeyIsA<bool?>(
+      key: 'fetchTags',
+      map: yaml,
+      path: 'command/version',
+    );
+
     return VersionCommandConfigs(
       branch: branch,
       message: message,
@@ -498,6 +505,7 @@ class VersionCommandConfigs {
       updateGitTagRefs: updateGitTagRefs ?? false,
       releaseUrl: releaseUrl ?? false,
       aggregateChangelogs: aggregateChangelogs,
+      fetchTags: fetchTags ?? true,
     );
   }
 
@@ -534,6 +542,9 @@ class VersionCommandConfigs {
 
   final List<AggregateChangelogConfig>? _aggregateChangelogs;
 
+  /// Whether to fetch tags from the `origin` remote before versioning.
+  final bool fetchTags;
+
   Map<String, Object?> toJson() {
     return {
       if (branch != null) 'branch': branch,
@@ -544,6 +555,7 @@ class VersionCommandConfigs {
       'updateGitTagRefs': updateGitTagRefs,
       'aggregateChangelogs':
           aggregateChangelogs.map((config) => config.toJson()).toList(),
+      'fetchTags': fetchTags,
     };
   }
 
@@ -559,7 +571,8 @@ class VersionCommandConfigs {
       other.updateGitTagRefs == updateGitTagRefs &&
       other.releaseUrl == releaseUrl &&
       const DeepCollectionEquality()
-          .equals(other.aggregateChangelogs, aggregateChangelogs);
+          .equals(other.aggregateChangelogs, aggregateChangelogs) &&
+      other.fetchTags == fetchTags;
 
   @override
   int get hashCode =>
@@ -571,7 +584,8 @@ class VersionCommandConfigs {
       linkToCommits.hashCode ^
       updateGitTagRefs.hashCode ^
       releaseUrl.hashCode ^
-      const DeepCollectionEquality().hash(aggregateChangelogs);
+      const DeepCollectionEquality().hash(aggregateChangelogs) ^
+      fetchTags.hashCode;
 
   @override
   String toString() {
@@ -585,6 +599,7 @@ VersionCommandConfigs(
   updateGitTagRefs: $updateGitTagRefs,
   releaseUrl: $releaseUrl,
   aggregateChangelogs: $aggregateChangelogs,
+  fetchTags: $fetchTags,
 )''';
   }
 }

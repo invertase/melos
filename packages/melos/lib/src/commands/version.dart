@@ -114,6 +114,10 @@ mixin _VersionMixin on _RunMixin {
 
     final commitMessageTemplate = Template(message, delimiters: '{ }');
 
+    if (config.commands.version.fetchTags) {
+      await gitFetchTags(workingDirectory: workspace.path, logger: logger);
+    }
+
     final packageCommits = await _getPackageCommits(
       workspace,
       versionPrivatePackages: versionPrivatePackages,
