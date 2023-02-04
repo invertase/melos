@@ -139,18 +139,20 @@ The packages that caused the problem are:
       }),
     );
 
-    test('load workspace config when workspace contains broken symlink',
-        () async {
-      final workspaceDir = await createTemporaryWorkspace();
+    test(
+      'load workspace config when workspace contains broken symlink',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace();
 
-      final link = Link(p.join(workspaceDir.path, 'link'));
-      await link.create(p.join(workspaceDir.path, 'does-not-exist'));
+        final link = Link(p.join(workspaceDir.path, 'link'));
+        await link.create(p.join(workspaceDir.path, 'does-not-exist'));
 
-      await MelosWorkspace.fromConfig(
-        await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir),
-        logger: TestLogger().toMelosLogger(),
-      );
-    });
+        await MelosWorkspace.fromConfig(
+          await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir),
+          logger: TestLogger().toMelosLogger(),
+        );
+      },
+    );
 
     group('locate packages', () {
       test('in workspace root', () async {
