@@ -77,7 +77,7 @@ void main() {
 
   group('startProcess', () {
     test('runs command chain in single shell', () async {
-      final workspaceDir = createTemporaryWorkspaceDirectory();
+      final workspaceDir = await createTemporaryWorkspace();
       final testDir = p.join(workspaceDir.path, 'test');
 
       ensureDir(testDir);

@@ -12,7 +12,7 @@ import '../utils.dart';
 void main() {
   group('exec', () {
     test('supports package filters', () async {
-      final workspaceDir = createTemporaryWorkspaceDirectory();
+      final workspaceDir = await createTemporaryWorkspace();
 
       final aDir = await createProject(
         workspaceDir,
@@ -32,7 +32,7 @@ void main() {
       );
 
       final logger = TestLogger();
-      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
       final melos = Melos(
         logger: logger,
         config: config,
@@ -74,7 +74,7 @@ ${'-' * terminalWidth}
 
     group('order dependents', () {
       test('sorts execution order topologically', () async {
-        final workspaceDir = createTemporaryWorkspaceDirectory();
+        final workspaceDir = await createTemporaryWorkspace();
 
         await createProject(
           workspaceDir,
@@ -98,7 +98,8 @@ ${'-' * terminalWidth}
         );
 
         final logger = TestLogger();
-        final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+        final config =
+            await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
         final melos = Melos(
           logger: logger,
           config: config,
@@ -133,7 +134,7 @@ ${'-' * terminalWidth}
       });
 
       test('fails fast if dependencies fail', () async {
-        final workspaceDir = createTemporaryWorkspaceDirectory();
+        final workspaceDir = await createTemporaryWorkspace();
 
         await createProject(
           workspaceDir,
@@ -157,7 +158,8 @@ ${'-' * terminalWidth}
         );
 
         final logger = TestLogger();
-        final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+        final config =
+            await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
         final melos = Melos(
           logger: logger,
           config: config,
@@ -192,7 +194,7 @@ ${'-' * terminalWidth}
       });
 
       test('does not fail fast if dependencies is not run', () async {
-        final workspaceDir = createTemporaryWorkspaceDirectory();
+        final workspaceDir = await createTemporaryWorkspace();
 
         final aDir = await createProject(
           workspaceDir,
@@ -218,7 +220,8 @@ ${'-' * terminalWidth}
         writeTextFile(p.join(cDir.path, 'log.txt'), '');
 
         final logger = TestLogger();
-        final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+        final config =
+            await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
         final melos = Melos(
           logger: logger,
           config: config,
@@ -254,7 +257,5 @@ ${'-' * terminalWidth}
         );
       });
     });
-
-    // TODO test that environment variables are injected
   });
 }

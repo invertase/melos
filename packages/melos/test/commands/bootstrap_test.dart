@@ -50,7 +50,7 @@ void main() {
         path: '',
       );
 
-      final workspaceDir = createTemporaryWorkspaceDirectory();
+      final workspaceDir = await createTemporaryWorkspace();
 
       final aPath = p.join(workspaceDir.path, 'packages', 'a');
 
@@ -78,7 +78,7 @@ void main() {
       );
 
       final logger = TestLogger();
-      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
       final workspace = await MelosWorkspace.fromConfig(
         config,
         logger: logger.toMelosLogger(),
@@ -152,7 +152,7 @@ Generating IntelliJ IDE files...
     });
 
     test('resolves workspace packages with path dependency', () async {
-      final workspaceDir = createTemporaryWorkspaceDirectory();
+      final workspaceDir = await createTemporaryWorkspace();
 
       final aDir = await createProject(
         workspaceDir,
@@ -177,7 +177,7 @@ Generating IntelliJ IDE files...
       );
 
       final logger = TestLogger();
-      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
       final melos = Melos(
         logger: logger,
         config: config,
@@ -254,9 +254,7 @@ Generating IntelliJ IDE files...
     );
 
     test('respects user dependency_overrides', () async {
-      final workspaceDir = createTemporaryWorkspaceDirectory(
-        configBuilder: (path) => MelosWorkspaceConfig.fallback(path: path),
-      );
+      final workspaceDir = await createTemporaryWorkspace();
 
       final pkgA = await createProject(
         workspaceDir,
@@ -275,7 +273,7 @@ Generating IntelliJ IDE files...
       );
 
       final logger = TestLogger();
-      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
       final melos = Melos(
         logger: logger,
         config: config,
@@ -293,9 +291,7 @@ Generating IntelliJ IDE files...
     });
 
     test('bootstrap flutter example packages', () async {
-      final workspaceDir = createTemporaryWorkspaceDirectory(
-        configBuilder: (path) => MelosWorkspaceConfig.fallback(path: path),
-      );
+      final workspaceDir = await createTemporaryWorkspace();
 
       await createProject(
         workspaceDir,
@@ -320,7 +316,7 @@ Generating IntelliJ IDE files...
       );
 
       final logger = TestLogger();
-      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
       final melos = Melos(
         logger: logger,
         config: config,
@@ -493,7 +489,7 @@ dependency_overrides:
     });
 
     test('handles errors in pub get', () async {
-      final workspaceDir = createTemporaryWorkspaceDirectory();
+      final workspaceDir = await createTemporaryWorkspace();
 
       await createProject(
         workspaceDir,
@@ -508,7 +504,7 @@ dependency_overrides:
       );
 
       final logger = TestLogger();
-      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
       final workspace = await MelosWorkspace.fromConfig(
         config,
         logger: logger.toMelosLogger(),
@@ -550,7 +546,7 @@ e-Because a depends on package_that_does_not_exists any which doesn't exist (cou
     });
 
     test('can run pub get offline', () async {
-      final workspaceDir = createTemporaryWorkspaceDirectory(
+      final workspaceDir = await createTemporaryWorkspace(
         configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
           createYamlMap(
             {
@@ -567,7 +563,7 @@ e-Because a depends on package_that_does_not_exists any which doesn't exist (cou
       );
 
       final logger = TestLogger();
-      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
       final workspace = await MelosWorkspace.fromConfig(
         config,
         logger: logger.toMelosLogger(),
@@ -635,9 +631,7 @@ Future<void> runMelosBootstrap(Melos melos, TestLogger logger) async {
 Future<void> dependencyResolutionTest(
   Map<String, List<String>> packages,
 ) async {
-  final workspaceDir = createTemporaryWorkspaceDirectory(
-    configBuilder: (path) => MelosWorkspaceConfig.fallback(path: path),
-  );
+  final workspaceDir = await createTemporaryWorkspace();
 
   Future<MapEntry<String, io.Directory>> createPackage(
     MapEntry<String, List<String>> entry,
@@ -694,7 +688,7 @@ Future<void> dependencyResolutionTest(
   }
 
   final logger = TestLogger();
-  final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+  final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
   final melos = Melos(
     logger: logger,
     config: config,

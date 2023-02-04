@@ -9,7 +9,7 @@ import 'utils.dart';
 void main() {
   group('PackageFilters', () {
     test('dirExists', () async {
-      final workspaceDir = createTemporaryWorkspaceDirectory();
+      final workspaceDir = await createTemporaryWorkspace();
 
       final aDir = await createProject(
         workspaceDir,
@@ -22,7 +22,7 @@ void main() {
         const PubSpec(name: 'b'),
       );
 
-      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
       final workspace = await MelosWorkspace.fromConfig(
         config,
         logger: TestLogger().toMelosLogger(),
@@ -45,7 +45,7 @@ void main() {
     });
 
     test('fileExists', () async {
-      final workspaceDir = createTemporaryWorkspaceDirectory();
+      final workspaceDir = await createTemporaryWorkspace();
 
       final aDir = await createProject(
         workspaceDir,
@@ -58,7 +58,7 @@ void main() {
         const PubSpec(name: 'b'),
       );
 
-      final config = await MelosWorkspaceConfig.fromDirectory(workspaceDir);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
       final workspace = await MelosWorkspace.fromConfig(
         config,
         logger: TestLogger().toMelosLogger(),

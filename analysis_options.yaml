@@ -87,3 +87,6 @@ linter:
     # Not a common style and would add a lot of verbosity to function signature.
     # 'parameter_assignments' already enforces this to an extent.
     prefer_final_parameters: false
+
+    # Useful to allow for `multiLine` utility function.
+    no_adjacent_strings_in_list: false

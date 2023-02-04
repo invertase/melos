@@ -17,16 +17,16 @@
 
 import 'dart:io';
 
+import 'package:ansi_styles/ansi_styles.dart';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
-import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
 
 import '../melos.dart';
 import 'common/git_repository.dart';
 import 'common/glob.dart';
 import 'common/io.dart';
-import 'common/platform.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
 import 'scripts.dart';
@@ -752,18 +752,6 @@ class MelosWorkspaceConfig {
     );
   }
 
-  MelosWorkspaceConfig.fallback({required String path})
-      : this(
-          name: 'Melos',
-          packages: [
-            createGlob('packages/**', currentDirectoryPath: path),
-          ],
-          path: currentPlatform.isWindows
-              ? p.windows.normalize(path).replaceAll(r'\', r'\\')
-              : path,
-          commands: CommandConfigs.empty,
-        );
-
   MelosWorkspaceConfig.empty()
       : this(
           name: 'Melos',
@@ -772,69 +760,109 @@ class MelosWorkspaceConfig {
           commands: CommandConfigs.empty,
         );
 
-  static Directory? _searchForAncestorDirectoryWithMelosYaml(Directory from) {
-    for (var testedDirectory = from;
-        testedDirectory.path != testedDirectory.parent.path;
-        testedDirectory = testedDirectory.parent) {
-      if (isWorkspaceDirectory(testedDirectory.path)) {
-        return testedDirectory;
-      }
-    }
-    return null;
-  }
-
-  /// Creates a new configuration from a [Directory].
-  ///
-  /// If no `melos.yaml` is found, but [Directory] contains a `packages/`
-  /// sub-directory, a configuration for those packages will be created.
-  static Future<MelosWorkspaceConfig> fromDirectory(
-    Directory directory,
+  /// Loads the [MelosWorkspaceConfig] for the workspace at [workspaceRoot].
+  static Future<MelosWorkspaceConfig> fromWorkspaceRoot(
+    Directory workspaceRoot,
   ) async {
-    final melosWorkspaceDirectory =
-        _searchForAncestorDirectoryWithMelosYaml(directory);
+    final melosYamlFile = File(melosYamlPathForDirectory(workspaceRoot.path));
 
-    if (melosWorkspaceDirectory == null) {
-      // Allow melos to use a project without a `melos.yaml` file if a
-      // `packages` directory exists.
-      final packagesDirectory = p.joinAll([directory.path, 'packages']);
-
-      if (dirExists(packagesDirectory)) {
-        return MelosWorkspaceConfig.fallback(path: directory.path)
-          ..validatePhysicalWorkspace();
-      }
-
-      throw MelosConfigException(
-        '''
-Your current directory does not appear to be a valid Melos workspace.
-
-You must have one of the following to be a valid Melos workspace:
-  - a "melos.yaml" file in the root with a "packages" option defined
-  - a "packages" directory
-''',
+    if (!melosYamlFile.existsSync()) {
+      throw UnresolvedWorkspace(
+        multiLine([
+          'Found no melos.yaml file in "${workspaceRoot.path}".',
+          '',
+          'You must have a ${AnsiStyles.bold('melos.yaml')} file in the root '
+              'of your workspace.',
+          '',
+          'For more information, see: '
+              'https://melos.invertase.dev/configuration/overview',
+        ]),
       );
     }
 
-    final melosYamlPath =
-        melosYamlPathForDirectory(melosWorkspaceDirectory.path);
-    final yamlContents = (await loadYamlFile(melosYamlPath))?.toPlainObject()
-        as Map<Object?, Object?>?;
-
-    if (yamlContents == null) {
-      throw MelosConfigException('Failed to parse the melos.yaml file');
+    Object? melosYamlContents;
+    try {
+      melosYamlContents = loadYamlNode(
+        await melosYamlFile.readAsString(),
+        sourceUrl: melosYamlFile.uri,
+      ).toPlainObject();
+    } on YamlException catch (error) {
+      throw MelosConfigException('Failed to parse melos.yaml:\n$error');
     }
 
-    final melosOverridesYamlPath =
-        melosOverridesYamlPathForDirectory(melosWorkspaceDirectory.path);
-    final overridesYamlContents = (await loadYamlFile(melosOverridesYamlPath))
-        ?.toPlainObject() as Map<Object?, Object?>?;
-    if (overridesYamlContents != null) {
-      mergeMap(yamlContents, overridesYamlContents);
+    if (melosYamlContents is! Map<Object?, Object?>) {
+      throw MelosConfigException('melos.yaml must contain a YAML map.');
+    }
+
+    final melosOverridesYamlFile =
+        File(melosOverridesYamlPathForDirectory(workspaceRoot.path));
+    if (melosOverridesYamlFile.existsSync()) {
+      Object? melosOverridesYamlContents;
+      try {
+        melosOverridesYamlContents = loadYamlNode(
+          await melosOverridesYamlFile.readAsString(),
+          sourceUrl: melosOverridesYamlFile.uri,
+        ).toPlainObject();
+      } on YamlException catch (error) {
+        throw MelosConfigException(
+          'Failed to parse melos_overrides.yaml:\n$error',
+        );
+      }
+
+      if (melosOverridesYamlContents is! Map<Object?, Object?>) {
+        throw MelosConfigException(
+          'melos_overrides.yaml must contain a YAML map.',
+        );
+      }
+
+      mergeMap(melosYamlContents, melosOverridesYamlContents);
     }
 
     return MelosWorkspaceConfig.fromYaml(
-      yamlContents,
-      path: melosWorkspaceDirectory.path,
+      melosYamlContents,
+      path: workspaceRoot.path,
     )..validatePhysicalWorkspace();
+  }
+
+  /// Handles the case where a workspace could not be found in the [current]
+  /// or a parent directory by throwing an error with a helpful message.
+  static Future<Never> handleWorkspaceNotFound(Directory current) async {
+    final legacyWorkspace = await _findMelosYaml(current);
+    if (legacyWorkspace != null) {
+      throw UnresolvedWorkspace(
+        multiLine([
+          'Found a melos.yaml file in "${legacyWorkspace.path}" but no local '
+              'installation of Melos.',
+          '',
+          'From version 3.0.0, the ${AnsiStyles.bold('melos')} package must be '
+              'installed in a ${AnsiStyles.bold('pubspec.yaml')} file next to '
+              'the melos.yaml file.',
+          '',
+          'For more information, see: '
+              'https://melos.invertase.dev/guides/migrations#200-to-300'
+        ]),
+      );
+    }
+
+    throw UnresolvedWorkspace(
+      multiLine([
+        'Your current directory does not appear to be within a Melos '
+            'workspace.',
+        '',
+        'For setting up a workspace, see: '
+            'https://melos.invertase.dev/getting-started#setup',
+      ]),
+    );
+  }
+
+  static Future<Directory?> _findMelosYaml(Directory start) async {
+    final melosYamlFile = File(melosYamlPathForDirectory(start.path));
+    if (melosYamlFile.existsSync()) {
+      return start;
+    }
+
+    final parent = start.parent;
+    return parent.path == start.path ? null : _findMelosYaml(parent);
   }
 
   /// The absolute path to the workspace folder.
@@ -966,4 +994,14 @@ class _GlobEquality implements Equality<Glob> {
 
   @override
   bool isValidKey(Object? o) => true;
+}
+
+/// An exception thrown when a Melos workspace could not be resolved.
+class UnresolvedWorkspace implements MelosException {
+  UnresolvedWorkspace(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }
