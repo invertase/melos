@@ -356,7 +356,11 @@ mixin _VersionMixin on _RunMixin {
     }
 
     if (gitTag) {
-      await _gitStageChanges(pendingPackageUpdates, workspace);
+      await _gitStageChanges(
+        workspace,
+        pendingPackageUpdates,
+        updateDependentsVersions: updateDependentsVersions,
+      );
       await _gitCommitChanges(
         workspace,
         pendingPackageUpdates,
@@ -365,7 +369,7 @@ mixin _VersionMixin on _RunMixin {
       );
       await _gitTagChanges(
         pendingPackageUpdates,
-        updateDependentsVersions,
+        updateDependentsVersions: updateDependentsVersions,
       );
     }
 
@@ -648,9 +652,8 @@ mixin _VersionMixin on _RunMixin {
     await Future.forEach(pendingPackageUpdates,
         (MelosPendingPackageUpdate pendingPackageUpdate) async {
       // Update package pubspec version.
-      if ((pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
-              updateDependentsVersions) ||
-          pendingPackageUpdate.reason != PackageUpdateReason.dependency) {
+      if (pendingPackageUpdate.reason != PackageUpdateReason.dependency ||
+          updateDependentsVersions) {
         await _setPubspecVersionForPackage(
           pendingPackageUpdate.package,
           pendingPackageUpdate.nextVersion,
@@ -679,12 +682,10 @@ mixin _VersionMixin on _RunMixin {
       }
 
       // Update changelogs if requested.
-      if (updateChangelog) {
-        if ((pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
-                updateDependentsVersions) ||
-            pendingPackageUpdate.reason != PackageUpdateReason.dependency) {
-          await pendingPackageUpdate.changelog.write();
-        }
+      if (updateChangelog &&
+          (pendingPackageUpdate.reason != PackageUpdateReason.dependency ||
+              updateDependentsVersions)) {
+        await pendingPackageUpdate.changelog.write();
       }
     });
 
@@ -776,11 +777,10 @@ mixin _VersionMixin on _RunMixin {
   }
 
   Future<void> _gitTagChanges(
-    List<MelosPendingPackageUpdate> pendingPackageUpdates,
-    bool updateDependentsVersions,
-  ) async {
-    await Future.forEach(pendingPackageUpdates,
-        (MelosPendingPackageUpdate pendingPackageUpdate) async {
+    List<MelosPendingPackageUpdate> pendingPackageUpdates, {
+    required bool updateDependentsVersions,
+  }) async {
+    await Future.forEach(pendingPackageUpdates, (pendingPackageUpdate) async {
       if (pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
           !updateDependentsVersions) {
         return;
@@ -834,9 +834,10 @@ mixin _VersionMixin on _RunMixin {
   }
 
   Future<void> _gitStageChanges(
-    List<MelosPendingPackageUpdate> pendingPackageUpdates,
     MelosWorkspace workspace,
-  ) async {
+    List<MelosPendingPackageUpdate> pendingPackageUpdates, {
+    required bool updateDependentsVersions,
+  }) async {
     for (final changelog
         in workspace.config.commands.version.aggregateChangelogs) {
       await gitAdd(
@@ -853,11 +854,14 @@ mixin _VersionMixin on _RunMixin {
         workingDirectory: pendingPackageUpdate.package.path,
         logger: logger,
       );
-      await gitAdd(
-        'CHANGELOG.md',
-        workingDirectory: pendingPackageUpdate.package.path,
-        logger: logger,
-      );
+      if (pendingPackageUpdate.reason != PackageUpdateReason.dependency ||
+          updateDependentsVersions) {
+        await gitAdd(
+          'CHANGELOG.md',
+          workingDirectory: pendingPackageUpdate.package.path,
+          logger: logger,
+        );
+      }
       await Future.forEach([
         ...pendingPackageUpdate.package.dependentsInWorkspace.values,
         ...pendingPackageUpdate.package.devDependentsInWorkspace.values,
@@ -868,17 +872,6 @@ mixin _VersionMixin on _RunMixin {
           logger: logger,
         );
       });
-
-      // TODO this is a temporary workaround for committing generated dart
-      // files.
-      // TODO remove once options exposed for this in a later release.
-      if (pendingPackageUpdate.package.name == 'melos') {
-        await gitAdd(
-          '**/*.g.dart',
-          workingDirectory: pendingPackageUpdate.package.path,
-          logger: logger,
-        );
-      }
     });
   }
 }
