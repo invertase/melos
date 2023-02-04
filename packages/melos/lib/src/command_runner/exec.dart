@@ -66,7 +66,7 @@ class ExecCommand extends MelosCommand {
 
     final melos = Melos(logger: logger, config: config);
 
-    final packageFilter = parsePackageFilter(config.path);
+    final packageFilters = parsePackageFilters(config.path);
     final concurrency = int.parse(argResults!['concurrency'] as String);
     final failFast = argResults!['fail-fast'] as bool;
     final orderDependents = argResults!['order-dependents'] as bool;
@@ -77,7 +77,7 @@ class ExecCommand extends MelosCommand {
       failFast: failFast,
       orderDependents: orderDependents,
       global: global,
-      filter: packageFilter,
+      packageFilters: packageFilters,
     );
   }
 }

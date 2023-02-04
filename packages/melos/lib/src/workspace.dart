@@ -57,7 +57,7 @@ class MelosWorkspace {
   static Future<MelosWorkspace> fromConfig(
     MelosWorkspaceConfig workspaceConfig, {
     GlobalOptions? global,
-    PackageFilter? filter,
+    PackageFilters? packageFilters,
     required MelosLogger logger,
   }) async {
     final allPackages = await PackageMap.resolvePackages(
@@ -73,7 +73,7 @@ class MelosWorkspace {
       logger: logger,
     );
 
-    final filteredPackages = await allPackages.applyFilter(filter);
+    final filteredPackages = await allPackages.applyFilters(packageFilters);
 
     return MelosWorkspace(
       name: workspaceConfig.name,

@@ -21,7 +21,7 @@ scripts:
     description: Format Dart code.
     run: dart format .
 
-  format-check:
+  format:check:
     description: Check formatting of Dart code.
     run: dart format --output none --set-exit-if-changed .
 
@@ -34,8 +34,8 @@ scripts:
     run: dart test
     exec:
       concurrency: 1
-    select-package:
-      dir-exists:
+    packageFilters:
+      dirExists:
         - 'test/'
     # This tells Melos tests to ignore env variables passed to tests from `melos run test`
     # as they could change the behaviour of how tests filter packages.

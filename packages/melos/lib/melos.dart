@@ -15,9 +15,9 @@ export 'src/global_options.dart' show GlobalOptions;
 export 'src/logging.dart' show MelosLogger, ToMelosLoggerExtension;
 export 'src/package.dart'
     show
-        InvalidPackageFilterException,
+        InvalidPackageFiltersException,
         Package,
-        PackageFilter,
+        PackageFilters,
         PackageMap,
         PackageType;
 export 'src/workspace.dart' show IdeWorkspace, MelosWorkspace;

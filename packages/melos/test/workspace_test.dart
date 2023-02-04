@@ -242,7 +242,7 @@ The packages that caused the problem are:
             );
             final workspace = await MelosWorkspace.fromConfig(
               config,
-              filter: PackageFilter(
+              packageFilters: PackageFilters(
                 scope: [
                   createGlob('b', currentDirectoryPath: workspaceDir.path)
                 ],
@@ -269,7 +269,7 @@ The packages that caused the problem are:
             );
             final workspace = await MelosWorkspace.fromConfig(
               config,
-              filter: PackageFilter(
+              packageFilters: PackageFilters(
                 scope: [
                   createGlob('a', currentDirectoryPath: workspaceDir.path),
                 ],
@@ -303,7 +303,7 @@ The packages that caused the problem are:
             );
             final workspace = await MelosWorkspace.fromConfig(
               config,
-              filter: PackageFilter(
+              packageFilters: PackageFilters(
                 scope: [
                   createGlob('a', currentDirectoryPath: workspaceDir.path),
                 ],
@@ -339,7 +339,7 @@ The packages that caused the problem are:
             );
             final workspace = await MelosWorkspace.fromConfig(
               config,
-              filter: PackageFilter(
+              packageFilters: PackageFilters(
                 scope: [
                   createGlob('a', currentDirectoryPath: workspaceDir.path),
                 ],
@@ -372,7 +372,7 @@ The packages that caused the problem are:
             );
             final workspace = await MelosWorkspace.fromConfig(
               config,
-              filter: PackageFilter(
+              packageFilters: PackageFilters(
                 scope: [
                   createGlob('a', currentDirectoryPath: workspaceDir.path),
                 ],
@@ -399,7 +399,7 @@ The packages that caused the problem are:
             );
             final workspace = await MelosWorkspace.fromConfig(
               config,
-              filter: PackageFilter(
+              packageFilters: PackageFilters(
                 scope: [
                   createGlob('b', currentDirectoryPath: workspaceDir.path),
                 ],
@@ -431,7 +431,7 @@ The packages that caused the problem are:
             );
             final workspace = await MelosWorkspace.fromConfig(
               config,
-              filter: PackageFilter(
+              packageFilters: PackageFilters(
                 scope: [
                   createGlob('c', currentDirectoryPath: workspaceDir.path),
                 ],
@@ -467,7 +467,7 @@ The packages that caused the problem are:
             );
             final workspace = await MelosWorkspace.fromConfig(
               config,
-              filter: PackageFilter(
+              packageFilters: PackageFilters(
                 scope: [
                   createGlob('d', currentDirectoryPath: workspaceDir.path),
                 ],

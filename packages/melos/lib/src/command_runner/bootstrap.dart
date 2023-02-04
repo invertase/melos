@@ -42,7 +42,7 @@ class BootstrapCommand extends MelosCommand {
 
     return melos.bootstrap(
       global: global,
-      filter: parsePackageFilter(config.path),
+      packageFilters: parsePackageFilters(config.path),
     );
   }
 }

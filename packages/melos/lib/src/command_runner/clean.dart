@@ -37,7 +37,7 @@ class CleanCommand extends MelosCommand {
 
     await melos.clean(
       global: global,
-      filter: parsePackageFilter(config.path),
+      packageFilters: parsePackageFilters(config.path),
     );
   }
 }

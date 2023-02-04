@@ -97,7 +97,7 @@ c
           final melos = Melos(logger: logger, config: config);
 
           await melos.list(
-            filter: PackageFilter(
+            packageFilters: PackageFilters(
               includePrivatePackages: true,
               ignore: [
                 createGlob('b', currentDirectoryPath: workspaceDir.path),

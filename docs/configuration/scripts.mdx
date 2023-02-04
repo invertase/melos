@@ -79,7 +79,7 @@ scripts:
       concurrency: 1
 ```
 
-See the [`select-package`](/configuration/scripts#scriptsselect-package) option
+See the [`packageFilters`](/configuration/scripts#scriptspackagefilters) option
 for filtering the packages to execute the command in.
 
 ## `scripts/*/exec/concurrency`
@@ -104,11 +104,11 @@ depend on each other. Defaults to `false`.
 
 A map of environment variables that will be passed to the executed command.
 
-## `scripts/*/select-package`
+## `scripts/*/packageFilters`
 
 The [`melos exec`](/commands/exec) command allows you to execute a command for
 multiple packages. When used in a script, you can declare filter options in the
-`select-packages` section.
+`packageFilters` section.
 
 The `hello_flutter` script below is only executed in Flutter packages:
 
@@ -116,13 +116,18 @@ The `hello_flutter` script below is only executed in Flutter packages:
 scripts:
   hello_flutter:
     exec: echo 'Hello $(dirname $PWD)'
-    select-package:
+    packageFilters:
       flutter: true
 ```
 
 See the [global options](/filters) for a list of supported filters.
 
-When running a script that uses `select-package`, you will be prompted to select
+<Warning>
+  The filter names in `packageFilters` are camel cased. For example, for the
+  equivalent of the command line option `--file-exists` use `fileExists`.
+</Warning>
+
+When running a script that uses `packageFilters`, you will be prompted to select
 the package to execute the script in. If you want to skip this prompt and run
 the script in all packages, use the `--no-select` option.
 
