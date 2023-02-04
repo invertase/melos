@@ -1,11 +1,11 @@
 ---
 title: Exec Command
-description: "Learn more about the `exec` command in Melos."
+description: Learn more about the `exec` command in Melos.
 ---
 
 # Exec Command
 
-> Supports all [Melos filtering](/filters) flags.
+<Info>Supports all [Melos filtering](/filters) flags.</Info>
 
 Execute an arbitrary command in each package.
 
@@ -14,22 +14,23 @@ melos exec
 # e.g. melos exec -- pub global run tuneup check
 ```
 
-The command is executed in a shell. On Windows the shell is `cmd.exe` and on all other platforms
-it is `sh`.
+The command is executed in a shell. On Windows the shell is `cmd.exe` and on all
+other platforms it is `sh`.
 
-If multiple commands are being executed and no further commands should be executed
-after a command has failed, connect the commands with `&&`:
+If multiple commands are being executed and no further commands should be
+executed after a command has failed, connect the commands with `&&`:
 
 ```shell
 melos exec -- "melos bootstrap && melos run build"
 ```
 
-It is important to pass multiple commands as a single string to `melos exec`, otherwise the shell
-will pass only the first command to `melos exec`.
+It is important to pass multiple commands as a single string to `melos exec`,
+otherwise the shell will pass only the first command to `melos exec`.
 
 ## concurrency (-c)
 
-Defines the max concurrency value of how many packages will execute the command in at any one time. Defaults to `5`.
+Defines the max concurrency value of how many packages will execute the command
+in at any one time. Defaults to `5`.
 
 ```bash
 # Set a 1 concurrency
@@ -38,8 +39,8 @@ melos exec -c 1  -- "dart analyze ."
 
 ## --fail-fast
 
-Whether exec should fail fast and not execute the script in further packages if the script fails in an individual package.
-Defaults to `false`.
+Whether exec should fail fast and not execute the script in further packages if
+the script fails in an individual package. Defaults to `false`.
 
 ```bash
 # Fail fast

@@ -1,6 +1,21 @@
 <p align="center">
+  <a href="https://melos.invertase.dev">
   <img src="https://static.invertase.io/assets/melos-logo.png" alt="Melos" /> <br /><br />
-  <span>A tool for managing Dart projects with multiple packages.</span>
+  </a>
+  <span>A tool for managing Dart projects with multiple packages, inspired by <a href="https://lerna.js.org">Lerna</a>.</span>
+</p>
+
+<p align="center">
+  <a href="https://github.com/invertase/melos#readme-badge"><img src="https://img.shields.io/badge/maintained%20with-melos-f700ff.svg?style=flat-square" alt="Melos" /></a>
+  <a href="https://docs.page"><img src="https://img.shields.io/badge/powered%20by-docs.page-34C4AC.svg?style=flat-square" alt="docs.page" /></a>
+ <a href="https://invertase.link/discord">
+   <img src="https://img.shields.io/discord/295953187817521152.svg?style=flat-square&colorA=7289da&label=Chat%20on%20Discord" alt="Chat on Discord">
+ </a>
+</p>
+
+<p align="center">
+  <a href="https://melos.invertase.dev">Documentation</a> &bull;
+  <a href="https://github.com/invertase/melos/blob/main/LICENSE">License</a>
 </p>
 
 ---
@@ -21,7 +36,7 @@ repositories with git and Pub.**
 
 ---
 
-### What does a Melos workspace look like?
+## What does a Melos workspace look like?
 
 A default file structure looks something like this:
 
@@ -40,7 +55,7 @@ configuration file if the default is unsuitable.
 
 ---
 
-### What can Melos do?
+## What can Melos do?
 
 - 🔗 Link local packages in your workspace together without adding dependency
   overrides.
@@ -51,12 +66,12 @@ configuration file if the default is unsuitable.
   workspace can just run `melos run` to be prompted to select a script from a
   list with descriptions of each script.
   - Scripts can even
-    [prompt to select a package](https://github.com/invertase/melos/pull/34) to
-    run against with pre-defined filters.
+    [prompt to select a package](https://melos.invertase.dev/configuration/scripts#packagefilters)
+    to run against with pre-defined filters.
 - ⚡ Execute commands across your packages easily with
-  `melos exec -- command here` with additional concurrency and fail-fast
+  `melos exec -- <command here>` with additional concurrency and fail-fast
   options.
-  - [Environment variables](https://github.com/invertase/melos/issues/3)
+  - [Environment variables](https://melos.invertase.dev/environment-variables)
     containing various information about the current package and the workspace
     are available in each execution.
   - Can be combined with all package filters.
@@ -92,13 +107,20 @@ configuration file if the default is unsuitable.
   - `--no-depends-on=<noDependantPackageName>`
     - Include only packages that _don't_ depend on a specific package.
 - ♨️ Advanced support for IntelliJ IDEs with automatic creation of
-  [run configurations for workspace defined scripts and more](https://github.com/invertase/melos/issues/9)
+  [run configurations for workspace defined scripts and more](https://melos.invertase.dev/ide-support)
   on workspace bootstrap.
   - Integration with VS Code through an [extension][melos-code].
 
 ---
 
-### Who is using Melos?
+## Getting Started
+
+Go to the [Getting Started](https://melos.invertase.dev/getting-started) page of
+the [documentation](https://docs.page/invertase/melos) to start using Melos.
+
+---
+
+## Who is using Melos?
 
 The following projects are using Melos:
 
@@ -124,33 +146,27 @@ The following projects are using Melos:
 > Submit a PR if you'd like to add your project to the list. Update the
 > [README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md)
 > and the [docs](https://github.com/invertase/melos/edit/main/docs/index.mdx).
-> You can also add a [readme badge](#readme-badge) to your projects readme to
+>
+> You can also add a [README badge](#readme-badge) to your projects README to
 > let others know about Melos 💙.
 
 ---
 
-## Getting Started
-
-Go to the [Getting Started](https://melos.invertase.dev/getting-started) page of
-the [documentation](https://docs.page/invertase/melos) to start using Melos.
-
----
-
-### Documentation
+## Documentation
 
 Documentation is available at
 [https://melos.invertase.dev](https://melos.invertase.dev).
 
 ---
 
-### Migrations
+## Migrations
 
 When migrating between major versions of Melos, please read the
 [migration guide](https://melos.invertase.dev/guides/migrations).
 
 ---
 
-### Commands
+## Commands
 
 Full commands list and args can be viewed by running `melos --help`.
 
@@ -180,6 +196,13 @@ Run "melos help <command>" for more information about a command.
 
 ---
 
+## How to Contribute
+
+To start making contributions please refer to
+[`CONTRIBUTING.md`](./CONTRIBUTING.md).
+
+---
+
 ## Lerna
 
 This project is heavily inspired by [Lerna](https://lerna.js.org/).
@@ -204,12 +227,14 @@ Using Melos? Add a README badge to show it off:
 
 ---
 
-<p>
-  <img align="left" width="75px" src="https://static.invertase.io/assets/invertase-logo-small.png">
-  <p align="left">
-    &nbsp;&nbsp;Built and maintained with 💛 by <a href="https://invertase.io">Invertase</a>.
+<p align="center">
+  <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=melos">
+    <img width="75px" src="https://static.invertase.io/assets/invertase/invertase-rounded-avatar.png">
+  </a>
+  <p align="center">
+    Built and maintained with 💛 by <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=melos">Invertase</a>.
   </p>
-  <p align="left">
+    <p align="center">
     &nbsp;&nbsp;<a href="https://twitter.com/invertaseio"><img src="https://img.shields.io/twitter/follow/invertaseio.svg?style=flat-square&colorA=1da1f2&colorB=&label=Follow%20on%20Twitter" alt="Follow on Twitter"></a>
   </p>
 </p>

@@ -23,7 +23,7 @@ The extends syntax allows for a more complex configuration of a script:
 scripts:
   hello:
     name: hey
-    description: 'Greet the world'
+    description: Greet the world
     run: echo '$GREETING World'
     env:
       GREETING: 'Hey'
@@ -40,19 +40,19 @@ scripts:
   prepare: melos bootstrap && melos run build
 ```
 
-## `scripts/*/name`
+## name
 
 A unique identifier for the script.
 
-## `scripts/*/description`
+## description
 
 A short description, shown when using `melos run` with no argument.
 
-## `scripts/*/run`
+## run
 
 The command to execute.
 
-## `scripts/*/exec`
+## exec
 
 Execute a script in multiple packages through `melos exec`.
 
@@ -79,20 +79,20 @@ scripts:
       concurrency: 1
 ```
 
-See the [`packageFilters`](/configuration/scripts#scriptspackagefilters) option
-for filtering the packages to execute the command in.
+See the [`packageFilters`](/configuration/scripts#packagefilters) option for
+filtering the packages to execute the command in.
 
-## `scripts/*/exec/concurrency`
+### concurrency
 
 Defines the max concurrency value of how many packages will execute the command
 in at any one time. Defaults to `5`.
 
-## `scripts/*/exec/failFast`
+### failFast
 
 Whether `exec` should fail fast and not execute the script in further packages
 if the script fails in an individual package. Defaults to `false`.
 
-## `scripts/*/exec/orderDependents`
+### orderDependents
 
 Whether `exec` should order the execution of the script in multiple packages
 based on the dependency graph of the packages. The script will be executed in
@@ -100,11 +100,11 @@ leaf packages first and then in packages that depend on them and so on. This is
 useful for example, for a script that generates code in multiple packages, which
 depend on each other. Defaults to `false`.
 
-## `scripts/*/env`
+## env
 
 A map of environment variables that will be passed to the executed command.
 
-## `scripts/*/packageFilters`
+## packageFilters
 
 The [`melos exec`](/commands/exec) command allows you to execute a command for
 multiple packages. When used in a script, you can declare filter options in the
@@ -133,7 +133,7 @@ the script in all packages, use the `--no-select` option.
 
 ---
 
-# Hooks
+## Hooks
 
 Certain Melos commands support running scripts before and after the command is
 executed, as well as at other interstring points in the command's execution.
