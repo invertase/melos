@@ -333,3 +333,14 @@ Whether to generate and print a link to the prefilled release creation page for
 each package after versioning. Defaults to `false`.
 
 [glob]: https://docs.python.org/3/library/glob.html
+
+### `command/version/fetchTags`
+
+Whether to fetch tags from the `origin` remote before versioning. Defaults to
+`true`.
+
+```yaml
+command:
+  version:
+    fetchTags: false
+```
