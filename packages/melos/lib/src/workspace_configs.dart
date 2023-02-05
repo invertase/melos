@@ -838,8 +838,11 @@ class MelosWorkspaceConfig {
               'installed in a ${AnsiStyles.bold('pubspec.yaml')} file next to '
               'the melos.yaml file.',
           '',
-          'For more information, see: '
-              'https://melos.invertase.dev/guides/migrations#200-to-300'
+          'For more information on migrating to version 3.0.0, see: '
+              'https://melos.invertase.dev/guides/migrations#200-to-300',
+          '',
+          'To migrate at a later time, ensure you have version 2.9.0 or below '
+              'installed: dart pub global activate melos 2.9.0',
         ]),
       );
     }
