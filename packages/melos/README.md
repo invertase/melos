@@ -34,8 +34,6 @@ bases into multi-package repositories (sometimes called
 **Melos is a tool that optimizes the workflow around managing multi-package
 repositories with git and Pub.**
 
----
-
 ## What does a Melos workspace look like?
 
 A default file structure looks something like this:
@@ -52,8 +50,6 @@ my-melos-repo/
 
 The location of your packages can be configured via the `melos.yaml`
 configuration file if the default is unsuitable.
-
----
 
 ## What can Melos do?
 
@@ -111,14 +107,10 @@ configuration file if the default is unsuitable.
   on workspace bootstrap.
   - Integration with VS Code through an [extension][melos-code].
 
----
-
 ## Getting Started
 
 Go to the [Getting Started](https://melos.invertase.dev/getting-started) page of
 the [documentation](https://docs.page/invertase/melos) to start using Melos.
-
----
 
 ## Who is using Melos?
 
@@ -150,21 +142,15 @@ The following projects are using Melos:
 > You can also add a [README badge](#readme-badge) to your projects README to
 > let others know about Melos 💙.
 
----
-
 ## Documentation
 
 Documentation is available at
 [https://melos.invertase.dev](https://melos.invertase.dev).
 
----
-
 ## Migrations
 
 When migrating between major versions of Melos, please read the
 [migration guide](https://melos.invertase.dev/guides/migrations).
-
----
 
 ## Commands
 
@@ -194,20 +180,14 @@ Available commands:
 Run "melos help <command>" for more information about a command.
 ```
 
----
-
 ## How to Contribute
 
 To start making contributions please refer to
 [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
----
-
 ## Lerna
 
 This project is heavily inspired by [Lerna](https://lerna.js.org/).
-
----
 
 ## README Badge
 
@@ -218,8 +198,6 @@ Using Melos? Add a README badge to show it off:
 ```markdown
 [![melos](https://img.shields.io/badge/maintained%20with-melos-f700ff.svg?style=flat-square)](https://github.com/invertase/melos)
 ```
-
----
 
 ## License
 
@@ -238,8 +216,6 @@ Using Melos? Add a README badge to show it off:
     &nbsp;&nbsp;<a href="https://twitter.com/invertaseio"><img src="https://img.shields.io/twitter/follow/invertaseio.svg?style=flat-square&colorA=1da1f2&colorB=&label=Follow%20on%20Twitter" alt="Follow on Twitter"></a>
   </p>
 </p>
-
----
 
 [melos-code]:
   https://marketplace.visualstudio.com/items?itemName=blaugold.melos-code
