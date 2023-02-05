@@ -69,14 +69,14 @@ can be used to specify a range of commits in addition to a single commit.
 
 To migrate from `--since` to `--diff` simply replace `--since` with `--diff`.
 
-### Options that are now enabled by default
+### Changed option defaults
 
-The following options which were previously set to `false` by default are now
-set to `true` by default:
+The following options are now enabled by default:
 
-- `command/version/includeScopes`
-- `command/version/linkToCommits`, if `repository` is configured
-- `command/version/workspaceChangelog`
+- [`command/version/includeScopes`](/configuration/overview#includescopes)
+- [`command/version/linkToCommits`](/configuration/overview#linktocommits), if
+  [`repository`](/configuration/overview#repository) is configured
+- [`command/version/workspaceChangelog`](/configuration/overview#workspacechangelog)
 
 ### Lifecycle hooks
 
@@ -101,8 +101,10 @@ created and is the equivalent of the previous `version` hook.
 
 ### Package filters
 
-The `select-package` option for scripts has been renamed to `packageFilters`.
-This brings it in line with `command/version/changelogs/packageFilters`.
+The `select-package` option for scripts has been renamed to
+[`packageFilters`](/configuration/scripts#packagefilters). This brings it in
+line with
+[`command/version/changelogs/packageFilters`](/configuration/overview#packagefilters).
 
 The names of filters specified in `packageFilters` are now camel cased instead
 of kebab cased.

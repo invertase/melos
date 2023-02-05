@@ -41,8 +41,8 @@ steps:
 
 1. Apply [filters](/filters) to the list of workspace packages.
 2. Load the commit history for each package. If the `--diff` option is
-   specified, Melos will only load the specified commit. Otherwise
-   it will load all commits since the last version tag (e.g. `foo-v1.0.0`).
+   specified, Melos will only load the specified commit. Otherwise it will load
+   all commits since the last version tag (e.g. `foo-v1.0.0`).
 3. Parse commit messages as Conventional Commits. If a commit message does not
    follow the Conventional Commits specification, it will be ignored.
 4. Filter out commits with types that don't trigger a version bump. For example,
@@ -157,9 +157,9 @@ section for the new version. You can disable this behavior by passing
 See the [configuration options](/configuration/overview#commandversion) for the
 `version` command for customizing changelog generation.
 
-Optionally, Melos can also write a
-[workspace changelog](/configuration/overview#commandversionworkspacechangelog).
-This is disabled by default.
+Melos can also write a
+[workspace changelog](/configuration/overview#workspacechangelog). This is
+enabled by default.
 
 ## Publishing
 
@@ -168,7 +168,7 @@ To publish packages on [pub.dev](https://pub.dev) you must:
 1. Have permission to publish all the packages.
 2. Be on a machine which is authenticated with Pub.
 
-> Internally, Melos uses `pub publish` to publish the packages.
+<Info>Internally, Melos uses `pub publish` to publish the packages.</Info>
 
 Once you have [versioned](/guides/automated-releases#versioning) your packages,
 run the publish command to check everything is good to go:
@@ -212,7 +212,11 @@ If your packages are private and you don't publish them to
 your `pubspec.yaml` files and Melos will ensure that the tags are updated
 accordingly.
 
-Example:
+To use this feature enable
+[`command/version/updateGitTagRefs`](/configuration/overview#updategittagrefs)
+in `melos.yaml`
+
+Take the following git dependency:
 
 ```yaml
 dependencies:
@@ -221,21 +225,16 @@ dependencies:
       url: git@github.com:org/repo.git
       path: packages/internal_dep
       ref: internal_dep-v0.0.1
+```
 
-# will be updated to:
+When creating a patch release for `internal_dep` through `melos version` the
+`ref` would be updated to the new version:
 
+```yaml
 dependencies:
   internal_dep:
     git:
       url: git@github.com:org/repo.git
       path: packages/internal_dep
       ref: internal_dep-v0.0.2
-```
-
-To use this feature enable it in `melos.yaml`
-
-```yaml
-command:
-  version:
-    updateGitTagRefs: true # defaults to false
 ```

@@ -1,13 +1,14 @@
 ---
 title: Clean Command
-description: "Learn more about the `clean` command in Melos."
+description: Learn more about the `clean` command in Melos.
 ---
 
 # Clean Command
 
-> Supports all [Melos filtering](/filters) flags.
+<Info>Supports all [Melos filtering](/filters) flags.</Info>
 
-This command cleans the current workspace and all its packages of temporary pub & generated Melos IDE files.
+This command cleans the current workspace and all its packages of temporary pub
+& generated Melos IDE files.
 
 ```bash
 melos clean
@@ -32,7 +33,8 @@ melos bootstrap
 
 ## Combining with filters
 
-Clean supports [all package filtering options](/filters), therefore if you wanted to you could clean only a specific subset of your packages, for example:
+Clean supports [all package filtering options](/filters), therefore if you
+wanted to you could clean only a specific subset of your packages, for example:
 
 ```bash
 # Only clean Flutter packages or apps.
@@ -41,9 +43,12 @@ melos clean --flutter
 
 ## Adding a postclean lifecycle script
 
-Melos supports various command lifecycle hooks that can be defined in your `melos.yaml`.
+Melos supports various command lifecycle hooks that can be defined in your
+`melos.yaml`.
 
-For example, if you needed to cleanup any generated files, e.g. from a build runner, automatically after `melos clean` is ran, you can add a `postClean` script.
+For example, if you needed to cleanup any generated files, e.g. from a build
+runner, automatically after `melos clean` is ran, you can add a `postClean`
+script.
 
 ```yaml
 # melos.yaml
