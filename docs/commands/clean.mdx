@@ -47,14 +47,16 @@ Melos supports various command lifecycle hooks that can be defined in your
 `melos.yaml`.
 
 For example, if you needed to cleanup any generated files, e.g. from a build
-runner, automatically after `melos clean` is ran, you can add a `postClean`
+runner, automatically after `melos clean` is ran, you can add a `post` hook
 script.
 
 ```yaml
 # melos.yaml
 # ...
-scripts:
-  postClean: rm packages/foo/lib/src/generated_file.g.dart
+command:
+  clean:
+    hooks:
+      post: rm packages/foo/lib/src/generated_file.g.dart
 # ...
 ```
 
@@ -63,11 +65,11 @@ Another common use case is to run `flutter clean` in all Flutter packages;
 ```yaml
 # melos.yaml
 # ...
-scripts:
-  # Runs "flutter clean" in all Flutter packages (`--flutter`)
-  # with a concurrency of 3 at a time (`--concurrency=3`).
-  postClean: >
-    melos exec --flutter --concurrency=3 -- "flutter clean"
-
+command:
+  clean:
+    hooks:
+      # Runs "flutter clean" in all Flutter packages (`--flutter`)
+      # with a concurrency of 3 at a time (`--concurrency=3`).
+      post: melos exec --flutter --concurrency=3 -- "flutter clean"
 # ...
 ```

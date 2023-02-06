@@ -12,6 +12,10 @@ command:
     branch: main
     # Additionally build a changelog at the root of the workspace.
     workspaceChangelog: true
+    hooks:
+      preCommit: |
+        dart run scripts/generate_version.dart && \
+        git add packages/melos/lib/version.g.dart
 
 ide:
   intellij: true
@@ -41,10 +45,6 @@ scripts:
     # as they could change the behaviour of how tests filter packages.
     env:
       MELOS_TEST: true
-
-  preVersionCommit: |
-    dart run scripts/generate_version.dart && \
-    git add packages/melos/lib/version.g.dart
 
   activate:
     description: Activate the local version of melos for development.

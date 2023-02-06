@@ -148,6 +148,7 @@ IntelliJConfig(
 class CommandConfigs {
   const CommandConfigs({
     this.bootstrap = BootstrapCommandConfigs.empty,
+    this.clean = CleanCommandConfigs.empty,
     this.version = VersionCommandConfigs.empty,
   });
 
@@ -158,6 +159,12 @@ class CommandConfigs {
   }) {
     final bootstrapMap = assertKeyIsA<Map<Object?, Object?>?>(
       key: 'bootstrap',
+      map: yaml,
+      path: 'command',
+    );
+
+    final cleanMap = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'clean',
       map: yaml,
       path: 'command',
     );
@@ -173,6 +180,10 @@ class CommandConfigs {
         bootstrapMap ?? const {},
         workspacePath: workspacePath,
       ),
+      clean: CleanCommandConfigs.fromYaml(
+        cleanMap ?? const {},
+        workspacePath: workspacePath,
+      ),
       version: VersionCommandConfigs.fromYaml(
         versionMap ?? const {},
         workspacePath: workspacePath,
@@ -184,11 +195,13 @@ class CommandConfigs {
   static const CommandConfigs empty = CommandConfigs();
 
   final BootstrapCommandConfigs bootstrap;
+  final CleanCommandConfigs clean;
   final VersionCommandConfigs version;
 
   Map<String, Object?> toJson() {
     return {
       'bootstrap': bootstrap.toJson(),
+      'clean': clean.toJson(),
       'version': version.toJson(),
     };
   }
@@ -198,18 +211,140 @@ class CommandConfigs {
       other is CommandConfigs &&
       runtimeType == other.runtimeType &&
       other.bootstrap == bootstrap &&
+      other.clean == clean &&
       other.version == version;
 
   @override
   int get hashCode =>
-      runtimeType.hashCode ^ bootstrap.hashCode ^ version.hashCode;
+      runtimeType.hashCode ^
+      bootstrap.hashCode ^
+      clean.hashCode ^
+      version.hashCode;
 
   @override
   String toString() {
     return '''
 CommandConfigs(
   bootstrap: ${bootstrap.toString().indent('  ')},
+  clean: ${clean.toString().indent('  ')},
   version: ${version.toString().indent('  ')},
+)
+''';
+  }
+}
+
+/// Scripts to be executed before/after a melos command.
+@immutable
+class LifecycleHooks {
+  const LifecycleHooks({this.pre, this.post});
+
+  factory LifecycleHooks.fromYaml(
+    Map<Object?, Object?> yaml, {
+    required String workspacePath,
+  }) {
+    return LifecycleHooks(
+      pre: LifecycleHooks._namedScript('pre', yaml, workspacePath),
+      post: LifecycleHooks._namedScript('post', yaml, workspacePath),
+    );
+  }
+
+  static Script? _namedScript(
+    String name,
+    Map<Object?, Object?> yaml,
+    String workspacePath,
+  ) {
+    final script = yaml[name];
+    if (script == null) {
+      return null;
+    }
+    return Script.fromYaml(script, name: name, workspacePath: workspacePath);
+  }
+
+  static const LifecycleHooks empty = LifecycleHooks();
+
+  /// A script to execute before the melos command starts.
+  final Script? pre;
+
+  /// A script to execute before the melos command completed.
+  final Script? post;
+
+  Map<String, Object?> toJson() {
+    return {
+      'pre': pre?.toJson(),
+      'post': post?.toJson(),
+    };
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is LifecycleHooks &&
+      runtimeType == other.runtimeType &&
+      other.pre == pre &&
+      other.post == post;
+
+  @override
+  int get hashCode => runtimeType.hashCode ^ pre.hashCode ^ post.hashCode;
+
+  @override
+  String toString() {
+    return '''
+LifecycleHooks(
+  pre: $pre,
+  post: $post,
+)
+''';
+  }
+}
+
+/// [LifecycleHooks] for the `version` command.
+@immutable
+class VersionLifecycleHooks extends LifecycleHooks {
+  const VersionLifecycleHooks({super.pre, super.post, this.preCommit});
+
+  factory VersionLifecycleHooks.fromYaml(
+    Map<Object?, Object?> yaml, {
+    required String workspacePath,
+  }) {
+    return VersionLifecycleHooks(
+      pre: LifecycleHooks._namedScript('pre', yaml, workspacePath),
+      post: LifecycleHooks._namedScript('post', yaml, workspacePath),
+      preCommit: LifecycleHooks._namedScript('preCommit', yaml, workspacePath),
+    );
+  }
+
+  /// A script to execute before the version command commits the the changes
+  /// made during versioning.
+  final Script? preCommit;
+
+  static const VersionLifecycleHooks empty = VersionLifecycleHooks();
+
+  @override
+  Map<String, Object?> toJson() {
+    return {
+      ...super.toJson(),
+      'preCommit': preCommit?.toJson(),
+    };
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is VersionLifecycleHooks &&
+      runtimeType == other.runtimeType &&
+      other.pre == pre &&
+      other.post == post &&
+      other.preCommit == preCommit;
+
+  @override
+  int get hashCode =>
+      runtimeType.hashCode ^ pre.hashCode ^ post.hashCode ^ preCommit.hashCode;
+
+  @override
+  String toString() {
+    return '''
+VersionLifecycleHooks(
+  pre: $pre,
+  post: $post,
+  preCommit: $preCommit,
 )
 ''';
   }
@@ -222,6 +357,7 @@ class BootstrapCommandConfigs {
     this.runPubGetInParallel = true,
     this.runPubGetOffline = false,
     this.dependencyOverridePaths = const [],
+    this.hooks = LifecycleHooks.empty,
   });
 
   factory BootstrapCommandConfigs.fromYaml(
@@ -253,6 +389,15 @@ class BootstrapCommandConfigs {
       ),
     );
 
+    final hooksMap = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'hooks',
+      map: yaml,
+      path: 'command/bootstrap',
+    );
+    final hooks = hooksMap != null
+        ? LifecycleHooks.fromYaml(hooksMap, workspacePath: workspacePath)
+        : LifecycleHooks.empty;
+
     return BootstrapCommandConfigs(
       runPubGetInParallel: runPubGetInParallel,
       runPubGetOffline: runPubGetOffline,
@@ -262,6 +407,7 @@ class BootstrapCommandConfigs {
                 createGlob(override, currentDirectoryPath: workspacePath),
           )
           .toList(),
+      hooks: hooks,
     );
   }
 
@@ -282,6 +428,9 @@ class BootstrapCommandConfigs {
   /// overrides for all packages managed in the Melos workspace.
   final List<Glob> dependencyOverridePaths;
 
+  /// Lifecycle hooks for this command.
+  final LifecycleHooks hooks;
+
   Map<String, Object?> toJson() {
     return {
       'runPubGetInParallel': runPubGetInParallel,
@@ -289,6 +438,7 @@ class BootstrapCommandConfigs {
       if (dependencyOverridePaths.isNotEmpty)
         'dependencyOverridePaths':
             dependencyOverridePaths.map((path) => path.toString()).toList(),
+      'hooks': hooks.toJson(),
     };
   }
 
@@ -299,7 +449,8 @@ class BootstrapCommandConfigs {
       other.runPubGetInParallel == runPubGetInParallel &&
       other.runPubGetOffline == runPubGetOffline &&
       const DeepCollectionEquality(_GlobEquality())
-          .equals(other.dependencyOverridePaths, dependencyOverridePaths);
+          .equals(other.dependencyOverridePaths, dependencyOverridePaths) &&
+      other.hooks == hooks;
 
   @override
   int get hashCode =>
@@ -307,7 +458,8 @@ class BootstrapCommandConfigs {
       runPubGetInParallel.hashCode ^
       runPubGetOffline.hashCode ^
       const DeepCollectionEquality(_GlobEquality())
-          .hash(dependencyOverridePaths);
+          .hash(dependencyOverridePaths) ^
+      hooks.hashCode;
 
   @override
   String toString() {
@@ -316,69 +468,60 @@ BootstrapCommandConfigs(
   runPubGetInParallel: $runPubGetInParallel,
   runPubGetOffline: $runPubGetOffline,
   dependencyOverridePaths: $dependencyOverridePaths,
+  hooks: $hooks,
 )''';
   }
 }
 
+/// Configurations for `melos clean`.
 @immutable
-class AggregateChangelogConfig {
-  AggregateChangelogConfig({
-    this.isWorkspaceChangelog = false,
-    required this.path,
-    required this.packageFilters,
-    this.description,
+class CleanCommandConfigs {
+  const CleanCommandConfigs({
+    this.hooks = LifecycleHooks.empty,
   });
 
-  AggregateChangelogConfig.workspace()
-      : this(
-          isWorkspaceChangelog: true,
-          path: 'CHANGELOG.md',
-          packageFilters: PackageFilters(),
-          description: '''
-All notable changes to this project will be documented in this file.
-See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
-''',
-        );
+  factory CleanCommandConfigs.fromYaml(
+    Map<Object?, Object?> yaml, {
+    required String workspacePath,
+  }) {
+    final hooksMap = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'hooks',
+      map: yaml,
+      path: 'command/clean',
+    );
+    final hooks = hooksMap != null
+        ? LifecycleHooks.fromYaml(hooksMap, workspacePath: workspacePath)
+        : LifecycleHooks.empty;
 
-  final bool isWorkspaceChangelog;
-  final String path;
-  final PackageFilters packageFilters;
-  final String? description;
+    return CleanCommandConfigs(
+      hooks: hooks,
+    );
+  }
 
-  Map<String, dynamic> toJson() {
+  static const CleanCommandConfigs empty = CleanCommandConfigs();
+
+  final LifecycleHooks hooks;
+
+  Map<String, Object?> toJson() {
     return {
-      'isWorkspaceChangelog': isWorkspaceChangelog,
-      'path': path,
-      'packageFilters': packageFilters,
-      'description': description,
+      'hooks': hooks.toJson(),
     };
   }
 
   @override
   bool operator ==(Object other) =>
-      other is AggregateChangelogConfig &&
+      other is CleanCommandConfigs &&
       runtimeType == other.runtimeType &&
-      other.isWorkspaceChangelog == isWorkspaceChangelog &&
-      other.path == path &&
-      other.packageFilters == packageFilters &&
-      other.description == description;
+      other.hooks == hooks;
 
   @override
-  int get hashCode =>
-      runtimeType.hashCode ^
-      isWorkspaceChangelog.hashCode ^
-      path.hashCode ^
-      packageFilters.hashCode ^
-      description.hashCode;
+  int get hashCode => runtimeType.hashCode ^ hooks.hashCode;
 
   @override
   String toString() {
     return '''
-AggregateChangelogConfig(
-  isWorkspaceChangelog: $isWorkspaceChangelog,
-  path: $path,
-  packageFilters: $packageFilters,
-  description: $description,
+CleanCommandConfigs(
+  hooks: $hooks,
 )''';
   }
 }
@@ -396,6 +539,7 @@ class VersionCommandConfigs {
     this.releaseUrl = false,
     List<AggregateChangelogConfig>? aggregateChangelogs,
     this.fetchTags = true,
+    this.hooks = VersionLifecycleHooks.empty,
   }) : _aggregateChangelogs = aggregateChangelogs;
 
   factory VersionCommandConfigs.fromYaml(
@@ -496,6 +640,19 @@ class VersionCommandConfigs {
       path: 'command/version',
     );
 
+    final hooksMap = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'hooks',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final hooks = hooksMap != null
+        ? VersionLifecycleHooks.fromYaml(
+            hooksMap,
+            workspacePath: workspacePath,
+          )
+        : VersionLifecycleHooks.empty;
+
     return VersionCommandConfigs(
       branch: branch,
       message: message,
@@ -506,6 +663,7 @@ class VersionCommandConfigs {
       releaseUrl: releaseUrl ?? false,
       aggregateChangelogs: aggregateChangelogs,
       fetchTags: fetchTags ?? true,
+      hooks: hooks,
     );
   }
 
@@ -545,6 +703,9 @@ class VersionCommandConfigs {
   /// Whether to fetch tags from the `origin` remote before versioning.
   final bool fetchTags;
 
+  /// Lifecycle hooks for this command.
+  final VersionLifecycleHooks hooks;
+
   Map<String, Object?> toJson() {
     return {
       if (branch != null) 'branch': branch,
@@ -556,6 +717,7 @@ class VersionCommandConfigs {
       'aggregateChangelogs':
           aggregateChangelogs.map((config) => config.toJson()).toList(),
       'fetchTags': fetchTags,
+      'hooks': hooks.toJson(),
     };
   }
 
@@ -572,7 +734,8 @@ class VersionCommandConfigs {
       other.releaseUrl == releaseUrl &&
       const DeepCollectionEquality()
           .equals(other.aggregateChangelogs, aggregateChangelogs) &&
-      other.fetchTags == fetchTags;
+      other.fetchTags == fetchTags &&
+      other.hooks == hooks;
 
   @override
   int get hashCode =>
@@ -585,7 +748,8 @@ class VersionCommandConfigs {
       updateGitTagRefs.hashCode ^
       releaseUrl.hashCode ^
       const DeepCollectionEquality().hash(aggregateChangelogs) ^
-      fetchTags.hashCode;
+      fetchTags.hashCode ^
+      hooks.hashCode;
 
   @override
   String toString() {
@@ -600,6 +764,70 @@ VersionCommandConfigs(
   releaseUrl: $releaseUrl,
   aggregateChangelogs: $aggregateChangelogs,
   fetchTags: $fetchTags,
+  hooks: $hooks,
+)''';
+  }
+}
+
+@immutable
+class AggregateChangelogConfig {
+  AggregateChangelogConfig({
+    this.isWorkspaceChangelog = false,
+    required this.path,
+    required this.packageFilters,
+    this.description,
+  });
+
+  AggregateChangelogConfig.workspace()
+      : this(
+          isWorkspaceChangelog: true,
+          path: 'CHANGELOG.md',
+          packageFilters: PackageFilters(),
+          description: '''
+All notable changes to this project will be documented in this file.
+See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
+''',
+        );
+
+  final bool isWorkspaceChangelog;
+  final String path;
+  final PackageFilters packageFilters;
+  final String? description;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'isWorkspaceChangelog': isWorkspaceChangelog,
+      'path': path,
+      'packageFilters': packageFilters,
+      'description': description,
+    };
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is AggregateChangelogConfig &&
+      runtimeType == other.runtimeType &&
+      other.isWorkspaceChangelog == isWorkspaceChangelog &&
+      other.path == path &&
+      other.packageFilters == packageFilters &&
+      other.description == description;
+
+  @override
+  int get hashCode =>
+      runtimeType.hashCode ^
+      isWorkspaceChangelog.hashCode ^
+      path.hashCode ^
+      packageFilters.hashCode ^
+      description.hashCode;
+
+  @override
+  String toString() {
+    return '''
+AggregateChangelogConfig(
+  isWorkspaceChangelog: $isWorkspaceChangelog,
+  path: $path,
+  packageFilters: $packageFilters,
+  description: $description,
 )''';
   }
 }

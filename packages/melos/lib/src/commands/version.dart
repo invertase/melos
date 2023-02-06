@@ -48,7 +48,7 @@ mixin _VersionMixin on _RunMixin {
       packageFilters: packageFilters?.copyWithDiff(null),
     );
 
-    return _runLifecycle(workspace, ScriptLifecycle.version, () {
+    return _runLifecycle(workspace, _CommandWithLifecycle.version, () {
       return _version(
         workspace: workspace,
         global: global,
@@ -151,13 +151,6 @@ mixin _VersionMixin on _RunMixin {
     };
     final dependentPackagesToVersion = <Package>{};
     final pendingPackageUpdates = <MelosPendingPackageUpdate>[];
-
-    if (workspace.config.scripts.containsKey('preversion')) {
-      logger
-        ..log('Running "preversion" lifecycle script...')
-        ..newLine();
-      await run(scriptName: 'preversion');
-    }
 
     if (asStableRelease) {
       for (final package in workspace.filteredPackages.values) {
@@ -351,12 +344,14 @@ mixin _VersionMixin on _RunMixin {
       workspace: workspace,
     );
 
-    final preCommit = workspace.config.scripts.version.preCommit;
+    final preCommit = workspace.config.commands.version.hooks.preCommit;
     if (preCommit != null) {
-      logger
-        ..log('Running ${preCommit.name} lifecycle script...')
-        ..newLine();
-      await run(scriptName: preCommit.name);
+      logger.newLine();
+      await _runLifecycleScript(
+        preCommit,
+        command: _CommandWithLifecycle.version,
+      );
+      logger.newLine();
     }
 
     if (gitTag) {

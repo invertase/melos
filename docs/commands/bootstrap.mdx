@@ -84,19 +84,21 @@ example:
 melos bootstrap --diff="main"
 ```
 
-## Adding a postbootstrap lifecycle script
+## Adding a post bootstrap lifecycle script
 
 Melos supports various command [lifecycle hooks](/configuration/scripts#hooks)
 that can be defined in your `melos.yaml`.
 
 For example, if you needed to run something such as a build runner automatically
-after `melos bootstrap` is run, you can add a `postBootstrap` script:
+after `melos bootstrap` is run, you can add a `post` hook script:
 
 ```yaml
 # melos.yaml
 # ...
-scripts:
-  postBootstrap: dart pub run build_runner build
+command:
+  bootstrap:
+    hooks:
+      post: dart pub run build_runner build
 # ...
 ```
 

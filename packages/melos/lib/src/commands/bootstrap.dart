@@ -10,7 +10,7 @@ mixin _BootstrapMixin on _CleanMixin {
 
     return _runLifecycle(
       workspace,
-      ScriptLifecycle.bootstrap,
+      _CommandWithLifecycle.bootstrap,
       () async {
         final pubCommandForLogging = [
           ...pubCommandExecArgs(

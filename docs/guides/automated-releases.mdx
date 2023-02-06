@@ -142,8 +142,9 @@ This behavior can be disabled by passing `--no-git-tag-version`.
 #### Hook
 
 After updating `pubspec.yaml` files and changelogs but before creating the
-version commit, the `preVersionCommit` script in `melos.yaml` is executed. This
-allows you to run custom code before the version commit is created.
+version commit, the `command/version/hooks/preCommit` script in `melos.yaml` is
+executed. This allows you to run custom code before the version commit is
+created.
 
 Note that you have to stage changes that you make in the hook and want to have
 included in the version commit yourself.
