@@ -20,9 +20,14 @@ mixin _RunMixin on _Melos {
       );
     }
 
+    final scriptSourceCode =
+        targetStyle(script.effectiveRun.replaceAll('\n', ''));
+
+    logger.command('melos run ${script.name}');
+    logger.child(scriptSourceCode).child(runningLabel).newLine();
+
     final exitCode = await _runScript(
       script,
-      config,
       global: global,
       noSelect: noSelect,
       extraArgs: extraArgs,
@@ -30,8 +35,7 @@ mixin _RunMixin on _Melos {
 
     logger.newLine();
     logger.command('melos run ${script.name}');
-    final resultLogger =
-        logger.child(targetStyle(script.effectiveRun.replaceAll('\n', '')));
+    final resultLogger = logger.child(scriptSourceCode);
 
     if (exitCode != 0) {
       resultLogger.child(failedLabel);
@@ -68,11 +72,11 @@ mixin _RunMixin on _Melos {
     return scripts[selectedScriptIndex].name;
   }
 
+  @override
   Future<int> _runScript(
-    Script script,
-    MelosWorkspaceConfig config, {
+    Script script, {
     GlobalOptions? global,
-    required bool noSelect,
+    bool noSelect = false,
     List<String> extraArgs = const [],
   }) async {
     final workspace = await MelosWorkspace.fromConfig(
@@ -151,12 +155,6 @@ mixin _RunMixin on _Melos {
     final scriptSource = script.effectiveRun;
     final scriptParts = scriptSource.split(' ');
 
-    logger.command('melos run ${script.name}');
-    logger
-        .child(targetStyle(scriptSource.replaceAll('\n', '')))
-        .child(runningLabel)
-        .newLine();
-
     return startCommand(
       scriptParts..addAll(extraArgs),
       logger: logger,
@@ -216,6 +214,6 @@ class ScriptException implements MelosException {
 
   @override
   String toString() {
-    return 'ScriptException: The script $scriptName failed to execute';
+    return 'ScriptException: The script $scriptName failed to execute.';
   }
 }

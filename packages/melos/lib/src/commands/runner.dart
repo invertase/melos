@@ -46,7 +46,7 @@ part 'publish.dart';
 part 'run.dart';
 part 'version.dart';
 
-enum ScriptLifecycle {
+enum _CommandWithLifecycle {
   bootstrap,
   clean,
   version,
@@ -108,31 +108,41 @@ abstract class _Melos {
 
   Future<void> _runLifecycle(
     MelosWorkspace workspace,
-    ScriptLifecycle lifecycle,
+    _CommandWithLifecycle command,
     FutureOr<void> Function() cb,
   ) async {
-    final hooks = workspace.config.scripts.lifecycleHooksFor(lifecycle);
+    final hooks = workspace.config.commands.lifecycleHooksFor(command);
     final preScript = hooks.pre;
     final postScript = hooks.post;
 
     if (preScript != null) {
-      logger
-        ..log('Running ${preScript.name} lifecycle script...')
-        ..newLine();
-
-      await run(scriptName: preScript.name);
+      await _runLifecycleScript(preScript, command: command);
+      logger.newLine();
     }
 
     try {
       await cb();
     } finally {
       if (postScript != null) {
-        logger
-          ..log('Running ${postScript.name} lifecycle script...')
-          ..newLine();
-
-        await run(scriptName: postScript.name);
+        logger.newLine();
+        await _runLifecycleScript(postScript, command: command);
       }
+    }
+  }
+
+  Future<void> _runLifecycleScript(
+    Script script, {
+    required _CommandWithLifecycle command,
+  }) async {
+    logger
+      ..command('melos ${command.name} [${script.name}]')
+      ..child(targetStyle(script.effectiveRun.replaceAll('\n', '')))
+      ..newLine();
+
+    final exitCode = await _runScript(script, noSelect: true);
+
+    if (exitCode != 0) {
+      throw ScriptException._('command/${command.name}/hooks/${script.name}');
     }
   }
 
@@ -140,4 +150,22 @@ abstract class _Melos {
     String? scriptName,
     bool noSelect = false,
   });
+
+  Future<int> _runScript(
+    Script script, {
+    bool noSelect = false,
+  });
+}
+
+extension on CommandConfigs {
+  LifecycleHooks lifecycleHooksFor(_CommandWithLifecycle command) {
+    switch (command) {
+      case _CommandWithLifecycle.bootstrap:
+        return bootstrap.hooks;
+      case _CommandWithLifecycle.clean:
+        return clean.hooks;
+      case _CommandWithLifecycle.version:
+        return version.hooks;
+    }
+  }
 }
