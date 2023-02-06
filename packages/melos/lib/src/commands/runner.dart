@@ -157,7 +157,7 @@ abstract class _Melos {
   });
 }
 
-extension on CommandConfigs {
+extension _ResolveLifecycleHooks on CommandConfigs {
   LifecycleHooks lifecycleHooksFor(_CommandWithLifecycle command) {
     switch (command) {
       case _CommandWithLifecycle.bootstrap:
