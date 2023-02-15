@@ -1,0 +1,16 @@
+name: melos_flutter_deps_check
+description:
+  Package to test that Melos can be installed alongside Flutter dependencies.
+
+environment:
+  sdk: '>=2.18.0 <3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+  melos:
+    path: ../melos
