@@ -35,6 +35,21 @@ jobs:
       - name: Run Melos
         run: ./.github/workflows/scripts/install-tools.sh
 
+  # This job ensures `melos` can be installed alongside Flutter dependencies on
+  # the stable channel.
+  melos_flutter_deps_check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v2
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Get dependencies
+        working-directory: packages/melos_flutter_deps_check
+        run: flutter pub get
+
   format:
     runs-on: ubuntu-latest
     timeout-minutes: 10
