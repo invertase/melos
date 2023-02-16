@@ -134,6 +134,7 @@ The following projects are using Melos:
 - [sub6resources/flutter_html](https://github.com/sub6resources/flutter_html)
 - [ferraridamiano/ConverterNOW](https://github.com/ferraridamiano/ConverterNOW)
 - [rrifafauzikomara/youtube_video](https://github.com/rrifafauzikomara/youtube_video)
+- [mobxjs/mobx.dart](https://github.com/mobxjs/mobx.dart)
 
 > Submit a PR if you'd like to add your project to the list. Update the
 > [README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md)
