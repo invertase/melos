@@ -7,6 +7,9 @@ ignore:
   - packages/melos_flutter_deps_check
 
 command:
+  bootstrap:
+    hooks:
+      post: dart run husky install
   version:
     # Generate commit links in package changelogs.
     linkToCommits: true

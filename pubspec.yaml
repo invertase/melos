@@ -8,6 +8,8 @@ executables:
   melos: melos_dev
 
 dev_dependencies:
+  commitlint_cli: ^0.3.0
+  husky: ^0.1.5
   melos:
     path: packages/melos
   path: ^1.7.0
