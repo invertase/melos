@@ -10,7 +10,7 @@ jobs:
   analyze:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -28,7 +28,7 @@ jobs:
   dart_version:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: 2.18.0 # Update when min sdk supported version of `melos` package changes.
@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -54,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - uses: subosito/flutter-action@v2
@@ -84,7 +84,7 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - uses: subosito/flutter-action@v2
@@ -100,7 +100,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - uses: subosito/flutter-action@v2
