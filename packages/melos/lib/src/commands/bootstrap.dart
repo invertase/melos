@@ -311,7 +311,7 @@ String? mergeMelosPubspecOverrides(
       .parseAt([], orElse: () => wrapAsYamlNode(null)).value as Object?;
   final dependencyOverrides = pubspecOverrides is Map &&
           pubspecOverrides['dependency_overrides'] is Map
-      ? <dynamic, dynamic>{...pubspecOverrides['dependency_overrides'] as Map}
+      ? {...pubspecOverrides['dependency_overrides'] as Map<Object?, Object?>}
       : null;
   final currentManagedDependencyOverrides = _managedDependencyOverridesRegex
           .firstMatch(pubspecOverridesContents)
@@ -319,13 +319,11 @@ String? mergeMelosPubspecOverrides(
           ?.split(',')
           .toSet() ??
       {};
-  final newManagedDependencyOverrides = <String>{
-    ...currentManagedDependencyOverrides
-  };
+  final newManagedDependencyOverrides = {...currentManagedDependencyOverrides};
 
   if (dependencyOverrides != null) {
     for (final dependencyOverride in dependencyOverrides.entries.toList()) {
-      final packageName = dependencyOverride.key as Object;
+      final packageName = dependencyOverride.key!;
 
       if (currentManagedDependencyOverrides.contains(packageName)) {
         // This dependency override is managed by melos and might need to be
@@ -369,7 +367,7 @@ String? mergeMelosPubspecOverrides(
       pubspecOverridesEditor.update(
         [],
         wrapAsYamlNode(
-          <dynamic, dynamic>{
+          {
             'dependency_overrides': {
               for (final dependencyOverride in melosDependencyOverrides.entries)
                 dependencyOverride.key:

@@ -648,8 +648,7 @@ mixin _VersionMixin on _RunMixin {
   }) async {
     // Note: not pooling & parallelizing rights to avoid possible file
     // contention.
-    await Future.forEach(pendingPackageUpdates,
-        (MelosPendingPackageUpdate pendingPackageUpdate) async {
+    await Future.forEach(pendingPackageUpdates, (pendingPackageUpdate) async {
       // Update package pubspec version.
       if (pendingPackageUpdate.reason != PackageUpdateReason.dependency ||
           updateDependentsVersions) {
@@ -664,7 +663,7 @@ mixin _VersionMixin on _RunMixin {
         await Future.forEach([
           ...pendingPackageUpdate.package.dependentsInWorkspace.values,
           ...pendingPackageUpdate.package.devDependentsInWorkspace.values
-        ], (Package package) {
+        ], (package) {
           return _setDependencyVersionForDependentPackage(
             package,
             pendingPackageUpdate.package.name,
@@ -846,8 +845,7 @@ mixin _VersionMixin on _RunMixin {
       );
     }
 
-    await Future.forEach(pendingPackageUpdates,
-        (MelosPendingPackageUpdate pendingPackageUpdate) async {
+    await Future.forEach(pendingPackageUpdates, (pendingPackageUpdate) async {
       await gitAdd(
         'pubspec.yaml',
         workingDirectory: pendingPackageUpdate.package.path,
@@ -864,7 +862,7 @@ mixin _VersionMixin on _RunMixin {
       await Future.forEach([
         ...pendingPackageUpdate.package.dependentsInWorkspace.values,
         ...pendingPackageUpdate.package.devDependentsInWorkspace.values,
-      ], (Package dependentPackage) async {
+      ], (dependentPackage) async {
         await gitAdd(
           'pubspec.yaml',
           workingDirectory: dependentPackage.path,

@@ -268,7 +268,7 @@ class IntellijProject {
       runConfigurations["Melos Run -&gt; '$key'"] = 'run $key';
     }
 
-    await Future.forEach(runConfigurations.keys, (String scriptName) async {
+    await Future.forEach(runConfigurations.keys, (scriptName) async {
       final scriptArgs = runConfigurations[scriptName]!;
       final pathSafeScriptArgs =
           scriptArgs.replaceAll(RegExp('[^A-Za-z0-9]'), '_');
@@ -296,8 +296,7 @@ class IntellijProject {
       templateCategory: 'runConfigurations',
     );
 
-    await Future.forEach(_workspace.filteredPackages.values,
-        (Package package) async {
+    await Future.forEach(_workspace.filteredPackages.values, (package) async {
       if (!package.isFlutterApp) return;
 
       final generatedRunConfiguration =
@@ -322,8 +321,7 @@ class IntellijProject {
       templateCategory: 'runConfigurations',
     );
 
-    await Future.forEach(_workspace.filteredPackages.values,
-        (Package package) async {
+    await Future.forEach(_workspace.filteredPackages.values, (package) async {
       if (!package.isFlutterPackage ||
           package.isFlutterApp ||
           !package.hasTests) {

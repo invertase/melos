@@ -534,7 +534,7 @@ Future<int> startCommand(
   final processStderrCompleter = Completer<void>();
 
   stdoutStream.listen(
-    (List<int> event) {
+    (event) {
       processStdout.addAll(event);
       if (!onlyOutputOnError) {
         logger.write(utf8.decode(event, allowMalformed: true));
@@ -543,7 +543,7 @@ Future<int> startCommand(
     onDone: processStdoutCompleter.complete,
   );
   stderrStream.listen(
-    (List<int> event) {
+    (event) {
       processStderr.addAll(event);
       if (!onlyOutputOnError) {
         logger.stderr(utf8.decode(event, allowMalformed: true));
@@ -691,7 +691,7 @@ String prettyEncodeJson(Object? value) =>
     const JsonEncoder.withIndent('  ').convert(value);
 
 extension OptionalArgResults on ArgResults {
-  dynamic optional(String name) => wasParsed(name) ? this[name] : null;
+  Object? optional(String name) => wasParsed(name) ? this[name] : null;
 }
 
 String removeTrailingSlash(String url) {

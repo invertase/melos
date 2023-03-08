@@ -72,7 +72,7 @@ class Scripts extends MapView<String, Script> {
 
 @immutable
 class ExecOptions {
-  ExecOptions({
+  const ExecOptions({
     this.concurrency,
     this.failFast,
     this.orderDependents,
@@ -191,7 +191,7 @@ class Script {
             );
 
       if (execYaml is String) {
-        exec = ExecOptions();
+        exec = const ExecOptions();
       } else {
         final execMap = assertKeyIsA<Map<Object?, Object?>?>(
           key: 'exec',

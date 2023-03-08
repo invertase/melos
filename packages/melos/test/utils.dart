@@ -177,10 +177,10 @@ Future<Directory> createProject(
   // supports Android.
   // If it is, create an empty main class file to appease flutter pub
   // get in case an add-to-app module is present in the workspace
-  final androidPluginNode =
-      // ignore: avoid_dynamic_calls
-      pubSpec.unParsedYaml?['flutter']?['plugin']?['platforms']?['android']
-          as Map?;
+  final flutterNode = pubSpec.unParsedYaml?['flutter'] as Map<String, Object?>?;
+  final pluginNode = flutterNode?['plugin'] as Map<String, Object?>?;
+  final platformsNode = pluginNode?['platforms'] as Map<String, Object?>?;
+  final androidPluginNode = platformsNode?['android'] as Map<String, Object?>?;
 
   if (androidPluginNode != null) {
     final package = androidPluginNode['package'] as String?;

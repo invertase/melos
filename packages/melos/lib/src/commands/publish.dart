@@ -166,7 +166,7 @@ mixin _PublishMixin on _ExecMixin {
         logger
           ..newLine()
           ..log('Creating git tags for any versions not already created... ');
-        await Future.forEach(unpublishedPackages, (Package package) async {
+        await Future.forEach(unpublishedPackages, (package) async {
           final tag =
               gitTagForPackageVersion(package.name, package.version.toString());
           await gitTagCreate(

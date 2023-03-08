@@ -153,7 +153,7 @@ melos run test_script
             'test_script': Script(
               name: 'test_script',
               run: 'echo "hello"',
-              exec: ExecOptions(
+              exec: const ExecOptions(
                 concurrency: 1,
               ),
             )

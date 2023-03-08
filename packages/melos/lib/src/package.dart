@@ -254,7 +254,7 @@ class PackageFilters {
 
   /// A default constructor with **all** properties as requires, to ensure that
   /// copyWith functions properly copy all properties.
-  PackageFilters._({
+  const PackageFilters._({
     required this.scope,
     required this.ignore,
     required this.dirExists,
@@ -903,19 +903,18 @@ class Package {
         '(HTTP Status ${response.statusCode}), response: ${response.body}',
       );
     }
-    final versions = <String>[];
-    final versionsRaw =
-        (json.decode(response.body) as Map)['versions'] as List<dynamic>;
-    for (final versionElement in versionsRaw) {
-      if (versionElement is Map<String, dynamic>) {
-        versions.add(versionElement['version'] as String);
-      }
-    }
-    versions.sort((String a, String b) {
+
+    final body = json.decode(response.body) as Map<String, Object?>;
+    final packageVersionInfos = body['versions']! as List<Object?>;
+    final packageVersions = packageVersionInfos
+        .map((info) => (info! as Map<String, Object?>)['version']! as String)
+        .toList();
+
+    packageVersions.sort((a, b) {
       return Version.prioritize(Version.parse(a), Version.parse(b));
     });
 
-    return versions.reversed.toList();
+    return packageVersions.reversed.toList();
   }
 
   /// The example [Package] contained within this package, if any.

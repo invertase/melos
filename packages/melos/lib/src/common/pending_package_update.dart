@@ -58,7 +58,7 @@ class MelosPendingPackageUpdate {
   })  : manualVersion = null,
         userChangelogMessage = null;
 
-  MelosPendingPackageUpdate.manual(
+  const MelosPendingPackageUpdate.manual(
     this.workspace,
     this.package,
     this.commits,
