@@ -594,44 +594,46 @@ class VersionCommandConfigs {
       aggregateChangelogs.add(AggregateChangelogConfig.workspace());
     }
 
-    final changelogsYaml = assertKeyIsA<List<dynamic>?>(
+    final changelogsYaml = assertKeyIsA<List<Object?>?>(
       key: 'changelogs',
       map: yaml,
       path: 'command/version',
     );
 
-    for (var i = 0; i < (changelogsYaml?.length ?? 0); i++) {
-      final entry = changelogsYaml?[i] as Map;
+    if (changelogsYaml != null) {
+      for (var i = 0; i < changelogsYaml.length; i++) {
+        final entry = changelogsYaml[i]! as Map<String, Object?>;
 
-      final path = assertKeyIsA<String>(
-        map: entry,
-        path: 'command/version/changelogs[$i]',
-        key: 'path',
-      );
+        final path = assertKeyIsA<String>(
+          map: entry,
+          path: 'command/version/changelogs[$i]',
+          key: 'path',
+        );
 
-      final packageFiltersMap = assertKeyIsA<Map<Object?, Object?>>(
-        map: entry,
-        key: 'packageFilters',
-        path: 'command/version/changelogs[$i]',
-      );
-      final packageFilters = PackageFilters.fromYaml(
-        packageFiltersMap,
-        path: 'command/version/changelogs[$i]',
-        workspacePath: workspacePath,
-      );
+        final packageFiltersMap = assertKeyIsA<Map<Object?, Object?>>(
+          map: entry,
+          key: 'packageFilters',
+          path: 'command/version/changelogs[$i]',
+        );
+        final packageFilters = PackageFilters.fromYaml(
+          packageFiltersMap,
+          path: 'command/version/changelogs[$i]',
+          workspacePath: workspacePath,
+        );
 
-      final description = assertKeyIsA<String?>(
-        map: entry,
-        path: 'command/version/changelogs[$i]',
-        key: 'description',
-      );
-      final changelogConfig = AggregateChangelogConfig(
-        path: path,
-        packageFilters: packageFilters,
-        description: description,
-      );
+        final description = assertKeyIsA<String?>(
+          map: entry,
+          path: 'command/version/changelogs[$i]',
+          key: 'description',
+        );
+        final changelogConfig = AggregateChangelogConfig(
+          path: path,
+          packageFilters: packageFilters,
+          description: description,
+        );
 
-      aggregateChangelogs.add(changelogConfig);
+        aggregateChangelogs.add(changelogConfig);
+      }
     }
 
     final fetchTags = assertKeyIsA<bool?>(
@@ -771,7 +773,7 @@ VersionCommandConfigs(
 
 @immutable
 class AggregateChangelogConfig {
-  AggregateChangelogConfig({
+  const AggregateChangelogConfig({
     this.isWorkspaceChangelog = false,
     required this.path,
     required this.packageFilters,
@@ -794,7 +796,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
   final PackageFilters packageFilters;
   final String? description;
 
-  Map<String, dynamic> toJson() {
+  Map<String, Object?> toJson() {
     return {
       'isWorkspaceChangelog': isWorkspaceChangelog,
       'path': path,

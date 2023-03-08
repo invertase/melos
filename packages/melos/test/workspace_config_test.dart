@@ -344,34 +344,32 @@ void main() {
     group('fromYaml', () {
       test('yields default config from empty map', () {
         expect(
-          IntelliJConfig.fromYaml(const <dynamic, dynamic>{}),
+          IntelliJConfig.fromYaml(const <Object?, Object?>{}),
           IntelliJConfig.empty,
         );
       });
 
       test('supports "enabled"', () {
         expect(
-          IntelliJConfig.fromYaml(const <dynamic, dynamic>{'enabled': false}),
+          IntelliJConfig.fromYaml(const {'enabled': false}),
           const IntelliJConfig(enabled: false),
         );
         expect(
-          IntelliJConfig.fromYaml(const <dynamic, dynamic>{'enabled': true}),
+          IntelliJConfig.fromYaml(const {'enabled': true}),
           IntelliJConfig.empty,
         );
       });
 
       test('supports "moduleNamePrefix" override', () {
         expect(
-          IntelliJConfig.fromYaml(
-            const <dynamic, dynamic>{'moduleNamePrefix': 'prefix1'},
-          ),
+          IntelliJConfig.fromYaml(const {'moduleNamePrefix': 'prefix1'}),
           const IntelliJConfig(moduleNamePrefix: 'prefix1'),
         );
       });
 
       test('yields "moduleNamePrefix" of "melos_" by default', () {
         expect(
-          IntelliJConfig.fromYaml(const <dynamic, dynamic>{}).moduleNamePrefix,
+          IntelliJConfig.fromYaml(const <Object?, Object?>{}).moduleNamePrefix,
           'melos_',
         );
       });
@@ -406,7 +404,7 @@ void main() {
           workspacePath: testWorkspacePath,
         );
         expect(scripts['a']!.run, 'b');
-        expect(scripts['a']!.exec, ExecOptions());
+        expect(scripts['a']!.exec, const ExecOptions());
       });
 
       test('supports specifying command through "run"', () {
@@ -420,7 +418,7 @@ void main() {
           workspacePath: testWorkspacePath,
         );
         expect(scripts['a']!.run, 'b');
-        expect(scripts['a']!.exec, ExecOptions());
+        expect(scripts['a']!.exec, const ExecOptions());
       });
 
       test('supports specifying exec options', () {
@@ -440,7 +438,7 @@ void main() {
         expect(scripts['a']!.run, 'b');
         expect(
           scripts['a']!.exec,
-          ExecOptions(
+          const ExecOptions(
             concurrency: 1,
             failFast: true,
             orderDependents: true,

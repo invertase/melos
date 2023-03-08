@@ -223,12 +223,8 @@ final _hostsToUrlParser = {
 };
 
 final _hostsToSpecParser = {
-  'GitHub': (String origin, String owner, String name) {
-    return GitHubRepository(origin: origin, owner: owner, name: name);
-  },
-  'GitLab': (String origin, String owner, String name) {
-    return GitLabRepository(origin: origin, owner: owner, name: name);
-  },
+  'GitHub': GitHubRepository.new,
+  'GitLab': GitLabRepository.new,
 };
 
 /// Tries to parse [url] into a [HostedGitRepository].
@@ -261,7 +257,7 @@ HostedGitRepository parseHostedGitRepositorySpec(
 ) {
   for (final entry in _hostsToSpecParser.entries) {
     if (entry.key.toLowerCase() == type.toLowerCase()) {
-      return entry.value(origin, owner, name);
+      return entry.value(origin: origin, owner: owner, name: name);
     }
   }
 

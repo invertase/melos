@@ -15,6 +15,7 @@
 #
 
 include: all_lint_rules.yaml
+
 analyzer:
   language:
     strict-casts: true
@@ -66,23 +67,11 @@ linter:
     # especially as a library.
     avoid_catches_without_on_clauses: false
 
-    # Conflicts with disabling `implicit-dynamic`
-    avoid_annotating_with_dynamic: false
-
     # conflicts with `prefer_relative_imports`
     always_use_package_imports: false
 
     # False positive, null checks don't need a message
     prefer_asserts_with_message: false
-
-    # Cumbersome with `context.select`
-    avoid_types_on_closure_parameters: false
-
-    # Too many false positive (builders)
-    diagnostic_describe_all_properties: false
-
-    # Does not apply to providers
-    prefer_const_constructors_in_immutables: false
 
     # Not a common style and would add a lot of verbosity to function signature.
     # 'parameter_assignments' already enforces this to an extent.
