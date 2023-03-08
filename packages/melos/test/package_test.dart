@@ -18,7 +18,9 @@ import 'utils.dart';
 const pubPackageJson = '''
   {
     "versions": [
-      "1.0.0"
+      {
+        "version": "1.0.0"
+      }
     ]
   }
 ''';
@@ -85,7 +87,7 @@ void main() {
     tearDownAll(() => testClient = null);
 
     test('requests published packages from pub.dev by default', () async {
-      final uri = Uri.parse('https://pub.dev/packages/melos.json');
+      final uri = Uri.parse('https://pub.dev/api/packages/melos');
       when(httpClientMock.get(uri))
           .thenAnswer((_) async => http.Response(pubPackageJson, 200));
 
@@ -99,7 +101,7 @@ void main() {
       'requests published packages from PUB_HOSTED_URL if present',
       withMockPlatform(
         () async {
-          final uri = Uri.parse('http://localhost:8080/packages/melos.json');
+          final uri = Uri.parse('http://localhost:8080/api/packages/melos');
           when(httpClientMock.get(uri))
               .thenAnswer((_) async => http.Response(pubPackageJson, 200));
 

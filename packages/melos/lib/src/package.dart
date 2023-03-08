@@ -891,7 +891,7 @@ class Package {
 
     final pubHosted = publishTo ?? pubUrl;
 
-    final url = pubHosted.replace(path: '/packages/$name.json');
+    final url = pubHosted.replace(path: '/api/packages/$name');
     final response = await http.get(url);
 
     if (response.statusCode == 404) {
@@ -905,9 +905,11 @@ class Package {
     }
     final versions = <String>[];
     final versionsRaw =
-        (json.decode(response.body) as Map)['versions'] as List<Object?>;
+        (json.decode(response.body) as Map)['versions'] as List<dynamic>;
     for (final versionElement in versionsRaw) {
-      versions.add(versionElement! as String);
+      if (versionElement is Map<String, dynamic>) {
+        versions.add(versionElement['version'] as String);
+      }
     }
     versions.sort((String a, String b) {
       return Version.prioritize(Version.parse(a), Version.parse(b));
