@@ -22,6 +22,7 @@ import 'dart:isolate';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:args/args.dart';
+import 'package:collection/collection.dart' hide stronglyConnectedComponents;
 import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 import 'package:prompts/prompts.dart' as prompts;
@@ -577,26 +578,56 @@ bool isPubSubcommand({required MelosWorkspace workspace}) {
   }
 }
 
-/// Sorts packages in topological order so they may be published in the order
-/// they're sorted.
+/// Sorts [packages] in topological order so they can be published without
+/// errors.
 ///
 /// Packages with inter-dependencies cannot be topologically sorted and will
-/// remain unchanged.
-void sortPackagesTopologically(List<Package> packages) {
-  final packageNames = packages.map((el) => el.name).toList();
+/// be sorted by name length. This is a heuristic to better handle cyclic
+/// dependencies in federated plugins.
+void sortPackagesForPublishing(List<Package> packages) {
+  final packageNames = packages.map((package) => package.name).toList();
   final graph = <String, Iterable<String>>{
     for (var package in packages)
-      package.name: package.dependencies.where(packageNames.contains),
+      package.name: [
+        ...package.dependencies.where(packageNames.contains),
+        ...package.devDependencies.where(packageNames.contains)
+      ],
   };
-  try {
-    final ordered = topologicalSort(graph.keys, (key) => graph[key]!);
-    packages.sort((a, b) {
-      // `ordered` is in reverse ordering to our desired publish precedence.
-      return ordered.indexOf(b.name).compareTo(ordered.indexOf(a.name));
-    });
-  } on CycleException<String> {
-    // Cannot sort packages with inter-dependencies. Leave as-is.
-  }
+  final ordered =
+      stronglyConnectedComponents(graph.keys, (package) => graph[package]!)
+          .expand(
+            (component) => component.sortedByCompare(
+              (package) => package.length,
+              (a, b) => b - a,
+            ),
+          )
+          .toList();
+
+  packages.sort((a, b) {
+    return ordered.indexOf(a.name).compareTo(ordered.indexOf(b.name));
+  });
+}
+
+/// Returns a list of cyclic dependencies between [packages], taking into
+/// account only workspace dependencies.
+///
+/// All dependencies between packages in the workspace are considered, including
+/// `dev_dependencies` and `dependency_overrides`.
+List<List<Package>> findCyclicDependenciesInWorkspace(List<Package> packages) {
+  return stronglyConnectedComponents(
+    packages,
+    (package) => package.allDependenciesInWorkspace.values,
+  ).where((component) => component.length > 1).map((component) {
+    try {
+      topologicalSort(
+        component,
+        (package) => package.allDependenciesInWorkspace.values,
+      );
+    } on CycleException<Package> catch (error) {
+      return error.cycle;
+    }
+    throw StateError('Expected a cycle to be found.');
+  }).toList();
 }
 
 /// Given a workspace and package, this assembles the correct command to run pub

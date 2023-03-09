@@ -1,7 +1,7 @@
 part of 'runner.dart';
 
 // TODO find better names
-enum ListOutputKind { json, parsable, graph, gviz, column }
+enum ListOutputKind { json, parsable, graph, gviz, column, cycles }
 
 mixin _ListMixin on _Melos {
   Future<void> list({
@@ -36,6 +36,8 @@ mixin _ListMixin on _Melos {
         );
       case ListOutputKind.gviz:
         return _listGviz(workspace);
+      case ListOutputKind.cycles:
+        return _listCyclesInDependencies(workspace);
     }
   }
 
@@ -255,5 +257,20 @@ mixin _ListMixin on _Melos {
     buffer.add('}');
 
     logger.stdout(buffer.join('\n'));
+  }
+
+  Future<void> _listCyclesInDependencies(MelosWorkspace workspace) async {
+    final cycles = findCyclicDependenciesInWorkspace(
+      workspace.filteredPackages.values.toList(),
+    );
+
+    if (cycles.isEmpty) {
+      logger.stdout('🎉 No cycles in dependencies found.');
+    } else {
+      logger.stdout('🚨 ${cycles.length} cycles in dependencies found:');
+      for (final cycle in cycles) {
+        logger.stdout(cycle.map((package) => package.name).join(' -> '));
+      }
+    }
   }
 }
