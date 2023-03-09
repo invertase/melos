@@ -56,7 +56,7 @@ class ListCommand extends MelosCommand {
       negatable: false,
       help: 'Show dependency graph in Graphviz DOT language.',
     );
-     argParser.addFlag(
+    argParser.addFlag(
       'cycles',
       negatable: false,
       help: 'Find cycles in package dependencies in the workspace.',

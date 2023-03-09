@@ -269,7 +269,8 @@ mixin _ListMixin on _Melos {
     } else {
       logger.stdout('🚨 ${cycles.length} cycles in dependencies found:');
       for (final cycle in cycles) {
-        logger.stdout(cycle.map((package) => package.name).join(' -> '));
+        logger
+            .stdout('[ ${cycle.map((package) => package.name).join(' -> ')} ]');
       }
     }
   }
