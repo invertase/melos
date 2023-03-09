@@ -48,7 +48,7 @@ mixin _PublishMixin on _ExecMixin {
       return;
     }
 
-    sortPackagesTopologically(unpublishedPackages);
+    sortPackagesForPublishing(unpublishedPackages);
 
     logger
       ..newLine()

@@ -602,7 +602,7 @@ class VersionCommandConfigs {
 
     if (changelogsYaml != null) {
       for (var i = 0; i < changelogsYaml.length; i++) {
-        final entry = changelogsYaml[i]! as Map<String, Object?>;
+        final entry = changelogsYaml[i]! as Map<Object?, Object?>;
 
         final path = assertKeyIsA<String>(
           map: entry,

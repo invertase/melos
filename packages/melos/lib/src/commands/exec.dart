@@ -112,7 +112,9 @@ mixin _ExecMixin on _Melos {
     final sortedPackages = packages.toList(growable: false);
 
     if (orderDependents) {
-      sortPackagesTopologically(sortedPackages);
+      // TODO: This is not really the right way to do this. Cyclic dependencies
+      // are handled in a way that is specific for publishing.
+      sortPackagesForPublishing(sortedPackages);
     }
 
     final packageResults = Map.fromEntries(
