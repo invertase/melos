@@ -608,7 +608,7 @@ void sortPackagesForPublishing(List<Package> packages) {
   });
 }
 
-/// Returns a list of cyclic dependencies between [packages], taking into
+/// Returns a list of dependency cycles between [packages], taking into
 /// account only workspace dependencies.
 ///
 /// All dependencies between packages in the workspace are considered, including
