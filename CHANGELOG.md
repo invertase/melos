@@ -3,6 +3,29 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2023-03-10
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v3.0.0-dev.1`](#melos---v300-dev1)
+
+---
+
+#### `melos` - `v3.0.0-dev.1`
+
+ - **FIX**: change used API endpoint for querying versions ([#486](https://github.com/invertase/melos/issues/486)). ([1a5c8547](https://github.com/invertase/melos/commit/1a5c8547fd1c41640a1f15ae79fe8303ead40eea))
+ - **FEAT**: support listing cycles in dependencies ([#491](https://github.com/invertase/melos/issues/491)). ([6521ce0c](https://github.com/invertase/melos/commit/6521ce0cd3ea296532a782913647cb9e957d9302))
+ - **DOCS**: add `mobx.dart` to projects using Melos ([#476](https://github.com/invertase/melos/issues/476)). ([be3fc431](https://github.com/invertase/melos/commit/be3fc4317a01b2b38db5489c8961c868e0ccfec8))
+
+
 ## 2023-02-07
 
 ### Changes
