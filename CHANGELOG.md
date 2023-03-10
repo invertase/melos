@@ -11,20 +11,47 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 Packages with breaking changes:
 
- - There are no breaking changes in this release.
+ - [`melos` - `v3.0.0`](#melos---v300)
 
 Packages with other changes:
 
- - [`melos` - `v3.0.0-dev.1`](#melos---v300-dev1)
+ - [`conventional_commit` - `v0.6.0`](#conventional_commit---v060)
+
+Packages graduated to a stable release:
+
+ - `conventional_commit` - `v0.6.0`
+ - `melos` - `v3.0.0`
 
 ---
 
-#### `melos` - `v3.0.0-dev.1`
+#### `melos` - `v3.0.0`
 
  - **FIX**: change used API endpoint for querying versions ([#486](https://github.com/invertase/melos/issues/486)). ([1a5c8547](https://github.com/invertase/melos/commit/1a5c8547fd1c41640a1f15ae79fe8303ead40eea))
  - **FEAT**: support listing cycles in dependencies ([#491](https://github.com/invertase/melos/issues/491)). ([6521ce0c](https://github.com/invertase/melos/commit/6521ce0cd3ea296532a782913647cb9e957d9302))
  - **DOCS**: add `mobx.dart` to projects using Melos ([#476](https://github.com/invertase/melos/issues/476)). ([be3fc431](https://github.com/invertase/melos/commit/be3fc4317a01b2b38db5489c8961c868e0ccfec8))
+ - **PERF**: use `Glob.list` to more efficiently find packages ([#426](https://github.com/invertase/melos/issues/426)). ([d7a85417](https://github.com/invertase/melos/commit/d7a854177d775b18dc123a69f0749d8fd1ed749e))
+ - **FIX**: only stage `CHANGELOG.md` when package version changes ([#459](https://github.com/invertase/melos/issues/459)). ([a3e9bdc4](https://github.com/invertase/melos/commit/a3e9bdc4374c4796298e1be6516dbfb2883f0470))
+ - **FIX**: updateGitTagRefs not working for versions like 0.1.2+3 ([#456](https://github.com/invertase/melos/issues/456)). ([2a4f5ff9](https://github.com/invertase/melos/commit/2a4f5ff9e1e63487d21682310750a6fa669c5924))
+ - **FIX**: validate prerelease format is supported ([#449](https://github.com/invertase/melos/issues/449)). ([4504c659](https://github.com/invertase/melos/commit/4504c65958d0561c3e43f069f1fd546a7a6d3cd0))
+ - **FEAT**: improve error message for when no workspace can be found ([#465](https://github.com/invertase/melos/issues/465)). ([60b39c96](https://github.com/invertase/melos/commit/60b39c960dba2cb78526f9a69e825b2702ae084c))
+ - **FEAT**: fetch tags before versioning ([#461](https://github.com/invertase/melos/issues/461)). ([3088b7bc](https://github.com/invertase/melos/commit/3088b7bc7c23bbe277488bc3b655132545b17cd9))
+ - **FEAT**: support running scripts in topological order with `melos exec` ([#440](https://github.com/invertase/melos/issues/440)). ([efe608b8](https://github.com/invertase/melos/commit/efe608b84e90b0ad95524a6a7b0e5c0e00deeb17))
+ - **FEAT**: validate "melos exec" is not used in "run" along with "exec" ([#438](https://github.com/invertase/melos/issues/438)). ([628f798e](https://github.com/invertase/melos/commit/628f798e95c42ffbc1df2931301b40856e30410a))
+ - **FEAT**: add path to `IOException` message ([#436](https://github.com/invertase/melos/issues/436)). ([f8e1551d](https://github.com/invertase/melos/commit/f8e1551d4df98783748df180233bec612b17bbd5))
+ - **FEAT**: add support for `melos_overrides.yaml` + `command/bootstrap/dependencyOverridePaths` ([#410](https://github.com/invertase/melos/issues/410)). ([bf26b52f](https://github.com/invertase/melos/commit/bf26b52f695cd906885004bf67373242e8c06b94))
+ - **DOCS**: take advantage of new `docs.page` features ([#464](https://github.com/invertase/melos/issues/464)). ([e5a2b42e](https://github.com/invertase/melos/commit/e5a2b42e6ade646cd8d403f409823f642aaed955))
+ - **BREAKING** **FEAT**: move lifecycle hooks to command sections ([#466](https://github.com/invertase/melos/issues/466)). ([29cdf5ca](https://github.com/invertase/melos/commit/29cdf5ca3ea55fa2be1f5faefdf1e37c1824f88e))
+ - **BREAKING** **FEAT**: local installation of melos in workspace ([#431](https://github.com/invertase/melos/issues/431)). ([9b080a5d](https://github.com/invertase/melos/commit/9b080a5d509daf7d6baaa28c2eb40ba12e235fd3))
+ - **BREAKING** **FEAT**: make naming around package filters more consistent ([#462](https://github.com/invertase/melos/issues/462)). ([d71e749a](https://github.com/invertase/melos/commit/d71e749a73d4da0c665fb2a12d2497bfd0965a8a))
+ - **BREAKING** **FEAT**: revise lifecycle hooks ([#458](https://github.com/invertase/melos/issues/458)). ([a1a265ec](https://github.com/invertase/melos/commit/a1a265ececef8c128539d61c14dc04d7f1efdd1d))
+ - **BREAKING** **FEAT**: enable more options by default ([#457](https://github.com/invertase/melos/issues/457)). ([dc2c9fcc](https://github.com/invertase/melos/commit/dc2c9fcc06dcf305e0c4dc6f5bad46cc2ad67f6d))
+ - **BREAKING** **FEAT**: remove `--since` filter in favour of `--diff` ([#454](https://github.com/invertase/melos/issues/454)). ([a5c53040](https://github.com/invertase/melos/commit/a5c530400970e1f96e56a34e5a70121f845232a3))
+ - **BREAKING** **FEAT**: only support bootstrapping with `pubspec_overrides.yaml` ([#430](https://github.com/invertase/melos/issues/430)). ([973aac84](https://github.com/invertase/melos/commit/973aac84452244d27e672e282fb611609b19c968))
+ - **BREAKING** **FEAT**: upgrade minimum Dart SDK version to 2.18.0 ([#429](https://github.com/invertase/melos/issues/429)). ([fa81cba0](https://github.com/invertase/melos/commit/fa81cba00960ef04702d1535f57cb644ffcaeaae))
 
+#### `conventional_commit` - `v0.6.0`
+
+ - **BREAKING** **FEAT**: upgrade minimum Dart SDK version to 2.18.0 ([#429](https://github.com/invertase/melos/issues/429)). ([fa81cba0](https://github.com/invertase/melos/commit/fa81cba00960ef04702d1535f57cb644ffcaeaae))
 
 ## 2023-02-07
 
