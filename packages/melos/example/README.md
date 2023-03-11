@@ -1,4 +1,4 @@
 # Melos Example
 
-> See the [documentation](https://melos.invertase.dev) for example project
-> structures.
+> See the [documentation](https://melos.invertase.dev/~melos-latest) for example
+> project structures.

@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://melos.invertase.dev">
+  <a href="https://melos.invertase.dev/~melos-latest">
   <img src="https://static.invertase.io/assets/melos-logo.png" alt="Melos" /> <br /><br />
   </a>
   <span>A tool for managing Dart projects with multiple packages, inspired by <a href="https://lerna.js.org">Lerna</a>.</span>
@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <a href="https://melos.invertase.dev">Documentation</a> &bull;
+  <a href="https://melos.invertase.dev/~melos-latest">Documentation</a> &bull;
   <a href="https://github.com/invertase/melos/blob/main/LICENSE">License</a>
 </p>
 
@@ -62,7 +62,7 @@ configuration file if the default is unsuitable.
   workspace can just run `melos run` to be prompted to select a script from a
   list with descriptions of each script.
   - Scripts can even
-    [prompt to select a package](https://melos.invertase.dev/configuration/scripts#packagefilters)
+    [prompt to select a package](https://melos.invertase.dev/~melos-latest/configuration/scripts#packagefilters)
     to run against with pre-defined filters.
 - ⚡ Execute commands across your packages easily with
   `melos exec -- <command here>` with additional concurrency and fail-fast
@@ -103,14 +103,16 @@ configuration file if the default is unsuitable.
   - `--no-depends-on=<noDependantPackageName>`
     - Include only packages that _don't_ depend on a specific package.
 - ♨️ Advanced support for IntelliJ IDEs with automatic creation of
-  [run configurations for workspace defined scripts and more](https://melos.invertase.dev/ide-support)
+  [run configurations for workspace defined scripts and more](https://melos.invertase.dev/~melos-latest/ide-support)
   on workspace bootstrap.
   - Integration with VS Code through an [extension][melos-code].
 
 ## Getting Started
 
-Go to the [Getting Started](https://melos.invertase.dev/getting-started) page of
-the [documentation](https://docs.page/invertase/melos) to start using Melos.
+Go to the
+[Getting Started](https://melos.invertase.dev/~melos-latest/getting-started)
+page of the [documentation](https://melos.invertase.dev/~melos-latest) to start
+using Melos.
 
 ## Who is using Melos?
 
@@ -146,12 +148,12 @@ The following projects are using Melos:
 ## Documentation
 
 Documentation is available at
-[https://melos.invertase.dev](https://melos.invertase.dev).
+[https://melos.invertase.dev](https://melos.invertase.dev/~melos-latest).
 
 ## Migrations
 
 When migrating between major versions of Melos, please read the
-[migration guide](https://melos.invertase.dev/guides/migrations).
+[migration guide](https://melos.invertase.dev/~melos-latest/guides/migrations).
 
 ## Commands
 
