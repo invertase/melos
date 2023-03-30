@@ -1,3 +1,7 @@
+## 3.0.1
+
+ - **DOCS**: pin docs to latest Melos release ([#373](https://github.com/invertase/melos/issues/373)). ([d1fd8d1f](https://github.com/invertase/melos/commit/d1fd8d1ff7f785fb625e34da65b2662bcabfbb60))
+
 ## 3.0.0
 
 > Note: This release has breaking changes.
