@@ -55,6 +55,12 @@ feat(*): a new something (#1234)
 This also fixes an issue something else.
 ''';
 
+const commitMessageHyphenScope = '''
+feat(remote-config)!: add support for onConfigUpdated (#10647)
+
+This PR is a breaking change for Remote Config since we're removing the ChangeNotifier mixin that came with FirebaseRemoteConfig. You should handle the state of the RemoteConfig using your own state provider.
+''';
+
 void main() {
   group('$ConventionalCommit', () {
     test('invalid commit messages', () {
@@ -119,6 +125,27 @@ void main() {
       expect(commit.body, equals('This also fixes an issue something else.'));
       expect(commit.type, equals('feat'));
       expect(commit.scopes, equals(['*']));
+    });
+
+    test('correctly handles messages with a scope that contains "-"', () {
+      final commit = ConventionalCommit.tryParse(commitMessageHyphenScope);
+      expect(commit, isNotNull);
+      expect(
+        commit!.description,
+        equals('add support for onConfigUpdated (#10647)'),
+      );
+      expect(
+        commit.body,
+        equals(
+          "This PR is a breaking change for Remote Config since we're removing "
+          'the ChangeNotifier mixin that came with FirebaseRemoteConfig. You '
+          'should handle the state of the RemoteConfig using your own state '
+          'provider.',
+        ),
+      );
+      expect(commit.type, equals('feat'));
+      expect(commit.isBreakingChange, equals(true));
+      expect(commit.scopes, equals(['remote-config']));
     });
 
     test('header', () {
