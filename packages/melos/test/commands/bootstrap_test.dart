@@ -392,7 +392,7 @@ dependency_overrides: null
 ''',
           updatedPubspecOverrides: '''
 # melos_managed_dependency_overrides: a
-dependency_overrides: 
+dependency_overrides:
   a:
     path: ../a
 ''',
@@ -453,13 +453,13 @@ dependency_overrides:
           currentPubspecOverrides: '''
 # melos_managed_dependency_overrides: a
 dependency_overrides:
-  a: 
+  a:
     path: ../a
 ''',
           updatedPubspecOverrides: '''
 # melos_managed_dependency_overrides: a
 dependency_overrides:
-  a: 
+  a:
     path: ../aa
 ''',
         );
@@ -479,7 +479,7 @@ dependency_overrides:
           updatedPubspecOverrides: '''
 # melos_managed_dependency_overrides: b,c
 dependency_overrides:
-  b: 
+  b:
     path: ../bb
   c:
     path: ../c
