@@ -953,7 +953,7 @@ class Package {
     // Must directly depend on the Flutter SDK.
     if (!isFlutterPackage) return false;
 
-    // Must not have a Flutter plugin definition in it's pubspec.yaml.
+    // Must not have a Flutter plugin definition in its pubspec.yaml.
     if (pubSpec.flutter?.plugin != null) return false;
 
     return fileExists(p.join(path, 'lib', 'main.dart'));

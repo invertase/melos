@@ -39,7 +39,7 @@ class IdeWorkspace {
       IntellijProject.fromWorkspace(_workspace);
 }
 
-/// A representation of a workspace. This includes it's packages, configuration
+/// A representation of a workspace. This includes its packages, configuration
 /// such as scripts and more.
 class MelosWorkspace {
   MelosWorkspace({

@@ -31,7 +31,7 @@ enum SemverReleaseType {
 }
 
 extension ConventionalCommitVersioningExtension on ConventionalCommit {
-  /// Whether this commit should trigger a version bump in it's residing
+  /// Whether this commit should trigger a version bump in its residing
   /// package.
   bool get isVersionableCommit {
     return isBreakingChange ||
