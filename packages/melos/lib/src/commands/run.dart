@@ -203,7 +203,7 @@ class NoScriptException implements MelosException {
 
   @override
   String toString() {
-    return "NoScriptException: This workspace has no scripts defined in it's "
+    return 'NoScriptException: This workspace has no scripts defined in its '
         "'melos.yaml' file.";
   }
 }

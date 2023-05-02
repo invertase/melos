@@ -355,7 +355,7 @@ Future<void> gitRemoteUpdate({
   );
 }
 
-/// Determine if the local git repository is behind on commits from it's remote
+/// Determine if the local git repository is behind on commits from its remote
 /// branch.
 Future<bool> gitIsBehindUpstream({
   required String workingDirectory,
