@@ -347,6 +347,7 @@ class VirtualWorkspaceBuilder {
       allPackages: packageMap,
       filteredPackages: packageMap,
       dependencyOverridePackages: _buildVirtualPackageMap(const [], logger),
+      dependencyOverrides: const {},
       logger: logger,
       sdkPath: sdkPath,
     );

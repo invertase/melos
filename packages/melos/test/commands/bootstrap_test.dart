@@ -263,9 +263,13 @@ Generating IntelliJ IDE files...
             packages: [
               Glob('**'),
             ],
-            globalDependencyOverrides: {
-              'path': HostedReference(Version.parse('1.8.3')),
-            },
+            commands: CommandConfigs(
+              bootstrap: BootstrapCommandConfigs(
+                dependencyOverrides: {
+                  'path': HostedReference(Version.parse('1.8.3')),
+                },
+              ),
+            ),
           );
         },
       );
