@@ -64,8 +64,6 @@ extension Let<T> on T? {
   }
 }
 
-String describeEnum(Object value) => value.toString().split('.').last;
-
 /// Utility function to write inline multi-line strings with indentation and
 /// without trailing a new line.
 ///

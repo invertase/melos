@@ -75,6 +75,13 @@ Uri get pubUrl => Uri.parse(
       currentPlatform.environment['PUB_HOSTED_URL'] ?? 'https://pub.dev',
     );
 
+final _isValidPubPackageNameRegExp =
+    RegExp(r'^[a-z][a-z\d_-]*$', caseSensitive: false);
+
+/// Returns whether the given [name] is a valid pub package name.
+bool isValidPubPackageName(String name) =>
+    _isValidPubPackageNameRegExp.hasMatch(name);
+
 /// Enum representing what type of package this is.
 enum PackageType {
   dartPackage,
