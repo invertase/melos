@@ -1079,6 +1079,7 @@ class Package {
 /// related to it.
 Map<String, Package> _transitivelyRelatedPackages({
   required Package root,
+  // ignore: avoid_positional_boolean_parameters
   required Map<String, Package> Function(Package, bool isRoot)
       directlyRelatedPackages,
 }) {
