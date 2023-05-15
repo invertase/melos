@@ -357,6 +357,7 @@ class BootstrapCommandConfigs {
   const BootstrapCommandConfigs({
     this.runPubGetInParallel = true,
     this.runPubGetOffline = false,
+    this.shareDependencies = false,
     this.dependencyOverridePaths = const [],
     this.hooks = LifecycleHooks.empty,
   });
@@ -374,6 +375,13 @@ class BootstrapCommandConfigs {
 
     final runPubGetOffline = assertKeyIsA<bool?>(
           key: 'runPubGetOffline',
+          map: yaml,
+          path: 'command/bootstrap',
+        ) ??
+        false;
+
+    final shareDependencies = assertKeyIsA<bool?>(
+          key: 'shareDependencies',
           map: yaml,
           path: 'command/bootstrap',
         ) ??
@@ -402,6 +410,7 @@ class BootstrapCommandConfigs {
     return BootstrapCommandConfigs(
       runPubGetInParallel: runPubGetInParallel,
       runPubGetOffline: runPubGetOffline,
+      shareDependencies: shareDependencies,
       dependencyOverridePaths: dependencyOverridePaths
           .map(
             (override) =>
@@ -425,6 +434,12 @@ class BootstrapCommandConfigs {
   /// The default is `false`.
   final bool runPubGetOffline;
 
+  /// Whether to sync package dependencies with dependencies specified in
+  /// common_packages.yaml.
+  ///
+  /// The default is `false`.
+  final bool shareDependencies;
+
   /// A list of [Glob]s for paths that contain packages to be used as dependency
   /// overrides for all packages managed in the Melos workspace.
   final List<Glob> dependencyOverridePaths;
@@ -436,6 +451,7 @@ class BootstrapCommandConfigs {
     return {
       'runPubGetInParallel': runPubGetInParallel,
       'runPubGetOffline': runPubGetOffline,
+      'shareDependencies': shareDependencies,
       if (dependencyOverridePaths.isNotEmpty)
         'dependencyOverridePaths':
             dependencyOverridePaths.map((path) => path.toString()).toList(),
@@ -449,6 +465,7 @@ class BootstrapCommandConfigs {
       runtimeType == other.runtimeType &&
       other.runPubGetInParallel == runPubGetInParallel &&
       other.runPubGetOffline == runPubGetOffline &&
+      other.shareDependencies == shareDependencies &&
       const DeepCollectionEquality(_GlobEquality())
           .equals(other.dependencyOverridePaths, dependencyOverridePaths) &&
       other.hooks == hooks;
@@ -458,6 +475,7 @@ class BootstrapCommandConfigs {
       runtimeType.hashCode ^
       runPubGetInParallel.hashCode ^
       runPubGetOffline.hashCode ^
+      shareDependencies.hashCode ^
       const DeepCollectionEquality(_GlobEquality())
           .hash(dependencyOverridePaths) ^
       hooks.hashCode;
@@ -468,6 +486,7 @@ class BootstrapCommandConfigs {
 BootstrapCommandConfigs(
   runPubGetInParallel: $runPubGetInParallel,
   runPubGetOffline: $runPubGetOffline,
+  shareDependencies: $shareDependencies,
   dependencyOverridePaths: $dependencyOverridePaths,
   hooks: $hooks,
 )''';
