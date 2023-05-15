@@ -19,6 +19,7 @@ import 'dart:async';
 
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
+import 'package:pubspec/pubspec.dart';
 
 import 'common/intellij_project.dart';
 import 'common/io.dart';
@@ -49,6 +50,7 @@ class MelosWorkspace {
     required this.allPackages,
     required this.filteredPackages,
     required this.dependencyOverridePackages,
+    required this.dependencyOverrides,
     required this.sdkPath,
     required this.logger,
   });
@@ -73,6 +75,9 @@ class MelosWorkspace {
       logger: logger,
     );
 
+    final dependencyOverrides =
+        workspaceConfig.commands.bootstrap.dependencyOverrides;
+
     final filteredPackages = await allPackages.applyFilters(packageFilters);
 
     return MelosWorkspace(
@@ -83,6 +88,7 @@ class MelosWorkspace {
       logger: logger,
       filteredPackages: filteredPackages,
       dependencyOverridePackages: dependencyOverridePackages,
+      dependencyOverrides: dependencyOverrides,
       sdkPath: resolveSdkPath(
         configSdkPath: workspaceConfig.sdkPath,
         envSdkPath: currentPlatform.environment[utils.envKeyMelosSdkPath],
@@ -118,6 +124,10 @@ class MelosWorkspace {
   /// The packages specified in
   /// [BootstrapCommandConfigs.dependencyOverridePaths].
   final PackageMap dependencyOverridePackages;
+
+  /// The dependencies specified in
+  /// [BootstrapCommandConfigs.dependencyOverrides].
+  final Map<String, DependencyReference> dependencyOverrides;
 
   late final IdeWorkspace ide = IdeWorkspace._(this);
 

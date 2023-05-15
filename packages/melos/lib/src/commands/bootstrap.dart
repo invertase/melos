@@ -117,7 +117,7 @@ mixin _BootstrapMixin on _CleanMixin {
     }
 
     // Add global workspace overrides
-    melosDependencyOverrides.addAll(config.globalDependencyOverrides);
+    melosDependencyOverrides.addAll(workspace.dependencyOverrides);
 
     // Add custom workspace overrides.
     for (final dependencyOverride

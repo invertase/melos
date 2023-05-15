@@ -358,6 +358,7 @@ class BootstrapCommandConfigs {
     this.runPubGetInParallel = true,
     this.runPubGetOffline = false,
     this.dependencyOverridePaths = const [],
+    this.dependencyOverrides = const {},
     this.hooks = LifecycleHooks.empty,
   });
 
@@ -390,6 +391,11 @@ class BootstrapCommandConfigs {
       ),
     );
 
+    final dependencyOverridesMap = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'dependencyOverrides',
+      map: yaml,
+    );
+
     final hooksMap = assertKeyIsA<Map<Object?, Object?>?>(
       key: 'hooks',
       map: yaml,
@@ -408,6 +414,13 @@ class BootstrapCommandConfigs {
                 createGlob(override, currentDirectoryPath: workspacePath),
           )
           .toList(),
+      dependencyOverrides: dependencyOverridesMap?.map(
+            (key, value) => MapEntry(
+              key! as String,
+              DependencyReference.fromJson(value),
+            ),
+          ) ??
+          const {},
       hooks: hooks,
     );
   }
@@ -429,6 +442,9 @@ class BootstrapCommandConfigs {
   /// overrides for all packages managed in the Melos workspace.
   final List<Glob> dependencyOverridePaths;
 
+  /// A map of global dependency overrides.
+  final Map<String, DependencyReference> dependencyOverrides;
+
   /// Lifecycle hooks for this command.
   final LifecycleHooks hooks;
 
@@ -439,6 +455,8 @@ class BootstrapCommandConfigs {
       if (dependencyOverridePaths.isNotEmpty)
         'dependencyOverridePaths':
             dependencyOverridePaths.map((path) => path.toString()).toList(),
+      'dependencyOverrides': dependencyOverrides
+          .map((key, value) => MapEntry(key, value.toJson())),
       'hooks': hooks.toJson(),
     };
   }
@@ -451,6 +469,8 @@ class BootstrapCommandConfigs {
       other.runPubGetOffline == runPubGetOffline &&
       const DeepCollectionEquality(_GlobEquality())
           .equals(other.dependencyOverridePaths, dependencyOverridePaths) &&
+      const DeepCollectionEquality(_GlobEquality())
+          .equals(other.dependencyOverrides, dependencyOverrides) &&
       other.hooks == hooks;
 
   @override
@@ -459,7 +479,9 @@ class BootstrapCommandConfigs {
       runPubGetInParallel.hashCode ^
       runPubGetOffline.hashCode ^
       const DeepCollectionEquality(_GlobEquality())
-          .hash(dependencyOverridePaths) ^
+              .hash(dependencyOverridePaths) &
+          const DeepCollectionEquality(_GlobEquality())
+              .hash(dependencyOverrides) ^
       hooks.hashCode;
 
   @override
@@ -469,6 +491,7 @@ BootstrapCommandConfigs(
   runPubGetInParallel: $runPubGetInParallel,
   runPubGetOffline: $runPubGetOffline,
   dependencyOverridePaths: $dependencyOverridePaths,
+  dependencyOverrides: $dependencyOverrides,
   hooks: $hooks,
 )''';
   }
@@ -844,7 +867,6 @@ class MelosWorkspaceConfig {
     this.repository,
     required this.packages,
     this.ignore = const [],
-    this.globalDependencyOverrides = const {},
     this.scripts = Scripts.empty,
     this.ide = IDEConfigs.empty,
     this.commands = CommandConfigs.empty,
@@ -939,11 +961,6 @@ class MelosWorkspaceConfig {
       ),
     );
 
-    final globalDependencyOverridesMap = assertKeyIsA<Map<Object?, Object?>?>(
-      key: 'globalDependencyOverrides',
-      map: yaml,
-    );
-
     final scriptsMap = assertKeyIsA<Map<Object?, Object?>?>(
       key: 'scripts',
       map: yaml,
@@ -975,13 +992,6 @@ class MelosWorkspaceConfig {
       ignore: ignore
           .map((ignore) => createGlob(ignore, currentDirectoryPath: path))
           .toList(),
-      globalDependencyOverrides: globalDependencyOverridesMap?.map(
-            (key, value) => MapEntry(
-              key! as String,
-              DependencyReference.fromJson(value),
-            ),
-          ) ??
-          const {},
       scripts: scriptsMap == null
           ? Scripts.empty
           : Scripts.fromYaml(scriptsMap, workspacePath: path),
@@ -1128,9 +1138,6 @@ class MelosWorkspaceConfig {
   /// packages.
   final List<Glob> ignore;
 
-  /// A map of global dependency overrides.
-  final Map<String, DependencyReference> globalDependencyOverrides;
-
   /// A list of scripts that can be executed with `melos run` or will be
   /// executed before/after some specific melos commands.
   final Scripts scripts;
@@ -1187,8 +1194,6 @@ class MelosWorkspaceConfig {
           .equals(other.packages, packages) &&
       const DeepCollectionEquality(_GlobEquality())
           .equals(other.ignore, ignore) &&
-      const DeepCollectionEquality(_GlobEquality())
-          .equals(other.globalDependencyOverrides, globalDependencyOverrides) &&
       other.scripts == scripts &&
       other.ide == ide &&
       other.commands == commands;
@@ -1200,9 +1205,7 @@ class MelosWorkspaceConfig {
       name.hashCode ^
       repository.hashCode ^
       const DeepCollectionEquality(_GlobEquality()).hash(packages) &
-          const DeepCollectionEquality(_GlobEquality()).hash(ignore) &
-          const DeepCollectionEquality(_GlobEquality())
-              .hash(globalDependencyOverrides) ^
+          const DeepCollectionEquality(_GlobEquality()).hash(ignore) ^
       scripts.hashCode ^
       ide.hashCode ^
       commands.hashCode;
@@ -1214,9 +1217,6 @@ class MelosWorkspaceConfig {
       if (repository != null) 'repository': repository!,
       'packages': packages.map((p) => p.toString()).toList(),
       if (ignore.isNotEmpty) 'ignore': ignore.map((p) => p.toString()).toList(),
-      'globalDependencyOverrides': globalDependencyOverrides.map(
-        (key, value) => MapEntry(key, value.toJson()),
-      ),
       if (scripts.isNotEmpty) 'scripts': scripts.toJson(),
       'ide': ide.toJson(),
       'command': commands.toJson(),
@@ -1232,7 +1232,6 @@ MelosWorkspaceConfig(
   repository: $repository,
   packages: $packages,
   ignore: $ignore,
-  globalDependencyOverrides: $globalDependencyOverrides,
   scripts: ${scripts.toString().indent('  ')},
   ide: ${ide.toString().indent('  ')},
   commands: ${commands.toString().indent('  ')},
