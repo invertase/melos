@@ -321,6 +321,9 @@ String melosOverridesYamlPathForDirectory(String directory) =>
 String pubspecPathForDirectory(String directory) =>
     p.join(directory, 'pubspec.yaml');
 
+String pubspecCommonPathForDirectory(String directory) =>
+    p.join(directory, 'common_packages.yaml');
+
 String pubspecOverridesPathForDirectory(String directory) =>
     p.join(directory, 'pubspec_overrides.yaml');
 

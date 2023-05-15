@@ -35,6 +35,10 @@ mixin _BootstrapMixin on _CleanMixin {
         }
 
         try {
+          if (workspace.config.commands.bootstrap.shareDependencies) {
+            await _setSharedDependencies(workspace);
+          }
+
           await _linkPackagesWithPubspecOverrides(workspace);
         } on BootstrapException catch (exception) {
           _logBootstrapException(exception, workspace);
@@ -59,6 +63,16 @@ mixin _BootstrapMixin on _CleanMixin {
           );
       },
     );
+  }
+
+  Future<void> _setSharedDependencies(MelosWorkspace workspace) async {
+    final filePath = utils.pubspecCommonPathForDirectory(workspace.config.path);
+    final pubspecWorkspaceFile = await PubSpec.loadFile(filePath);
+
+    final filteredPackages = workspace.filteredPackages.values;
+    await Stream.fromIterable(filteredPackages).parallel((package) async {
+      await _setSharedDependenciesInPackage(pubspecWorkspaceFile, package);
+    }).drain<void>();
   }
 
   Future<void> _linkPackagesWithPubspecOverrides(
@@ -197,6 +211,66 @@ mixin _BootstrapMixin on _CleanMixin {
         stderr: await stderr,
       );
     }
+  }
+
+  Future<void> _setSharedDependenciesInPackage(
+    PubSpec workspacePubspec,
+    Package package,
+  ) async {
+    final packagePubspecFile = utils.pubspecPathForDirectory(package.path);
+
+    final packagePubspecContents = await readTextFileAsync(packagePubspecFile);
+
+    final pubspecEditor = YamlEditor(packagePubspecContents);
+
+    final dependenciesUpdated = _updatePackages(
+      pubspecEditor: pubspecEditor,
+      workspaceDependencies: workspacePubspec.dependencies,
+      packageDependencies: package.pubSpec.dependencies,
+      pubspecKey: 'dependencies',
+    );
+
+    final devDependenciesUpdated = _updatePackages(
+      pubspecEditor: pubspecEditor,
+      workspaceDependencies: workspacePubspec.devDependencies,
+      packageDependencies: package.pubSpec.devDependencies,
+      pubspecKey: 'dev_dependencies',
+    );
+
+    await writeTextFileAsync(
+      packagePubspecFile,
+      pubspecEditor.toString(),
+    );
+
+    final totalUpdated = dependenciesUpdated + devDependenciesUpdated;
+    logger.log('Updated $totalUpdated packages in ${package.name}');
+  }
+
+  int _updatePackages({
+    required YamlEditor pubspecEditor,
+    required Map<String, DependencyReference> workspaceDependencies,
+    required Map<String, DependencyReference> packageDependencies,
+    required String pubspecKey,
+  }) {
+    // Filter out the packages that does not exist in package and only the
+    // dependencies that has a different version specified in the workspace.
+    final packagesToUpgrade = workspaceDependencies.entries.where((element) {
+      if (!packageDependencies.containsKey(element.key)) return false;
+      if (packageDependencies[element.key] == element.value) return false;
+      return true;
+    });
+
+    for (final entry in packagesToUpgrade) {
+      pubspecEditor.update(
+        [pubspecKey, entry.key],
+        wrapAsYamlNode(
+          entry.value.toJson(),
+          collectionStyle: CollectionStyle.BLOCK,
+        ),
+      );
+    }
+
+    return packagesToUpgrade.length;
   }
 
   void _logBootstrapSuccess(Package package) {
