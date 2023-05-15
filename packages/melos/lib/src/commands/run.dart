@@ -21,7 +21,7 @@ mixin _RunMixin on _Melos {
     }
 
     final scriptSourceCode =
-        targetStyle(script.effectiveRun.replaceAll('\n', ''));
+        targetStyle(script.effectiveRun.withoutTrailing('\n'));
 
     logger.command('melos run ${script.name}');
     logger.child(scriptSourceCode).child(runningLabel).newLine();
