@@ -1,5 +1,6 @@
 import 'dart:io' as io;
 
+import 'package:glob/glob.dart';
 import 'package:melos/melos.dart';
 import 'package:melos/src/commands/runner.dart';
 import 'package:melos/src/common/io.dart';
@@ -252,6 +253,48 @@ Generating IntelliJ IDE files...
         },
       ),
     );
+
+    test('respects global dependency_overrides', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: (path) {
+          return MelosWorkspaceConfig(
+            path: path,
+            name: 'test',
+            packages: [
+              Glob('**'),
+            ],
+            globalDependencyOverrides: {
+              'path': HostedReference(Version.parse('1.8.3')),
+            },
+          );
+        },
+      );
+
+      final pkgA = await createProject(
+        workspaceDir,
+        PubSpec(
+          name: 'a',
+          dependencies: {'path': HostedReference(Version.parse('1.8.0'))},
+        ),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      await runMelosBootstrap(melos, logger);
+
+      final packageConfig = packageConfigForPackageAt(pkgA);
+      expect(
+        packageConfig.packages
+            .firstWhere((package) => package.name == 'path')
+            .rootUri,
+        endsWith('1.8.3'),
+      );
+    });
 
     test('respects user dependency_overrides', () async {
       final workspaceDir = await createTemporaryWorkspace();
