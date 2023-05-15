@@ -29,6 +29,7 @@ import 'common/glob.dart';
 import 'common/io.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
+import 'package.dart';
 import 'scripts.dart';
 
 /// IDE-specific configurations.
@@ -855,11 +856,9 @@ class MelosWorkspaceConfig {
     required String path,
   }) {
     final name = assertKeyIsA<String>(key: 'name', map: yaml);
-    final isValidDartPackageNameRegExp =
-        RegExp(r'^[a-z][a-z\d_-]*$', caseSensitive: false);
-    if (!isValidDartPackageNameRegExp.hasMatch(name)) {
+    if (!isValidPubPackageName(name)) {
       throw MelosConfigException(
-        'The name $name is not a valid dart package name',
+        'The name $name is not a valid pub package name.',
       );
     }
 
