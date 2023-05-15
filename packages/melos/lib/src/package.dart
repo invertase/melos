@@ -843,7 +843,7 @@ class Package {
   late final Map<String, Package> allTransitiveDependenciesInWorkspace =
       _transitivelyRelatedPackages(
     root: this,
-    directlyRelatedPackages: (package, {required isRoot}) => isRoot
+    directlyRelatedPackages: (package, isRoot) => isRoot
         ? package.allDependenciesInWorkspace
         : package.dependenciesInWorkspace,
   );
@@ -851,8 +851,7 @@ class Package {
   late final Map<String, Package> allTransitiveDependentsInWorkspace =
       _transitivelyRelatedPackages(
     root: this,
-    directlyRelatedPackages: (package, {required isRoot}) =>
-        package.allDependentsInWorkspace,
+    directlyRelatedPackages: (package, _) => package.allDependentsInWorkspace,
   );
 
   Map<String, Package> _packagesInWorkspaceForNames(List<String> names) {
@@ -1080,12 +1079,11 @@ class Package {
 /// related to it.
 Map<String, Package> _transitivelyRelatedPackages({
   required Package root,
-  required Map<String, Package> Function(Package, {required bool isRoot})
+  required Map<String, Package> Function(Package, bool isRoot)
       directlyRelatedPackages,
 }) {
   final result = <String, Package>{};
-  final workingSet =
-      directlyRelatedPackages(root, isRoot: true).values.toList();
+  final workingSet = directlyRelatedPackages(root, true).values.toList();
 
   while (workingSet.isNotEmpty) {
     final current = workingSet.removeLast();
@@ -1099,10 +1097,7 @@ Map<String, Package> _transitivelyRelatedPackages({
       // Since `current` is a package that was not in the result, we are
       // seeing it for the first time and still need to traverse its related
       // packages.
-      workingSet.insertAll(
-        0,
-        directlyRelatedPackages(current, isRoot: false).values,
-      );
+      workingSet.insertAll(0, directlyRelatedPackages(current, false).values);
 
       return current;
     });
