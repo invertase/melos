@@ -21,6 +21,7 @@ import 'package:ansi_styles/ansi_styles.dart';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
+import 'package:pubspec/pubspec.dart';
 import 'package:yaml/yaml.dart';
 
 import '../melos.dart';
@@ -843,6 +844,7 @@ class MelosWorkspaceConfig {
     this.repository,
     required this.packages,
     this.ignore = const [],
+    this.globalDependencyOverrides = const {},
     this.scripts = Scripts.empty,
     this.ide = IDEConfigs.empty,
     this.commands = CommandConfigs.empty,
@@ -937,6 +939,11 @@ class MelosWorkspaceConfig {
       ),
     );
 
+    final globalDependencyOverridesMap = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'globalDependencyOverrides',
+      map: yaml,
+    );
+
     final scriptsMap = assertKeyIsA<Map<Object?, Object?>?>(
       key: 'scripts',
       map: yaml,
@@ -968,6 +975,13 @@ class MelosWorkspaceConfig {
       ignore: ignore
           .map((ignore) => createGlob(ignore, currentDirectoryPath: path))
           .toList(),
+      globalDependencyOverrides: globalDependencyOverridesMap?.map(
+            (key, value) => MapEntry(
+              key! as String,
+              DependencyReference.fromJson(value),
+            ),
+          ) ??
+          const {},
       scripts: scriptsMap == null
           ? Scripts.empty
           : Scripts.fromYaml(scriptsMap, workspacePath: path),
@@ -1114,6 +1128,9 @@ class MelosWorkspaceConfig {
   /// packages.
   final List<Glob> ignore;
 
+  /// A map of global dependency overrides.
+  final Map<String, DependencyReference> globalDependencyOverrides;
+
   /// A list of scripts that can be executed with `melos run` or will be
   /// executed before/after some specific melos commands.
   final Scripts scripts;
@@ -1170,6 +1187,8 @@ class MelosWorkspaceConfig {
           .equals(other.packages, packages) &&
       const DeepCollectionEquality(_GlobEquality())
           .equals(other.ignore, ignore) &&
+      const DeepCollectionEquality(_GlobEquality())
+          .equals(other.globalDependencyOverrides, globalDependencyOverrides) &&
       other.scripts == scripts &&
       other.ide == ide &&
       other.commands == commands;
@@ -1181,7 +1200,9 @@ class MelosWorkspaceConfig {
       name.hashCode ^
       repository.hashCode ^
       const DeepCollectionEquality(_GlobEquality()).hash(packages) &
-          const DeepCollectionEquality(_GlobEquality()).hash(ignore) ^
+          const DeepCollectionEquality(_GlobEquality()).hash(ignore) &
+          const DeepCollectionEquality(_GlobEquality())
+              .hash(globalDependencyOverrides) ^
       scripts.hashCode ^
       ide.hashCode ^
       commands.hashCode;
@@ -1193,6 +1214,9 @@ class MelosWorkspaceConfig {
       if (repository != null) 'repository': repository!,
       'packages': packages.map((p) => p.toString()).toList(),
       if (ignore.isNotEmpty) 'ignore': ignore.map((p) => p.toString()).toList(),
+      'globalDependencyOverrides': globalDependencyOverrides.map(
+        (key, value) => MapEntry(key, value.toJson()),
+      ),
       if (scripts.isNotEmpty) 'scripts': scripts.toJson(),
       'ide': ide.toJson(),
       'command': commands.toJson(),
@@ -1208,6 +1232,7 @@ MelosWorkspaceConfig(
   repository: $repository,
   packages: $packages,
   ignore: $ignore,
+  globalDependencyOverrides: $globalDependencyOverrides,
   scripts: ${scripts.toString().indent('  ')},
   ide: ${ide.toString().indent('  ')},
   commands: ${commands.toString().indent('  ')},
