@@ -18,7 +18,7 @@ dependencies:
   ansi_styles: ^0.3.1
   args: ^2.0.0
   cli_launcher: ^0.3.0
-  cli_util: ^0.3.0
+  cli_util: '>=0.3.0 <0.5.0'
   collection: ^1.14.12
   conventional_commit: ^0.6.0+1
   file: ^6.1.0
