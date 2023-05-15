@@ -110,11 +110,16 @@ class MelosLogger with _DelegateLogger {
       childIndentation: childIndentation,
     );
 
-    final prefixedMessage = '$prefix$message';
-    if (stderr) {
-      logger.stderr(prefixedMessage);
-    } else {
-      logger.stdout(prefixedMessage);
+    final lines = message.split('\n');
+    var isFirstLine = true;
+    for (final line in lines) {
+      final prefixedLine = '${isFirstLine ? prefix : childIndentation}$line';
+      if (stderr) {
+        logger.stderr(prefixedLine);
+      } else {
+        logger.stdout(prefixedLine);
+      }
+      isFirstLine = false;
     }
 
     return logger;
