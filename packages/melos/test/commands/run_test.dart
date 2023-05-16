@@ -125,15 +125,77 @@ melos run test_script
       expect(
         logger.output.normalizeNewLines(),
         ignoringAnsii(
-          '''
+          r'''
 melos run test_script
-  └> echo \$0 \$1 \$2
+  └> echo $0 $1 $2
      └> RUNNING
 
-${currentPlatform.isWindows ? r'$0 $1 $2' : '/bin/sh'} foo bar baz
+foo bar baz
 
 melos run test_script
-  └> echo \$0 \$1 \$2
+  └> echo $0 $1 $2
+     └> SUCCESS
+''',
+        ),
+      );
+    });
+
+    test('supports passing additional arguments to multiline run scripts',
+        () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: Scripts({
+            'test_script': Script(
+              name: 'test_script',
+              run: r'''
+echo $0
+echo $1
+echo $2''',
+            )
+          }),
+        ),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      await melos.run(
+        scriptName: 'test_script',
+        noSelect: true,
+        extraArgs: [
+          'foo',
+          'bar',
+          'baz',
+        ],
+      );
+
+      expect(
+        logger.output.normalizeNewLines(),
+        ignoringAnsii(
+          r'''
+melos run test_script
+  └> echo $0
+     echo $1
+     echo $2
+     └> RUNNING
+
+foo
+bar
+baz
+
+melos run test_script
+  └> echo $0
+     echo $1
+     echo $2
      └> SUCCESS
 ''',
         ),

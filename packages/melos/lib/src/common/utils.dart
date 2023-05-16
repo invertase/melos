@@ -437,6 +437,7 @@ Future<Process> startCommandRaw(
   String? workingDirectory,
   Map<String, String> environment = const {},
   bool includeParentEnvironment = true,
+  List<String> extraArgs = const [],
 }) {
   final executable = currentPlatform.isWindows ? 'cmd.exe' : '/bin/sh';
   workingDirectory ??= Directory.current.path;
@@ -444,8 +445,8 @@ Future<Process> startCommandRaw(
   return Process.start(
     executable,
     currentPlatform.isWindows
-        ? ['/C', '%MELOS_SCRIPT%']
-        : ['-c', r'eval "$MELOS_SCRIPT"'],
+        ? ['/C', '%MELOS_SCRIPT%', ...extraArgs]
+        : ['-c', r'eval "$MELOS_SCRIPT"', ...extraArgs],
     workingDirectory: workingDirectory,
     environment: {
       ...environment,
@@ -464,6 +465,7 @@ Future<int> startCommand(
   bool onlyOutputOnError = false,
   bool includeParentEnvironment = true,
   required MelosLogger logger,
+  List<String> extraArgs = const [],
 }) async {
   final processedCommand = command
       .map((arg) {
@@ -498,6 +500,7 @@ Future<int> startCommand(
     workingDirectory: workingDirectory,
     environment: environment,
     includeParentEnvironment: includeParentEnvironment,
+    extraArgs: extraArgs,
   );
 
   var stdoutStream = process.stdout;

@@ -156,10 +156,11 @@ mixin _RunMixin on _Melos {
     final scriptParts = scriptSource.split(' ');
 
     return startCommand(
-      scriptParts..addAll(extraArgs),
+      scriptParts,
       logger: logger,
       environment: environment,
       workingDirectory: config.path,
+      extraArgs: extraArgs,
     );
   }
 }
