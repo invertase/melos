@@ -1,3 +1,10 @@
+## 3.1.0
+
+ - **REFACTOR**: tidy up workspace name validation and fix docs ([#522](https://github.com/invertase/melos/issues/522)). ([3d76097d](https://github.com/invertase/melos/commit/3d76097db131b760368766ecbf7e133f2e1db23e))
+ - **FEAT**: improve output for multi-line scripts ([#524](https://github.com/invertase/melos/issues/524)). ([b4d71300](https://github.com/invertase/melos/commit/b4d7130006d7cdc04967c6b42f41850f56f71229))
+ - **FEAT**: set exit code to 1 when detecting cycles in `melos list` ([#523](https://github.com/invertase/melos/issues/523)). ([e2863e6f](https://github.com/invertase/melos/commit/e2863e6f043702da4d1b12d0ac837211beb8977e))
+ - **DOCS**: add `NetGlade/auto_mappr` to user of melos ([#508](https://github.com/invertase/melos/issues/508)). ([60c86195](https://github.com/invertase/melos/commit/60c86195c176d1b06f0bd983d903593465a15ce7))
+
 ## 3.0.1
 
  - **DOCS**: pin docs to latest Melos release ([#373](https://github.com/invertase/melos/issues/373)). ([d1fd8d1f](https://github.com/invertase/melos/commit/d1fd8d1ff7f785fb625e34da65b2662bcabfbb60))
