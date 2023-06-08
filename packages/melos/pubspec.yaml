@@ -24,7 +24,7 @@ dependencies:
   file: ^6.1.0
   glob: ^2.1.0
   graphs: ^2.1.0
-  http: ^0.13.1
+  http: ">=0.13.1 <2.0.0"
   meta: ^1.1.8
   mustache_template: ^2.0.0
   path: ^1.7.0
