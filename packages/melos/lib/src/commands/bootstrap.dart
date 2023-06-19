@@ -223,14 +223,14 @@ mixin _BootstrapMixin on _CleanMixin {
 
     final pubspecEditor = YamlEditor(packagePubspecContents);
 
-    final dependenciesUpdated = _updatePackages(
+    final updatedDependenciesCount = _updateDependencies(
       pubspecEditor: pubspecEditor,
       workspaceDependencies: workspacePubspec.dependencies,
       packageDependencies: package.pubSpec.dependencies,
       pubspecKey: 'dependencies',
     );
 
-    final devDependenciesUpdated = _updatePackages(
+    final updatedDevDependenciesCount = _updateDependencies(
       pubspecEditor: pubspecEditor,
       workspaceDependencies: workspacePubspec.devDependencies,
       packageDependencies: package.pubSpec.devDependencies,
@@ -242,11 +242,11 @@ mixin _BootstrapMixin on _CleanMixin {
       pubspecEditor.toString(),
     );
 
-    final totalUpdated = dependenciesUpdated + devDependenciesUpdated;
+    final totalUpdated = updatedDependenciesCount + updatedDevDependenciesCount;
     logger.log('Updated $totalUpdated packages in ${package.name}');
   }
 
-  int _updatePackages({
+  int _updateDependencies({
     required YamlEditor pubspecEditor,
     required Map<String, DependencyReference> workspaceDependencies,
     required Map<String, DependencyReference> packageDependencies,
@@ -254,13 +254,13 @@ mixin _BootstrapMixin on _CleanMixin {
   }) {
     // Filter out the packages that does not exist in package and only the
     // dependencies that has a different version specified in the workspace.
-    final packagesToUpgrade = workspaceDependencies.entries.where((element) {
+    final dependenciesToUpgrade = workspaceDependencies.entries.where((element) {
       if (!packageDependencies.containsKey(element.key)) return false;
       if (packageDependencies[element.key] == element.value) return false;
       return true;
     });
 
-    for (final entry in packagesToUpgrade) {
+    for (final entry in dependenciesToUpgrade) {
       pubspecEditor.update(
         [pubspecKey, entry.key],
         wrapAsYamlNode(
@@ -270,7 +270,7 @@ mixin _BootstrapMixin on _CleanMixin {
       );
     }
 
-    return packagesToUpgrade.length;
+    return dependenciesToUpgrade.length;
   }
 
   void _logBootstrapSuccess(Package package) {
