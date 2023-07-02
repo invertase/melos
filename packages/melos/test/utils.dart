@@ -71,6 +71,12 @@ class TestLogger extends StandardLogger {
   }
 }
 
+Directory createTestTempDir() {
+  final dir = createTempDir(Directory.systemTemp.path);
+  addTearDown(() => deleteEntry(dir));
+  return Directory(dir);
+}
+
 Future<void> runPubGet(String workspacePath) async {
   final result = await Process.run(
     'dart',
