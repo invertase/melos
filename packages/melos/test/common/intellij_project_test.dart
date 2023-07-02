@@ -5,6 +5,7 @@ import 'package:test/test.dart';
 import '../utils.dart';
 
 void main() {
+  // https://github.com/invertase/melos/issues/379
   test(
     'generates correct path for package at root in modules.xml ',
     () async {
