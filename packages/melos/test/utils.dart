@@ -289,21 +289,19 @@ PubSpec pubSpecFromJsonFile({
 class VirtualWorkspaceBuilder {
   VirtualWorkspaceBuilder(
     this.melosYaml, {
-    this.path = '/workspace',
+    String? path,
     this.defaultPackagesPath = 'packages',
     this.sdkPath,
     Logger? logger,
   }) : logger = (logger ?? TestLogger()).toMelosLogger() {
-    if (currentPlatform.isWindows) {
-      path = r'\\workspace';
-    }
+    path ??= currentPlatform.isWindows ? r'\\workspace' : '/workspace';
   }
 
   /// The contents of the melos.yaml file, to configure the workspace.
   final String melosYaml;
 
   /// The absolute path to the workspace.
-  late String path;
+  late final String path;
 
   /// The path relative to the workspace root, where packages are located,
   /// unless a path is provided in [addPackage].
