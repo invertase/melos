@@ -20,8 +20,9 @@ mixin _RunMixin on _Melos {
       );
     }
 
-    final scriptSourceCode =
-        targetStyle(script.effectiveRun.withoutTrailing('\n'));
+    final scriptSourceCode = targetStyle(
+      script.command(extraArgs).join(' ').withoutTrailing('\n'),
+    );
 
     logger.command('melos run ${script.name}');
     logger.child(scriptSourceCode).child(runningLabel).newLine();
@@ -152,11 +153,8 @@ mixin _RunMixin on _Melos {
       environment[envKeyMelosPackages] = packagesEnv;
     }
 
-    final scriptSource = script.effectiveRun;
-    final scriptParts = scriptSource.split(' ');
-
     return startCommand(
-      scriptParts..addAll(extraArgs),
+      script.command(extraArgs),
       logger: logger,
       environment: environment,
       workingDirectory: config.path,
