@@ -293,9 +293,9 @@ class VirtualWorkspaceBuilder {
     this.defaultPackagesPath = 'packages',
     this.sdkPath,
     Logger? logger,
-  }) : logger = (logger ?? TestLogger()).toMelosLogger() {
-    path ??= currentPlatform.isWindows ? r'\\workspace' : '/workspace';
-  }
+  })  : logger = (logger ?? TestLogger()).toMelosLogger(),
+        path =
+            path ?? (currentPlatform.isWindows ? r'\\workspace' : '/workspace');
 
   /// The contents of the melos.yaml file, to configure the workspace.
   final String melosYaml;
