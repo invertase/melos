@@ -138,6 +138,7 @@ The following projects are using Melos:
 - [rrifafauzikomara/youtube_video](https://github.com/rrifafauzikomara/youtube_video)
 - [mobxjs/mobx.dart](https://github.com/mobxjs/mobx.dart)
 - [NetGlade/auto_mappr](https://github.com/netglade/auto_mappr)
+- [myConsciousness/atproto.dart](https://github.com/myConsciousness/atproto.dart)
 
 > Submit a PR if you'd like to add your project to the list. Update the
 > [README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md)
