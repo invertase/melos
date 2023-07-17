@@ -477,7 +477,7 @@ class BootstrapCommandConfigs {
     return {
       'runPubGetInParallel': runPubGetInParallel,
       'runPubGetOffline': runPubGetOffline,
-      if (environment != null) 'environment': environment,
+      if (environment != null) 'environment': environment!.toJson(),
       if (dependencies != null)
         'dependencies': dependencies!.map(
           (key, value) => MapEntry(key, value.toJson()),
@@ -499,8 +499,12 @@ class BootstrapCommandConfigs {
       runtimeType == other.runtimeType &&
       other.runPubGetInParallel == runPubGetInParallel &&
       other.runPubGetOffline == runPubGetOffline &&
-      // TODO(lohnn): Equality implementation for environment
-      other.environment == environment &&
+      // Extracting equality from environment here as it does not implement ==
+      other.environment?.sdkConstraint == environment?.sdkConstraint &&
+      const DeepCollectionEquality().equals(
+        other.environment?.unParsedYaml,
+        environment?.unParsedYaml,
+      ) &&
       const DeepCollectionEquality().equals(other.dependencies, dependencies) &&
       const DeepCollectionEquality()
           .equals(other.devDependencies, devDependencies) &&
@@ -513,8 +517,12 @@ class BootstrapCommandConfigs {
       runtimeType.hashCode ^
       runPubGetInParallel.hashCode ^
       runPubGetOffline.hashCode ^
-      // TODO(lohnn): Hashcode for environment?
-      environment.hashCode ^
+      // Extracting hashCode from environment here as it does not implement
+      // hashCode
+      (environment?.sdkConstraint).hashCode ^
+      const DeepCollectionEquality().hash(
+        environment?.unParsedYaml,
+      ) ^
       const DeepCollectionEquality().hash(dependencies) ^
       const DeepCollectionEquality().hash(devDependencies) ^
       const DeepCollectionEquality(_GlobEquality())
