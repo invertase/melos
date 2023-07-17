@@ -436,7 +436,7 @@ bool isWorkspaceDirectory(String directory) =>
     fileExists(melosYamlPathForDirectory(directory));
 
 Future<Process> startCommandRaw(
-  String command, {
+  List<String> command, {
   String? workingDirectory,
   Map<String, String> environment = const {},
   bool includeParentEnvironment = true,
@@ -453,7 +453,7 @@ Future<Process> startCommandRaw(
     environment: {
       ...environment,
       envKeyMelosTerminalWidth: terminalWidth.toString(),
-      'MELOS_SCRIPT': command,
+      'MELOS_SCRIPT': command.join(' '),
     },
     includeParentEnvironment: includeParentEnvironment,
   );
@@ -469,32 +469,10 @@ Future<int> startCommand(
   required MelosLogger logger,
 }) async {
   final processedCommand = command
-      .map((arg) {
-        // Remove empty args.
-        if (arg.trim().isEmpty) {
-          return null;
-        }
-
-        // Attempt to make line continuations Windows & Linux compatible.
-        if (arg.trim() == r'\') {
-          return currentPlatform.isWindows ? arg.replaceAll(r'\', '^') : arg;
-        }
-        if (arg.trim() == '^') {
-          return currentPlatform.isWindows ? arg : arg.replaceAll('^', r'\');
-        }
-
-        // Inject MELOS_* variables if any.
-        environment.forEach((key, value) {
-          if (key.startsWith('MELOS_')) {
-            arg = arg.replaceAll('\$$key', value);
-            arg = arg.replaceAll(key, value);
-          }
-        });
-
-        return arg;
-      })
-      .where((element) => element != null)
-      .join(' ');
+      // Remove empty arguments.
+      .whereNot((argument) => argument.trim().isEmpty)
+      .map(_scriptArgumentFormatter(environment))
+      .toList();
 
   final process = await startCommandRaw(
     processedCommand,
@@ -564,6 +542,34 @@ Future<int> startCommand(
   }
 
   return exitCode;
+}
+
+String Function(String) _scriptArgumentFormatter(
+  Map<String, String> environment,
+) {
+  return (argument) {
+    // Attempt to make line continuations Windows & Linux compatible.
+    if (argument.trim() == r'\') {
+      return currentPlatform.isWindows
+          ? argument.replaceAll(r'\', '^')
+          : argument;
+    }
+    if (argument.trim() == '^') {
+      return currentPlatform.isWindows
+          ? argument
+          : argument.replaceAll('^', r'\');
+    }
+
+    // Inject MELOS_* variables if any.
+    environment.forEach((key, value) {
+      if (key.startsWith('MELOS_')) {
+        argument = argument.replaceAll('\$$key', value);
+        argument = argument.replaceAll(key, value);
+      }
+    });
+
+    return argument;
+  };
 }
 
 bool isPubSubcommand({required MelosWorkspace workspace}) {

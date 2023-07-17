@@ -150,7 +150,7 @@ class IntellijProject {
 
   String ideaModuleStringForName(String moduleName, {String? relativePath}) {
     final imlPath = relativePath != null
-        ? '$relativePath/$moduleName.iml'
+        ? p.normalize('$relativePath/$moduleName.iml')
         : '$moduleName.iml';
     final module = '<module '
         'fileurl="file://\$PROJECT_DIR\$/$imlPath" '
