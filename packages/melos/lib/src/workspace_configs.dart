@@ -457,13 +457,13 @@ class BootstrapCommandConfigs {
   /// The default is `false`.
   final bool runPubGetOffline;
 
-  // TODO(lohnn): Document
+  /// Environment configuration to be synced between all packages.
   final Environment? environment;
 
-  // TODO(lohnn): Document
+  /// Dependencies to be synced between all packages.
   final Map<String, DependencyReference>? dependencies;
 
-  // TODO(lohnn): Document
+  /// Dev dependencies to be synced between all packages.
   final Map<String, DependencyReference>? devDependencies;
 
   /// A list of [Glob]s for paths that contain packages to be used as dependency
