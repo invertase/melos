@@ -300,8 +300,8 @@ mixin _BootstrapMixin on _CleanMixin {
             collectionStyle: CollectionStyle.BLOCK,
           ),
         );
+        didUpdate = true;
       }
-      didUpdate = true;
     }
 
     return didUpdate;
