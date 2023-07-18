@@ -289,7 +289,7 @@ mixin _BootstrapMixin on _CleanMixin {
     final workspaceUnParsedYaml = workspaceEnvironment.unParsedYaml;
     final packageUnParsedYaml = packageEnvironment.unParsedYaml;
     if (workspaceUnParsedYaml != null && packageUnParsedYaml != null) {
-      for(final entry in workspaceUnParsedYaml.entries){
+      for (final entry in workspaceUnParsedYaml.entries) {
         if (!packageUnParsedYaml.containsKey(entry.key)) continue;
         if (packageUnParsedYaml[entry.key] == entry.value) continue;
 
