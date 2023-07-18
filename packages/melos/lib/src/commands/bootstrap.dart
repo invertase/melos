@@ -272,6 +272,8 @@ mixin _BootstrapMixin on _CleanMixin {
       return false;
     }
 
+    var didUpdate = false;
+
     if (workspaceEnvironment.sdkConstraint !=
         packageEnvironment.sdkConstraint) {
       pubspecEditor.update(
@@ -281,10 +283,28 @@ mixin _BootstrapMixin on _CleanMixin {
           collectionStyle: CollectionStyle.BLOCK,
         ),
       );
-      return true;
+      didUpdate = true;
     }
 
-    return false;
+    final workspaceUnParsedYaml = workspaceEnvironment.unParsedYaml;
+    final packageUnParsedYaml = packageEnvironment.unParsedYaml;
+    if (workspaceUnParsedYaml != null && packageUnParsedYaml != null) {
+      for(final entry in workspaceUnParsedYaml.entries){
+        if (!packageUnParsedYaml.containsKey(entry.key)) continue;
+        if (packageUnParsedYaml[entry.key] == entry.value) continue;
+
+        pubspecEditor.update(
+          ['environment', entry.key],
+          wrapAsYamlNode(
+            entry.value.toString(),
+            collectionStyle: CollectionStyle.BLOCK,
+          ),
+        );
+      }
+      didUpdate = true;
+    }
+
+    return didUpdate;
   }
 
   int _updateDependencies({
@@ -296,14 +316,13 @@ mixin _BootstrapMixin on _CleanMixin {
     if (workspaceDependencies == null) return 0;
     // Filter out the packages that does not exist in package and only the
     // dependencies that has a different version specified in the workspace.
-    final dependenciesToUpgrade =
-        workspaceDependencies.entries.where((element) {
+    final dependenciesToUpdate = workspaceDependencies.entries.where((element) {
       if (!packageDependencies.containsKey(element.key)) return false;
       if (packageDependencies[element.key] == element.value) return false;
       return true;
     });
 
-    for (final entry in dependenciesToUpgrade) {
+    for (final entry in dependenciesToUpdate) {
       pubspecEditor.update(
         [pubspecKey, entry.key],
         wrapAsYamlNode(
@@ -313,7 +332,7 @@ mixin _BootstrapMixin on _CleanMixin {
       );
     }
 
-    return dependenciesToUpgrade.length;
+    return dependenciesToUpdate.length;
   }
 
   void _logBootstrapSuccess(Package package) {
