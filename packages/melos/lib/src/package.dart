@@ -689,9 +689,9 @@ extension on Iterable<Package> {
 
     return Pool(10)
         .forEach(this, (package) async {
-          final commits =
-              await gitCommitsForPackage(package, diff: diff, logger: logger);
-          return MapEntry(package, commits.isNotEmpty);
+          final hasDiff =
+              await gitHasDiffInPackage(package, diff: diff, logger: logger);
+          return MapEntry(package, hasDiff);
         })
         .where((event) => event.value)
         .map((event) => event.key)
