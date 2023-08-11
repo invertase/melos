@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2023-07-14
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v3.1.1`](#melos---v311)
+
+---
+
+#### `melos` - `v3.1.1`
+
+ - **FIX**: pass extra args to exec scripts ([#540](https://github.com/invertase/melos/issues/540)). ([27b2275d](https://github.com/invertase/melos/commit/27b2275d5f44cbc3b93e780c88618363afca0b55))
+ - **FIX**: generate correct path in `modules.xml` for package at workspace root ([#539](https://github.com/invertase/melos/issues/539)). ([712ae6c3](https://github.com/invertase/melos/commit/712ae6c332d2f50e9b62917f4ffeb9debb1279cc))
+
+
 ## 2023-05-22
 
 ### Changes
