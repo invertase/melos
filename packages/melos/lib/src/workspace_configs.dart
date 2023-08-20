@@ -483,7 +483,7 @@ class BootstrapCommandConfigs {
           (key, value) => MapEntry(key, value.toJson()),
         ),
       if (devDependencies != null)
-        'devDependencies': devDependencies!.map(
+        'dev_dependencies': devDependencies!.map(
           (key, value) => MapEntry(key, value.toJson()),
         ),
       if (dependencyOverridePaths.isNotEmpty)
