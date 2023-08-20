@@ -600,6 +600,10 @@ Generating IntelliJ IDE files...
             ],
             commands: CommandConfigs(
               bootstrap: BootstrapCommandConfigs(
+                environment: Environment(
+                  VersionConstraint.parse('>=2.18.0 <3.0.0'),
+                  {'flutter': '>=2.18.0 <3.0.0'},
+                ),
                 dependencies: {
                   'intl': HostedReference(
                     VersionConstraint.compatibleWith(Version.parse('0.18.1')),
@@ -626,6 +630,10 @@ Generating IntelliJ IDE files...
           workspaceDir,
           PubSpec(
             name: 'a',
+            environment: Environment(
+              VersionConstraint.any,
+              {},
+            ),
             dependencies: {
               'intl': HostedReference(
                 VersionConstraint.compatibleWith(Version.parse('0.18.1')),
@@ -646,6 +654,16 @@ Generating IntelliJ IDE files...
           workspaceDir,
           PubSpec(
             name: 'b',
+            environment: Environment(
+              VersionRange(
+                min: Version.parse('2.12.0'),
+                max: Version.parse('3.0.0'),
+                includeMin: true,
+              ),
+              {
+                'flutter': '>=2.12.0 <3.0.0',
+              },
+            ),
             dependencies: {
               'integral_isolates': HostedReference(
                 VersionConstraint.compatibleWith(Version.parse('0.4.1')),
@@ -672,6 +690,14 @@ Generating IntelliJ IDE files...
         final pubspecB = pubSpecFromYamlFile(directory: pkgB.path);
 
         expect(
+          pubspecA.environment?.sdkConstraint,
+          equals(VersionConstraint.parse('>=2.18.0 <3.0.0')),
+        );
+        expect(
+          pubspecA.environment?.unParsedYaml,
+          equals({}),
+        );
+        expect(
           pubspecA.dependencies,
           equals({
             'intl': HostedReference(
@@ -691,6 +717,14 @@ Generating IntelliJ IDE files...
           }),
         );
 
+        expect(
+          pubspecB.environment?.sdkConstraint,
+          equals(VersionConstraint.parse('>=2.18.0 <3.0.0')),
+        );
+        expect(
+          pubspecB.environment?.unParsedYaml,
+          equals({'flutter': '>=2.18.0 <3.0.0'}),
+        );
         expect(
           pubspecB.dependencies,
           equals({
