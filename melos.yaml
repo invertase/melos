@@ -7,6 +7,38 @@ ignore:
   - packages/melos_flutter_deps_check
 
 command:
+  bootstrap:
+    environment:
+      sdk: '>=2.18.0 <3.0.0'
+    dependencies:
+      ansi_styles: ^0.3.1
+      args: ^2.0.0
+      cli_launcher: ^0.3.0
+      cli_util: '>=0.3.0 <0.5.0'
+      collection: ^1.14.12
+      conventional_commit: ^0.6.0+1
+      file: ^6.1.0
+      glob: ^2.1.0
+      graphs: ^2.1.0
+      http: ">=0.13.1 <2.0.0"
+      meta: ^1.1.8
+      mustache_template: ^2.0.0
+      path: ^1.7.0
+      platform: ^3.1.0
+      pool: ^1.4.0
+      prompts: ^2.0.0
+      pub_semver: ^2.0.0
+      pub_updater: ^0.3.0
+      pubspec: ^2.1.0
+      string_scanner: ^1.0.5
+      yaml: ^3.1.0
+      yaml_edit: ^2.0.2
+    dev_dependencies:
+      collection: ^1.15.0
+      mockito: ^5.1.0
+      test: ^1.17.5
+      path: ^1.7.0
+      yaml: ^3.1.0
   version:
     # Generate commit links in package changelogs.
     linkToCommits: true
