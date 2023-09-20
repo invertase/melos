@@ -3,7 +3,6 @@ import 'dart:io' as io;
 import 'package:glob/glob.dart';
 import 'package:melos/melos.dart';
 import 'package:melos/src/commands/runner.dart';
-import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
@@ -13,12 +12,6 @@ import 'package:test/test.dart';
 import '../matchers.dart';
 import '../utils.dart';
 import '../workspace_config_test.dart';
-
-io.Directory createTestTempDir() {
-  final dir = createTempDir(io.Directory.systemTemp.path);
-  addTearDown(() => deleteEntry(dir));
-  return io.Directory(dir);
-}
 
 void main() {
   group('bootstrap', () {

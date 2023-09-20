@@ -71,6 +71,12 @@ class TestLogger extends StandardLogger {
   }
 }
 
+Directory createTestTempDir() {
+  final dir = createTempDir(Directory.systemTemp.path);
+  addTearDown(() => deleteEntry(dir));
+  return Directory(dir);
+}
+
 Future<void> runPubGet(String workspacePath) async {
   final result = await Process.run(
     'dart',
@@ -283,21 +289,19 @@ PubSpec pubSpecFromJsonFile({
 class VirtualWorkspaceBuilder {
   VirtualWorkspaceBuilder(
     this.melosYaml, {
-    this.path = '/workspace',
+    String? path,
     this.defaultPackagesPath = 'packages',
     this.sdkPath,
     Logger? logger,
-  }) : logger = (logger ?? TestLogger()).toMelosLogger() {
-    if (currentPlatform.isWindows) {
-      path = r'\\workspace';
-    }
-  }
+  })  : logger = (logger ?? TestLogger()).toMelosLogger(),
+        path =
+            path ?? (currentPlatform.isWindows ? r'\\workspace' : '/workspace');
 
   /// The contents of the melos.yaml file, to configure the workspace.
   final String melosYaml;
 
   /// The absolute path to the workspace.
-  late String path;
+  late final String path;
 
   /// The path relative to the workspace root, where packages are located,
   /// unless a path is provided in [addPackage].

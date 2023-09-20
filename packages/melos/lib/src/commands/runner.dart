@@ -136,7 +136,7 @@ abstract class _Melos {
   }) async {
     logger
       ..command('melos ${command.name} [${script.name}]')
-      ..child(targetStyle(script.effectiveRun.replaceAll('\n', '')))
+      ..child(targetStyle(script.command().join(' ').replaceAll('\n', '')))
       ..newLine();
 
     final exitCode = await _runScript(script, noSelect: true);

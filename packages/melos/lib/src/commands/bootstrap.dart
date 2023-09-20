@@ -167,7 +167,7 @@ mixin _BootstrapMixin on _CleanMixin {
       ),
       'get',
       if (workspace.config.commands.bootstrap.runPubGetOffline) '--offline'
-    ].join(' ');
+    ];
 
     final process = await startCommandRaw(
       command,

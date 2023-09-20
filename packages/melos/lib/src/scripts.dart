@@ -114,7 +114,7 @@ ExecOptions(
 
 @immutable
 class Script {
-  Script({
+  const Script({
     required this.name,
     required this.run,
     this.description,
@@ -255,9 +255,6 @@ class Script {
   /// The command specified by the user.
   final String run;
 
-  /// The command to run when executing this script.
-  late final effectiveRun = _buildEffectiveCommand();
-
   /// A short description, shown when using `melos run` with no argument.
   final String? description;
 
@@ -272,30 +269,37 @@ class Script {
   /// packages.
   final ExecOptions? exec;
 
-  String _buildEffectiveCommand() {
+  /// Returns the full command to run when executing this script.
+  List<String> command([List<String>? extraArgs]) {
     String quoteScript(String script) => '"${script.replaceAll('"', r'\"')}"';
 
+    final scriptCommand = run.split(' ').toList();
+    if (extraArgs != null && extraArgs.isNotEmpty) {
+      scriptCommand.addAll(extraArgs);
+    }
+
     final exec = this.exec;
-    if (exec != null) {
-      final parts = ['melos', 'exec'];
+    if (exec == null) {
+      return scriptCommand;
+    } else {
+      final execCommand = ['melos', 'exec'];
 
       if (exec.concurrency != null) {
-        parts.addAll(['--concurrency', '${exec.concurrency}']);
+        execCommand.addAll(['--concurrency', '${exec.concurrency}']);
       }
 
       if (exec.failFast ?? false) {
-        parts.add('--fail-fast');
+        execCommand.add('--fail-fast');
       }
 
       if (exec.orderDependents ?? false) {
-        parts.add('--order-dependents');
+        execCommand.add('--order-dependents');
       }
 
-      parts.addAll(['--', quoteScript(run)]);
+      execCommand.addAll(['--', quoteScript(scriptCommand.join(' '))]);
 
-      return parts.join(' ');
+      return execCommand;
     }
-    return run;
   }
 
   /// Validates the script. Throws a [MelosConfigException] if the script is

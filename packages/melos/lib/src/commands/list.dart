@@ -272,6 +272,7 @@ mixin _ListMixin on _Melos {
         logger
             .stdout('[ ${cycle.map((package) => package.name).join(' -> ')} ]');
       }
+      exitCode = 1;
     }
   }
 }
