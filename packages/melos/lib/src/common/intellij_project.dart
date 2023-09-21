@@ -149,11 +149,11 @@ class IntellijProject {
   }
 
   String ideaModuleStringForName(String moduleName, {String? relativePath}) {
-    String imlPath = relativePath != null
+    var imlPath = relativePath != null
         ? p.normalize('$relativePath/$moduleName.iml')
         : '$moduleName.iml';
     // Use `/` instead of `\` no matter what platform is.
-    imlPath = imlPath.replaceAll(r'\', r'/');
+    imlPath = imlPath.replaceAll(r'\', '/');
     final module = '<module '
         'fileurl="file://\$PROJECT_DIR\$/$imlPath" '
         'filepath="\$PROJECT_DIR\$/$imlPath" '
