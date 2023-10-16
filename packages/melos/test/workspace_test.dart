@@ -160,7 +160,7 @@ The packages that caused the problem are:
           configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
             const {
               'name': 'test',
-              'packages': ['.']
+              'packages': ['.'],
             },
             path: path,
           ),
@@ -185,7 +185,7 @@ The packages that caused the problem are:
           configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
             const {
               'name': 'test',
-              'packages': ['packages/a']
+              'packages': ['packages/a'],
             },
             path: path,
           ),
@@ -246,7 +246,7 @@ The packages that caused the problem are:
               config,
               packageFilters: PackageFilters(
                 scope: [
-                  createGlob('b', currentDirectoryPath: workspaceDir.path)
+                  createGlob('b', currentDirectoryPath: workspaceDir.path),
                 ],
                 includeDependencies: true,
               ),

@@ -171,7 +171,7 @@ Future<Directory> createProject(
       else ...[
         'packages',
         pubSpec.name!,
-      ]
+      ],
     ]),
   );
 

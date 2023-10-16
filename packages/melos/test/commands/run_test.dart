@@ -31,7 +31,7 @@ void main() {
                 packageFilters: PackageFilters(
                   fileExists: const ['log.txt'],
                 ),
-              )
+              ),
             }),
           ),
         );
@@ -155,7 +155,7 @@ melos run hello
               name: 'hello',
               run: 'echo',
               exec: ExecOptions(),
-            )
+            ),
           }),
         ),
       );
@@ -225,7 +225,7 @@ melos run hello
               exec: ExecOptions(
                 concurrency: 1,
               ),
-            )
+            ),
           }),
         ),
       );

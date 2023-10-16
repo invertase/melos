@@ -591,10 +591,10 @@ bool isPubSubcommand({required MelosWorkspace workspace}) {
 void sortPackagesForPublishing(List<Package> packages) {
   final packageNames = packages.map((package) => package.name).toList();
   final graph = <String, Iterable<String>>{
-    for (var package in packages)
+    for (final package in packages)
       package.name: [
         ...package.dependencies.where(packageNames.contains),
-        ...package.devDependencies.where(packageNames.contains)
+        ...package.devDependencies.where(packageNames.contains),
       ],
   };
   final ordered =
