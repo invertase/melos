@@ -18,7 +18,7 @@ mixin _BootstrapMixin on _CleanMixin {
             workspace: workspace,
           ),
           'get',
-          if (workspace.config.commands.bootstrap.runPubGetOffline) '--offline'
+          if (workspace.config.commands.bootstrap.runPubGetOffline) '--offline',
         ].join(' ');
 
         logger
@@ -163,7 +163,7 @@ mixin _BootstrapMixin on _CleanMixin {
         workspace: workspace,
       ),
       'get',
-      if (workspace.config.commands.bootstrap.runPubGetOffline) '--offline'
+      if (workspace.config.commands.bootstrap.runPubGetOffline) '--offline',
     ];
 
     final process = await startCommandRaw(
