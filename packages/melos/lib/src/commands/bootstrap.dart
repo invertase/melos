@@ -41,7 +41,7 @@ mixin _BootstrapMixin on _CleanMixin {
               bootstrapCommandConfig.devDependencies != null) {
             final filteredPackages = workspace.filteredPackages.values;
             await Stream.fromIterable(filteredPackages).parallel((package) {
-              return _setSharedPreferencesInPackage(
+              return _setSharedDependenciesForPackage(
                 package,
                 environment: bootstrapCommandConfig.environment,
                 dependencies: bootstrapCommandConfig.dependencies,
@@ -214,7 +214,7 @@ mixin _BootstrapMixin on _CleanMixin {
     }
   }
 
-  Future<void> _setSharedPreferencesInPackage(
+  Future<void> _setSharedDependenciesForPackage(
     Package package, {
     required Environment? environment,
     required Map<String, DependencyReference>? dependencies,
@@ -244,22 +244,24 @@ mixin _BootstrapMixin on _CleanMixin {
       pubspecKey: 'dev_dependencies',
     );
 
-    await writeTextFileAsync(
-      packagePubspecFile,
-      pubspecEditor.toString(),
-    );
+    if (pubspecEditor.edits.isNotEmpty) {
+      await writeTextFileAsync(
+        packagePubspecFile,
+        pubspecEditor.toString(),
+      );
 
-    final message = <String>[
-      if (updatedEnvironment) 'Updated environment',
-      if (updatedDependenciesCount > 0)
-        'Updated $updatedDependenciesCount dependencies',
-      if (updatedDevDependenciesCount > 0)
-        'Updated $updatedDevDependenciesCount dev_dependencies',
-    ];
-    if (message.isNotEmpty) {
-      logger.child(packageNameStyle(package.name), prefix: '').child(
-            message.join('\n'),
-          );
+      final message = <String>[
+        if (updatedEnvironment) 'Updated environment',
+        if (updatedDependenciesCount > 0)
+          'Updated $updatedDependenciesCount dependencies',
+        if (updatedDevDependenciesCount > 0)
+          'Updated $updatedDevDependenciesCount dev_dependencies',
+      ];
+      if (message.isNotEmpty) {
+        logger
+            .child(packageNameStyle(package.name), prefix: '')
+            .child(message.join('\n'));
+      }
     }
   }
 
@@ -314,11 +316,11 @@ mixin _BootstrapMixin on _CleanMixin {
     required String pubspecKey,
   }) {
     if (workspaceDependencies == null) return 0;
-    // Filter out the packages that does not exist in package and only the
+    // Filter out the packages that do not exist in package and only the
     // dependencies that has a different version specified in the workspace.
-    final dependenciesToUpdate = workspaceDependencies.entries.where((element) {
-      if (!packageDependencies.containsKey(element.key)) return false;
-      if (packageDependencies[element.key] == element.value) return false;
+    final dependenciesToUpdate = workspaceDependencies.entries.where((entry) {
+      if (!packageDependencies.containsKey(entry.key)) return false;
+      if (packageDependencies[entry.key] == entry.value) return false;
       return true;
     });
 
