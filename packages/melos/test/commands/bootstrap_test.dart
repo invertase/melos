@@ -334,7 +334,7 @@ Generating IntelliJ IDE files...
           mergeMelosPubspecOverrides(
             {
               for (final entry in melosDependencyOverrides.entries)
-                entry.key: PathReference(entry.value)
+                entry.key: PathReference(entry.value),
             },
             currentPubspecOverrides,
           ),

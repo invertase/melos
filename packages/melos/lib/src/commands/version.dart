@@ -143,7 +143,7 @@ mixin _VersionMixin on _RunMixin {
       for (final package in workspace.filteredPackages.values)
         if (!packagesToManuallyVersion.contains(package))
           if (packagesWithVersionableCommits.contains(package.name))
-            if (!asStableRelease || !package.version.isPreRelease) package
+            if (!asStableRelease || !package.version.isPreRelease) package,
     };
     final packagesToVersion = {
       ...packagesToManuallyVersion,
@@ -662,7 +662,7 @@ mixin _VersionMixin on _RunMixin {
       if (updateDependentsConstraints) {
         await Future.forEach([
           ...pendingPackageUpdate.package.dependentsInWorkspace.values,
-          ...pendingPackageUpdate.package.devDependentsInWorkspace.values
+          ...pendingPackageUpdate.package.devDependentsInWorkspace.values,
         ], (package) {
           return _setDependencyVersionForDependentPackage(
             package,
@@ -710,7 +710,7 @@ mixin _VersionMixin on _RunMixin {
     final dateSlug = [
       today.year.toString(),
       today.month.toString().padLeft(2, '0'),
-      today.day.toString().padLeft(2, '0')
+      today.day.toString().padLeft(2, '0'),
     ].join('-');
 
     final packages =
