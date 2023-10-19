@@ -317,7 +317,7 @@ mixin _BootstrapMixin on _CleanMixin {
   }) {
     if (workspaceDependencies == null) return 0;
     // Filter out the packages that do not exist in package and only the
-    // dependencies that has a different version specified in the workspace.
+    // dependencies that have a different version specified in the workspace.
     final dependenciesToUpdate = workspaceDependencies.entries.where((entry) {
       if (!packageDependencies.containsKey(entry.key)) return false;
       if (packageDependencies[entry.key] == entry.value) return false;
