@@ -12,13 +12,14 @@ mixin _BootstrapMixin on _CleanMixin {
       workspace,
       _CommandWithLifecycle.bootstrap,
       () async {
+        final bootstrapCommandConfig = workspace.config.commands.bootstrap;
         final pubCommandForLogging = [
           ...pubCommandExecArgs(
             useFlutter: workspace.isFlutterWorkspace,
             workspace: workspace,
           ),
           'get',
-          if (workspace.config.commands.bootstrap.runPubGetOffline) '--offline',
+          if (bootstrapCommandConfig.runPubGetOffline) '--offline',
         ].join(' ');
 
         logger
@@ -35,6 +36,20 @@ mixin _BootstrapMixin on _CleanMixin {
         }
 
         try {
+          if (bootstrapCommandConfig.environment != null ||
+              bootstrapCommandConfig.dependencies != null ||
+              bootstrapCommandConfig.devDependencies != null) {
+            final filteredPackages = workspace.filteredPackages.values;
+            await Stream.fromIterable(filteredPackages).parallel((package) {
+              return _setSharedDependenciesForPackage(
+                package,
+                environment: bootstrapCommandConfig.environment,
+                dependencies: bootstrapCommandConfig.dependencies,
+                devDependencies: bootstrapCommandConfig.devDependencies,
+              );
+            }).drain<void>();
+          }
+
           await _linkPackagesWithPubspecOverrides(workspace);
         } on BootstrapException catch (exception) {
           _logBootstrapException(exception, workspace);
@@ -197,6 +212,129 @@ mixin _BootstrapMixin on _CleanMixin {
         stderr: await stderr,
       );
     }
+  }
+
+  Future<void> _setSharedDependenciesForPackage(
+    Package package, {
+    required Environment? environment,
+    required Map<String, DependencyReference>? dependencies,
+    required Map<String, DependencyReference>? devDependencies,
+  }) async {
+    final packagePubspecFile = utils.pubspecPathForDirectory(package.path);
+    final packagePubspecContents = await readTextFileAsync(packagePubspecFile);
+    final pubspecEditor = YamlEditor(packagePubspecContents);
+
+    final updatedEnvironment = _updateEnvironment(
+      pubspecEditor: pubspecEditor,
+      workspaceEnvironment: environment,
+      packageEnvironment: package.pubSpec.environment,
+    );
+
+    final updatedDependenciesCount = _updateDependencies(
+      pubspecEditor: pubspecEditor,
+      workspaceDependencies: dependencies,
+      packageDependencies: package.pubSpec.dependencies,
+      pubspecKey: 'dependencies',
+    );
+
+    final updatedDevDependenciesCount = _updateDependencies(
+      pubspecEditor: pubspecEditor,
+      workspaceDependencies: devDependencies,
+      packageDependencies: package.pubSpec.devDependencies,
+      pubspecKey: 'dev_dependencies',
+    );
+
+    if (pubspecEditor.edits.isNotEmpty) {
+      await writeTextFileAsync(
+        packagePubspecFile,
+        pubspecEditor.toString(),
+      );
+
+      final message = <String>[
+        if (updatedEnvironment) 'Updated environment',
+        if (updatedDependenciesCount > 0)
+          'Updated $updatedDependenciesCount dependencies',
+        if (updatedDevDependenciesCount > 0)
+          'Updated $updatedDevDependenciesCount dev_dependencies',
+      ];
+      if (message.isNotEmpty) {
+        logger
+            .child(packageNameStyle(package.name), prefix: '')
+            .child(message.join('\n'));
+      }
+    }
+  }
+
+  bool _updateEnvironment({
+    required YamlEditor pubspecEditor,
+    required Environment? workspaceEnvironment,
+    required Environment? packageEnvironment,
+  }) {
+    if (workspaceEnvironment == null || packageEnvironment == null) {
+      return false;
+    }
+
+    var didUpdate = false;
+
+    if (workspaceEnvironment.sdkConstraint !=
+        packageEnvironment.sdkConstraint) {
+      pubspecEditor.update(
+        ['environment', 'sdk'],
+        wrapAsYamlNode(
+          workspaceEnvironment.sdkConstraint.toString(),
+          collectionStyle: CollectionStyle.BLOCK,
+        ),
+      );
+      didUpdate = true;
+    }
+
+    final workspaceUnParsedYaml = workspaceEnvironment.unParsedYaml;
+    final packageUnParsedYaml = packageEnvironment.unParsedYaml;
+    if (workspaceUnParsedYaml != null && packageUnParsedYaml != null) {
+      for (final entry in workspaceUnParsedYaml.entries) {
+        if (!packageUnParsedYaml.containsKey(entry.key)) continue;
+        if (packageUnParsedYaml[entry.key] == entry.value) continue;
+
+        pubspecEditor.update(
+          ['environment', entry.key],
+          wrapAsYamlNode(
+            entry.value.toString(),
+            collectionStyle: CollectionStyle.BLOCK,
+          ),
+        );
+        didUpdate = true;
+      }
+    }
+
+    return didUpdate;
+  }
+
+  int _updateDependencies({
+    required YamlEditor pubspecEditor,
+    required Map<String, DependencyReference>? workspaceDependencies,
+    required Map<String, DependencyReference> packageDependencies,
+    required String pubspecKey,
+  }) {
+    if (workspaceDependencies == null) return 0;
+    // Filter out the packages that do not exist in package and only the
+    // dependencies that have a different version specified in the workspace.
+    final dependenciesToUpdate = workspaceDependencies.entries.where((entry) {
+      if (!packageDependencies.containsKey(entry.key)) return false;
+      if (packageDependencies[entry.key] == entry.value) return false;
+      return true;
+    });
+
+    for (final entry in dependenciesToUpdate) {
+      pubspecEditor.update(
+        [pubspecKey, entry.key],
+        wrapAsYamlNode(
+          entry.value.toJson(),
+          collectionStyle: CollectionStyle.BLOCK,
+        ),
+      );
+    }
+
+    return dependenciesToUpdate.length;
   }
 
   void _logBootstrapSuccess(Package package) {

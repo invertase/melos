@@ -2,6 +2,7 @@ import 'dart:io' as io;
 
 import 'package:melos/melos.dart';
 import 'package:melos/src/commands/runner.dart';
+import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
@@ -587,6 +588,164 @@ Generating IntelliJ IDE files...
         ),
       );
     });
+
+    test(
+      'applies dependencies from melos config',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            name: 'Melos',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            commands: CommandConfigs(
+              bootstrap: BootstrapCommandConfigs(
+                environment: Environment(
+                  VersionConstraint.parse('>=2.18.0 <3.0.0'),
+                  {'flutter': '>=2.18.0 <3.0.0'},
+                ),
+                dependencies: {
+                  'intl': HostedReference(
+                    VersionConstraint.compatibleWith(Version.parse('0.18.1')),
+                  ),
+                  'integral_isolates': HostedReference(
+                    VersionConstraint.compatibleWith(Version.parse('0.4.1')),
+                  ),
+                  'path': HostedReference(
+                    VersionConstraint.compatibleWith(Version.parse('1.8.3')),
+                  ),
+                },
+                devDependencies: {
+                  'build_runner': HostedReference(
+                    VersionConstraint.compatibleWith(Version.parse('2.4.6')),
+                  ),
+                },
+              ),
+            ),
+            path: path,
+          ),
+        );
+
+        final pkgA = await createProject(
+          workspaceDir,
+          PubSpec(
+            name: 'a',
+            environment: Environment(
+              VersionConstraint.any,
+              {},
+            ),
+            dependencies: {
+              'intl': HostedReference(
+                VersionConstraint.compatibleWith(Version.parse('0.18.1')),
+              ),
+              'path': HostedReference(
+                VersionConstraint.compatibleWith(Version.parse('1.7.2')),
+              ),
+            },
+            devDependencies: {
+              'build_runner': HostedReference(
+                VersionConstraint.compatibleWith(Version.parse('2.4.0')),
+              ),
+            },
+          ),
+        );
+
+        final pkgB = await createProject(
+          workspaceDir,
+          PubSpec(
+            name: 'b',
+            environment: Environment(
+              VersionRange(
+                min: Version.parse('2.12.0'),
+                max: Version.parse('3.0.0'),
+                includeMin: true,
+              ),
+              {
+                'flutter': '>=2.12.0 <3.0.0',
+              },
+            ),
+            dependencies: {
+              'integral_isolates': HostedReference(
+                VersionConstraint.compatibleWith(Version.parse('0.4.1')),
+              ),
+              'intl': HostedReference(
+                VersionConstraint.compatibleWith(Version.parse('0.17.0')),
+              ),
+              'path': HostedReference(VersionConstraint.any),
+            },
+          ),
+        );
+
+        final logger = TestLogger();
+        final config =
+            await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        await runMelosBootstrap(melos, logger);
+
+        final pubspecA = pubSpecFromYamlFile(directory: pkgA.path);
+        final pubspecB = pubSpecFromYamlFile(directory: pkgB.path);
+
+        expect(
+          pubspecA.environment?.sdkConstraint,
+          equals(VersionConstraint.parse('>=2.18.0 <3.0.0')),
+        );
+        expect(
+          pubspecA.environment?.unParsedYaml,
+          equals({}),
+        );
+        expect(
+          pubspecA.dependencies,
+          equals({
+            'intl': HostedReference(
+              VersionConstraint.compatibleWith(Version.parse('0.18.1')),
+            ),
+            'path': HostedReference(
+              VersionConstraint.compatibleWith(Version.parse('1.8.3')),
+            ),
+          }),
+        );
+        expect(
+          pubspecA.devDependencies,
+          equals({
+            'build_runner': HostedReference(
+              VersionConstraint.compatibleWith(Version.parse('2.4.6')),
+            ),
+          }),
+        );
+
+        expect(
+          pubspecB.environment?.sdkConstraint,
+          equals(VersionConstraint.parse('>=2.18.0 <3.0.0')),
+        );
+        expect(
+          pubspecB.environment?.unParsedYaml,
+          equals({'flutter': '>=2.18.0 <3.0.0'}),
+        );
+        expect(
+          pubspecB.dependencies,
+          equals({
+            'integral_isolates': HostedReference(
+              VersionConstraint.compatibleWith(Version.parse('0.4.1')),
+            ),
+            'intl': HostedReference(
+              VersionConstraint.compatibleWith(Version.parse('0.18.1')),
+            ),
+            'path': HostedReference(
+              VersionConstraint.compatibleWith(Version.parse('1.8.3')),
+            ),
+          }),
+        );
+        expect(
+          pubspecB.devDependencies,
+          equals({}),
+        );
+      },
+      timeout: const Timeout(Duration(days: 2)),
+    );
   });
 }
 
