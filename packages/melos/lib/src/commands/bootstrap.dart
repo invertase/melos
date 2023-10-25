@@ -38,7 +38,8 @@ mixin _BootstrapMixin on _CleanMixin {
         try {
           if (bootstrapCommandConfig.environment != null ||
               bootstrapCommandConfig.dependencies != null ||
-              bootstrapCommandConfig.devDependencies != null) {
+              bootstrapCommandConfig.devDependencies != null ||
+              bootstrapCommandConfig.dependencyOverrides != null) {
             final filteredPackages = workspace.filteredPackages.values;
             await Stream.fromIterable(filteredPackages).parallel((package) {
               return _setSharedDependenciesForPackage(
@@ -46,6 +47,7 @@ mixin _BootstrapMixin on _CleanMixin {
                 environment: bootstrapCommandConfig.environment,
                 dependencies: bootstrapCommandConfig.dependencies,
                 devDependencies: bootstrapCommandConfig.devDependencies,
+                dependencyOverrides :bootstrapCommandConfig.dependencyOverrides
               );
             }).drain<void>();
           }
@@ -219,6 +221,7 @@ mixin _BootstrapMixin on _CleanMixin {
     required Environment? environment,
     required Map<String, DependencyReference>? dependencies,
     required Map<String, DependencyReference>? devDependencies,
+    required Map<String, DependencyReference>? dependencyOverrides,
   }) async {
     final packagePubspecFile = utils.pubspecPathForDirectory(package.path);
     final packagePubspecContents = await readTextFileAsync(packagePubspecFile);
@@ -244,6 +247,13 @@ mixin _BootstrapMixin on _CleanMixin {
       pubspecKey: 'dev_dependencies',
     );
 
+    final updatedDependencyOverridesCount = _updateDependencies(
+      pubspecEditor: pubspecEditor,
+      workspaceDependencies: dependencyOverrides,
+      packageDependencies: package.pubSpec.dependencyOverrides,
+      pubspecKey: 'dependency_overrides',
+    );
+
     if (pubspecEditor.edits.isNotEmpty) {
       await writeTextFileAsync(
         packagePubspecFile,
@@ -256,6 +266,8 @@ mixin _BootstrapMixin on _CleanMixin {
           'Updated $updatedDependenciesCount dependencies',
         if (updatedDevDependenciesCount > 0)
           'Updated $updatedDevDependenciesCount dev_dependencies',
+        if (updatedDependencyOverridesCount > 0)
+          'Updated $updatedDependencyOverridesCount dependency_overrides',
       ];
       if (message.isNotEmpty) {
         logger

@@ -614,11 +614,21 @@ Generating IntelliJ IDE files...
                   'path': HostedReference(
                     VersionConstraint.compatibleWith(Version.parse('1.8.3')),
                   ),
+                  'provider': HostedReference(
+                    VersionConstraint.compatibleWith(Version.parse('6.0.5')),
+                  ),
+                  'photo_view': HostedReference(
+                    VersionConstraint.compatibleWith(Version.parse('0.14.0')),
+                  ),
                 },
                 devDependencies: {
                   'build_runner': HostedReference(
                     VersionConstraint.compatibleWith(Version.parse('2.4.6')),
                   ),
+                },
+                dependencyOverrides: const {
+                  'provider': GitReference('https://github.com/rrousselGit/provider.git'),
+                  'photo_view': GitReference('https://github.com/bluefireteam/photo_view.git'),
                 },
               ),
             ),
@@ -647,6 +657,14 @@ Generating IntelliJ IDE files...
                 VersionConstraint.compatibleWith(Version.parse('2.4.0')),
               ),
             },
+            dependencyOverrides: {
+              'provider': HostedReference(
+                VersionConstraint.compatibleWith(Version.parse('6.0.5')),
+              ),
+              'photo_view': HostedReference(
+                VersionConstraint.compatibleWith(Version.parse('0.14.0')),
+              ),
+            },
           ),
         );
 
@@ -672,9 +690,54 @@ Generating IntelliJ IDE files...
                 VersionConstraint.compatibleWith(Version.parse('0.17.0')),
               ),
               'path': HostedReference(VersionConstraint.any),
+              'provider': HostedReference(VersionConstraint.any),
+              'photo_view': HostedReference(VersionConstraint.any),
+            },
+            dependencyOverrides: const {
+              'provider': PathReference('provider'),
+              'photo_view': PathReference('photo_view'),
             },
           ),
         );
+
+        //create provider package
+        await createProject(
+          workspaceDir,
+          PubSpec(
+            name: 'provider',
+            environment: Environment(
+              VersionRange(
+                min: Version.parse('2.12.0'),
+                max: Version.parse('3.0.0'),
+                includeMin: true,
+              ),
+              {
+                'flutter': '>=2.12.0 <3.0.0',
+              },
+            ),
+          ),
+          path: p.join(pkgB.path,'provider'),
+        );
+
+        //create photo_view package
+        await createProject(
+          workspaceDir,
+          PubSpec(
+            name: 'photo_view',
+            environment: Environment(
+              VersionRange(
+                min: Version.parse('2.12.0'),
+                max: Version.parse('3.0.0'),
+                includeMin: true,
+              ),
+              {
+                'flutter': '>=2.12.0 <3.0.0',
+              },
+            ),
+          ),
+          path: p.join(pkgB.path,'photo_view'),
+        );
+
 
         final logger = TestLogger();
         final config =
@@ -718,6 +781,14 @@ Generating IntelliJ IDE files...
         );
 
         expect(
+          pubspecA.dependencyOverrides,
+          equals({
+            'provider': const GitReference('https://github.com/rrousselGit/provider.git'),
+            'photo_view': const GitReference('https://github.com/bluefireteam/photo_view.git'),
+          }),
+        );
+
+        expect(
           pubspecB.environment?.sdkConstraint,
           equals(VersionConstraint.parse('>=2.18.0 <3.0.0')),
         );
@@ -737,11 +808,26 @@ Generating IntelliJ IDE files...
             'path': HostedReference(
               VersionConstraint.compatibleWith(Version.parse('1.8.3')),
             ),
+            'provider': HostedReference(
+              VersionConstraint.compatibleWith(Version.parse('6.0.5')),
+            ),
+            'photo_view': HostedReference(
+              VersionConstraint.compatibleWith(Version.parse('0.14.0')),
+            ),
           }),
         );
+
         expect(
           pubspecB.devDependencies,
           equals({}),
+        );
+
+        expect(
+          pubspecB.dependencyOverrides,
+          equals({
+            'provider': const GitReference('https://github.com/rrousselGit/provider.git'),
+            'photo_view': const GitReference('https://github.com/bluefireteam/photo_view.git'),
+          }),
         );
       },
       timeout: const Timeout(Duration(days: 2)),
