@@ -5,10 +5,9 @@ import '../packages/melos/bin/melos.dart' as melos;
 void main(List<String> arguments) async {
   if (arguments.contains('--help')) {
     // ignore_for_file: avoid_print
-    print('--------------------------------------------------------------------');
-    print('| You are running a local forked '
-        'development from Scotch of melos. |');
-    print('--------------------------------------------------------------------');
+    print('---------------------------------------------------------');
+    print('| You are running a local development version of melos. |');
+    print('---------------------------------------------------------');
     print('');
   }
   await melos.main(arguments);
