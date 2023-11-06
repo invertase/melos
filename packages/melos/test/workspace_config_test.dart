@@ -67,7 +67,7 @@ void main() {
             runPubGetInParallel: false,
             runPubGetOffline: true,
             dependencyOverridePaths: [
-              createGlob('a', currentDirectoryPath: '.')
+              createGlob('a', currentDirectoryPath: '.'),
             ],
           ),
         );
@@ -155,7 +155,7 @@ void main() {
                   'packageFilters': {'flutter': true},
                   'description': 'Changelog for all foo packages.',
                 }
-              ]
+              ],
             },
             workspacePath: '.',
           ),
@@ -215,7 +215,7 @@ void main() {
             const {
               'bootstrap': {
                 'runPubGetInParallel': true,
-              }
+              },
             },
             workspacePath: '.',
           ),
@@ -236,7 +236,7 @@ void main() {
             const {
               'bootstrap': {
                 'runPubGetOffline': true,
-              }
+              },
             },
             workspacePath: '.',
           ),
@@ -256,7 +256,7 @@ void main() {
                 'message': 'Hello world',
                 'branch': 'main',
                 'linkToCommits': true,
-              }
+              },
             },
             workspacePath: '.',
           ),
@@ -429,7 +429,7 @@ void main() {
               'exec': {
                 'concurrency': 1,
                 'failFast': true,
-                'orderDependents': true
+                'orderDependents': true,
               },
             },
           }),
@@ -520,7 +520,7 @@ void main() {
         expect(
           () => MelosWorkspaceConfig.fromYaml(
             createYamlMap({
-              'packages': <Object?>['*']
+              'packages': <Object?>['*'],
             }),
             path: testWorkspacePath,
           ),
@@ -617,7 +617,7 @@ void main() {
           () => MelosWorkspaceConfig.fromYaml(
             createYamlMap(
               {
-                'packages': [42]
+                'packages': [42],
               },
               defaults: configMapDefaults,
             ),
@@ -658,7 +658,7 @@ void main() {
           () => MelosWorkspaceConfig.fromYaml(
             createYamlMap(
               {
-                'ignore': [42]
+                'ignore': [42],
               },
               defaults: configMapDefaults,
             ),

@@ -171,7 +171,7 @@ Future<Directory> createProject(
       else ...[
         'packages',
         pubSpec.name!,
-      ]
+      ],
     ]),
   );
 
@@ -282,6 +282,13 @@ PubSpec pubSpecFromJsonFile({
   final filePath = '$path$fileName';
   final jsonAsString = readTextFile(filePath);
   return PubSpec.fromJson(json.decode(jsonAsString) as Map);
+}
+
+PubSpec pubSpecFromYamlFile({
+  required String directory,
+}) {
+  final filePath = pubspecPathForDirectory(directory);
+  return PubSpec.fromYamlString(readTextFile(filePath));
 }
 
 /// Builder to build a [MelosWorkspace] that is entirely virtual and only exists
