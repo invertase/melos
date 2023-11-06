@@ -21,6 +21,7 @@ import 'package:ansi_styles/ansi_styles.dart';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
+import 'package:pubspec/pubspec.dart';
 import 'package:yaml/yaml.dart';
 
 import '../melos.dart';
@@ -357,6 +358,9 @@ class BootstrapCommandConfigs {
   const BootstrapCommandConfigs({
     this.runPubGetInParallel = true,
     this.runPubGetOffline = false,
+    this.environment,
+    this.dependencies,
+    this.devDependencies,
     this.dependencyOverridePaths = const [],
     this.hooks = LifecycleHooks.empty,
   });
@@ -378,6 +382,31 @@ class BootstrapCommandConfigs {
           path: 'command/bootstrap',
         ) ??
         false;
+
+    final environment = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'environment',
+      map: yaml,
+    ).let(Environment.fromJson);
+
+    final dependencies = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'dependencies',
+      map: yaml,
+    )?.map(
+      (key, value) => MapEntry(
+        key.toString(),
+        DependencyReference.fromJson(value),
+      ),
+    );
+
+    final devDependencies = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'dev_dependencies',
+      map: yaml,
+    )?.map(
+      (key, value) => MapEntry(
+        key.toString(),
+        DependencyReference.fromJson(value),
+      ),
+    );
 
     final dependencyOverridePaths = assertListIsA<String>(
       key: 'dependencyOverridePaths',
@@ -402,6 +431,9 @@ class BootstrapCommandConfigs {
     return BootstrapCommandConfigs(
       runPubGetInParallel: runPubGetInParallel,
       runPubGetOffline: runPubGetOffline,
+      environment: environment,
+      dependencies: dependencies,
+      devDependencies: devDependencies,
       dependencyOverridePaths: dependencyOverridePaths
           .map(
             (override) =>
@@ -425,6 +457,15 @@ class BootstrapCommandConfigs {
   /// The default is `false`.
   final bool runPubGetOffline;
 
+  /// Environment configuration to be synced between all packages.
+  final Environment? environment;
+
+  /// Dependencies to be synced between all packages.
+  final Map<String, DependencyReference>? dependencies;
+
+  /// Dev dependencies to be synced between all packages.
+  final Map<String, DependencyReference>? devDependencies;
+
   /// A list of [Glob]s for paths that contain packages to be used as dependency
   /// overrides for all packages managed in the Melos workspace.
   final List<Glob> dependencyOverridePaths;
@@ -436,6 +477,15 @@ class BootstrapCommandConfigs {
     return {
       'runPubGetInParallel': runPubGetInParallel,
       'runPubGetOffline': runPubGetOffline,
+      if (environment != null) 'environment': environment!.toJson(),
+      if (dependencies != null)
+        'dependencies': dependencies!.map(
+          (key, value) => MapEntry(key, value.toJson()),
+        ),
+      if (devDependencies != null)
+        'dev_dependencies': devDependencies!.map(
+          (key, value) => MapEntry(key, value.toJson()),
+        ),
       if (dependencyOverridePaths.isNotEmpty)
         'dependencyOverridePaths':
             dependencyOverridePaths.map((path) => path.toString()).toList(),
@@ -449,6 +499,15 @@ class BootstrapCommandConfigs {
       runtimeType == other.runtimeType &&
       other.runPubGetInParallel == runPubGetInParallel &&
       other.runPubGetOffline == runPubGetOffline &&
+      // Extracting equality from environment here as it does not implement ==
+      other.environment?.sdkConstraint == environment?.sdkConstraint &&
+      const DeepCollectionEquality().equals(
+        other.environment?.unParsedYaml,
+        environment?.unParsedYaml,
+      ) &&
+      const DeepCollectionEquality().equals(other.dependencies, dependencies) &&
+      const DeepCollectionEquality()
+          .equals(other.devDependencies, devDependencies) &&
       const DeepCollectionEquality(_GlobEquality())
           .equals(other.dependencyOverridePaths, dependencyOverridePaths) &&
       other.hooks == hooks;
@@ -458,6 +517,14 @@ class BootstrapCommandConfigs {
       runtimeType.hashCode ^
       runPubGetInParallel.hashCode ^
       runPubGetOffline.hashCode ^
+      // Extracting hashCode from environment here as it does not implement
+      // hashCode
+      (environment?.sdkConstraint).hashCode ^
+      const DeepCollectionEquality().hash(
+        environment?.unParsedYaml,
+      ) ^
+      const DeepCollectionEquality().hash(dependencies) ^
+      const DeepCollectionEquality().hash(devDependencies) ^
       const DeepCollectionEquality(_GlobEquality())
           .hash(dependencyOverridePaths) ^
       hooks.hashCode;
@@ -468,6 +535,9 @@ class BootstrapCommandConfigs {
 BootstrapCommandConfigs(
   runPubGetInParallel: $runPubGetInParallel,
   runPubGetOffline: $runPubGetOffline,
+  environment: $environment,
+  dependencies: $dependencies,
+  devDependencies: $devDependencies,
   dependencyOverridePaths: $dependencyOverridePaths,
   hooks: $hooks,
 )''';

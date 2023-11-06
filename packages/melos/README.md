@@ -140,6 +140,7 @@ The following projects are using Melos:
 - [NetGlade/auto_mappr](https://github.com/netglade/auto_mappr)
 - [myConsciousness/atproto.dart](https://github.com/myConsciousness/atproto.dart)
 - [GrowERP Flutter ERP](https://github.com/growerp/growerp)
+- [mrverdant13/coverde](https://github.com/mrverdant13/coverde)
 
 > Submit a PR if you'd like to add your project to the list. Update the
 > [README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md)
