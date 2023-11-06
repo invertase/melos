@@ -480,7 +480,7 @@ class PackageMap {
       ignore: [
         ...ignore,
         for (final pattern in _commonIgnorePatterns)
-          createGlob(pattern, currentDirectoryPath: workspacePath)
+          createGlob(pattern, currentDirectoryPath: workspacePath),
       ],
     );
 
