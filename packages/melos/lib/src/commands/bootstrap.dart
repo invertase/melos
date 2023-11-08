@@ -47,7 +47,7 @@ mixin _BootstrapMixin on _CleanMixin {
                 environment: bootstrapCommandConfig.environment,
                 dependencies: bootstrapCommandConfig.dependencies,
                 devDependencies: bootstrapCommandConfig.devDependencies,
-                dependencyOverrides :bootstrapCommandConfig.dependencyOverrides
+                dependencyOverrides: bootstrapCommandConfig.dependencyOverrides,
               );
             }).drain<void>();
           }

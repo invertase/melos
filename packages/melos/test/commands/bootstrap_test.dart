@@ -627,8 +627,12 @@ Generating IntelliJ IDE files...
                   ),
                 },
                 dependencyOverrides: const {
-                  'provider': GitReference('https://github.com/rrousselGit/provider.git'),
-                  'photo_view': GitReference('https://github.com/bluefireteam/photo_view.git'),
+                  'provider': GitReference(
+                    'https://github.com/rrousselGit/provider.git',
+                  ),
+                  'photo_view': GitReference(
+                    'https://github.com/bluefireteam/photo_view.git',
+                  ),
                 },
               ),
             ),
@@ -716,7 +720,7 @@ Generating IntelliJ IDE files...
               },
             ),
           ),
-          path: p.join(pkgB.path,'provider'),
+          path: p.join(pkgB.path, 'provider'),
         );
 
         //create photo_view package
@@ -735,9 +739,8 @@ Generating IntelliJ IDE files...
               },
             ),
           ),
-          path: p.join(pkgB.path,'photo_view'),
+          path: p.join(pkgB.path, 'photo_view'),
         );
-
 
         final logger = TestLogger();
         final config =
@@ -783,8 +786,12 @@ Generating IntelliJ IDE files...
         expect(
           pubspecA.dependencyOverrides,
           equals({
-            'provider': const GitReference('https://github.com/rrousselGit/provider.git'),
-            'photo_view': const GitReference('https://github.com/bluefireteam/photo_view.git'),
+            'provider': const GitReference(
+              'https://github.com/rrousselGit/provider.git',
+            ),
+            'photo_view': const GitReference(
+              'https://github.com/bluefireteam/photo_view.git',
+            ),
           }),
         );
 
@@ -825,8 +832,12 @@ Generating IntelliJ IDE files...
         expect(
           pubspecB.dependencyOverrides,
           equals({
-            'provider': const GitReference('https://github.com/rrousselGit/provider.git'),
-            'photo_view': const GitReference('https://github.com/bluefireteam/photo_view.git'),
+            'provider': const GitReference(
+              'https://github.com/rrousselGit/provider.git',
+            ),
+            'photo_view': const GitReference(
+              'https://github.com/bluefireteam/photo_view.git',
+            ),
           }),
         );
       },
