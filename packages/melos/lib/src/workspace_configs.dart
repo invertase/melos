@@ -470,7 +470,7 @@ class BootstrapCommandConfigs {
   /// Useful when you want to ensure the same versions of dependencies are used
   /// across different environments/machines.
   ///
-  /// The default is `false`.
+  /// The default is `false` but will be `true` for CI environments.
   final bool enforceLockfile;
 
   /// Environment configuration to be synced between all packages.
