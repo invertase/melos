@@ -20,8 +20,7 @@ mixin _BootstrapMixin on _CleanMixin {
           ),
           'get',
           if (bootstrapCommandConfig.runPubGetOffline) '--offline',
-          if (utils.isCI || bootstrapCommandConfig.enforceLockfile)
-            '--enforce-lockfile',
+          if (bootstrapCommandConfig.enforceLockfile) '--enforce-lockfile',
         ].join(' ');
 
         logger
@@ -181,7 +180,7 @@ mixin _BootstrapMixin on _CleanMixin {
       ),
       'get',
       if (workspace.config.commands.bootstrap.runPubGetOffline) '--offline',
-      if (utils.isCI || workspace.config.commands.bootstrap.enforceLockfile)
+      if (workspace.config.commands.bootstrap.enforceLockfile)
         '--enforce-lockfile',
     ];
 
