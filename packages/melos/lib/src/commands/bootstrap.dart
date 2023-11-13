@@ -20,6 +20,7 @@ mixin _BootstrapMixin on _CleanMixin {
           ),
           'get',
           if (bootstrapCommandConfig.runPubGetOffline) '--offline',
+          if (utils.isCI) '--enforce-lockfile',
         ].join(' ');
 
         logger
@@ -179,6 +180,7 @@ mixin _BootstrapMixin on _CleanMixin {
       ),
       'get',
       if (workspace.config.commands.bootstrap.runPubGetOffline) '--offline',
+      if (utils.isCI) '--enforce-lockfile',
     ];
 
     final process = await startCommandRaw(
