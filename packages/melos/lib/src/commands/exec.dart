@@ -35,7 +35,7 @@ mixin _ExecMixin on _Melos {
     final environment = {
       ...currentPlatform.environment,
       'MELOS_PACKAGE_NAME': package.name,
-      'MELOS_PACKAGE_VERSION': (package.version).toString(),
+      'MELOS_PACKAGE_VERSION': package.version.toString(),
       'MELOS_PACKAGE_PATH': package.path,
       'MELOS_ROOT_PATH': workspace.path,
       if (workspace.sdkPath != null) envKeyMelosSdkPath: workspace.sdkPath!,

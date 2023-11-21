@@ -74,7 +74,7 @@ mixin _ListMixin on _Melos {
             .map(
               (package) => [
                 package.name,
-                AnsiStyles.green((package.version).toString()),
+                AnsiStyles.green(package.version.toString()),
                 AnsiStyles.gray(printablePath(package.pathRelativeToWorkspace)),
                 if (package.isPrivate) AnsiStyles.red('PRIVATE'),
               ],
