@@ -23,6 +23,11 @@ import 'base.dart';
 class BootstrapCommand extends MelosCommand {
   BootstrapCommand(super.config) {
     setupPackageFilterParser();
+    argParser.addFlag(
+      'no-example',
+      negatable: false,
+      help: 'Run pub get with/without example pub get',
+    );
   }
 
   @override
@@ -39,10 +44,10 @@ class BootstrapCommand extends MelosCommand {
   @override
   FutureOr<void>? run() {
     final melos = Melos(logger: logger, config: config);
-
     return melos.bootstrap(
       global: global,
       packageFilters: parsePackageFilters(config.path),
+      noExample: argResults?['no-example'] as bool,
     );
   }
 }
