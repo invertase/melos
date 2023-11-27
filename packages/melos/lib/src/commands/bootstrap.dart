@@ -4,7 +4,7 @@ mixin _BootstrapMixin on _CleanMixin {
   Future<void> bootstrap({
     GlobalOptions? global,
     PackageFilters? packageFilters,
-    required bool noExample,
+    bool noExample = false,
   }) async {
     final workspace =
         await createWorkspace(global: global, packageFilters: packageFilters);
