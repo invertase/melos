@@ -607,6 +607,7 @@ class VersionCommandConfigs {
     this.linkToCommits = false,
     this.includeCommitId = false,
     this.includeCommitBody = false,
+    this.commitBodyOnlyBreaking = true,
     this.updateGitTagRefs = false,
     this.releaseUrl = false,
     List<AggregateChangelogConfig>? aggregateChangelogs,
@@ -727,10 +728,23 @@ class VersionCommandConfigs {
           )
         : VersionLifecycleHooks.empty;
 
-    final inlcudeCommitBody = assertKeyIsA<bool?>(
-      key: 'includeCommitBody',
-      map: yaml,
-      path: 'command/version',
+    final changelogCommitBodiesEntry = assertKeyIsA<Map<Object?, Object?>?>(
+          key: 'changelogCommitBodies',
+          map: yaml,
+          path: 'command/version',
+        ) ??
+        const {};
+
+    final includeCommitBodies = assertKeyIsA<bool?>(
+      key: 'include',
+      map: changelogCommitBodiesEntry,
+      path: 'command/version/changelogCommitBodies',
+    );
+
+    final bodiesOnlyBreaking = assertKeyIsA<bool?>(
+      key: 'onlyBreaking',
+      map: changelogCommitBodiesEntry,
+      path: 'command/version/changelogCommitBodies',
     );
 
     return VersionCommandConfigs(
@@ -738,7 +752,8 @@ class VersionCommandConfigs {
       message: message,
       includeScopes: includeScopes ?? true,
       includeCommitId: includeCommitId ?? false,
-      includeCommitBody: inlcudeCommitBody ?? false,
+      includeCommitBody: includeCommitBodies ?? false,
+      commitBodyOnlyBreaking: bodiesOnlyBreaking ?? true,
       linkToCommits: linkToCommits ?? repositoryIsConfigured,
       updateGitTagRefs: updateGitTagRefs ?? false,
       releaseUrl: releaseUrl ?? false,
@@ -766,6 +781,9 @@ class VersionCommandConfigs {
 
   /// Wheter to include commit bodies in the generated CHANGELOG.md.
   final bool includeCommitBody;
+
+  /// Whether to only include commit bodies for breaking changes.
+  final bool commitBodyOnlyBreaking;
 
   /// Whether to add links to commits in the generated CHANGELOG.md.
   final bool linkToCommits;
