@@ -194,6 +194,16 @@ extension ChangelogStringBufferExtension on StringBuffer {
         }
 
         writeln();
+
+        if (update.workspace.config.commands.version.includeCommitBody &&
+            parsedMessage.body != null) {
+          writeln();
+          for (final line in parsedMessage.body!.split('\n')) {
+            write(' ' * 4);
+            writeln(line);
+          }
+          writeln();
+        }
       }
       writeln();
     }

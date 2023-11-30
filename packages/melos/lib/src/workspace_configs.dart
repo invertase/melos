@@ -606,6 +606,7 @@ class VersionCommandConfigs {
     this.includeScopes = true,
     this.linkToCommits = false,
     this.includeCommitId = false,
+    this.includeCommitBody = false,
     this.updateGitTagRefs = false,
     this.releaseUrl = false,
     List<AggregateChangelogConfig>? aggregateChangelogs,
@@ -726,11 +727,18 @@ class VersionCommandConfigs {
           )
         : VersionLifecycleHooks.empty;
 
+    final inlcudeCommitBody = assertKeyIsA<bool?>(
+      key: 'includeCommitBody',
+      map: yaml,
+      path: 'command/version',
+    );
+
     return VersionCommandConfigs(
       branch: branch,
       message: message,
       includeScopes: includeScopes ?? true,
       includeCommitId: includeCommitId ?? false,
+      includeCommitBody: inlcudeCommitBody ?? false,
       linkToCommits: linkToCommits ?? repositoryIsConfigured,
       updateGitTagRefs: updateGitTagRefs ?? false,
       releaseUrl: releaseUrl ?? false,
@@ -755,6 +763,9 @@ class VersionCommandConfigs {
 
   /// Whether to add commits ids in the generated CHANGELOG.md.
   final bool includeCommitId;
+
+  /// Wheter to include commit bodies in the generated CHANGELOG.md.
+  final bool includeCommitBody;
 
   /// Whether to add links to commits in the generated CHANGELOG.md.
   final bool linkToCommits;
