@@ -253,10 +253,9 @@ class BitbucketRepository extends HostedGitRepository {
   @override
   Uri commitUrl(String id) => url.resolve('commits/$id');
 
+  // TODO(fenrirx22): Implementing an issueUrl for Bitbucket requires a Jira URL
   @override
-  Uri issueUrl(String id) => throw UnsupportedError(
-        'Not supported yet as it require Jira url',
-      );
+  Uri issueUrl(String id) => Uri();
 
   @override
   Uri get url => Uri.parse('$origin/$owner/$name/');

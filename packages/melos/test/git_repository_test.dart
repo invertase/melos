@@ -314,13 +314,13 @@ void main() {
       );
     });
 
-    test('issueUrl returns correct URL', () {
+    test('issueUrl returns empty URL', () {
       final repo = BitbucketRepository(owner: 'a', name: 'b');
       const issueId = '123';
 
       expect(
         repo.issueUrl(issueId),
-        Uri.parse('https://bitbucket.org/a/b/pull-requests/123'),
+        Uri(),
       );
     });
   });
