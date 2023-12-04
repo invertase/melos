@@ -236,7 +236,8 @@ class BitbucketRepository extends HostedGitRepository {
     }
 
     throw FormatException(
-        'The URL $uri is not a valid Bitbucket repository URL.');
+      'The URL $uri is not a valid Bitbucket repository URL.',
+    );
   }
 
   static const defaultOrigin = 'https://bitbucket.org';
