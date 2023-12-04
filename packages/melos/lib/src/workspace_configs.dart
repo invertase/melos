@@ -466,7 +466,7 @@ class BootstrapCommandConfigs {
   /// The default is `false`.
   final bool runPubGetOffline;
 
-  /// Whether `pubspec.lock` is enforced when running `flutter pub get` or not.
+  /// Whether `pubspec.lock` is enforced when running `pub get` or not.
   /// Useful when you want to ensure the same versions of dependencies are used
   /// across different environments/machines.
   ///
