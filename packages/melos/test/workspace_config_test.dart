@@ -18,7 +18,6 @@ import 'package:melos/melos.dart';
 import 'package:melos/src/common/git_repository.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/platform.dart';
-import 'package:melos/src/scripts.dart';
 import 'package:melos/src/workspace_configs.dart';
 import 'package:test/test.dart';
 
