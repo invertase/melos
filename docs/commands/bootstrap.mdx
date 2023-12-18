@@ -86,7 +86,12 @@ melos bootstrap --diff="main"
 
 ## Bootstrap flags
 
-Melos bootstrap command supports a few different flags that can be defined in
+
+- `--enforce-lockfile` flag to enforce versions from `.lock` files
+    - Ensure .lock files exist, as failure may occur if they're not checked in.
+
+
+In addition to the above flags, Melos bootstrap command supports a few different flags that can be defined in
 your `melos.yaml`.
 
 
