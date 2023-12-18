@@ -4,6 +4,7 @@ mixin _BootstrapMixin on _CleanMixin {
   Future<void> bootstrap({
     GlobalOptions? global,
     PackageFilters? packageFilters,
+    bool noExample = false,
     bool enforceLockfile = false,
   }) async {
     final workspace =
@@ -21,6 +22,7 @@ mixin _BootstrapMixin on _CleanMixin {
           ),
           'get',
           if (enforceLockfile) '--enforce-lockfile',
+          if (noExample) '--no-example',
           if (bootstrapCommandConfig.runPubGetOffline) '--offline',
           if (bootstrapCommandConfig.enforceLockfile) '--enforce-lockfile',
         ].join(' ');
@@ -56,6 +58,7 @@ mixin _BootstrapMixin on _CleanMixin {
           await _linkPackagesWithPubspecOverrides(
             workspace,
             enforceLockfile: enforceLockfile,
+            noExample: noExample,
           );
         } on BootstrapException catch (exception) {
           _logBootstrapException(exception, workspace);
@@ -85,6 +88,7 @@ mixin _BootstrapMixin on _CleanMixin {
   Future<void> _linkPackagesWithPubspecOverrides(
     MelosWorkspace workspace, {
     required bool enforceLockfile,
+    required bool noExample,
   }) async {
     final filteredPackages = workspace.filteredPackages.values;
 
@@ -116,6 +120,7 @@ mixin _BootstrapMixin on _CleanMixin {
           workspace,
           package,
           enforceLockfile: enforceLockfile,
+          noExample: noExample,
         );
 
         bootstrappedPackages.forEach(_logBootstrapSuccess);
@@ -183,6 +188,7 @@ mixin _BootstrapMixin on _CleanMixin {
     MelosWorkspace workspace,
     Package package, {
     required bool enforceLockfile,
+    required bool noExample,
   }) async {
     final command = [
       ...pubCommandExecArgs(
@@ -191,6 +197,7 @@ mixin _BootstrapMixin on _CleanMixin {
       ),
       'get',
       if (enforceLockfile) '--enforce-lockfile',
+      if (noExample) '--no-example',
       if (workspace.config.commands.bootstrap.runPubGetOffline) '--offline',
       if (workspace.config.commands.bootstrap.enforceLockfile)
         '--enforce-lockfile',

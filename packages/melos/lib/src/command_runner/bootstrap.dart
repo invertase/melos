@@ -24,6 +24,11 @@ class BootstrapCommand extends MelosCommand {
   BootstrapCommand(super.config) {
     setupPackageFilterParser();
     argParser.addFlag(
+      'no-example',
+      negatable: false,
+      help: 'Run pub get with/without example pub get',
+    );
+    argParser.addFlag(
       'enforce-lockfile',
       negatable: false,
       help: 'Rub pub get with --enforce-lockfile to enforce versions from .lock'
@@ -35,7 +40,7 @@ class BootstrapCommand extends MelosCommand {
   final String name = 'bootstrap';
 
   @override
-  final List<String> aliases = ['bs'];
+  final List<String> aliases = ['bs', 'bullshit'];
 
   @override
   final String description =
@@ -45,11 +50,11 @@ class BootstrapCommand extends MelosCommand {
   @override
   FutureOr<void>? run() {
     final melos = Melos(logger: logger, config: config);
-
     return melos.bootstrap(
       global: global,
       packageFilters: parsePackageFilters(config.path),
       enforceLockfile: argResults?['enforce-lockfile'] as bool? ?? false,
+      noExample: argResults?['no-example'] as bool,
     );
   }
 }

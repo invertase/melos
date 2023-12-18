@@ -1,3 +1,7 @@
+## 3.4.0
+
+ - **FEAT**: add support for bitbucket repository url ([#608](https://github.com/invertase/melos/issues/608)). ([6f3ea624](https://github.com/invertase/melos/commit/6f3ea62466547ecddf309a0a4d387ffdb3168a13))
+
 ## 3.3.0
 
  - **REFACTOR**: Remove unnecessary parenthesis to get analyzer green ([#602](https://github.com/invertase/melos/issues/602)). ([d368b439](https://github.com/invertase/melos/commit/d368b439941cb21a46f5f2681c70c5e438b301bf))
