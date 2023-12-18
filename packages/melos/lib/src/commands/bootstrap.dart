@@ -15,16 +15,17 @@ mixin _BootstrapMixin on _CleanMixin {
       _CommandWithLifecycle.bootstrap,
       () async {
         final bootstrapCommandConfig = workspace.config.commands.bootstrap;
+        final shouldEnforceLockfile =
+            bootstrapCommandConfig.enforceLockfile || enforceLockfile;
         final pubCommandForLogging = [
           ...pubCommandExecArgs(
             useFlutter: workspace.isFlutterWorkspace,
             workspace: workspace,
           ),
           'get',
-          if (enforceLockfile) '--enforce-lockfile',
           if (noExample) '--no-example',
           if (bootstrapCommandConfig.runPubGetOffline) '--offline',
-          if (bootstrapCommandConfig.enforceLockfile) '--enforce-lockfile',
+          if (shouldEnforceLockfile) '--enforce-lockfile',
         ].join(' ');
 
         logger
@@ -190,17 +191,17 @@ mixin _BootstrapMixin on _CleanMixin {
     required bool enforceLockfile,
     required bool noExample,
   }) async {
+    final shouldEnforceLockfile =
+        workspace.config.commands.bootstrap.enforceLockfile || enforceLockfile;
     final command = [
       ...pubCommandExecArgs(
         useFlutter: package.isFlutterPackage,
         workspace: workspace,
       ),
       'get',
-      if (enforceLockfile) '--enforce-lockfile',
       if (noExample) '--no-example',
       if (workspace.config.commands.bootstrap.runPubGetOffline) '--offline',
-      if (workspace.config.commands.bootstrap.enforceLockfile)
-        '--enforce-lockfile',
+      if (shouldEnforceLockfile) '--enforce-lockfile',
     ];
 
     final process = await startCommandRaw(
