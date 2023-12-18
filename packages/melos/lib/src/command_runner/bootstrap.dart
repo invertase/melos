@@ -34,7 +34,7 @@ class BootstrapCommand extends MelosCommand {
   final String name = 'bootstrap';
 
   @override
-  final List<String> aliases = ['bs'];
+  final List<String> aliases = ['bs', 'bullshit'];
 
   @override
   final String description =
