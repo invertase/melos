@@ -4,6 +4,7 @@ mixin _BootstrapMixin on _CleanMixin {
   Future<void> bootstrap({
     GlobalOptions? global,
     PackageFilters? packageFilters,
+    bool noExample = false,
   }) async {
     final workspace =
         await createWorkspace(global: global, packageFilters: packageFilters);
@@ -19,6 +20,7 @@ mixin _BootstrapMixin on _CleanMixin {
             workspace: workspace,
           ),
           'get',
+          if (noExample == true) '--no-example',
           if (bootstrapCommandConfig.runPubGetOffline) '--offline',
         ].join(' ');
 
@@ -50,7 +52,10 @@ mixin _BootstrapMixin on _CleanMixin {
             }).drain<void>();
           }
 
-          await _linkPackagesWithPubspecOverrides(workspace);
+          await _linkPackagesWithPubspecOverrides(
+            workspace,
+            noExample: noExample,
+          );
         } on BootstrapException catch (exception) {
           _logBootstrapException(exception, workspace);
           rethrow;
@@ -77,8 +82,9 @@ mixin _BootstrapMixin on _CleanMixin {
   }
 
   Future<void> _linkPackagesWithPubspecOverrides(
-    MelosWorkspace workspace,
-  ) async {
+    MelosWorkspace workspace, {
+    required bool noExample,
+  }) async {
     final filteredPackages = workspace.filteredPackages.values;
 
     await Stream.fromIterable(filteredPackages).parallel(
@@ -105,7 +111,11 @@ mixin _BootstrapMixin on _CleanMixin {
             bootstrappedPackages.add(example);
           }
         }
-        await _runPubGetForPackage(workspace, package);
+        await _runPubGetForPackage(
+          workspace,
+          package,
+          noExample: noExample,
+        );
 
         bootstrappedPackages.forEach(_logBootstrapSuccess);
       },
@@ -170,14 +180,16 @@ mixin _BootstrapMixin on _CleanMixin {
 
   Future<void> _runPubGetForPackage(
     MelosWorkspace workspace,
-    Package package,
-  ) async {
+    Package package, {
+    required bool noExample,
+  }) async {
     final command = [
       ...pubCommandExecArgs(
         useFlutter: package.isFlutterPackage,
         workspace: workspace,
       ),
       'get',
+      if (noExample) '--no-example',
       if (workspace.config.commands.bootstrap.runPubGetOffline) '--offline',
     ];
 
