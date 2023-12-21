@@ -78,9 +78,9 @@ melos --help
 - Create a new local branch from `main` (e.g. `git checkout -b my-new-feature`)
 - Make your changes (try to split them up with one PR per feature/fix).
 - When committing your changes, make sure that each commit message is clear
- (e.g. `git commit -m 'docs: Add CONTRIBUTING.md'`).
+  (e.g. `git commit -m 'docs: Add CONTRIBUTING.md'`).
 - Push your new branch to your own fork into the same remote branch
- (e.g. `git push origin my-username.my-new-feature`, replace `origin` if you use another remote.)
+  (e.g. `git push origin my-username.my-new-feature`, replace `origin` if you use another remote.)
 
 ### Open a pull request
 
@@ -96,4 +96,3 @@ guide.
 
 Please also enable **“Allow edits by maintainers”**, this will help to speed-up the review
 process as well.
-

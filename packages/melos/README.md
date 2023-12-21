@@ -224,5 +224,4 @@ Using Melos? Add a README badge to show it off:
   </p>
 </p>
 
-[melos-code]:
-  https://marketplace.visualstudio.com/items?itemName=blaugold.melos-code
+[melos-code]: https://marketplace.visualstudio.com/items?itemName=blaugold.melos-code
