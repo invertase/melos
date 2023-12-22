@@ -19,13 +19,6 @@ melos bs
 Bootstrapping has two primary functions:
 
 1. Installing all package dependencies (internally using `pub get`).
-   Optionally, you can use the `--no-example`` flag to exclude flutter package's example's dependencies (https://github.com/dart-lang/pub/pull/3856):
-   ```bash
-   melos bootstrap --no-example
-   # or
-   melos bs --no-example
-   ```
-   this will run `pub get --no-example` instead of `pub get`
 2. Locally linking any packages together via path dependency overrides _without
    having to edit your pubspec.yaml_.
 
@@ -93,8 +86,14 @@ melos bootstrap --diff="main"
 
 ## Bootstrap flags
 
-Melos bootstrap command supports a few different flags that can be defined in
-your `melos.yaml`.
+- The `--no-example` flag is used to exclude flutter package's example's dependencies (https://github.com/dart-lang/pub/pull/3856)
+    - This will run `pub get` with the `--no-example` flag.
+- The `--enforce-lockfile` flag is used to enforce versions from `.lock` files.
+    - Ensure .lock files exist, as failure may occur if they're not checked in.
+
+
+In addition to the above flags, the `melos bootstrap` command supports a few different flags that can be defined in
+ your `melos.yaml` file.
 
 
 ### Shared dependencies

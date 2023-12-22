@@ -178,6 +178,14 @@ Useful in closed network environments with pre-populated pubcaches.
 
 The default is `false`.
 
+### enforceLockfile
+
+Whether to run `pub get` with the `--enforce-lockfile` option or not, to force getting the versions specified in the `pubspec.lock` file.
+
+This is useful in CI environments or when you want to ensure that all environments/machines are using the same package versions.
+
+The default is `false`.
+
 ## command/version
 
 Configuration for the `version` command.

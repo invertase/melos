@@ -5,6 +5,7 @@ mixin _BootstrapMixin on _CleanMixin {
     GlobalOptions? global,
     PackageFilters? packageFilters,
     bool noExample = false,
+    bool enforceLockfile = false,
   }) async {
     final workspace =
         await createWorkspace(global: global, packageFilters: packageFilters);
@@ -14,14 +15,17 @@ mixin _BootstrapMixin on _CleanMixin {
       _CommandWithLifecycle.bootstrap,
       () async {
         final bootstrapCommandConfig = workspace.config.commands.bootstrap;
+        final shouldEnforceLockfile =
+            bootstrapCommandConfig.enforceLockfile || enforceLockfile;
         final pubCommandForLogging = [
           ...pubCommandExecArgs(
             useFlutter: workspace.isFlutterWorkspace,
             workspace: workspace,
           ),
           'get',
-          if (noExample == true) '--no-example',
+          if (noExample) '--no-example',
           if (bootstrapCommandConfig.runPubGetOffline) '--offline',
+          if (shouldEnforceLockfile) '--enforce-lockfile',
         ].join(' ');
 
         logger
@@ -54,6 +58,7 @@ mixin _BootstrapMixin on _CleanMixin {
 
           await _linkPackagesWithPubspecOverrides(
             workspace,
+            enforceLockfile: enforceLockfile,
             noExample: noExample,
           );
         } on BootstrapException catch (exception) {
@@ -83,6 +88,7 @@ mixin _BootstrapMixin on _CleanMixin {
 
   Future<void> _linkPackagesWithPubspecOverrides(
     MelosWorkspace workspace, {
+    required bool enforceLockfile,
     required bool noExample,
   }) async {
     final filteredPackages = workspace.filteredPackages.values;
@@ -114,6 +120,7 @@ mixin _BootstrapMixin on _CleanMixin {
         await _runPubGetForPackage(
           workspace,
           package,
+          enforceLockfile: enforceLockfile,
           noExample: noExample,
         );
 
@@ -181,8 +188,11 @@ mixin _BootstrapMixin on _CleanMixin {
   Future<void> _runPubGetForPackage(
     MelosWorkspace workspace,
     Package package, {
+    required bool enforceLockfile,
     required bool noExample,
   }) async {
+    final shouldEnforceLockfile =
+        workspace.config.commands.bootstrap.enforceLockfile || enforceLockfile;
     final command = [
       ...pubCommandExecArgs(
         useFlutter: package.isFlutterPackage,
@@ -191,6 +201,7 @@ mixin _BootstrapMixin on _CleanMixin {
       'get',
       if (noExample) '--no-example',
       if (workspace.config.commands.bootstrap.runPubGetOffline) '--offline',
+      if (shouldEnforceLockfile) '--enforce-lockfile',
     ];
 
     final process = await startCommandRaw(

@@ -28,6 +28,12 @@ class BootstrapCommand extends MelosCommand {
       negatable: false,
       help: 'Run pub get with/without example pub get',
     );
+    argParser.addFlag(
+      'enforce-lockfile',
+      negatable: false,
+      help: 'Rub pub get with --enforce-lockfile to enforce versions from .lock'
+          ' files, ensure .lockfile exist for all packages.',
+    );
   }
 
   @override
@@ -47,6 +53,7 @@ class BootstrapCommand extends MelosCommand {
     return melos.bootstrap(
       global: global,
       packageFilters: parsePackageFilters(config.path),
+      enforceLockfile: argResults?['enforce-lockfile'] as bool? ?? false,
       noExample: argResults?['no-example'] as bool,
     );
   }
