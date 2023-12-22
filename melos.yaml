@@ -9,18 +9,18 @@ ignore:
 command:
   bootstrap:
     environment:
-      sdk: ">=2.18.0 <3.0.0"
+      sdk: '>=2.18.0 <3.0.0'
     dependencies:
       ansi_styles: ^0.3.1
       args: ^2.0.0
       cli_launcher: ^0.3.0
-      cli_util: ">=0.3.0 <0.5.0"
+      cli_util: '>=0.3.0 <0.5.0'
       collection: ^1.14.12
       conventional_commit: ^0.6.0+1
       file: ^6.1.0
       glob: ^2.1.0
       graphs: ^2.1.0
-      http: ">=0.13.1 <2.0.0"
+      http: '>=0.13.1 <2.0.0'
       meta: ^1.1.8
       mustache_template: ^2.0.0
       path: ^1.7.0

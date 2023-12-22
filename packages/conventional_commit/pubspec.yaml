@@ -5,7 +5,7 @@ repository: https://github.com/invertase/melos/tree/main/packages/conventional_c
 issue_tracker: https://github.com/invertase/melos/issues
 
 environment:
-  sdk: ">=2.18.0 <3.0.0"
+  sdk: '>=2.18.0 <3.0.0'
 
 dev_dependencies:
   collection: ^1.15.0
