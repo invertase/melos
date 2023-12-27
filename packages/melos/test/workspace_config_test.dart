@@ -58,6 +58,7 @@ void main() {
             const {
               'runPubGetInParallel': false,
               'runPubGetOffline': true,
+              'enforceLockfile': true,
               'dependencyOverridePaths': ['a'],
             },
             workspacePath: '.',
@@ -65,6 +66,7 @@ void main() {
           BootstrapCommandConfigs(
             runPubGetInParallel: false,
             runPubGetOffline: true,
+            enforceLockfile: true,
             dependencyOverridePaths: [
               createGlob('a', currentDirectoryPath: '.'),
             ],
@@ -247,6 +249,23 @@ void main() {
         );
       });
 
+      test('can decode `bootstrap` with pub get --enforce-lockfile', () {
+        expect(
+          CommandConfigs.fromYaml(
+            const {
+              'bootstrap': {
+                'enforceLockfile': true,
+              },
+            },
+            workspacePath: '.',
+          ),
+          const CommandConfigs(
+            bootstrap: BootstrapCommandConfigs(
+              enforceLockfile: true,
+            ),
+          ),
+        );
+      });
       test('can decode `version`', () {
         expect(
           CommandConfigs.fromYaml(

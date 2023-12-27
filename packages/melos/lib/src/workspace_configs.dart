@@ -357,6 +357,7 @@ class BootstrapCommandConfigs {
   const BootstrapCommandConfigs({
     this.runPubGetInParallel = true,
     this.runPubGetOffline = false,
+    this.enforceLockfile = false,
     this.environment,
     this.dependencies,
     this.devDependencies,
@@ -377,6 +378,13 @@ class BootstrapCommandConfigs {
 
     final runPubGetOffline = assertKeyIsA<bool?>(
           key: 'runPubGetOffline',
+          map: yaml,
+          path: 'command/bootstrap',
+        ) ??
+        false;
+
+    final enforceLockfile = assertKeyIsA<bool?>(
+          key: 'enforceLockfile',
           map: yaml,
           path: 'command/bootstrap',
         ) ??
@@ -430,6 +438,7 @@ class BootstrapCommandConfigs {
     return BootstrapCommandConfigs(
       runPubGetInParallel: runPubGetInParallel,
       runPubGetOffline: runPubGetOffline,
+      enforceLockfile: enforceLockfile,
       environment: environment,
       dependencies: dependencies,
       devDependencies: devDependencies,
@@ -456,6 +465,13 @@ class BootstrapCommandConfigs {
   /// The default is `false`.
   final bool runPubGetOffline;
 
+  /// Whether `pubspec.lock` is enforced when running `pub get` or not.
+  /// Useful when you want to ensure the same versions of dependencies are used
+  /// across different environments/machines.
+  ///
+  /// The default is `false`.
+  final bool enforceLockfile;
+
   /// Environment configuration to be synced between all packages.
   final Environment? environment;
 
@@ -476,6 +492,7 @@ class BootstrapCommandConfigs {
     return {
       'runPubGetInParallel': runPubGetInParallel,
       'runPubGetOffline': runPubGetOffline,
+      'enforceLockfile': enforceLockfile,
       if (environment != null) 'environment': environment!.toJson(),
       if (dependencies != null)
         'dependencies': dependencies!.map(
@@ -498,6 +515,7 @@ class BootstrapCommandConfigs {
       runtimeType == other.runtimeType &&
       other.runPubGetInParallel == runPubGetInParallel &&
       other.runPubGetOffline == runPubGetOffline &&
+      other.enforceLockfile == enforceLockfile &&
       // Extracting equality from environment here as it does not implement ==
       other.environment?.sdkConstraint == environment?.sdkConstraint &&
       const DeepCollectionEquality().equals(
@@ -516,6 +534,7 @@ class BootstrapCommandConfigs {
       runtimeType.hashCode ^
       runPubGetInParallel.hashCode ^
       runPubGetOffline.hashCode ^
+      enforceLockfile.hashCode ^
       // Extracting hashCode from environment here as it does not implement
       // hashCode
       (environment?.sdkConstraint).hashCode ^
@@ -534,6 +553,7 @@ class BootstrapCommandConfigs {
 BootstrapCommandConfigs(
   runPubGetInParallel: $runPubGetInParallel,
   runPubGetOffline: $runPubGetOffline,
+  enforceLockfile: $enforceLockfile,
   environment: $environment,
   dependencies: $dependencies,
   devDependencies: $devDependencies,
@@ -605,6 +625,8 @@ class VersionCommandConfigs {
     this.includeScopes = true,
     this.linkToCommits = false,
     this.includeCommitId = false,
+    this.includeCommitBody = false,
+    this.commitBodyOnlyBreaking = true,
     this.updateGitTagRefs = false,
     this.releaseUrl = false,
     List<AggregateChangelogConfig>? aggregateChangelogs,
@@ -725,11 +747,32 @@ class VersionCommandConfigs {
           )
         : VersionLifecycleHooks.empty;
 
+    final changelogCommitBodiesEntry = assertKeyIsA<Map<Object?, Object?>?>(
+          key: 'changelogCommitBodies',
+          map: yaml,
+          path: 'command/version',
+        ) ??
+        const {};
+
+    final includeCommitBodies = assertKeyIsA<bool?>(
+      key: 'include',
+      map: changelogCommitBodiesEntry,
+      path: 'command/version/changelogCommitBodies',
+    );
+
+    final bodiesOnlyBreaking = assertKeyIsA<bool?>(
+      key: 'onlyBreaking',
+      map: changelogCommitBodiesEntry,
+      path: 'command/version/changelogCommitBodies',
+    );
+
     return VersionCommandConfigs(
       branch: branch,
       message: message,
       includeScopes: includeScopes ?? true,
       includeCommitId: includeCommitId ?? false,
+      includeCommitBody: includeCommitBodies ?? false,
+      commitBodyOnlyBreaking: bodiesOnlyBreaking ?? true,
       linkToCommits: linkToCommits ?? repositoryIsConfigured,
       updateGitTagRefs: updateGitTagRefs ?? false,
       releaseUrl: releaseUrl ?? false,
@@ -754,6 +797,12 @@ class VersionCommandConfigs {
 
   /// Whether to add commits ids in the generated CHANGELOG.md.
   final bool includeCommitId;
+
+  /// Wheter to include commit bodies in the generated CHANGELOG.md.
+  final bool includeCommitBody;
+
+  /// Whether to only include commit bodies for breaking changes.
+  final bool commitBodyOnlyBreaking;
 
   /// Whether to add links to commits in the generated CHANGELOG.md.
   final bool linkToCommits;
