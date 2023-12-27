@@ -179,5 +179,10 @@ Each value must be in the format
 ```bash
 melos version --manual-version=foo:patch
 melos version --manual-version=foo:1.0.0
-melos version -Vfoo:1.0.0
+melos version -V foo:1.0.0
+
+# To manually version multiple packages
+melos version --manual-version=foo:patch --manual-version=bar:major
+melos version --manual-version=foo:1.0.0 --manual-version=bar:1.0.0
+melos version -V foo:1.0.0 -V bar:2.0.0
 ```

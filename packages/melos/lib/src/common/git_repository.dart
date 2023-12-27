@@ -217,14 +217,61 @@ GitLabRepository(
   int get hashCode => origin.hashCode ^ owner.hashCode ^ name.hashCode;
 }
 
+class BitbucketRepository extends HostedGitRepository {
+  BitbucketRepository({
+    String origin = defaultOrigin,
+    required this.owner,
+    required this.name,
+  }) : origin = removeTrailingSlash(origin);
+
+  factory BitbucketRepository.fromUrl(Uri uri) {
+    if (uri.scheme == 'https' && uri.host == 'bitbucket.org') {
+      final match = RegExp(r'^/(.+)?/(.+)/?$').firstMatch(uri.path);
+      if (match != null) {
+        return BitbucketRepository(
+          owner: match.group(1)!,
+          name: match.group(2)!,
+        );
+      }
+    }
+
+    throw FormatException(
+      'The URL $uri is not a valid Bitbucket repository URL.',
+    );
+  }
+
+  static const defaultOrigin = 'https://bitbucket.org';
+
+  /// The origin of the Bitbucket server, defaults to `https://bitbucket.org`.
+  final String origin;
+
+  /// The owning workspace name.
+  final String owner;
+
+  @override
+  final String name;
+
+  @override
+  Uri commitUrl(String id) => url.resolve('commits/$id');
+
+  // TODO(fenrirx22): Implementing an issueUrl for Bitbucket requires a Jira URL
+  @override
+  Uri issueUrl(String id) => Uri();
+
+  @override
+  Uri get url => Uri.parse('$origin/$owner/$name/');
+}
+
 final _hostsToUrlParser = {
   'GitHub': GitHubRepository.fromUrl,
   'GitLab': GitLabRepository.fromUrl,
+  'Bitbucket': BitbucketRepository.fromUrl,
 };
 
 final _hostsToSpecParser = {
   'GitHub': GitHubRepository.new,
   'GitLab': GitLabRepository.new,
+  'Bitbucket': BitbucketRepository.new,
 };
 
 /// Tries to parse [url] into a [HostedGitRepository].

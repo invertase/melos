@@ -225,6 +225,106 @@ void main() {
     });
   });
 
+  group('BitBucketRepository', () {
+    group('fromUrl', () {
+      test('parse Bitbucket repository URL correctly', () {
+        final url = Uri.parse('https://bitbucket.org/a/b');
+        final repo = BitbucketRepository.fromUrl(url);
+
+        expect(repo.origin, 'https://bitbucket.org');
+        expect(repo.owner, 'a');
+        expect(repo.name, 'b');
+        expect(repo.url, Uri.parse('https://bitbucket.org/a/b/'));
+      });
+
+      test('throws if URL is not a valid GitLab repository URL', () {
+        void expectBadUrl(String url) {
+          final uri = Uri.parse(url);
+          expect(
+            () => BitbucketRepository.fromUrl(uri),
+            throwsFormatException,
+            reason: url,
+          );
+        }
+
+        const [
+          '',
+          'http://bitbucket.org/a/b',
+          'https://gitlab.com/a/b',
+          'https://github.com/a/b',
+          'https://bitbucket.org/a',
+          'https://bitbucket.org/',
+          'https://bitbucket.org',
+        ].forEach(expectBadUrl);
+      });
+    });
+
+    group('fromSpec', () {
+      test('parse Bitbucket repository spec correctly', () {
+        final repo = BitbucketRepository(
+          origin: 'https://bitbucket.invertase.dev',
+          owner: 'a',
+          name: 'b',
+        );
+
+        expect(repo.origin, 'https://bitbucket.invertase.dev');
+        expect(repo.owner, 'a');
+        expect(repo.name, 'b');
+        expect(repo.url, Uri.parse('https://bitbucket.invertase.dev/a/b/'));
+      });
+
+      test('parse Bitbucket repository spec with nested groups correctly', () {
+        final repo = BitbucketRepository(
+          origin: 'https://bitbucket.invertase.dev',
+          owner: 'a/b',
+          name: 'c',
+        );
+
+        expect(repo.origin, 'https://bitbucket.invertase.dev');
+        expect(repo.owner, 'a/b');
+        expect(repo.name, 'c');
+        expect(repo.url, Uri.parse('https://bitbucket.invertase.dev/a/b/c/'));
+      });
+
+      test(
+          'parse Bitbucket repository spec with sub-path and nested groups '
+          'correctly', () {
+        final repo = BitbucketRepository(
+          origin: 'https://invertase.dev/bitbucket',
+          owner: 'a/b',
+          name: 'c',
+        );
+
+        expect(repo.origin, 'https://invertase.dev/bitbucket');
+        expect(repo.owner, 'a/b');
+        expect(repo.name, 'c');
+        expect(repo.url, Uri.parse('https://invertase.dev/bitbucket/a/b/c/'));
+      });
+    });
+
+    test('commitUrl returns correct URL', () {
+      final repo = BitbucketRepository(owner: 'a', name: 'b');
+      const commitId = 'b2841394a48cd7d84a4966a788842690e543b2ef';
+
+      expect(
+        repo.commitUrl(commitId),
+        Uri.parse(
+          'https://bitbucket.org/a/b/commits/b2841394a48cd7d84a4966a788842690e543b2ef',
+        ),
+      );
+    });
+
+    test('issueUrl returns empty URL', () {
+      final repo = BitbucketRepository(owner: 'a', name: 'b');
+      const issueId = '123';
+
+      expect(
+        repo.issueUrl(issueId),
+        Uri(),
+      );
+    });
+  });
+
   group('parseHostedGitRepositoryUrl', () {
     test('parses GitHub repository URL', () {
       final repo =
