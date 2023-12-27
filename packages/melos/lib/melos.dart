@@ -26,6 +26,7 @@ export 'src/package.dart'
         PackageFilters,
         PackageMap,
         PackageType;
+export 'src/scripts.dart' show ExecOptions, Script, Scripts;
 export 'src/workspace.dart' show IdeWorkspace, MelosWorkspace;
 export 'src/workspace_configs.dart'
     show

@@ -31,7 +31,6 @@ import 'common/io.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
 import 'package.dart';
-import 'scripts.dart';
 
 /// IDE-specific configurations.
 @immutable
