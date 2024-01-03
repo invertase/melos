@@ -1,7 +1,6 @@
 import 'package:melos/melos.dart';
 import 'package:melos/src/command_runner.dart';
 import 'package:melos/src/common/glob.dart';
-import 'package:melos/src/scripts.dart';
 import 'package:test/test.dart';
 
 import 'utils.dart';

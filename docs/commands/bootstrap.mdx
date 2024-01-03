@@ -86,8 +86,14 @@ melos bootstrap --diff="main"
 
 ## Bootstrap flags
 
-Melos bootstrap command supports a few different flags that can be defined in
-your `melos.yaml`.
+- The `--no-example` flag is used to exclude flutter package's example's dependencies (https://github.com/dart-lang/pub/pull/3856)
+    - This will run `pub get` with the `--no-example` flag.
+- The `--enforce-lockfile` flag is used to enforce versions from `.lock` files.
+    - Ensure .lock files exist, as failure may occur if they're not checked in.
+
+
+In addition to the above flags, the `melos bootstrap` command supports a few different flags that can be defined in
+ your `melos.yaml` file.
 
 
 ### Shared dependencies
@@ -110,10 +116,10 @@ own dependency overrides.
 # melos.yaml
 # ...
 command:
-  environment:
-    sdk: ">=3.0.0 <4.0.0"
-    flutter: ">=3.0.0 <4.0.0"  
   bootstrap:
+    environment:
+      sdk: ">=3.0.0 <4.0.0"
+      flutter: ">=3.0.0 <4.0.0"
     dependencies:
       collection: ^1.18.0
       integral_isolates: any
