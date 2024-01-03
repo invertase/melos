@@ -72,7 +72,7 @@ void main() {
             MockPackageFs(
               name: 'melos',
               version: Version(0, 0, 0),
-            )
+            ),
           ],
         ),
       );

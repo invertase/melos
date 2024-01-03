@@ -41,8 +41,8 @@ void main() {
         pubspecOverrides,
         yamlFile({
           'dependency_overrides': {
-            'a': {'path': relativePath(packageADir.path, packageBDir.path)}
-          }
+            'a': {'path': relativePath(packageADir.path, packageBDir.path)},
+          },
         }),
       );
 

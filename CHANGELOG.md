@@ -3,6 +3,76 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2023-12-04
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v3.4.0`](#melos---v340)
+
+---
+
+#### `melos` - `v3.4.0`
+
+ - **FEAT**: add support for bitbucket repository url ([#608](https://github.com/invertase/melos/issues/608)). ([6f3ea624](https://github.com/invertase/melos/commit/6f3ea62466547ecddf309a0a4d387ffdb3168a13))
+
+
+## 2023-12-01
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v3.3.0`](#melos---v330)
+
+---
+
+#### `melos` - `v3.3.0`
+
+ - **REFACTOR**: Remove unnecessary parenthesis to get analyzer green ([#602](https://github.com/invertase/melos/issues/602)). ([d368b439](https://github.com/invertase/melos/commit/d368b439941cb21a46f5f2681c70c5e438b301bf))
+ - **FIX**: `.idea/modules.xml` should always uses `/` instead of `\` ([#582](https://github.com/invertase/melos/issues/582)). ([5d49c4a6](https://github.com/invertase/melos/commit/5d49c4a6c7d227a56935366e9bf1c9aaf5b61122))
+ - **FEAT**: add option that allows to include commit bodies in changelog ([#606](https://github.com/invertase/melos/issues/606)). ([524e58a1](https://github.com/invertase/melos/commit/524e58a1d2c72d39b62e355997d06134c9342b53))
+ - **DOCS**(melos): add `coverde` to projects using Melos ([#562](https://github.com/invertase/melos/issues/562)). ([6a64b059](https://github.com/invertase/melos/commit/6a64b0595d01003145049125226fa2db2c45c918))
+
+
+## 2023-10-24
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v3.2.0`](#melos---v320)
+
+---
+
+#### `melos` - `v3.2.0`
+
+ - **REFACTOR**: fix analyzer issues ([#590](https://github.com/invertase/melos/issues/590)). ([2f19770e](https://github.com/invertase/melos/commit/2f19770eee9deff097d26202bece72bd6b2127a1))
+ - **FEAT**: support syncing common dependency versions ([#526](https://github.com/invertase/melos/issues/526)). ([39e5e499](https://github.com/invertase/melos/commit/39e5e499d71e95cf7794ae724ab2ccd3bb4e9fd5))
+ - **FEAT**: Expose `Changelog` and `ManualVersionChange` ([#538](https://github.com/invertase/melos/issues/538)). ([b049ed89](https://github.com/invertase/melos/commit/b049ed897402921a5b0f3b818e49b47e3b3bf4cf))
+ - **DOCS**: added link to `atproto.dart` ([#544](https://github.com/invertase/melos/issues/544)). ([aa891d82](https://github.com/invertase/melos/commit/aa891d8268f0aba7335ca274af747a15c9e72848))
+ - **DOCS**: growerp also use melos ([#551](https://github.com/invertase/melos/issues/551)). ([c679622f](https://github.com/invertase/melos/commit/c679622f1279107e31ec1d10d2b21c18877f7771))
+
+
 ## 2023-07-14
 
 ### Changes

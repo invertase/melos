@@ -31,7 +31,6 @@ import 'common/io.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
 import 'package.dart';
-import 'scripts.dart';
 
 /// IDE-specific configurations.
 @immutable
@@ -358,6 +357,10 @@ class BootstrapCommandConfigs {
   const BootstrapCommandConfigs({
     this.runPubGetInParallel = true,
     this.runPubGetOffline = false,
+    this.enforceLockfile = false,
+    this.environment,
+    this.dependencies,
+    this.devDependencies,
     this.dependencyOverridePaths = const [],
     this.dependencyOverrides = const {},
     this.hooks = LifecycleHooks.empty,
@@ -380,6 +383,38 @@ class BootstrapCommandConfigs {
           path: 'command/bootstrap',
         ) ??
         false;
+
+    final enforceLockfile = assertKeyIsA<bool?>(
+          key: 'enforceLockfile',
+          map: yaml,
+          path: 'command/bootstrap',
+        ) ??
+        false;
+
+    final environment = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'environment',
+      map: yaml,
+    ).let(Environment.fromJson);
+
+    final dependencies = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'dependencies',
+      map: yaml,
+    )?.map(
+      (key, value) => MapEntry(
+        key.toString(),
+        DependencyReference.fromJson(value),
+      ),
+    );
+
+    final devDependencies = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'dev_dependencies',
+      map: yaml,
+    )?.map(
+      (key, value) => MapEntry(
+        key.toString(),
+        DependencyReference.fromJson(value),
+      ),
+    );
 
     final dependencyOverridePaths = assertListIsA<String>(
       key: 'dependencyOverridePaths',
@@ -409,6 +444,10 @@ class BootstrapCommandConfigs {
     return BootstrapCommandConfigs(
       runPubGetInParallel: runPubGetInParallel,
       runPubGetOffline: runPubGetOffline,
+      enforceLockfile: enforceLockfile,
+      environment: environment,
+      dependencies: dependencies,
+      devDependencies: devDependencies,
       dependencyOverridePaths: dependencyOverridePaths
           .map(
             (override) =>
@@ -439,6 +478,22 @@ class BootstrapCommandConfigs {
   /// The default is `false`.
   final bool runPubGetOffline;
 
+  /// Whether `pubspec.lock` is enforced when running `pub get` or not.
+  /// Useful when you want to ensure the same versions of dependencies are used
+  /// across different environments/machines.
+  ///
+  /// The default is `false`.
+  final bool enforceLockfile;
+
+  /// Environment configuration to be synced between all packages.
+  final Environment? environment;
+
+  /// Dependencies to be synced between all packages.
+  final Map<String, DependencyReference>? dependencies;
+
+  /// Dev dependencies to be synced between all packages.
+  final Map<String, DependencyReference>? devDependencies;
+
   /// A list of [Glob]s for paths that contain packages to be used as dependency
   /// overrides for all packages managed in the Melos workspace.
   final List<Glob> dependencyOverridePaths;
@@ -453,6 +508,16 @@ class BootstrapCommandConfigs {
     return {
       'runPubGetInParallel': runPubGetInParallel,
       'runPubGetOffline': runPubGetOffline,
+      'enforceLockfile': enforceLockfile,
+      if (environment != null) 'environment': environment!.toJson(),
+      if (dependencies != null)
+        'dependencies': dependencies!.map(
+          (key, value) => MapEntry(key, value.toJson()),
+        ),
+      if (devDependencies != null)
+        'dev_dependencies': devDependencies!.map(
+          (key, value) => MapEntry(key, value.toJson()),
+        ),
       if (dependencyOverridePaths.isNotEmpty)
         'dependencyOverridePaths':
             dependencyOverridePaths.map((path) => path.toString()).toList(),
@@ -468,6 +533,16 @@ class BootstrapCommandConfigs {
       runtimeType == other.runtimeType &&
       other.runPubGetInParallel == runPubGetInParallel &&
       other.runPubGetOffline == runPubGetOffline &&
+      other.enforceLockfile == enforceLockfile &&
+      // Extracting equality from environment here as it does not implement ==
+      other.environment?.sdkConstraint == environment?.sdkConstraint &&
+      const DeepCollectionEquality().equals(
+        other.environment?.unParsedYaml,
+        environment?.unParsedYaml,
+      ) &&
+      const DeepCollectionEquality().equals(other.dependencies, dependencies) &&
+      const DeepCollectionEquality()
+          .equals(other.devDependencies, devDependencies) &&
       const DeepCollectionEquality(_GlobEquality())
           .equals(other.dependencyOverridePaths, dependencyOverridePaths) &&
       const DeepCollectionEquality(_GlobEquality())
@@ -479,6 +554,15 @@ class BootstrapCommandConfigs {
       runtimeType.hashCode ^
       runPubGetInParallel.hashCode ^
       runPubGetOffline.hashCode ^
+      enforceLockfile.hashCode ^
+      // Extracting hashCode from environment here as it does not implement
+      // hashCode
+      (environment?.sdkConstraint).hashCode ^
+      const DeepCollectionEquality().hash(
+        environment?.unParsedYaml,
+      ) ^
+      const DeepCollectionEquality().hash(dependencies) ^
+      const DeepCollectionEquality().hash(devDependencies) ^
       const DeepCollectionEquality(_GlobEquality())
               .hash(dependencyOverridePaths) &
           const DeepCollectionEquality(_GlobEquality())
@@ -491,6 +575,10 @@ class BootstrapCommandConfigs {
 BootstrapCommandConfigs(
   runPubGetInParallel: $runPubGetInParallel,
   runPubGetOffline: $runPubGetOffline,
+  enforceLockfile: $enforceLockfile,
+  environment: $environment,
+  dependencies: $dependencies,
+  devDependencies: $devDependencies,
   dependencyOverridePaths: $dependencyOverridePaths,
   dependencyOverrides: $dependencyOverrides,
   hooks: $hooks,
@@ -560,6 +648,8 @@ class VersionCommandConfigs {
     this.includeScopes = true,
     this.linkToCommits = false,
     this.includeCommitId = false,
+    this.includeCommitBody = false,
+    this.commitBodyOnlyBreaking = true,
     this.updateGitTagRefs = false,
     this.releaseUrl = false,
     List<AggregateChangelogConfig>? aggregateChangelogs,
@@ -680,11 +770,32 @@ class VersionCommandConfigs {
           )
         : VersionLifecycleHooks.empty;
 
+    final changelogCommitBodiesEntry = assertKeyIsA<Map<Object?, Object?>?>(
+          key: 'changelogCommitBodies',
+          map: yaml,
+          path: 'command/version',
+        ) ??
+        const {};
+
+    final includeCommitBodies = assertKeyIsA<bool?>(
+      key: 'include',
+      map: changelogCommitBodiesEntry,
+      path: 'command/version/changelogCommitBodies',
+    );
+
+    final bodiesOnlyBreaking = assertKeyIsA<bool?>(
+      key: 'onlyBreaking',
+      map: changelogCommitBodiesEntry,
+      path: 'command/version/changelogCommitBodies',
+    );
+
     return VersionCommandConfigs(
       branch: branch,
       message: message,
       includeScopes: includeScopes ?? true,
       includeCommitId: includeCommitId ?? false,
+      includeCommitBody: includeCommitBodies ?? false,
+      commitBodyOnlyBreaking: bodiesOnlyBreaking ?? true,
       linkToCommits: linkToCommits ?? repositoryIsConfigured,
       updateGitTagRefs: updateGitTagRefs ?? false,
       releaseUrl: releaseUrl ?? false,
@@ -709,6 +820,12 @@ class VersionCommandConfigs {
 
   /// Whether to add commits ids in the generated CHANGELOG.md.
   final bool includeCommitId;
+
+  /// Wheter to include commit bodies in the generated CHANGELOG.md.
+  final bool includeCommitBody;
+
+  /// Whether to only include commit bodies for breaking changes.
+  final bool commitBodyOnlyBreaking;
 
   /// Whether to add links to commits in the generated CHANGELOG.md.
   final bool linkToCommits;

@@ -84,6 +84,49 @@ example:
 melos bootstrap --diff="main"
 ```
 
+## Bootstrap flags
+
+- The `--no-example` flag is used to exclude flutter package's example's dependencies (https://github.com/dart-lang/pub/pull/3856)
+    - This will run `pub get` with the `--no-example` flag.
+- The `--enforce-lockfile` flag is used to enforce versions from `.lock` files.
+    - Ensure .lock files exist, as failure may occur if they're not checked in.
+
+
+In addition to the above flags, the `melos bootstrap` command supports a few different flags that can be defined in
+ your `melos.yaml` file.
+
+
+### Shared dependencies
+
+If you want to share dependency versions between your packages in your Melos
+project, just add the dependencies you wish to share between the packages to
+your bootstrap config in your `melos.yaml` file.
+
+If a dependency from `environment`, `dependencies` or `dev_dependencies` in
+your `melos.yaml` exists in a package, the dependency version in this
+package will be updated to match the version defined in your
+bootstrap config every time `melos bootstrap` is run.
+
+```yaml
+# melos.yaml
+# ...
+command:
+  bootstrap:
+    environment:
+      sdk: ">=3.0.0 <4.0.0"
+      flutter: ">=3.0.0 <4.0.0"
+    dependencies:
+      collection: ^1.18.0
+      integral_isolates: any
+      uni_links2:
+      uni_links_macos:
+        git: https://github.com/SamJakob/uni_links_macos.git
+    
+    dev_dependencies:
+      build_runner: ^2.3.3
+# ...
+```
+
 ## Adding a post bootstrap lifecycle script
 
 Melos supports various command [lifecycle hooks](/configuration/scripts#hooks)

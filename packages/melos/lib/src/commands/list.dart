@@ -74,9 +74,9 @@ mixin _ListMixin on _Melos {
             .map(
               (package) => [
                 package.name,
-                AnsiStyles.green((package.version).toString()),
+                AnsiStyles.green(package.version.toString()),
                 AnsiStyles.gray(printablePath(package.pathRelativeToWorkspace)),
-                if (package.isPrivate) AnsiStyles.red('PRIVATE')
+                if (package.isPrivate) AnsiStyles.red('PRIVATE'),
               ],
             )
             .cast<List<String>>()
@@ -132,7 +132,7 @@ mixin _ListMixin on _Melos {
         'version': package.version.toString(),
         'private': package.isPrivate,
         'location': packagePath,
-        'type': package.type.index
+        'type': package.type.index,
       };
 
       if (long) {

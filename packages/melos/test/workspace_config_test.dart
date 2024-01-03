@@ -18,7 +18,6 @@ import 'package:melos/melos.dart';
 import 'package:melos/src/common/git_repository.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/platform.dart';
-import 'package:melos/src/scripts.dart';
 import 'package:melos/src/workspace_configs.dart';
 import 'package:test/test.dart';
 
@@ -59,6 +58,7 @@ void main() {
             const {
               'runPubGetInParallel': false,
               'runPubGetOffline': true,
+              'enforceLockfile': true,
               'dependencyOverridePaths': ['a'],
             },
             workspacePath: '.',
@@ -66,8 +66,9 @@ void main() {
           BootstrapCommandConfigs(
             runPubGetInParallel: false,
             runPubGetOffline: true,
+            enforceLockfile: true,
             dependencyOverridePaths: [
-              createGlob('a', currentDirectoryPath: '.')
+              createGlob('a', currentDirectoryPath: '.'),
             ],
           ),
         );
@@ -155,7 +156,7 @@ void main() {
                   'packageFilters': {'flutter': true},
                   'description': 'Changelog for all foo packages.',
                 }
-              ]
+              ],
             },
             workspacePath: '.',
           ),
@@ -215,7 +216,7 @@ void main() {
             const {
               'bootstrap': {
                 'runPubGetInParallel': true,
-              }
+              },
             },
             workspacePath: '.',
           ),
@@ -236,7 +237,7 @@ void main() {
             const {
               'bootstrap': {
                 'runPubGetOffline': true,
-              }
+              },
             },
             workspacePath: '.',
           ),
@@ -248,6 +249,23 @@ void main() {
         );
       });
 
+      test('can decode `bootstrap` with pub get --enforce-lockfile', () {
+        expect(
+          CommandConfigs.fromYaml(
+            const {
+              'bootstrap': {
+                'enforceLockfile': true,
+              },
+            },
+            workspacePath: '.',
+          ),
+          const CommandConfigs(
+            bootstrap: BootstrapCommandConfigs(
+              enforceLockfile: true,
+            ),
+          ),
+        );
+      });
       test('can decode `version`', () {
         expect(
           CommandConfigs.fromYaml(
@@ -256,7 +274,7 @@ void main() {
                 'message': 'Hello world',
                 'branch': 'main',
                 'linkToCommits': true,
-              }
+              },
             },
             workspacePath: '.',
           ),
@@ -429,7 +447,7 @@ void main() {
               'exec': {
                 'concurrency': 1,
                 'failFast': true,
-                'orderDependents': true
+                'orderDependents': true,
               },
             },
           }),
@@ -520,7 +538,7 @@ void main() {
         expect(
           () => MelosWorkspaceConfig.fromYaml(
             createYamlMap({
-              'packages': <Object?>['*']
+              'packages': <Object?>['*'],
             }),
             path: testWorkspacePath,
           ),
@@ -617,7 +635,7 @@ void main() {
           () => MelosWorkspaceConfig.fromYaml(
             createYamlMap(
               {
-                'packages': [42]
+                'packages': [42],
               },
               defaults: configMapDefaults,
             ),
@@ -658,7 +676,7 @@ void main() {
           () => MelosWorkspaceConfig.fromYaml(
             createYamlMap(
               {
-                'ignore': [42]
+                'ignore': [42],
               },
               defaults: configMapDefaults,
             ),
