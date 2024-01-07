@@ -354,25 +354,24 @@ mixin _VersionMixin on _RunMixin {
       logger.newLine();
     }
 
+    await _gitStageChanges(
+      workspace,
+      pendingPackageUpdates,
+      updateDependentsVersions: updateDependentsVersions,
+    );
+    await _gitCommitChanges(
+      workspace,
+      pendingPackageUpdates,
+      commitMessageTemplate,
+      updateDependentsVersions: updateDependentsVersions,
+    );
+
     if (gitTag) {
-      await _gitStageChanges(
-        workspace,
-        pendingPackageUpdates,
-        updateDependentsVersions: updateDependentsVersions,
-      );
-      await _gitCommitChanges(
-        workspace,
-        pendingPackageUpdates,
-        commitMessageTemplate,
-        updateDependentsVersions: updateDependentsVersions,
-      );
       await _gitTagChanges(
         pendingPackageUpdates,
         updateDependentsVersions: updateDependentsVersions,
       );
-    }
 
-    if (gitTag) {
       logger.success(
         'Versioning successful. '
         'Ensure you push your git changes and tags (if applicable) via '
