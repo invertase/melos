@@ -84,16 +84,16 @@ void main() {
       final pubCredentialStoreMock = PubCredentialStore([]);
 
       setUpAll(() {
-        pubCredentialStore = pubCredentialStoreMock;
+        internalPubCredentialStore = pubCredentialStoreMock;
       });
 
       tearDownAll(() {
-        pubCredentialStore = PubCredentialStore([]);
+        internalPubCredentialStore = PubCredentialStore([]);
       });
 
       test('Should fetch package from pub.dev by default', () async {
         final uri = Uri.parse('https://pub.dev/api/packages/melos');
-        innerHttpClient = HttpClientMock(
+        internalHttpClient = HttpClientMock(
           (request) {
             expect(request.url, uri);
             return HttpClientMock.parseResponse(pubPackageJson);
@@ -111,7 +111,7 @@ void main() {
         withMockPlatform(
           () async {
             final uri = Uri.parse('http://localhost:8080/api/packages/melos');
-            innerHttpClient = HttpClientMock(
+            internalHttpClient = HttpClientMock(
               (request) {
                 expect(request.url, uri);
                 return HttpClientMock.parseResponse(pubPackageJson);
@@ -160,18 +160,18 @@ void main() {
       final pubCredentialStoreMock = PubCredentialStore([fakeCredential]);
 
       setUpAll(() {
-        pubCredentialStore = pubCredentialStoreMock;
+        internalPubCredentialStore = pubCredentialStoreMock;
       });
 
       tearDownAll(() {
-        pubCredentialStore = PubCredentialStore([]);
+        internalPubCredentialStore = PubCredentialStore([]);
       });
 
       test(
         'Should fetch without credentials',
         () async {
           final uri = Uri.parse('https://pub.dev/api/packages/melos');
-          innerHttpClient = HttpClientMock(
+          internalHttpClient = HttpClientMock(
             (request) {
               expect(request.url, uri);
               expect(
@@ -194,7 +194,7 @@ void main() {
         withMockPlatform(
           () async {
             final uri = fakeCredential.url.resolve('api/packages/melos');
-            innerHttpClient = HttpClientMock(
+            internalHttpClient = HttpClientMock(
               (request) {
                 expect(request.url, uri);
                 expect(

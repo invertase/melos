@@ -9,19 +9,20 @@ import 'package:path/path.dart' as path;
 import 'io.dart';
 import 'pub_hosted.dart';
 
-const _kPubTokenFileName = 'pub-tokens.json';
+const _pubTokenFileName = 'pub-tokens.json';
 
 @visibleForTesting
-PubCredentialStore pubCredentialStore = PubCredentialStore.fromConfigFile();
+PubCredentialStore internalPubCredentialStore =
+    PubCredentialStore.fromConfigFile();
 
-PubCredentialStore get pubGlobalCredentialStore => pubCredentialStore;
+PubCredentialStore get pubCredentialStore => internalPubCredentialStore;
 
 class PubCredentialStore {
   PubCredentialStore(this.credentials);
 
   factory PubCredentialStore.fromConfigFile({String? configDir}) {
     configDir ??= applicationConfigHome('dart');
-    final tokenFilePath = path.join(configDir, _kPubTokenFileName);
+    final tokenFilePath = path.join(configDir, _pubTokenFileName);
 
     if (!fileExists(tokenFilePath)) {
       return PubCredentialStore([]);

@@ -15,7 +15,7 @@ import 'pub_hosted_package.dart';
 /// The default is `pub.dev`, but it can be overridden using the
 /// `PUB_HOSTED_URL` environment variable.
 /// https://dart.dev/tools/pub/environment-variables
-Uri get kDefaultPubUrl => Uri.parse(
+Uri get defaultPubUrl => Uri.parse(
       currentPlatform.environment['PUB_HOSTED_URL'] ?? 'https://pub.dev',
     );
 
@@ -24,9 +24,9 @@ class PubHostedClient extends http.BaseClient {
   PubHostedClient(this.pubHosted, this._inner, this._credentialStore);
 
   factory PubHostedClient.fromUri({required Uri? pubHosted}) {
-    final store = pubGlobalCredentialStore;
-    final innerClient = globalHttpClient;
-    final uri = normalizeHostedUrl(pubHosted ?? kDefaultPubUrl);
+    final store = pubCredentialStore;
+    final innerClient = httpClient;
+    final uri = normalizeHostedUrl(pubHosted ?? defaultPubUrl);
 
     return PubHostedClient(uri, innerClient, store);
   }
