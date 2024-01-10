@@ -1,11 +1,10 @@
 import 'dart:io';
 
 import 'package:glob/glob.dart';
-import 'package:http/http.dart' as http;
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/http.dart';
+import 'package:melos/src/common/pub_credential.dart';
 import 'package:melos/src/package.dart';
-import 'package:mockito/mockito.dart';
 import 'package:platform/platform.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
@@ -17,6 +16,7 @@ import 'utils.dart';
 
 const pubPackageJson = '''
   {
+    "name": "melos",
     "versions": [
       {
         "version": "1.0.0"
@@ -57,13 +57,9 @@ void main() {
   });
 
   group('MelosPackage', () {
-    final httpClientMock = HttpClientMock();
     late MelosWorkspace workspace;
 
-    setUpAll(() => testClient = httpClientMock);
-
     setUp(() async {
-      reset(httpClientMock);
       IOOverrides.global = MockFs();
 
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
@@ -84,40 +80,55 @@ void main() {
 
     tearDown(() => IOOverrides.global = null);
 
-    tearDownAll(() => testClient = null);
+    group('When requests published packages', () {
+      final pubCredentialStoreMock = PubCredentialStore([]);
 
-    test('requests published packages from pub.dev by default', () async {
-      final uri = Uri.parse('https://pub.dev/api/packages/melos');
-      when(httpClientMock.get(uri))
-          .thenAnswer((_) async => http.Response(pubPackageJson, 200));
+      setUpAll(() {
+        internalPubCredentialStore = pubCredentialStoreMock;
+      });
 
-      final package = workspace.allPackages.values.first;
-      await package.getPublishedVersions();
+      tearDownAll(() {
+        internalPubCredentialStore = PubCredentialStore([]);
+      });
 
-      verify(httpClientMock.get(uri)).called(1);
-    });
+      test('Should fetch package from pub.dev by default', () async {
+        final uri = Uri.parse('https://pub.dev/api/packages/melos');
+        internalHttpClient = HttpClientMock(
+          (request) {
+            expect(request.url, uri);
+            return HttpClientMock.parseResponse(pubPackageJson);
+          },
+        );
 
-    test(
-      'requests published packages from PUB_HOSTED_URL if present',
-      withMockPlatform(
-        () async {
-          final uri = Uri.parse('http://localhost:8080/api/packages/melos');
-          when(httpClientMock.get(uri))
-              .thenAnswer((_) async => http.Response(pubPackageJson, 200));
+        final package = workspace.allPackages.values.first;
+        final pubPackage = await package.getPublishedPackage();
 
-          final package = workspace.allPackages.values.first;
-          await package.getPublishedVersions();
+        expect(pubPackage?.name, isNotEmpty);
+      });
 
-          verify(httpClientMock.get(uri)).called(1);
-        },
-        platform: FakePlatform.fromPlatform(const LocalPlatform())
-          ..environment['PUB_HOSTED_URL'] = 'http://localhost:8080',
-      ),
-    );
+      test(
+        'Should fetch package from PUB_HOSTED_URL if present',
+        withMockPlatform(
+          () async {
+            final uri = Uri.parse('http://localhost:8080/api/packages/melos');
+            internalHttpClient = HttpClientMock(
+              (request) {
+                expect(request.url, uri);
+                return HttpClientMock.parseResponse(pubPackageJson);
+              },
+            );
 
-    test(
-      'do not request published versions for private package',
-      () async {
+            final package = workspace.allPackages.values.first;
+            final pubPackage = await package.getPublishedPackage();
+
+            expect(pubPackage?.name, isNotEmpty);
+          },
+          platform: FakePlatform.fromPlatform(const LocalPlatform())
+            ..environment['PUB_HOSTED_URL'] = 'http://localhost:8080',
+        ),
+      );
+
+      test('Should not fetch versions for private package', () async {
         final workspaceBuilder = VirtualWorkspaceBuilder('name: test');
         workspaceBuilder.addPackage('''
             name: a
@@ -130,17 +141,80 @@ void main() {
         final workspace = workspaceBuilder.build();
 
         expect(
-          await workspace.allPackages['a']!.getPublishedVersions(),
-          isEmpty,
+          await workspace.allPackages['a']!.getPublishedPackage(),
+          isNull,
         );
         expect(
-          await workspace.allPackages['b']!.getPublishedVersions(),
-          isEmpty,
+          await workspace.allPackages['b']!.getPublishedPackage(),
+          isNull,
         );
+      });
+    });
 
-        verifyNever(httpClientMock.get(any));
-      },
-    );
+    group('When requests published packages for private registries', () {
+      final fakeCredential = PubCredential(
+        url: Uri.parse('https://fake.registry'),
+        token: 'fake_token',
+      );
+
+      final pubCredentialStoreMock = PubCredentialStore([fakeCredential]);
+
+      setUpAll(() {
+        internalPubCredentialStore = pubCredentialStoreMock;
+      });
+
+      tearDownAll(() {
+        internalPubCredentialStore = PubCredentialStore([]);
+      });
+
+      test(
+        'Should fetch without credentials',
+        () async {
+          final uri = Uri.parse('https://pub.dev/api/packages/melos');
+          internalHttpClient = HttpClientMock(
+            (request) {
+              expect(request.url, uri);
+              expect(
+                request.headers,
+                isNot(contains(HttpHeaders.authorizationHeader)),
+              );
+              return HttpClientMock.parseResponse(pubPackageJson);
+            },
+          );
+
+          final package = workspace.allPackages.values.first;
+          final pubPackage = await package.getPublishedPackage();
+
+          expect(pubPackage?.name, isNotEmpty);
+        },
+      );
+
+      test(
+        'Should fetch from private registry if present',
+        withMockPlatform(
+          () async {
+            final uri = fakeCredential.url.resolve('api/packages/melos');
+            internalHttpClient = HttpClientMock(
+              (request) {
+                expect(request.url, uri);
+                expect(
+                  request.headers[HttpHeaders.authorizationHeader],
+                  fakeCredential.getAuthHeader(),
+                );
+                return HttpClientMock.parseResponse(pubPackageJson);
+              },
+            );
+
+            final package = workspace.allPackages.values.first;
+            final pubPackage = await package.getPublishedPackage();
+
+            expect(pubPackage?.name, isNotEmpty);
+          },
+          platform: FakePlatform.fromPlatform(const LocalPlatform())
+            ..environment['PUB_HOSTED_URL'] = fakeCredential.url.toString(),
+        ),
+      );
+    });
   });
 
   group('Package', () {

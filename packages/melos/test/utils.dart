@@ -3,12 +3,12 @@ import 'dart:io';
 
 import 'package:cli_util/cli_logging.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/testing.dart' as http_testing;
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/common/utils.dart';
-import 'package:mockito/mockito.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
@@ -403,13 +403,11 @@ class _VirtualPackage {
   final String? path;
 }
 
-class HttpClientMock extends Mock implements http.Client {
-  @override
-  Future<http.Response> get(Uri? url, {Map<String, String>? headers}) {
-    return super.noSuchMethod(
-      Invocation.method(#get, [url], {#headers: headers}),
-      returnValue: Future.value(http.Response('', 200)),
-    ) as Future<http.Response>;
+class HttpClientMock extends http_testing.MockClient {
+  HttpClientMock(super.fn);
+
+  static Future<http.Response> parseResponse(String result) async {
+    return http.Response(result, 200);
   }
 }
 

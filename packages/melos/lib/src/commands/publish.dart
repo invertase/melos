@@ -107,9 +107,12 @@ mixin _PublishMixin on _ExecMixin {
         (package) async {
       if (package.isPrivate) return;
 
-      final versions = await package.getPublishedVersions();
+      final pubPackage = await package.getPublishedPackage();
+      final versions = pubPackage?.prioritizedVersions
+          .map((v) => v.version.toString())
+          .toList();
 
-      if (versions.isEmpty) {
+      if (versions == null || versions.isEmpty) {
         latestPackageVersion[package.name] = null;
         return;
       }
