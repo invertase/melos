@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2024-01-11
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v4.0.0`](#melos---v400)
+
+---
+
+#### `melos` - `v4.0.0`
+
+ - **FIX**: Create commit when `--no-git-tag-version` is used ([#625](https://github.com/invertase/melos/issues/625)). ([b89133dc](https://github.com/invertase/melos/commit/b89133dc79e56920727451e409b3adc1d2e666ee))
+ - **FIX**: Expose script api ([#573](https://github.com/invertase/melos/issues/573)). ([bb971018](https://github.com/invertase/melos/commit/bb9710185a735e7176646e509433f4c033a2c774))
+ - **FEAT**: Add `git-commit-version` flag to control commit creation ([#628](https://github.com/invertase/melos/issues/628)). ([cca71872](https://github.com/invertase/melos/commit/cca7187233727aaf84bd83bf41bca11c5f962372))
+ - **FEAT**: support authenticating private pub repository ([#627](https://github.com/invertase/melos/issues/627)). ([dddc7b31](https://github.com/invertase/melos/commit/dddc7b31b2bb2588c23efc6b5a43ce5acfab1329))
+ - **FEAT**: Add enforce lockfile bootstrap command config ([#600](https://github.com/invertase/melos/issues/600)). ([b9c6d0cc](https://github.com/invertase/melos/commit/b9c6d0ccd55698d244dd856c26767e5e3a9852ac))
+ - **FEAT**: add "--no-example" arg to "pub get " command for melos bootstrap ([#604](https://github.com/invertase/melos/issues/604)). ([8b69f51f](https://github.com/invertase/melos/commit/8b69f51fd71eec01ebeba7bf5e3f0a691feac986))
+ - **DOCS**: Add flutter_web_auth_2 to melos project list ([#624](https://github.com/invertase/melos/issues/624)). ([bbede2d2](https://github.com/invertase/melos/commit/bbede2d2a795f37b5db2468c3e130278b09c7bea))
+
+
 ## 2023-12-04
 
 ### Changes
