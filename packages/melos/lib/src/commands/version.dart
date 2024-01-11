@@ -371,7 +371,7 @@ mixin _VersionMixin on _RunMixin {
       );
     }
 
-    if (gitTag) {
+    if (gitTag && gitCommit) {
       await _gitTagChanges(
         pendingPackageUpdates,
         updateDependentsVersions: updateDependentsVersions,
