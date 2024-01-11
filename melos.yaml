@@ -9,7 +9,7 @@ ignore:
 command:
   bootstrap:
     environment:
-      sdk: '>=2.18.0 <3.0.0'
+      sdk: ">=3.0.0 <4.0.0"
     dependencies:
       ansi_styles: ^0.3.1
       args: ^2.0.0
