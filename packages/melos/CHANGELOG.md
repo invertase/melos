@@ -1,5 +1,6 @@
 ## 4.0.0
 
+ - **FIX**: Compare with correct version when publishing ([#633](https://github.com/invertase/melos/issues/633)). ([9c4cd2eb](https://github.com/invertase/melos/commit/9c4cd2eb470de79eaa026ce8449d559f0a161374))
  - **FIX**: Expose script api ([#573](https://github.com/invertase/melos/issues/573)). ([bb971018](https://github.com/invertase/melos/commit/bb9710185a735e7176646e509433f4c033a2c774))
  - **FEAT**: Add `git-commit-version` flag to control commit creation ([#628](https://github.com/invertase/melos/issues/628)). ([cca71872](https://github.com/invertase/melos/commit/cca7187233727aaf84bd83bf41bca11c5f962372))
  - **FEAT**: support authenticating private pub repository ([#627](https://github.com/invertase/melos/issues/627)). ([dddc7b31](https://github.com/invertase/melos/commit/dddc7b31b2bb2588c23efc6b5a43ce5acfab1329))
