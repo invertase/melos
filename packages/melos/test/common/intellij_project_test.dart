@@ -29,4 +29,29 @@ void main() {
       expect(modulesXml, contains(r'file://$PROJECT_DIR$/melos_root.iml'));
     },
   );
+
+  // https://github.com/invertase/melos/issues/582
+  test(
+    'always generates iml paths with `/`',
+    () async {
+      final tempDir = createTestTempDir();
+      final workspaceBuilder = VirtualWorkspaceBuilder(
+        path: tempDir.path,
+        '''
+        packages:
+          - .
+        ''',
+      )..addPackage(
+          '''
+          name: test
+          ''',
+          path: 'test',
+        );
+      final workspace = workspaceBuilder.build();
+      final project = IntellijProject.fromWorkspace(workspace);
+      await project.generate();
+      final modulesXml = readTextFile(project.pathModulesXml);
+      expect(modulesXml, contains(r'file://$PROJECT_DIR$/test/melos_test.iml'));
+    },
+  );
 }

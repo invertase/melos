@@ -16,7 +16,6 @@
  */
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:collection/collection.dart';
@@ -31,9 +30,10 @@ import 'package:pubspec/pubspec.dart';
 import 'common/exception.dart';
 import 'common/git.dart';
 import 'common/glob.dart';
-import 'common/http.dart' as http;
 import 'common/io.dart';
 import 'common/platform.dart';
+import 'common/pub_hosted.dart' as pub;
+import 'common/pub_hosted_package.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
 import 'logging.dart';
@@ -65,15 +65,6 @@ final List<String> cleanablePubFilePaths = [
   '.dart_tool${currentPlatform.pathSeparator}package_config_subset',
   '.dart_tool${currentPlatform.pathSeparator}version',
 ];
-
-/// The URL where we can find a package server.
-///
-/// The default is `pub.dev`, but it can be overridden using the
-/// `PUB_HOSTED_URL` environment variable.
-/// https://dart.dev/tools/pub/environment-variables
-Uri get pubUrl => Uri.parse(
-      currentPlatform.environment['PUB_HOSTED_URL'] ?? 'https://pub.dev',
-    );
 
 final _isValidPubPackageNameRegExp =
     RegExp(r'^[a-z][a-z\d_-]*$', caseSensitive: false);
@@ -667,13 +658,11 @@ extension on Iterable<Package> {
     final packagesFilteredWithPublishStatus = <Package>[];
 
     await pool.forEach<Package, void>(this, (package) async {
-      final packageVersion = package.version.toString();
+      final pubPackage = await package.getPublishedPackage();
 
-      final publishedVersions = await package.getPublishedVersions();
+      final isOnPubRegistry = pubPackage?.isVersionPublished(package.version);
 
-      final isOnPubRegistry = publishedVersions.contains(packageVersion);
-
-      if (published == isOnPubRegistry) {
+      if (published == (isOnPubRegistry ?? false)) {
         packagesFilteredWithPublishStatus.add(package);
       }
     }).drain<void>();
@@ -891,37 +880,13 @@ class Package {
 
   /// Queries the pub.dev registry for published versions of this package.
   /// Primarily used for publish filters and versioning.
-  Future<List<String>> getPublishedVersions() async {
+  Future<PubHostedPackage?> getPublishedPackage() async {
     if (isPrivate) {
-      return [];
+      return null;
     }
 
-    final pubHosted = publishTo ?? pubUrl;
-
-    final url = pubHosted.replace(path: '/api/packages/$name');
-    final response = await http.get(url);
-
-    if (response.statusCode == 404) {
-      // The package was never published
-      return [];
-    } else if (response.statusCode != 200) {
-      throw Exception(
-        'Error reading pub.dev registry for package "$name" '
-        '(HTTP Status ${response.statusCode}), response: ${response.body}',
-      );
-    }
-
-    final body = json.decode(response.body) as Map<String, Object?>;
-    final packageVersionInfos = body['versions']! as List<Object?>;
-    final packageVersions = packageVersionInfos
-        .map((info) => (info! as Map<String, Object?>)['version']! as String)
-        .toList();
-
-    packageVersions.sort((a, b) {
-      return Version.prioritize(Version.parse(a), Version.parse(b));
-    });
-
-    return packageVersions.reversed.toList();
+    final pubClient = pub.PubHostedClient.fromUri(pubHosted: publishTo);
+    return pubClient.fetchPackage(name);
   }
 
   /// The example [Package] contained within this package, if any.

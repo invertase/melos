@@ -107,13 +107,15 @@ To manually version multiple packages use the `--manual-version` (short `-V`)
 option:
 
 ```sh
-melos version --manual-version <package-name>:<version-change>
+melos version --manual-version <package-1-name>:<version-change> --manual-version <package-2-name>:<version-change>
+# Same but with short version
+melos version -V <package-1-name>:<version-change> -V <package-2-name>:<version-change>
 ```
 
 Note that when using the `--manual-version` option, the automatic versioning
-process is executed normally, execpt for the packages that are manually
-versioned. This allows you to mix automatic and manual versioning. The
-[`--ignore`](/filters#--ignore) filter can be used to exclude all package from
+process is executed normally, except for the packages that are manually
+versioned. It allows to mix automatic and manual versioning. The
+[`--ignore`](/filters#--ignore) filter can be used to exclude all packages from
 automatic versioning, by passing `--ignore '*'`.
 
 ### Dependents Versioning

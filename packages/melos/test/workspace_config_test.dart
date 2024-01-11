@@ -18,7 +18,6 @@ import 'package:melos/melos.dart';
 import 'package:melos/src/common/git_repository.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/platform.dart';
-import 'package:melos/src/scripts.dart';
 import 'package:melos/src/workspace_configs.dart';
 import 'package:test/test.dart';
 
@@ -59,6 +58,7 @@ void main() {
             const {
               'runPubGetInParallel': false,
               'runPubGetOffline': true,
+              'enforceLockfile': true,
               'dependencyOverridePaths': ['a'],
             },
             workspacePath: '.',
@@ -66,6 +66,7 @@ void main() {
           BootstrapCommandConfigs(
             runPubGetInParallel: false,
             runPubGetOffline: true,
+            enforceLockfile: true,
             dependencyOverridePaths: [
               createGlob('a', currentDirectoryPath: '.'),
             ],
@@ -248,6 +249,23 @@ void main() {
         );
       });
 
+      test('can decode `bootstrap` with pub get --enforce-lockfile', () {
+        expect(
+          CommandConfigs.fromYaml(
+            const {
+              'bootstrap': {
+                'enforceLockfile': true,
+              },
+            },
+            workspacePath: '.',
+          ),
+          const CommandConfigs(
+            bootstrap: BootstrapCommandConfigs(
+              enforceLockfile: true,
+            ),
+          ),
+        );
+      });
       test('can decode `version`', () {
         expect(
           CommandConfigs.fromYaml(
