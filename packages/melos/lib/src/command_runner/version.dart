@@ -84,10 +84,15 @@ class VersionCommand extends MelosCommand {
       'git-tag-version',
       abbr: 't',
       defaultsTo: true,
-      help:
-          'By default, melos version will commit changes to pubspec.yaml files '
-          'and tag the release. Pass --no-git-tag-version to disable the '
-          'behaviour.',
+      help: 'By default, melos version will tag the release. Pass '
+          '--no-git-tag-version to disable the behaviour.',
+    );
+    argParser.addFlag(
+      'git-commit-version',
+      abbr: 'C',
+      defaultsTo: true,
+      help: 'By default, melos version will commit changes to pubspec.yaml '
+          'files. Pass --no-git-commit-version to disable the behaviour.',
     );
     argParser.addFlag(
       'release-url',
@@ -167,6 +172,7 @@ class VersionCommand extends MelosCommand {
     final updateDependentsConstraints =
         argResults!['dependent-constraints'] as bool;
     final tag = argResults!['git-tag-version'] as bool;
+    final commit = argResults!['git-commit-version'] as bool;
     final releaseUrl = argResults!.optional('release-url') as bool?;
     final changelog = argResults!['changelog'] as bool;
     final commitMessage =
@@ -196,6 +202,7 @@ class VersionCommand extends MelosCommand {
         manualVersions: {packageName: versionChange},
         force: force,
         gitTag: tag,
+        gitCommit: commit,
         releaseUrl: releaseUrl,
         updateChangelog: changelog,
         updateDependentsConstraints: updateDependentsConstraints,
@@ -238,6 +245,7 @@ class VersionCommand extends MelosCommand {
         packageFilters: parsePackageFilters(config.path),
         force: force,
         gitTag: tag,
+        gitCommit: commit,
         releaseUrl: releaseUrl,
         updateChangelog: changelog,
         updateDependentsConstraints: updateDependentsConstraints,
