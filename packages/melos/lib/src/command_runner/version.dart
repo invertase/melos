@@ -91,9 +91,9 @@ class VersionCommand extends MelosCommand {
       'git-commit-version',
       abbr: 'C',
       defaultsTo: true,
-      help: 'By default, melos version will commit changes to pubspec.yaml and changelog '
-          'files. Pass --no-git-commit-version to disable the behaviour, '
-          'passing this also implies --no-git-tag-version.',
+      help: 'By default, melos version will commit changes to pubspec.yaml and '
+          'changelog files. Pass --no-git-commit-version to disable the '
+          'behaviour, passing this also implies --no-git-tag-version.',
     );
     argParser.addFlag(
       'release-url',
