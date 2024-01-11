@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: dart-lang/setup-dart@v1
         with:
-          sdk: 2.18.0 # Update when min sdk supported version of `melos` package changes.
+          sdk: 3.0.0 # Update when min sdk supported version of `melos` package changes.
       - name: Run Melos
         run: ./.github/workflows/scripts/install-tools.sh
 

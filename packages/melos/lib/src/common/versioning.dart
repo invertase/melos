@@ -326,14 +326,11 @@ Version nextVersion(
         nextPreMajor++;
         nextPreMinor = 0;
         nextPrePatch = 0;
-        break;
       case SemverReleaseType.minor:
         nextPreMinor++;
         nextPrePatch = 0;
-        break;
       case SemverReleaseType.patch:
         nextPrePatch++;
-        break;
     }
     return Version(
       currentVersion.major,
