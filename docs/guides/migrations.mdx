@@ -5,6 +5,14 @@ description: How to migrate between major versions of Melos.
 
 # Migrations
 
+## 3.0.0 to 4.0.0
+
+### `--no-git-tag-version` behavior change
+
+If you were previously using `--no-git-tag-version` and were relying on that it
+didn't create a commit you now have to also pass `--no-git-commit-version` to
+prevent a commit from being automatically created after versioning.
+
 ## 2.0.0 to 3.0.0
 
 ### Versioning of Melos in workspaces
@@ -27,7 +35,7 @@ now:
 name: my_project_workspace
 
 environment:
-  sdk: '>=2.18.0 <3.0.0'
+  sdk: '>=3.0.0 <4.0.0'
 ```
 
 The corresponding `pubspec.lock` file should also be committed. Make sure to
