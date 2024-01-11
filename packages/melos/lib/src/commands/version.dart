@@ -12,6 +12,7 @@ mixin _VersionMixin on _RunMixin {
     bool updateDependentsConstraints = true,
     bool updateDependentsVersions = true,
     bool gitTag = true,
+    bool gitCommit = true,
     bool? releaseUrl,
     String? message,
     bool force = false,
@@ -59,6 +60,7 @@ mixin _VersionMixin on _RunMixin {
         updateDependentsConstraints: updateDependentsConstraints,
         updateDependentsVersions: updateDependentsVersions,
         gitTag: gitTag,
+        gitCommit: gitCommit,
         releaseUrl: releaseUrl,
         message: message,
         force: force,
@@ -81,6 +83,7 @@ mixin _VersionMixin on _RunMixin {
     bool updateDependentsConstraints = true,
     bool updateDependentsVersions = true,
     bool gitTag = true,
+    bool gitCommit = true,
     bool? releaseUrl,
     String? message,
     bool force = false,
@@ -354,19 +357,21 @@ mixin _VersionMixin on _RunMixin {
       logger.newLine();
     }
 
-    await _gitStageChanges(
-      workspace,
-      pendingPackageUpdates,
-      updateDependentsVersions: updateDependentsVersions,
-    );
-    await _gitCommitChanges(
-      workspace,
-      pendingPackageUpdates,
-      commitMessageTemplate,
-      updateDependentsVersions: updateDependentsVersions,
-    );
+    if (gitCommit) {
+      await _gitStageChanges(
+        workspace,
+        pendingPackageUpdates,
+        updateDependentsVersions: updateDependentsVersions,
+      );
+      await _gitCommitChanges(
+        workspace,
+        pendingPackageUpdates,
+        commitMessageTemplate,
+        updateDependentsVersions: updateDependentsVersions,
+      );
+    }
 
-    if (gitTag) {
+    if (gitTag && gitCommit) {
       await _gitTagChanges(
         pendingPackageUpdates,
         updateDependentsVersions: updateDependentsVersions,
