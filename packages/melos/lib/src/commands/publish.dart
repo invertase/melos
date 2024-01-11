@@ -108,7 +108,7 @@ mixin _PublishMixin on _ExecMixin {
       if (package.isPrivate) return;
 
       final pubPackage = await package.getPublishedPackage();
-      final versions = pubPackage?.prioritizedVersions
+      final versions = pubPackage?.prioritizedVersions.reversed
           .map((v) => v.version.toString())
           .toList();
 
