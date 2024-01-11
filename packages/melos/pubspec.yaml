@@ -32,7 +32,7 @@ dependencies:
   pool: ^1.4.0
   prompts: ^2.0.0
   pub_semver: ^2.0.0
-  pub_updater: ^0.3.0
+  pub_updater: ^0.4.0
   pubspec: ^2.1.0
   string_scanner: ^1.0.5
   yaml: ^3.1.0
