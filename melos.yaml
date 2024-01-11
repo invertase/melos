@@ -14,21 +14,21 @@ command:
       ansi_styles: ^0.3.1
       args: ^2.0.0
       cli_launcher: ^0.3.0
-      cli_util: '>=0.3.0 <0.5.0'
+      cli_util: ^0.4.1
       collection: ^1.14.12
       conventional_commit: ^0.6.0+1
-      file: ^6.1.0
+      file: ^7.0.0
       glob: ^2.1.0
       graphs: ^2.1.0
-      http: ">=0.13.1 <2.0.0"
-      meta: ^1.1.8
+      http: ^1.0.0
+      meta: ^1.11.0
       mustache_template: ^2.0.0
       path: ^1.7.0
       platform: ^3.1.0
       pool: ^1.4.0
       prompts: ^2.0.0
       pub_semver: ^2.0.0
-      pub_updater: ^0.3.0
+      pub_updater: ^0.4.0
       pubspec: ^2.1.0
       string_scanner: ^1.0.5
       yaml: ^3.1.0
