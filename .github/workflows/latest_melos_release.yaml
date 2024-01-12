@@ -2,6 +2,7 @@
 name: Latest Melos release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - melos-v*
@@ -10,4 +11,5 @@ jobs:
   release_docs:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - run: git push -f origin HEAD:melos-latest
