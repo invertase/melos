@@ -31,7 +31,7 @@ class BootstrapCommand extends MelosCommand {
     argParser.addFlag(
       'enforce-lockfile',
       negatable: false,
-      help: 'Rub pub get with --enforce-lockfile to enforce versions from .lock'
+      help: 'Run pub get with --enforce-lockfile to enforce versions from .lock'
           ' files, ensure .lockfile exist for all packages.',
     );
   }
