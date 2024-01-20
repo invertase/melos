@@ -142,6 +142,7 @@ The following projects are using Melos:
 - [GrowERP Flutter ERP](https://github.com/growerp/growerp)
 - [mrverdant13/coverde](https://github.com/mrverdant13/coverde)
 - [ThexXTURBOXx/flutter_web_auth_2](https://github.com/ThexXTURBOXx/flutter_web_auth_2)
+- [woltapp/wolt_modal_sheet](https://github.com/woltapp/wolt_modal_sheet)
 
 > Submit a PR if you'd like to add your project to the list. Update the
 > [README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md)
