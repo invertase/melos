@@ -366,6 +366,23 @@ class PackageFilters {
     );
   }
 
+  PackageFilters copyWithUpdatedScope(List<Glob> scope) {
+    return PackageFilters._(
+      dependsOn: dependsOn,
+      dirExists: dirExists,
+      fileExists: fileExists,
+      ignore: ignore,
+      includePrivatePackages: includePrivatePackages,
+      noDependsOn: noDependsOn,
+      nullSafe: nullSafe,
+      published: published,
+      scope: scope,
+      diff: diff,
+      includeDependencies: includeDependencies,
+      includeDependents: includeDependents,
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       other is PackageFilters &&
