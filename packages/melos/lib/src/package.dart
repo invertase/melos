@@ -366,20 +366,47 @@ class PackageFilters {
     );
   }
 
-  PackageFilters copyWithUpdatedScope(List<Glob> scope) {
+  PackageFilters copyWith({
+    ValueProvider<List<String>>? dependsOnValueProvider,
+    ValueProvider<List<String>>? dirExistsValueProvider,
+    ValueProvider<List<String>>? fileExistsValueProvider,
+    ValueProvider<List<Glob>>? ignoreValueProvider,
+    ValueProvider<bool?>? includePrivatePackagesValueProvider,
+    ValueProvider<List<String>>? noDependsOnValueProvider,
+    ValueProvider<bool?>? nullSafeValueProvider,
+    ValueProvider<bool?>? publishedValueProvider,
+    ValueProvider<List<Glob>>? scopeValueProvider,
+    ValueProvider<String?>? diffValueProvider,
+    ValueProvider<bool>? includeDependenciesValueProvider,
+    ValueProvider<bool>? includeDependentsValueProvider,
+  }) {
     return PackageFilters._(
-      dependsOn: dependsOn,
-      dirExists: dirExists,
-      fileExists: fileExists,
-      ignore: ignore,
-      includePrivatePackages: includePrivatePackages,
-      noDependsOn: noDependsOn,
-      nullSafe: nullSafe,
-      published: published,
-      scope: scope,
-      diff: diff,
-      includeDependencies: includeDependencies,
-      includeDependents: includeDependents,
+      dependsOn:
+          dependsOnValueProvider == null ? dependsOn : dependsOnValueProvider(),
+      dirExists:
+          dirExistsValueProvider == null ? dirExists : dirExistsValueProvider(),
+      fileExists: fileExistsValueProvider == null
+          ? fileExists
+          : fileExistsValueProvider(),
+      ignore: ignoreValueProvider == null ? ignore : ignoreValueProvider(),
+      includePrivatePackages: includePrivatePackagesValueProvider == null
+          ? includePrivatePackages
+          : includePrivatePackagesValueProvider(),
+      noDependsOn: noDependsOnValueProvider == null
+          ? noDependsOn
+          : noDependsOnValueProvider(),
+      nullSafe:
+          nullSafeValueProvider == null ? nullSafe : nullSafeValueProvider(),
+      published:
+          publishedValueProvider == null ? published : publishedValueProvider(),
+      scope: scopeValueProvider == null ? scope : scopeValueProvider(),
+      diff: diffValueProvider == null ? diff : diffValueProvider(),
+      includeDependencies: includeDependenciesValueProvider == null
+          ? includeDependencies
+          : includeDependenciesValueProvider(),
+      includeDependents: includeDependentsValueProvider == null
+          ? includeDependents
+          : includeDependentsValueProvider(),
     );
   }
 
@@ -435,6 +462,8 @@ PackageFilters(
 )''';
   }
 }
+
+typedef ValueProvider<T> = T Function();
 
 class InvalidPackageFiltersException extends MelosException {
   InvalidPackageFiltersException(this.message);
