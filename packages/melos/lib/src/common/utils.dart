@@ -77,7 +77,7 @@ extension Let<T> on T? {
 String multiLine(List<String> lines) => lines.join('\n');
 
 // MELOS_PACKAGES environment variable is a comma delimited list of
-// package names - used to scope the packageFilers if it is present.
+// package names - used to scope the `packageFilers` if it is present.
 // This can be user defined or can come from package selection in `melos run`.
 const envKeyMelosPackages = 'MELOS_PACKAGES';
 
