@@ -147,7 +147,7 @@ mixin _RunMixin on _Melos {
           : packages[selectedPackageIndex - 1].name;
       // MELOS_PACKAGES environment is detected by melos itself when through
       // a defined script, this comma delimited list of package names used to
-      // scope the `packageFilers` if it is present.
+      // scope the `packageFilters` if it is present.
       environment[envKeyMelosPackages] = packagesEnv;
     }
 
