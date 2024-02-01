@@ -367,46 +367,36 @@ class PackageFilters {
   }
 
   PackageFilters copyWith({
-    ValueProvider<List<String>>? dependsOnValueProvider,
-    ValueProvider<List<String>>? dirExistsValueProvider,
-    ValueProvider<List<String>>? fileExistsValueProvider,
-    ValueProvider<List<Glob>>? ignoreValueProvider,
+    List<String>? dependsOn,
+    List<String>? dirExists,
+    List<String>? fileExists,
+    List<Glob>? ignore,
     ValueProvider<bool?>? includePrivatePackagesValueProvider,
-    ValueProvider<List<String>>? noDependsOnValueProvider,
+    List<String>? noDependsOn,
     ValueProvider<bool?>? nullSafeValueProvider,
     ValueProvider<bool?>? publishedValueProvider,
-    ValueProvider<List<Glob>>? scopeValueProvider,
+    List<Glob>? scope,
     ValueProvider<String?>? diffValueProvider,
-    ValueProvider<bool>? includeDependenciesValueProvider,
-    ValueProvider<bool>? includeDependentsValueProvider,
+    bool? includeDependencies,
+    bool? includeDependents,
   }) {
     return PackageFilters._(
-      dependsOn:
-          dependsOnValueProvider == null ? dependsOn : dependsOnValueProvider(),
-      dirExists:
-          dirExistsValueProvider == null ? dirExists : dirExistsValueProvider(),
-      fileExists: fileExistsValueProvider == null
-          ? fileExists
-          : fileExistsValueProvider(),
-      ignore: ignoreValueProvider == null ? ignore : ignoreValueProvider(),
+      dependsOn: dependsOn ?? this.dependsOn,
+      dirExists: dirExists ?? this.dirExists,
+      fileExists: fileExists ?? this.fileExists,
+      ignore: ignore ?? this.ignore,
       includePrivatePackages: includePrivatePackagesValueProvider == null
           ? includePrivatePackages
           : includePrivatePackagesValueProvider(),
-      noDependsOn: noDependsOnValueProvider == null
-          ? noDependsOn
-          : noDependsOnValueProvider(),
+      noDependsOn: noDependsOn ?? this.noDependsOn,
       nullSafe:
           nullSafeValueProvider == null ? nullSafe : nullSafeValueProvider(),
       published:
           publishedValueProvider == null ? published : publishedValueProvider(),
-      scope: scopeValueProvider == null ? scope : scopeValueProvider(),
+      scope: scope ?? this.scope,
       diff: diffValueProvider == null ? diff : diffValueProvider(),
-      includeDependencies: includeDependenciesValueProvider == null
-          ? includeDependencies
-          : includeDependenciesValueProvider(),
-      includeDependents: includeDependentsValueProvider == null
-          ? includeDependents
-          : includeDependentsValueProvider(),
+      includeDependencies: includeDependencies ?? this.includeDependencies,
+      includeDependents: includeDependents ?? this.includeDependents,
     );
   }
 

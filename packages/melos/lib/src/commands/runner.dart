@@ -97,9 +97,7 @@ abstract class _Melos {
 
       filterWithEnv = packageFilters == null
           ? PackageFilters(scope: filteredPackagesScopeFromEnv)
-          : packageFilters.copyWith(
-              scopeValueProvider: () => filteredPackagesScopeFromEnv,
-            );
+          : packageFilters.copyWith(scope: filteredPackagesScopeFromEnv);
     }
 
     return (await MelosWorkspace.fromConfig(
