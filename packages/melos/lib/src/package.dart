@@ -371,12 +371,12 @@ class PackageFilters {
     List<String>? dirExists,
     List<String>? fileExists,
     List<Glob>? ignore,
-    ValueProvider<bool?>? includePrivatePackagesValueProvider,
+    bool? includePrivatePackages,
     List<String>? noDependsOn,
-    ValueProvider<bool?>? nullSafeValueProvider,
-    ValueProvider<bool?>? publishedValueProvider,
+    bool? nullSafe,
+    bool? published,
     List<Glob>? scope,
-    ValueProvider<String?>? diffValueProvider,
+    String? diff,
     bool? includeDependencies,
     bool? includeDependents,
   }) {
@@ -385,16 +385,13 @@ class PackageFilters {
       dirExists: dirExists ?? this.dirExists,
       fileExists: fileExists ?? this.fileExists,
       ignore: ignore ?? this.ignore,
-      includePrivatePackages: includePrivatePackagesValueProvider == null
-          ? includePrivatePackages
-          : includePrivatePackagesValueProvider(),
+      includePrivatePackages:
+          includePrivatePackages ?? this.includePrivatePackages,
       noDependsOn: noDependsOn ?? this.noDependsOn,
-      nullSafe:
-          nullSafeValueProvider == null ? nullSafe : nullSafeValueProvider(),
-      published:
-          publishedValueProvider == null ? published : publishedValueProvider(),
+      nullSafe: nullSafe ?? this.nullSafe,
+      published: published ?? this.published,
       scope: scope ?? this.scope,
-      diff: diffValueProvider == null ? diff : diffValueProvider(),
+      diff: diff ?? this.diff,
       includeDependencies: includeDependencies ?? this.includeDependencies,
       includeDependents: includeDependents ?? this.includeDependents,
     );
@@ -452,8 +449,6 @@ PackageFilters(
 )''';
   }
 }
-
-typedef ValueProvider<T> = T Function();
 
 class InvalidPackageFiltersException extends MelosException {
   InvalidPackageFiltersException(this.message);
