@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2024-02-06
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - [`melos` - `v4.1.0`](#melos---v410)
+
+Packages with other changes:
+
+ - There are no other changes in this release.
+
+---
+
+#### `melos` - `v4.1.0`
+
+ - **FIX**: typo on help description of bootstrap --enforce-lockfile ([#636](https://github.com/invertase/melos/issues/636)). ([a5247561](https://github.com/invertase/melos/commit/a5247561804a1a030325366bcd05c6a6a7a5c7dd))
+ - **BREAKING** **FEAT**: make run script use melos_packages env variable scope ([#640](https://github.com/invertase/melos/issues/640)). ([e12ff57e](https://github.com/invertase/melos/commit/e12ff57efd71baae5eea20252d02894ec8be712e))
+
+
 ## 2024-01-11
 
 ### Changes
