@@ -366,6 +366,37 @@ class PackageFilters {
     );
   }
 
+  PackageFilters copyWith({
+    List<String>? dependsOn,
+    List<String>? dirExists,
+    List<String>? fileExists,
+    List<Glob>? ignore,
+    bool? includePrivatePackages,
+    List<String>? noDependsOn,
+    bool? nullSafe,
+    bool? published,
+    List<Glob>? scope,
+    String? diff,
+    bool? includeDependencies,
+    bool? includeDependents,
+  }) {
+    return PackageFilters._(
+      dependsOn: dependsOn ?? this.dependsOn,
+      dirExists: dirExists ?? this.dirExists,
+      fileExists: fileExists ?? this.fileExists,
+      ignore: ignore ?? this.ignore,
+      includePrivatePackages:
+          includePrivatePackages ?? this.includePrivatePackages,
+      noDependsOn: noDependsOn ?? this.noDependsOn,
+      nullSafe: nullSafe ?? this.nullSafe,
+      published: published ?? this.published,
+      scope: scope ?? this.scope,
+      diff: diff ?? this.diff,
+      includeDependencies: includeDependencies ?? this.includeDependencies,
+      includeDependents: includeDependents ?? this.includeDependents,
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       other is PackageFilters &&

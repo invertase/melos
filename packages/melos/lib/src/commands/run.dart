@@ -80,14 +80,12 @@ mixin _RunMixin on _Melos {
     bool noSelect = false,
     List<String> extraArgs = const [],
   }) async {
-    final workspace = await MelosWorkspace.fromConfig(
-      config,
+    final workspace = await createWorkspace(
       global: global,
       packageFilters: script.packageFilters?.copyWithUpdatedIgnore([
         ...script.packageFilters!.ignore,
         ...config.ignore,
       ]),
-      logger: logger,
     )
       ..validate();
 
@@ -148,8 +146,8 @@ mixin _RunMixin on _Melos {
           ? packages.map((e) => e.name).toList().join(',')
           : packages[selectedPackageIndex - 1].name;
       // MELOS_PACKAGES environment is detected by melos itself when through
-      // a defined script, this comma delimited list of package names is used
-      // instead of any filters if detected.
+      // a defined script, this comma delimited list of package names used to
+      // scope the `packageFilters` if it is present.
       environment[envKeyMelosPackages] = packagesEnv;
     }
 
