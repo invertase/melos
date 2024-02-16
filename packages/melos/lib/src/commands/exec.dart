@@ -35,7 +35,7 @@ mixin _ExecMixin on _Melos {
     final environment = {
       ...currentPlatform.environment,
       'MELOS_PACKAGE_NAME': package.name,
-      'MELOS_PACKAGE_VERSION': (package.version).toString(),
+      'MELOS_PACKAGE_VERSION': package.version.toString(),
       'MELOS_PACKAGE_PATH': package.path,
       'MELOS_ROOT_PATH': workspace.path,
       if (workspace.sdkPath != null) envKeyMelosSdkPath: workspace.sdkPath!,
@@ -112,7 +112,9 @@ mixin _ExecMixin on _Melos {
     final sortedPackages = packages.toList(growable: false);
 
     if (orderDependents) {
-      sortPackagesTopologically(sortedPackages);
+      // TODO: This is not really the right way to do this. Cyclic dependencies
+      // are handled in a way that is specific for publishing.
+      sortPackagesForPublishing(sortedPackages);
     }
 
     final packageResults = Map.fromEntries(

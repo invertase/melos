@@ -8,7 +8,7 @@ import 'package:test/scaffolding.dart';
 void main() {
   group('publish', () {
     group('sort packages', () {
-      test('', () {
+      test('wo/ cyclic dependencies', () {
         //     b
         //   /   \
         // a       d
@@ -24,7 +24,7 @@ void main() {
           _dummyPackage('e', deps: ['f']),
         ]..shuffle();
         final packageNames = packages.map((el) => el.name).toList();
-        sortPackagesTopologically(packages);
+        sortPackagesForPublishing(packages);
 
         final published = <String>{};
         for (final package in packages) {
@@ -44,7 +44,7 @@ void main() {
           _dummyPackage('b', deps: ['a']),
         ];
         expect(
-          () => sortPackagesTopologically(packages),
+          () => sortPackagesForPublishing(packages),
           returnsNormally,
         );
       });

@@ -317,7 +317,7 @@ Future<List<GitCommit>> gitCommitsForPackage(
       .where((element) => element.trim().isNotEmpty)
       .toList();
 
-  return rawCommits.map((String rawCommit) {
+  return rawCommits.map((rawCommit) {
     final parts = rawCommit.split('|||');
     return GitCommit(
       id: parts[0].trim(),
@@ -355,7 +355,7 @@ Future<void> gitRemoteUpdate({
   );
 }
 
-/// Determine if the local git repository is behind on commits from it's remote
+/// Determine if the local git repository is behind on commits from its remote
 /// branch.
 Future<bool> gitIsBehindUpstream({
   required String workingDirectory,

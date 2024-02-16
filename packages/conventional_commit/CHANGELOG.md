@@ -1,3 +1,19 @@
+## 0.6.0+1
+
+ - **FIX**: commit scopes that contain "-" should be treated as valid scopes ([#496](https://github.com/invertase/melos/issues/496)). ([615c208e](https://github.com/invertase/melos/commit/615c208e08bb6c7a4c159fe0a06561b0b42edd50))
+
+## 0.6.0
+
+> Note: This release has breaking changes.
+
+ - **BREAKING** **FEAT**: upgrade minimum Dart SDK version to 2.18.0 ([#429](https://github.com/invertase/melos/issues/429)). ([fa81cba0](https://github.com/invertase/melos/commit/fa81cba00960ef04702d1535f57cb644ffcaeaae))
+
+## 0.6.0-dev.0
+
+> Note: This release has breaking changes.
+
+ - **BREAKING** **FEAT**: upgrade minimum Dart SDK version to 2.18.0 ([#429](https://github.com/invertase/melos/issues/429)). ([fa81cba0](https://github.com/invertase/melos/commit/fa81cba00960ef04702d1535f57cb644ffcaeaae))
+
 ## 0.5.0+1
 
  - **FIX**: Merge commits should be versioned ([#407](https://github.com/invertase/melos/issues/407)). ([01d4cd0d](https://github.com/invertase/melos/commit/01d4cd0d01e87fa836d0bb92949a8ccccb8f8027))

@@ -26,7 +26,7 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 
-Matcher packageNamed(dynamic matcher) => _PackageNameMatcher(matcher);
+Matcher packageNamed(Object? matcher) => _PackageNameMatcher(matcher);
 
 Matcher ignoringAnsii(Object? matcher) {
   return _IgnoringAnsii(matcher);
@@ -43,7 +43,7 @@ class _IgnoringAnsii extends CustomMatcher {
 }
 
 class _PackageNameMatcher extends CustomMatcher {
-  _PackageNameMatcher(dynamic matcher)
+  _PackageNameMatcher(Object? matcher)
       : super('package named', 'name', matcher);
 
   @override
@@ -60,9 +60,9 @@ class _ContainsDuplicatesMatcher extends Matcher {
       description.add('contains duplicates');
 
   @override
-  bool matches(dynamic item, Map matchState) {
+  bool matches(Object? item, Map matchState) {
     if (item is Iterable) {
-      final seen = <dynamic>{};
+      final seen = <Object?>{};
       for (final element in item) {
         if (seen.contains(element)) {
           return true;

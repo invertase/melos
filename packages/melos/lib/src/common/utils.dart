@@ -22,6 +22,7 @@ import 'dart:isolate';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:args/args.dart';
+import 'package:collection/collection.dart' hide stronglyConnectedComponents;
 import 'package:graphs/graphs.dart';
 import 'package:path/path.dart' as p;
 import 'package:prompts/prompts.dart' as prompts;
@@ -63,8 +64,6 @@ extension Let<T> on T? {
   }
 }
 
-String describeEnum(Object value) => value.toString().split('.').last;
-
 /// Utility function to write inline multi-line strings with indentation and
 /// without trailing a new line.
 ///
@@ -78,7 +77,7 @@ String describeEnum(Object value) => value.toString().split('.').last;
 String multiLine(List<String> lines) => lines.join('\n');
 
 // MELOS_PACKAGES environment variable is a comma delimited list of
-// package names - used instead of filters if it is present.
+// package names - used to scope the `packageFilters` if it is present.
 // This can be user defined or can come from package selection in `melos run`.
 const envKeyMelosPackages = 'MELOS_PACKAGES';
 
@@ -434,7 +433,7 @@ bool isWorkspaceDirectory(String directory) =>
     fileExists(melosYamlPathForDirectory(directory));
 
 Future<Process> startCommandRaw(
-  String command, {
+  List<String> command, {
   String? workingDirectory,
   Map<String, String> environment = const {},
   bool includeParentEnvironment = true,
@@ -451,7 +450,7 @@ Future<Process> startCommandRaw(
     environment: {
       ...environment,
       envKeyMelosTerminalWidth: terminalWidth.toString(),
-      'MELOS_SCRIPT': command,
+      'MELOS_SCRIPT': command.join(' '),
     },
     includeParentEnvironment: includeParentEnvironment,
   );
@@ -467,32 +466,10 @@ Future<int> startCommand(
   required MelosLogger logger,
 }) async {
   final processedCommand = command
-      .map((arg) {
-        // Remove empty args.
-        if (arg.trim().isEmpty) {
-          return null;
-        }
-
-        // Attempt to make line continuations Windows & Linux compatible.
-        if (arg.trim() == r'\') {
-          return currentPlatform.isWindows ? arg.replaceAll(r'\', '^') : arg;
-        }
-        if (arg.trim() == '^') {
-          return currentPlatform.isWindows ? arg : arg.replaceAll('^', r'\');
-        }
-
-        // Inject MELOS_* variables if any.
-        environment.forEach((key, value) {
-          if (key.startsWith('MELOS_')) {
-            arg = arg.replaceAll('\$$key', value);
-            arg = arg.replaceAll(key, value);
-          }
-        });
-
-        return arg;
-      })
-      .where((element) => element != null)
-      .join(' ');
+      // Remove empty arguments.
+      .whereNot((argument) => argument.trim().isEmpty)
+      .map(_scriptArgumentFormatter(environment))
+      .toList();
 
   final process = await startCommandRaw(
     processedCommand,
@@ -534,7 +511,7 @@ Future<int> startCommand(
   final processStderrCompleter = Completer<void>();
 
   stdoutStream.listen(
-    (List<int> event) {
+    (event) {
       processStdout.addAll(event);
       if (!onlyOutputOnError) {
         logger.write(utf8.decode(event, allowMalformed: true));
@@ -543,7 +520,7 @@ Future<int> startCommand(
     onDone: processStdoutCompleter.complete,
   );
   stderrStream.listen(
-    (List<int> event) {
+    (event) {
       processStderr.addAll(event);
       if (!onlyOutputOnError) {
         logger.stderr(utf8.decode(event, allowMalformed: true));
@@ -564,6 +541,34 @@ Future<int> startCommand(
   return exitCode;
 }
 
+String Function(String) _scriptArgumentFormatter(
+  Map<String, String> environment,
+) {
+  return (argument) {
+    // Attempt to make line continuations Windows & Linux compatible.
+    if (argument.trim() == r'\') {
+      return currentPlatform.isWindows
+          ? argument.replaceAll(r'\', '^')
+          : argument;
+    }
+    if (argument.trim() == '^') {
+      return currentPlatform.isWindows
+          ? argument
+          : argument.replaceAll('^', r'\');
+    }
+
+    // Inject MELOS_* variables if any.
+    environment.forEach((key, value) {
+      if (key.startsWith('MELOS_')) {
+        argument = argument.replaceAll('\$$key', value);
+        argument = argument.replaceAll(key, value);
+      }
+    });
+
+    return argument;
+  };
+}
+
 bool isPubSubcommand({required MelosWorkspace workspace}) {
   try {
     return Process.runSync(
@@ -577,26 +582,56 @@ bool isPubSubcommand({required MelosWorkspace workspace}) {
   }
 }
 
-/// Sorts packages in topological order so they may be published in the order
-/// they're sorted.
+/// Sorts [packages] in topological order so they can be published without
+/// errors.
 ///
 /// Packages with inter-dependencies cannot be topologically sorted and will
-/// remain unchanged.
-void sortPackagesTopologically(List<Package> packages) {
-  final packageNames = packages.map((el) => el.name).toList();
+/// be sorted by name length. This is a heuristic to better handle cyclic
+/// dependencies in federated plugins.
+void sortPackagesForPublishing(List<Package> packages) {
+  final packageNames = packages.map((package) => package.name).toList();
   final graph = <String, Iterable<String>>{
-    for (var package in packages)
-      package.name: package.dependencies.where(packageNames.contains),
+    for (final package in packages)
+      package.name: [
+        ...package.dependencies.where(packageNames.contains),
+        ...package.devDependencies.where(packageNames.contains),
+      ],
   };
-  try {
-    final ordered = topologicalSort(graph.keys, (key) => graph[key]!);
-    packages.sort((a, b) {
-      // `ordered` is in reverse ordering to our desired publish precedence.
-      return ordered.indexOf(b.name).compareTo(ordered.indexOf(a.name));
-    });
-  } on CycleException<String> {
-    // Cannot sort packages with inter-dependencies. Leave as-is.
-  }
+  final ordered =
+      stronglyConnectedComponents(graph.keys, (package) => graph[package]!)
+          .expand(
+            (component) => component.sortedByCompare(
+              (package) => package.length,
+              (a, b) => b - a,
+            ),
+          )
+          .toList();
+
+  packages.sort((a, b) {
+    return ordered.indexOf(a.name).compareTo(ordered.indexOf(b.name));
+  });
+}
+
+/// Returns a list of dependency cycles between [packages], taking into
+/// account only workspace dependencies.
+///
+/// All dependencies between packages in the workspace are considered, including
+/// `dev_dependencies` and `dependency_overrides`.
+List<List<Package>> findCyclicDependenciesInWorkspace(List<Package> packages) {
+  return stronglyConnectedComponents(
+    packages,
+    (package) => package.allDependenciesInWorkspace.values,
+  ).where((component) => component.length > 1).map((component) {
+    try {
+      topologicalSort(
+        component,
+        (package) => package.allDependenciesInWorkspace.values,
+      );
+    } on CycleException<Package> catch (error) {
+      return error.cycle;
+    }
+    throw StateError('Expected a cycle to be found.');
+  }).toList();
 }
 
 /// Given a workspace and package, this assembles the correct command to run pub
@@ -691,7 +726,7 @@ String prettyEncodeJson(Object? value) =>
     const JsonEncoder.withIndent('  ').convert(value);
 
 extension OptionalArgResults on ArgResults {
-  dynamic optional(String name) => wasParsed(name) ? this[name] : null;
+  Object? optional(String name) => wasParsed(name) ? this[name] : null;
 }
 
 String removeTrailingSlash(String url) {

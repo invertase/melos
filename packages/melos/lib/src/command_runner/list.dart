@@ -56,6 +56,11 @@ class ListCommand extends MelosCommand {
       negatable: false,
       help: 'Show dependency graph in Graphviz DOT language.',
     );
+    argParser.addFlag(
+      'cycles',
+      negatable: false,
+      help: 'Find cycles in package dependencies in the workspace.',
+    );
   }
 
   @override
@@ -80,6 +85,7 @@ class ListCommand extends MelosCommand {
     final relative = argResults!['relative'] as bool;
     final graph = argResults!['graph'] as bool;
     final gviz = argResults!['gviz'] as bool;
+    final cycles = argResults!['cycles'] as bool;
 
     final melos = Melos(logger: logger, config: config);
 
@@ -89,6 +95,7 @@ class ListCommand extends MelosCommand {
     if (json) kind = ListOutputKind.json;
     if (graph) kind = ListOutputKind.graph;
     if (gviz) kind = ListOutputKind.gviz;
+    if (cycles) kind = ListOutputKind.cycles;
 
     return melos.list(
       long: long,

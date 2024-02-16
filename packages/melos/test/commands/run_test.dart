@@ -3,12 +3,13 @@ import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/common/utils.dart';
-import 'package:melos/src/scripts.dart';
 import 'package:path/path.dart' as p;
+import 'package:platform/platform.dart';
 import 'package:pubspec/pubspec.dart';
 import 'package:test/test.dart';
 
 import '../matchers.dart';
+import '../mock_env.dart';
 import '../utils.dart';
 
 void main() {
@@ -31,7 +32,7 @@ void main() {
                 packageFilters: PackageFilters(
                   fileExists: const ['log.txt'],
                 ),
-              )
+              ),
             }),
           ),
         );
@@ -88,19 +89,105 @@ melos run test_script
       },
     );
 
-    test('supports passing additional arguments to run scripts', () async {
+    test(
+      'merges filters from `packageFilters` and `$envKeyMelosPackages`',
+      withMockPlatform(
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            runPubGet: true,
+            configBuilder: (path) => MelosWorkspaceConfig(
+              path: path,
+              name: 'test_package',
+              packages: [
+                createGlob('packages/**', currentDirectoryPath: path),
+              ],
+              scripts: Scripts({
+                'test_script': Script(
+                  name: 'test_script',
+                  run: 'melos exec -- "echo hello"',
+                  packageFilters: PackageFilters(
+                    fileExists: const ['log.txt'],
+                  ),
+                ),
+              }),
+            ),
+          );
+
+          final aDir = await createProject(
+            workspaceDir,
+            const PubSpec(name: 'a'),
+          );
+          writeTextFile(p.join(aDir.path, 'log.txt'), '');
+
+          await createProject(
+            workspaceDir,
+            const PubSpec(name: 'b'),
+          );
+
+          final cDir = await createProject(
+            workspaceDir,
+            const PubSpec(name: 'c'),
+          );
+          writeTextFile(p.join(cDir.path, 'log.txt'), '');
+
+          final logger = TestLogger();
+          final config =
+              await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+          final melos = Melos(
+            logger: logger,
+            config: config,
+          );
+
+          await melos.run(scriptName: 'test_script', noSelect: true);
+
+          expect(
+            logger.output.normalizeNewLines(),
+            ignoringAnsii(
+              '''
+melos run test_script
+  └> melos exec -- "echo hello"
+     └> RUNNING
+
+\$ melos exec
+  └> echo hello
+     └> RUNNING (in 1 packages)
+
+${'-' * terminalWidth}
+c:
+hello
+c: SUCCESS
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> echo hello
+     └> SUCCESS
+
+melos run test_script
+  └> melos exec -- "echo hello"
+     └> SUCCESS
+''',
+            ),
+          );
+        },
+        platform: FakePlatform.fromPlatform(const LocalPlatform())
+          ..environment[envKeyMelosPackages] = 'b,c',
+      ),
+    );
+
+    test('supports passing additional arguments to scripts', () async {
       final workspaceDir = await createTemporaryWorkspace(
+        runPubGet: true,
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
           name: 'test_package',
           packages: [
             createGlob('packages/**', currentDirectoryPath: path),
           ],
-          scripts: Scripts({
-            'test_script': Script(
-              name: 'test_script',
-              run: r'echo $0 $1 $2',
-            )
+          scripts: const Scripts({
+            'hello': Script(
+              name: 'hello',
+              run: 'echo',
+            ),
           }),
         ),
       );
@@ -113,7 +200,7 @@ melos run test_script
       );
 
       await melos.run(
-        scriptName: 'test_script',
+        scriptName: 'hello',
         noSelect: true,
         extraArgs: [
           'foo',
@@ -126,14 +213,82 @@ melos run test_script
         logger.output.normalizeNewLines(),
         ignoringAnsii(
           '''
-melos run test_script
-  └> echo \$0 \$1 \$2
+melos run hello
+  └> echo foo bar baz
      └> RUNNING
 
-${currentPlatform.isWindows ? r'$0 $1 $2' : '/bin/sh'} foo bar baz
+foo bar baz
 
-melos run test_script
-  └> echo \$0 \$1 \$2
+melos run hello
+  └> echo foo bar baz
+     └> SUCCESS
+''',
+        ),
+      );
+    });
+
+    test('supports passing additional arguments to scripts (exec)', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        runPubGet: true,
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: const Scripts({
+            'hello': Script(
+              name: 'hello',
+              run: 'echo',
+              exec: ExecOptions(),
+            ),
+          }),
+        ),
+      );
+
+      await createProject(workspaceDir, const PubSpec(name: 'a'));
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      await melos.run(
+        scriptName: 'hello',
+        noSelect: true,
+        extraArgs: [
+          'foo',
+          'bar',
+          'baz',
+        ],
+      );
+
+      expect(
+        logger.output.normalizeNewLines(),
+        ignoringAnsii(
+          r'''
+melos run hello
+  └> melos exec -- "echo foo bar baz"
+     └> RUNNING
+
+$ melos exec
+  └> echo foo bar baz
+     └> RUNNING (in 1 packages)
+
+--------------------------------------------------------------------------------
+a:
+foo bar baz
+a: SUCCESS
+--------------------------------------------------------------------------------
+
+$ melos exec
+  └> echo foo bar baz
+     └> SUCCESS
+
+melos run hello
+  └> melos exec -- "echo foo bar baz"
      └> SUCCESS
 ''',
         ),
@@ -149,14 +304,14 @@ melos run test_script
           packages: [
             createGlob('packages/**', currentDirectoryPath: path),
           ],
-          scripts: Scripts({
+          scripts: const Scripts({
             'test_script': Script(
               name: 'test_script',
               run: 'echo "hello"',
               exec: ExecOptions(
                 concurrency: 1,
               ),
-            )
+            ),
           }),
         ),
       );

@@ -18,7 +18,7 @@
 final _mergeCommitPrefixRegex = RegExp('^Merged? (.*?:)?');
 
 final _conventionalCommitHeaderRegex = RegExp(
-  r'(?<type>[a-zA-Z0-9_]+)(\((?<scope>[a-zA-Z0-9_,\s\*]+)\))?(?<breaking>!)?: ?(?<description>.+)',
+  r'(?<type>[a-zA-Z0-9_]+)(\((?<scope>[a-zA-Z0-9\-_,\s\*]+)\))?(?<breaking>!)?: ?(?<description>.+)',
 );
 
 final _breakingChangeRegex =

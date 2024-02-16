@@ -23,9 +23,18 @@ melos version
 The `version` command supports the following hooks in addition to the
 [common hooks](/configuration/scripts#hooks):
 
-- `preVersionCommit`: Runs before the version commit is created. Allows you to
-  make your own changes as part of versioning. You need to stage changes that
-  you make yourself.
+- `preCommit`: Runs before the version commit is created. Allows you to make
+  your own changes as part of versioning. You need to stage changes that you
+  make yourself.
+
+```yaml
+command:
+  version:
+    hooks:
+      preCommit: |
+        # Make changes to the version commit here.
+        # You need to stage changes that you make yourself.
+```
 
 ## --prerelease (-p)
 
@@ -170,5 +179,10 @@ Each value must be in the format
 ```bash
 melos version --manual-version=foo:patch
 melos version --manual-version=foo:1.0.0
-melos version -Vfoo:1.0.0
+melos version -V foo:1.0.0
+
+# To manually version multiple packages
+melos version --manual-version=foo:patch --manual-version=bar:major
+melos version --manual-version=foo:1.0.0 --manual-version=bar:1.0.0
+melos version -V foo:1.0.0 -V bar:2.0.0
 ```

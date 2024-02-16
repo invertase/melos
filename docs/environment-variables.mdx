@@ -63,7 +63,8 @@ package' name ends with `example`
 ### `MELOS_PACKAGES`
 
 Define a comma delimited list of package names that Melos should focus on. This
-bypasses all filtering flags if defined.
+will act as the `scope` global package filter, and it will override the `scope`
+for all the filtering options defined in the `packageFilters` section.
 
 ### `MELOS_SDK_PATH`
 

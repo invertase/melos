@@ -18,7 +18,6 @@ import 'package:melos/melos.dart';
 import 'package:melos/src/common/git_repository.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/platform.dart';
-import 'package:melos/src/scripts.dart';
 import 'package:melos/src/workspace_configs.dart';
 import 'package:test/test.dart';
 
@@ -59,6 +58,7 @@ void main() {
             const {
               'runPubGetInParallel': false,
               'runPubGetOffline': true,
+              'enforceLockfile': true,
               'dependencyOverridePaths': ['a'],
             },
             workspacePath: '.',
@@ -66,8 +66,9 @@ void main() {
           BootstrapCommandConfigs(
             runPubGetInParallel: false,
             runPubGetOffline: true,
+            enforceLockfile: true,
             dependencyOverridePaths: [
-              createGlob('a', currentDirectoryPath: '.')
+              createGlob('a', currentDirectoryPath: '.'),
             ],
           ),
         );
@@ -155,7 +156,7 @@ void main() {
                   'packageFilters': {'flutter': true},
                   'description': 'Changelog for all foo packages.',
                 }
-              ]
+              ],
             },
             workspacePath: '.',
           ),
@@ -215,7 +216,7 @@ void main() {
             const {
               'bootstrap': {
                 'runPubGetInParallel': true,
-              }
+              },
             },
             workspacePath: '.',
           ),
@@ -236,7 +237,7 @@ void main() {
             const {
               'bootstrap': {
                 'runPubGetOffline': true,
-              }
+              },
             },
             workspacePath: '.',
           ),
@@ -248,6 +249,23 @@ void main() {
         );
       });
 
+      test('can decode `bootstrap` with pub get --enforce-lockfile', () {
+        expect(
+          CommandConfigs.fromYaml(
+            const {
+              'bootstrap': {
+                'enforceLockfile': true,
+              },
+            },
+            workspacePath: '.',
+          ),
+          const CommandConfigs(
+            bootstrap: BootstrapCommandConfigs(
+              enforceLockfile: true,
+            ),
+          ),
+        );
+      });
       test('can decode `version`', () {
         expect(
           CommandConfigs.fromYaml(
@@ -256,7 +274,7 @@ void main() {
                 'message': 'Hello world',
                 'branch': 'main',
                 'linkToCommits': true,
-              }
+              },
             },
             workspacePath: '.',
           ),
@@ -344,34 +362,32 @@ void main() {
     group('fromYaml', () {
       test('yields default config from empty map', () {
         expect(
-          IntelliJConfig.fromYaml(const <dynamic, dynamic>{}),
+          IntelliJConfig.fromYaml(const <Object?, Object?>{}),
           IntelliJConfig.empty,
         );
       });
 
       test('supports "enabled"', () {
         expect(
-          IntelliJConfig.fromYaml(const <dynamic, dynamic>{'enabled': false}),
+          IntelliJConfig.fromYaml(const {'enabled': false}),
           const IntelliJConfig(enabled: false),
         );
         expect(
-          IntelliJConfig.fromYaml(const <dynamic, dynamic>{'enabled': true}),
+          IntelliJConfig.fromYaml(const {'enabled': true}),
           IntelliJConfig.empty,
         );
       });
 
       test('supports "moduleNamePrefix" override', () {
         expect(
-          IntelliJConfig.fromYaml(
-            const <dynamic, dynamic>{'moduleNamePrefix': 'prefix1'},
-          ),
+          IntelliJConfig.fromYaml(const {'moduleNamePrefix': 'prefix1'}),
           const IntelliJConfig(moduleNamePrefix: 'prefix1'),
         );
       });
 
       test('yields "moduleNamePrefix" of "melos_" by default', () {
         expect(
-          IntelliJConfig.fromYaml(const <dynamic, dynamic>{}).moduleNamePrefix,
+          IntelliJConfig.fromYaml(const <Object?, Object?>{}).moduleNamePrefix,
           'melos_',
         );
       });
@@ -406,7 +422,7 @@ void main() {
           workspacePath: testWorkspacePath,
         );
         expect(scripts['a']!.run, 'b');
-        expect(scripts['a']!.exec, ExecOptions());
+        expect(scripts['a']!.exec, const ExecOptions());
       });
 
       test('supports specifying command through "run"', () {
@@ -420,7 +436,7 @@ void main() {
           workspacePath: testWorkspacePath,
         );
         expect(scripts['a']!.run, 'b');
-        expect(scripts['a']!.exec, ExecOptions());
+        expect(scripts['a']!.exec, const ExecOptions());
       });
 
       test('supports specifying exec options', () {
@@ -431,7 +447,7 @@ void main() {
               'exec': {
                 'concurrency': 1,
                 'failFast': true,
-                'orderDependents': true
+                'orderDependents': true,
               },
             },
           }),
@@ -440,7 +456,7 @@ void main() {
         expect(scripts['a']!.run, 'b');
         expect(
           scripts['a']!.exec,
-          ExecOptions(
+          const ExecOptions(
             concurrency: 1,
             failFast: true,
             orderDependents: true,
@@ -522,7 +538,7 @@ void main() {
         expect(
           () => MelosWorkspaceConfig.fromYaml(
             createYamlMap({
-              'packages': <Object?>['*']
+              'packages': <Object?>['*'],
             }),
             path: testWorkspacePath,
           ),
@@ -619,7 +635,7 @@ void main() {
           () => MelosWorkspaceConfig.fromYaml(
             createYamlMap(
               {
-                'packages': [42]
+                'packages': [42],
               },
               defaults: configMapDefaults,
             ),
@@ -660,7 +676,7 @@ void main() {
           () => MelosWorkspaceConfig.fromYaml(
             createYamlMap(
               {
-                'ignore': [42]
+                'ignore': [42],
               },
               defaults: configMapDefaults,
             ),

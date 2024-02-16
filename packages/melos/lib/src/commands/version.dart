@@ -12,6 +12,7 @@ mixin _VersionMixin on _RunMixin {
     bool updateDependentsConstraints = true,
     bool updateDependentsVersions = true,
     bool gitTag = true,
+    bool gitCommit = true,
     bool? releaseUrl,
     String? message,
     bool force = false,
@@ -48,7 +49,7 @@ mixin _VersionMixin on _RunMixin {
       packageFilters: packageFilters?.copyWithDiff(null),
     );
 
-    return _runLifecycle(workspace, ScriptLifecycle.version, () {
+    return _runLifecycle(workspace, _CommandWithLifecycle.version, () {
       return _version(
         workspace: workspace,
         global: global,
@@ -59,6 +60,7 @@ mixin _VersionMixin on _RunMixin {
         updateDependentsConstraints: updateDependentsConstraints,
         updateDependentsVersions: updateDependentsVersions,
         gitTag: gitTag,
+        gitCommit: gitCommit,
         releaseUrl: releaseUrl,
         message: message,
         force: force,
@@ -81,6 +83,7 @@ mixin _VersionMixin on _RunMixin {
     bool updateDependentsConstraints = true,
     bool updateDependentsVersions = true,
     bool gitTag = true,
+    bool gitCommit = true,
     bool? releaseUrl,
     String? message,
     bool force = false,
@@ -143,7 +146,7 @@ mixin _VersionMixin on _RunMixin {
       for (final package in workspace.filteredPackages.values)
         if (!packagesToManuallyVersion.contains(package))
           if (packagesWithVersionableCommits.contains(package.name))
-            if (!asStableRelease || !package.version.isPreRelease) package
+            if (!asStableRelease || !package.version.isPreRelease) package,
     };
     final packagesToVersion = {
       ...packagesToManuallyVersion,
@@ -151,13 +154,6 @@ mixin _VersionMixin on _RunMixin {
     };
     final dependentPackagesToVersion = <Package>{};
     final pendingPackageUpdates = <MelosPendingPackageUpdate>[];
-
-    if (workspace.config.scripts.containsKey('preversion')) {
-      logger
-        ..log('Running "preversion" lifecycle script...')
-        ..newLine();
-      await run(scriptName: 'preversion');
-    }
 
     if (asStableRelease) {
       for (final package in workspace.filteredPackages.values) {
@@ -351,15 +347,17 @@ mixin _VersionMixin on _RunMixin {
       workspace: workspace,
     );
 
-    final preCommit = workspace.config.scripts.version.preCommit;
+    final preCommit = workspace.config.commands.version.hooks.preCommit;
     if (preCommit != null) {
-      logger
-        ..log('Running ${preCommit.name} lifecycle script...')
-        ..newLine();
-      await run(scriptName: preCommit.name);
+      logger.newLine();
+      await _runLifecycleScript(
+        preCommit,
+        command: _CommandWithLifecycle.version,
+      );
+      logger.newLine();
     }
 
-    if (gitTag) {
+    if (gitCommit) {
       await _gitStageChanges(
         workspace,
         pendingPackageUpdates,
@@ -371,13 +369,14 @@ mixin _VersionMixin on _RunMixin {
         commitMessageTemplate,
         updateDependentsVersions: updateDependentsVersions,
       );
+    }
+
+    if (gitTag && gitCommit) {
       await _gitTagChanges(
         pendingPackageUpdates,
         updateDependentsVersions: updateDependentsVersions,
       );
-    }
 
-    if (gitTag) {
       logger.success(
         'Versioning successful. '
         'Ensure you push your git changes and tags (if applicable) via '
@@ -653,8 +652,7 @@ mixin _VersionMixin on _RunMixin {
   }) async {
     // Note: not pooling & parallelizing rights to avoid possible file
     // contention.
-    await Future.forEach(pendingPackageUpdates,
-        (MelosPendingPackageUpdate pendingPackageUpdate) async {
+    await Future.forEach(pendingPackageUpdates, (pendingPackageUpdate) async {
       // Update package pubspec version.
       if (pendingPackageUpdate.reason != PackageUpdateReason.dependency ||
           updateDependentsVersions) {
@@ -668,8 +666,8 @@ mixin _VersionMixin on _RunMixin {
       if (updateDependentsConstraints) {
         await Future.forEach([
           ...pendingPackageUpdate.package.dependentsInWorkspace.values,
-          ...pendingPackageUpdate.package.devDependentsInWorkspace.values
-        ], (Package package) {
+          ...pendingPackageUpdate.package.devDependentsInWorkspace.values,
+        ], (package) {
           return _setDependencyVersionForDependentPackage(
             package,
             pendingPackageUpdate.package.name,
@@ -716,7 +714,7 @@ mixin _VersionMixin on _RunMixin {
     final dateSlug = [
       today.year.toString(),
       today.month.toString().padLeft(2, '0'),
-      today.day.toString().padLeft(2, '0')
+      today.day.toString().padLeft(2, '0'),
     ].join('-');
 
     final packages =
@@ -851,8 +849,7 @@ mixin _VersionMixin on _RunMixin {
       );
     }
 
-    await Future.forEach(pendingPackageUpdates,
-        (MelosPendingPackageUpdate pendingPackageUpdate) async {
+    await Future.forEach(pendingPackageUpdates, (pendingPackageUpdate) async {
       await gitAdd(
         'pubspec.yaml',
         workingDirectory: pendingPackageUpdate.package.path,
@@ -869,7 +866,7 @@ mixin _VersionMixin on _RunMixin {
       await Future.forEach([
         ...pendingPackageUpdate.package.dependentsInWorkspace.values,
         ...pendingPackageUpdate.package.devDependentsInWorkspace.values,
-      ], (Package dependentPackage) async {
+      ], (dependentPackage) async {
         await gitAdd(
           'pubspec.yaml',
           workingDirectory: dependentPackage.path,

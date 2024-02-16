@@ -20,9 +20,15 @@ mixin _RunMixin on _Melos {
       );
     }
 
+    final scriptSourceCode = targetStyle(
+      script.command(extraArgs).join(' ').withoutTrailing('\n'),
+    );
+
+    logger.command('melos run ${script.name}');
+    logger.child(scriptSourceCode).child(runningLabel).newLine();
+
     final exitCode = await _runScript(
       script,
-      config,
       global: global,
       noSelect: noSelect,
       extraArgs: extraArgs,
@@ -30,8 +36,7 @@ mixin _RunMixin on _Melos {
 
     logger.newLine();
     logger.command('melos run ${script.name}');
-    final resultLogger =
-        logger.child(targetStyle(script.effectiveRun.replaceAll('\n', '')));
+    final resultLogger = logger.child(scriptSourceCode);
 
     if (exitCode != 0) {
       resultLogger.child(failedLabel);
@@ -68,21 +73,19 @@ mixin _RunMixin on _Melos {
     return scripts[selectedScriptIndex].name;
   }
 
+  @override
   Future<int> _runScript(
-    Script script,
-    MelosWorkspaceConfig config, {
+    Script script, {
     GlobalOptions? global,
-    required bool noSelect,
+    bool noSelect = false,
     List<String> extraArgs = const [],
   }) async {
-    final workspace = await MelosWorkspace.fromConfig(
-      config,
+    final workspace = await createWorkspace(
       global: global,
       packageFilters: script.packageFilters?.copyWithUpdatedIgnore([
         ...script.packageFilters!.ignore,
         ...config.ignore,
       ]),
-      logger: logger,
     )
       ..validate();
 
@@ -143,22 +146,13 @@ mixin _RunMixin on _Melos {
           ? packages.map((e) => e.name).toList().join(',')
           : packages[selectedPackageIndex - 1].name;
       // MELOS_PACKAGES environment is detected by melos itself when through
-      // a defined script, this comma delimited list of package names is used
-      // instead of any filters if detected.
+      // a defined script, this comma delimited list of package names used to
+      // scope the `packageFilters` if it is present.
       environment[envKeyMelosPackages] = packagesEnv;
     }
 
-    final scriptSource = script.effectiveRun;
-    final scriptParts = scriptSource.split(' ');
-
-    logger.command('melos run ${script.name}');
-    logger
-        .child(targetStyle(scriptSource.replaceAll('\n', '')))
-        .child(runningLabel)
-        .newLine();
-
     return startCommand(
-      scriptParts..addAll(extraArgs),
+      script.command(extraArgs),
       logger: logger,
       environment: environment,
       workingDirectory: config.path,
@@ -205,7 +199,7 @@ class NoScriptException implements MelosException {
 
   @override
   String toString() {
-    return "NoScriptException: This workspace has no scripts defined in it's "
+    return 'NoScriptException: This workspace has no scripts defined in its '
         "'melos.yaml' file.";
   }
 }
@@ -216,6 +210,6 @@ class ScriptException implements MelosException {
 
   @override
   String toString() {
-    return 'ScriptException: The script $scriptName failed to execute';
+    return 'ScriptException: The script $scriptName failed to execute.';
   }
 }

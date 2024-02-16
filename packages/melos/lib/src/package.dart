@@ -16,7 +16,6 @@
  */
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:collection/collection.dart';
@@ -31,9 +30,10 @@ import 'package:pubspec/pubspec.dart';
 import 'common/exception.dart';
 import 'common/git.dart';
 import 'common/glob.dart';
-import 'common/http.dart' as http;
 import 'common/io.dart';
 import 'common/platform.dart';
+import 'common/pub_hosted.dart' as pub;
+import 'common/pub_hosted_package.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
 import 'logging.dart';
@@ -66,14 +66,12 @@ final List<String> cleanablePubFilePaths = [
   '.dart_tool${currentPlatform.pathSeparator}version',
 ];
 
-/// The URL where we can find a package server.
-///
-/// The default is `pub.dev`, but it can be overridden using the
-/// `PUB_HOSTED_URL` environment variable.
-/// https://dart.dev/tools/pub/environment-variables
-Uri get pubUrl => Uri.parse(
-      currentPlatform.environment['PUB_HOSTED_URL'] ?? 'https://pub.dev',
-    );
+final _isValidPubPackageNameRegExp =
+    RegExp(r'^[a-z][a-z\d_-]*$', caseSensitive: false);
+
+/// Returns whether the given [name] is a valid pub package name.
+bool isValidPubPackageName(String name) =>
+    _isValidPubPackageNameRegExp.hasMatch(name);
 
 /// Enum representing what type of package this is.
 enum PackageType {
@@ -254,7 +252,7 @@ class PackageFilters {
 
   /// A default constructor with **all** properties as requires, to ensure that
   /// copyWith functions properly copy all properties.
-  PackageFilters._({
+  const PackageFilters._({
     required this.scope,
     required this.ignore,
     required this.dirExists,
@@ -368,6 +366,37 @@ class PackageFilters {
     );
   }
 
+  PackageFilters copyWith({
+    List<String>? dependsOn,
+    List<String>? dirExists,
+    List<String>? fileExists,
+    List<Glob>? ignore,
+    bool? includePrivatePackages,
+    List<String>? noDependsOn,
+    bool? nullSafe,
+    bool? published,
+    List<Glob>? scope,
+    String? diff,
+    bool? includeDependencies,
+    bool? includeDependents,
+  }) {
+    return PackageFilters._(
+      dependsOn: dependsOn ?? this.dependsOn,
+      dirExists: dirExists ?? this.dirExists,
+      fileExists: fileExists ?? this.fileExists,
+      ignore: ignore ?? this.ignore,
+      includePrivatePackages:
+          includePrivatePackages ?? this.includePrivatePackages,
+      noDependsOn: noDependsOn ?? this.noDependsOn,
+      nullSafe: nullSafe ?? this.nullSafe,
+      published: published ?? this.published,
+      scope: scope ?? this.scope,
+      diff: diff ?? this.diff,
+      includeDependencies: includeDependencies ?? this.includeDependencies,
+      includeDependents: includeDependents ?? this.includeDependents,
+    );
+  }
+
   @override
   bool operator ==(Object other) =>
       other is PackageFilters &&
@@ -473,7 +502,7 @@ class PackageMap {
       ignore: [
         ...ignore,
         for (final pattern in _commonIgnorePatterns)
-          createGlob(pattern, currentDirectoryPath: workspacePath)
+          createGlob(pattern, currentDirectoryPath: workspacePath),
       ],
     );
 
@@ -660,13 +689,11 @@ extension on Iterable<Package> {
     final packagesFilteredWithPublishStatus = <Package>[];
 
     await pool.forEach<Package, void>(this, (package) async {
-      final packageVersion = package.version.toString();
+      final pubPackage = await package.getPublishedPackage();
 
-      final publishedVersions = await package.getPublishedVersions();
+      final isOnPubRegistry = pubPackage?.isVersionPublished(package.version);
 
-      final isOnPubRegistry = publishedVersions.contains(packageVersion);
-
-      if (published == isOnPubRegistry) {
+      if (published == (isOnPubRegistry ?? false)) {
         packagesFilteredWithPublishStatus.add(package);
       }
     }).drain<void>();
@@ -884,36 +911,13 @@ class Package {
 
   /// Queries the pub.dev registry for published versions of this package.
   /// Primarily used for publish filters and versioning.
-  Future<List<String>> getPublishedVersions() async {
+  Future<PubHostedPackage?> getPublishedPackage() async {
     if (isPrivate) {
-      return [];
+      return null;
     }
 
-    final pubHosted = publishTo ?? pubUrl;
-
-    final url = pubHosted.replace(path: '/packages/$name.json');
-    final response = await http.get(url);
-
-    if (response.statusCode == 404) {
-      // The package was never published
-      return [];
-    } else if (response.statusCode != 200) {
-      throw Exception(
-        'Error reading pub.dev registry for package "$name" '
-        '(HTTP Status ${response.statusCode}), response: ${response.body}',
-      );
-    }
-    final versions = <String>[];
-    final versionsRaw =
-        (json.decode(response.body) as Map)['versions'] as List<Object?>;
-    for (final versionElement in versionsRaw) {
-      versions.add(versionElement! as String);
-    }
-    versions.sort((String a, String b) {
-      return Version.prioritize(Version.parse(a), Version.parse(b));
-    });
-
-    return versions.reversed.toList();
+    final pubClient = pub.PubHostedClient.fromUri(pubHosted: publishTo);
+    return pubClient.fetchPackage(name);
   }
 
   /// The example [Package] contained within this package, if any.
@@ -952,7 +956,7 @@ class Package {
     // Must directly depend on the Flutter SDK.
     if (!isFlutterPackage) return false;
 
-    // Must not have a Flutter plugin definition in it's pubspec.yaml.
+    // Must not have a Flutter plugin definition in its pubspec.yaml.
     if (pubSpec.flutter?.plugin != null) return false;
 
     return fileExists(p.join(path, 'lib', 'main.dart'));
@@ -1078,6 +1082,7 @@ class Package {
 /// related to it.
 Map<String, Package> _transitivelyRelatedPackages({
   required Package root,
+  // ignore: avoid_positional_boolean_parameters
   required Map<String, Package> Function(Package, bool isRoot)
       directlyRelatedPackages,
 }) {

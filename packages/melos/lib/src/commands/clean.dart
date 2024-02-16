@@ -10,7 +10,7 @@ mixin _CleanMixin on _Melos {
 
     return _runLifecycle(
       workspace,
-      ScriptLifecycle.clean,
+      _CommandWithLifecycle.clean,
       () async {
         logger.log('Cleaning workspace...');
 

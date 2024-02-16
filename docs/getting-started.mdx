@@ -10,7 +10,7 @@ it.
 
 ## Installation
 
-Installe Melos as a
+Install Melos as a
 [global package](https://dart.dev/tools/pub/cmd/pub-global#running-a-script-from-your-path)
 via [pub.dev](https://pub.dev/) so it can be used from anywhere on your system:
 
@@ -22,7 +22,28 @@ dart pub global activate melos
 
 Melos is designed to work with a workspace. A workspace is a directory which
 contains all the packages that are going to be developed together. Its root
-directory must contain a `melos.yaml` file.
+directory must contain a `melos.yaml` and a `pubspec.yaml` file.
+
+### Recommended directory structure
+
+When using Melos you shouldn't have a project in the root of the workspace,
+since that is where the configuration for the workspace will live and those
+dependencies might clash with your project dependencies.
+
+The following is the recommended workspace directory structure:
+
+```console
+my_project
+├── apps
+│   ├── apps_1
+│   └── apps_2
+├── packages
+│   ├── package_1
+│   └── package_2
+├── melos.yaml
+├── pubspec.yaml
+└── README.md
+```
 
 ### Install Melos in the workspace
 
@@ -37,10 +58,10 @@ If you don't have a `pubspec.yaml` file at the workspace root yet, create one
 now:
 
 ```yaml
-name: <project>_workspace
+name: my_project
 
 environment:
-  sdk: '>=2.18.0 <3.0.0'
+  sdk: '>=3.0.0 <4.0.0'
 ```
 
 The corresponding `pubspec.lock` file should also be committed. Make sure to
@@ -58,10 +79,11 @@ Next create a `melos.yaml` file at the repository root. Within the `melos.yaml`
 file, add the `name` and `packages` fields:
 
 ```yaml
-name: <project>
+name: my_project
 
 packages:
-  - packages/*
+  - apps/**
+  - packages/**
 ```
 
 The `packages` list should contain paths to the individual packages within your
@@ -83,6 +105,12 @@ primary roles:
 
 1. Installing all package dependencies (internally using `pub get`).
 2. Locally linking any packages together.
+
+Bootstrap your project by running the following command: 
+
+```bash
+melos bootstrap
+```
 
 ### Why do I need to bootstrap?
 
@@ -114,6 +142,7 @@ item in your `melos.yaml`:
 name: my_project
 
 packages:
+  - apps/**
   - packages/**
 
 scripts:

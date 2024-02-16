@@ -20,36 +20,12 @@ import 'dart:collection';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
-import 'commands/runner.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
 import 'package.dart';
 
 // https://regex101.com/r/44dzaz/1
 final _leadingMelosExecRegExp = RegExp(r'^\s*melos\s+exec');
-
-/// Scripts to be executed before/after a melos command.
-class LifecycleHooks {
-  LifecycleHooks._({required this.pre, required this.post});
-
-  /// A script to execute before the melos command starts.
-  final Script? pre;
-
-  /// A script to execute before the melos command completed.
-  final Script? post;
-}
-
-class VersionLifecycleHooks extends LifecycleHooks {
-  VersionLifecycleHooks._({
-    required super.pre,
-    required super.post,
-    required this.preCommit,
-  }) : super._();
-
-  /// A script to execute before the version command commits the the changes
-  /// made during versioning.
-  final Script? preCommit;
-}
 
 class Scripts extends MapView<String, Script> {
   const Scripts(super.map);
@@ -79,53 +55,6 @@ class Scripts extends MapView<String, Script> {
 
   static const Scripts empty = Scripts({});
 
-  LifecycleHooks get bootstrap => _lifecycleHooksFor(ScriptLifecycle.bootstrap);
-  VersionLifecycleHooks get version =>
-      _lifecycleHooksFor(ScriptLifecycle.version) as VersionLifecycleHooks;
-  LifecycleHooks get clean => _lifecycleHooksFor(ScriptLifecycle.clean);
-
-  Set<Script> get allLifecycleScripts {
-    return {
-      for (final lifecycle in [bootstrap, version, clean]) ...[
-        if (lifecycle.pre != null) lifecycle.pre!,
-        if (lifecycle.post != null) lifecycle.post!,
-      ],
-    };
-  }
-
-  LifecycleHooks lifecycleHooksFor(ScriptLifecycle lifecycle) {
-    switch (lifecycle) {
-      case ScriptLifecycle.bootstrap:
-        return bootstrap;
-      case ScriptLifecycle.clean:
-        return clean;
-      case ScriptLifecycle.version:
-        return version;
-    }
-  }
-
-  LifecycleHooks _lifecycleHooksFor(ScriptLifecycle lifecycle) {
-    final name = lifecycle.name.capitalized;
-    final pre = this['pre$name'];
-    final post = this['post$name'];
-
-    switch (lifecycle) {
-      case ScriptLifecycle.bootstrap:
-      case ScriptLifecycle.clean:
-        return LifecycleHooks._(
-          pre: pre,
-          post: post,
-        );
-      case ScriptLifecycle.version:
-        final preCommit = this['pre${name}Commit'];
-        return VersionLifecycleHooks._(
-          pre: pre,
-          post: post,
-          preCommit: preCommit,
-        );
-    }
-  }
-
   /// Validates the scripts. Throws a [MelosConfigException] if any script is
   /// invalid.
   void validate() {
@@ -143,7 +72,7 @@ class Scripts extends MapView<String, Script> {
 
 @immutable
 class ExecOptions {
-  ExecOptions({
+  const ExecOptions({
     this.concurrency,
     this.failFast,
     this.orderDependents,
@@ -185,7 +114,7 @@ ExecOptions(
 
 @immutable
 class Script {
-  Script({
+  const Script({
     required this.name,
     required this.run,
     this.description,
@@ -262,7 +191,7 @@ class Script {
             );
 
       if (execYaml is String) {
-        exec = ExecOptions();
+        exec = const ExecOptions();
       } else {
         final execMap = assertKeyIsA<Map<Object?, Object?>?>(
           key: 'exec',
@@ -326,9 +255,6 @@ class Script {
   /// The command specified by the user.
   final String run;
 
-  /// The command to run when executing this script.
-  late final effectiveRun = _buildEffectiveCommand();
-
   /// A short description, shown when using `melos run` with no argument.
   final String? description;
 
@@ -343,30 +269,37 @@ class Script {
   /// packages.
   final ExecOptions? exec;
 
-  String _buildEffectiveCommand() {
+  /// Returns the full command to run when executing this script.
+  List<String> command([List<String>? extraArgs]) {
     String quoteScript(String script) => '"${script.replaceAll('"', r'\"')}"';
 
+    final scriptCommand = run.split(' ').toList();
+    if (extraArgs != null && extraArgs.isNotEmpty) {
+      scriptCommand.addAll(extraArgs);
+    }
+
     final exec = this.exec;
-    if (exec != null) {
-      final parts = ['melos', 'exec'];
+    if (exec == null) {
+      return scriptCommand;
+    } else {
+      final execCommand = ['melos', 'exec'];
 
       if (exec.concurrency != null) {
-        parts.addAll(['--concurrency', '${exec.concurrency}']);
+        execCommand.addAll(['--concurrency', '${exec.concurrency}']);
       }
 
       if (exec.failFast ?? false) {
-        parts.add('--fail-fast');
+        execCommand.add('--fail-fast');
       }
 
       if (exec.orderDependents ?? false) {
-        parts.add('--order-dependents');
+        execCommand.add('--order-dependents');
       }
 
-      parts.addAll(['--', quoteScript(run)]);
+      execCommand.addAll(['--', quoteScript(scriptCommand.join(' '))]);
 
-      return parts.join(' ');
+      return execCommand;
     }
-    return run;
   }
 
   /// Validates the script. Throws a [MelosConfigException] if the script is

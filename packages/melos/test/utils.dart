@@ -3,12 +3,12 @@ import 'dart:io';
 
 import 'package:cli_util/cli_logging.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/testing.dart' as http_testing;
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/common/utils.dart';
-import 'package:mockito/mockito.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
@@ -69,6 +69,12 @@ class TestLogger extends StandardLogger {
   void writeCharCode(int charCode) {
     throw UnimplementedError();
   }
+}
+
+Directory createTestTempDir() {
+  final dir = createTempDir(Directory.systemTemp.path);
+  addTearDown(() => deleteEntry(dir));
+  return Directory(dir);
 }
 
 Future<void> runPubGet(String workspacePath) async {
@@ -148,7 +154,7 @@ Future<Directory> createProject(
       ? partialPubSpec
       : partialPubSpec.copy(
           environment: Environment.fromJson(<Object?, Object?>{
-            'sdk': '>=2.18.0 <3.0.0',
+            'sdk': '>=3.0.0 <4.0.0',
           }),
         );
 
@@ -165,7 +171,7 @@ Future<Directory> createProject(
       else ...[
         'packages',
         pubSpec.name!,
-      ]
+      ],
     ]),
   );
 
@@ -177,10 +183,10 @@ Future<Directory> createProject(
   // supports Android.
   // If it is, create an empty main class file to appease flutter pub
   // get in case an add-to-app module is present in the workspace
-  final androidPluginNode =
-      // ignore: avoid_dynamic_calls
-      pubSpec.unParsedYaml?['flutter']?['plugin']?['platforms']?['android']
-          as Map?;
+  final flutterNode = pubSpec.unParsedYaml?['flutter'] as Map<String, Object?>?;
+  final pluginNode = flutterNode?['plugin'] as Map<String, Object?>?;
+  final platformsNode = pluginNode?['platforms'] as Map<String, Object?>?;
+  final androidPluginNode = platformsNode?['android'] as Map<String, Object?>?;
 
   if (androidPluginNode != null) {
     final package = androidPluginNode['package'] as String?;
@@ -278,26 +284,31 @@ PubSpec pubSpecFromJsonFile({
   return PubSpec.fromJson(json.decode(jsonAsString) as Map);
 }
 
+PubSpec pubSpecFromYamlFile({
+  required String directory,
+}) {
+  final filePath = pubspecPathForDirectory(directory);
+  return PubSpec.fromYamlString(readTextFile(filePath));
+}
+
 /// Builder to build a [MelosWorkspace] that is entirely virtual and only exists
 /// in memory.
 class VirtualWorkspaceBuilder {
   VirtualWorkspaceBuilder(
     this.melosYaml, {
-    this.path = '/workspace',
+    String? path,
     this.defaultPackagesPath = 'packages',
     this.sdkPath,
     Logger? logger,
-  }) : logger = (logger ?? TestLogger()).toMelosLogger() {
-    if (currentPlatform.isWindows) {
-      path = r'\\workspace';
-    }
-  }
+  })  : logger = (logger ?? TestLogger()).toMelosLogger(),
+        path =
+            path ?? (currentPlatform.isWindows ? r'\\workspace' : '/workspace');
 
   /// The contents of the melos.yaml file, to configure the workspace.
   final String melosYaml;
 
   /// The absolute path to the workspace.
-  late String path;
+  late final String path;
 
   /// The path relative to the workspace root, where packages are located,
   /// unless a path is provided in [addPackage].
@@ -392,13 +403,11 @@ class _VirtualPackage {
   final String? path;
 }
 
-class HttpClientMock extends Mock implements http.Client {
-  @override
-  Future<http.Response> get(Uri? url, {Map<String, String>? headers}) {
-    return super.noSuchMethod(
-      Invocation.method(#get, [url], {#headers: headers}),
-      returnValue: Future.value(http.Response('', 200)),
-    ) as Future<http.Response>;
+class HttpClientMock extends http_testing.MockClient {
+  HttpClientMock(super.fn);
+
+  static Future<http.Response> parseResponse(String result) async {
+    return http.Response(result, 200);
   }
 }
 

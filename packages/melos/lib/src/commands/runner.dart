@@ -46,7 +46,7 @@ part 'publish.dart';
 part 'run.dart';
 part 'version.dart';
 
-enum ScriptLifecycle {
+enum _CommandWithLifecycle {
   bootstrap,
   clean,
   version,
@@ -84,17 +84,20 @@ abstract class _Melos {
 
     if (currentPlatform.environment.containsKey(envKeyMelosPackages)) {
       // MELOS_PACKAGES environment variable is a comma delimited list of
-      // package names - used instead of filters if it is present.
+      // package names - used to scope the `packageFilters` if it is present.
       // This can be user defined or can come from package selection in
       // `melos run`.
-      filterWithEnv = PackageFilters(
-        scope: currentPlatform.environment[envKeyMelosPackages]!
-            .split(',')
-            .map(
-              (e) => createGlob(e, currentDirectoryPath: config.path),
-            )
-            .toList(),
-      );
+      final filteredPackagesScopeFromEnv =
+          currentPlatform.environment[envKeyMelosPackages]!
+              .split(',')
+              .map(
+                (e) => createGlob(e, currentDirectoryPath: config.path),
+              )
+              .toList();
+
+      filterWithEnv = packageFilters == null
+          ? PackageFilters(scope: filteredPackagesScopeFromEnv)
+          : packageFilters.copyWith(scope: filteredPackagesScopeFromEnv);
     }
 
     return (await MelosWorkspace.fromConfig(
@@ -108,31 +111,41 @@ abstract class _Melos {
 
   Future<void> _runLifecycle(
     MelosWorkspace workspace,
-    ScriptLifecycle lifecycle,
+    _CommandWithLifecycle command,
     FutureOr<void> Function() cb,
   ) async {
-    final hooks = workspace.config.scripts.lifecycleHooksFor(lifecycle);
+    final hooks = workspace.config.commands.lifecycleHooksFor(command);
     final preScript = hooks.pre;
     final postScript = hooks.post;
 
     if (preScript != null) {
-      logger
-        ..log('Running ${preScript.name} lifecycle script...')
-        ..newLine();
-
-      await run(scriptName: preScript.name);
+      await _runLifecycleScript(preScript, command: command);
+      logger.newLine();
     }
 
     try {
       await cb();
     } finally {
       if (postScript != null) {
-        logger
-          ..log('Running ${postScript.name} lifecycle script...')
-          ..newLine();
-
-        await run(scriptName: postScript.name);
+        logger.newLine();
+        await _runLifecycleScript(postScript, command: command);
       }
+    }
+  }
+
+  Future<void> _runLifecycleScript(
+    Script script, {
+    required _CommandWithLifecycle command,
+  }) async {
+    logger
+      ..command('melos ${command.name} [${script.name}]')
+      ..child(targetStyle(script.command().join(' ').replaceAll('\n', '')))
+      ..newLine();
+
+    final exitCode = await _runScript(script, noSelect: true);
+
+    if (exitCode != 0) {
+      throw ScriptException._('command/${command.name}/hooks/${script.name}');
     }
   }
 
@@ -140,4 +153,22 @@ abstract class _Melos {
     String? scriptName,
     bool noSelect = false,
   });
+
+  Future<int> _runScript(
+    Script script, {
+    bool noSelect = false,
+  });
+}
+
+extension _ResolveLifecycleHooks on CommandConfigs {
+  LifecycleHooks lifecycleHooksFor(_CommandWithLifecycle command) {
+    switch (command) {
+      case _CommandWithLifecycle.bootstrap:
+        return bootstrap.hooks;
+      case _CommandWithLifecycle.clean:
+        return clean.hooks;
+      case _CommandWithLifecycle.version:
+        return version.hooks;
+    }
+  }
 }

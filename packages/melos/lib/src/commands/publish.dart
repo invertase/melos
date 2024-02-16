@@ -48,7 +48,7 @@ mixin _PublishMixin on _ExecMixin {
       return;
     }
 
-    sortPackagesTopologically(unpublishedPackages);
+    sortPackagesForPublishing(unpublishedPackages);
 
     logger
       ..newLine()
@@ -77,7 +77,7 @@ mixin _PublishMixin on _ExecMixin {
               AnsiStyles.dim(latestPublishedVersionForPackages[package.name]),
               AnsiStyles.green(package.version.toString()),
             ];
-          })
+          }),
         ],
         paddingSize: 4,
       ),
@@ -107,9 +107,12 @@ mixin _PublishMixin on _ExecMixin {
         (package) async {
       if (package.isPrivate) return;
 
-      final versions = await package.getPublishedVersions();
+      final pubPackage = await package.getPublishedPackage();
+      final versions = pubPackage?.prioritizedVersions.reversed
+          .map((v) => v.version.toString())
+          .toList();
 
-      if (versions.isEmpty) {
+      if (versions == null || versions.isEmpty) {
         latestPackageVersion[package.name] = null;
         return;
       }
@@ -166,7 +169,7 @@ mixin _PublishMixin on _ExecMixin {
         logger
           ..newLine()
           ..log('Creating git tags for any versions not already created... ');
-        await Future.forEach(unpublishedPackages, (Package package) async {
+        await Future.forEach(unpublishedPackages, (package) async {
           final tag =
               gitTagForPackageVersion(package.name, package.version.toString());
           await gitTagCreate(

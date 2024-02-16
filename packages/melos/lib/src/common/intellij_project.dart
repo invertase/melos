@@ -149,9 +149,11 @@ class IntellijProject {
   }
 
   String ideaModuleStringForName(String moduleName, {String? relativePath}) {
-    final imlPath = relativePath != null
-        ? '$relativePath/$moduleName.iml'
+    var imlPath = relativePath != null
+        ? p.normalize('$relativePath/$moduleName.iml')
         : '$moduleName.iml';
+    // Use `/` instead of `\` no matter what platform is.
+    imlPath = imlPath.replaceAll(r'\', '/');
     final module = '<module '
         'fileurl="file://\$PROJECT_DIR\$/$imlPath" '
         'filepath="\$PROJECT_DIR\$/$imlPath" '
@@ -268,7 +270,7 @@ class IntellijProject {
       runConfigurations["Melos Run -&gt; '$key'"] = 'run $key';
     }
 
-    await Future.forEach(runConfigurations.keys, (String scriptName) async {
+    await Future.forEach(runConfigurations.keys, (scriptName) async {
       final scriptArgs = runConfigurations[scriptName]!;
       final pathSafeScriptArgs =
           scriptArgs.replaceAll(RegExp('[^A-Za-z0-9]'), '_');
@@ -296,8 +298,7 @@ class IntellijProject {
       templateCategory: 'runConfigurations',
     );
 
-    await Future.forEach(_workspace.filteredPackages.values,
-        (Package package) async {
+    await Future.forEach(_workspace.filteredPackages.values, (package) async {
       if (!package.isFlutterApp) return;
 
       final generatedRunConfiguration =
@@ -322,8 +323,7 @@ class IntellijProject {
       templateCategory: 'runConfigurations',
     );
 
-    await Future.forEach(_workspace.filteredPackages.values,
-        (Package package) async {
+    await Future.forEach(_workspace.filteredPackages.values, (package) async {
       if (!package.isFlutterPackage ||
           package.isFlutterApp ||
           !package.hasTests) {

@@ -10,7 +10,7 @@ jobs:
   analyze:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -28,18 +28,33 @@ jobs:
   dart_version:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: dart-lang/setup-dart@v1
         with:
-          sdk: 2.18.0 # Update when min sdk supported version of `melos` package changes.
+          sdk: 3.0.0 # Update when min sdk supported version of `melos` package changes.
       - name: Run Melos
         run: ./.github/workflows/scripts/install-tools.sh
+
+  # This job ensures `melos` can be installed alongside Flutter dependencies on
+  # the stable channel.
+  melos_flutter_deps_check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Get dependencies
+        working-directory: packages/melos_flutter_deps_check
+        run: flutter pub get
 
   format:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -53,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - uses: subosito/flutter-action@v2
@@ -69,7 +84,7 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - uses: subosito/flutter-action@v2
@@ -85,7 +100,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - uses: subosito/flutter-action@v2
@@ -95,4 +110,8 @@ jobs:
       - name: Install Tools
         run: .\.github\workflows\scripts\install-tools.bat
       - name: Run Tests
+        # TODO: Figure out why invoking Melos via PowerShell doesn't work properly.
+        # When using PowerShell, the exit code is not propagated correctly.
+        # Even running `CMD /C melos ...` from PowerShell does not work.
+        shell: cmd
         run: melos test --no-select
