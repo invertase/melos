@@ -32,6 +32,7 @@ import 'package:yaml/yaml.dart';
 import '../logging.dart';
 import '../package.dart';
 import '../workspace.dart';
+import 'environment_variable_key.dart';
 import 'exception.dart';
 import 'io.dart';
 import 'platform.dart';
@@ -75,15 +76,6 @@ extension Let<T> on T? {
 /// ]));
 /// ```
 String multiLine(List<String> lines) => lines.join('\n');
-
-// MELOS_PACKAGES environment variable is a comma delimited list of
-// package names - used to scope the `packageFilters` if it is present.
-// This can be user defined or can come from package selection in `melos run`.
-const envKeyMelosPackages = 'MELOS_PACKAGES';
-
-const envKeyMelosSdkPath = 'MELOS_SDK_PATH';
-
-const envKeyMelosTerminalWidth = 'MELOS_TERMINAL_WIDTH';
 
 final melosPackageUri = Uri.parse('package:melos/melos.dart');
 
@@ -140,9 +132,11 @@ extension StringUtils on String {
 }
 
 int get terminalWidth {
-  if (currentPlatform.environment.containsKey(envKeyMelosTerminalWidth)) {
+  if (currentPlatform.environment
+      .containsKey(EnvironmentVariableKey.melosTerminalWidth)) {
     return int.tryParse(
-          currentPlatform.environment[envKeyMelosTerminalWidth]!,
+          currentPlatform
+              .environment[EnvironmentVariableKey.melosTerminalWidth]!,
           radix: 10,
         ) ??
         80;
@@ -444,13 +438,13 @@ Future<Process> startCommandRaw(
   return Process.start(
     executable,
     currentPlatform.isWindows
-        ? ['/C', '%MELOS_SCRIPT%']
-        : ['-c', r'eval "$MELOS_SCRIPT"'],
+        ? ['/C', '%${EnvironmentVariableKey.melosScript}%']
+        : ['-c', 'eval "\$${EnvironmentVariableKey.melosScript}"'],
     workingDirectory: workingDirectory,
     environment: {
       ...environment,
-      envKeyMelosTerminalWidth: terminalWidth.toString(),
-      'MELOS_SCRIPT': command.join(' '),
+      EnvironmentVariableKey.melosTerminalWidth: terminalWidth.toString(),
+      EnvironmentVariableKey.melosScript: command.join(' '),
     },
     includeParentEnvironment: includeParentEnvironment,
   );
@@ -638,7 +632,8 @@ List<List<Package>> findCyclicDependenciesInWorkspace(List<Package> packages) {
 /// / dart pub / flutter pub.
 ///
 /// Takes into account a potential sdk path being provided. If no sdk path is
-/// provided then it will assume to use the pub command available in PATH.
+/// provided then it will assume to use the pub command available in
+/// [EnvironmentVariableKey.path].
 List<String> pubCommandExecArgs({
   required bool useFlutter,
   required MelosWorkspace workspace,
