@@ -142,6 +142,12 @@ The following projects are using Melos:
 - [mrverdant13/coverde](https://github.com/mrverdant13/coverde)
 - [ThexXTURBOXx/flutter_web_auth_2](https://github.com/ThexXTURBOXx/flutter_web_auth_2)
 - [woltapp/wolt_modal_sheet](https://github.com/woltapp/wolt_modal_sheet)
+- [cfug/dio](https://github.com/cfug/dio)
+- [simolus3/drift](https://github.com/simolus3/drift)
+- [Lyokone/flutterlocation](https://github.com/Lyokone/flutterlocation)
+- [FlutterGen/flutter_gen](https://github.com/FlutterGen/flutter_gen)
+- [canonical/ubuntu-desktop-provision](https://github.com/canonical/ubuntu-desktop-provision)
+- [ubuntu/app-center](https://github.com/ubuntu/app-center)
 
 > Submit a PR if you'd like to add your project to the list. Update the
 > [README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md)
