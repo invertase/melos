@@ -18,6 +18,7 @@ import 'package:yaml_edit/yaml_edit.dart';
 
 import '../command_runner/version.dart';
 import '../common/aggregate_changelog.dart';
+import '../common/environment_variable_key.dart';
 import '../common/exception.dart';
 import '../common/git.dart';
 import '../common/git_commit.dart';
@@ -82,13 +83,14 @@ abstract class _Melos {
   }) async {
     var filterWithEnv = packageFilters;
 
-    if (currentPlatform.environment.containsKey(envKeyMelosPackages)) {
+    if (currentPlatform.environment
+        .containsKey(EnvironmentVariableKey.melosPackages)) {
       // MELOS_PACKAGES environment variable is a comma delimited list of
       // package names - used to scope the `packageFilters` if it is present.
       // This can be user defined or can come from package selection in
       // `melos run`.
       final filteredPackagesScopeFromEnv =
-          currentPlatform.environment[envKeyMelosPackages]!
+          currentPlatform.environment[EnvironmentVariableKey.melosPackages]!
               .split(',')
               .map(
                 (e) => createGlob(e, currentDirectoryPath: config.path),

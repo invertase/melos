@@ -27,6 +27,7 @@ import 'package:pool/pool.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
 
+import 'common/environment_variable_key.dart';
 import 'common/exception.dart';
 import 'common/git.dart';
 import 'common/glob.dart';
@@ -656,8 +657,10 @@ extension on Iterable<Package> {
         // variables
         // TODO(rrousselGit): should support environment variables other than
         // PACKAGE_NAME
-        final expandedFileExistsPath =
-            fileExistsPath.replaceAll(r'$MELOS_PACKAGE_NAME', package.name);
+        final expandedFileExistsPath = fileExistsPath.replaceAll(
+          '\$${EnvironmentVariableKey.melosPackageName}',
+          package.name,
+        );
 
         return fileExists(p.join(package.path, expandedFileExistsPath));
       });

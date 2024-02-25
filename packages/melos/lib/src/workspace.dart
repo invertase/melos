@@ -20,6 +20,7 @@ import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
+import 'common/environment_variable_key.dart';
 import 'common/intellij_project.dart';
 import 'common/io.dart';
 import 'common/platform.dart';
@@ -85,7 +86,8 @@ class MelosWorkspace {
       dependencyOverridePackages: dependencyOverridePackages,
       sdkPath: resolveSdkPath(
         configSdkPath: workspaceConfig.sdkPath,
-        envSdkPath: currentPlatform.environment[utils.envKeyMelosSdkPath],
+        envSdkPath:
+            currentPlatform.environment[EnvironmentVariableKey.melosSdkPath],
         commandSdkPath: global?.sdkPath,
         workspacePath: workspaceConfig.path,
       ),
@@ -130,8 +132,9 @@ class MelosWorkspace {
 
   /// Returns the path to a [tool] from the Dart/Flutter SDK.
   ///
-  /// If no [sdkPath] is specified, this will return the name of the tool as is
-  /// so that it can be used as an executable from PATH.
+  /// If no [sdkPath] is specified, this will return the name of the tool
+  /// as is so that it can be used as an executable from
+  /// [EnvironmentVariableKey.path].
   String sdkTool(String tool) {
     final sdkPath = this.sdkPath;
     if (sdkPath != null) {
@@ -140,15 +143,17 @@ class MelosWorkspace {
     return tool;
   }
 
-  /// PATH environment variable for child processes launched in this workspace.
+  /// [EnvironmentVariableKey.path] environment variable for child processes
+  /// launched in this workspace.
   ///
-  /// Is `null` if the PATH for child processes is the same as the PATH for the
-  /// current process.
+  /// Is `null` if the [EnvironmentVariableKey.path] for child processes is the
+  /// same as the [EnvironmentVariableKey.path] for the current process.
   late final String? childProcessPath = sdkPath == null
       ? null
       : utils.addToPathEnvVar(
           directory: p.join(sdkPath!, 'bin'),
-          currentPath: currentPlatform.environment['PATH']!,
+          currentPath:
+              currentPlatform.environment[EnvironmentVariableKey.path]!,
           // We prepend the path to the bin directory in the Dart/Flutter SDK
           // because we want to shadow any system wide SDK.
           prepend: true,
@@ -180,9 +185,10 @@ class MelosWorkspace {
   /// Execute a command in the root of this workspace.
   Future<int> exec(List<String> execArgs, {bool onlyOutputOnError = false}) {
     final environment = {
-      'MELOS_ROOT_PATH': path,
-      if (sdkPath != null) utils.envKeyMelosSdkPath: sdkPath!,
-      if (childProcessPath != null) 'PATH': childProcessPath!,
+      EnvironmentVariableKey.melosRootPath: path,
+      if (sdkPath != null) EnvironmentVariableKey.melosSdkPath: sdkPath!,
+      if (childProcessPath != null)
+        EnvironmentVariableKey.path: childProcessPath!,
     };
 
     return utils.startCommand(

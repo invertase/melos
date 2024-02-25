@@ -1,4 +1,5 @@
 import 'package:melos/melos.dart';
+import 'package:melos/src/common/environment_variable_key.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/platform.dart';
@@ -90,7 +91,8 @@ melos run test_script
     );
 
     test(
-      'merges filters from `packageFilters` and `$envKeyMelosPackages`',
+      'merges filters from `packageFilters` and '
+      '`${EnvironmentVariableKey.melosPackages}`',
       withMockPlatform(
         () async {
           final workspaceDir = await createTemporaryWorkspace(
@@ -170,7 +172,7 @@ melos run test_script
           );
         },
         platform: FakePlatform.fromPlatform(const LocalPlatform())
-          ..environment[envKeyMelosPackages] = 'b,c',
+          ..environment[EnvironmentVariableKey.melosPackages] = 'b,c',
       ),
     );
 

@@ -34,13 +34,14 @@ mixin _ExecMixin on _Melos {
 
     final environment = {
       ...currentPlatform.environment,
-      'MELOS_PACKAGE_NAME': package.name,
-      'MELOS_PACKAGE_VERSION': package.version.toString(),
-      'MELOS_PACKAGE_PATH': package.path,
-      'MELOS_ROOT_PATH': workspace.path,
-      if (workspace.sdkPath != null) envKeyMelosSdkPath: workspace.sdkPath!,
+      EnvironmentVariableKey.melosPackageName: package.name,
+      EnvironmentVariableKey.melosPackageVersion: package.version.toString(),
+      EnvironmentVariableKey.melosPackagePath: package.path,
+      EnvironmentVariableKey.melosRootPath: workspace.path,
+      if (workspace.sdkPath != null)
+        EnvironmentVariableKey.melosSdkPath: workspace.sdkPath!,
       if (workspace.childProcessPath != null)
-        'PATH': workspace.childProcessPath!,
+        EnvironmentVariableKey.path: workspace.childProcessPath!,
     };
 
     if (package.isExample) {
@@ -53,27 +54,16 @@ mixin _ExecMixin on _Melos {
           await readTextFileAsync(exampleParentPubspecPath),
         );
 
-        environment['MELOS_PARENT_PACKAGE_NAME'] = exampleParentPackage.name!;
-        environment['MELOS_PARENT_PACKAGE_VERSION'] =
+        environment[EnvironmentVariableKey.melosParentPackageName] =
+            exampleParentPackage.name!;
+        environment[EnvironmentVariableKey.melosParentPackageVersion] =
             (exampleParentPackage.version ?? Version.none).toString();
-        environment['MELOS_PARENT_PACKAGE_PATH'] = exampleParentPackagePath;
+        environment[EnvironmentVariableKey.melosParentPackagePath] =
+            exampleParentPackagePath;
       }
     }
-    if (environment.containsKey('MELOS_TEST')) {
-      // TODO(rrousselGit) refactor this to not have to manually maitain the
-      // list of env variables to remove
-      environment.remove('MELOS_TEST');
-      environment.remove('MELOS_ROOT_PATH');
-      environment.remove('MELOS_SCRIPT');
-      environment.remove('MELOS_PACKAGE_NAME');
-      environment.remove('MELOS_PACKAGE_VERSION');
-      environment.remove('MELOS_PACKAGE_PATH');
-      environment.remove('MELOS_PARENT_PACKAGE_NAME');
-      environment.remove('MELOS_PARENT_PACKAGE_VERSION');
-      environment.remove('MELOS_PARENT_PACKAGE_PATH');
-      environment.remove(envKeyMelosPackages);
-      environment.remove(envKeyMelosSdkPath);
-      environment.remove(envKeyMelosTerminalWidth);
+    if (environment.containsKey(EnvironmentVariableKey.melosTest)) {
+      EnvironmentVariableKey.allMelosKeys().forEach(environment.remove);
     }
 
     return startCommand(
