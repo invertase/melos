@@ -589,6 +589,56 @@ Generating IntelliJ IDE files...
       );
     });
 
+    test('can run pub get --enforce-lockfile', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
+          createYamlMap(
+            {
+              'command': {
+                'bootstrap': {
+                  'enforceLockfile': true,
+                },
+              },
+            },
+            defaults: configMapDefaults,
+          ),
+          path: path,
+        ),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final workspace = await MelosWorkspace.fromConfig(
+        config,
+        logger: logger.toMelosLogger(),
+      );
+      final melos = Melos(logger: logger, config: config);
+      final pubExecArgs = pubCommandExecArgs(
+        useFlutter: workspace.isFlutterWorkspace,
+        workspace: workspace,
+      );
+
+      await runMelosBootstrap(melos, logger);
+
+      expect(
+        logger.output,
+        ignoringAnsii(
+          '''
+melos bootstrap
+  └> ${workspaceDir.path}
+
+Running "${pubExecArgs.join(' ')} get --enforce-lockfile" in workspace packages...
+  > SUCCESS
+
+Generating IntelliJ IDE files...
+  > SUCCESS
+
+ -> 0 packages bootstrapped
+''',
+        ),
+      );
+    });
+
     test(
       'applies dependencies from melos config',
       () async {

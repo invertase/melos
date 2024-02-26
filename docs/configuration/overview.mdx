@@ -30,12 +30,13 @@ Supported hosts:
 
 - GitHub
 - GitLab (https://gitlab.com)
+- Bitbucket (https://bitbucket.org)
 
 ```yaml
 repository: https://github.com/invertase/melos
 ```
 
-When using a self-hosted GitHub or GitLab instance, you can specify the
+When using a self-hosted GitHub, GitLab or Bitbucket instance, you can specify the
 repository location like this:
 
 ```yaml
@@ -174,6 +175,14 @@ The default is `true`.
 Whether to attempt to run `pub get` in offline mode during bootstrapping.
 
 Useful in closed network environments with pre-populated pubcaches.
+
+The default is `false`.
+
+### enforceLockfile
+
+Whether to run `pub get` with the `--enforce-lockfile` option or not, to force getting the versions specified in the `pubspec.lock` file.
+
+This is useful in CI environments or when you want to ensure that all environments/machines are using the same package versions.
 
 The default is `false`.
 
