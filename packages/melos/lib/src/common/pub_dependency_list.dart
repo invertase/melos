@@ -22,7 +22,7 @@ import 'package:string_scanner/string_scanner.dart';
 
 class PubDependencyList extends VersionedEntry {
   PubDependencyList._(
-    super.entry,
+    super.other,
     this.sdks,
     this.sections,
   ) : super.copy();

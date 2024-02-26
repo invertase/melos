@@ -1258,7 +1258,7 @@ class MelosWorkspaceConfig {
     }
 
     final linkToCommits = commands.version.linkToCommits;
-    if (linkToCommits == true && repository == null) {
+    if (linkToCommits && repository == null) {
       throw MelosConfigException(
         'repository must be specified if commands/version/linkToCommits is true',
       );
