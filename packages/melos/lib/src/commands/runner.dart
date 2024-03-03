@@ -16,6 +16,7 @@ import 'package:pubspec/pubspec.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
+import '../command_configs/command_configs.dart';
 import '../command_runner/version.dart';
 import '../common/aggregate_changelog.dart';
 import '../common/environment_variable_key.dart';
@@ -33,6 +34,7 @@ import '../common/utils.dart';
 import '../common/versioning.dart';
 import '../common/versioning.dart' as versioning;
 import '../global_options.dart';
+import '../lifecycle_hooks/lifecycle_hooks.dart';
 import '../logging.dart';
 import '../package.dart';
 import '../scripts.dart';

@@ -15,6 +15,7 @@
  */
 
 import 'package:melos/melos.dart';
+import 'package:melos/src/command_configs/command_configs.dart';
 import 'package:melos/src/common/git_repository.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/platform.dart';

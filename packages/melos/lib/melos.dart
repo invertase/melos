@@ -1,3 +1,5 @@
+export 'src/command_configs/command_configs.dart'
+    show BootstrapCommandConfigs, CleanCommandConfigs, VersionCommandConfigs;
 export 'src/commands/runner.dart'
     show
         BootstrapException,
@@ -29,10 +31,4 @@ export 'src/package.dart'
 export 'src/scripts.dart' show ExecOptions, Script, Scripts;
 export 'src/workspace.dart' show IdeWorkspace, MelosWorkspace;
 export 'src/workspace_configs.dart'
-    show
-        BootstrapCommandConfigs,
-        CommandConfigs,
-        IDEConfigs,
-        IntelliJConfig,
-        MelosWorkspaceConfig,
-        VersionCommandConfigs;
+    show IDEConfigs, IntelliJConfig, MelosWorkspaceConfig;
