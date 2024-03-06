@@ -229,7 +229,7 @@ Future<void> gitFetchTags({
   required MelosLogger logger,
 }) async {
   await gitExecuteCommand(
-    arguments: ['fetch', '--tags'],
+    arguments: ['pull', '--tags'],
     workingDirectory: workingDirectory,
     logger: logger,
   );
