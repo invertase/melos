@@ -107,6 +107,11 @@ your `melos.yaml` exists in a package, the dependency version in this
 package will be updated to match the version defined in your
 bootstrap config every time `melos bootstrap` is run.
 
+When there's a need to override the dependency_overrides
+specified in a package's pubspec.yaml, use dependency_overrides in Melos' configuration.
+This allows you to specify different package versions than those defined in the package's
+own dependency overrides.
+
 ```yaml
 # melos.yaml
 # ...
@@ -124,6 +129,10 @@ command:
     
     dev_dependencies:
       build_runner: ^2.3.3
+
+    dependency_overrides:
+      provider:
+        git: https://github.com/rrousselGit/provider.git	
 # ...
 ```
 

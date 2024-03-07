@@ -361,6 +361,7 @@ class BootstrapCommandConfigs {
     this.environment,
     this.dependencies,
     this.devDependencies,
+    this.dependencyOverrides,
     this.dependencyOverridePaths = const [],
     this.hooks = LifecycleHooks.empty,
   });
@@ -415,6 +416,16 @@ class BootstrapCommandConfigs {
       ),
     );
 
+    final dependencyOverrides = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'dependency_overrides',
+      map: yaml,
+    )?.map(
+      (key, value) => MapEntry(
+        key.toString(),
+        DependencyReference.fromJson(value),
+      ),
+    );
+
     final dependencyOverridePaths = assertListIsA<String>(
       key: 'dependencyOverridePaths',
       map: yaml,
@@ -442,6 +453,7 @@ class BootstrapCommandConfigs {
       environment: environment,
       dependencies: dependencies,
       devDependencies: devDependencies,
+      dependencyOverrides: dependencyOverrides,
       dependencyOverridePaths: dependencyOverridePaths
           .map(
             (override) =>
@@ -481,6 +493,9 @@ class BootstrapCommandConfigs {
   /// Dev dependencies to be synced between all packages.
   final Map<String, DependencyReference>? devDependencies;
 
+  /// Dependency overrides to be synced between all packages.
+  final Map<String, DependencyReference>? dependencyOverrides;
+
   /// A list of [Glob]s for paths that contain packages to be used as dependency
   /// overrides for all packages managed in the Melos workspace.
   final List<Glob> dependencyOverridePaths;
@@ -500,6 +515,10 @@ class BootstrapCommandConfigs {
         ),
       if (devDependencies != null)
         'dev_dependencies': devDependencies!.map(
+          (key, value) => MapEntry(key, value.toJson()),
+        ),
+      if (dependencyOverrides != null)
+        'dependency_overrides': dependencyOverrides!.map(
           (key, value) => MapEntry(key, value.toJson()),
         ),
       if (dependencyOverridePaths.isNotEmpty)
@@ -525,6 +544,8 @@ class BootstrapCommandConfigs {
       const DeepCollectionEquality().equals(other.dependencies, dependencies) &&
       const DeepCollectionEquality()
           .equals(other.devDependencies, devDependencies) &&
+      const DeepCollectionEquality()
+          .equals(other.dependencyOverrides, dependencyOverrides) &&
       const DeepCollectionEquality(_GlobEquality())
           .equals(other.dependencyOverridePaths, dependencyOverridePaths) &&
       other.hooks == hooks;
@@ -543,6 +564,7 @@ class BootstrapCommandConfigs {
       ) ^
       const DeepCollectionEquality().hash(dependencies) ^
       const DeepCollectionEquality().hash(devDependencies) ^
+      const DeepCollectionEquality().hash(dependencyOverrides) ^
       const DeepCollectionEquality(_GlobEquality())
           .hash(dependencyOverridePaths) ^
       hooks.hashCode;
@@ -557,6 +579,7 @@ BootstrapCommandConfigs(
   environment: $environment,
   dependencies: $dependencies,
   devDependencies: $devDependencies,
+  dependencyOverrides: $dependencyOverrides,
   dependencyOverridePaths: $dependencyOverridePaths,
   hooks: $hooks,
 )''';
