@@ -20,6 +20,7 @@ import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
+import 'command_configs/command_configs.dart';
 import 'common/environment_variable_key.dart';
 import 'common/intellij_project.dart';
 import 'common/io.dart';

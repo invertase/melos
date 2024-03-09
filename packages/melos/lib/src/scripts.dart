@@ -217,6 +217,19 @@ class Script {
     );
   }
 
+  @internal
+  static Script? fromName(
+    String name,
+    Map<Object?, Object?> yaml,
+    String workspacePath,
+  ) {
+    final script = yaml[name];
+    if (script == null) {
+      return null;
+    }
+    return Script.fromYaml(script, name: name, workspacePath: workspacePath);
+  }
+
   @visibleForTesting
   static ExecOptions execOptionsFromYaml(
     Map<Object?, Object?> yaml, {
