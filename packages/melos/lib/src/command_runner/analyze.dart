@@ -44,7 +44,9 @@ class AnalyzeCommand extends MelosCommand {
 
   @override
   final String description =
-      '''Analyzes all packages in your project for potential issues in a single run. Optionally configure severity levels. Supports all package filtering options.''';
+      'Analyzes all packages in your project for potential issues '
+      'in a single run. Optionally configure severity levels. '
+      'Supports all package filtering options.';
 
   @override
   Future<void> run() async {
