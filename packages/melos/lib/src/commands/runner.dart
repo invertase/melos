@@ -48,6 +48,7 @@ part 'list.dart';
 part 'publish.dart';
 part 'run.dart';
 part 'version.dart';
+part 'analyze.dart';
 
 enum _CommandWithLifecycle {
   bootstrap,
@@ -63,7 +64,8 @@ class Melos extends _Melos
         _RunMixin,
         _ExecMixin,
         _VersionMixin,
-        _PublishMixin {
+        _PublishMixin,
+        _AnalyzeMixin {
   Melos({
     required this.config,
     Logger? logger,
