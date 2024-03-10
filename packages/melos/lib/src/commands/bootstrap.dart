@@ -12,7 +12,7 @@ mixin _BootstrapMixin on _CleanMixin {
 
     return _runLifecycle(
       workspace,
-      _CommandWithLifecycle.bootstrap,
+      CommandWithLifecycle.bootstrap,
       () async {
         final bootstrapCommandConfig = workspace.config.commands.bootstrap;
         final shouldEnforceLockfile =

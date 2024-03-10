@@ -4,6 +4,7 @@ import '../common/utils.dart';
 import '../common/validation.dart';
 import 'bootstrap.dart';
 import 'clean.dart';
+import 'publish.dart';
 import 'version.dart';
 
 export 'bootstrap.dart';
@@ -17,6 +18,7 @@ class CommandConfigs {
     this.bootstrap = BootstrapCommandConfigs.empty,
     this.clean = CleanCommandConfigs.empty,
     this.version = VersionCommandConfigs.empty,
+    this.publish = PublishCommandConfigs.empty,
   });
 
   factory CommandConfigs.fromYaml(
@@ -42,6 +44,12 @@ class CommandConfigs {
       path: 'command',
     );
 
+    final publishMap = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'publish',
+      map: yaml,
+      path: 'command',
+    );
+
     return CommandConfigs(
       bootstrap: BootstrapCommandConfigs.fromYaml(
         bootstrapMap ?? const {},
@@ -56,6 +64,11 @@ class CommandConfigs {
         workspacePath: workspacePath,
         repositoryIsConfigured: repositoryIsConfigured,
       ),
+      publish: PublishCommandConfigs.fromYaml(
+        publishMap ?? const {},
+        workspacePath: workspacePath,
+        repositoryIsConfigured: repositoryIsConfigured,
+      ),
     );
   }
 
@@ -64,12 +77,14 @@ class CommandConfigs {
   final BootstrapCommandConfigs bootstrap;
   final CleanCommandConfigs clean;
   final VersionCommandConfigs version;
+  final PublishCommandConfigs publish;
 
   Map<String, Object?> toJson() {
     return {
       'bootstrap': bootstrap.toJson(),
       'clean': clean.toJson(),
       'version': version.toJson(),
+      'publish': publish.toJson(),
     };
   }
 
@@ -79,14 +94,17 @@ class CommandConfigs {
       runtimeType == other.runtimeType &&
       other.bootstrap == bootstrap &&
       other.clean == clean &&
-      other.version == version;
+      other.version == version &&
+      other.publish == publish;
 
   @override
-  int get hashCode =>
-      runtimeType.hashCode ^
-      bootstrap.hashCode ^
-      clean.hashCode ^
-      version.hashCode;
+  int get hashCode => Object.hash(
+        runtimeType,
+        bootstrap,
+        clean,
+        version,
+        publish,
+      );
 
   @override
   String toString() {
@@ -95,6 +113,7 @@ CommandConfigs(
   bootstrap: ${bootstrap.toString().indent('  ')},
   clean: ${clean.toString().indent('  ')},
   version: ${version.toString().indent('  ')},
+  publish: ${publish.toString().indent('  ')},
 )
 ''';
   }
