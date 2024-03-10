@@ -57,63 +57,66 @@ void main() {
     });
 
     group('lifecycle hooks', () {
-      test('are called in the correct order', () async {
-        final logger = TestLogger();
-        final workspaceDir = await createTemporaryWorkspace(
-          configBuilder: (path) => MelosWorkspaceConfig(
-            path: path,
-            name: 'test_workspace',
-            packages: [
-              createGlob('packages/**', currentDirectoryPath: path),
-            ],
-            commands: const CommandConfigs(
-              publish: PublishCommandConfigs(
-                hooks: PublishLifecycleHooks(
-                  pre: Script(name: 'pre', run: 'echo pre'),
-                  post: Script(name: 'post', run: 'echo post'),
+      for (final dryRun in [false, true]) {
+        test('are called in the correct order', () async {
+          final logger = TestLogger();
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: (path) => MelosWorkspaceConfig(
+              path: path,
+              name: 'test_workspace',
+              packages: [
+                createGlob('packages/**', currentDirectoryPath: path),
+              ],
+              commands: const CommandConfigs(
+                publish: PublishCommandConfigs(
+                  hooks: PublishLifecycleHooks(
+                    pre: Script(name: 'pre', run: 'echo pre'),
+                    post: Script(name: 'post', run: 'echo post'),
+                  ),
                 ),
               ),
             ),
-          ),
-        );
-
-        for (final package in ['a', 'b']) {
-          await createProject(
-            workspaceDir,
-            PubSpec(name: package),
-            path: 'packages',
           );
-        }
 
-        final config =
-            await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
-        final melos = Melos(
-          logger: logger,
-          config: config,
-        );
+          for (final package in ['a', 'b']) {
+            await createProject(
+              workspaceDir,
+              PubSpec(name: package),
+              path: 'packages',
+            );
+          }
 
-        await melos.publish();
-        final order = [
-          'melos publish [pre]',
-          'pre',
-          'melos publish --dry-run',
-          'melos publish [post]',
-          'post',
-        ];
-        final output = logger.output.normalizeNewLines().split('\n');
-        var previousIndex = -1;
-
-        for (final line in order) {
-          final index = output.indexOf(line);
-          expect(index, isNonNegative, reason: 'Line not found: $line');
-          expect(
-            index,
-            greaterThan(previousIndex),
-            reason: 'Line $line is out of order',
+          final config =
+              await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+          final melos = Melos(
+            logger: logger,
+            config: config,
           );
-          previousIndex = index;
-        }
-      });
+
+          await melos.publish(dryRun: dryRun);
+          final order = [
+            'melos publish [pre]',
+            'pre',
+            if (dryRun) 'melos publish --dry-run',
+            if (!dryRun) 'melos publish',
+            'melos publish [post]',
+            'post',
+          ];
+          final output = logger.output.normalizeNewLines().split('\n');
+          var previousIndex = -1;
+
+          for (final line in order) {
+            final index = output.indexOf(line);
+            expect(index, isNonNegative, reason: 'Line not found: $line');
+            expect(
+              index,
+              greaterThan(previousIndex),
+              reason: 'Line $line is out of order',
+            );
+            previousIndex = index;
+          }
+        });
+      }
     });
   });
 }
