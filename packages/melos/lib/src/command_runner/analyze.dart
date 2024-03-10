@@ -15,8 +15,6 @@
  *
  */
 
-import 'dart:io';
-
 import '../commands/runner.dart';
 import '../common/utils.dart';
 import 'base.dart';
@@ -50,15 +48,6 @@ class AnalyzeCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    if (argResults!.rest.isNotEmpty) {
-      logger.log('No additional command line arguments are needed');
-      logger.log(description);
-      logger.log(argParser.usage);
-
-      exitCode = 1;
-      return;
-    }
-
     final fatalInfos = argResults?['fatal-infos'] as bool;
     final fatalWarnings = argResults!.optional('fatal-warnings') as bool?;
     final concurrency = int.parse(argResults!['concurrency'] as String);
