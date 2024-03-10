@@ -55,9 +55,10 @@ publish of packages.
 Melos supports various command [lifecycle hooks](/configuration/scripts#hooks)
 that can be defined in your `melos.yaml`.
 
-For example, if you needed to run something such as a build runner automatically
+For example, if you need to run something such as a build runner automatically
 before `melos publish` is run and then remove the generated files after
-publishing is done, you can add a `pre` hook and a `post` hook script:
+publishing is done, you can add `pre` and `post` hook scripts to your
+`melos.yaml` file:
 
 ```yaml
 # melos.yaml
