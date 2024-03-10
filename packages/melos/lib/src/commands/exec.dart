@@ -5,10 +5,11 @@ mixin _ExecMixin on _Melos {
     List<String> execArgs, {
     GlobalOptions? global,
     PackageFilters? packageFilters,
-    int concurrency = 5,
+    int? concurrency,
     bool failFast = false,
     bool orderDependents = false,
   }) async {
+    concurrency ??= Platform.numberOfProcessors;
     final workspace =
         await createWorkspace(global: global, packageFilters: packageFilters);
     final packages = workspace.filteredPackages.values;
