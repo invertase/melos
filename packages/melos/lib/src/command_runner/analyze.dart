@@ -28,8 +28,8 @@ class AnalyzeCommand extends MelosCommand {
     argParser.addFlag(
       'fatal-infos',
       negatable: false,
-      help: 'Enables treating info-lever issues as fatal errors,'
-          ' stopping the process if any are encountered.',
+      help: 'Enables treating info-lever issues as fatal errors, '
+          'stopping the process if any are encountered.',
     );
 
     argParser.addFlag(
