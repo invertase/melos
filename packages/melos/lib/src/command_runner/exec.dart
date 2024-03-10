@@ -23,7 +23,11 @@ import 'base.dart';
 class ExecCommand extends MelosCommand {
   ExecCommand(super.config) {
     setupPackageFilterParser();
-    argParser.addOption('concurrency', defaultsTo: '5', abbr: 'c');
+    argParser.addOption(
+      'concurrency',
+      defaultsTo: Platform.numberOfProcessors.toString(),
+      abbr: 'c',
+    );
     argParser.addFlag(
       'fail-fast',
       abbr: 'f',
