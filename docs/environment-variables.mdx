@@ -48,6 +48,11 @@ executing a script (when using `melos exec`).
 The path of the parent package of the current package that's currently executing
 a script (when using `melos exec`).
 
+### `MELOS_PUBLISH_DRY_RUN`
+
+Whether the current publish is a dry run or not. This is `true` when running
+`melos publish --dry-run` and `false` otherwise.
+
 #### What is a 'parent package'
 
 If a package exists in a directory that is also a child of another package, then
