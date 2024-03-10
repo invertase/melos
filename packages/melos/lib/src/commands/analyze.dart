@@ -116,17 +116,17 @@ mixin _AnalyzeMixin on _Melos {
   }
 
   String _getOptionsArgs(bool fatalInfos, bool? fatalWarnings) {
-    var options = '';
+    final options = <String>[];
 
     if (fatalInfos) {
-      options = '--fatal-infos';
+      options.add('--fatal-infos');
     }
 
     if (fatalWarnings != null) {
-      options = fatalWarnings ? '--fatal-warnings' : '--no-fatal-warnings';
+      options.add(fatalWarnings ? '--fatal-warnings' : '--no-fatal-warnings');
     }
 
-    return options;
+    return options.join(' ');
   }
 
   Future<int> _analyzeForPackage(

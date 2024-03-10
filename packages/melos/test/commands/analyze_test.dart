@@ -209,5 +209,61 @@ $ melos analyze
 '''),
       );
     });
+
+    test('should run analysis with --fatal-infos and --fatal-warnings',
+        () async {
+      writeTextFile(
+        p.join(aDir.path, 'main.dart'),
+        r'''
+        void main() {
+           var name = "Jessica";
+           int age = 28;
+           print("Hello, $name!");
+        }
+      ''',
+      );
+
+      await melos.analyze(fatalInfos: true, fatalWarnings: true);
+
+      expect(
+        logger.output.normalizeNewLines(),
+        ignoringAnsii(r'''
+$ melos analyze
+  └> dart analyze --fatal-infos --fatal-warnings
+     └> RUNNING (in 3 packages)
+
+--------------------------------------------------------------------------------
+a:
+Analyzing a...
+
+warning - main.dart:3:16 - The value of the local variable 'age' isn't used. Try removing the variable or using it. - unused_local_variable
+   info - main.dart:2:12 - Local variables should be final. Try making the variable final. - prefer_final_locals
+   info - main.dart:2:23 - Unnecessary use of double quotes. Try using single quotes unless the string contains single quotes. - prefer_single_quotes
+   info - main.dart:3:12 - Local variables should be final. Try making the variable final. - prefer_final_locals
+   info - main.dart:3:12 - Unnecessary type annotation on a local variable. Try removing the type annotation. - omit_local_variable_types
+   info - main.dart:4:12 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - main.dart:4:18 - Unnecessary use of double quotes. Try using single quotes unless the string contains single quotes. - prefer_single_quotes
+   info - main.dart:5:10 - Missing a newline at the end of the file. Try adding a newline at the end of the file. - eol_at_end_of_file
+
+8 issues found.
+--------------------------------------------------------------------------------
+b:
+Analyzing b...
+No issues found!
+b: SUCCESS
+--------------------------------------------------------------------------------
+c:
+Analyzing c...
+No issues found!
+c: SUCCESS
+--------------------------------------------------------------------------------
+
+$ melos analyze
+  └> dart analyze --fatal-infos --fatal-warnings
+     └> FAILED (in 1 packages)
+        └> a (with exit code 2)
+'''),
+      );
+    });
   });
 }
