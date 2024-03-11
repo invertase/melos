@@ -1,0 +1,49 @@
+---
+title: Analyze Command
+description: Learn more about the `analyze` command in Melos.
+---
+
+# Analyze Command
+
+<Info>Supports all [Melos filtering](/filters) flags.</Info>
+
+This command analyzes all local packages in your workspace.
+
+```bash
+melos analyze
+```
+
+<Info>
+  To learn more, visit the [Dart Analyze](https://dart.dev/tools/dart-analyze) documentation.
+</Info>
+
+
+## --fatal-infos
+Enforces a strict analysis by treating info-level issues as critical errors.
+
+```bash
+melos analyze --fatal-infos
+```
+
+## --fatal-warnings
+Enables treating warnings as fatal errors. When enabled, any warning will cause the analyzer to fail.
+
+```bash
+melos analyze --fatal-warnings
+```
+
+## --no-fatal-warnings
+This option configures the melos analyze command to ignore warnings, allowing the analysis process to complete successfully even if warnings are present.
+
+```bash
+melos analyze --no-fatal-warnings
+```
+
+## concurrency (-c)
+
+Defines the max concurrency value of how many packages will execute the command in at any one time. Defaults to `1`.
+
+```bash
+# Set a 5 concurrency
+melos analyze -c 5
+```
