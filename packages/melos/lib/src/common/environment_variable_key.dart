@@ -9,6 +9,7 @@ class EnvironmentVariableKey {
   static const String melosParentPackageVersion =
       'MELOS_PARENT_PACKAGE_VERSION';
   static const String melosParentPackagePath = 'MELOS_PARENT_PACKAGE_PATH';
+  static const String melosPublishDryRun = 'MELOS_PUBLISH_DRY_RUN';
   static const String melosScript = 'MELOS_SCRIPT';
   static const String melosTest = 'MELOS_TEST';
 
@@ -35,6 +36,7 @@ class EnvironmentVariableKey {
         melosParentPackageName,
         melosParentPackageVersion,
         melosParentPackagePath,
+        melosPublishDryRun,
         melosScript,
         melosTest,
         melosPackages,

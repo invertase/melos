@@ -57,6 +57,13 @@ const filterOptionNoDependsOn = 'no-depends-on';
 const filterOptionIncludeDependents = 'include-dependents';
 const filterOptionIncludeDependencies = 'include-dependencies';
 
+const publishOptionDryRun = 'dry-run';
+const publishOptionNoDryRun = 'no-dry-run';
+const publishOptionGitTagVersion = 'git-tag-version';
+const publishOptionNoGitTagVersion = 'no-git-tag-version';
+const publishOptionYes = 'yes';
+const publishOptionForce = 'force';
+
 extension Let<T> on T? {
   R? let<R>(R Function(T value) cb) {
     if (this == null) return null;

@@ -49,3 +49,30 @@ Note that tags are automatically created as part of `melos version` (unless
 `--no-git-tag-version` is specified when running the version command) so this is
 usually not required on `melos publish` unless you're doing a manual version and
 publish of packages.
+
+## Hooks
+
+Melos supports various command [lifecycle hooks](/configuration/scripts#hooks)
+that can be defined in your `melos.yaml`.
+
+For example, if you need to run something such as a build runner automatically
+before `melos publish` is run and then remove the generated files after
+publishing is done, you can add `pre` and `post` hook scripts to your
+`melos.yaml` file:
+
+```yaml
+# melos.yaml
+# ...
+command:
+  publish:
+    hooks:
+      pre: dart pub run build_runner build
+      post: dart pub run build_runner clean
+# ...
+```
+
+The pre-hook will run before `melos publish` and the post-hook will run after
+`melos publish` is done. It only runs once, even if multiple packages are
+published and it also runs when you are doing a `dry-run` publish.
+You can detect whether it is a dry-run by checking the `MELOS_PUBLISH_DRY_RUN`
+environment variable.

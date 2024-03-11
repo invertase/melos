@@ -1,9 +1,15 @@
 import 'package:melos/melos.dart';
+import 'package:melos/src/command_configs/command_configs.dart';
+import 'package:melos/src/command_configs/publish.dart';
+import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/utils.dart';
+import 'package:melos/src/lifecycle_hooks/publish.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
 import 'package:test/expect.dart';
 import 'package:test/scaffolding.dart';
+
+import '../utils.dart';
 
 void main() {
   group('publish', () {
@@ -48,6 +54,69 @@ void main() {
           returnsNormally,
         );
       });
+    });
+
+    group('lifecycle hooks', () {
+      for (final dryRun in [false, true]) {
+        test('are called in the correct order', () async {
+          final logger = TestLogger();
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: (path) => MelosWorkspaceConfig(
+              path: path,
+              name: 'test_workspace',
+              packages: [
+                createGlob('packages/**', currentDirectoryPath: path),
+              ],
+              commands: const CommandConfigs(
+                publish: PublishCommandConfigs(
+                  hooks: PublishLifecycleHooks(
+                    pre: Script(name: 'pre', run: 'echo pre'),
+                    post: Script(name: 'post', run: 'echo post'),
+                  ),
+                ),
+              ),
+            ),
+          );
+
+          for (final package in ['a', 'b']) {
+            await createProject(
+              workspaceDir,
+              PubSpec(name: package),
+              path: 'packages',
+            );
+          }
+
+          final config =
+              await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+          final melos = Melos(
+            logger: logger,
+            config: config,
+          );
+
+          await melos.publish(dryRun: dryRun);
+          final order = [
+            'melos publish [pre]',
+            'pre',
+            if (dryRun) 'melos publish --dry-run',
+            if (!dryRun) 'melos publish',
+            'melos publish [post]',
+            'post',
+          ];
+          final output = logger.output.normalizeNewLines().split('\n');
+          var previousIndex = -1;
+
+          for (final line in order) {
+            final index = output.indexOf(line);
+            expect(index, isNonNegative, reason: 'Line not found: $line');
+            expect(
+              index,
+              greaterThan(previousIndex),
+              reason: 'Line $line is out of order',
+            );
+            previousIndex = index;
+          }
+        });
+      }
     });
   });
 }

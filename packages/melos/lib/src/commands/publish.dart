@@ -12,7 +12,28 @@ mixin _PublishMixin on _ExecMixin {
     final workspace =
         await createWorkspace(global: global, packageFilters: packageFilters);
 
-    logger.command('melos publish${dryRun ? " --dry-run" : ''}');
+    return _runLifecycle(workspace, CommandWithLifecycle.publish, () {
+      return _publish(
+        workspace: workspace,
+        global: global,
+        packageFilters: packageFilters,
+        dryRun: dryRun,
+        gitTagVersion: gitTagVersion,
+        force: force,
+      );
+    });
+  }
+
+  Future<void> _publish({
+    required MelosWorkspace workspace,
+    GlobalOptions? global,
+    PackageFilters? packageFilters,
+    bool dryRun = true,
+    bool gitTagVersion = true,
+    // yes
+    bool force = false,
+  }) async {
+    logger.command('melos publish${dryRun ? " --$publishOptionDryRun" : ''}');
     logger.child(targetStyle(workspace.path)).newLine();
 
     final readRegistryProgress =
@@ -89,7 +110,7 @@ mixin _PublishMixin on _ExecMixin {
       logger.newLine();
     }
 
-    await _publish(
+    await _performPublishing(
       workspace,
       unpublishedPackages,
       dryRun: dryRun,
@@ -135,7 +156,7 @@ mixin _PublishMixin on _ExecMixin {
     return latestPackageVersion;
   }
 
-  Future<void> _publish(
+  Future<void> _performPublishing(
     MelosWorkspace workspace,
     List<Package> unpublishedPackages, {
     required bool dryRun,
@@ -162,6 +183,9 @@ mixin _PublishMixin on _ExecMixin {
       concurrency: 1,
       failFast: true,
       orderDependents: false,
+      additionalEnvironment: {
+        EnvironmentVariableKey.melosPublishDryRun: dryRun.toString(),
+      },
     );
 
     if (exitCode != 1) {
