@@ -29,6 +29,7 @@ import 'command_runner/analyze.dart';
 import 'command_runner/bootstrap.dart';
 import 'command_runner/clean.dart';
 import 'command_runner/exec.dart';
+import 'command_runner/format.dart';
 import 'command_runner/list.dart';
 import 'command_runner/publish.dart';
 import 'command_runner/run.dart';
@@ -79,6 +80,7 @@ class MelosCommandRunner extends CommandRunner<void> {
     addCommand(PublishCommand(config));
     addCommand(VersionCommand(config));
     addCommand(AnalyzeCommand(config));
+    addCommand(FormatCommand(config));
 
     // Keep this last to exclude all built-in commands listed above
     final script = ScriptCommand.fromConfig(config, exclude: commands.keys);
