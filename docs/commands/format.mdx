@@ -7,20 +7,23 @@ description: Learn more about the `format` command in Melos.
 
 <Info>Supports all [Melos filtering](/filters) flags.</Info>
 
-The format command is used to format the code in your Melos workspace according to Dart's formatting standards.
+The format command is used to format the code in your Melos workspace according
+to Dart's formatting standards.
 
 ```bash
 melos format
 ```
 
 <Info>
-  To learn more, visit the [Dart format](https://dart.dev/tools/dart-format) documentation.
+To learn more, visit the [Dart format](https://dart.dev/tools/dart-format) 
+documentation.
 </Info>
 
 
 ## --set-exit-if-changed
-Return exit code 1 if there are any formatting changes. This flag is particularly useful in CI/CD pipelines to automatically detect and reject commits that do not adhere to the formatting standards, ensuring code quality.
-
+Return exit code 1 if there are any formatting changes. This flag is
+particularly useful in CI/CD pipelines to automatically detect and reject
+commits that do not adhere to the formatting standards, ensuring code quality.
 
 ```bash
 melos format --set-exit-if-changed
@@ -31,7 +34,8 @@ By default, dart format overwrites the Dart files.
 </Info>
 
 ## --output
-This option is useful when you want to review formatting changes without directly overwriting your files.
+This option is useful when you want to review formatting changes without
+directly overwriting your files.
 
 ```bash
 melos format --output
@@ -51,14 +55,16 @@ Outputs the formatted code as a JSON object
 melos format -o json
 ```
 
-Lists the files that would be formatted, without showing the formatted content or making changes.
+Lists the files that would be formatted, without showing the formatted content
+or making changes.
 
 ```bash
 melos format -o none
 ```
 
 ## concurrency (-c)
-Defines the max concurrency value of how many packages will execute the command in at any one time. Defaults to `1`.
+Defines the max concurrency value of how many packages will execute the command
+in at any one time. Defaults to `1`.
 
 ```bash
 # Set a 5 concurrency
