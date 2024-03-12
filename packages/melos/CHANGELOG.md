@@ -1,3 +1,17 @@
+## 5.0.0
+
+> Note: This release has breaking changes.
+
+ - **REFACTOR**: Move `CommandConfigs` and `LifecycleHooks` to their own directories ([#652](https://github.com/invertase/melos/issues/652)). ([95f23716](https://github.com/invertase/melos/commit/95f23716b33152afb73a1b64a8302138fcbff6f7))
+ - **REFACTOR**: move environment variable related strings into one class ([#648](https://github.com/invertase/melos/issues/648)). ([2db32ec5](https://github.com/invertase/melos/commit/2db32ec568e64440ee03a85321f2ba60457d7012))
+ - **FIX**: use `git pull --tags` instead of `git fetch --tags` ([#468](https://github.com/invertase/melos/issues/468)). ([109f5f98](https://github.com/invertase/melos/commit/109f5f985dc65172f6392285cd0b239bd0b43fff))
+ - **FIX**: typo on help description of bootstrap --enforce-lockfile ([#636](https://github.com/invertase/melos/issues/636)). ([a5247561](https://github.com/invertase/melos/commit/a5247561804a1a030325366bcd05c6a6a7a5c7dd))
+ - **FEAT**: Add lifecycle hooks for `publish` ([#656](https://github.com/invertase/melos/issues/656)). ([ed826b39](https://github.com/invertase/melos/commit/ed826b39761039ba545d3ae7b18f491726d7ebe1))
+ - **FEAT**: built-in melos command for analyzing projects ([#655](https://github.com/invertase/melos/issues/655)). ([93db45df](https://github.com/invertase/melos/commit/93db45dffc0f8b23d97e11d67a4b9cc7b4818737))
+ - **FEAT**: Default to number of processors for exec concurrency ([#654](https://github.com/invertase/melos/issues/654)). ([43c6ddb7](https://github.com/invertase/melos/commit/43c6ddb72a89de1eed08193388996c9f9c15e1c2))
+ - **DOCS**: add more projects using melos ([#649](https://github.com/invertase/melos/issues/649)). ([30611f40](https://github.com/invertase/melos/commit/30611f40e14f34fce178fffebd44fff83f10fa50))
+ - **BREAKING** **FEAT**: make run script use melos_packages env variable scope ([#640](https://github.com/invertase/melos/issues/640)). ([e12ff57e](https://github.com/invertase/melos/commit/e12ff57efd71baae5eea20252d02894ec8be712e))
+
 ## 4.1.0
 
 > Note: This release has breaking changes.
