@@ -193,6 +193,7 @@ Available commands:
   clean       Clean this workspace and all packages. This deletes the temporary pub & ide files such
               as ".packages" & ".flutter-plugins". Supports all package filtering options.
   exec        Execute an arbitrary command in each package. Supports all package filtering options.
+  format      Idiomatically format Dart source code.
   list        List local packages in various output formats. Supports all package filtering options.
   publish     Publish any unpublished packages or package versions in your repository to pub.dev. Dry
               run is on by default.
