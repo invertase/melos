@@ -1,3 +1,7 @@
+## 5.1.0
+
+ - **FEAT**: format built in command ([#657](https://github.com/invertase/melos/issues/657)). ([e0491f54](https://github.com/invertase/melos/commit/e0491f5466f79ce56cd010f5970a783c34756480))
+
 ## 5.0.0
 
 > Note: This release has breaking changes.
