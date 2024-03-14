@@ -284,6 +284,10 @@ mixin _BootstrapMixin on _CleanMixin {
     // dependencies that have a different version specified in the workspace.
     final dependenciesToUpdate = workspaceDependencies.entries.where((entry) {
       if (!packageDependencies.containsKey(entry.key)) return false;
+      // TODO: We may want to replace the `pubspec` dependency with something
+      // else that is actively maintained, so we don't have to provide our own
+      // equality logic.
+      // See: https://github.com/invertase/melos/discussions/663
       if (_areDependenciesEqual(packageDependencies[entry.key], entry.value)) {
         return false;
       }
