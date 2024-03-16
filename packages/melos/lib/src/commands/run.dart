@@ -20,6 +20,33 @@ mixin _RunMixin on _Melos {
       );
     }
 
+    if (script.steps != null && script.steps!.isNotEmpty) {
+      //TODO(jessica): Reevaluate the design decision regarding execution
+      // options (e.g., concurrency) for scripts with steps.
+      // Current concern: Allowing execution options for scripts with steps
+      // might introduce complexity and unpredictability, especially if nested
+      // scripts also utilize concurrency.
+      if (script.exec != null) {
+        throw ScriptExecOptionsException._(
+          scriptName,
+        );
+      }
+      await _runMultipleScripts(
+        script,
+        global: global,
+        noSelect: noSelect,
+        scripts: config.scripts,
+        steps: script.steps!,
+      );
+      return;
+    }
+
+    if (script.run!.isEmpty && script.exec is! String) {
+      throw MissingScriptCommandException._(
+        scriptName,
+      );
+    }
+
     final scriptSourceCode = targetStyle(
       script.command(extraArgs).join(' ').withoutTrailing('\n'),
     );
@@ -159,6 +186,81 @@ mixin _RunMixin on _Melos {
       workingDirectory: config.path,
     );
   }
+
+  Future<void> _runMultipleScripts(
+    Script script, {
+    GlobalOptions? global,
+    bool noSelect = false,
+    required Scripts scripts,
+    required List<String> steps,
+  }) async {
+    final workspace = await createWorkspace(
+      global: global,
+    )
+      ..validate();
+
+    final environment = {
+      EnvironmentVariableKey.melosRootPath: config.path,
+      if (workspace.sdkPath != null)
+        EnvironmentVariableKey.melosSdkPath: workspace.sdkPath!,
+      if (workspace.childProcessPath != null)
+        EnvironmentVariableKey.path: workspace.childProcessPath!,
+      ...script.env,
+    };
+
+    await _executeScriptSteps(steps, scripts, script, environment);
+  }
+
+  Future<void> _executeScriptSteps(
+    List<String> steps,
+    Scripts scripts,
+    Script script,
+    Map<String, String> environment,
+  ) async {
+    for (final step in steps) {
+      final scriptCommand =
+          scripts.containsKey(step) ? 'melos run $step' : step;
+      final scriptSourceCode = targetStyle(
+        step.withoutTrailing('\n'),
+      );
+
+      await _executeAndLogCommand(
+        script,
+        scriptSourceCode,
+        scriptCommand,
+        environment,
+      );
+    }
+  }
+
+  Future<void> _executeAndLogCommand(
+    Script script,
+    String scriptSourceCode,
+    String scriptCommand,
+    Map<String, String> environment,
+  ) async {
+    logger.command('melos run ${script.name}');
+    logger.child(scriptSourceCode).child(runningLabel).newLine();
+
+    final exitCode = await startCommand(
+      [scriptCommand],
+      logger: logger,
+      environment: environment,
+      workingDirectory: config.path,
+    );
+
+    logger.newLine();
+    logger.command('melos run ${script.name}');
+    final resultLogger = logger.child(scriptSourceCode);
+
+    if (exitCode != 0) {
+      resultLogger.child(failedLabel);
+      throw ScriptException._(script.name);
+    } else {
+      resultLogger.child(successLabel);
+    }
+    logger.newLine();
+  }
 }
 
 class NoPackageFoundScriptException implements MelosException {
@@ -212,5 +314,32 @@ class ScriptException implements MelosException {
   @override
   String toString() {
     return 'ScriptException: The script $scriptName failed to execute.';
+  }
+}
+
+class ScriptExecOptionsException implements MelosException {
+  ScriptExecOptionsException._(this.scriptName);
+  final String scriptName;
+
+  @override
+  String toString() {
+    return 'ScriptExecOptionsException: Execution options are not supported '
+        'for the script "$scriptName". Ensure the script is designed to run '
+        'with the provided options or consult the documentation for supported '
+        'scripts.';
+  }
+}
+
+class MissingScriptCommandException implements MelosException {
+  MissingScriptCommandException._(this.scriptName);
+  final String scriptName;
+
+  @override
+  String toString() {
+    return 'MissingScriptCommandException: The script $scriptName failed '
+        'to execute. You must specify a script to run. '
+        'This can be done by filling "run" with a command, '
+        'defining a sequence of commands in the "steps", '
+        'or by providing a script execution definition in the "exec".';
   }
 }

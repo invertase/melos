@@ -116,11 +116,12 @@ ExecOptions(
 class Script {
   const Script({
     required this.name,
-    required this.run,
+    this.run,
     this.description,
     this.env = const {},
     this.packageFilters,
     this.exec,
+    this.steps = const [],
   });
 
   factory Script.fromYaml(
@@ -129,15 +130,18 @@ class Script {
     required String workspacePath,
   }) {
     final scriptPath = 'scripts/$name';
-    String run;
+    var run = '';
     String? description;
     var env = <String, String>{};
+    var steps = <String>[];
     PackageFilters? packageFilters;
     ExecOptions? exec;
 
     if (yaml is String) {
       run = yaml;
-    } else if (yaml is Map<Object?, Object?>) {
+    }
+
+    if (yaml is Map<Object?, Object?>) {
       final execYaml = yaml['exec'];
       if (execYaml is String) {
         if (yaml['run'] is String) {
@@ -147,12 +151,47 @@ class Script {
           );
         }
         run = execYaml;
+      }
+
+      if (execYaml is String) {
+        exec = const ExecOptions();
       } else {
-        run = assertKeyIsA<String>(
-          key: 'run',
+        final execMap = assertKeyIsA<Map<Object?, Object?>?>(
+          key: 'exec',
           map: yaml,
           path: scriptPath,
         );
+
+        exec = execMap != null
+            ? execOptionsFromYaml(execMap, scriptName: name)
+            : null;
+      }
+
+      final stepsList = yaml['steps'];
+      if (stepsList is List && stepsList.isNotEmpty) {
+        steps = assertListIsA<String>(
+          key: 'steps',
+          map: yaml,
+          isRequired: false,
+          assertItemIsA: (index, value) {
+            return assertIsA<String>(
+              value: value,
+              index: index,
+              path: scriptPath,
+            );
+          },
+        );
+      }
+
+      final runYaml = yaml['run'];
+      if (runYaml is String && runYaml.isNotEmpty) {
+        run = execYaml is String
+            ? execYaml
+            : assertKeyIsA<String>(
+                key: 'run',
+                map: yaml,
+                path: scriptPath,
+              );
       }
 
       description = assertKeyIsA<String?>(
@@ -189,27 +228,12 @@ class Script {
               path: 'scripts/$name/packageFilters',
               workspacePath: workspacePath,
             );
-
-      if (execYaml is String) {
-        exec = const ExecOptions();
-      } else {
-        final execMap = assertKeyIsA<Map<Object?, Object?>?>(
-          key: 'exec',
-          map: yaml,
-          path: scriptPath,
-        );
-
-        exec = execMap == null
-            ? null
-            : execOptionsFromYaml(execMap, scriptName: name);
-      }
-    } else {
-      throw MelosConfigException('Unsupported value for script $name');
     }
 
     return Script(
       name: name,
       run: run,
+      steps: steps,
       description: description,
       env: env,
       packageFilters: packageFilters,
@@ -266,7 +290,14 @@ class Script {
   final String name;
 
   /// The command specified by the user.
-  final String run;
+  final String? run;
+
+  /// A list of individual command steps to be executed as part of this script.
+  /// Each string in the list represents a separate command to be run.
+  /// These steps are executed in sequence. This is an alternative to
+  /// specifying a single command in the [run] variable. If [steps] is
+  /// provided, [run] should not be used.
+  final List<String>? steps;
 
   /// A short description, shown when using `melos run` with no argument.
   final String? description;
@@ -286,7 +317,7 @@ class Script {
   List<String> command([List<String>? extraArgs]) {
     String quoteScript(String script) => '"${script.replaceAll('"', r'\"')}"';
 
-    final scriptCommand = run.split(' ').toList();
+    final scriptCommand = run!.split(' ').toList();
     if (extraArgs != null && extraArgs.isNotEmpty) {
       scriptCommand.addAll(extraArgs);
     }
@@ -318,7 +349,9 @@ class Script {
   /// Validates the script. Throws a [MelosConfigException] if the script is
   /// invalid.
   void validate() {
-    if (exec != null && run.startsWith(_leadingMelosExecRegExp)) {
+    if (exec != null &&
+        run != null &&
+        run!.startsWith(_leadingMelosExecRegExp)) {
       throw MelosConfigException(
         'Do not use "melos exec" in "run" when also providing options in '
         '"exec". In this case the script in "run" is already being executed by '
@@ -337,6 +370,7 @@ class Script {
       if (description != null) 'description': description,
       if (env.isNotEmpty) 'env': env,
       if (packageFilters != null) 'packageFilters': packageFilters!.toJson(),
+      if (steps != null) 'steps': steps,
       if (exec != null) 'exec': exec!.toJson(),
     };
   }
@@ -350,6 +384,7 @@ class Script {
       other.description == description &&
       const DeepCollectionEquality().equals(other.env, env) &&
       other.packageFilters == packageFilters &&
+      other.steps == steps &&
       other.exec == exec;
 
   @override
@@ -360,6 +395,7 @@ class Script {
       description.hashCode ^
       const DeepCollectionEquality().hash(env) ^
       packageFilters.hashCode ^
+      steps.hashCode ^
       exec.hashCode;
 
   @override
@@ -371,6 +407,7 @@ Script(
   description: $description,
   env: $env,
   packageFilters: ${packageFilters.toString().indent('  ')},
+  steps: $steps,
   exec: ${exec.toString().indent('  ')},
 )''';
   }

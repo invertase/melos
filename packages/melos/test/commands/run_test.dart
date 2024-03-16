@@ -361,5 +361,195 @@ melos run test_script
         ),
       );
     });
+
+    test('throws an error if neither run, steps, nor exec are provided',
+        () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        runPubGet: true,
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: const Scripts({
+            'test_script': Script(
+              name: 'test_script',
+            ),
+          }),
+        ),
+      );
+
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'a'),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      expect(() => melos.run(scriptName: 'test_script'), throwsException);
+    });
+
+    test(
+        'throws an error if neither run or steps are provided, and exec '
+        'are options', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        runPubGet: true,
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: const Scripts({
+            'test_script': Script(
+              name: 'test_script',
+              exec: ExecOptions(),
+            ),
+          }),
+        ),
+      );
+
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'a'),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      expect(() => melos.run(scriptName: 'test_script'), throwsException);
+    });
+  });
+
+  group('multiple scripts', () {
+    test(
+        'verifies that a melos script can successfully call another '
+        'script as a step and execute commands', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        runPubGet: true,
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: const Scripts({
+            'hello_script': Script(
+              name: 'hello_script',
+              steps: ['test_script', 'echo "hello world"'],
+            ),
+            'test_script': Script(
+              name: 'test_script',
+              run: 'echo "test_script"',
+            ),
+          }),
+        ),
+      );
+
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'a'),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      await melos.run(scriptName: 'hello_script', noSelect: true);
+
+      expect(
+        logger.output.normalizeNewLines(),
+        ignoringAnsii(
+          '''
+melos run hello_script
+  └> test_script
+     └> RUNNING
+
+melos run test_script
+  └> echo "test_script"
+     └> RUNNING
+
+test_script
+
+melos run test_script
+  └> echo "test_script"
+     └> SUCCESS
+
+melos run hello_script
+  └> test_script
+     └> SUCCESS
+
+melos run hello_script
+  └> echo "hello world"
+     └> RUNNING
+
+hello world
+
+melos run hello_script
+  └> echo "hello world"
+     └> SUCCESS
+
+''',
+        ),
+      );
+    });
+
+    test(
+        'throws an error if a script defined with steps also includes exec '
+        'options', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        runPubGet: true,
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: const Scripts({
+            'hello_script': Script(
+              name: 'hello_script',
+              steps: ['test_script', 'echo "hello world"'],
+              exec: ExecOptions(
+                concurrency: 5,
+              ),
+            ),
+            'test_script': Script(
+              name: 'test_script',
+              run: 'echo "test_script"',
+            ),
+          }),
+        ),
+      );
+
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'a'),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      expect(
+        () => melos.run(scriptName: 'hello_script'),
+        throwsException,
+      );
+    });
   });
 }
