@@ -52,6 +52,36 @@ A short description, shown when using `melos run` with no argument.
 
 The command to execute.
 
+## steps
+
+Enables the combination of multiple scripts within a single script definition. 
+In the example below, the 'pre-commit' is configured to sequentially invoke the 
+format and analyze scripts.
+
+```yaml
+scripts:
+  pre-commit:
+    description: pre-commit git hook script
+    steps:
+      - format
+      - analyze
+  format:
+    description: Format Dart code.
+    run: melos format
+    exec:
+      concurrency: 5
+  analyze:
+    description: Analyze Dart code
+    run: melos analyze
+    exec:
+      concurrency: 5
+```
+
+Note: When utilizing the `steps`, it's important to understand that options 
+related to exec — such as concurrency — or `packageFilters` cannot be directly 
+applied within the steps configuration. Instead, these options should be 
+configured in the individual scripts that are being called as part of the step.
+
 ## exec
 
 Execute a script in multiple packages through `melos exec`.
