@@ -11,8 +11,10 @@ mixin _ExecMixin on _Melos {
     Map<String, String> extraEnvironment = const {},
   }) async {
     concurrency ??= Platform.numberOfProcessors;
-    final workspace =
-        await createWorkspace(global: global, packageFilters: packageFilters);
+    final workspace = await createWorkspace(
+      global: global,
+      packageFilters: packageFilters,
+    );
     final packages = workspace.filteredPackages.values;
 
     await _execForAllPackages(
@@ -117,52 +119,65 @@ mixin _ExecMixin on _Melos {
       packages.map((package) => MapEntry(package.name, Completer<int?>())),
     );
 
-    await pool.forEach<Package, void>(sortedPackages, (package) async {
-      if (failFast && failures.isNotEmpty) {
-        return;
-      }
+    CancelableOperation<void>? operation;
 
-      if (orderDependents) {
-        final dependenciesResults = await Future.wait(
-          package.allDependenciesInWorkspace.values
-              .map((package) => packageResults[package.name]?.future)
-              .whereNotNull(),
-        );
+    operation = CancelableOperation.fromFuture(
+      pool.forEach<Package, void>(sortedPackages, (package) async {
+        if (orderDependents) {
+          final dependenciesResults = await Future.wait(
+            package.allDependenciesInWorkspace.values
+                .map((package) => packageResults[package.name]?.future)
+                .whereNotNull(),
+          );
 
-        final dependencyFailed = dependenciesResults
-            .any((exitCode) => exitCode == null || exitCode > 0);
-        if (dependencyFailed) {
-          packageResults[package.name]?.complete();
-          failures[package.name] = null;
-          return;
+          final dependencyFailed = dependenciesResults
+              .any((exitCode) => exitCode == null || exitCode > 0);
+          if (dependencyFailed) {
+            packageResults[package.name]?.complete();
+            failures[package.name] = null;
+
+            if (failFast) {
+              await operation?.cancel();
+              operation = null;
+            }
+
+            return;
+          }
         }
-      }
 
-      if (!prefixLogs) {
-        logger
-          ..horizontalLine()
-          ..log(AnsiStyles.bgBlack.bold.italic('${package.name}:'));
-      }
+        if (!prefixLogs) {
+          logger
+            ..horizontalLine()
+            ..log(AnsiStyles.bgBlack.bold.italic('${package.name}:'));
+        }
 
-      final packageExitCode = await _execForPackage(
-        workspace,
-        package,
-        execArgs,
-        prefixLogs: prefixLogs,
-        extraEnvironment: additionalEnvironment,
-      );
-
-      packageResults[package.name]?.complete(packageExitCode);
-
-      if (packageExitCode > 0) {
-        failures[package.name] = packageExitCode;
-      } else if (!prefixLogs) {
-        logger.log(
-          AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
-              AnsiStyles.bgBlack(successLabel),
+        final packageExitCode = await _execForPackage(
+          workspace,
+          package,
+          execArgs,
+          prefixLogs: prefixLogs,
+          extraEnvironment: additionalEnvironment,
         );
-      }
-    }).drain<void>();
+
+        packageResults[package.name]?.complete(packageExitCode);
+
+        if (packageExitCode > 0) {
+          failures[package.name] = packageExitCode;
+        } else if (!prefixLogs) {
+          logger.log(
+            AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
+                AnsiStyles.bgBlack(successLabel),
+          );
+        }
+
+        if (packageExitCode > 0 && failFast) {
+          await operation?.cancel();
+          operation = null;
+        }
+      }).drain<void>(),
+    );
+
+    await operation?.valueOrCancellation();
 
     logger
       ..horizontalLine()
@@ -180,6 +195,9 @@ mixin _ExecMixin on _Melos {
           '${failures[packageName] == null ? '(dependency failed)' : '('
               'with exit code ${failures[packageName]})'}',
         );
+      }
+      if (failFast) {
+        exit(1);
       }
       exitCode = 1;
     } else {
