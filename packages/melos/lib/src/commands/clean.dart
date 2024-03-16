@@ -10,7 +10,7 @@ mixin _CleanMixin on _Melos {
 
     return _runLifecycle(
       workspace,
-      _CommandWithLifecycle.clean,
+      CommandWithLifecycle.clean,
       () async {
         logger.log('Cleaning workspace...');
 

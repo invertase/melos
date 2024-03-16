@@ -8,6 +8,7 @@ mixin _ExecMixin on _Melos {
     int? concurrency,
     bool failFast = false,
     bool orderDependents = false,
+    Map<String, String> extraEnvironment = const {},
   }) async {
     concurrency ??= Platform.numberOfProcessors;
     final workspace =
@@ -21,6 +22,7 @@ mixin _ExecMixin on _Melos {
       failFast: failFast,
       concurrency: concurrency,
       orderDependents: orderDependents,
+      additionalEnvironment: extraEnvironment,
     );
   }
 
@@ -30,11 +32,13 @@ mixin _ExecMixin on _Melos {
     Package package,
     List<String> execArgs, {
     bool prefixLogs = true,
+    Map<String, String> extraEnvironment = const {},
   }) async {
     final packagePrefix = '[${AnsiStyles.blue.bold(package.name)}]: ';
 
     final environment = {
       ...currentPlatform.environment,
+      ...extraEnvironment,
       EnvironmentVariableKey.melosPackageName: package.name,
       EnvironmentVariableKey.melosPackageVersion: package.version.toString(),
       EnvironmentVariableKey.melosPackagePath: package.path,
@@ -85,6 +89,7 @@ mixin _ExecMixin on _Melos {
     required int concurrency,
     required bool failFast,
     required bool orderDependents,
+    Map<String, String> additionalEnvironment = const {},
   }) async {
     final failures = <String, int?>{};
     final pool = Pool(concurrency);
@@ -144,6 +149,7 @@ mixin _ExecMixin on _Melos {
         package,
         execArgs,
         prefixLogs: prefixLogs,
+        extraEnvironment: additionalEnvironment,
       );
 
       packageResults[package.name]?.complete(packageExitCode);

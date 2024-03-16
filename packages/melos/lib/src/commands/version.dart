@@ -49,7 +49,7 @@ mixin _VersionMixin on _RunMixin {
       packageFilters: packageFilters?.copyWithDiff(null),
     );
 
-    return _runLifecycle(workspace, _CommandWithLifecycle.version, () {
+    return _runLifecycle(workspace, CommandWithLifecycle.version, () {
       return _version(
         workspace: workspace,
         global: global,
@@ -352,7 +352,7 @@ mixin _VersionMixin on _RunMixin {
       logger.newLine();
       await _runLifecycleScript(
         preCommit,
-        command: _CommandWithLifecycle.version,
+        command: CommandWithLifecycle.version,
       );
       logger.newLine();
     }

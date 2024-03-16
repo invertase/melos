@@ -55,18 +55,6 @@ ide:
   intellij: true
 
 scripts:
-  format:
-    description: Format Dart code.
-    run: dart format .
-
-  format:check:
-    description: Check formatting of Dart code.
-    run: dart format --output none --set-exit-if-changed .
-
-  analyze:
-    description: Analyze Dart code.
-    run: dart analyze . --fatal-infos
-
   test:
     description: Run tests in a specific package.
     run: dart test

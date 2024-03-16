@@ -180,16 +180,26 @@ Usage: melos <command> [arguments]
 Global options:
 -h, --help        Print this usage information.
     --verbose     Enable verbose logging.
-    --sdk-path    Path to the Dart/Flutter SDK that should be used. This command line option has precedence over the `sdkPath` option in the `melos.yaml` configuration file and the `MELOS_SDK_PATH` environment variable. To use the system-wide SDK, provide the special value "auto".
+    --sdk-path    Path to the Dart/Flutter SDK that should be used. This command line option has
+                  precedence over the `sdkPath` option in the `melos.yaml` configuration file and the
+                  `MELOS_SDK_PATH` environment variable. To use the system-wide SDK, provide the
+                  special value "auto".
 
 Available commands:
-  bootstrap   Initialize the workspace, link local packages together and install remaining package dependencies. Supports all package filtering options.
-  clean       Clean this workspace and all packages. This deletes the temporary pub & ide files such as ".packages" & ".flutter-plugins". Supports all package filtering options.
+  analyze     Analyzes all packages in your project for potential issues in a single run. Optionally
+              configure severity levels. Supports all package filtering options.
+  bootstrap   Initialize the workspace, link local packages together and install remaining package
+              dependencies. Supports all package filtering options.
+  clean       Clean this workspace and all packages. This deletes the temporary pub & ide files such
+              as ".packages" & ".flutter-plugins". Supports all package filtering options.
   exec        Execute an arbitrary command in each package. Supports all package filtering options.
+  format      Idiomatically format Dart source code.
   list        List local packages in various output formats. Supports all package filtering options.
-  publish     Publish any unpublished packages or package versions in your repository to pub.dev. Dry run is on by default.
+  publish     Publish any unpublished packages or package versions in your repository to pub.dev. Dry
+              run is on by default.
   run         Run a script by name defined in the workspace melos.yaml config file.
-  version     Automatically version and generate changelogs based on the Conventional Commits specification. Supports all package filtering options.
+  version     Automatically version and generate changelogs based on the Conventional Commits
+              specification. Supports all package filtering options.
 
 Run "melos help <command>" for more information about a command.
 ```
