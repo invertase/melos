@@ -551,5 +551,92 @@ melos run hello_script
         throwsException,
       );
     });
+
+    test(
+        'verifies that a melos script can call another script containing '
+        'steps, and ensures all commands in those steps are executed '
+        'successfully', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        runPubGet: true,
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: const Scripts({
+            'hello_script': Script(
+              name: 'hello_script',
+              steps: ['test_script', 'echo "hello world"'],
+            ),
+            'test_script': Script(
+              name: 'test_script',
+              steps: ['echo "test_script_1"', 'echo "test_script_2"'],
+            ),
+          }),
+        ),
+      );
+
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'a'),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      await melos.run(scriptName: 'hello_script', noSelect: true);
+
+      expect(
+        logger.output.normalizeNewLines(),
+        ignoringAnsii(
+          '''
+melos run hello_script
+  └> test_script
+     └> RUNNING
+
+melos run test_script
+  └> echo "test_script_1"
+     └> RUNNING
+
+${currentPlatform.isWindows ? '"test_script_1"' : 'test_script_1'}
+
+melos run test_script
+  └> echo "test_script_1"
+     └> SUCCESS
+
+melos run test_script
+  └> echo "test_script_2"
+     └> RUNNING
+
+${currentPlatform.isWindows ? '"test_script_2"' : 'test_script_2'}
+
+melos run test_script
+  └> echo "test_script_2"
+     └> SUCCESS
+
+
+melos run hello_script
+  └> test_script
+     └> SUCCESS
+
+melos run hello_script
+  └> echo "hello world"
+     └> RUNNING
+
+${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
+
+melos run hello_script
+  └> echo "hello world"
+     └> SUCCESS
+
+''',
+        ),
+      );
+    });
   });
 }
