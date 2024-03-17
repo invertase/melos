@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
