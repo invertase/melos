@@ -63,16 +63,17 @@ scripts:
   pre-commit:
     description: pre-commit git hook script
     steps:
+      - echo 'hello world'
       - format
       - analyze
   format:
     description: Format Dart code.
-    run: melos format
+    run: dart format .
     exec:
       concurrency: 5
   analyze:
     description: Analyze Dart code
-    run: melos analyze
+    run: dart analyze .
     exec:
       concurrency: 5
 ```
