@@ -255,7 +255,6 @@ mixin _RunMixin on _Melos {
       final scriptCommand =
           scripts.containsKey(step) ? 'melos run $step' : step;
 
-      /// TODO: return scripts.containsKey(step) if true
       final scriptSourceCode = targetStyle(
         step.withoutTrailing('\n'),
       );
