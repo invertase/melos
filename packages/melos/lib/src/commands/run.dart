@@ -41,7 +41,7 @@ mixin _RunMixin on _Melos {
       return;
     }
 
-    if (script.run!.isEmpty && script.exec is! String) {
+    if (script.run == null && script.exec is! String) {
       throw MissingScriptCommandException._(
         scriptName,
       );

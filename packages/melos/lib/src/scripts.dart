@@ -130,7 +130,7 @@ class Script {
     required String workspacePath,
   }) {
     final scriptPath = 'scripts/$name';
-    var run = '';
+    String? run;
     String? description;
     var env = <String, String>{};
     var steps = <String>[];
@@ -139,9 +139,7 @@ class Script {
 
     if (yaml is String) {
       run = yaml;
-    }
-
-    if (yaml is Map<Object?, Object?>) {
+    } else if (yaml is Map<Object?, Object?>) {
       final execYaml = yaml['exec'];
       if (execYaml is String) {
         if (yaml['run'] is String) {
@@ -228,6 +226,8 @@ class Script {
               path: 'scripts/$name/packageFilters',
               workspacePath: workspacePath,
             );
+    } else {
+      throw MelosConfigException('Unsupported value for script $name');
     }
 
     return Script(
