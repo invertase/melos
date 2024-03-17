@@ -182,6 +182,10 @@ mixin _ExecMixin on _Melos {
 
     await operation.valueOrCancellation();
 
+    if (failFast) {
+      runningPids.forEach(Process.killPid);
+    }
+
     logger
       ..horizontalLine()
       ..newLine()
@@ -231,9 +235,6 @@ mixin _ExecMixin on _Melos {
         }
       }
 
-      if (failFast) {
-        runningPids.forEach(Process.killPid);
-      }
       exitCode = 1;
     } else {
       resultLogger.child(successLabel);
