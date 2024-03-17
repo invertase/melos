@@ -119,10 +119,12 @@ mixin _ExecMixin on _Melos {
       packages.map((package) => MapEntry(package.name, Completer<int?>())),
     );
 
-    CancelableOperation<void>? operation;
+    late final CancelableOperation<void> operation;
 
     operation = CancelableOperation.fromFuture(
       pool.forEach<Package, void>(sortedPackages, (package) async {
+        assert(!(failFast && failures.isNotEmpty));
+
         if (orderDependents) {
           final dependenciesResults = await Future.wait(
             package.allDependenciesInWorkspace.values
@@ -135,11 +137,13 @@ mixin _ExecMixin on _Melos {
           if (dependencyFailed) {
             packageResults[package.name]?.complete();
             failures[package.name] = null;
+            package.allDependentsInWorkspace.forEach((_, dependent) {
+              failures[dependent.name] = null;
+            });
 
-            if (failFast) {
-              await operation?.cancel();
-              operation = null;
-            }
+            // cancel in case of dependency failure, irrespective of failFast
+            // or not
+            await operation.cancel();
 
             return;
           }
@@ -171,13 +175,12 @@ mixin _ExecMixin on _Melos {
         }
 
         if (packageExitCode > 0 && failFast) {
-          await operation?.cancel();
-          operation = null;
+          await operation.cancel();
         }
       }).drain<void>(),
     );
 
-    await operation?.valueOrCancellation();
+    await operation.valueOrCancellation();
 
     logger
       ..horizontalLine()
@@ -196,8 +199,40 @@ mixin _ExecMixin on _Melos {
               'with exit code ${failures[packageName]})'}',
         );
       }
+
+      final canceled = <String>[];
+      for (final package in packages) {
+        if (failures.containsKey(package.name)) {
+          continue;
+        }
+
+        if (packageResults.containsKey(package.name)) {
+          final packageResult = packageResults[package.name]!;
+
+          if (packageResult.isCompleted) {
+            final exitCode = await packageResult.future;
+
+            if (exitCode == 0) {
+              continue;
+            }
+          }
+        }
+
+        canceled.add(package.name);
+      }
+
+      if (canceled.isNotEmpty) {
+        final canceledLogger = resultLogger
+            .child('$canceledLabel (in ${canceled.length} packages)');
+        for (final packageName in canceled) {
+          canceledLogger.child(
+            '${errorPackageNameStyle(packageName)} (due to failFast)',
+          );
+        }
+      }
+
       if (failFast) {
-        exit(1);
+        runningPids.forEach(Process.killPid);
       }
       exitCode = 1;
     } else {
