@@ -72,6 +72,125 @@ ${'-' * terminalWidth}
       );
     });
 
+    group('concurrent processes', () {
+      test('get cancel on first fail when fail fast is enabled', () async {
+        final workspaceDir = await createTemporaryWorkspace();
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'a'),
+        );
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'b'),
+        );
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'c'),
+        );
+
+        final logger = TestLogger();
+        final config =
+        await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        await melos.exec(
+          ['exit', '1'],
+          concurrency: 2,
+          orderDependents: true,
+          failFast: true,
+        );
+
+        expect(
+          logger.output.normalizeNewLines(),
+          ignoringAnsii(
+            '''
+\$ melos exec
+  └> exit 1
+     └> RUNNING (in 3 packages)
+
+${'-' * terminalWidth}
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> exit 1
+     └> FAILED (in 1 packages)
+        └> c (with exit code 1)
+     └> CANCELED (in 2 packages)
+        └> a (due to failFast)
+        └> b (due to failFast)
+''',
+          ),
+        );
+      });
+
+      test('keep running when fail fast is not enabled', () async {
+        final workspaceDir = await createTemporaryWorkspace();
+
+        await createProject(
+          workspaceDir,
+          PubSpec(
+            name: 'a',
+            dependencies: {'c': HostedReference(VersionConstraint.any)},
+          ),
+        );
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'b'),
+        );
+
+        await createProject(
+          workspaceDir,
+          PubSpec(
+            name: 'c',
+            dependencies: {'b': HostedReference(VersionConstraint.any)},
+          ),
+        );
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        await melos.exec(
+          ['exit', '1'],
+          concurrency: 3,
+          orderDependents: true,
+        );
+
+        expect(
+          logger.output.normalizeNewLines(),
+          ignoringAnsii(
+            '''
+\$ melos exec
+  └> exit 1
+     └> RUNNING (in 3 packages)
+
+${'-' * terminalWidth}
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> exit 1
+     └> FAILED (in 3 packages)
+        └> b (with exit code 1)
+        └> c (dependency failed)
+        └> a (dependency failed)
+''',
+          ),
+        );
+      });
+    });
+
     group('order dependents', () {
       test('sorts execution order topologically', () async {
         final workspaceDir = await createTemporaryWorkspace();
@@ -128,123 +247,6 @@ ${'-' * terminalWidth}
 \$ melos exec
   └> echo hello world
      └> SUCCESS
-''',
-          ),
-        );
-      });
-
-      test('fails fast cancels all running processes on first fail', () async {
-        final workspaceDir = await createTemporaryWorkspace();
-
-        await createProject(
-          workspaceDir,
-          const PubSpec(name: 'a'),
-        );
-
-        await createProject(
-          workspaceDir,
-          const PubSpec(name: 'b'),
-        );
-
-        await createProject(
-          workspaceDir,
-          const PubSpec(name: 'c'),
-        );
-
-        final logger = TestLogger();
-        final config =
-            await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
-        final melos = Melos(
-          logger: logger,
-          config: config,
-        );
-
-        await melos.exec(
-          ['exit', '1'],
-          concurrency: 2,
-          orderDependents: true,
-          failFast: true,
-        );
-
-        expect(
-          logger.output.normalizeNewLines(),
-          ignoringAnsii(
-            '''
-\$ melos exec
-  └> exit 1
-     └> RUNNING (in 3 packages)
-
-${'-' * terminalWidth}
-${'-' * terminalWidth}
-
-\$ melos exec
-  └> exit 1
-     └> FAILED (in 1 packages)
-        └> c (with exit code 1)
-     └> CANCELED (in 2 packages)
-        └> a (due to failFast)
-        └> b (due to failFast)
-''',
-          ),
-        );
-      });
-
-      test('all processes fail fail fast is not enabled', () async {
-        final workspaceDir = await createTemporaryWorkspace();
-
-        await createProject(
-          workspaceDir,
-          PubSpec(
-            name: 'a',
-            dependencies: {'c': HostedReference(VersionConstraint.any)},
-          ),
-        );
-
-        await createProject(
-          workspaceDir,
-          const PubSpec(name: 'b'),
-        );
-
-        await createProject(
-          workspaceDir,
-          PubSpec(
-            name: 'c',
-            dependencies: {'b': HostedReference(VersionConstraint.any)},
-          ),
-        );
-
-        final logger = TestLogger();
-        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
-          workspaceDir,
-        );
-        final melos = Melos(
-          logger: logger,
-          config: config,
-        );
-
-        await melos.exec(
-          ['exit', '1'],
-          concurrency: 3,
-          orderDependents: true,
-        );
-
-        expect(
-          logger.output.normalizeNewLines(),
-          ignoringAnsii(
-            '''
-\$ melos exec
-  └> exit 1
-     └> RUNNING (in 3 packages)
-
-${'-' * terminalWidth}
-${'-' * terminalWidth}
-
-\$ melos exec
-  └> exit 1
-     └> FAILED (in 3 packages)
-        └> b (with exit code 1)
-        └> c (dependency failed)
-        └> a (dependency failed)
 ''',
           ),
         );
