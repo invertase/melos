@@ -482,7 +482,7 @@ melos run test_script
   └> echo "test_script"
      └> RUNNING
 
-test_script
+${currentPlatform.isWindows ? '"test_script"' : 'test_script'}
 
 melos run test_script
   └> echo "test_script"
@@ -496,7 +496,7 @@ melos run hello_script
   └> echo "hello world"
      └> RUNNING
 
-hello world
+${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
 
 melos run hello_script
   └> echo "hello world"
