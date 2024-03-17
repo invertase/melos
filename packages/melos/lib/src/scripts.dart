@@ -149,9 +149,6 @@ class Script {
           );
         }
         run = execYaml;
-      }
-
-      if (execYaml is String) {
         exec = const ExecOptions();
       } else {
         final execMap = assertKeyIsA<Map<Object?, Object?>?>(
