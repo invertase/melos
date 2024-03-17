@@ -1,4 +1,5 @@
 import 'package:melos/melos.dart';
+import 'package:melos/src/commands/runner.dart';
 import 'package:melos/src/common/environment_variable_key.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
@@ -636,6 +637,49 @@ melos run hello_script
 
 ''',
         ),
+      );
+    });
+
+    test(
+        'throw an error if correctly identifies when a script indirectly '
+        'calls itself through another script, leading to a recursive call',
+        () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        runPubGet: true,
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: const Scripts({
+            'hello_script': Script(
+              name: 'hello_script',
+              steps: ['test_script', 'echo "hello world"'],
+            ),
+            'test_script': Script(
+              name: 'test_script',
+              steps: ['echo "test_script_1"', 'hello_script'],
+            ),
+          }),
+        ),
+      );
+
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'a'),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      expect(
+        () => melos.run(scriptName: 'hello_script', noSelect: true),
+        throwsA(const TypeMatcher<RecursiveScriptCallException>()),
       );
     });
   });

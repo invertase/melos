@@ -31,6 +31,9 @@ mixin _RunMixin on _Melos {
           scriptName,
         );
       }
+
+      _detectRecursiveScriptCalls(script);
+
       await _runMultipleScripts(
         script,
         global: global,
@@ -70,6 +73,37 @@ mixin _RunMixin on _Melos {
       throw ScriptException._(script.name);
     }
     resultLogger.child(successLabel);
+  }
+
+  /// Detects recursive script calls within the provided [script].
+  ///
+  /// This method recursively traverses the steps of the script to check
+  /// for any recursive calls. If a step calls another script that
+  /// eventually leads back to the original script, it indicates a
+  /// recursive script call, which can result in an infinite loop during
+  /// execution.
+  ///
+  void _detectRecursiveScriptCalls(Script script) {
+    final visitedScripts = <String>{};
+
+    void traverseSteps(Script currentScript) {
+      visitedScripts.add(currentScript.name);
+
+      for (final step in currentScript.steps!) {
+        if (visitedScripts.contains(step)) {
+          throw RecursiveScriptCallException._(step);
+        }
+
+        final nestedScript = config.scripts[step];
+        if (nestedScript != null) {
+          traverseSteps(nestedScript);
+        }
+      }
+
+      visitedScripts.remove(currentScript.name);
+    }
+
+    traverseSteps(script);
   }
 
   Future<String> _pickScript(MelosWorkspaceConfig config) async {
@@ -220,6 +254,8 @@ mixin _RunMixin on _Melos {
     for (final step in steps) {
       final scriptCommand =
           scripts.containsKey(step) ? 'melos run $step' : step;
+
+      /// TODO: return scripts.containsKey(step) if true
       final scriptSourceCode = targetStyle(
         step.withoutTrailing('\n'),
       );
@@ -341,5 +377,18 @@ class MissingScriptCommandException implements MelosException {
         'This can be done by filling "run" with a command, '
         'defining a sequence of commands in the "steps", '
         'or by providing a script execution definition in the "exec".';
+  }
+}
+
+class RecursiveScriptCallException implements MelosException {
+  RecursiveScriptCallException._(this.scriptName);
+
+  final String scriptName;
+
+  @override
+  String toString() {
+    return 'RecursiveScriptCallException: Detected a recursive call in script '
+        'execution. The script "$scriptName" calls itself or forms a recursive '
+        'loop.';
   }
 }
