@@ -132,18 +132,12 @@ mixin _ExecMixin on _Melos {
                 .whereNotNull(),
           );
 
-          final dependencyFailed = dependenciesResults
-              .any((exitCode) => exitCode == null || exitCode > 0);
+          final dependencyFailed = dependenciesResults.any(
+            (exitCode) => exitCode == null || exitCode > 0,
+          );
           if (dependencyFailed) {
             packageResults[package.name]?.complete();
             failures[package.name] = null;
-            package.allDependentsInWorkspace.forEach((_, dependent) {
-              failures[dependent.name] = null;
-            });
-
-            // cancel in case of dependency failure, irrespective of failFast
-            // or not
-            await operation.cancel();
 
             return;
           }
