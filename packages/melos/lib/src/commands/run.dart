@@ -21,11 +21,6 @@ mixin _RunMixin on _Melos {
     }
 
     if (script.steps != null && script.steps!.isNotEmpty) {
-      //TODO(jessica): Reevaluate the design decision regarding execution
-      // options (e.g., concurrency) for scripts with steps.
-      // Current concern: Allowing execution options for scripts with steps
-      // might introduce complexity and unpredictability, especially if nested
-      // scripts also utilize concurrency.
       if (script.exec != null) {
         throw ScriptExecOptionsException._(
           scriptName,
@@ -82,7 +77,6 @@ mixin _RunMixin on _Melos {
   /// eventually leads back to the original script, it indicates a
   /// recursive script call, which can result in an infinite loop during
   /// execution.
-  ///
   void _detectRecursiveScriptCalls(Script script) {
     final visitedScripts = <String>{};
 
