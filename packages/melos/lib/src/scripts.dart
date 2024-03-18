@@ -133,99 +133,111 @@ class Script {
     String? run;
     String? description;
     var env = <String, String>{};
-    var steps = <String>[];
+    final List<String> steps;
     PackageFilters? packageFilters;
     ExecOptions? exec;
 
     if (yaml is String) {
       run = yaml;
-    } else if (yaml is Map<Object?, Object?>) {
-      final execYaml = yaml['exec'];
-      if (execYaml is String) {
-        if (yaml['run'] is String) {
-          throw MelosConfigException(
-            'The script $name specifies a command in both "run" and "exec". '
-            'Remove one of them.',
-          );
-        }
-        run = execYaml;
-        exec = const ExecOptions();
-      } else {
-        final execMap = assertKeyIsA<Map<Object?, Object?>?>(
-          key: 'exec',
-          map: yaml,
-          path: scriptPath,
-        );
-
-        exec = execMap != null
-            ? execOptionsFromYaml(execMap, scriptName: name)
-            : null;
-      }
-
-      final stepsList = yaml['steps'];
-      if (stepsList is List && stepsList.isNotEmpty) {
-        steps = assertListIsA<String>(
-          key: 'steps',
-          map: yaml,
-          isRequired: false,
-          assertItemIsA: (index, value) {
-            return assertIsA<String>(
-              value: value,
-              index: index,
-              path: scriptPath,
-            );
-          },
-        );
-      }
-
-      final runYaml = yaml['run'];
-      if (runYaml is String && runYaml.isNotEmpty) {
-        run = execYaml is String
-            ? execYaml
-            : assertKeyIsA<String>(
-                key: 'run',
-                map: yaml,
-                path: scriptPath,
-              );
-      }
-
-      description = assertKeyIsA<String?>(
-        key: 'description',
-        map: yaml,
-        path: scriptPath,
+      steps = [];
+      return Script(
+        name: name,
+        run: run,
+        steps: steps,
+        description: description,
+        env: env,
+        packageFilters: packageFilters,
+        exec: exec,
       );
-      final envMap = assertKeyIsA<Map<Object?, Object?>?>(
-        key: 'env',
-        map: yaml,
-        path: scriptPath,
-      );
+    }
 
-      env = <String, String>{
-        if (envMap != null)
-          for (final entry in envMap.entries)
-            assertIsA<String>(
-              value: entry.key,
-              key: 'env',
-              path: scriptPath,
-            ): entry.value.toString(),
-      };
-
-      final packageFiltersMap = assertKeyIsA<Map<Object?, Object?>?>(
-        key: 'packageFilters',
-        map: yaml,
-        path: scriptPath,
-      );
-
-      packageFilters = packageFiltersMap == null
-          ? null
-          : PackageFilters.fromYaml(
-              packageFiltersMap,
-              path: 'scripts/$name/packageFilters',
-              workspacePath: workspacePath,
-            );
-    } else {
+    if (yaml is! Map<Object?, Object?>) {
       throw MelosConfigException('Unsupported value for script $name');
     }
+
+    final execYaml = yaml['exec'];
+    if (execYaml is String) {
+      if (yaml['run'] is String) {
+        throw MelosConfigException(
+          'The script $name specifies a command in both "run" and "exec". '
+          'Remove one of them.',
+        );
+      }
+      run = execYaml;
+      exec = const ExecOptions();
+    } else {
+      final execMap = assertKeyIsA<Map<Object?, Object?>?>(
+        key: 'exec',
+        map: yaml,
+        path: scriptPath,
+      );
+
+      exec = execMap != null
+          ? execOptionsFromYaml(execMap, scriptName: name)
+          : null;
+    }
+
+    final stepsList = yaml['steps'];
+    steps = stepsList is List && stepsList.isNotEmpty
+        ? assertListIsA<String>(
+            key: 'steps',
+            map: yaml,
+            isRequired: false,
+            assertItemIsA: (index, value) {
+              return assertIsA<String>(
+                value: value,
+                index: index,
+                path: scriptPath,
+              );
+            },
+          )
+        : [];
+
+    final runYaml = yaml['run'];
+    if (runYaml is String && runYaml.isNotEmpty) {
+      run = execYaml is String
+          ? execYaml
+          : assertKeyIsA<String>(
+              key: 'run',
+              map: yaml,
+              path: scriptPath,
+            );
+    }
+
+    description = assertKeyIsA<String?>(
+      key: 'description',
+      map: yaml,
+      path: scriptPath,
+    );
+    final envMap = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'env',
+      map: yaml,
+      path: scriptPath,
+    );
+
+    env = <String, String>{
+      if (envMap != null)
+        for (final entry in envMap.entries)
+          assertIsA<String>(
+            value: entry.key,
+            key: 'env',
+            path: scriptPath,
+          ): entry.value.toString(),
+    };
+
+    final packageFiltersMap = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'packageFilters',
+      map: yaml,
+      path: scriptPath,
+    );
+
+    packageFilters = packageFiltersMap == null
+        ? null
+        : PackageFilters.fromYaml(
+            packageFiltersMap,
+            path: 'scripts/$name/packageFilters',
+            workspacePath: workspacePath,
+          );
 
     return Script(
       name: name,
