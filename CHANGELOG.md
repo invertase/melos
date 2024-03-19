@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2024-03-19
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v5.2.0`](#melos---v520)
+
+---
+
+#### `melos` - `v5.2.0`
+
+ - **FEAT**: add support for combining scripts ([#664](https://github.com/invertase/melos/issues/664)). ([aabf21c5](https://github.com/invertase/melos/commit/aabf21c5847f68b364098b9458bae053292795c8))
+
+
 ## 2024-03-13
 
 ### Changes

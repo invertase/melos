@@ -1,3 +1,7 @@
+## 5.2.0
+
+ - **FEAT**: add support for combining scripts ([#664](https://github.com/invertase/melos/issues/664)). ([aabf21c5](https://github.com/invertase/melos/commit/aabf21c5847f68b364098b9458bae053292795c8))
+
 ## 5.1.0
 
  - **FEAT**: format built in command ([#657](https://github.com/invertase/melos/issues/657)). ([e0491f54](https://github.com/invertase/melos/commit/e0491f5466f79ce56cd010f5970a783c34756480))
