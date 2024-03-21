@@ -17,6 +17,7 @@ executables:
 dependencies:
   ansi_styles: ^0.3.2+1
   args: ^2.4.2
+  async: ^2.11.0
   cli_launcher: ^0.3.1
   cli_util: ^0.4.1
   collection: ^1.18.0

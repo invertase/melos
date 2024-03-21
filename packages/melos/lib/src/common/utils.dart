@@ -457,6 +457,10 @@ Future<Process> startCommandRaw(
   );
 }
 
+final _runningPids = <int>[];
+
+List<int> get runningPids => UnmodifiableListView(_runningPids);
+
 Future<int> startCommand(
   List<String> command, {
   String? prefix,
@@ -478,6 +482,8 @@ Future<int> startCommand(
     environment: environment,
     includeParentEnvironment: includeParentEnvironment,
   );
+
+  _runningPids.add(process.pid);
 
   var stdoutStream = process.stdout;
   var stderrStream = process.stderr;
@@ -533,6 +539,8 @@ Future<int> startCommand(
   await processStdoutCompleter.future;
   await processStderrCompleter.future;
   final exitCode = await process.exitCode;
+
+  _runningPids.remove(process.pid);
 
   if (onlyOutputOnError && exitCode > 0) {
     logger.stdout(utf8.decode(processStdout, allowMalformed: true));

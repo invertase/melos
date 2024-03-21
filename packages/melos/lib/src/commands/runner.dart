@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:ansi_styles/ansi_styles.dart';
+import 'package:async/async.dart';
 import 'package:cli_util/cli_logging.dart';
 import 'package:collection/collection.dart';
 import 'package:file/local.dart';
@@ -31,8 +32,8 @@ import '../common/pending_package_update.dart';
 import '../common/platform.dart';
 import '../common/utils.dart' as utils;
 import '../common/utils.dart';
-import '../common/versioning.dart';
 import '../common/versioning.dart' as versioning;
+import '../common/versioning.dart';
 import '../global_options.dart';
 import '../lifecycle_hooks/lifecycle_hooks.dart';
 import '../logging.dart';

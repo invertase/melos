@@ -24,6 +24,7 @@ final successLabel = successLableColor(labelStyle('SUCCESS'));
 final warningLabel = warningLabelColor(labelStyle('WARNING'));
 final errorLabel = errorLabelColor(labelStyle('ERROR'));
 final failedLabel = errorLabelColor(labelStyle('FAILED'));
+final canceledLabel = errorLabelColor(labelStyle('CANCELED'));
 final hintLabel = hintLabelColor(labelStyle('HINT'));
 final runningLabel = commandLabelColor(labelStyle('RUNNING'));
 final checkLabel = AnsiStyles.greenBright('✓');
