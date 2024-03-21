@@ -21,8 +21,10 @@
     [
       "Commands",
       [
+        ["analyze", "/commands/analyze"],
         ["bootstrap", "/commands/bootstrap"],
         ["clean", "/commands/clean"],
+        ["format", "/commands/format"],
         ["exec", "/commands/exec"],
         ["list", "/commands/list"],
         ["publish", "/commands/publish"],
