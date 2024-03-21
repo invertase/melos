@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2024-03-21
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v5.2.1`](#melos---v521)
+
+---
+
+#### `melos` - `v5.2.1`
+
+ - **FIX**: exec command with failFast should fail immediately ([#665](https://github.com/invertase/melos/issues/665)). ([a5ff6da9](https://github.com/invertase/melos/commit/a5ff6da983130299a2170cb38b6bf1c19ac77cc9))
+ - **FIX**: fix diff functionality ([#669](https://github.com/invertase/melos/issues/669)). ([08d6ec2a](https://github.com/invertase/melos/commit/08d6ec2a97df386e69b2fc4baa736f152f1f3ab8))
+
+
 ## 2024-03-19
 
 ### Changes

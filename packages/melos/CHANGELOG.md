@@ -1,3 +1,8 @@
+## 5.2.1
+
+ - **FIX**: exec command with failFast should fail immediately ([#665](https://github.com/invertase/melos/issues/665)). ([a5ff6da9](https://github.com/invertase/melos/commit/a5ff6da983130299a2170cb38b6bf1c19ac77cc9))
+ - **FIX**: fix diff functionality ([#669](https://github.com/invertase/melos/issues/669)). ([08d6ec2a](https://github.com/invertase/melos/commit/08d6ec2a97df386e69b2fc4baa736f152f1f3ab8))
+
 ## 5.2.0
 
  - **FEAT**: add support for combining scripts ([#664](https://github.com/invertase/melos/issues/664)). ([aabf21c5](https://github.com/invertase/melos/commit/aabf21c5847f68b364098b9458bae053292795c8))
