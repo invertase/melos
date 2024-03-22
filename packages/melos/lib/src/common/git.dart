@@ -419,7 +419,9 @@ Future<String> _resolveRevisionRange(
   if (revisionRange != null) {
     if (revisionRange.isEmpty) {
       revisionRange = null;
-    } else if (!_gitVersionRangeShortHandRegExp.hasMatch(revisionRange)) {
+    } else if (_gitVersionRangeShortHandRegExp.hasMatch(revisionRange)) {
+      return revisionRange;
+    } else {
       // If the revision range is not a valid revision range short hand then we
       // assume it's a commit or tag and default to the range from that
       // commit/tag to HEAD.
