@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2024-03-25
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v5.2.2`](#melos---v522)
+
+---
+
+#### `melos` - `v5.2.2`
+
+ - **FIX**: revisionRange not resolving to correct diff ([#674](https://github.com/invertase/melos/issues/674)). ([289a2f73](https://github.com/invertase/melos/commit/289a2f73101569a802064c758e9b2e4210349272))
+
+
 ## 2024-03-21
 
 ### Changes

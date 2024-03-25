@@ -1,3 +1,7 @@
+## 5.2.2
+
+ - **FIX**: revisionRange not resolving to correct diff ([#674](https://github.com/invertase/melos/issues/674)). ([289a2f73](https://github.com/invertase/melos/commit/289a2f73101569a802064c758e9b2e4210349272))
+
 ## 5.2.1
 
  - **FIX**: exec command with failFast should fail immediately ([#665](https://github.com/invertase/melos/issues/665)). ([a5ff6da9](https://github.com/invertase/melos/commit/a5ff6da983130299a2170cb38b6bf1c19ac77cc9))
