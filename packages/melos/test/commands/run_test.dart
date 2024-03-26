@@ -592,9 +592,28 @@ melos run hello_script
 
       await melos.run(scriptName: 'hello_script', noSelect: true);
 
+      /// Resolve flaky test in linux environments
+      Matcher ignoringDependencyMessages(String expected) {
+        return predicate(
+          (actual) {
+            final normalizedActual = actual
+                .toString()
+                .split('\n')
+                .where(
+                  (line) =>
+                      !line.startsWith('Resolving dependencies...') &&
+                      !line.startsWith('Got dependencies!'),
+                )
+                .join('\n');
+            return ignoringAnsii(expected).matches(normalizedActual, {});
+          },
+          'ignores dependency resolution messages',
+        );
+      }
+
       expect(
         logger.output.normalizeNewLines(),
-        ignoringAnsii(
+        ignoringDependencyMessages(
           '''
 melos run hello_script
   └> test_script
@@ -638,6 +657,103 @@ melos run hello_script
 ''',
         ),
       );
+
+      //TODO: following expect result in a flaky test
+      // the output is the following:
+      ///  Expected: String ignoring Ansii 'melos run hello_script\n'
+      //               '  └> test_script\n'
+      //               '     └> RUNNING\n'
+      //               '\n'
+      //               'melos run test_script\n'
+      //               '  └> echo "test_script"\n'
+      //               '     └> RUNNING\n'
+      //               '\n'
+      //               'test_script\n'
+      //               '\n'
+      //               'melos run test_script\n'
+      //               '  └> echo "test_script"\n'
+      //               '     └> SUCCESS\n'
+      //               '\n'
+      //               'melos run hello_script\n'
+      //               '  └> test_script\n'
+      //               '     └> SUCCESS\n'
+      //               '\n'
+      //               'melos run hello_script\n'
+      //               '  └> echo "hello world"\n'
+      //               '     └> RUNNING\n'
+      //               '\n'
+      //               'hello world\n'
+      //               '\n'
+      //               'melos run hello_script\n'
+      //               '  └> echo "hello world"\n'
+      //               '     └> SUCCESS\n'
+      //               '\n'
+      //               ''
+      //     Actual: 'melos run hello_script\n'
+      //               '  └> test_script\n'
+      //               '     └> RUNNING\n'
+      //               '\n'
+      //               'Resolving dependencies...\n'
+      //               'Got dependencies!\n'
+      //               'melos run test_script\n'
+      //               '  └> echo "test_script"\n'
+      //               '     └> RUNNING\n'
+      //               '\n'
+      //               'test_script\n'
+      //               '\n'
+      //               'melos run test_script\n'
+      //               '  └> echo "test_script"\n'
+      //               '     └> SUCCESS\n'
+      //               '\n'
+      //               'melos run hello_script\n'
+      //               '  └> test_script\n'
+      //               '     └> SUCCESS\n'
+      //               '\n'
+      //               'melos run hello_script\n'
+      //               '  └> echo "hello world"\n'
+      //               '     └> RUNNING\n'
+      //               '\n'
+      //               'hello world\n'
+      //               '\n'
+      //               'melos run hello_script\n'
+      //               '  └> echo "hello world"\n'
+      //               '     └> SUCCESS\n'
+      //               '\n'
+      //               ''
+      //      Which: has String with value 'melos run hello_script\n'
+      //               '  └> test_script\n'
+      //               '     └> RUNNING\n'
+      //               '\n'
+      //               'Resolving dependencies...\n'
+      //               'Got dependencies!\n'
+      //               'melos run test_script\n'
+      //               '  └> echo "test_script"\n'
+      //               '     └> RUNNING\n'
+      //               '\n'
+      //               'test_script\n'
+      //               '\n'
+      //               'melos run test_script\n'
+      //               '  └> echo "test_script"\n'
+      //               '     └> SUCCESS\n'
+      //               '\n'
+      //               'melos run hello_script\n'
+      //               '  └> test_script\n'
+      //               '     └> SUCCESS\n'
+      //               '\n'
+      //               'melos run hello_script\n'
+      //               '  └> echo "hello world"\n'
+      //               '     └> RUNNING\n'
+      //               '\n'
+      //               'hello world\n'
+      //               '\n'
+      //               'melos run hello_script\n'
+      //               '  └> echo "hello world"\n'
+      //               '     └> SUCCESS\n'
+      //               '\n'
+      //               '' which is different.
+      //             Expected: ... UNNING\n\nmelos run  ...
+      //               Actual: ... UNNING\n\nResolving  ...
+      //                                     ^
     });
 
     test(
