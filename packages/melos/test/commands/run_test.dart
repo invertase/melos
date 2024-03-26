@@ -592,25 +592,6 @@ melos run hello_script
 
       await melos.run(scriptName: 'hello_script', noSelect: true);
 
-      /// Resolve flaky test in linux environments
-      Matcher ignoringDependencyMessages(String expected) {
-        return predicate(
-          (actual) {
-            final normalizedActual = actual
-                .toString()
-                .split('\n')
-                .where(
-                  (line) =>
-                      !line.startsWith('Resolving dependencies...') &&
-                      !line.startsWith('Got dependencies!'),
-                )
-                .join('\n');
-            return ignoringAnsii(expected).matches(normalizedActual, {});
-          },
-          'ignores dependency resolution messages',
-        );
-      }
-
       expect(
         logger.output.normalizeNewLines(),
         ignoringDependencyMessages(

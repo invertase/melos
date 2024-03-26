@@ -26,6 +26,25 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 
+/// Resolve flaky test in linux environments
+Matcher ignoringDependencyMessages(String expected) {
+  return predicate(
+        (actual) {
+      final normalizedActual = actual
+          .toString()
+          .split('\n')
+          .where(
+            (line) =>
+        !line.startsWith('Resolving dependencies...') &&
+            !line.startsWith('Got dependencies!'),
+      )
+          .join('\n');
+      return ignoringAnsii(expected).matches(normalizedActual, {});
+    },
+    'ignores dependency resolution messages',
+  );
+}
+
 Matcher packageNamed(Object? matcher) => _PackageNameMatcher(matcher);
 
 Matcher ignoringAnsii(Object? matcher) {
