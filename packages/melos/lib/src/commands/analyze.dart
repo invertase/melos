@@ -36,7 +36,7 @@ mixin _AnalyzeMixin on _Melos {
       fatalWarnings: fatalWarnings,
       concurrency: concurrency,
     ).join(' ');
-    final prefixLogs = concurrency != 1 && packages.length != 1;
+    final useGroupBuffer = concurrency != 1 && packages.length != 1;
 
     logger.command('melos analyze', withDollarSign: true);
 
@@ -44,20 +44,12 @@ mixin _AnalyzeMixin on _Melos {
         .child(targetStyle(analyzeArgsString))
         .child('$runningLabel (in ${packages.length} packages)')
         .newLine();
-    if (prefixLogs) {
-      logger.horizontalLine();
-    }
-
-    final packageResults = Map.fromEntries(
-      packages.map((package) => MapEntry(package.name, Completer<int?>())),
-    );
 
     await pool.forEach<Package, void>(packages, (package) async {
-      if (!prefixLogs) {
-        logger
-          ..horizontalLine()
-          ..log(AnsiStyles.bgBlack.bold.italic('${package.name}:'));
-      }
+      final group = useGroupBuffer ? package.name : null;
+      logger
+        ..horizontalLine(group: group)
+        ..log(AnsiStyles.bgBlack.bold.italic('${package.name}:'), group: group);
 
       final packageExitCode = await _analyzeForPackage(
         workspace,
@@ -67,19 +59,21 @@ mixin _AnalyzeMixin on _Melos {
           fatalInfos: fatalInfos,
           fatalWarnings: fatalWarnings,
         ),
+        group: group,
       );
-
-      packageResults[package.name]?.complete(packageExitCode);
 
       if (packageExitCode > 0) {
         failures[package.name] = packageExitCode;
-      } else if (!prefixLogs) {
+      } else {
         logger.log(
           AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
               AnsiStyles.bgBlack(successLabel),
+          group: group,
         );
       }
     }).drain<void>();
+
+    logger.flushGroupBufferIfNeed();
 
     logger
       ..horizontalLine()
@@ -149,8 +143,9 @@ mixin _AnalyzeMixin on _Melos {
   Future<int> _analyzeForPackage(
     MelosWorkspace workspace,
     Package package,
-    List<String> analyzeArgs,
-  ) async {
+    List<String> analyzeArgs, {
+    String? group,
+  }) async {
     final environment = {
       EnvironmentVariableKey.melosRootPath: config.path,
       if (workspace.sdkPath != null)
@@ -164,6 +159,7 @@ mixin _AnalyzeMixin on _Melos {
       logger: logger,
       environment: environment,
       workingDirectory: package.path,
+      group: group,
     );
   }
 
