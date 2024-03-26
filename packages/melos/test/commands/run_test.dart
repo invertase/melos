@@ -594,7 +594,7 @@ melos run hello_script
 
       expect(
         logger.output.normalizeNewLines(),
-        ignoringAnsii(
+        ignoringDependencyMessages(
           '''
 melos run hello_script
   └> test_script

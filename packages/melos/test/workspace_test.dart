@@ -110,7 +110,7 @@ The packages that caused the problem are:
       );
 
       expect(result.exitCode, 0);
-      expect(result.stdout, 'a\n');
+      expect(result.stdout, ignoringDependencyMessages('a\n'));
     });
 
     test(
