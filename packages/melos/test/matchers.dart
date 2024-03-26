@@ -29,15 +29,15 @@ import 'package:yaml/yaml.dart';
 /// Resolve flaky test in linux environments
 Matcher ignoringDependencyMessages(String expected) {
   return predicate(
-        (actual) {
+    (actual) {
       final normalizedActual = actual
           .toString()
           .split('\n')
           .where(
             (line) =>
-        !line.startsWith('Resolving dependencies...') &&
-            !line.startsWith('Got dependencies!'),
-      )
+                !line.startsWith('Resolving dependencies...') &&
+                !line.startsWith('Got dependencies!'),
+          )
           .join('\n');
       return ignoringAnsii(expected).matches(normalizedActual, {});
     },
