@@ -30,12 +30,12 @@ mixin _AnalyzeMixin on _Melos {
   }) async {
     final failures = <String, int?>{};
     final pool = Pool(concurrency);
-    final analyzeArgs = _getAnalyzeArgs(
-      workspace,
-      fatalInfos,
-      fatalWarnings,
-    );
-    final analyzeArgsString = analyzeArgs.join(' ');
+    final analyzeArgsString = _getAnalyzeArgs(
+      workspace: workspace,
+      fatalInfos: fatalInfos,
+      fatalWarnings: fatalWarnings,
+      concurrency: concurrency,
+    ).join(' ');
     final prefixLogs = concurrency != 1 && packages.length != 1;
 
     logger.command('melos analyze', withDollarSign: true);
@@ -62,7 +62,11 @@ mixin _AnalyzeMixin on _Melos {
       final packageExitCode = await _analyzeForPackage(
         workspace,
         package,
-        analyzeArgs,
+        _getAnalyzeArgs(
+          workspace: workspace,
+          fatalInfos: fatalInfos,
+          fatalWarnings: fatalWarnings,
+        ),
       );
 
       packageResults[package.name]?.complete(packageExitCode);
@@ -100,12 +104,17 @@ mixin _AnalyzeMixin on _Melos {
     }
   }
 
-  List<String> _getAnalyzeArgs(
-    MelosWorkspace workspace,
-    bool fatalInfos,
+  List<String> _getAnalyzeArgs({
+    required MelosWorkspace workspace,
+    required bool fatalInfos,
     bool? fatalWarnings,
-  ) {
-    final options = _getOptionsArgs(fatalInfos, fatalWarnings);
+    // Note: The `concurrency` argument is intentionally set to a default value
+    // of 1 to prevent its direct use by the `startCommand` function. It is
+    // designed to be utilized only for logging purposes to indicate the level
+    // of concurrency being applied.
+    int concurrency = 1,
+  }) {
+    final options = _getOptionsArgs(fatalInfos, fatalWarnings, concurrency);
     return <String>[
       ..._analyzeCommandExecArgs(
         useFlutter: workspace.isFlutterWorkspace,
@@ -115,7 +124,11 @@ mixin _AnalyzeMixin on _Melos {
     ];
   }
 
-  String _getOptionsArgs(bool fatalInfos, bool? fatalWarnings) {
+  String _getOptionsArgs(
+    bool fatalInfos,
+    bool? fatalWarnings,
+    int concurrency,
+  ) {
     final options = <String>[];
 
     if (fatalInfos) {
@@ -124,6 +137,10 @@ mixin _AnalyzeMixin on _Melos {
 
     if (fatalWarnings != null) {
       options.add(fatalWarnings ? '--fatal-warnings' : '--no-fatal-warnings');
+    }
+
+    if (concurrency > 1) {
+      options.add('--concurrency $concurrency');
     }
 
     return options.join(' ');

@@ -265,5 +265,16 @@ $ melos analyze
 '''),
       );
     });
+
+    test('should run analysis with --concurrency flag', () async {
+      // when concurrency is set to a number bigger than 1 then
+      // the output should appears as the following
+      await melos.analyze(concurrency: 2);
+
+      final regex =
+          RegExp(r'\$ melos analyze\s+└> dart analyze --concurrency 2');
+
+      expect(regex.hasMatch(logger.output.normalizeNewLines()), isTrue);
+    });
   });
 }
