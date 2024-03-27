@@ -193,7 +193,7 @@ class MelosLogger with _DelegateLogger {
     for (final line in lines) {
       final prefixedLine = '${isFirstLine ? prefix : childIndentation}$line';
       if (stderr) {
-        logger.error(prefixedLine, group: group);
+        logger.error(prefixedLine, group: group, label: false);
       } else {
         logger.log(prefixedLine, group: group);
       }
