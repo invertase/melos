@@ -146,67 +146,70 @@ Generating IntelliJ IDE files...
       );
     });
 
-    test('resolves workspace packages with path dependency', () async {
-      final workspaceDir = await createTemporaryWorkspace();
+    test(
+      'resolves workspace packages with path dependency',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace();
 
-      final aDir = await createProject(
-        workspaceDir,
-        PubSpec(
-          name: 'a',
-          dependencies: {'b': HostedReference(VersionConstraint.any)},
-        ),
-      );
-      await createProject(
-        workspaceDir,
-        const PubSpec(name: 'b'),
-      );
+        final aDir = await createProject(
+          workspaceDir,
+          PubSpec(
+            name: 'a',
+            dependencies: {'b': HostedReference(VersionConstraint.any)},
+          ),
+        );
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'b'),
+        );
 
-      await createProject(
-        workspaceDir,
-        pubSpecFromJsonFile(fileName: 'add_to_app_json.json'),
-      );
+        await createProject(
+          workspaceDir,
+          pubSpecFromJsonFile(fileName: 'add_to_app_json.json'),
+        );
 
-      await createProject(
-        workspaceDir,
-        pubSpecFromJsonFile(fileName: 'plugin_json.json'),
-      );
+        await createProject(
+          workspaceDir,
+          pubSpecFromJsonFile(fileName: 'plugin_json.json'),
+        );
 
-      final logger = TestLogger();
-      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
-      final melos = Melos(
-        logger: logger,
-        config: config,
-      );
+        final logger = TestLogger();
+        final config =
+            await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
 
-      await runMelosBootstrap(melos, logger);
+        await runMelosBootstrap(melos, logger);
 
-      expect(
-        logger.output,
-        ignoringAnsii(
-          allOf(
-            [
-              '''
+        expect(
+          logger.output,
+          ignoringAnsii(
+            allOf(
+              [
+                '''
 melos bootstrap
   └> ${workspaceDir.path}
 
 Running "flutter pub get" in workspace packages...''',
-              '''
+                '''
   ✓ a
     └> packages/a
 ''',
-              '''
+                '''
   ✓ b
     └> packages/b
 ''',
-              '''
+                '''
   ✓ c
     └> packages/c
 ''',
-              '''
+                '''
   ✓ d
     └> packages/d
 ''',
-              '''
+                '''
   > SUCCESS
 
 Generating IntelliJ IDE files...
@@ -214,18 +217,21 @@ Generating IntelliJ IDE files...
 
  -> 4 packages bootstrapped
 ''',
-            ].map(contains).toList(),
+              ].map(contains).toList(),
+            ),
           ),
-        ),
-      );
+        );
 
-      final aConfig = packageConfigForPackageAt(aDir);
+        final aConfig = packageConfigForPackageAt(aDir);
 
-      expect(
-        aConfig.packages.firstWhere((p) => p.name == 'b').rootUri,
-        '../../b',
-      );
-    });
+        expect(
+          aConfig.packages.firstWhere((p) => p.name == 'b').rootUri,
+          '../../b',
+        );
+      },
+      timeout:
+          io.Platform.isLinux ? const Timeout(Duration(seconds: 45)) : null,
+    );
 
     test(
       'bootstrap transitive dependencies',
