@@ -229,7 +229,8 @@ Generating IntelliJ IDE files...
           '../../b',
         );
       },
-      timeout: const Timeout(Duration(minutes: 1)),
+      timeout:
+          io.Platform.isLinux ? const Timeout(Duration(seconds: 45)) : null,
     );
 
     test(
