@@ -469,6 +469,7 @@ Future<int> startCommand(
   bool onlyOutputOnError = false,
   bool includeParentEnvironment = true,
   required MelosLogger logger,
+  String? group,
 }) async {
   final processedCommand = command
       // Remove empty arguments.
@@ -521,7 +522,10 @@ Future<int> startCommand(
     (event) {
       processStdout.addAll(event);
       if (!onlyOutputOnError) {
-        logger.write(utf8.decode(event, allowMalformed: true));
+        logger.logWithoutNewLine(
+          utf8.decode(event, allowMalformed: true),
+          group: group,
+        );
       }
     },
     onDone: processStdoutCompleter.complete,
@@ -530,7 +534,7 @@ Future<int> startCommand(
     (event) {
       processStderr.addAll(event);
       if (!onlyOutputOnError) {
-        logger.stderr(utf8.decode(event, allowMalformed: true));
+        logger.error(utf8.decode(event, allowMalformed: true), group: group);
       }
     },
     onDone: processStderrCompleter.complete,
@@ -543,8 +547,14 @@ Future<int> startCommand(
   _runningPids.remove(process.pid);
 
   if (onlyOutputOnError && exitCode > 0) {
-    logger.stdout(utf8.decode(processStdout, allowMalformed: true));
-    logger.stderr(utf8.decode(processStderr, allowMalformed: true));
+    logger.log(
+      utf8.decode(processStdout, allowMalformed: true),
+      group: group,
+    );
+    logger.error(
+      utf8.decode(processStderr, allowMalformed: true),
+      group: group,
+    );
   }
 
   return exitCode;

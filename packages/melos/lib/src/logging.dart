@@ -49,7 +49,23 @@ class MelosLogger with _DelegateLogger {
   final String _indentation;
   final String _childIndentation;
 
-  void log(String message) => stdout(message);
+  void log(String message, {String? group}) {
+    if (group != null) {
+      _stdoutGroup(message, group);
+      return;
+    }
+
+    stdout(message);
+  }
+
+  void logWithoutNewLine(String message, {String? group}) {
+    if (group != null) {
+      _writeGroup(message, group);
+      return;
+    }
+
+    write(message);
+  }
 
   void command(String command, {bool withDollarSign = false}) {
     if (withDollarSign) {
@@ -59,7 +75,17 @@ class MelosLogger with _DelegateLogger {
     }
   }
 
-  void success(String message, {bool dryRun = false}) {
+  void success(String message, {String? group, bool dryRun = false}) {
+    if (group != null) {
+      if (dryRun) {
+        _stdoutGroup(successMessageColor(message), group);
+      } else {
+        _stdoutGroup(successMessageColor(successStyle(message)), group);
+      }
+
+      return;
+    }
+
     if (dryRun) {
       stdout(successMessageColor(message));
     } else {
@@ -67,11 +93,27 @@ class MelosLogger with _DelegateLogger {
     }
   }
 
-  void warning(String message, {bool label = true, bool dryRun = false}) {
+  void warning(
+    String message, {
+    String? group,
+    bool label = true,
+    bool dryRun = false,
+  }) {
     final labelColor =
         dryRun ? dryRunWarningLabelColor : dryRunWarningMessageColor;
     final messageColor =
         dryRun ? dryRunWarningMessageColor : warningMessageColor;
+
+    if (group != null) {
+      if (label) {
+        _stdoutGroup('$warningLabel${labelColor(':')} $message', group);
+      } else {
+        _stdoutGroup(messageColor(message), group);
+      }
+
+      return;
+    }
+
     if (label) {
       stdout('$warningLabel${labelColor(':')} $message');
     } else {
@@ -79,7 +121,17 @@ class MelosLogger with _DelegateLogger {
     }
   }
 
-  void error(String message, {bool label = true}) {
+  void error(String message, {String? group, bool label = true}) {
+    if (group != null) {
+      if (label) {
+        _stderrGroup('$errorLabel${errorLabelColor(':')} $message', group);
+      } else {
+        _stderrGroup(errorMessageColor(message), group);
+      }
+
+      return;
+    }
+
     if (label) {
       stderr('$errorLabel${errorLabelColor(':')} $message');
     } else {
@@ -87,7 +139,17 @@ class MelosLogger with _DelegateLogger {
     }
   }
 
-  void hint(String message, {bool label = true}) {
+  void hint(String message, {String? group, bool label = true}) {
+    if (group != null) {
+      if (label) {
+        _stdoutGroup('$hintLabel${hintLabelColor(':')} $message', group);
+      } else {
+        _stdoutGroup(hintMessageColor(message), group);
+      }
+
+      return;
+    }
+
     if (label) {
       stdout(hintMessageColor('$hintLabel: $message'));
     } else {
@@ -95,14 +157,29 @@ class MelosLogger with _DelegateLogger {
     }
   }
 
-  void newLine() => _logger.write('\n');
+  void newLine({String? group}) {
+    if (group != null) {
+      _stdoutGroup('', group);
+      return;
+    }
 
-  void horizontalLine() => _logger.stdout('-' * terminalWidth);
+    _logger.stdout('');
+  }
+
+  void horizontalLine({String? group}) {
+    if (group != null) {
+      _stdoutGroup('-' * terminalWidth, group);
+      return;
+    }
+
+    _logger.stdout('-' * terminalWidth);
+  }
 
   MelosLogger child(
     String message, {
     String prefix = '└> ',
     bool stderr = false,
+    String? group,
   }) {
     final childIndentation = ' ' * AnsiStyles.strip(prefix).length;
     final logger = MelosLogger(
@@ -116,9 +193,9 @@ class MelosLogger with _DelegateLogger {
     for (final line in lines) {
       final prefixedLine = '${isFirstLine ? prefix : childIndentation}$line';
       if (stderr) {
-        logger.stderr(prefixedLine);
+        logger.error(prefixedLine, group: group, label: false);
       } else {
-        logger.stdout(prefixedLine);
+        logger.log(prefixedLine, group: group);
       }
       isFirstLine = false;
     }
@@ -141,6 +218,58 @@ class MelosLogger with _DelegateLogger {
 
   @override
   void trace(String message) => _logger.trace('$_indentation$message');
+
+  final _groupBuffer = <String, List<_GroupBufferMessage>>{};
+
+  void _stdoutGroup(String message, String group) {
+    final previous = _groupBuffer[group] ?? const [];
+    _groupBuffer[group] = [...previous, _GroupBufferStdoutMessage(message)];
+  }
+
+  void _stderrGroup(String message, String group) {
+    final previous = _groupBuffer[group] ?? const [];
+    _groupBuffer[group] = [...previous, _GroupBufferStderrMessage(message)];
+  }
+
+  void _writeGroup(String message, String group) {
+    final previous = _groupBuffer[group] ?? const [];
+    _groupBuffer[group] = [...previous, _GroupBufferWriteMessage(message)];
+  }
+
+  void flushGroupBufferIfNeed() {
+    for (final entry in _groupBuffer.entries) {
+      for (final value in entry.value) {
+        switch (value) {
+          case _GroupBufferStdoutMessage(:final message):
+            stdout(message);
+          case _GroupBufferStderrMessage(:final message):
+            stderr(message);
+          case _GroupBufferWriteMessage(:final message):
+            write(message);
+        }
+      }
+    }
+
+    _groupBuffer.clear();
+  }
+}
+
+sealed class _GroupBufferMessage {
+  const _GroupBufferMessage(this.message);
+
+  final String message;
+}
+
+class _GroupBufferStdoutMessage extends _GroupBufferMessage {
+  const _GroupBufferStdoutMessage(super.message);
+}
+
+class _GroupBufferStderrMessage extends _GroupBufferMessage {
+  const _GroupBufferStderrMessage(super.message);
+}
+
+class _GroupBufferWriteMessage extends _GroupBufferMessage {
+  const _GroupBufferWriteMessage(super.message);
 }
 
 mixin _DelegateLogger implements Logger {

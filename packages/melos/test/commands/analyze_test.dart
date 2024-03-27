@@ -276,5 +276,89 @@ $ melos analyze
 
       expect(regex.hasMatch(logger.output.normalizeNewLines()), isTrue);
     });
+
+    test('should run analysis with --concurrency 2 flag', () async {
+      await melos.analyze(concurrency: 2);
+
+      expect(
+        logger.output.normalizeNewLines(),
+        ignoringAnsii(r'''
+$ melos analyze
+  └> dart analyze --concurrency 2
+     └> RUNNING (in 3 packages)
+
+--------------------------------------------------------------------------------
+a:
+Analyzing a...
+No issues found!
+a: SUCCESS
+--------------------------------------------------------------------------------
+b:
+Analyzing b...
+No issues found!
+b: SUCCESS
+--------------------------------------------------------------------------------
+c:
+Analyzing c...
+No issues found!
+c: SUCCESS
+--------------------------------------------------------------------------------
+
+$ melos analyze
+  └> dart analyze --concurrency 2
+     └> SUCCESS
+'''),
+      );
+    });
+
+    test('should run analysis with --concurrency 2 and --fatal-infos flag',
+        () async {
+      writeTextFile(
+        p.join(aDir.path, 'main.dart'),
+        r'''
+        void main() {
+          for (var i = 0; i < 10; i++) {
+            print('hello ${i + 1}');
+          }
+        }
+      ''',
+      );
+
+      await melos.analyze(concurrency: 2, fatalInfos: true);
+
+      expect(
+        logger.output.normalizeNewLines(),
+        ignoringAnsii(r'''
+$ melos analyze
+  └> dart analyze --fatal-infos --concurrency 2
+     └> RUNNING (in 3 packages)
+
+--------------------------------------------------------------------------------
+a:
+Analyzing a...
+
+   info - main.dart:3:13 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - main.dart:5:10 - Missing a newline at the end of the file. Try adding a newline at the end of the file. - eol_at_end_of_file
+
+2 issues found.
+--------------------------------------------------------------------------------
+b:
+Analyzing b...
+No issues found!
+b: SUCCESS
+--------------------------------------------------------------------------------
+c:
+Analyzing c...
+No issues found!
+c: SUCCESS
+--------------------------------------------------------------------------------
+
+$ melos analyze
+  └> dart analyze --fatal-infos --concurrency 2
+     └> FAILED (in 1 packages)
+        └> a (with exit code 1)
+'''),
+      );
+    });
   });
 }
