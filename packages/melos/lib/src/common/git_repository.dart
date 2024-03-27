@@ -262,16 +262,98 @@ class BitbucketRepository extends HostedGitRepository {
   Uri get url => Uri.parse('$origin/$owner/$name/');
 }
 
+/// A git repository, hosted by Azure DevOps.
+@immutable
+class AzureDevOpsRepository extends HostedGitRepository {
+  AzureDevOpsRepository({
+    required String origin,
+    required this.owner,
+    required this.name,
+  }) : origin = removeTrailingSlash(origin);
+
+  factory AzureDevOpsRepository.fromUrl(Uri uri) {
+    final match = RegExp(r'(https://dev.azure.com/.+)/(.+)/_git/(.+)/?$')
+        .firstMatch(uri.toString());
+    if (match != null) {
+      return AzureDevOpsRepository(
+        origin: match.group(1)!,
+        owner: match.group(2)!,
+        name: match.group(3)!,
+      );
+    }
+
+    // Azure DevOps has also an older URL format, see
+    // https://learn.microsoft.com/en-us/azure/devops/extend/develop/work-with-urls
+    final matchOld = RegExp(r'(https://.+\.visualstudio.com)/(.+)/_git/(.+)/?$')
+        .firstMatch(uri.toString());
+    if (matchOld != null) {
+      return AzureDevOpsRepository(
+        origin: matchOld.group(1)!,
+        owner: matchOld.group(2)!,
+        name: matchOld.group(3)!,
+      );
+    }
+
+    throw FormatException(
+      'The URL $uri is not a valid Azure DevOps repository URL.',
+    );
+  }
+
+  static const defaultOrigin = 'https://dev.azure.com';
+
+  /// The origin of the Azure DevOps project.
+  final String origin;
+
+  /// The name of the project.
+  final String owner;
+
+  @override
+  final String name;
+
+  @override
+  late final Uri url = Uri.parse('$origin/$owner/_git/$name/');
+
+  @override
+  Uri commitUrl(String id) => Uri.parse('$origin/$owner/_git/$name/commit/$id');
+
+  @override
+  Uri issueUrl(String id) => Uri.parse('$origin/$owner/_workitems/edit/$id');
+
+  @override
+  String toString() {
+    return '''
+AzureDevOpsRepository(
+  origin: $origin,
+  owner: $owner,
+  name: $name,
+)''';
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AzureDevOpsRepository &&
+          other.runtimeType == runtimeType &&
+          other.origin == origin &&
+          other.owner == owner &&
+          other.name == name;
+
+  @override
+  int get hashCode => origin.hashCode ^ owner.hashCode ^ name.hashCode;
+}
+
 final _hostsToUrlParser = {
   'GitHub': GitHubRepository.fromUrl,
   'GitLab': GitLabRepository.fromUrl,
   'Bitbucket': BitbucketRepository.fromUrl,
+  'AzureDevOps': AzureDevOpsRepository.fromUrl,
 };
 
 final _hostsToSpecParser = {
   'GitHub': GitHubRepository.new,
   'GitLab': GitLabRepository.new,
   'Bitbucket': BitbucketRepository.new,
+  'AzureDevOps': AzureDevOpsRepository.new,
 };
 
 /// Tries to parse [url] into a [HostedGitRepository].
