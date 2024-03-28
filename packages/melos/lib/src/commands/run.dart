@@ -241,6 +241,9 @@ mixin _RunMixin on _Melos {
 
   /// Checks if the given [step] is a recognized Melos command.
   bool _isStepACommand(String step) {
+    // Split the step by spaces to separate the command from its flags/arguments.
+    final command = step.split(' ')[0];
+
     const melosCommands = {
       'analyze',
       'format',
@@ -251,7 +254,7 @@ mixin _RunMixin on _Melos {
       'publish',
     };
 
-    return melosCommands.contains(step);
+    return melosCommands.contains(command);
   }
 
   String _buildScriptCommand(String step, Scripts scripts) {
