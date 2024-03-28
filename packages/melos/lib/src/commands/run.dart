@@ -313,7 +313,6 @@ mixin _RunMixin on _Melos {
 
     if (exitCode != 0) {
       resultLogger.child(failedLabel);
-      throw ScriptException._(script.name);
     } else {
       resultLogger.child(successLabel);
     }

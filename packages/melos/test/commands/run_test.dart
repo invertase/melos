@@ -759,6 +759,120 @@ melos run hello_script
     });
 
     test(
+        'verifies that a melos script can call another script containing '
+        'melos commands with flags, and ensures the script is successfully '
+        'executed', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        runPubGet: true,
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: const Scripts({
+            'hello_script': Script(
+              name: 'hello_script',
+              steps: ['analyze --fatal-infos', 'echo "hello world"'],
+            ),
+          }),
+        ),
+      );
+
+      aDir = await createProject(
+        workspaceDir,
+        const PubSpec(name: 'a'),
+      );
+
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'b'),
+      );
+
+      await createProject(
+        workspaceDir,
+        const PubSpec(
+          name: 'c',
+        ),
+      );
+
+      writeTextFile(
+        p.join(aDir.path, 'main.dart'),
+        r'''
+        void main() {
+          for (var i = 0; i < 10; i++) {
+            print('hello ${i + 1}');
+          }
+        }
+      ''',
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      await melos.run(scriptName: 'hello_script', noSelect: true);
+
+      expect(
+        logger.output.normalizeNewLines(),
+        ignoringAnsii(
+          '''
+melos run hello_script
+  └> analyze --fatal-infos
+     └> RUNNING
+
+\$ melos analyze
+  └> dart analyze --fatal-infos
+     └> RUNNING (in 3 packages)
+
+--------------------------------------------------------------------------------
+a:
+Analyzing a...
+
+   info - main.dart:3:13 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - main.dart:5:10 - Missing a newline at the end of the file. Try adding a newline at the end of the file. - eol_at_end_of_file
+
+2 issues found.
+--------------------------------------------------------------------------------
+b:
+Analyzing b...
+No issues found!
+b: SUCCESS
+--------------------------------------------------------------------------------
+c:
+Analyzing c...
+No issues found!
+c: SUCCESS
+--------------------------------------------------------------------------------
+
+\$ melos analyze
+  └> dart analyze --fatal-infos
+     └> FAILED (in 1 packages)
+        └> a (with exit code 1)
+
+melos run hello_script
+  └> analyze --fatal-infos
+     └> FAILED
+
+melos run hello_script
+  └> echo "hello world"
+     └> RUNNING
+
+${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
+
+melos run hello_script
+  └> echo "hello world"
+     └> SUCCESS
+
+''',
+        ),
+      );
+    });
+
+    test(
         'throw an error if correctly identifies when a script indirectly '
         'calls itself through another script, leading to a recursive call',
         () async {
