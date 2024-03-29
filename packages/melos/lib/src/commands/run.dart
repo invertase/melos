@@ -239,6 +239,36 @@ mixin _RunMixin on _Melos {
     await _executeScriptSteps(steps, scripts, script, environment);
   }
 
+  /// Checks if the given [step] is a recognized Melos command.
+  bool _isStepACommand(String step) {
+    // Split the step by spaces to separate the command from its flags/arguments.
+    final command = step.split(' ')[0];
+
+    const melosCommands = {
+      'analyze',
+      'format',
+      'bs',
+      'bootstrap',
+      'clean',
+      'list',
+      'publish',
+    };
+
+    return melosCommands.contains(command);
+  }
+
+  String _buildScriptCommand(String step, Scripts scripts) {
+    if (scripts.containsKey(step)) {
+      return 'melos run $step';
+    }
+
+    if (_isStepACommand(step)) {
+      return 'melos $step';
+    }
+
+    return step;
+  }
+
   Future<void> _executeScriptSteps(
     List<String> steps,
     Scripts scripts,
@@ -246,8 +276,7 @@ mixin _RunMixin on _Melos {
     Map<String, String> environment,
   ) async {
     for (final step in steps) {
-      final scriptCommand =
-          scripts.containsKey(step) ? 'melos run $step' : step;
+      final scriptCommand = _buildScriptCommand(step, scripts);
 
       final scriptSourceCode = targetStyle(
         step.withoutTrailing('\n'),
@@ -284,7 +313,6 @@ mixin _RunMixin on _Melos {
 
     if (exitCode != 0) {
       resultLogger.child(failedLabel);
-      throw ScriptException._(script.name);
     } else {
       resultLogger.child(successLabel);
     }
