@@ -34,6 +34,11 @@ class BootstrapCommand extends MelosCommand {
       help: 'Run pub get with --enforce-lockfile to enforce versions from .lock'
           ' files, ensure .lockfile exist for all packages.',
     );
+    argParser.addFlag(
+      'skip-linking',
+      negatable: false,
+      help: 'Skips locally linking workspace packages.',
+    );
   }
 
   @override
@@ -55,6 +60,7 @@ class BootstrapCommand extends MelosCommand {
       packageFilters: parsePackageFilters(config.path),
       enforceLockfile: argResults?['enforce-lockfile'] as bool? ?? false,
       noExample: argResults?['no-example'] as bool,
+      skipLinking: argResults?['skip-linking'] as bool,
     );
   }
 }

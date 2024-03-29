@@ -6,6 +6,7 @@ mixin _BootstrapMixin on _CleanMixin {
     PackageFilters? packageFilters,
     bool noExample = false,
     bool enforceLockfile = false,
+    bool skipLinking = false,
   }) async {
     final workspace =
         await createWorkspace(global: global, packageFilters: packageFilters);
@@ -33,7 +34,6 @@ mixin _BootstrapMixin on _CleanMixin {
           ..child(targetStyle(workspace.path))
           ..newLine();
 
-        logger.log('Running "$pubCommandForLogging" in workspace packages...');
         if (!utils.isCI && workspace.filteredPackages.keys.length > 20) {
           logger.warning(
             'Note: this may take a while in large workspaces such as this one.',
@@ -45,6 +45,8 @@ mixin _BootstrapMixin on _CleanMixin {
           if (bootstrapCommandConfig.environment != null ||
               bootstrapCommandConfig.dependencies != null ||
               bootstrapCommandConfig.devDependencies != null) {
+            logger.log('Updating common dependencies in workspace packages...');
+
             final filteredPackages = workspace.filteredPackages.values;
             await Stream.fromIterable(filteredPackages).parallel((package) {
               return _setSharedDependenciesForPackage(
@@ -54,19 +56,27 @@ mixin _BootstrapMixin on _CleanMixin {
                 devDependencies: bootstrapCommandConfig.devDependencies,
               );
             }).drain<void>();
+
+            logger.child(successLabel, prefix: '> ');
           }
 
-          await _linkPackagesWithPubspecOverrides(
-            workspace,
-            enforceLockfile: enforceLockfile,
-            noExample: noExample,
-          );
+          if (!skipLinking) {
+            logger
+              ..newLine()
+              ..log('Running "$pubCommandForLogging" in workspace packages...');
+
+            await _linkPackagesWithPubspecOverrides(
+              workspace,
+              enforceLockfile: enforceLockfile,
+              noExample: noExample,
+            );
+
+            logger.child(successLabel, prefix: '> ');
+          }
         } on BootstrapException catch (exception) {
           _logBootstrapException(exception, workspace);
           rethrow;
         }
-
-        logger.child(successLabel, prefix: '> ');
 
         if (workspace.config.ide.intelliJ.enabled) {
           logger
@@ -282,7 +292,7 @@ mixin _BootstrapMixin on _CleanMixin {
       ];
       if (message.isNotEmpty) {
         logger
-            .child(packageNameStyle(package.name), prefix: '')
+            .child(packageNameStyle(package.name), prefix: '$checkLabel ')
             .child(message.join('\n'));
       }
     }
