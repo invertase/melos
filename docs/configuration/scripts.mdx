@@ -54,9 +54,10 @@ The command to execute.
 
 ## steps
 
-Enables the combination of multiple scripts within a single script definition. 
-In the example below, the 'pre-commit' is configured to sequentially invoke the 
-format and analyze scripts.
+Enables the combination of multiple scripts within a single script definition
+for complex workflows. In the example below, the pre-commit script is
+configured to sequentially invoke a simple command echo 'hello world',
+followed by Melos commands: format and analyze, each with specific arguments.
 
 ```yaml
 scripts:
@@ -64,18 +65,8 @@ scripts:
     description: pre-commit git hook script
     steps:
       - echo 'hello world'
-      - format
-      - analyze
-  format:
-    description: Format Dart code.
-    run: dart format .
-    exec:
-      concurrency: 5
-  analyze:
-    description: Analyze Dart code
-    run: dart analyze .
-    exec:
-      concurrency: 5
+      - format --output none --set-exit-if-changed
+      - analyze --fatal-infos
 ```
 
 Note: When utilizing the `steps`, it's important to understand that options 
