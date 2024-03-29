@@ -835,65 +835,7 @@ Generating IntelliJ IDE files...
       );
     });
 
-    test(
-      'should work fine with environment config',
-      () async {
-        final workspaceDir = await createTemporaryWorkspace(
-          configBuilder: (path) => MelosWorkspaceConfig(
-            name: 'Melos',
-            packages: [
-              createGlob('packages/**', currentDirectoryPath: path),
-            ],
-            commands: CommandConfigs(
-              bootstrap: BootstrapCommandConfigs(
-                environment: Environment(
-                  VersionConstraint.parse('>=2.18.0 <3.0.0'),
-                  {'flutter': '>=2.18.0 <3.0.0'},
-                ),
-              ),
-            ),
-            path: path,
-          ),
-        );
-
-        await createProject(
-          workspaceDir,
-          const PubSpec(name: 'a'),
-        );
-
-        final logger = TestLogger();
-        final config =
-            await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
-        final melos = Melos(logger: logger, config: config);
-
-        await runMelosBootstrap(melos, logger, skipLinking: true);
-
-        expect(
-          logger.output,
-          ignoringAnsii(
-            '''
-melos bootstrap
-  └> ${workspaceDir.path}
-
-Updating common dependencies in workspace packages...
-  ✓ a
-    └> Updated environment
-  > SUCCESS
-
-Generating IntelliJ IDE files...
-  > SUCCESS
-
- -> 1 packages bootstrapped
-''',
-          ),
-        );
-      },
-    );
-  });
-
-  test(
-    'can skip package linking if --skip-linking is enabled',
-    () async {
+    test('should work fine with environment config', () async {
       final workspaceDir = await createTemporaryWorkspace(
         configBuilder: (path) => MelosWorkspaceConfig(
           name: 'Melos',
@@ -942,8 +884,8 @@ Generating IntelliJ IDE files...
 ''',
         ),
       );
-    },
-  );
+    });
+  });
 }
 
 Future<void> runMelosBootstrap(
