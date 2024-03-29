@@ -804,11 +804,155 @@ Generating IntelliJ IDE files...
       timeout: const Timeout(Duration(days: 2)),
     );
   });
+
+  group('melos bs --skip-linking', () {
+    test('should skip package linking', () async {
+      final workspaceDir = await createTemporaryWorkspace();
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'a'),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(logger: logger, config: config);
+
+      await runMelosBootstrap(melos, logger, skipLinking: true);
+
+      expect(
+        logger.output,
+        ignoringAnsii(
+          '''
+melos bootstrap
+  └> ${workspaceDir.path}
+
+Generating IntelliJ IDE files...
+  > SUCCESS
+
+ -> 1 packages bootstrapped
+''',
+        ),
+      );
+    });
+
+    test(
+      'should work fine with environment config',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            name: 'Melos',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            commands: CommandConfigs(
+              bootstrap: BootstrapCommandConfigs(
+                environment: Environment(
+                  VersionConstraint.parse('>=2.18.0 <3.0.0'),
+                  {'flutter': '>=2.18.0 <3.0.0'},
+                ),
+              ),
+            ),
+            path: path,
+          ),
+        );
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'a'),
+        );
+
+        final logger = TestLogger();
+        final config =
+            await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+        final melos = Melos(logger: logger, config: config);
+
+        await runMelosBootstrap(melos, logger, skipLinking: true);
+
+        expect(
+          logger.output,
+          ignoringAnsii(
+            '''
+melos bootstrap
+  └> ${workspaceDir.path}
+
+Updating common dependencies in workspace packages...
+  ✓ a
+    └> Updated environment
+  > SUCCESS
+
+Generating IntelliJ IDE files...
+  > SUCCESS
+
+ -> 1 packages bootstrapped
+''',
+          ),
+        );
+      },
+    );
+  });
+
+  test(
+    'can skip package linking if --skip-linking is enabled',
+    () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: (path) => MelosWorkspaceConfig(
+          name: 'Melos',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          commands: CommandConfigs(
+            bootstrap: BootstrapCommandConfigs(
+              environment: Environment(
+                VersionConstraint.parse('>=2.18.0 <3.0.0'),
+                {'flutter': '>=2.18.0 <3.0.0'},
+              ),
+            ),
+          ),
+          path: path,
+        ),
+      );
+
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'a'),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(logger: logger, config: config);
+
+      await runMelosBootstrap(melos, logger, skipLinking: true);
+
+      expect(
+        logger.output,
+        ignoringAnsii(
+          '''
+melos bootstrap
+  └> ${workspaceDir.path}
+
+Updating common dependencies in workspace packages...
+  ✓ a
+    └> Updated environment
+  > SUCCESS
+
+Generating IntelliJ IDE files...
+  > SUCCESS
+
+ -> 1 packages bootstrapped
+''',
+        ),
+      );
+    },
+  );
 }
 
-Future<void> runMelosBootstrap(Melos melos, TestLogger logger) async {
+Future<void> runMelosBootstrap(
+  Melos melos,
+  TestLogger logger, {
+  bool skipLinking = false,
+}) async {
   try {
-    await melos.bootstrap();
+    await melos.bootstrap(skipLinking: skipLinking);
   } on BootstrapException {
     // ignore: avoid_print
     print(logger.output);
