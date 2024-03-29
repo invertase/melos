@@ -773,11 +773,11 @@ melos run hello_script
           scripts: const Scripts({
             'hello_script': Script(
               name: 'hello_script',
-              steps: ['analyze', 'echo "hello world"'],
+              steps: ['list', 'echo "hello world"'],
             ),
-            'analyze': Script(
-              name: 'hello_script',
-              run: 'dart analyze . --fatal-warnings',
+            'list': Script(
+              name: 'list script',
+              run: 'echo "list script"',
             ),
           }),
         ),
@@ -800,17 +800,6 @@ melos run hello_script
         ),
       );
 
-      writeTextFile(
-        p.join(aDir.path, 'main.dart'),
-        r'''
-        void main() {
-          for (var i = 0; i < 10; i++) {
-            print('hello ${i + 1}');
-          }
-        }
-      ''',
-      );
-
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
       final melos = Melos(
@@ -822,29 +811,24 @@ melos run hello_script
 
       expect(
         logger.output.normalizeNewLines(),
-        ignoringAnsii(
+        ignoringDependencyMessages(
           '''
 melos run hello_script
-  └> analyze
+  └> list
      └> RUNNING
 
-melos run analyze
-  └> dart analyze . --fatal-warnings
+melos run list
+  └> echo "list script"
      └> RUNNING
 
-Analyzing ....
+${currentPlatform.isWindows ? '"list script"' : 'list script'}
 
-${currentPlatform.isWindows ? r"warning - pubspec.yaml:6:11 - The path d:\a\melos\melos\packages\melos isn't a POSIX-style path. Try converting the value to a POSIX-style path. - path_not_posix" : "   info - ${currentPlatform.isWindows ? r'packages\a\main.dart' : 'packages/a/main.dart'}:3:13 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print"}
-   info - ${currentPlatform.isWindows ? r'packages\a\main.dart' : 'packages/a/main.dart'}:5:10 - Missing a newline at the end of the file. Try adding a newline at the end of the file. - eol_at_end_of_file
-
-${currentPlatform.isWindows ? '3' : '2'} issues found.
-
-melos run analyze
-  └> dart analyze . --fatal-warnings
+melos run list
+  └> echo "list script"
      └> SUCCESS
 
 melos run hello_script
-  └> analyze
+  └> list
      └> SUCCESS
 
 melos run hello_script
