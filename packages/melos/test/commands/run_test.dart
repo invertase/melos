@@ -834,10 +834,10 @@ melos run analyze
 
 Analyzing ....
 
-   info - packages/a/main.dart:3:13 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
-   info - packages/a/main.dart:5:10 - Missing a newline at the end of the file. Try adding a newline at the end of the file. - eol_at_end_of_file
+${currentPlatform.isWindows ? r"warning - pubspec.yaml:6:11 - The path d:\a\melos\melos\packages\melos isn't a POSIX-style path. Try converting the value to a POSIX-style path. - path_not_posix" : "   info - ${currentPlatform.isWindows ? r'packages\a\main.dart' : 'packages/a/main.dart'}:3:13 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print"}
+   info - ${currentPlatform.isWindows ? r'packages\a\main.dart' : 'packages/a/main.dart'}:5:10 - Missing a newline at the end of the file. Try adding a newline at the end of the file. - eol_at_end_of_file
 
-2 issues found.
+${currentPlatform.isWindows ? '3' : '2'} issues found.
 
 melos run analyze
   └> dart analyze . --fatal-warnings
