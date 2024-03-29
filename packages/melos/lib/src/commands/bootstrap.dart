@@ -57,13 +57,15 @@ mixin _BootstrapMixin on _CleanMixin {
               );
             }).drain<void>();
 
-            logger.child(successLabel, prefix: '> ');
+            logger
+              ..child(successLabel, prefix: '> ')
+              ..newLine();
           }
 
           if (!skipLinking) {
-            logger
-              ..newLine()
-              ..log('Running "$pubCommandForLogging" in workspace packages...');
+            logger.log(
+              'Running "$pubCommandForLogging" in workspace packages...',
+            );
 
             await _linkPackagesWithPubspecOverrides(
               workspace,
@@ -71,7 +73,9 @@ mixin _BootstrapMixin on _CleanMixin {
               noExample: noExample,
             );
 
-            logger.child(successLabel, prefix: '> ');
+            logger
+              ..child(successLabel, prefix: '> ')
+              ..newLine();
           }
         } on BootstrapException catch (exception) {
           _logBootstrapException(exception, workspace);
@@ -79,19 +83,17 @@ mixin _BootstrapMixin on _CleanMixin {
         }
 
         if (workspace.config.ide.intelliJ.enabled) {
-          logger
-            ..newLine()
-            ..log('Generating IntelliJ IDE files...');
+          logger.log('Generating IntelliJ IDE files...');
 
           await cleanIntelliJ(workspace);
           await workspace.ide.intelliJ.generate();
-          logger.child(successLabel, prefix: '> ');
+          logger
+            ..child(successLabel, prefix: '> ')
+            ..newLine();
         }
-        logger
-          ..newLine()
-          ..log(
-            ' -> ${workspace.filteredPackages.length} packages bootstrapped',
-          );
+        logger.log(
+          ' -> ${workspace.filteredPackages.length} packages bootstrapped',
+        );
       },
     );
   }
