@@ -759,6 +759,110 @@ melos run hello_script
     });
 
     test(
+        'verifies that a Melos script can call another script containing '
+        'a script with a name equal to a melos command,  and ensures the '
+        'script group successfully runs instead of the command', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        runPubGet: true,
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: const Scripts({
+            'hello_script': Script(
+              name: 'hello_script',
+              steps: ['analyze', 'echo "hello world"'],
+            ),
+            'analyze': Script(
+              name: 'hello_script',
+              run: 'dart analyze . --fatal-warnings',
+            ),
+          }),
+        ),
+      );
+
+      aDir = await createProject(
+        workspaceDir,
+        const PubSpec(name: 'a'),
+      );
+
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'b'),
+      );
+
+      await createProject(
+        workspaceDir,
+        const PubSpec(
+          name: 'c',
+        ),
+      );
+
+      writeTextFile(
+        p.join(aDir.path, 'main.dart'),
+        r'''
+        void main() {
+          for (var i = 0; i < 10; i++) {
+            print('hello ${i + 1}');
+          }
+        }
+      ''',
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      await melos.run(scriptName: 'hello_script', noSelect: true);
+
+      expect(
+        logger.output.normalizeNewLines(),
+        ignoringAnsii(
+          '''
+melos run hello_script
+  └> analyze
+     └> RUNNING
+
+melos run analyze
+  └> dart analyze . --fatal-warnings
+     └> RUNNING
+
+Analyzing ....
+
+   info - packages/a/main.dart:3:13 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - packages/a/main.dart:5:10 - Missing a newline at the end of the file. Try adding a newline at the end of the file. - eol_at_end_of_file
+
+2 issues found.
+
+melos run analyze
+  └> dart analyze . --fatal-warnings
+     └> SUCCESS
+
+melos run hello_script
+  └> analyze
+     └> SUCCESS
+
+melos run hello_script
+  └> echo "hello world"
+     └> RUNNING
+
+${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
+
+melos run hello_script
+  └> echo "hello world"
+     └> SUCCESS
+
+''',
+        ),
+      );
+    });
+
+    test(
         'verifies that a melos script can call another script containing '
         'melos commands with flags, and ensures the script is successfully '
         'executed', () async {

@@ -258,12 +258,12 @@ mixin _RunMixin on _Melos {
   }
 
   String _buildScriptCommand(String step, Scripts scripts) {
-    if (_isStepACommand(step)) {
-      return 'melos $step';
-    }
-
     if (scripts.containsKey(step)) {
       return 'melos run $step';
+    }
+
+    if (_isStepACommand(step)) {
+      return 'melos $step';
     }
 
     return step;
