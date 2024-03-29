@@ -64,7 +64,7 @@ void main() {
 
         expect(
           logger.output.normalizeNewLines(),
-          ignoringAnsii(
+          ignoringDependencyMessages(
             '''
 melos run test_script
   └> melos exec -- "echo hello"
@@ -147,7 +147,7 @@ melos run test_script
 
           expect(
             logger.output.normalizeNewLines(),
-            ignoringAnsii(
+            ignoringDependencyMessages(
               '''
 melos run test_script
   └> melos exec -- "echo hello"
@@ -216,7 +216,7 @@ melos run test_script
 
       expect(
         logger.output.normalizeNewLines(),
-        ignoringAnsii(
+        ignoringDependencyMessages(
           '''
 melos run hello
   └> echo foo bar baz
@@ -272,7 +272,7 @@ melos run hello
 
       expect(
         logger.output.normalizeNewLines(),
-        ignoringAnsii(
+        ignoringDependencyMessages(
           r'''
 melos run hello
   └> melos exec -- "echo foo bar baz"
@@ -337,7 +337,7 @@ melos run hello
 
       expect(
         logger.output.normalizeNewLines(),
-        ignoringAnsii(
+        ignoringDependencyMessages(
           '''
 melos run test_script
   └> melos exec --concurrency 1 -- "echo \\"hello\\""
@@ -704,7 +704,7 @@ melos run hello_script
 
       expect(
         logger.output.normalizeNewLines(),
-        ignoringAnsii(
+        ignoringDependencyMessages(
           '''
 melos run hello_script
   └> analyze
@@ -906,7 +906,7 @@ melos run hello_script
 
       expect(
         logger.output.normalizeNewLines(),
-        ignoringAnsii(
+        ignoringDependencyMessages(
           '''
 melos run hello_script
   └> analyze --fatal-infos
