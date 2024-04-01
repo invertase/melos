@@ -3,6 +3,31 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2024-04-01
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v5.3.0`](#melos---v530)
+
+---
+
+#### `melos` - `v5.3.0`
+
+ - **FIX**: melos analyze concurrency flag log output ([#678](https://github.com/invertase/melos/issues/678)). ([2ee575e4](https://github.com/invertase/melos/commit/2ee575e4f2087717d15600c4ab4228df1a7c1c30))
+ - **FEAT**: support for melos command within script steps ([#683](https://github.com/invertase/melos/issues/683)). ([a1da197f](https://github.com/invertase/melos/commit/a1da197fb00dd9b174a30593533ae79e48bcbafe))
+ - **FEAT**: add support for `melos bs --skip-linking` ([#684](https://github.com/invertase/melos/issues/684)). ([699fedc0](https://github.com/invertase/melos/commit/699fedc0cc0ba1b8d9b8a39638761f4ab1764b6a))
+ - **FEAT**: add support for Azure DevOps repository ([#681](https://github.com/invertase/melos/issues/681)). ([16fc890d](https://github.com/invertase/melos/commit/16fc890d1d5ee40d47be6f9dfd565de927f1b32c))
+ - **FEAT**: Change concurrent log to sequential log ([#679](https://github.com/invertase/melos/issues/679)). ([15b1518b](https://github.com/invertase/melos/commit/15b1518b2af185aa1c87fe60f1178844826c5091))
+
+
 ## 2024-03-25
 
 ### Changes
