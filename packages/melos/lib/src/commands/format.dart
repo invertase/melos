@@ -7,6 +7,7 @@ mixin _FormatMixin on _Melos {
     int concurrency = 1,
     bool setExitIfChanged = false,
     String? output,
+    int lineLength = 80,
   }) async {
     final workspace =
         await createWorkspace(global: global, packageFilters: packageFilters);
@@ -18,6 +19,7 @@ mixin _FormatMixin on _Melos {
       concurrency: concurrency,
       setExitIfChanged: setExitIfChanged,
       output: output,
+      lineLength: lineLength,
     );
   }
 
@@ -27,6 +29,7 @@ mixin _FormatMixin on _Melos {
     required int concurrency,
     required bool setExitIfChanged,
     String? output,
+    required int lineLength,
   }) async {
     final failures = <String, int?>{};
     final pool = Pool(concurrency);
@@ -35,6 +38,7 @@ mixin _FormatMixin on _Melos {
       'format',
       if (setExitIfChanged) '--set-exit-if-changed',
       if (output != null) '--output $output',
+      '--line-length $lineLength',
       '.',
     ];
     final formatArgsString = formatArgs.join(' ');
