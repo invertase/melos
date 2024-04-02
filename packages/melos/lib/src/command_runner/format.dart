@@ -36,7 +36,10 @@ class FormatCommand extends MelosCommand {
     final setExitIfChanged = argResults?['set-exit-if-changed'] as bool;
     final output = argResults?['output'] as String?;
     final concurrency = int.parse(argResults!['concurrency'] as String);
-    final lineLength = int.tryParse(argResults?['line-length'] as String);
+    final lineLength = switch (argResults?['line-length']) {
+      final int length => length,
+      _ => null,
+    };
 
     final melos = Melos(logger: logger, config: config);
 
