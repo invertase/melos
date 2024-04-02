@@ -21,7 +21,6 @@ class FormatCommand extends MelosCommand {
     );
     argParser.addOption(
       'line-length',
-      defaultsTo: '80',
       help: 'The line length to format the code to.',
     );
   }
