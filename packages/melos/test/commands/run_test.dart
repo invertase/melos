@@ -232,6 +232,63 @@ melos run hello
       );
     });
 
+    test('supports passing additional arguments to multiline scripts',
+        () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        runPubGet: true,
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: const Scripts({
+            'hello': Script(
+              name: 'hello',
+              run: '''
+
+echo
+''',
+            ),
+          }),
+        ),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      await melos.run(
+        scriptName: 'hello',
+        noSelect: true,
+        extraArgs: [
+          'foo',
+          'bar',
+          'baz',
+        ],
+      );
+
+      expect(
+        logger.output.normalizeNewLines(),
+        ignoringDependencyMessages(
+          '''
+melos run hello
+  └> echo foo bar baz
+     └> RUNNING
+
+foo bar baz
+
+melos run hello
+  └> echo foo bar baz
+     └> SUCCESS
+''',
+        ),
+      );
+    });
+
     test('supports passing additional arguments to scripts (exec)', () async {
       final workspaceDir = await createTemporaryWorkspace(
         runPubGet: true,

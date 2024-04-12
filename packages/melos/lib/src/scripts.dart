@@ -224,7 +224,7 @@ class Script {
 
     return Script(
       name: name,
-      run: run,
+      run: run?.trim(),
       steps: steps,
       description: description,
       env: env,
