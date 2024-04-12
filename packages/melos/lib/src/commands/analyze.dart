@@ -110,10 +110,8 @@ mixin _AnalyzeMixin on _Melos {
   }) {
     final options = _getOptionsArgs(fatalInfos, fatalWarnings, concurrency);
     return <String>[
-      ..._analyzeCommandExecArgs(
-        useFlutter: workspace.isFlutterWorkspace,
-        workspace: workspace,
-      ),
+      workspace.sdkTool('dart'),
+      'analyze',
       options,
     ];
   }
@@ -161,18 +159,5 @@ mixin _AnalyzeMixin on _Melos {
       workingDirectory: package.path,
       group: group,
     );
-  }
-
-  List<String> _analyzeCommandExecArgs({
-    required bool useFlutter,
-    required MelosWorkspace workspace,
-  }) {
-    return [
-      if (useFlutter)
-        workspace.sdkTool('flutter')
-      else
-        workspace.sdkTool('dart'),
-      'analyze',
-    ];
   }
 }
