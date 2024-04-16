@@ -102,6 +102,12 @@ configuration file if the default is unsuitable.
     - Include only packages that depend on a specific package.
   - `--no-depends-on=<noDependantPackageName>`
     - Include only packages that _don't_ depend on a specific package.
+  - `--include-dependencies`
+    - Expands the filtered list of packages to include those packages'
+      transitive dependencies (ignoring filters).
+  - `--include-dependents`
+      Expands the filtered list of packages to include those packages'
+      transitive dependents (ignoring filters).
 - ♨️ Advanced support for IntelliJ IDEs with automatic creation of
   [run configurations for workspace defined scripts and more](https://melos.invertase.dev/~melos-latest/ide-support)
   on workspace bootstrap.
