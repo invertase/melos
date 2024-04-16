@@ -162,6 +162,39 @@ void main() {
           ),
         );
       });
+
+      test('can decode packageFilters values', () {
+        expect(
+          VersionCommandConfigs.fromYaml(
+            const {
+              'changelogs': [
+                {
+                  'path': 'FOO_CHANGELOG.md',
+                  'packageFilters': {
+                    'flutter': true,
+                    'includeDependencies': true,
+                    'includeDependents': true,
+                  },
+                }
+              ],
+            },
+            workspacePath: '.',
+          ),
+          VersionCommandConfigs(
+            aggregateChangelogs: [
+              AggregateChangelogConfig.workspace(),
+              AggregateChangelogConfig(
+                path: 'FOO_CHANGELOG.md',
+                packageFilters: PackageFilters(
+                  flutter: true,
+                  includeDependencies: true,
+                  includeDependents: true,
+                ),
+              ),
+            ],
+          ),
+        );
+      });
     });
   });
 

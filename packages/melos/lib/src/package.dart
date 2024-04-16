@@ -169,6 +169,20 @@ class PackageFilters {
       path: path,
     );
 
+    final includeDependents = assertKeyIsA<bool?>(
+          key: filterOptionIncludeDependents.camelCased,
+          map: yaml,
+          path: path,
+        ) ??
+        false;
+
+    final includeDependencies = assertKeyIsA<bool?>(
+          key: filterOptionIncludeDependencies.camelCased,
+          map: yaml,
+          path: path,
+        ) ??
+        false;
+
     final noPrivateOptionKey = filterOptionNoPrivate.camelCased;
     final excludePrivatePackagesTmp = assertKeyIsA<bool?>(
       key: noPrivateOptionKey,
@@ -227,6 +241,8 @@ class PackageFilters {
       dependsOn: dependsOn,
       noDependsOn: noDependsOn,
       diff: diff,
+      includeDependents: includeDependents,
+      includeDependencies: includeDependencies,
       includePrivatePackages: includePrivatePackages,
       published: published,
       nullSafe: nullSafe,
