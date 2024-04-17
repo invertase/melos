@@ -106,7 +106,7 @@ configuration file if the default is unsuitable.
     - Expands the filtered list of packages to include those packages'
       transitive dependencies (ignoring filters).
   - `--include-dependents`
-      Expands the filtered list of packages to include those packages'
+    - Expands the filtered list of packages to include those packages'
       transitive dependents (ignoring filters).
 - ♨️ Advanced support for IntelliJ IDEs with automatic creation of
   [run configurations for workspace defined scripts and more](https://melos.invertase.dev/~melos-latest/ide-support)
