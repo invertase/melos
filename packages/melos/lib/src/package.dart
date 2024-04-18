@@ -112,6 +112,7 @@ class PackageFilters {
     bool? flutter,
     this.includeDependencies = false,
     this.includeDependents = false,
+    this.reversedFilterGroupPriority = false,
   })  : dependsOn = [
           ...dependsOn,
           // ignore: use_if_null_to_convert_nulls_to_bools
@@ -230,6 +231,13 @@ class PackageFilters {
       path: path,
     );
 
+    final reversedFilterGroupPriority = assertKeyIsA<bool?>(
+          key: filterOptionReversedFilterGroupPriority.camelCased,
+          map: yaml,
+          path: path,
+        ) ??
+        false;
+
     Glob createPackageGlob(String pattern) =>
         createGlob(pattern, currentDirectoryPath: workspacePath);
 
@@ -247,6 +255,7 @@ class PackageFilters {
       published: published,
       nullSafe: nullSafe,
       flutter: flutter,
+      reversedFilterGroupPriority: reversedFilterGroupPriority,
     );
   }
 
@@ -265,6 +274,7 @@ class PackageFilters {
     required this.nullSafe,
     required this.includeDependencies,
     required this.includeDependents,
+    required this.reversedFilterGroupPriority,
   });
 
   /// Patterns for filtering packages by name.
@@ -311,6 +321,11 @@ class PackageFilters {
   /// This supersede other filters.
   final bool includeDependencies;
 
+  /// All the filters are divided into several groups, they applied sequentially
+  /// based on the priority of the group. This flag allows to reverse the order
+  /// of the groups, so that the filters from the last group are applied first.
+  final bool reversedFilterGroupPriority;
+
   Map<String, Object?> toJson() {
     return {
       if (scope.isNotEmpty)
@@ -329,6 +344,8 @@ class PackageFilters {
       if (nullSafe != null) filterOptionNullsafety.camelCased: nullSafe,
       if (includeDependents) filterOptionIncludeDependents.camelCased: true,
       if (includeDependencies) filterOptionIncludeDependencies.camelCased: true,
+      if (reversedFilterGroupPriority)
+        filterOptionReversedFilterGroupPriority.camelCased: true,
     };
   }
 
@@ -346,6 +363,7 @@ class PackageFilters {
       diff: diff,
       includeDependencies: includeDependencies,
       includeDependents: includeDependents,
+      reversedFilterGroupPriority: reversedFilterGroupPriority,
     );
   }
 
@@ -363,6 +381,7 @@ class PackageFilters {
       diff: diff,
       includeDependencies: includeDependencies,
       includeDependents: includeDependents,
+      reversedFilterGroupPriority: reversedFilterGroupPriority,
     );
   }
 
@@ -379,6 +398,7 @@ class PackageFilters {
     String? diff,
     bool? includeDependencies,
     bool? includeDependents,
+    bool? reversedFilterGroupPriority,
   }) {
     return PackageFilters._(
       dependsOn: dependsOn ?? this.dependsOn,
@@ -394,6 +414,8 @@ class PackageFilters {
       diff: diff ?? this.diff,
       includeDependencies: includeDependencies ?? this.includeDependencies,
       includeDependents: includeDependents ?? this.includeDependents,
+      reversedFilterGroupPriority:
+          reversedFilterGroupPriority ?? this.reversedFilterGroupPriority,
     );
   }
 
@@ -412,7 +434,8 @@ class PackageFilters {
       const DeepCollectionEquality().equals(other.fileExists, fileExists) &&
       const DeepCollectionEquality().equals(other.dependsOn, dependsOn) &&
       const DeepCollectionEquality().equals(other.noDependsOn, noDependsOn) &&
-      other.diff == diff;
+      other.diff == diff &&
+      other.reversedFilterGroupPriority == reversedFilterGroupPriority;
 
   @override
   int get hashCode =>
@@ -428,7 +451,8 @@ class PackageFilters {
       const DeepCollectionEquality().hash(fileExists) ^
       const DeepCollectionEquality().hash(dependsOn) ^
       const DeepCollectionEquality().hash(noDependsOn) ^
-      diff.hashCode;
+      diff.hashCode ^
+      reversedFilterGroupPriority.hashCode;
 
   @override
   String toString() {
@@ -446,6 +470,7 @@ PackageFilters(
   dependsOn: $dependsOn,
   noDependsOn: $noDependsOn,
   diff: $diff,
+  reversedFilterGroupPriority: $reversedFilterGroupPriority,
 )''';
   }
 }
@@ -596,30 +621,54 @@ The packages that caused the problem are:
   Future<PackageMap> applyFilters(PackageFilters? filters) async {
     if (filters == null) return this;
 
-    var packageList = await values
-        .applyIgnore(filters.ignore)
-        .applyDirExists(filters.dirExists)
-        .applyFileExists(filters.fileExists)
-        .filterPrivatePackages(include: filters.includePrivatePackages)
-        .applyScope(filters.scope)
-        .applyDependsOn(filters.dependsOn)
-        .applyNoDependsOn(filters.noDependsOn)
-        .filterNullSafe(nullSafe: filters.nullSafe)
-        .filterPublishedPackages(published: filters.published);
+    final filterGroups = <FilterGroup>[
+      FilterGroup.firstPriority(
+        filters: [
+          (packages) => Future.value(packages.applyIgnore(filters.ignore)),
+          (packages) =>
+              Future.value(packages.applyDirExists(filters.dirExists)),
+          (packages) =>
+              Future.value(packages.applyFileExists(filters.fileExists)),
+          (packages) => Future.value(
+                packages.filterPrivatePackages(
+                  include: filters.includePrivatePackages,
+                ),
+              ),
+          (packages) => Future.value(packages.applyScope(filters.scope)),
+          (packages) =>
+              Future.value(packages.applyDependsOn(filters.dependsOn)),
+          (packages) =>
+              Future.value(packages.applyNoDependsOn(filters.noDependsOn)),
+          (packages) =>
+              Future.value(packages.filterNullSafe(nullSafe: filters.nullSafe)),
+          (packages) =>
+              packages.filterPublishedPackages(published: filters.published),
+        ],
+      ),
+      FilterGroup.secondPriority(
+        filters: [
+          (packages) => packages.applyDiff(filters.diff, _logger),
+          (packages) => Future.value(
+                packages.applyIncludeDependentsOrDependencies(
+                  includeDependents: filters.includeDependents,
+                  includeDependencies: filters.includeDependencies,
+                ),
+              ),
+        ],
+      ),
+    ];
 
-    final diff = filters.diff;
-    if (diff != null) {
-      packageList = await packageList.applyDiff(diff, _logger);
+    var filteredPackages = values;
+
+    for (final filterGroup in (filters.reversedFilterGroupPriority
+        ? filterGroups.reversed
+        : filterGroups)) {
+      filteredPackages = await filterGroup.apply(filteredPackages);
     }
-
-    packageList = packageList.applyIncludeDependentsOrDependencies(
-      includeDependents: filters.includeDependents,
-      includeDependencies: filters.includeDependencies,
-    );
 
     return PackageMap(
       {
-        for (final package in packageList) package.name: package,
+        for (final package in filteredPackages) package.name: package,
       },
       _logger,
     );
@@ -1133,4 +1182,48 @@ class Plugin {
 
   Map<Object?, Object?>? get platforms =>
       _plugin['platforms'] as Map<Object?, Object?>?;
+}
+
+enum FilterPriority {
+  first,
+  second,
+}
+
+typedef FilterFunction = Future<Iterable<Package>> Function(
+  Iterable<Package> packages,
+);
+
+class FilterGroup {
+  const FilterGroup.firstPriority({
+    required List<FilterFunction> filters,
+  }) : this._(priority: FilterPriority.first, filters: filters);
+
+  const FilterGroup.secondPriority({
+    required List<FilterFunction> filters,
+  }) : this._(priority: FilterPriority.second, filters: filters);
+
+  const FilterGroup._({
+    required this.priority,
+    required this.filters,
+  });
+
+  static const String belongsToFirstPriorityGroupFilterDescription =
+      'The filter belongs to 1st priority group.';
+
+  static const String belongsToSecondPriorityGroupFilterDescription =
+      'The filter belongs to 2nd priority group.';
+
+  final FilterPriority priority;
+  final List<FilterFunction> filters;
+
+  /// Sequentially applies all [filters] in this group to the given [packages].
+  Future<Iterable<Package>> apply(Iterable<Package> packages) async {
+    var filtered = packages;
+
+    for (final filter in filters) {
+      filtered = await filter(filtered);
+    }
+
+    return filtered;
+  }
 }

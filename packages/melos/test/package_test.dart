@@ -257,6 +257,7 @@ void main() {
       expect(filters.nullSafe, null);
       expect(filters.published, null);
       expect(filters.diff, null);
+      expect(filters.reversedFilterGroupPriority, false);
     });
 
     group('copyWithWithDiff', () {
@@ -281,6 +282,7 @@ void main() {
           nullSafe: true,
           published: true,
           diff: '123',
+          reversedFilterGroupPriority: true,
         );
 
         final copy = filters.copyWithDiff('456');
@@ -297,7 +299,91 @@ void main() {
         expect(copy.noDependsOn, filters.noDependsOn);
         expect(copy.nullSafe, filters.nullSafe);
         expect(copy.published, filters.published);
+        expect(
+          copy.reversedFilterGroupPriority,
+          filters.reversedFilterGroupPriority,
+        );
       });
+    });
+  });
+
+  group('PackageMap', () {
+    test('applyFilters works with original filter group priority', () async {
+      final workspaceBuilder = VirtualWorkspaceBuilder('name: test');
+      workspaceBuilder.addPackage('''
+            name: a
+          ''');
+      workspaceBuilder.addPackage('''
+            name: b
+            dependencies:
+              a: any
+          ''');
+      workspaceBuilder.addPackage('''
+            name: c
+            dependencies:
+              b: any
+          ''');
+      workspaceBuilder.addPackage('''
+            name: d
+          ''');
+      final workspace = workspaceBuilder.build();
+
+      final packageMap = workspace.allPackages;
+
+      final filters = PackageFilters(
+        dependsOn: const ['a'],
+        includeDependents: true,
+      );
+
+      final filteredPackages = await packageMap.applyFilters(filters);
+
+      expect(filteredPackages.length, 2);
+      expect(
+        filteredPackages.values,
+        [
+          isA<Package>().having((p) => p.name, 'name', 'b'),
+          isA<Package>().having((p) => p.name, 'name', 'c'),
+        ],
+      );
+    });
+
+    test('applyFilters works with reversed filter group priority', () async {
+      final workspaceBuilder = VirtualWorkspaceBuilder('name: test');
+      workspaceBuilder.addPackage('''
+            name: a
+          ''');
+      workspaceBuilder.addPackage('''
+            name: b
+            dependencies:
+              a: any
+          ''');
+      workspaceBuilder.addPackage('''
+            name: c
+            dependencies:
+              b: any
+          ''');
+      workspaceBuilder.addPackage('''
+            name: d
+          ''');
+      final workspace = workspaceBuilder.build();
+
+      final packageMap = workspace.allPackages;
+
+      final filters = PackageFilters(
+        dependsOn: const ['a'],
+        includeDependents: true,
+        reversedFilterGroupPriority: true,
+      );
+
+      final filteredPackages = await packageMap.applyFilters(filters);
+
+      expect(filteredPackages.length, 1);
+      expect(
+        filteredPackages.values,
+        [
+          isA<Package>().having((p) => p.name, 'name', 'b'),
+        ],
+      );
     });
   });
 }

@@ -39,6 +39,8 @@ const filterOptionDependsOn = 'depends-on';
 const filterOptionNoDependsOn = 'no-depends-on';
 const filterOptionIncludeDependents = 'include-dependents';
 const filterOptionIncludeDependencies = 'include-dependencies';
+const filterOptionReversedFilterGroupPriority =
+    'reversed-filter-group-priority';
 
 const publishOptionDryRun = 'dry-run';
 const publishOptionNoDryRun = 'no-dry-run';
