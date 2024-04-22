@@ -111,6 +111,7 @@ MelosWorkspaceConfig _defaultWorkspaceConfigBuilder(String path) =>
 Future<Directory> createTemporaryWorkspace({
   TestWorkspaceConfigBuilder configBuilder = _defaultWorkspaceConfigBuilder,
   bool runPubGet = false,
+  bool createLockfile = false,
 }) async {
   final tempDir = createTempDir(p.join(Directory.current.path, '.dart_tool'));
   addTearDown(() => deleteEntry(tempDir));
@@ -128,6 +129,7 @@ Future<Directory> createTemporaryWorkspace({
       },
     ),
     path: '.',
+    createLockfile: createLockfile,
   );
 
   if (runPubGet) {
@@ -149,6 +151,7 @@ Future<Directory> createProject(
   Directory workspace,
   PubSpec partialPubSpec, {
   String? path,
+  bool createLockfile = false,
 }) async {
   final pubSpec = partialPubSpec.environment != null
       ? partialPubSpec
@@ -178,6 +181,11 @@ Future<Directory> createProject(
   ensureDir(projectDirectory.path);
 
   await pubSpec.save(projectDirectory);
+
+  if (createLockfile) {
+    final lockfile = p.join(projectDirectory.path, 'pubspec.lock');
+    writeTextFile(lockfile, '');
+  }
 
   // Reach into unParsedYaml and determine whether this is a plugin that
   // supports Android.

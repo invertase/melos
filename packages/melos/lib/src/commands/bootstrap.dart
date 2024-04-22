@@ -17,7 +17,7 @@ mixin _BootstrapMixin on _CleanMixin {
       () async {
         final bootstrapCommandConfig = workspace.config.commands.bootstrap;
         late final hasLockFile =
-            File('${workspace.path}/pubspec.lock').existsSync();
+            File(p.join(workspace.path, 'pubspec.lock')).existsSync();
         final enforceLockfileConfigValue =
             workspace.config.commands.bootstrap.enforceLockfile;
         final shouldEnforceLockfile =
@@ -208,7 +208,8 @@ mixin _BootstrapMixin on _CleanMixin {
     required bool enforceLockfile,
     required bool noExample,
   }) async {
-    late final hasLockFile = File('${package.path}/pubspec.lock').existsSync();
+    late final hasLockFile =
+        File(p.join(package.path, 'pubspec.lock')).existsSync();
     final enforceLockfileConfigValue =
         workspace.config.commands.bootstrap.enforceLockfile;
     final shouldEnforceLockfile =
