@@ -16,8 +16,13 @@ mixin _BootstrapMixin on _CleanMixin {
       CommandWithLifecycle.bootstrap,
       () async {
         final bootstrapCommandConfig = workspace.config.commands.bootstrap;
+        late final hasLockFile =
+            File(p.join(workspace.path, 'pubspec.lock')).existsSync();
+        final enforceLockfileConfigValue =
+            workspace.config.commands.bootstrap.enforceLockfile;
         final shouldEnforceLockfile =
-            bootstrapCommandConfig.enforceLockfile || enforceLockfile;
+            (enforceLockfileConfigValue || enforceLockfile) && hasLockFile;
+
         final pubCommandForLogging = [
           ...pubCommandExecArgs(
             useFlutter: workspace.isFlutterWorkspace,
@@ -203,8 +208,12 @@ mixin _BootstrapMixin on _CleanMixin {
     required bool enforceLockfile,
     required bool noExample,
   }) async {
+    late final hasLockFile =
+        File(p.join(package.path, 'pubspec.lock')).existsSync();
+    final enforceLockfileConfigValue =
+        workspace.config.commands.bootstrap.enforceLockfile;
     final shouldEnforceLockfile =
-        workspace.config.commands.bootstrap.enforceLockfile || enforceLockfile;
+        (enforceLockfileConfigValue || enforceLockfile) && hasLockFile;
     final command = [
       ...pubCommandExecArgs(
         useFlutter: package.isFlutterPackage,
