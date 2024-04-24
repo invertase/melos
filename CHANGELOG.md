@@ -3,6 +3,31 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2024-04-24
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - [`melos` - `v6.0.0`](#melos---v600)
+
+Packages with other changes:
+
+ - There are no other changes in this release.
+
+---
+
+#### `melos` - `v6.0.0`
+
+ - **FIX**: Only enforce lockfile when it exists ([#704](https://github.com/invertase/melos/issues/704)). ([be94adac](https://github.com/invertase/melos/commit/be94adacac71d8263079641229640932b387891a))
+ - **FEAT**: option to provide dependencies related filters from yaml ([#698](https://github.com/invertase/melos/issues/698)). ([92be9858](https://github.com/invertase/melos/commit/92be9858cd64f35cce2d3a3ba2f4184cd32d0955))
+ - **FEAT**: add `--line-length` option to `melos format` command ([#689](https://github.com/invertase/melos/issues/689)). ([048ab301](https://github.com/invertase/melos/commit/048ab301ca0f01f99d198c3ba6ca0f3c951078cf))
+ - **DOCS**: fix misalignment in readme ([#699](https://github.com/invertase/melos/issues/699)). ([5e588ef9](https://github.com/invertase/melos/commit/5e588ef92d5e5ad25bb99be5a279305c4c07e9a9))
+ - **BREAKING** **FIX**: Make `melos analyze` always use `dart analyze` ([#695](https://github.com/invertase/melos/issues/695)). ([2b16e360](https://github.com/invertase/melos/commit/2b16e3609bf3e00d15c42968dfbaeac2663a48c9))
+
+
 ## 2024-04-01
 
 ### Changes
