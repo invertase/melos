@@ -38,6 +38,7 @@ class FormatCommand extends MelosCommand {
     final concurrency = int.parse(argResults!['concurrency'] as String);
     final lineLength = switch (argResults?['line-length']) {
       final int length => length,
+      final String length => int.tryParse(length),
       _ => null,
     };
 
