@@ -33,17 +33,18 @@ mixin _FormatMixin on _Melos {
   }) async {
     final formatConfig = workspace.config.commands.format;
 
-    setExitIfChanged = setExitIfChanged ?? formatConfig.setExitIfChanged;
-    lineLength = lineLength ?? formatConfig.lineLength;
+    final effectiveSetExitIfChanged =
+        setExitIfChanged ?? formatConfig.setExitIfChanged;
+    final effectiveLineLength = lineLength ?? formatConfig.lineLength;
 
     final failures = <String, int?>{};
     final pool = Pool(concurrency);
     final formatArgs = [
       'dart',
       'format',
-      if (setExitIfChanged ?? false) '--set-exit-if-changed',
+      if (effectiveSetExitIfChanged ?? false) '--set-exit-if-changed',
       if (output != null) '--output $output',
-      if (lineLength != null) '--line-length $lineLength',
+      if (effectiveLineLength != null) '--line-length $effectiveLineLength',
       '.',
     ];
     final formatArgsString = formatArgs.join(' ');
