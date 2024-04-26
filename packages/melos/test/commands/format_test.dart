@@ -351,16 +351,6 @@ void main() {
             r'''
 $ melos format
   └> dart format --set-exit-if-changed --line-length 150 .
-     └> RUNNING (in 1 packages)
-
---------------------------------------------------------------------------------
-a:
-Formatted 1 file (0 changed) in 0.06 seconds.
-a: SUCCESS
---------------------------------------------------------------------------------
-
-$ melos format
-  └> dart format --set-exit-if-changed --line-length 150 .
      └> SUCCESS''',
           ),
         );
