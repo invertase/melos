@@ -31,6 +31,11 @@ mixin _FormatMixin on _Melos {
     String? output,
     int? lineLength,
   }) async {
+    final formatConfig = workspace.config.commands.format;
+
+    setExitIfChanged = setExitIfChanged ?? formatConfig.setExitIfChanged;
+    lineLength = lineLength ?? formatConfig.lineLength;
+
     final failures = <String, int?>{};
     final pool = Pool(concurrency);
     final formatArgs = [
