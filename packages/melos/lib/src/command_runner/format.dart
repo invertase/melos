@@ -8,6 +8,7 @@ class FormatCommand extends MelosCommand {
     argParser.addFlag(
       'set-exit-if-changed',
       negatable: false,
+      defaultsTo: null,
       help: 'Return exit code 1 if there are any formatting changes.',
     );
     argParser.addOption(
@@ -33,7 +34,7 @@ class FormatCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    final setExitIfChanged = argResults?['set-exit-if-changed'] as bool;
+    final setExitIfChanged = argResults?['set-exit-if-changed'] as bool?;
     final output = argResults?['output'] as String?;
     final concurrency = int.parse(argResults!['concurrency'] as String);
     final lineLength = switch (argResults?['line-length']) {
