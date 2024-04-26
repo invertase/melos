@@ -263,5 +263,39 @@ $ melos format
         skip: 'Differ at offset 1261',
       );
     });
+
+    test('should run format with --line-length flag', () async {
+      const code = '''
+void main() {
+  print('a very long line that should be wrapped with default dart settings but we use a longer line length');
+}
+''';
+
+      writeTextFile(
+        p.join(aDir.path, 'main.dart'),
+        code,
+      );
+
+      final result = await Process.run(
+        'melos',
+        ['format', '--set-exit-if-changed', '--line-length', '150'],
+        workingDirectory: workspaceDir.path,
+        runInShell: Platform.isWindows,
+        stdoutEncoding: utf8,
+        stderrEncoding: utf8,
+      );
+
+      expect(result.exitCode, equals(0));
+
+      expect(
+        result.stdout,
+        contains(
+          r'''
+$ melos format
+  └> dart format --set-exit-if-changed --line-length 150 .
+     └> SUCCESS''',
+        ),
+      );
+    });
   });
 }
