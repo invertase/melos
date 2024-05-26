@@ -8,6 +8,13 @@ homepage: https://melos.invertase.dev/~melos-latest
 repository: https://github.com/invertase/melos/tree/main/packages/melos
 issue_tracker: https://github.com/invertase/melos/issues
 
+topics:
+  - tool
+  - repository-management
+  - cli
+  - monorepo
+  - lerna
+
 environment:
   sdk: ">=3.0.0 <4.0.0"
 
