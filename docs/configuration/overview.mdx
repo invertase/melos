@@ -345,3 +345,20 @@ command:
   version:
     fetchTags: false
 ```
+
+### changelogFormat
+
+Configure the format of the generated CHANGELOG.md.
+
+```yaml
+command:
+  version:
+    changelogFormat:
+      includeDate: true
+```
+
+#### includeDate
+
+Whether to include the date in the generated CHANGELOG.md. Defaults to `false`.
+
+With enabled, changelog entry header will include the date in the `yyyy-MM-dd` format.
