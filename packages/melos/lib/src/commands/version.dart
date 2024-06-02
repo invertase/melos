@@ -309,10 +309,15 @@ mixin _VersionMixin on _RunMixin {
       return;
     }
 
+    final pendingPackageUpdatesCount = updateDependentsVersions
+        ? pendingPackageUpdates.length
+        : pendingPackageUpdates
+            .where((update) => update.reason != PackageUpdateReason.dependency)
+            .length;
     logger.log(
       AnsiStyles.magentaBright(
         'The following '
-        '${packageNameStyle(pendingPackageUpdates.length.toString())} '
+        '${packageNameStyle(pendingPackageUpdatesCount.toString())} '
         'packages will be updated:\n',
       ),
     );
@@ -699,6 +704,7 @@ mixin _VersionMixin on _RunMixin {
             workspace,
             changelogConfig,
             pendingPackageUpdates,
+            updateDependentsVersions: updateDependentsVersions,
           );
         }),
       );
@@ -708,8 +714,9 @@ mixin _VersionMixin on _RunMixin {
   Future<void> _writeAggregateChangelog(
     MelosWorkspace workspace,
     AggregateChangelogConfig config,
-    List<MelosPendingPackageUpdate> pendingPackageUpdates,
-  ) async {
+    List<MelosPendingPackageUpdate> pendingPackageUpdates, {
+    required bool updateDependentsVersions,
+  }) async {
     final today = DateTime.now();
     final dateSlug = [
       today.year.toString(),
@@ -731,6 +738,7 @@ mixin _VersionMixin on _RunMixin {
       pendingPackageUpdates,
       logger,
       config.path,
+      updateDependentsVersions: updateDependentsVersions,
     );
 
     await changelog.write();
