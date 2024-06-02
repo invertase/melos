@@ -105,7 +105,7 @@ extension ChangelogStringBufferExtension on StringBuffer {
 
       write(update.nextVersion);
       write(' - ');
-      write(nowFormatted);
+      writeln(nowFormatted);
     } else {
       writeln(update.nextVersion);
     }
