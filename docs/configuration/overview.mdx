@@ -345,3 +345,23 @@ command:
   version:
     fetchTags: false
 ```
+
+### changelogCommitBodies
+
+Configuration for including commit bodies in the changelog.
+
+```yaml
+command:
+  version:
+    changelogCommitBodies:
+      include: true
+      onlyBreaking: false
+```
+
+#### include
+
+Whether to include commit bodies in the changelog. Defaults to `false`.
+
+#### onlyBreaking
+
+Whether to include only breaking changes in the changelog. Defaults to `true`.
