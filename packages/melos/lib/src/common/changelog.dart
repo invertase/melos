@@ -93,9 +93,22 @@ extension MarkdownStringBufferExtension on StringBuffer {
 
 extension ChangelogStringBufferExtension on StringBuffer {
   void writePackageChangelog(MelosPendingPackageUpdate update) {
+    final config = update.workspace.config;
+    final includeDate = config.commands.version.includeDateInChangelogEntry;
+
     // Changelog entry header.
     write('## ');
-    writeln(update.nextVersion);
+    if (includeDate) {
+      final now = DateTime.now();
+      final nowFormatted =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
+      write(update.nextVersion);
+      write(' - ');
+      write(nowFormatted);
+    } else {
+      writeln(update.nextVersion);
+    }
     writeln();
 
     if (update.reason == PackageUpdateReason.dependency) {
