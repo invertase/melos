@@ -246,7 +246,9 @@ class VersionCommandConfigs {
           aggregateChangelogs.map((config) => config.toJson()).toList(),
       'fetchTags': fetchTags,
       'hooks': hooks.toJson(),
-      'includeDateInChangelogEntry': includeDateInChangelogEntry,
+      'changelogFormat': {
+        'includeDate': includeDateInChangelogEntry,
+      },
     };
   }
 
