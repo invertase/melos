@@ -1,3 +1,4 @@
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
@@ -100,12 +101,10 @@ extension ChangelogStringBufferExtension on StringBuffer {
     write('## ');
     if (includeDate) {
       final now = DateTime.now();
-      final nowFormatted =
-          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
       write(update.nextVersion);
       write(' - ');
-      writeln(nowFormatted);
+      writeln(now.toFormattedString());
     } else {
       writeln(update.nextVersion);
     }
@@ -241,5 +240,14 @@ extension on String {
       final issueUrl = repository.issueUrl(match.group(1)!);
       return '[${match.group(0)}]($issueUrl)';
     });
+  }
+}
+
+extension DateTimeExt on DateTime {
+  @visibleForTesting
+  String toFormattedString() {
+    final formattedMonth = month.toString().padLeft(2, '0');
+    final formattedDay = day.toString().padLeft(2, '0');
+    return '$year-$formattedMonth-$formattedDay';
   }
 }
