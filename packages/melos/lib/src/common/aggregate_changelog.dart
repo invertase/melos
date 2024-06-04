@@ -14,9 +14,8 @@ class AggregateChangelog {
     this.newEntryTitle,
     this.pendingPackageUpdates,
     this.logger,
-    this.path, {
-    required this.updateDependentsVersions,
-  });
+    this.path,
+  );
 
   final MelosWorkspace workspace;
   final String? description;
@@ -24,7 +23,6 @@ class AggregateChangelog {
   final MelosLogger logger;
   final List<MelosPendingPackageUpdate> pendingPackageUpdates;
   final String path;
-  final bool updateDependentsVersions;
 
   String get _changelogFileHeader => '''
 # Change Log
@@ -46,21 +44,14 @@ ${description?.withoutTrailing('\n') ?? ''}
 
   String get markdown {
     final body = StringBuffer();
-    final dependencyOnlyPackages = updateDependentsVersions
-        ? pendingPackageUpdates
-            .where((update) => update.reason == PackageUpdateReason.dependency)
-        : <MelosPendingPackageUpdate>[];
+    final dependencyOnlyPackages = pendingPackageUpdates
+        .where((update) => update.reason == PackageUpdateReason.dependency);
     final graduatedPackages = pendingPackageUpdates
         .where((update) => update.reason == PackageUpdateReason.graduate);
     final packagesWithBreakingChanges =
         pendingPackageUpdates.where((update) => update.hasBreakingChanges);
-    final packagesWithOtherChanges = pendingPackageUpdates.where((update) {
-      if (update.reason == PackageUpdateReason.dependency &&
-          !updateDependentsVersions) {
-        return false;
-      }
-      return !update.hasBreakingChanges;
-    });
+    final packagesWithOtherChanges =
+        pendingPackageUpdates.where((update) => !update.hasBreakingChanges);
 
     body.writeln(_changelogFileHeader);
     body.writeln('## $newEntryTitle');
