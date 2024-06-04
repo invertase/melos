@@ -158,10 +158,11 @@ class VersionCommandConfigs {
     );
 
     final changelogFormat = assertKeyIsA<Map<Object?, Object?>?>(
-      key: 'changelogFormat',
-      map: yaml,
-      path: 'command/version',
-    ) ?? const {};
+          key: 'changelogFormat',
+          map: yaml,
+          path: 'command/version',
+        ) ??
+        const {};
 
     final includeDate = assertKeyIsA<bool?>(
       key: 'includeDate',
@@ -281,7 +282,8 @@ class VersionCommandConfigs {
       releaseUrl.hashCode ^
       const DeepCollectionEquality().hash(aggregateChangelogs) ^
       fetchTags.hashCode ^
-      hooks.hashCode ^ includeDateInChangelogEntry.hashCode;
+      hooks.hashCode ^
+      includeDateInChangelogEntry.hashCode;
 
   @override
   String toString() {
