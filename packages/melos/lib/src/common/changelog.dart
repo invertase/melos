@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
@@ -244,10 +245,10 @@ extension on String {
 }
 
 extension DateTimeExt on DateTime {
+  /// Returns a formatted string in the format `yyyy-MM-dd`.
   @visibleForTesting
   String toFormattedString() {
-    final formattedMonth = month.toString().padLeft(2, '0');
-    final formattedDay = day.toString().padLeft(2, '0');
-    return '$year-$formattedMonth-$formattedDay';
+    final format = DateFormat('yyyy-MM-dd');
+    return format.format(this);
   }
 }

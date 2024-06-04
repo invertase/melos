@@ -26,6 +26,7 @@ dependencies:
   glob: ^2.1.2
   graphs: ^2.3.1
   http: ^1.1.0
+  intl: ^0.19.0
   meta: ^1.10.0
   mustache_template: ^2.0.0
   path: ^1.8.3
