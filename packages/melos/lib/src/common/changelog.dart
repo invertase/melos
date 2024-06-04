@@ -246,7 +246,7 @@ extension on String {
 
 extension DateTimeExt on DateTime {
   /// Returns a formatted string in the format `yyyy-MM-dd`.
-  @visibleForTesting
+  @internal
   String toFormattedString() {
     final format = DateFormat('yyyy-MM-dd');
     return format.format(this);
