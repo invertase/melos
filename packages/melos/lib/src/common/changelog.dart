@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
@@ -93,9 +95,20 @@ extension MarkdownStringBufferExtension on StringBuffer {
 
 extension ChangelogStringBufferExtension on StringBuffer {
   void writePackageChangelog(MelosPendingPackageUpdate update) {
+    final config = update.workspace.config;
+    final includeDate = config.commands.version.includeDateInChangelogEntry;
+
     // Changelog entry header.
     write('## ');
-    writeln(update.nextVersion);
+    if (includeDate) {
+      final now = DateTime.now();
+
+      write(update.nextVersion);
+      write(' - ');
+      writeln(now.toFormattedString());
+    } else {
+      writeln(update.nextVersion);
+    }
     writeln();
 
     if (update.reason == PackageUpdateReason.dependency) {
@@ -228,5 +241,14 @@ extension on String {
       final issueUrl = repository.issueUrl(match.group(1)!);
       return '[${match.group(0)}]($issueUrl)';
     });
+  }
+}
+
+extension DateTimeExt on DateTime {
+  /// Returns a formatted string in the format `yyyy-MM-dd`.
+  @internal
+  String toFormattedString() {
+    final format = DateFormat('yyyy-MM-dd');
+    return format.format(this);
   }
 }
