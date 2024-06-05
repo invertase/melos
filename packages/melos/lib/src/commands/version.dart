@@ -265,6 +265,11 @@ mixin _VersionMixin on _RunMixin {
     );
 
     for (final package in dependentPackagesToVersion) {
+      // If updateDependentsVersions is set to false, we do not perform updates.
+      if (!updateDependentsVersions) {
+        break;
+      }
+
       final packageHasPendingUpdate = pendingPackageUpdates.any(
         (packageToVersion) => packageToVersion.package.name == package.name,
       );
