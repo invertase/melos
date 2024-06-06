@@ -33,7 +33,7 @@ Melos is a tool that optimizes the workflow around managing multi-package reposi
 
 - If you have suggestions for improvements to the documentation or examples (or something else), we would love to hear about it.
 - As always first file a [GitHub issue](https://github.com/invertase/melos/issues/new).
-- Implement the changes to the documentation, please read the [Docs](#docs).
+- Implement the changes to the documentation, please read the [Docs](#docs) section.
 
 ## How To Contribute
 
