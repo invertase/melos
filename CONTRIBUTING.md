@@ -86,7 +86,7 @@ melos --help
 
 When editing the documentation, once you have submitted your Pull Request (PR)
 and pipeline has passed, you can preview your changes on the:
-https://melos.invertase.dev/{PR_NUMBER}.
+https://melos.invertase.dev/~{PR_NUMBER}.
 - For example a PR with number 123, you can preview it on: https://melos.invertase.dev/~123
 - For more information, see the [docs](https://use.docs.page/previews#custom-domain)
 
