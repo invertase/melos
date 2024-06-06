@@ -104,8 +104,3 @@ guide.
 
 Please also enable **“Allow edits by maintainers”**, this will help to speed-up the review
 process as well.
-
-
-
-
-
