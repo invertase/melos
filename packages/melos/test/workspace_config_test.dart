@@ -174,6 +174,7 @@ void main() {
                     'flutter': true,
                     'includeDependencies': true,
                     'includeDependents': true,
+                    'reversedFilterGroupPriority': true,
                   },
                 }
               ],
@@ -189,6 +190,7 @@ void main() {
                   flutter: true,
                   includeDependencies: true,
                   includeDependents: true,
+                  reversedFilterGroupPriority: true,
                 ),
               ),
             ],

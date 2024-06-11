@@ -42,7 +42,8 @@ abstract class MelosCommand extends Command<void> {
     argParser.addFlag(
       filterOptionPrivate,
       help: 'Whether to include or exclude packages with `publish_to: "none"`. '
-          'By default, the filter has no effect.',
+          'By default, the filter has no effect.'
+          ' ${FilterGroup.belongsToFirstPriorityGroupFilterDescription}',
       defaultsTo: null,
     );
 
@@ -51,7 +52,8 @@ abstract class MelosCommand extends Command<void> {
       defaultsTo: null,
       help: 'Filter packages where the current local package version exists on '
           'pub.dev. Or "-no-published" to filter packages that have not had '
-          'their current version published yet.',
+          'their current version published yet.'
+          ' ${FilterGroup.belongsToFirstPriorityGroupFilterDescription}',
     );
 
     argParser.addFlag(
@@ -60,7 +62,8 @@ abstract class MelosCommand extends Command<void> {
       help:
           'Filter packages where the current local version uses a "nullsafety" '
           'prerelease preid. Or "-no-nullsafety" to filter packages where '
-          'their current version does not have a "nullsafety" preid.',
+          'their current version does not have a "nullsafety" preid.'
+          ' ${FilterGroup.belongsToFirstPriorityGroupFilterDescription}',
     );
 
     argParser.addFlag(
@@ -68,44 +71,39 @@ abstract class MelosCommand extends Command<void> {
       defaultsTo: null,
       help: 'Filter packages where the package depends on the Flutter SDK. Or '
           '"-no-flutter" to filter packages that do not depend on the Flutter '
-          'SDK.',
+          'SDK.'
+          ' ${FilterGroup.belongsToFirstPriorityGroupFilterDescription}',
     );
 
     argParser.addMultiOption(
       filterOptionScope,
       valueHelp: 'glob',
       help: 'Include only packages with names matching the given glob. This '
-          'option can be repeated.',
+          'option can be repeated.'
+          ' ${FilterGroup.belongsToFirstPriorityGroupFilterDescription}',
     );
 
     argParser.addMultiOption(
       filterOptionIgnore,
       valueHelp: 'glob',
       help: 'Exclude packages with names matching the given glob. This option '
-          'can be repeated.',
-    );
-
-    argParser.addOption(
-      filterOptionDiff,
-      valueHelp: 'ref',
-      help: 'Filter packages based on whether there were changes between a '
-          'commit and the current HEAD or within a range of commits. A range '
-          'of commits can be specified using the git short hand syntax '
-          '`<start-commit>..<end-commit>` and `<start-commit>...<end-commit>`',
+          'can be repeated.'
+          ' ${FilterGroup.belongsToFirstPriorityGroupFilterDescription}',
     );
 
     argParser.addMultiOption(
       filterOptionDirExists,
       valueHelp: 'dirRelativeToPackageRoot',
       help: 'Include only packages where a specific directory exists inside '
-          'the package.',
+          'the package.'
+          ' ${FilterGroup.belongsToFirstPriorityGroupFilterDescription}',
     );
 
     argParser.addMultiOption(
       filterOptionFileExists,
       valueHelp: 'fileRelativeToPackageRoot',
-      help:
-          'Include only packages where a specific file exists in the package.',
+      help: 'Include only packages where a specific file exists in the package.'
+          ' ${FilterGroup.belongsToFirstPriorityGroupFilterDescription}',
     );
 
     argParser.addMultiOption(
@@ -122,20 +120,37 @@ abstract class MelosCommand extends Command<void> {
           'This option can be repeated.',
     );
 
+    argParser.addOption(
+      filterOptionDiff,
+      valueHelp: 'ref',
+      help: 'Filter packages based on whether there were changes between a '
+          'commit and the current HEAD or within a range of commits. A range '
+          'of commits can be specified using the git short hand syntax '
+          '`<start-commit>..<end-commit>` and `<start-commit>...<end-commit>`.'
+          ' ${FilterGroup.belongsToSecondPriorityGroupFilterDescription}',
+    );
+
     argParser.addFlag(
       filterOptionIncludeDependents,
       negatable: false,
       help: 'Include all transitive dependents for each package that matches '
-          'the other filters. The included packages skip --ignore and '
-          '--diff checks.',
+          'the other filters.'
+          ' ${FilterGroup.belongsToSecondPriorityGroupFilterDescription}',
     );
 
     argParser.addFlag(
       filterOptionIncludeDependencies,
       negatable: false,
       help: 'Include all transitive dependencies for each package that '
-          'matches the other filters. The included packages skip --ignore '
-          'and --diff checks.',
+          'matches the other filters.'
+          ' ${FilterGroup.belongsToSecondPriorityGroupFilterDescription}',
+    );
+
+    argParser.addFlag(
+      filterOptionReversedFilterGroupPriority,
+      negatable: false,
+      help: 'Filters are divided into several groups based on their priority '
+          'of execution. This flag reverses the priority of these groups.',
     );
   }
 
@@ -172,6 +187,8 @@ abstract class MelosCommand extends Command<void> {
       noDependsOn: argResults![filterOptionNoDependsOn] as List<String>? ?? [],
       includeDependents: argResults![filterOptionIncludeDependents] as bool,
       includeDependencies: argResults![filterOptionIncludeDependencies] as bool,
+      reversedFilterGroupPriority:
+          argResults![filterOptionReversedFilterGroupPriority] as bool,
     );
   }
 }

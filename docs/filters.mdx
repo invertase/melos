@@ -5,9 +5,21 @@ description: Learn more about all the package filtering flags in Melos.
 
 # Filtering Packages
 
-Each Melos command can be used alongside the following global filters:
+Each Melos command can be used alongside the following global filters.
 
-## --no-private
+The filters are divided into 2 priority groups. The priority determines the
+order of their application. The grouping has been introduced with backward
+compatibility in mind. It is possible to reverse the order of the priority
+groups to achive different filtering result.
+
+## --reversed-filter-group-priority
+Reverses the priority of filtering groups. Useful for applying diff-based
+filtering first, allowing the filters from the other group to further narrow
+down the packages.
+
+## 1st Priority Group
+
+### --no-private
 
 Exclude private packages (`publish_to: none`). They are included by default.
 
@@ -15,7 +27,7 @@ Exclude private packages (`publish_to: none`). They are included by default.
 melos bootstrap --no-private
 ```
 
-## --published
+### --published
 
 Filter packages where the current local package version exists on pub.dev.
 
@@ -26,7 +38,7 @@ melos bootstrap --published
 Use `--no-published` to filter packages that have not had their current version
 published yet.
 
-## --scope
+### --scope
 
 Include only packages with names matching the given glob. This option can be
 repeated.
@@ -36,7 +48,7 @@ repeated.
 melos exec --scope="*example*" -- flutter build ios
 ```
 
-## --ignore
+### --ignore
 
 Exclude packages with names matching the given glob. This option can be
 repeated.
@@ -46,7 +58,48 @@ repeated.
 melos exec --ignore="*internal*" -- flutter build ios
 ```
 
-## --diff
+### --dir-exists
+
+Include only packages where a specific directory exists inside the package.
+
+```bash
+# Only bootstrap packages with an example directory
+melos bootstrap --dir-exists="example"
+```
+
+### --file-exists
+
+Include only packages where a specific file exists in the package.
+
+```bash
+# Only bootstrap packages with an README.md file
+melos bootstrap --file-exists="README.md"
+```
+
+### --flutter
+
+Filter packages where the package depends on the Flutter SDK.
+
+```bash
+melos exec --flutter -- flutter test
+```
+
+Use `--no-flutter` to filter packages that do not depend on the Flutter SDK.
+
+### --depends-on
+
+Include only packages that depend on specific dependencies.
+
+```bash
+melos exec --depends-on="flutter" --depends-on="firebase_core" -- flutter test
+```
+
+Use `--no-depends-on` to filter packages that do not depend on the given
+dependencies.
+
+## 2nd Priority Group
+
+### --diff
 
 Filter packages based on whether there were changes between a commit and the
 current HEAD or within a range of commits.
@@ -62,48 +115,14 @@ melos exec --diff=<commit hash> -- flutter build ios
 # Run `flutter build ios` on all packages that are different between remote
 # `main` branch and HEAD.
 melos exec --diff=origin/main...HEAD -- flutter build ios
+
+# Find all packages that are different between remote `main` branch and HEAD,
+# add their dependents to the list, filter out packages without `test`
+# directory and run `flutter test` on them.
+melos exec --diff=origin/main...HEAD --include-dependents --reversed-filter-group-priority --dir-exists="test" -- flutter test
 ```
 
-## --dir-exists
-
-Include only packages where a specific directory exists inside the package.
-
-```bash
-# Only bootstrap packages with an example directory
-melos bootstrap --dir-exists="example"
-```
-
-## --file-exists
-
-Include only packages where a specific file exists in the package.
-
-```bash
-# Only bootstrap packages with an README.md file
-melos bootstrap --file-exists="README.md"
-```
-
-## --flutter
-
-Filter packages where the package depends on the Flutter SDK.
-
-```bash
-melos exec --flutter -- flutter test
-```
-
-Use `--no-flutter` to filter packages that do not depend on the Flutter SDK.
-
-## --depends-on
-
-Include only packages that depend on specific dependencies.
-
-```bash
-melos exec --depends-on="flutter" --depends-on="firebase_core" -- flutter test
-```
-
-Use `--no-depends-on` to filter packages that do not depend on the given
-dependencies.
-
-## --include-dependencies
+### --include-dependencies
 
 Takes the filtered list of packages, and expands them to include those packages'
 transitive dependencies (ignoring filters).
@@ -112,7 +131,7 @@ transitive dependencies (ignoring filters).
 melos list --scope=some_package --include-dependencies
 ```
 
-## --include-dependents
+### --include-dependents
 Takes the filtered list of packages, and expands them to include those packages'
 transitive dependents (ignoring filters).
 
