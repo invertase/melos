@@ -393,6 +393,7 @@ class VirtualWorkspaceBuilder {
         dependencyOverrides: pubSpec.dependencyOverrides.keys.toList(),
         packageMap: packageMap,
         pathRelativeToWorkspace: pathRelativeToWorkspace,
+        categories: [],
       );
     }
 

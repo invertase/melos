@@ -26,6 +26,7 @@ const globalOptionSdkPath = 'sdk-path';
 const autoSdkPathOptionValue = 'auto';
 
 const filterOptionScope = 'scope';
+const categoryOptionScope = 'category';
 const filterOptionIgnore = 'ignore';
 const filterOptionDirExists = 'dir-exists';
 const filterOptionFileExists = 'file-exists';

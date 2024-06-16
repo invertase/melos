@@ -133,5 +133,6 @@ Package _dummyPackage(String name, {List<String> deps = const []}) {
     version: Version(1, 0, 0),
     publishTo: null,
     pubSpec: const PubSpec(),
+    categories: [],
   );
 }

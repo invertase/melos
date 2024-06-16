@@ -10,6 +10,7 @@ import 'package:pool/pool.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
 
+import 'command_runner.dart';
 import 'common/environment_variable_key.dart';
 import 'common/exception.dart';
 import 'common/git.dart';
@@ -101,6 +102,7 @@ class PackageFilters {
   PackageFilters({
     this.scope = const [],
     this.ignore = const [],
+    this.categories = const [],
     this.dirExists = const [],
     this.fileExists = const [],
     List<String> dependsOn = const [],
@@ -129,6 +131,12 @@ class PackageFilters {
   }) {
     final scope = assertListOrString(
       key: filterOptionScope.camelCased,
+      map: yaml,
+      path: path,
+    );
+
+    final category = assertListOrString(
+      key: categoryOptionScope.camelCased,
       map: yaml,
       path: path,
     );
@@ -247,6 +255,7 @@ class PackageFilters {
       published: published,
       nullSafe: nullSafe,
       flutter: flutter,
+      categories: category.map(createPackageGlob).toList(),
     );
   }
 
@@ -255,6 +264,7 @@ class PackageFilters {
   const PackageFilters._({
     required this.scope,
     required this.ignore,
+    required this.categories,
     required this.dirExists,
     required this.fileExists,
     required this.dependsOn,
@@ -272,6 +282,9 @@ class PackageFilters {
 
   /// Patterns for excluding packages by name.
   final List<Glob> ignore;
+
+  /// Patterns for filtering packages by category.
+  final List<Glob> categories;
 
   /// Include a package only if a given directory exists.
   final List<String> dirExists;
@@ -346,6 +359,7 @@ class PackageFilters {
       diff: diff,
       includeDependencies: includeDependencies,
       includeDependents: includeDependents,
+      categories: categories,
     );
   }
 
@@ -363,6 +377,7 @@ class PackageFilters {
       diff: diff,
       includeDependencies: includeDependencies,
       includeDependents: includeDependents,
+      categories: categories,
     );
   }
 
@@ -379,6 +394,7 @@ class PackageFilters {
     String? diff,
     bool? includeDependencies,
     bool? includeDependents,
+    List<Glob>? category,
   }) {
     return PackageFilters._(
       dependsOn: dependsOn ?? this.dependsOn,
@@ -394,6 +410,7 @@ class PackageFilters {
       diff: diff ?? this.diff,
       includeDependencies: includeDependencies ?? this.includeDependencies,
       includeDependents: includeDependents ?? this.includeDependents,
+      categories: category ?? categories,
     );
   }
 
@@ -440,6 +457,7 @@ PackageFilters(
   includeDependents: $includeDependents,
   includePrivatePackages: $includePrivatePackages,
   scope: $scope,
+  categories: $categories,
   ignore: $ignore,
   dirExists: $dirExists,
   fileExists: $fileExists,
@@ -494,6 +512,7 @@ class PackageMap {
     required String workspacePath,
     required List<Glob> packages,
     required List<Glob> ignore,
+    required Map<String, List<Glob>> categories,
     required MelosLogger logger,
   }) async {
     final pubspecFiles = await _resolvePubspecFiles(
@@ -528,6 +547,20 @@ The packages that caused the problem are:
           );
         }
 
+        final filteredCategories = <String>[];
+
+        categories.forEach((category, globs) {
+          if (categories[category]!.contains(Glob(name))) {
+            filteredCategories.add(category);
+          }
+        });
+
+        // final a = categories.values.where((packages) {
+        //   return packages.any((glob) => glob.matches(name));
+        // }).toList();
+
+        // final filteredCategories = categories.;
+
         packageMap[name] = Package(
           name: name,
           path: pubspecDirPath,
@@ -539,6 +572,7 @@ The packages that caused the problem are:
           devDependencies: pubSpec.devDependencies.keys.toList(),
           dependencyOverrides: pubSpec.dependencyOverrides.keys.toList(),
           pubSpec: pubSpec,
+          categories: filteredCategories,
         );
       }),
     );
@@ -602,6 +636,7 @@ The packages that caused the problem are:
         .applyFileExists(filters.fileExists)
         .filterPrivatePackages(include: filters.includePrivatePackages)
         .applyScope(filters.scope)
+        .applyCategory(filters.categories)
         .applyDependsOn(filters.dependsOn)
         .applyNoDependsOn(filters.noDependsOn)
         .filterNullSafe(nullSafe: filters.nullSafe)
@@ -747,6 +782,16 @@ extension on Iterable<Package> {
     }).toList();
   }
 
+  Iterable<Package> applyCategory(List<Glob> category) {
+    if (category.isEmpty) return this;
+
+    return where((package) {
+      return category.any(
+        (category) => category.matches(package.name),
+      );
+    }).toList();
+  }
+
   Iterable<Package> applyDependsOn(List<String> dependsOn) {
     if (dependsOn.isEmpty) return this;
 
@@ -802,6 +847,7 @@ class Package {
     required this.version,
     required this.publishTo,
     required this.pubSpec,
+    required this.categories,
   })  : _packageMap = packageMap,
         assert(p.isAbsolute(path));
 
@@ -816,6 +862,7 @@ class Package {
   final Version version;
   final String path;
   final PubSpec pubSpec;
+  final List<String> categories;
 
   /// Package path as a normalized sting relative to the root of the workspace.
   /// e.g. "packages/firebase_database".
@@ -1133,4 +1180,11 @@ class Plugin {
 
   Map<Object?, Object?>? get platforms =>
       _plugin['platforms'] as Map<Object?, Object?>?;
+}
+
+class PackageCategory {
+  PackageCategory(this.name, this.packages);
+
+  final String name;
+  final List<Glob> packages;
 }
