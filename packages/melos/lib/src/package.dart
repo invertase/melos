@@ -555,12 +555,6 @@ The packages that caused the problem are:
           }
         });
 
-        // final a = categories.values.where((packages) {
-        //   return packages.any((glob) => glob.matches(name));
-        // }).toList();
-
-        // final filteredCategories = categories.;
-
         packageMap[name] = Package(
           name: name,
           path: pubspecDirPath,

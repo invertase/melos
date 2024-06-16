@@ -293,7 +293,6 @@ class MelosWorkspaceConfig {
         }).toList(),
       );
     });
-    print(categories);
 
     final ignore = assertListIsA<String>(
       key: 'ignore',
@@ -587,6 +586,7 @@ MelosWorkspaceConfig(
   path: $path,
   name: $name,
   repository: $repository,
+  categories: $categories,
   packages: $packages,
   ignore: $ignore,
   scripts: ${scripts.toString().indent('  ')},
