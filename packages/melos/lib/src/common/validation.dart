@@ -89,6 +89,26 @@ List<T> assertListIsA<T>({
   ];
 }
 
+Map<T, V> assertMapIsA<T, V>({
+  String? path,
+  required Object key,
+  required Map<Object?, Object?> map,
+  required bool isRequired,
+  required T Function(Object? value) assertKey,
+  required V Function(Object? key, Object? value) assertValue,
+}) {
+  final collection = assertKeyIsA<Map<Object?, Object?>?>(key: key, map: map);
+
+  if (isRequired && collection == null) {
+    throw MelosConfigException.missingKey(key: key, path: path);
+  }
+
+  return <T, V>{
+    for (final entry in collection?.entries ?? <MapEntry<Object?, Object?>>[])
+      assertKey(entry.key): assertValue(entry.key, entry.value),
+  };
+}
+
 /// Thrown when `melos.yaml` configuration is malformed.
 class MelosConfigException implements MelosException {
   MelosConfigException(this.message);

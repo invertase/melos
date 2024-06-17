@@ -5,6 +5,9 @@ packages:
   - packages/*
 ignore:
   - packages/melos_flutter_deps_check
+categories:
+  testando:
+    - packages/*
 
 command:
   bootstrap:
