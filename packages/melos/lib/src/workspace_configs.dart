@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:collection/collection.dart';
@@ -247,8 +246,12 @@ class MelosWorkspaceConfig {
         );
 
         try {
-          repository =
-              parseHostedGitRepositorySpec(type, origin, owner, repositoryName);
+          repository = parseHostedGitRepositorySpec(
+            type,
+            origin,
+            owner,
+            repositoryName,
+          );
         } on FormatException catch (e) {
           throw MelosConfigException(e.toString());
         }
@@ -285,14 +288,23 @@ class MelosWorkspaceConfig {
       ),
     );
 
-    final categories = (yaml['categories'] as Map).entries.map((e) {
-      return PackageCategory(
-        e.key! as String,
-        (e.value! as List).map((v) {
-          return Glob(v as String);
-        }).toList(),
-      );
-    });
+    final categories = assertMapIsA<String, List<String>>(
+      key: 'categories',
+      map: yaml,
+      isRequired: false,
+      assertKey: (value) => assertIsA<String>(
+        value: value,
+      ),
+      assertValue: (key, value) => assertListIsA<String>(
+        key: key!,
+        map: yaml['categories'] as Map<Object?, Object?>,
+        isRequired: false,
+        assertItemIsA: (index, value) => assertIsA<String>(
+          value: value,
+          index: index,
+        ),
+      ),
+    );
 
     final ignore = assertListIsA<String>(
       key: 'ignore',
@@ -330,9 +342,14 @@ class MelosWorkspaceConfig {
       name: name,
       repository: repository,
       sdkPath: sdkPath,
-      categories: <String, List<Glob>>{
-        for (final entry in categories) entry.name: entry.packages,
-      },
+      categories: categories.map(
+        (key, value) => MapEntry(
+          key,
+          value.map((v) {
+            return Glob(v);
+          }).toList(),
+        ),
+      ),
       packages: packages
           .map((package) => createGlob(package, currentDirectoryPath: path))
           .toList(),

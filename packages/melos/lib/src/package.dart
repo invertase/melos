@@ -10,7 +10,6 @@ import 'package:pool/pool.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec/pubspec.dart';
 
-import 'command_runner.dart';
 import 'common/environment_variable_key.dart';
 import 'common/exception.dart';
 import 'common/git.dart';
@@ -328,6 +327,8 @@ class PackageFilters {
     return {
       if (scope.isNotEmpty)
         filterOptionScope.camelCased: scope.map((e) => e.toString()).toList(),
+      if (categories.isNotEmpty)
+        categoryOptionScope.camelCased: scope.map((e) => e.toString()).toList(),
       if (ignore.isNotEmpty)
         filterOptionIgnore.camelCased: ignore.map((e) => e.toString()).toList(),
       if (dirExists.isNotEmpty) filterOptionDirExists.camelCased: dirExists,
@@ -429,6 +430,7 @@ class PackageFilters {
       const DeepCollectionEquality().equals(other.fileExists, fileExists) &&
       const DeepCollectionEquality().equals(other.dependsOn, dependsOn) &&
       const DeepCollectionEquality().equals(other.noDependsOn, noDependsOn) &&
+      const DeepCollectionEquality().equals(other.categories, categories) &&
       other.diff == diff;
 
   @override
@@ -445,6 +447,7 @@ class PackageFilters {
       const DeepCollectionEquality().hash(fileExists) ^
       const DeepCollectionEquality().hash(dependsOn) ^
       const DeepCollectionEquality().hash(noDependsOn) ^
+      const DeepCollectionEquality().hash(categories) ^
       diff.hashCode;
 
   @override
@@ -549,9 +552,15 @@ The packages that caused the problem are:
 
         final filteredCategories = <String>[];
 
-        categories.forEach((category, globs) {
-          if (categories[category]!.contains(Glob(name))) {
-            filteredCategories.add(category);
+        categories.forEach((key, value) {
+          final isCategoryMatching = value.any(
+            (category) => category.matches(
+              relativePath(pubspecDirPath, workspacePath),
+            ),
+          );
+
+          if (isCategoryMatching) {
+            filteredCategories.add(key);
           }
         });
 
@@ -655,7 +664,7 @@ The packages that caused the problem are:
   }
 }
 
-extension on Iterable<Package> {
+extension IterablePackageExt on Iterable<Package> {
   Iterable<Package> applyIgnore(List<Glob> ignore) {
     if (ignore.isEmpty) return this;
 
@@ -776,12 +785,14 @@ extension on Iterable<Package> {
     }).toList();
   }
 
-  Iterable<Package> applyCategory(List<Glob> category) {
-    if (category.isEmpty) return this;
+  Iterable<Package> applyCategory(List<Glob> appliedCategories) {
+    if (appliedCategories.isEmpty) return this;
 
     return where((package) {
-      return category.any(
-        (category) => category.matches(package.name),
+      return package.categories.any(
+        (category) => appliedCategories.any(
+          (appliedCategory) => appliedCategory.matches(category),
+        ),
       );
     }).toList();
   }

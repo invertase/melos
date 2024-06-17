@@ -127,7 +127,14 @@ void main() {
           ],
           categories: {
             'a': [
-              Glob('a'),
+              Glob('packages/a'),
+              Glob('packages/c'),
+            ],
+            'b': [
+              Glob('packages/*a*'),
+            ],
+            'c': [
+              Glob('packages/ab*'),
             ],
           },
           path: currentPlatform.isWindows
@@ -144,10 +151,21 @@ void main() {
         workspaceDir,
         const PubSpec(name: 'a'),
       );
-
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'ab'),
+      );
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'abc'),
+      );
       await createProject(
         workspaceDir,
         const PubSpec(name: 'b'),
+      );
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'c'),
       );
 
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -155,7 +173,7 @@ void main() {
         config,
         logger: TestLogger().toMelosLogger(),
         packageFilters: PackageFilters(
-          categories: [Glob('a')],
+          categories: [Glob('b')],
         ),
       );
 
@@ -163,12 +181,19 @@ void main() {
         workspace.allPackages.values,
         [
           isA<Package>().having((p) => p.name, 'name', 'a'),
+          isA<Package>().having((p) => p.name, 'name', 'ab'),
+          isA<Package>().having((p) => p.name, 'name', 'abc'),
           isA<Package>().having((p) => p.name, 'name', 'b'),
+          isA<Package>().having((p) => p.name, 'name', 'c'),
         ],
       );
       expect(
         workspace.filteredPackages.values,
-        [isA<Package>().having((p) => p.name, 'name', 'a')],
+        [
+          isA<Package>().having((p) => p.name, 'name', 'a'),
+          isA<Package>().having((p) => p.name, 'name', 'ab'),
+          isA<Package>().having((p) => p.name, 'name', 'abc'),
+        ],
       );
     });
   });
