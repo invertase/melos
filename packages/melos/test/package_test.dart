@@ -7,6 +7,7 @@ import 'package:melos/src/common/pub_credential.dart';
 import 'package:melos/src/package.dart';
 import 'package:platform/platform.dart';
 import 'package:pub_semver/pub_semver.dart';
+import 'package:pubspec/pubspec.dart';
 import 'package:test/test.dart';
 
 import 'mock_env.dart';
@@ -239,6 +240,57 @@ void main() {
         expect(cPackage.allTransitiveDependenciesInWorkspace.keys, ['b']);
       });
     });
+
+    group('applying filters', () {
+      test('applyCategory', () {
+        Package createPackage(String name, List<String> category) {
+          return Package(
+            devDependencies: [],
+            dependencies: [],
+            dependencyOverrides: [],
+            packageMap: {},
+            name: name,
+            path: '/test',
+            pathRelativeToWorkspace: 'test',
+            version: Version(1, 0, 0),
+            publishTo: Uri(),
+            pubSpec: const PubSpec(),
+            categories: category,
+          );
+        }
+
+        final packages = [
+          createPackage('package1', ['ab', 'bc']),
+          createPackage('package2', ['bc', 'cd']),
+          createPackage('package3', ['ab', 'cd']),
+        ];
+
+        final result1 = packages.applyCategories(
+          [Glob('ab')],
+        );
+
+        expect(
+          result1,
+          [
+            isA<Package>().having((p) => p.name, 'name', 'package1'),
+            isA<Package>().having((p) => p.name, 'name', 'package3'),
+          ],
+        );
+
+        final result2 = packages.applyCategories(
+          [Glob('*b*')],
+        );
+
+        expect(
+          result2,
+          [
+            isA<Package>().having((p) => p.name, 'name', 'package1'),
+            isA<Package>().having((p) => p.name, 'name', 'package2'),
+            isA<Package>().having((p) => p.name, 'name', 'package3'),
+          ],
+        );
+      });
+    });
   });
 
   group('PackageFilters', () {
@@ -251,6 +303,7 @@ void main() {
       expect(filters.fileExists, isEmpty);
       expect(filters.ignore, isEmpty);
       expect(filters.scope, isEmpty);
+      expect(filters.categories, isEmpty);
       expect(filters.includeDependencies, false);
       expect(filters.includeDependents, false);
       expect(filters.includePrivatePackages, null);
@@ -273,6 +326,7 @@ void main() {
           fileExists: const ['a'],
           flutter: true,
           scope: [Glob('a')],
+          categories: [Glob('a')],
           ignore: [Glob('a')],
           includeDependencies: true,
           includeDependents: true,
@@ -290,6 +344,7 @@ void main() {
         expect(copy.dirExists, filters.dirExists);
         expect(copy.fileExists, filters.fileExists);
         expect(copy.scope, filters.scope);
+        expect(copy.categories, filters.categories);
         expect(copy.ignore, filters.ignore);
         expect(copy.includeDependencies, filters.includeDependencies);
         expect(copy.includeDependents, filters.includeDependents);

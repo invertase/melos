@@ -199,6 +199,7 @@ class MelosWorkspaceConfig {
     this.sdkPath,
     this.repository,
     required this.packages,
+    this.categories = const {},
     this.ignore = const [],
     this.scripts = Scripts.empty,
     this.ide = IDEConfigs.empty,
@@ -238,14 +239,19 @@ class MelosWorkspaceConfig {
           map: repositoryYaml,
           path: 'repository',
         );
-        final name = assertKeyIsA<String>(
+        final repositoryName = assertKeyIsA<String>(
           key: 'name',
           map: repositoryYaml,
           path: 'repository',
         );
 
         try {
-          repository = parseHostedGitRepositorySpec(type, origin, owner, name);
+          repository = parseHostedGitRepositorySpec(
+            type,
+            origin,
+            owner,
+            repositoryName,
+          );
         } on FormatException catch (e) {
           throw MelosConfigException(e.toString());
         }
@@ -281,6 +287,25 @@ class MelosWorkspaceConfig {
         path: 'packages',
       ),
     );
+
+    final categories = assertMapIsA<String, List<String>>(
+      key: 'categories',
+      map: yaml,
+      isRequired: false,
+      assertKey: (value) => assertIsA<String>(
+        value: value,
+      ),
+      assertValue: (key, value) => assertListIsA<String>(
+        key: key!,
+        map: (yaml['categories'] ?? {}) as Map<Object?, Object?>,
+        isRequired: false,
+        assertItemIsA: (index, value) => assertIsA<String>(
+          value: value,
+          index: index,
+        ),
+      ),
+    );
+
     final ignore = assertListIsA<String>(
       key: 'ignore',
       map: yaml,
@@ -317,6 +342,12 @@ class MelosWorkspaceConfig {
       name: name,
       repository: repository,
       sdkPath: sdkPath,
+      categories: categories.map(
+        (key, value) => MapEntry(
+          key,
+          value.map(Glob.new).toList(),
+        ),
+      ),
       packages: packages
           .map((package) => createGlob(package, currentDirectoryPath: path))
           .toList(),
@@ -465,6 +496,9 @@ class MelosWorkspaceConfig {
   /// A list of [Glob]s for paths that should be searched for packages.
   final List<Glob> packages;
 
+  /// A map of [Glob]s for paths that should be searched for packages.
+  final Map<String, List<Glob>> categories;
+
   /// A list of [Glob]s for paths that should be excluded from the search for
   /// packages.
   final List<Glob> ignore;
@@ -547,6 +581,12 @@ class MelosWorkspaceConfig {
       'path': path,
       if (repository != null) 'repository': repository!,
       'packages': packages.map((p) => p.toString()).toList(),
+      'categories': categories.map((category, packages) {
+        return MapEntry(
+          category,
+          packages.map((p) => p.pattern).toList(),
+        );
+      }),
       if (ignore.isNotEmpty) 'ignore': ignore.map((p) => p.toString()).toList(),
       if (scripts.isNotEmpty) 'scripts': scripts.toJson(),
       'ide': ide.toJson(),
@@ -561,6 +601,7 @@ MelosWorkspaceConfig(
   path: $path,
   name: $name,
   repository: $repository,
+  categories: $categories,
   packages: $packages,
   ignore: $ignore,
   scripts: ${scripts.toString().indent('  ')},

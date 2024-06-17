@@ -101,6 +101,7 @@ class PackageFilters {
   PackageFilters({
     this.scope = const [],
     this.ignore = const [],
+    this.categories = const [],
     this.dirExists = const [],
     this.fileExists = const [],
     List<String> dependsOn = const [],
@@ -129,6 +130,12 @@ class PackageFilters {
   }) {
     final scope = assertListOrString(
       key: filterOptionScope.camelCased,
+      map: yaml,
+      path: path,
+    );
+
+    final category = assertListOrString(
+      key: filterOptionCategory.camelCased,
       map: yaml,
       path: path,
     );
@@ -247,6 +254,7 @@ class PackageFilters {
       published: published,
       nullSafe: nullSafe,
       flutter: flutter,
+      categories: category.map(createPackageGlob).toList(),
     );
   }
 
@@ -255,6 +263,7 @@ class PackageFilters {
   const PackageFilters._({
     required this.scope,
     required this.ignore,
+    required this.categories,
     required this.dirExists,
     required this.fileExists,
     required this.dependsOn,
@@ -272,6 +281,9 @@ class PackageFilters {
 
   /// Patterns for excluding packages by name.
   final List<Glob> ignore;
+
+  /// Patterns for filtering packages by category.
+  final List<Glob> categories;
 
   /// Include a package only if a given directory exists.
   final List<String> dirExists;
@@ -315,6 +327,9 @@ class PackageFilters {
     return {
       if (scope.isNotEmpty)
         filterOptionScope.camelCased: scope.map((e) => e.toString()).toList(),
+      if (categories.isNotEmpty)
+        filterOptionCategory.camelCased:
+            scope.map((e) => e.toString()).toList(),
       if (ignore.isNotEmpty)
         filterOptionIgnore.camelCased: ignore.map((e) => e.toString()).toList(),
       if (dirExists.isNotEmpty) filterOptionDirExists.camelCased: dirExists,
@@ -346,6 +361,7 @@ class PackageFilters {
       diff: diff,
       includeDependencies: includeDependencies,
       includeDependents: includeDependents,
+      categories: categories,
     );
   }
 
@@ -363,6 +379,7 @@ class PackageFilters {
       diff: diff,
       includeDependencies: includeDependencies,
       includeDependents: includeDependents,
+      categories: categories,
     );
   }
 
@@ -379,12 +396,14 @@ class PackageFilters {
     String? diff,
     bool? includeDependencies,
     bool? includeDependents,
+    List<Glob>? categories,
   }) {
     return PackageFilters._(
       dependsOn: dependsOn ?? this.dependsOn,
       dirExists: dirExists ?? this.dirExists,
       fileExists: fileExists ?? this.fileExists,
       ignore: ignore ?? this.ignore,
+      categories: categories ?? this.categories,
       includePrivatePackages:
           includePrivatePackages ?? this.includePrivatePackages,
       noDependsOn: noDependsOn ?? this.noDependsOn,
@@ -412,6 +431,7 @@ class PackageFilters {
       const DeepCollectionEquality().equals(other.fileExists, fileExists) &&
       const DeepCollectionEquality().equals(other.dependsOn, dependsOn) &&
       const DeepCollectionEquality().equals(other.noDependsOn, noDependsOn) &&
+      const DeepCollectionEquality().equals(other.categories, categories) &&
       other.diff == diff;
 
   @override
@@ -428,6 +448,7 @@ class PackageFilters {
       const DeepCollectionEquality().hash(fileExists) ^
       const DeepCollectionEquality().hash(dependsOn) ^
       const DeepCollectionEquality().hash(noDependsOn) ^
+      const DeepCollectionEquality().hash(categories) ^
       diff.hashCode;
 
   @override
@@ -440,6 +461,7 @@ PackageFilters(
   includeDependents: $includeDependents,
   includePrivatePackages: $includePrivatePackages,
   scope: $scope,
+  categories: $categories,
   ignore: $ignore,
   dirExists: $dirExists,
   fileExists: $fileExists,
@@ -494,6 +516,7 @@ class PackageMap {
     required String workspacePath,
     required List<Glob> packages,
     required List<Glob> ignore,
+    required Map<String, List<Glob>> categories,
     required MelosLogger logger,
   }) async {
     final pubspecFiles = await _resolvePubspecFiles(
@@ -528,6 +551,20 @@ The packages that caused the problem are:
           );
         }
 
+        final filteredCategories = <String>[];
+
+        categories.forEach((key, value) {
+          final isCategoryMatching = value.any(
+            (category) => category.matches(
+              relativePath(pubspecDirPath, workspacePath),
+            ),
+          );
+
+          if (isCategoryMatching) {
+            filteredCategories.add(key);
+          }
+        });
+
         packageMap[name] = Package(
           name: name,
           path: pubspecDirPath,
@@ -539,6 +576,7 @@ The packages that caused the problem are:
           devDependencies: pubSpec.devDependencies.keys.toList(),
           dependencyOverrides: pubSpec.dependencyOverrides.keys.toList(),
           pubSpec: pubSpec,
+          categories: filteredCategories,
         );
       }),
     );
@@ -602,6 +640,7 @@ The packages that caused the problem are:
         .applyFileExists(filters.fileExists)
         .filterPrivatePackages(include: filters.includePrivatePackages)
         .applyScope(filters.scope)
+        .applyCategories(filters.categories)
         .applyDependsOn(filters.dependsOn)
         .applyNoDependsOn(filters.noDependsOn)
         .filterNullSafe(nullSafe: filters.nullSafe)
@@ -626,7 +665,7 @@ The packages that caused the problem are:
   }
 }
 
-extension on Iterable<Package> {
+extension IterablePackageExt on Iterable<Package> {
   Iterable<Package> applyIgnore(List<Glob> ignore) {
     if (ignore.isEmpty) return this;
 
@@ -747,6 +786,18 @@ extension on Iterable<Package> {
     }).toList();
   }
 
+  Iterable<Package> applyCategories(List<Glob> appliedCategories) {
+    if (appliedCategories.isEmpty) return this;
+
+    return where((package) {
+      return package.categories.any(
+        (category) => appliedCategories.any(
+          (appliedCategory) => appliedCategory.matches(category),
+        ),
+      );
+    }).toList();
+  }
+
   Iterable<Package> applyDependsOn(List<String> dependsOn) {
     if (dependsOn.isEmpty) return this;
 
@@ -802,6 +853,7 @@ class Package {
     required this.version,
     required this.publishTo,
     required this.pubSpec,
+    required this.categories,
   })  : _packageMap = packageMap,
         assert(p.isAbsolute(path));
 
@@ -816,6 +868,7 @@ class Package {
   final Version version;
   final String path;
   final PubSpec pubSpec;
+  final List<String> categories;
 
   /// Package path as a normalized sting relative to the root of the workspace.
   /// e.g. "packages/firebase_database".

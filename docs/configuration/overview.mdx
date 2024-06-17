@@ -110,10 +110,24 @@ ignore:
   - 'packages/**/example'
 ```
 
-<Info>
-  You can also expand the scope of packages on a per-command basis via the
-  [`--scope` filter](/filters#--scope) flag.
-</Info>
+## categories
+
+Categories are used to group packages together.
+
+To define custom package categories, add a `categories` section in your `melos.yaml` file.
+Under this section, you can specify category names as keys, and their corresponding values
+should be lists of glob patterns that match the packages you want to include in each category.
+
+```yaml
+# melos.yaml
+
+categories:
+  examples:
+    - packages/example*
+  alpha:
+    - packages/feature_a/*
+    - packages/feature_b
+```
 
 ## ide/intellij
 

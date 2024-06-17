@@ -46,6 +46,15 @@ repeated.
 melos exec --ignore="*internal*" -- flutter build ios
 ```
 
+## --categories
+
+Filter packages based on categories declared in the `melos.yaml` file.
+
+```bash
+# Run `flutter build ios` on all packages in the "examples" category.
+melos exec --category="examples" -- flutter build ios
+```
+
 ## --diff
 
 Filter packages based on whether there were changes between a commit and the
