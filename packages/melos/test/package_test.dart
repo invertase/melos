@@ -259,13 +259,13 @@ void main() {
           );
         }
 
-        final sut = [
+        final packages = [
           createPackage('package1', ['ab', 'bc']),
           createPackage('package2', ['bc', 'cd']),
           createPackage('package3', ['ab', 'cd']),
         ];
 
-        final result1 = sut.applyCategories(
+        final result1 = packages.applyCategories(
           [Glob('ab')],
         );
 
@@ -277,7 +277,7 @@ void main() {
           ],
         );
 
-        final result2 = sut.applyCategories(
+        final result2 = packages.applyCategories(
           [Glob('*b*')],
         );
 
