@@ -297,7 +297,7 @@ class MelosWorkspaceConfig {
       ),
       assertValue: (key, value) => assertListIsA<String>(
         key: key!,
-        map: yaml['categories'] as Map<Object?, Object?>,
+        map: (yaml['categories'] ?? {}) as Map<Object?, Object?>,
         isRequired: false,
         assertItemIsA: (index, value) => assertIsA<String>(
           value: value,

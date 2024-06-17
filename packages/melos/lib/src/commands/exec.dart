@@ -129,7 +129,7 @@ mixin _ExecMixin on _Melos {
           final dependenciesResults = await Future.wait(
             package.allDependenciesInWorkspace.values
                 .map((package) => packageResults[package.name]?.future)
-                .whereNotNull(),
+                .nonNulls,
           );
 
           final dependencyFailed = dependenciesResults.any(
