@@ -396,13 +396,14 @@ class PackageFilters {
     String? diff,
     bool? includeDependencies,
     bool? includeDependents,
-    List<Glob>? category,
+    List<Glob>? categories,
   }) {
     return PackageFilters._(
       dependsOn: dependsOn ?? this.dependsOn,
       dirExists: dirExists ?? this.dirExists,
       fileExists: fileExists ?? this.fileExists,
       ignore: ignore ?? this.ignore,
+      categories: categories ?? this.categories,
       includePrivatePackages:
           includePrivatePackages ?? this.includePrivatePackages,
       noDependsOn: noDependsOn ?? this.noDependsOn,
@@ -412,7 +413,6 @@ class PackageFilters {
       diff: diff ?? this.diff,
       includeDependencies: includeDependencies ?? this.includeDependencies,
       includeDependents: includeDependents ?? this.includeDependents,
-      categories: category ?? categories,
     );
   }
 
@@ -640,7 +640,7 @@ The packages that caused the problem are:
         .applyFileExists(filters.fileExists)
         .filterPrivatePackages(include: filters.includePrivatePackages)
         .applyScope(filters.scope)
-        .applyCategory(filters.categories)
+        .applyCategories(filters.categories)
         .applyDependsOn(filters.dependsOn)
         .applyNoDependsOn(filters.noDependsOn)
         .filterNullSafe(nullSafe: filters.nullSafe)
@@ -786,7 +786,7 @@ extension IterablePackageExt on Iterable<Package> {
     }).toList();
   }
 
-  Iterable<Package> applyCategory(List<Glob> appliedCategories) {
+  Iterable<Package> applyCategories(List<Glob> appliedCategories) {
     if (appliedCategories.isEmpty) return this;
 
     return where((package) {
@@ -1186,11 +1186,4 @@ class Plugin {
 
   Map<Object?, Object?>? get platforms =>
       _plugin['platforms'] as Map<Object?, Object?>?;
-}
-
-class PackageCategory {
-  PackageCategory(this.name, this.packages);
-
-  final String name;
-  final List<Glob> packages;
 }

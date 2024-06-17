@@ -265,7 +265,7 @@ void main() {
           createPackage('package3', ['ab', 'cd']),
         ];
 
-        final result1 = sut.applyCategory(
+        final result1 = sut.applyCategories(
           [Glob('ab')],
         );
 
@@ -277,7 +277,7 @@ void main() {
           ],
         );
 
-        final result2 = sut.applyCategory(
+        final result2 = sut.applyCategories(
           [Glob('*b*')],
         );
 

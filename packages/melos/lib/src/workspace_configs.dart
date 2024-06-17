@@ -345,9 +345,7 @@ class MelosWorkspaceConfig {
       categories: categories.map(
         (key, value) => MapEntry(
           key,
-          value.map((v) {
-            return Glob(v);
-          }).toList(),
+          value.map(Glob.new).toList(),
         ),
       ),
       packages: packages
