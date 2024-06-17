@@ -135,7 +135,7 @@ class PackageFilters {
     );
 
     final category = assertListOrString(
-      key: categoryOptionScope.camelCased,
+      key: filterOptionCategory.camelCased,
       map: yaml,
       path: path,
     );
@@ -328,7 +328,8 @@ class PackageFilters {
       if (scope.isNotEmpty)
         filterOptionScope.camelCased: scope.map((e) => e.toString()).toList(),
       if (categories.isNotEmpty)
-        categoryOptionScope.camelCased: scope.map((e) => e.toString()).toList(),
+        filterOptionCategory.camelCased:
+            scope.map((e) => e.toString()).toList(),
       if (ignore.isNotEmpty)
         filterOptionIgnore.camelCased: ignore.map((e) => e.toString()).toList(),
       if (dirExists.isNotEmpty) filterOptionDirExists.camelCased: dirExists,
