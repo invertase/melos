@@ -259,7 +259,7 @@ enum ParallelPubGetMode {
       default:
         throw ArgumentError.value(
           value,
-          'name',
+          'value',
           'Invalid value for ParallelPubGetMode',
         );
     }
