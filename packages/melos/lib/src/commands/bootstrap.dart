@@ -109,6 +109,16 @@ mixin _BootstrapMixin on _CleanMixin {
     required bool noExample,
   }) async {
     final filteredPackages = workspace.filteredPackages.values;
+    final isCI = utils.isCI;
+
+    bool parallelism;
+    if (workspace.config.commands.bootstrap.parallelPubGetMode ==
+        ParallelPubGetMode.auto) {
+      parallelism = !isCI;
+    } else {
+      parallelism = workspace.config.commands.bootstrap.parallelPubGetMode ==
+          ParallelPubGetMode.enabled;
+    }
 
     await Stream.fromIterable(filteredPackages).parallel(
       (package) async {
@@ -143,8 +153,7 @@ mixin _BootstrapMixin on _CleanMixin {
 
         bootstrappedPackages.forEach(_logBootstrapSuccess);
       },
-      parallelism:
-          workspace.config.commands.bootstrap.runPubGetInParallel ? null : 1,
+      parallelism: parallelism ? null : 1,
     ).drain<void>();
   }
 

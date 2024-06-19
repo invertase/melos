@@ -14,7 +14,7 @@ void main() {
       // ignore: use_named_constants
       const value = BootstrapCommandConfigs();
 
-      expect(value.runPubGetInParallel, true);
+      expect(value.parallelPubGetMode, ParallelPubGetMode.auto);
     });
 
     group('fromYaml', () {
@@ -49,7 +49,7 @@ void main() {
             workspacePath: '.',
           ),
           BootstrapCommandConfigs(
-            runPubGetInParallel: false,
+            parallelPubGetMode: ParallelPubGetMode.disabled,
             runPubGetOffline: true,
             enforceLockfile: true,
             dependencyOverridePaths: [
@@ -243,7 +243,7 @@ void main() {
             // ignore: avoid_redundant_argument_values, use_named_constants
             bootstrap: BootstrapCommandConfigs(
               // ignore: avoid_redundant_argument_values
-              runPubGetInParallel: true,
+              parallelPubGetMode: ParallelPubGetMode.enabled,
             ),
           ),
         );

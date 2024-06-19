@@ -13,7 +13,7 @@ import '../lifecycle_hooks/lifecycle_hooks.dart';
 @immutable
 class BootstrapCommandConfigs {
   const BootstrapCommandConfigs({
-    this.runPubGetInParallel = true,
+    this.parallelPubGetMode = ParallelPubGetMode.auto,
     this.runPubGetOffline = false,
     this.enforceLockfile = false,
     this.environment,
@@ -27,12 +27,31 @@ class BootstrapCommandConfigs {
     Map<Object?, Object?> yaml, {
     required String workspacePath,
   }) {
-    final runPubGetInParallel = assertKeyIsA<bool?>(
-          key: 'runPubGetInParallel',
-          map: yaml,
-          path: 'command/bootstrap',
-        ) ??
-        true;
+    ParallelPubGetMode parallelPubGetMode;
+    try {
+      final runPubGetInParallel = assertKeyIsA<bool?>(
+        key: 'runPubGetInParallel',
+        map: yaml,
+        path: 'command/bootstrap',
+      );
+      if (runPubGetInParallel != null) {
+        parallelPubGetMode = runPubGetInParallel
+            ? ParallelPubGetMode.enabled
+            : ParallelPubGetMode.disabled;
+      } else {
+        parallelPubGetMode = ParallelPubGetMode.auto;
+      }
+    } on MelosConfigException {
+      final runPubGetInParallel = assertKeyIsA<String?>(
+            key: 'runPubGetInParallel',
+            map: yaml,
+            path: 'command/bootstrap',
+          ) ??
+          'auto';
+      parallelPubGetMode = ParallelPubGetMode.fromValue(runPubGetInParallel);
+    } catch (_) {
+      rethrow;
+    }
 
     final runPubGetOffline = assertKeyIsA<bool?>(
           key: 'runPubGetOffline',
@@ -94,7 +113,7 @@ class BootstrapCommandConfigs {
         : LifecycleHooks.empty;
 
     return BootstrapCommandConfigs(
-      runPubGetInParallel: runPubGetInParallel,
+      parallelPubGetMode: parallelPubGetMode,
       runPubGetOffline: runPubGetOffline,
       enforceLockfile: enforceLockfile,
       environment: environment,
@@ -114,8 +133,9 @@ class BootstrapCommandConfigs {
 
   /// Whether to run `pub get` in parallel during bootstrapping.
   ///
-  /// The default is `true`.
-  final bool runPubGetInParallel;
+  /// The default is `auto`, which will run `pub get` in parallel if the `CI`
+  /// environment variable is not set.
+  final ParallelPubGetMode parallelPubGetMode;
 
   /// Whether to attempt to run `pub get` in offline mode during bootstrapping.
   /// Useful in closed network environments with pre-populated pubcaches.
@@ -148,7 +168,7 @@ class BootstrapCommandConfigs {
 
   Map<String, Object?> toJson() {
     return {
-      'runPubGetInParallel': runPubGetInParallel,
+      'runPubGetInParallel': parallelPubGetMode.name,
       'runPubGetOffline': runPubGetOffline,
       'enforceLockfile': enforceLockfile,
       if (environment != null) 'environment': environment!.toJson(),
@@ -171,7 +191,7 @@ class BootstrapCommandConfigs {
   bool operator ==(Object other) =>
       other is BootstrapCommandConfigs &&
       runtimeType == other.runtimeType &&
-      other.runPubGetInParallel == runPubGetInParallel &&
+      other.parallelPubGetMode == parallelPubGetMode &&
       other.runPubGetOffline == runPubGetOffline &&
       other.enforceLockfile == enforceLockfile &&
       // Extracting equality from environment here as it does not implement ==
@@ -190,7 +210,7 @@ class BootstrapCommandConfigs {
   @override
   int get hashCode =>
       runtimeType.hashCode ^
-      runPubGetInParallel.hashCode ^
+      parallelPubGetMode.hashCode ^
       runPubGetOffline.hashCode ^
       enforceLockfile.hashCode ^
       // Extracting hashCode from environment here as it does not implement
@@ -209,7 +229,7 @@ class BootstrapCommandConfigs {
   String toString() {
     return '''
 BootstrapCommandConfigs(
-  runPubGetInParallel: $runPubGetInParallel,
+  runPubGetInParallel: $parallelPubGetMode,
   runPubGetOffline: $runPubGetOffline,
   enforceLockfile: $enforceLockfile,
   environment: $environment,
@@ -218,5 +238,30 @@ BootstrapCommandConfigs(
   dependencyOverridePaths: $dependencyOverridePaths,
   hooks: $hooks,
 )''';
+  }
+}
+
+enum ParallelPubGetMode {
+  auto,
+  enabled,
+  disabled;
+
+  factory ParallelPubGetMode.fromValue(String value) {
+    switch (value) {
+      case 'auto':
+        return ParallelPubGetMode.auto;
+      case 'true':
+      case 'enabled':
+        return ParallelPubGetMode.enabled;
+      case 'false':
+      case 'disabled':
+        return ParallelPubGetMode.disabled;
+      default:
+        throw ArgumentError.value(
+          value,
+          'name',
+          'Invalid value for ParallelPubGetMode',
+        );
+    }
   }
 }
