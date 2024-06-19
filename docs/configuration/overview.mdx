@@ -183,7 +183,7 @@ dependencyOverridePaths:
 
 Whether to run `pub get` in parallel during bootstrapping.
 
-The default is `true`.
+The default is `auto`, which fallbacks to `false` if the machine is a CI instance.
 
 ### runPubGetOffline
 
