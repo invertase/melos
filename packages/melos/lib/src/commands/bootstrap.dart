@@ -112,12 +112,13 @@ mixin _BootstrapMixin on _CleanMixin {
     final isCI = utils.isCI;
 
     bool parallelism;
-    if (workspace.config.commands.bootstrap.parallelPubGetMode ==
-        ParallelPubGetMode.auto) {
-      parallelism = !isCI;
-    } else {
-      parallelism = workspace.config.commands.bootstrap.parallelPubGetMode ==
-          ParallelPubGetMode.enabled;
+    switch (workspace.config.commands.bootstrap.parallelPubGetMode) {
+      case ParallelPubGetMode.auto:
+        parallelism = !isCI;
+      case ParallelPubGetMode.enabled:
+        parallelism = true;
+      case ParallelPubGetMode.disabled:
+        parallelism = false;
     }
 
     await Stream.fromIterable(filteredPackages).parallel(
