@@ -50,7 +50,12 @@ class PersistentShell {
 
   Future<void> stopShell() async {
     await _process.stdin.close();
-    await _process.exitCode;
+    final exitCode = await _process.exitCode;
+    if (exitCode == 0) {
+      logger.log(successLabel);
+      return;
+    }
+    logger.log(failedLabel);
   }
 
   Future<bool> _awaitCommandCompletion() async {
@@ -69,20 +74,11 @@ class PersistentShell {
         targetStyle(command.addStepPrefixEmoji().withoutTrailing('\n'));
 
     final echoCommand = 'echo "$formattedScriptStep"';
-    final echoRunning = 'echo $runningLabel';
-    final echoSuccess = 'echo $successLabel';
-    final echoFailure = 'echo $failedLabel';
 
     if (_isWindows) {
-      return '''
-      $echoCommand && $echoRunning && $command && if %ERRORLEVEL%==0 
-          ($echoSuccess) else ($echoFailure || true)
-      ''';
+      return '$echoCommand && $command';
     }
 
-    return '''
-    eval "$echoCommand && $echoRunning && $command; if [ \$? -eq 0 ]; 
-    then $echoSuccess; else $echoFailure; fi || true"
-    ''';
+    return 'eval "$echoCommand && $command"';
   }
 }
