@@ -16,6 +16,7 @@ class PersistentShell {
   final MelosLogger logger;
   final String? workingDirectory;
   late final Process _process;
+  Completer<void>? _commandCompleter;
 
   Future<void> startShell() async {
     final executable = _isWindows ? 'cmd.exe' : '/bin/sh';
@@ -29,6 +30,7 @@ class PersistentShell {
     _process.stdout.listen(
       (event) {
         final output = utf8.decode(event, allowMalformed: true);
+        _handleCommandCompletion(output);
         logger.logWithoutNewLine(output);
       },
     );
@@ -39,9 +41,15 @@ class PersistentShell {
     );
   }
 
-  void sendCommand(String command) {
+  Future<void> sendCommand(String command) async {
+    assert(_commandCompleter == null, 'A command is already in progress.');
+    _commandCompleter = Completer<void>();
+
     final fullCommand = _buildFullCommand(command);
     _process.stdin.writeln(fullCommand);
+
+    await _commandCompleter!.future;
+    _commandCompleter = null;
   }
 
   Future<void> stopShell() async {
@@ -59,11 +67,23 @@ class PersistentShell {
     final echoFailure = 'echo $failedLabel';
 
     if (_isWindows) {
-      return '$echoCommand && $echoRunning && $command && if %ERRORLEVEL%==0 '
-          '($echoSuccess) else ($echoFailure)';
+      return '''
+        $echoCommand && $echoRunning && $command && if %ERRORLEVEL%==0 
+            ($echoSuccess) else ($echoFailure || true)
+      ''';
     }
 
-    return 'eval "$echoCommand && $echoRunning && $command && if [ \$? -eq 0 ];'
-        ' then $echoSuccess; else $echoFailure; fi"';
+    return '''
+      eval "$echoCommand && $echoRunning && $command && if [ \$? -eq 0 ]; 
+      then $echoSuccess; else $echoFailure; fi || true"
+    ''';
+  }
+
+  void _handleCommandCompletion(String output) {
+    if (output.contains(successLabel)) {
+      _commandCompleter?.complete();
+    } else if (output.contains(failedLabel)) {
+      _commandCompleter?.completeError('Command failed');
+    }
   }
 }
