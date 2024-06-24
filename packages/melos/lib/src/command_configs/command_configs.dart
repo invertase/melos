@@ -77,7 +77,10 @@ class CommandConfigs {
         workspacePath: workspacePath,
         repositoryIsConfigured: repositoryIsConfigured,
       ),
-      format: FormatCommandConfigs.fromYaml(formatMap ?? const {}),
+      format: FormatCommandConfigs.fromYaml(
+        formatMap ?? const {},
+        workspacePath: workspacePath,
+      ),
     );
   }
 

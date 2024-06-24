@@ -42,21 +42,22 @@ import '../scripts.dart';
 import '../workspace.dart';
 import '../workspace_configs.dart';
 
+part 'analyze.dart';
 part 'bootstrap.dart';
 part 'clean.dart';
 part 'exec.dart';
+part 'format.dart';
 part 'list.dart';
 part 'publish.dart';
 part 'run.dart';
 part 'version.dart';
-part 'analyze.dart';
-part 'format.dart';
 
 enum CommandWithLifecycle {
   bootstrap,
   clean,
   version,
   publish,
+  format,
 }
 
 class Melos extends _Melos
@@ -83,6 +84,7 @@ class Melos extends _Melos
 
 abstract class _Melos {
   MelosLogger get logger;
+
   MelosWorkspaceConfig get config;
 
   Future<MelosWorkspace> createWorkspace({
@@ -181,6 +183,8 @@ extension _ResolveLifecycleHooks on CommandConfigs {
         return version.hooks;
       case CommandWithLifecycle.publish:
         return publish.hooks;
+      case CommandWithLifecycle.format:
+        return format.hooks;
     }
   }
 }

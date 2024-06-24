@@ -13,13 +13,19 @@ mixin _FormatMixin on _Melos {
         await createWorkspace(global: global, packageFilters: packageFilters);
     final packages = workspace.filteredPackages.values;
 
-    await _formatForAllPackages(
+    return _runLifecycle(
       workspace,
-      packages,
-      concurrency: concurrency,
-      setExitIfChanged: setExitIfChanged,
-      output: output,
-      lineLength: lineLength,
+      CommandWithLifecycle.format,
+      () async {
+        await _formatForAllPackages(
+          workspace,
+          packages,
+          concurrency: concurrency,
+          setExitIfChanged: setExitIfChanged,
+          output: output,
+          lineLength: lineLength,
+        );
+      },
     );
   }
 
