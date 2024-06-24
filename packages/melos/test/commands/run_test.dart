@@ -884,6 +884,7 @@ $ melos analyze
   └> dart analyze --fatal-infos
      └> FAILED (in 1 packages)
         └> a (with exit code 1)
+SUCCESS
 ➡️ step: echo hello world
 RUNNING
 hello world
