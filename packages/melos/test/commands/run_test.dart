@@ -887,7 +887,7 @@ $ melos analyze
 ➡️ step: echo hello world
 RUNNING
 hello world
-FAILED
+SUCCESS
 ''',
         ),
       );
