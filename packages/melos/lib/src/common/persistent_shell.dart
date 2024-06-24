@@ -63,7 +63,7 @@ class PersistentShell {
           '($echoSuccess) else ($echoFailure)';
     }
 
-    return 'eval "$echoCommand && $echoRunning && $command && if [ \$? -eq 0 ]; '
-        'then $echoSuccess; else $echoFailure; fi"';
+    return 'eval "$echoCommand && $echoRunning && $command && if [ \$? -eq 0 ];'
+        ' then $echoSuccess; else $echoFailure; fi"';
   }
 }
