@@ -12,12 +12,18 @@ mixin _AnalyzeMixin on _Melos {
         await createWorkspace(global: global, packageFilters: packageFilters);
     final packages = workspace.filteredPackages.values;
 
-    await _analyzeForAllPackages(
+    return _runLifecycle(
       workspace,
-      packages,
-      fatalInfos: fatalInfos,
-      fatalWarnings: fatalWarnings,
-      concurrency: concurrency,
+      CommandWithLifecycle.analyze,
+      () async {
+        await _analyzeForAllPackages(
+          workspace,
+          packages,
+          fatalInfos: fatalInfos,
+          fatalWarnings: fatalWarnings,
+          concurrency: concurrency,
+        );
+      },
     );
   }
 

@@ -58,6 +58,7 @@ enum CommandWithLifecycle {
   version,
   publish,
   format,
+  analyze,
 }
 
 class Melos extends _Melos
@@ -185,6 +186,8 @@ extension _ResolveLifecycleHooks on CommandConfigs {
         return publish.hooks;
       case CommandWithLifecycle.format:
         return format.hooks;
+      case CommandWithLifecycle.analyze:
+        return analyze.hooks;
     }
   }
 }

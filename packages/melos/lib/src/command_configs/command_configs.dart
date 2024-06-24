@@ -2,6 +2,7 @@ import 'package:meta/meta.dart';
 
 import '../common/utils.dart';
 import '../common/validation.dart';
+import 'analyze.dart';
 import 'bootstrap.dart';
 import 'clean.dart';
 import 'format.dart';
@@ -21,6 +22,7 @@ class CommandConfigs {
     this.version = VersionCommandConfigs.empty,
     this.publish = PublishCommandConfigs.empty,
     this.format = FormatCommandConfigs.empty,
+    this.analyze = AnalyzeCommandConfigs.empty,
   });
 
   factory CommandConfigs.fromYaml(
@@ -58,6 +60,12 @@ class CommandConfigs {
       path: 'command',
     );
 
+    final analyzeMap = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'analyze',
+      map: yaml,
+      path: 'command',
+    );
+
     return CommandConfigs(
       bootstrap: BootstrapCommandConfigs.fromYaml(
         bootstrapMap ?? const {},
@@ -81,6 +89,10 @@ class CommandConfigs {
         formatMap ?? const {},
         workspacePath: workspacePath,
       ),
+      analyze: AnalyzeCommandConfigs.fromYaml(
+        analyzeMap ?? const {},
+        workspacePath: workspacePath,
+      ),
     );
   }
 
@@ -91,6 +103,7 @@ class CommandConfigs {
   final VersionCommandConfigs version;
   final PublishCommandConfigs publish;
   final FormatCommandConfigs format;
+  final AnalyzeCommandConfigs analyze;
 
   Map<String, Object?> toJson() {
     return {
@@ -99,6 +112,7 @@ class CommandConfigs {
       'version': version.toJson(),
       'publish': publish.toJson(),
       'format': format.toJson(),
+      'analyze': analyze.toJson(),
     };
   }
 
@@ -110,7 +124,8 @@ class CommandConfigs {
       other.clean == clean &&
       other.version == version &&
       other.publish == publish &&
-      other.format == format;
+      other.format == format &&
+      other.analyze == analyze;
 
   @override
   int get hashCode => Object.hash(
@@ -120,6 +135,7 @@ class CommandConfigs {
         version,
         publish,
         format,
+        analyze,
       );
 
   @override
@@ -131,6 +147,7 @@ CommandConfigs(
   version: ${version.toString().indent('  ')},
   publish: ${publish.toString().indent('  ')},
   format: ${format.toString().indent('  ')},
+  analyze: ${analyze.toString().indent('  ')},
 )
 ''';
   }
