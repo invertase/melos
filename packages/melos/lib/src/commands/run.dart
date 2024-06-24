@@ -286,7 +286,10 @@ mixin _RunMixin on _Melos {
     for (final step in steps) {
       final scriptCommand = _buildScriptCommand(step, scripts);
 
-      await shell.sendCommand(scriptCommand);
+      final shouldContinue = await shell.sendCommand(scriptCommand);
+      if (!shouldContinue) {
+        break;
+      }
     }
 
     await shell.stopShell();
