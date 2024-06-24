@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -16,11 +17,6 @@ class PersistentShell {
   final String? workingDirectory;
   late final Process _process;
 
-  /// This list is intended to store the commands that are sent to the shell.
-  /// Currently, it is not being utilized in the code,
-  ///TODO: remove this or actually use it
-  final List<String> _commands = [];
-
   Future<void> startShell() async {
     final executable = _isWindows ? 'cmd.exe' : '/bin/sh';
 
@@ -32,44 +28,42 @@ class PersistentShell {
 
     _process.stdout.listen(
       (event) {
-        logger.logWithoutNewLine(utf8.decode(event, allowMalformed: true));
-      },
-      onDone: () {
-        /// TODO: Identify and log the specific steps that have been completed
-        /// successfully.
-        logger.success('Shell process completed some steps successfully.');
+        final output = utf8.decode(event, allowMalformed: true);
+        logger.logWithoutNewLine(output);
       },
     );
     _process.stderr.listen(
       (event) {
         logger.error(utf8.decode(event, allowMalformed: true));
       },
-      onDone: () {
-        /// TODO: Identify and log the specific steps that have completed
-        /// with errors.
-        logger.error('Shell process completed with errors.');
-      },
     );
   }
 
   void sendCommand(String command) {
-    _commands.add(command);
-
-    final formattedScriptStep = targetStyle(
-      command.addStepPrefixEmoji().withoutTrailing('\n'),
-    );
-
-    final echoCommand = 'echo "$formattedScriptStep"';
-
-    final fullCommand = _isWindows
-        ? '$echoCommand && $command'
-        : 'eval "$echoCommand && $command"';
-
+    final fullCommand = _buildFullCommand(command);
     _process.stdin.writeln(fullCommand);
   }
 
   Future<void> stopShell() async {
     await _process.stdin.close();
     await _process.exitCode;
+  }
+
+  String _buildFullCommand(String command) {
+    final formattedScriptStep =
+        targetStyle(command.addStepPrefixEmoji().withoutTrailing('\n'));
+
+    final echoCommand = 'echo "$formattedScriptStep"';
+    final echoRunning = 'echo $runningLabel';
+    final echoSuccess = 'echo $successLabel';
+    final echoFailure = 'echo $failedLabel';
+
+    if (_isWindows) {
+      return '$echoCommand && $echoRunning && $command && if %ERRORLEVEL%==0 '
+          '($echoSuccess) else ($echoFailure)';
+    }
+
+    return 'eval "$echoCommand && $echoRunning && $command && if [ \$? -eq 0 ]; '
+        'then $echoSuccess; else $echoFailure; fi"';
   }
 }

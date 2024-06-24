@@ -480,9 +480,8 @@ melos run test_script
         ignoringDependencyMessages(
           '''
 melos run hello_script
-  └> test_script
-     └> RUNNING
-
+➡️ step: melos run test_script
+RUNNING
 melos run test_script
   └> echo "test_script"
      └> RUNNING
@@ -492,21 +491,11 @@ ${currentPlatform.isWindows ? '"test_script"' : 'test_script'}
 melos run test_script
   └> echo "test_script"
      └> SUCCESS
-
-melos run hello_script
-  └> test_script
-     └> SUCCESS
-
-melos run hello_script
-  └> echo "hello world"
-     └> RUNNING
-
+SUCCESS
+➡️ step: echo hello world
+RUNNING
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
-
-melos run hello_script
-  └> echo "hello world"
-     └> SUCCESS
-
+SUCCESS
 ''',
         ),
       );
@@ -601,44 +590,22 @@ melos run hello_script
         ignoringDependencyMessages(
           '''
 melos run hello_script
-  └> test_script
-     └> RUNNING
-
+➡️ step: melos run test_script
+RUNNING
 melos run test_script
-  └> echo "test_script_1"
-     └> RUNNING
-
+➡️ step: echo test_script_1
+RUNNING
 ${currentPlatform.isWindows ? '"test_script_1"' : 'test_script_1'}
-
-melos run test_script
-  └> echo "test_script_1"
-     └> SUCCESS
-
-melos run test_script
-  └> echo "test_script_2"
-     └> RUNNING
-
+SUCCESS
+➡️ step: echo test_script_2
+RUNNING
 ${currentPlatform.isWindows ? '"test_script_2"' : 'test_script_2'}
-
-melos run test_script
-  └> echo "test_script_2"
-     └> SUCCESS
-
-
-melos run hello_script
-  └> test_script
-     └> SUCCESS
-
-melos run hello_script
-  └> echo "hello world"
-     └> RUNNING
-
+SUCCESS
+SUCCESS
+➡️ step: echo hello world
+RUNNING
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
-
-melos run hello_script
-  └> echo "hello world"
-     └> SUCCESS
-
+SUCCESS
 ''',
         ),
       );
@@ -707,9 +674,8 @@ melos run hello_script
         ignoringDependencyMessages(
           '''
 melos run hello_script
-  └> analyze
-     └> RUNNING
-
+➡️ step: melos analyze
+RUNNING
 \$ melos analyze
   └> dart analyze 
      └> RUNNING (in 3 packages)
@@ -738,21 +704,11 @@ c: SUCCESS
 \$ melos analyze
   └> dart analyze 
      └> SUCCESS
-
-melos run hello_script
-  └> analyze
-     └> SUCCESS
-
-melos run hello_script
-  └> echo "hello world"
-     └> RUNNING
-
+SUCCESS
+➡️ step: echo hello world
+RUNNING
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
-
-melos run hello_script
-  └> echo "hello world"
-     └> SUCCESS
-
+SUCCESS
 ''',
         ),
       );
@@ -814,9 +770,8 @@ melos run hello_script
         ignoringDependencyMessages(
           '''
 melos run hello_script
-  └> list
-     └> RUNNING
-
+➡️ step: melos run list
+RUNNING
 melos run list
   └> echo "list script"
      └> RUNNING
@@ -826,21 +781,11 @@ ${currentPlatform.isWindows ? '"list script"' : 'list script'}
 melos run list
   └> echo "list script"
      └> SUCCESS
-
-melos run hello_script
-  └> list
-     └> SUCCESS
-
-melos run hello_script
-  └> echo "hello world"
-     └> RUNNING
-
+SUCCESS
+➡️ step: echo hello world
+RUNNING
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
-
-melos run hello_script
-  └> echo "hello world"
-     └> SUCCESS
-
+SUCCESS
 ''',
         ),
       );
@@ -907,12 +852,11 @@ melos run hello_script
       expect(
         logger.output.normalizeNewLines(),
         ignoringDependencyMessages(
-          '''
+          r'''
 melos run hello_script
-  └> analyze --fatal-infos
-     └> RUNNING
-
-\$ melos analyze
+➡️ step: melos analyze --fatal-infos
+RUNNING
+$ melos analyze
   └> dart analyze --fatal-infos
      └> RUNNING (in 3 packages)
 
@@ -936,25 +880,14 @@ No issues found!
 c: SUCCESS
 --------------------------------------------------------------------------------
 
-\$ melos analyze
+$ melos analyze
   └> dart analyze --fatal-infos
      └> FAILED (in 1 packages)
         └> a (with exit code 1)
-
-melos run hello_script
-  └> analyze --fatal-infos
-     └> FAILED
-
-melos run hello_script
-  └> echo "hello world"
-     └> RUNNING
-
-${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
-
-melos run hello_script
-  └> echo "hello world"
-     └> SUCCESS
-
+➡️ step: echo hello world
+RUNNING
+hello world
+FAILED
 ''',
         ),
       );
