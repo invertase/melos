@@ -20,6 +20,7 @@ Matcher ignoringDependencyMessages(String expected) {
           .where(
             (line) =>
                 !line.startsWith('Resolving dependencies...') &&
+                !line.startsWith('Downloading packages...') &&
                 !line.startsWith('Got dependencies!'),
           )
           .join('\n');
