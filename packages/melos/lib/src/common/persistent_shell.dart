@@ -76,9 +76,9 @@ class PersistentShell {
     final echoCommand = 'echo "$formattedScriptStep"';
 
     if (_isWindows) {
-      return '$echoCommand && $command';
+      return '$echoCommand && $command || true';
     }
 
-    return 'eval "$echoCommand && $command"';
+    return 'eval "$echoCommand && $command || true"';
   }
 }
