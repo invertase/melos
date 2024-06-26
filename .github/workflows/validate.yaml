@@ -94,8 +94,7 @@ jobs:
       - name: Install Tools
         run: ./.github/workflows/scripts/install-tools.sh
       - name: Run Tests
-        # TODO: Remove | true once #724 iw solved.
-        run: melos test --no-select || true
+        run: melos test --no-select
 
   test_windows:
     runs-on: windows-latest
