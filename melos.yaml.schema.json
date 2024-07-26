@@ -1,0 +1,435 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "melos.yaml",
+  "description": "The workspace configuration file for Melos",
+  "type": "object",
+  "required": ["name", "packages"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the Melos workspace - used by IDE documentation."
+    },
+    "repository": {
+      "anyOf": [
+        {
+          "type": "string",
+          "description": "The hosted git repository which contains the workspace."
+        },
+        {
+          "type": "object",
+          "description": "The self-hosted git repository which contains the workspace.",
+          "additionalProperties": false,
+          "required": ["type", "origin", "owner", "name"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "The type of repository",
+              "enum": ["github", "gitlab"]
+            },
+            "origin": {
+              "type": "string",
+              "description": "The origin of the repository, e.g. https://git.example.dev/gitlab"
+            },
+            "owner": {
+              "type": "string",
+              "description": "The owner of the repository"
+            },
+            "name": {
+              "type": "string",
+              "description": "The name of the repository"
+            }
+          }
+        }
+      ]
+    },
+    "packages": {
+      "type": "array",
+      "description": "Patterns for packages that are included in the melos workspace.",
+      "items": { "type": "string" }
+    },
+    "ignore": {
+      "type": "array",
+      "description": "Patterns for packages to exclude from the melos workspace.",
+      "items": { "type": "string" }
+    },
+    "sdkPath": {
+      "type": "string",
+      "description": "Path to the Dart/Flutter SDK that should be used."
+    },
+    "categories": {
+      "type": "object",
+      "description": "Categorize packages in the workspace.",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "ide": {
+      "type": "object",
+      "description": "IDE-specific configurations.\n\nThis allows connecting the different scripts to the IDE or tells melos to generate the necessary files for mono-repositories to work in the IDE.",
+      "additionalProperties": false,
+      "properties": {
+        "intellij": {
+          "description": "IntelliJ-specific configurations.",
+          "anyOf": [
+            {
+              "type": "boolean",
+              "description": "Whether IntelliJ support is enabled."
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Whether IntelliJ support is enabled."
+                },
+                "moduleNamePrefix": {
+                  "type": "string",
+                  "description": "Used when generating IntelliJ project modules files, this value specifies a string to prepend to a package's IntelliJ module name.\n\nThe default is 'melos_'."
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "command": {
+      "type": "object",
+      "description": "Command-specific configurations.\n\nThis allows customizing the default behavior of melos commands.",
+      "additionalProperties": false,
+      "properties": {
+        "bootstrap": {
+          "type": "object",
+          "description": "The bootstrap command configuration.",
+          "additionalProperties": false,
+          "properties": {
+            "runPubGetInParallel": {
+              "type": "boolean",
+              "description": "Whether to run `pub get` in parallel during bootstrapping."
+            },
+            "runPubGetOffline": {
+              "type": "boolean",
+              "description": "Whether to attempt to run `pub get` in offline mode during bootstrapping."
+            },
+            "enforceLockfile": {
+              "type": "boolean",
+              "description": "Whether `pubspec.lock` is enforced when running `pub get` or not.\nUseful when you want to ensure the same versions of dependencies are used across different environments/machines.\n\nDefaults to false."
+            },
+            "hooks": {
+              "description": "Hooks to run at certain points of the command lifecycle.",
+              "allOf": [{ "$ref": "#/$defs/commonHooks" }]
+            },
+            "dependencyOverridePaths": {
+              "type": "array",
+              "description": "A list of paths to local packages relative to the workspace directory that should be added to each workspace package's dependency overrides. Each entry can be a specific path or a glob pattern.",
+              "items": {
+                "type": "string"
+              }
+            },
+            "dependencyOverrides": {
+              "type": "object",
+              "description": "Dependencies that should be added to each workspace package's dependency overrides."
+            },
+            "environment": {
+              "type": "object",
+              "description": "Environment configuration to be synced between all packages."
+            },
+            "dependencies": {
+              "type": "object",
+              "description": "Dependencies to be synced between all packages."
+            },
+            "dev_dependencies": {
+              "type": "object",
+              "description": "Dev dependencies to be synced between all packages."
+            }
+          }
+        },
+        "publish": {
+          "type": "object",
+          "description": "The publish command configuration.",
+          "additionalProperties": false,
+          "properties": {
+            "hooks": {
+              "type": "object",
+              "description": "Hooks to run at certain points of the command lifecycle.",
+              "properties": {
+                "pre": {
+                  "type": "string",
+                  "description": "Hook to run before publishing."
+                },
+                "post": {
+                  "type": "string",
+                  "description": "Hook to run after publishing."
+                }
+              }
+            }
+          }
+        },
+        "version": {
+          "type": "object",
+          "description": "The version command configuration.",
+          "additionalProperties": false,
+          "properties": {
+            "message": {
+              "type": "string",
+              "description": "A custom header for the generated CHANGELOG.md."
+            },
+            "includeScopes": {
+              "type": "string",
+              "description": "Whether to include conventional commit scopes in the generated CHANGELOG.md."
+            },
+            "linkToCommits": {
+              "type": "boolean",
+              "description": "Whether to add links to commits in the generated CHANGELOG.md.\n\nDisabled by default."
+            },
+            "workspaceChangelog": {
+              "type": "boolean",
+              "description": "Whether to additionally generate a summary CHANGELOG.md at the root of the workspace."
+            },
+            "branch": {
+              "type": "string",
+              "description": "If specified, prevents `melos version` from being used inside branches other than the one specified."
+            },
+            "updateGitTagRefs": {
+              "type": "boolean",
+              "description": "Whether to also update pubspec with git referenced packages."
+            },
+            "releaseUrl": {
+              "type": "boolean",
+              "description": "Whether to generate and print a link to the prefilled release creation page for each package after versioning.\n\nDisabled by default."
+            },
+            "fetchTags": {
+              "type": "boolean",
+              "description": "Whether to fetch tags from the origin remote before versioning.\n\nDefaults to true."
+            },
+            "hooks": {
+              "description": "Hooks to run at certain points of the command lifecycle.",
+              "allOf": [
+                { "$id": "#/$defs/commonHooks" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "preCommit": { "$ref": "#/$defs/script" }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "clean": {
+          "type": "object",
+          "description": "The clean command configuration.",
+          "additionalProperties": false,
+          "properties": {
+            "hooks": {
+              "description": "Hooks to run at certain points of the command lifecycle.",
+              "allOf": [{ "$ref": "#/$defs/commonHooks" }]
+            }
+          }
+        }
+      }
+    },
+    "scripts": {
+      "type": "object",
+      "description": "A list of scripts that can be executed with `melos run` or will be executed before/after some specific melos commands.",
+      "additionalProperties": { "$ref": "#/$defs/script" }
+    }
+  },
+  "$defs": {
+    "script": {
+      "anyOf": [
+        { "type": "string", "description": "The command to execute." },
+        {
+          "allOf": [
+            {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": ["run"],
+                  "properties": { "run": { "type": "string" } }
+                },
+                {
+                  "type": "object",
+                  "required": ["exec"],
+                  "properties": { "exec": { "type": "string" } }
+                },
+                {
+                  "type": "object",
+                  "required": ["exec", "run"],
+                  "properties": { "exec": { "type": "object" } }
+                }
+              ]
+            },
+            {
+              "type": "object",
+              "description": "The script definition.",
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "A unique identifier for the script."
+                },
+                "description": {
+                  "type": "string",
+                  "description": "A short description, shown when using `melos run` with no argument."
+                },
+                "run": {
+                  "type": "string",
+                  "description": "The command to execute."
+                },
+                "exec": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "description": "The command to execute in multiple packages."
+                    },
+                    {
+                      "type": "object",
+                      "description": "The options to pass to `exec`.",
+                      "properties": {
+                        "concurrency": {
+                          "type": "number",
+                          "description": "The number of packages to execute the command in concurrently."
+                        },
+                        "failFast": {
+                          "type": "boolean",
+                          "description": "Whether exec should fail fast and not execute the script in further packages if the script fails in a individual package."
+                        }
+                      }
+                    }
+                  ]
+                },
+                "env": {
+                  "type": "object",
+                  "description": "Environment variables that will be passed to the command to execute.",
+                  "additionalProperties": {
+                    "anyOf": [
+                      { "type": "string" },
+                      { "type": "number" },
+                      { "type": "integer" },
+                      { "type": "boolean" },
+                      { "type": "null" }
+                    ],
+                    "description": "The value of the environment variable."
+                  }
+                },
+                "packageFilters": {
+                  "type": "object",
+                  "description": "If the command to execute is a melos command, allows filtering packages that will execute the command.",
+                  "additionalProperties": false,
+                  "properties": {
+                    "scope": {
+                      "description": "Patterns for including packages by name.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": { "type": "string" }
+                        }
+                      ]
+                    },
+                    "ignore": {
+                      "description": "Patterns for excluding packages by name.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": { "type": "string" }
+                        }
+                      ]
+                    },
+                    "dirExists": {
+                      "description": "Include a package only if a given directory exists.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": { "type": "string" }
+                        }
+                      ]
+                    },
+                    "fileExists": {
+                      "description": "Include a package only if a given file exists.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": { "type": "string" }
+                        }
+                      ]
+                    },
+                    "dependsOn": {
+                      "description": "Include only packages that depend on a specific package.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": { "type": "string" }
+                        }
+                      ]
+                    },
+                    "noDependsOn": {
+                      "description": "Include only packages that do not depend on a specific package.",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "array",
+                          "items": { "type": "string" }
+                        }
+                      ]
+                    },
+                    "diff": {
+                      "type": "string",
+                      "description": "Filter packages based on whether there were changes between a commit and the current HEAD or within a range of commits. A range of commits can be specified using the git short hand syntax `<start-commit>..<end-commit>` and `<start-commit>...<end-commit>."
+                    },
+                    "private": {
+                      "type": "boolean",
+                      "description": "Include packages with `publish_to: none`."
+                    },
+                    "noPrivate": {
+                      "type": "boolean",
+                      "description": "Exclude packages with `publish_to: none`."
+                    },
+                    "published": {
+                      "type": "boolean",
+                      "description": "Include/Exclude packages that are up-to-date on pub.dev."
+                    },
+                    "nullSafety": {
+                      "type": "boolean",
+                      "description": "Include/Exclude packages that are null-safe."
+                    },
+                    "flutter": {
+                      "type": "boolean",
+                      "description": "Include/Exclude packages that are Flutter packages."
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "commonHooks": {
+      "type": "object",
+      "properties": {
+        "pre": { "$ref": "#/$defs/script" },
+        "post": { "$ref": "#/$defs/script" }
+      }
+    }
+  }
+}
