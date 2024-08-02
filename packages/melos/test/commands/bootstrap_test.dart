@@ -146,6 +146,126 @@ Generating IntelliJ IDE files...
       );
     });
 
+    test('properly compares the path changes on git references', () async {
+      final temporaryGitRepository = createTestTempDir();
+
+      await io.Process.run(
+        'git',
+        ['init'],
+        workingDirectory: temporaryGitRepository.absolute.path,
+      );
+
+      await createProject(
+        io.Directory('${temporaryGitRepository.absolute.path}/dependency1'),
+        const PubSpec(name: 'dependency'),
+      );
+
+      await createProject(
+        io.Directory('${temporaryGitRepository.absolute.path}/dependency2'),
+        const PubSpec(name: 'dependency'),
+      );
+
+      await io.Process.run(
+        'git',
+        ['add', '-A'],
+        workingDirectory: temporaryGitRepository.absolute.path,
+      );
+
+      await io.Process.run(
+        'git',
+        ['commit', '--message="Initial commit"'],
+        workingDirectory: temporaryGitRepository.absolute.path,
+      );
+
+      final workspaceDirectory = await createTemporaryWorkspace();
+
+      final initialReference = {
+        'git': {
+          'url': 'file://${temporaryGitRepository.absolute.path}',
+          'path': 'dependency1/packages/dependency',
+        },
+      };
+
+      final package = await createProject(
+        workspaceDirectory,
+        PubSpec(
+          name: 'git_references',
+          dependencies: {
+            'dependency': GitReference.fromJson(initialReference),
+          },
+        ),
+      );
+
+      final logger = TestLogger();
+      final initialConfig = MelosWorkspaceConfig.fromYaml(
+        {
+          'name': 'test',
+          'packages': const ['packages/**'],
+          'command': {
+            'bootstrap': {
+              'dependencies': {
+                'dependency': initialReference,
+              },
+            },
+          },
+        },
+        path: workspaceDirectory.path,
+      );
+
+      final melosBeforeChangingPath = Melos(
+        logger: logger,
+        config: initialConfig,
+      );
+
+      await runMelosBootstrap(melosBeforeChangingPath, logger);
+
+      final packageConfig = packageConfigForPackageAt(package);
+      final dependencyPackage = packageConfig.packages.singleWhere(
+        (package) => package.name == 'dependency',
+      );
+
+      expect(
+        dependencyPackage.rootUri,
+        contains('dependency1/packages/dependency'),
+      );
+
+      final configWithChangedPath = MelosWorkspaceConfig.fromYaml(
+        {
+          'name': 'test',
+          'packages': const ['packages/**'],
+          'command': {
+            'bootstrap': {
+              'dependencies': {
+                'dependency': {
+                  'git': {
+                    'url': 'file://${temporaryGitRepository.absolute.path}',
+                    'path': 'dependency2/packages/dependency',
+                  },
+                },
+              },
+            },
+          },
+        },
+        path: workspaceDirectory.path,
+      );
+
+      final melosAfterChangingPath = Melos(
+        logger: logger,
+        config: configWithChangedPath,
+      );
+
+      await runMelosBootstrap(melosAfterChangingPath, logger);
+
+      final alteredPackageConfig = packageConfigForPackageAt(package);
+      final alteredDependencyPackage = alteredPackageConfig.packages
+          .singleWhere((package) => package.name == 'dependency');
+
+      expect(
+        alteredDependencyPackage.rootUri,
+        contains('dependency2/packages/dependency'),
+      );
+    });
+
     test(
       'resolves workspace packages with path dependency',
       () async {
