@@ -438,6 +438,53 @@ melos run test_script
     late Directory aDir;
 
     test(
+      '''
+Verify that multiple script steps are executed sequentially in a persistent 
+shell. When the script changes directory to "packages" and runs "ls -la", 
+it should list the contents including the package named "this is package A".
+          ''',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          runPubGet: true,
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: const Scripts({
+              'cd_script': Script(
+                name: 'cd_script',
+                steps: ['cd packages', 'ls -la', 'pwd'],
+              ),
+            }),
+          ),
+        );
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'this is package A'),
+        );
+
+        final logger = TestLogger();
+        final config =
+            await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        await melos.run(scriptName: 'cd_script', noSelect: true);
+
+        expect(
+          logger.output.normalizeNewLines(),
+          contains('this is package A'),
+        );
+      },
+      timeout: const Timeout(Duration(minutes: 1)),
+    );
+
+    test(
         'verifies that a melos script can successfully call another '
         'script as a step and execute commands', () async {
       final workspaceDir = await createTemporaryWorkspace(
@@ -480,9 +527,7 @@ melos run test_script
         ignoringDependencyMessages(
           '''
 melos run hello_script
-  └> test_script
-     └> RUNNING
-
+➡️ step: melos run test_script
 melos run test_script
   └> echo "test_script"
      └> RUNNING
@@ -493,20 +538,10 @@ melos run test_script
   └> echo "test_script"
      └> SUCCESS
 
-melos run hello_script
-  └> test_script
-     └> SUCCESS
-
-melos run hello_script
-  └> echo "hello world"
-     └> RUNNING
-
+➡️ step: echo hello world
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
 
-melos run hello_script
-  └> echo "hello world"
-     └> SUCCESS
-
+SUCCESS
 ''',
         ),
       );
@@ -601,44 +636,20 @@ melos run hello_script
         ignoringDependencyMessages(
           '''
 melos run hello_script
-  └> test_script
-     └> RUNNING
-
+➡️ step: melos run test_script
 melos run test_script
-  └> echo "test_script_1"
-     └> RUNNING
-
+➡️ step: echo test_script_1
 ${currentPlatform.isWindows ? '"test_script_1"' : 'test_script_1'}
 
-melos run test_script
-  └> echo "test_script_1"
-     └> SUCCESS
-
-melos run test_script
-  └> echo "test_script_2"
-     └> RUNNING
-
+➡️ step: echo test_script_2
 ${currentPlatform.isWindows ? '"test_script_2"' : 'test_script_2'}
 
-melos run test_script
-  └> echo "test_script_2"
-     └> SUCCESS
+SUCCESS
 
-
-melos run hello_script
-  └> test_script
-     └> SUCCESS
-
-melos run hello_script
-  └> echo "hello world"
-     └> RUNNING
-
+➡️ step: echo hello world
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
 
-melos run hello_script
-  └> echo "hello world"
-     └> SUCCESS
-
+SUCCESS
 ''',
         ),
       );
@@ -707,9 +718,7 @@ melos run hello_script
         ignoringDependencyMessages(
           '''
 melos run hello_script
-  └> analyze
-     └> RUNNING
-
+➡️ step: melos analyze
 \$ melos analyze
   └> dart analyze 
      └> RUNNING (in 3 packages)
@@ -739,20 +748,10 @@ c: SUCCESS
   └> dart analyze 
      └> SUCCESS
 
-melos run hello_script
-  └> analyze
-     └> SUCCESS
-
-melos run hello_script
-  └> echo "hello world"
-     └> RUNNING
-
+➡️ step: echo hello world
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
 
-melos run hello_script
-  └> echo "hello world"
-     └> SUCCESS
-
+SUCCESS
 ''',
         ),
       );
@@ -814,9 +813,7 @@ melos run hello_script
         ignoringDependencyMessages(
           '''
 melos run hello_script
-  └> list
-     └> RUNNING
-
+➡️ step: melos run list
 melos run list
   └> echo "list script"
      └> RUNNING
@@ -827,20 +824,10 @@ melos run list
   └> echo "list script"
      └> SUCCESS
 
-melos run hello_script
-  └> list
-     └> SUCCESS
-
-melos run hello_script
-  └> echo "hello world"
-     └> RUNNING
-
+➡️ step: echo hello world
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
 
-melos run hello_script
-  └> echo "hello world"
-     └> SUCCESS
-
+SUCCESS
 ''',
         ),
       );
@@ -909,9 +896,7 @@ melos run hello_script
         ignoringDependencyMessages(
           '''
 melos run hello_script
-  └> analyze --fatal-infos
-     └> RUNNING
-
+➡️ step: melos analyze --fatal-infos
 \$ melos analyze
   └> dart analyze --fatal-infos
      └> RUNNING (in 3 packages)
@@ -941,20 +926,10 @@ c: SUCCESS
      └> FAILED (in 1 packages)
         └> a (with exit code 1)
 
-melos run hello_script
-  └> analyze --fatal-infos
-     └> FAILED
-
-melos run hello_script
-  └> echo "hello world"
-     └> RUNNING
-
+➡️ step: echo hello world
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
 
-melos run hello_script
-  └> echo "hello world"
-     └> SUCCESS
-
+SUCCESS
 ''',
         ),
       );

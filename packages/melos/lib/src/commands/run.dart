@@ -275,48 +275,24 @@ mixin _RunMixin on _Melos {
     Script script,
     Map<String, String> environment,
   ) async {
-    for (final step in steps) {
-      final scriptCommand = _buildScriptCommand(step, scripts);
-
-      final scriptSourceCode = targetStyle(
-        step.withoutTrailing('\n'),
-      );
-
-      await _executeAndLogCommand(
-        script,
-        scriptSourceCode,
-        scriptCommand,
-        environment,
-      );
-    }
-  }
-
-  Future<void> _executeAndLogCommand(
-    Script script,
-    String scriptSourceCode,
-    String scriptCommand,
-    Map<String, String> environment,
-  ) async {
-    logger.command('melos run ${script.name}');
-    logger.child(scriptSourceCode).child(runningLabel).newLine();
-
-    final exitCode = await startCommand(
-      [scriptCommand],
+    final shell = PersistentShell(
       logger: logger,
-      environment: environment,
       workingDirectory: config.path,
     );
 
-    logger.newLine();
+    await shell.startShell();
     logger.command('melos run ${script.name}');
-    final resultLogger = logger.child(scriptSourceCode);
 
-    if (exitCode != 0) {
-      resultLogger.child(failedLabel);
-    } else {
-      resultLogger.child(successLabel);
+    for (final step in steps) {
+      final scriptCommand = _buildScriptCommand(step, scripts);
+
+      final shouldContinue = await shell.sendCommand(scriptCommand);
+      if (!shouldContinue) {
+        break;
+      }
     }
-    logger.newLine();
+
+    await shell.stopShell();
   }
 }
 
