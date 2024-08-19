@@ -278,6 +278,7 @@ mixin _RunMixin on _Melos {
     final shell = PersistentShell(
       logger: logger,
       workingDirectory: config.path,
+      environment: environment,
     );
 
     await shell.startShell();

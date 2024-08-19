@@ -3,17 +3,20 @@ import 'dart:convert';
 import 'dart:io';
 
 import '../logging.dart';
+import 'environment_variable_key.dart';
 import 'platform.dart';
 import 'utils.dart';
 
 class PersistentShell {
   PersistentShell({
     required this.logger,
+    required this.environment,
     this.workingDirectory,
   });
 
   final _isWindows = currentPlatform.isWindows;
   final MelosLogger logger;
+  final Map<String, String> environment;
   final String? workingDirectory;
   late final Process _process;
   Completer<void>? _commandCompleter;
@@ -27,6 +30,10 @@ class PersistentShell {
       executable,
       [],
       workingDirectory: workingDirectory,
+      environment: {
+        ...environment,
+        EnvironmentVariableKey.melosTerminalWidth: terminalWidth.toString(),
+      },
     );
 
     _listenToProcessStream(_process.stdout);
