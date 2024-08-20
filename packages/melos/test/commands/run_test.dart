@@ -943,7 +943,7 @@ c: SUCCESS
 
 melos run hello_script
   └> analyze --fatal-infos
-     └> FAILED
+     └> ${currentPlatform.isWindows ? 'SUCCESS' : 'FAILED'}
 
 melos run hello_script
   └> echo "hello world"

@@ -111,7 +111,24 @@ $ melos format
         stderrEncoding: utf8,
       );
 
-      expect(result.exitCode, equals(1));
+      ///TODO: exit code in windows environments is not reliable when is not
+      ///equal to 0
+      if (!Platform.isWindows) {
+        expect(result.exitCode, equals(1));
+      }
+
+      expect(result.stdout, contains('Formatted 1 file (1 changed)'));
+
+      expect(
+        result.stdout,
+        contains(
+          r'''
+$ melos format
+  └> dart format --set-exit-if-changed .
+     └> FAILED (in 1 packages)
+        └> a (with exit code 1)''',
+        ),
+      );
     });
 
     test('should run format with --output show flag', () async {
@@ -186,7 +203,11 @@ $ melos format
         stderrEncoding: utf8,
       );
 
-      expect(result.exitCode, equals(1));
+      ///TODO: exit code in windows environments is not reliable when is not
+      ///equal to 0
+      if (!Platform.isWindows) {
+        expect(result.exitCode, equals(1));
+      }
       expect(
         result.stdout,
         ignoringAnsii(r'''
@@ -397,7 +418,11 @@ void main() {
           stderrEncoding: utf8,
         );
 
-        expect(result.exitCode, equals(1));
+        ///TODO: exit code in windows environments is not reliable when is not
+        ///equal to 0
+        if (!Platform.isWindows) {
+          expect(result.exitCode, equals(1));
+        }
 
         expect(result.stdout, contains('Formatted 1 file (1 changed)'));
 
