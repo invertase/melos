@@ -106,8 +106,9 @@ filtering the packages to execute the command in.
 
 ### concurrency
 
-Defines the max concurrency value of how many packages will execute the command
-in at any one time. Defaults to `5`.
+Defines the maximum concurrency value, i.e., the maximum number of packages that
+the script will execute in concurrently at any given time. By default, this value
+is set to the number of processors available on the underlying machine.
 
 ### failFast
 
