@@ -156,6 +156,7 @@ The following projects are using Melos:
 - [ubuntu/app-center](https://github.com/ubuntu/app-center)
 - [jhomlala/alice](https://github.com/jhomlala/alice)
 - [powersync/powersync.dart](https://github.com/powersync-ja/powersync.dart)
+- [rodydavis/signals.dart](https://github.com/rodydavis/signals.dart)
 
 > Submit a PR if you'd like to add your project to the list. Update the
 > [README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md)
