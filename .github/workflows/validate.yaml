@@ -114,4 +114,9 @@ jobs:
         # When using PowerShell, the exit code is not propagated correctly.
         # Even running `CMD /C melos ...` from PowerShell does not work.
         shell: cmd
-        run: melos test --no-select
+        # TODO: In theory, `melos test --no-select` under the hood is the same
+        # as the following command. For some reason, using this one directly
+        # provides the actual exit code of the process, avoiding
+        # always returning 'SUCCESS' even when tests are failing.
+        run: melos exec --dir-exists=test --concurrency 1 -- "dart test"
+
