@@ -29,6 +29,7 @@ import '../common/glob.dart';
 import '../common/intellij_project.dart';
 import '../common/io.dart';
 import '../common/pending_package_update.dart';
+import '../common/persistent_shell.dart';
 import '../common/platform.dart';
 import '../common/utils.dart' as utils;
 import '../common/utils.dart';
