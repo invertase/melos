@@ -195,11 +195,16 @@ The default is `false`.
 
 ### enforceLockfile
 
-Whether to run `pub get` with the `--enforce-lockfile` option or not, to force getting the versions specified in the `pubspec.lock` file.
+Whether to run `pub get` with the `--enforce-lockfile` option or not, to force getting the versions
+specified in the `pubspec.lock` file.
 
-This is useful in CI environments or when you want to ensure that all environments/machines are using the same package versions.
+This is useful in CI environments or when you want to ensure that all environments/machines are
+using the same package versions.
 
 The default is `false`.
+
+To temporarily override this `melos bootstrap --no-enforce-lockfile / --enforce-lockfile` can be
+used.
 
 ## command/version
 

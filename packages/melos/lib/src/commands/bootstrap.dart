@@ -5,7 +5,7 @@ mixin _BootstrapMixin on _CleanMixin {
     GlobalOptions? global,
     PackageFilters? packageFilters,
     bool noExample = false,
-    bool enforceLockfile = false,
+    bool? enforceLockfile,
     bool skipLinking = false,
   }) async {
     final workspace =
@@ -21,7 +21,7 @@ mixin _BootstrapMixin on _CleanMixin {
         final enforceLockfileConfigValue =
             workspace.config.commands.bootstrap.enforceLockfile;
         final shouldEnforceLockfile =
-            (enforceLockfileConfigValue || enforceLockfile) && hasLockFile;
+            (enforceLockfile ?? enforceLockfileConfigValue) && hasLockFile;
 
         final pubCommandForLogging = [
           ...pubCommandExecArgs(
@@ -74,7 +74,7 @@ mixin _BootstrapMixin on _CleanMixin {
 
             await _linkPackagesWithPubspecOverrides(
               workspace,
-              enforceLockfile: enforceLockfile,
+              enforceLockfile: shouldEnforceLockfile,
               noExample: noExample,
             );
 
