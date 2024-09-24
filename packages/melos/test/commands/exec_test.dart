@@ -243,7 +243,7 @@ ${'-' * terminalWidth}
         );
 
         await melos.exec(
-          ['ls', 'i_do_surely_not_exist'],
+          ['exit', '2'],
           failFast: true,
         );
 
@@ -252,16 +252,14 @@ ${'-' * terminalWidth}
           ignoringAnsii(
             '''
 \$ melos exec
-  └> ls i_do_surely_not_exist
+  └> exit 2
      └> RUNNING (in 3 packages)
 
 ${'-' * terminalWidth}
-e-ERROR: [a]: ls: cannot access 'i_do_surely_not_exist': No such file or directory
-e-
 ${'-' * terminalWidth}
 
 \$ melos exec
-  └> ls i_do_surely_not_exist
+  └> exit 2
      └> FAILED (in 1 packages)
         └> a (with exit code 2)
      └> CANCELED (in 2 packages)
@@ -292,9 +290,9 @@ ${'-' * terminalWidth}
 
         final result = await Process.run(
           'melos',
-          ['exec', '--fail-fast', 'ls', 'i_do_surely_not_exist'],
+          ['exec', '--fail-fast', 'exit', '2'],
           workingDirectory: workspaceDir.path,
-          runInShell: true,
+          runInShell: Platform.isWindows,
         );
 
         expect(result.exitCode, equals(2));
