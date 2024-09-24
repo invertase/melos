@@ -215,20 +215,20 @@ ${'-' * terminalWidth}
     });
 
     group('fail fast', () {
-      test('propagate error code when fail fast is enabled', () async {
+      test('print error codes correctly', () async {
         final workspaceDir = await createTemporaryWorkspace();
 
-        final a = await createProject(
+        await createProject(
           workspaceDir,
           const PubSpec(name: 'a'),
         );
 
-        final b = await createProject(
+        await createProject(
           workspaceDir,
           const PubSpec(name: 'b'),
         );
 
-        final c = await createProject(
+        await createProject(
           workspaceDir,
           const PubSpec(name: 'c'),
         );
@@ -256,7 +256,7 @@ ${'-' * terminalWidth}
      └> RUNNING (in 3 packages)
 
 ${'-' * terminalWidth}
-e-ERROR: [a]: ls: cannot access \'i_do_surely_not_exist\': No such file or directory
+e-ERROR: [a]: ls: cannot access 'i_do_surely_not_exist': No such file or directory
 e-
 ${'-' * terminalWidth}
 
@@ -270,6 +270,34 @@ ${'-' * terminalWidth}
 ''',
           ),
         );
+      });
+
+      test('propagate error code when fail fast is enabled', () async {
+        final workspaceDir = await createTemporaryWorkspace();
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'a'),
+        );
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'b'),
+        );
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'c'),
+        );
+
+        final result = await Process.run(
+          'melos',
+          ['exec', '--fail-fast', 'ls', 'i_do_surely_not_exist'],
+          workingDirectory: workspaceDir.path,
+          runInShell: true,
+        );
+
+        expect(result.exitCode, equals(2));
       });
     });
 
