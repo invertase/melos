@@ -214,6 +214,65 @@ ${'-' * terminalWidth}
       });
     });
 
+    group('fail fast', () {
+      test('propagate error code when fail fast is enabled', () async {
+        final workspaceDir = await createTemporaryWorkspace();
+
+        final a = await createProject(
+          workspaceDir,
+          const PubSpec(name: 'a'),
+        );
+
+        final b = await createProject(
+          workspaceDir,
+          const PubSpec(name: 'b'),
+        );
+
+        final c = await createProject(
+          workspaceDir,
+          const PubSpec(name: 'c'),
+        );
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        await melos.exec(
+          ['ls', 'i_do_surely_not_exist'],
+          failFast: true,
+        );
+
+        expect(
+          logger.output.normalizeNewLines(),
+          ignoringAnsii(
+            '''
+\$ melos exec
+  └> ls i_do_surely_not_exist
+     └> RUNNING (in 3 packages)
+
+${'-' * terminalWidth}
+e-ERROR: [a]: ls: cannot access \'i_do_surely_not_exist\': No such file or directory
+e-
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> ls i_do_surely_not_exist
+     └> FAILED (in 1 packages)
+        └> a (with exit code 2)
+     └> CANCELED (in 2 packages)
+        └> b (due to failFast)
+        └> c (due to failFast)
+''',
+          ),
+        );
+      });
+    });
+
     group('order dependents', () {
       test('sorts execution order topologically', () async {
         final workspaceDir = await createTemporaryWorkspace();
