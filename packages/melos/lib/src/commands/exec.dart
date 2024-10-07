@@ -93,8 +93,20 @@ mixin _ExecMixin on _Melos {
     required bool orderDependents,
     Map<String, String> additionalEnvironment = const {},
   }) async {
+    final sortedPackages = packages.toList(growable: false);
+    var hasImpactfulCycles = false;
+
+    if (orderDependents) {
+      // TODO: This is not really the right way to do this. Cyclic dependencies
+      // are handled in a way that is specific for publishing.
+      sortPackagesForPublishing(sortedPackages);
+      hasImpactfulCycles =
+          findCyclicDependenciesInWorkspace(sortedPackages).isNotEmpty;
+    }
+
+    final calculatedConcurrency = hasImpactfulCycles ? 1 : concurrency;
     final failures = <String, int?>{};
-    final pool = Pool(concurrency);
+    final pool = Pool(calculatedConcurrency);
     final execArgsString = execArgs.join(' ');
     final prefixLogs = concurrency != 1 && packages.length != 1;
 
@@ -107,14 +119,6 @@ mixin _ExecMixin on _Melos {
       logger.horizontalLine();
     }
 
-    final sortedPackages = packages.toList(growable: false);
-
-    if (orderDependents) {
-      // TODO: This is not really the right way to do this. Cyclic dependencies
-      // are handled in a way that is specific for publishing.
-      sortPackagesForPublishing(sortedPackages);
-    }
-
     final packageResults = Map.fromEntries(
       packages.map((package) => MapEntry(package.name, Completer<int?>())),
     );
@@ -125,7 +129,7 @@ mixin _ExecMixin on _Melos {
       pool.forEach<Package, void>(sortedPackages, (package) async {
         assert(!(failFast && failures.isNotEmpty));
 
-        if (orderDependents) {
+        if (orderDependents && !hasImpactfulCycles) {
           final dependenciesResults = await Future.wait(
             package.allDependenciesInWorkspace.values
                 .map((package) => packageResults[package.name]?.future)
@@ -229,7 +233,7 @@ mixin _ExecMixin on _Melos {
         }
       }
 
-      exitCode = 1;
+      exitCode = failFast ? failures[failures.keys.first]! : 1;
     } else {
       resultLogger.child(successLabel);
     }

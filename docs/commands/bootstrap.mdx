@@ -94,6 +94,8 @@ melos bootstrap --diff="main"
 - The `--no-enforce-lockfile` flag is used to disregard versions from `.lock` files if
   `enforce-lockfile` is configured in the `melos.yaml` file.
 - The `--skip-linking` flag is used to skip the local linking of workspace packages.
+- The `--offline` flag is used to only resolve dependencies from the local cache by running
+  `pub get` with the `--offline` flag.
 
 
 In addition to the above flags, the `melos bootstrap` command supports a few different flags that

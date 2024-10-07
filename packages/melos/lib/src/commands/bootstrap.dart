@@ -7,6 +7,7 @@ mixin _BootstrapMixin on _CleanMixin {
     bool noExample = false,
     bool? enforceLockfile,
     bool skipLinking = false,
+    bool offline = false,
   }) async {
     final workspace =
         await createWorkspace(global: global, packageFilters: packageFilters);
@@ -16,6 +17,7 @@ mixin _BootstrapMixin on _CleanMixin {
       CommandWithLifecycle.bootstrap,
       () async {
         final bootstrapCommandConfig = workspace.config.commands.bootstrap;
+        final runOffline = bootstrapCommandConfig.runPubGetOffline || offline;
         late final hasLockFile =
             File(p.join(workspace.path, 'pubspec.lock')).existsSync();
         final enforceLockfileConfigValue =
@@ -30,7 +32,7 @@ mixin _BootstrapMixin on _CleanMixin {
           ),
           'get',
           if (noExample) '--no-example',
-          if (bootstrapCommandConfig.runPubGetOffline) '--offline',
+          if (runOffline) '--offline',
           if (shouldEnforceLockfile) '--enforce-lockfile',
         ].join(' ');
 

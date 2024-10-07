@@ -993,6 +993,42 @@ Generating IntelliJ IDE files...
       );
     });
   });
+
+  group('melos bs --offline', () {
+    test('should run pub get with --offline', () async {
+      final workspaceDir = await createTemporaryWorkspace();
+      await createProject(
+        workspaceDir,
+        const PubSpec(name: 'a'),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(logger: logger, config: config);
+
+      await runMelosBootstrap(melos, logger, offline: true);
+
+      expect(
+        logger.output,
+        ignoringAnsii(
+          '''
+melos bootstrap
+  └> ${workspaceDir.path}
+
+Running "dart pub get --offline" in workspace packages...
+  ✓ a
+    └> packages/a
+  > SUCCESS
+
+Generating IntelliJ IDE files...
+  > SUCCESS
+
+ -> 1 packages bootstrapped
+''',
+        ),
+      );
+    });
+  });
 }
 
 Future<void> runMelosBootstrap(
@@ -1000,11 +1036,13 @@ Future<void> runMelosBootstrap(
   TestLogger logger, {
   bool skipLinking = false,
   bool? enforceLockfile,
+  bool offline = false,
 }) async {
   try {
     await melos.bootstrap(
       skipLinking: skipLinking,
       enforceLockfile: enforceLockfile,
+      offline: offline,
     );
   } on BootstrapException {
     // ignore: avoid_print
