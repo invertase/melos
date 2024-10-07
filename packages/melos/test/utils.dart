@@ -157,7 +157,7 @@ Future<Directory> createProject(
       ? partialPubSpec
       : partialPubSpec.copy(
           environment: Environment.fromJson(<Object?, Object?>{
-            'sdk': '>=3.0.0 <4.0.0',
+            'sdk': '>=3.1.0 <4.0.0',
           }),
         );
 
