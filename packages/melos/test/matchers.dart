@@ -32,8 +32,6 @@ Matcher ignoringDependencyMessages(String expected) {
                 ),
           )
           .join('\n');
-      print('normalizedActual: $normalizedActual');
-      print('expected: $expected');
       return ignoringAnsii(expected).matches(normalizedActual, {});
     },
     'ignores dependency resolution messages',
