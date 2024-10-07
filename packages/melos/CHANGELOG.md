@@ -1,3 +1,14 @@
+## 6.2.0
+
+ - **FIX**: Propagate error code when fail fast is enabled ([#762](https://github.com/invertase/melos/issues/762)). ([ed6243bd](https://github.com/invertase/melos/commit/ed6243bd0882c61d82a79a35c95e1e1e9e874921))
+ - **FIX**: Don't deadlock on cycle exec with order dependents ([#761](https://github.com/invertase/melos/issues/761)). ([cec45d7d](https://github.com/invertase/melos/commit/cec45d7d6f042b7a173ea520a813a94fe445cab7))
+ - **FIX**: maintain working directory across script steps ([#711](https://github.com/invertase/melos/issues/711)). ([a3784c16](https://github.com/invertase/melos/commit/a3784c16bd6337b3baba1953b5e52cb33fa25f43))
+ - **FIX**: Flaky tests when run in GitHub Actions Workflow ([#733](https://github.com/invertase/melos/issues/733)). ([4a67d098](https://github.com/invertase/melos/commit/4a67d098686b4724cae23d24bdab46be820aa0b3))
+ - **FEAT**: Allow overriding `enforceLockfile` with `--no-enforce-lockfile` ([#758](https://github.com/invertase/melos/issues/758)). ([86647f1d](https://github.com/invertase/melos/commit/86647f1d2eea7ce66063fe44b0af70dc633a093e))
+ - **FEAT**: Expose `pub get`'s `--offline` flag on the bootstrap command ([#756](https://github.com/invertase/melos/issues/756)). ([b432749c](https://github.com/invertase/melos/commit/b432749c3214bd106b0c67173740d6e23eca9e23))
+ - **DOCS**: Add signals to list of projects using Melos ([#754](https://github.com/invertase/melos/issues/754)). ([dc05a52c](https://github.com/invertase/melos/commit/dc05a52c21796dd1c2455d0ddc2f2981b88e8d9c))
+ - **DOCS**: Add PowerSync to list of projects using Melos ([#746](https://github.com/invertase/melos/issues/746)). ([24fbcec1](https://github.com/invertase/melos/commit/24fbcec134773d5a61ffaa07a8b84f4daf3bbe41))
+
 ## 6.1.0
 
  - **FIX**: `updateDependentsVersions` disabled with packages still mentioned in changelogs ([#719](https://github.com/invertase/melos/issues/719)). ([0ad8f585](https://github.com/invertase/melos/commit/0ad8f5851333bc5d197132f9e7ec7c0a8b1ca45a))
