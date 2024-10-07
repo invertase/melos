@@ -21,7 +21,9 @@ Matcher ignoringDependencyMessages(String expected) {
             (line) =>
                 !line.startsWith('Resolving dependencies...') &&
                 !line.startsWith('Downloading packages...') &&
-                !line.startsWith('Got dependencies!'),
+                !line.startsWith('Got dependencies!') &&
+                // Removes lines like "  pub_updater 0.4.0 (0.5.0 available)"
+                !(line.startsWith('  ') && line.contains(' available)')),
           )
           .join('\n');
       return ignoringAnsii(expected).matches(normalizedActual, {});
