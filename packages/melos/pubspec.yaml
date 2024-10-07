@@ -27,7 +27,7 @@ dependencies:
   async: ^2.11.0
   cli_launcher: ^0.3.1
   cli_util: ^0.4.1
-  collection: ^1.19.0
+  collection: ^1.18.0
   conventional_commit: ^0.6.0+1
   file: ^7.0.0
   glob: ^2.1.2
