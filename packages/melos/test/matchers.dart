@@ -26,6 +26,8 @@ Matcher ignoringDependencyMessages(String expected) {
                 !(line.startsWith('  ') && line.contains(' available)')),
           )
           .join('\n');
+      print('normalizedActual: $normalizedActual');
+      print('expected: $expected');
       return ignoringAnsii(expected).matches(normalizedActual, {});
     },
     'ignores dependency resolution messages',
