@@ -214,6 +214,91 @@ ${'-' * terminalWidth}
       });
     });
 
+    group('fail fast', () {
+      test('print error codes correctly', () async {
+        final workspaceDir = await createTemporaryWorkspace();
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'a'),
+        );
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'b'),
+        );
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'c'),
+        );
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        await melos.exec(
+          ['exit', '2'],
+          failFast: true,
+        );
+
+        expect(
+          logger.output.normalizeNewLines(),
+          ignoringAnsii(
+            '''
+\$ melos exec
+  └> exit 2
+     └> RUNNING (in 3 packages)
+
+${'-' * terminalWidth}
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> exit 2
+     └> FAILED (in 1 packages)
+        └> a (with exit code 2)
+     └> CANCELED (in 2 packages)
+        └> b (due to failFast)
+        └> c (due to failFast)
+''',
+          ),
+        );
+      });
+
+      test('propagate error code when fail fast is enabled', () async {
+        final workspaceDir = await createTemporaryWorkspace();
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'a'),
+        );
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'b'),
+        );
+
+        await createProject(
+          workspaceDir,
+          const PubSpec(name: 'c'),
+        );
+
+        final result = await Process.run(
+          'melos',
+          ['exec', '--fail-fast', 'exit', '2'],
+          workingDirectory: workspaceDir.path,
+          runInShell: Platform.isWindows,
+        );
+
+        expect(result.exitCode, equals(2));
+      });
+    });
+
     group('order dependents', () {
       test('sorts execution order topologically', () async {
         final workspaceDir = await createTemporaryWorkspace();

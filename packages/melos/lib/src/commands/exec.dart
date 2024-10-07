@@ -233,7 +233,7 @@ mixin _ExecMixin on _Melos {
         }
       }
 
-      exitCode = 1;
+      exitCode = failFast ? failures[failures.keys.first]! : 1;
     } else {
       resultLogger.child(successLabel);
     }
