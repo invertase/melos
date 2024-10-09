@@ -37,7 +37,7 @@ repositories with git and Pub.**
 ## Github Action
 
 If you're planning on using Melos in your GitHub Actions workflows, you can use
-the [Melos Action](https://github.com/flame-engine/flame/tree/main/examples/assets/svgs)
+the [Melos Action](https://github.com/marketplace/actions/melos-action)
 to run Melos commands, this action also supports automatic versioning and
 publishing directly from your workflows.
 
