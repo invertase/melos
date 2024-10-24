@@ -53,8 +53,8 @@ class InitCommand extends MelosCommand {
           'Enter the project name',
           defaultsTo: workspaceName,
         );
-    final useRecommendedDirectoryStructure = promptBool(
-      message: 'Use recommended directory structure?',
+    final useAppsDir = promptBool(
+      message: 'Do you want to add the apps directory to the list of packages?',
       defaultsTo: true,
     );
 
@@ -65,7 +65,7 @@ class InitCommand extends MelosCommand {
       directory: directory,
       packages: packages ?? const [],
       project: project,
-      useRecommendedStructure: useRecommendedDirectoryStructure,
+      useAppDir: useAppsDir,
     );
   }
 }

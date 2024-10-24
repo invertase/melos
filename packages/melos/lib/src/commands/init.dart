@@ -6,7 +6,7 @@ mixin _InitMixin on _Melos {
     required String directory,
     required List<String> packages,
     required String project,
-    bool useRecommendedStructure = false,
+    bool useAppDir = false,
   }) async {
     late final String qualifiedWorkspaceName;
     if (workspaceName == '.') {
@@ -21,12 +21,16 @@ mixin _InitMixin on _Melos {
       throw StateError('Directory $directory already exists');
     } else if (!isCurrentDir) {
       dir.createSync(recursive: true);
+      Directory(p.join(dir.absolute.path, 'packages')).createSync();
+      if (useAppDir) {
+        Directory(p.join(dir.absolute.path, 'apps')).createSync();
+      }
     }
 
     final dartVersion = utils.currentDartVersion('dart');
     final melosYaml = <String, dynamic>{
       'name': qualifiedWorkspaceName,
-      if (useRecommendedStructure) 'packages': ['apps/**', 'packages/**'],
+      'packages': [if (useAppDir) 'apps/*', 'packages/*'],
       if (packages.isNotEmpty) 'packages': packages,
     };
     final pubspecYaml = <String, dynamic>{
