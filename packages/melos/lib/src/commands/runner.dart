@@ -17,6 +17,7 @@ import 'package:pubspec/pubspec.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
+import '../../version.g.dart';
 import '../command_configs/command_configs.dart';
 import '../command_runner/version.dart';
 import '../common/aggregate_changelog.dart';
@@ -44,14 +45,24 @@ import '../workspace.dart';
 import '../workspace_configs.dart';
 
 part 'bootstrap.dart';
+
 part 'clean.dart';
+
 part 'exec.dart';
+
 part 'list.dart';
+
 part 'publish.dart';
+
 part 'run.dart';
+
 part 'version.dart';
+
 part 'analyze.dart';
+
 part 'format.dart';
+
+part 'init.dart';
 
 enum CommandWithLifecycle {
   bootstrap,
@@ -70,7 +81,8 @@ class Melos extends _Melos
         _VersionMixin,
         _PublishMixin,
         _AnalyzeMixin,
-        _FormatMixin {
+        _FormatMixin,
+        _InitMixin {
   Melos({
     required this.config,
     Logger? logger,
@@ -84,6 +96,7 @@ class Melos extends _Melos
 
 abstract class _Melos {
   MelosLogger get logger;
+
   MelosWorkspaceConfig get config;
 
   Future<MelosWorkspace> createWorkspace({
