@@ -340,7 +340,8 @@ class Script {
     }
   }
 
-  /// Identifies path of currently running melos and reuses it for nested script execution.
+  /// Identifies path of currently running melos and reuses it
+  /// for nested script execution.
   ///
   /// Starting melos by just calling `melos` via shell
   /// would use the first found binary found in `$PATH`,
@@ -352,23 +353,28 @@ class Script {
   /// could differ.
   ///
   /// Besides ensuring starting the same melos as currently running,
-  /// this furthermore enables use of melos in environments
-  /// where `.pub-cache/bin` should/must not be put in `$PATH`.
+  /// this furthermore enables use of melos in environments where
+  /// `.pub-cache/bin` should/must not be put in `$PATH`.
   List<String> _determineMelosExecutablePaths() {
     final currentExecutablePathString = currentPlatform.resolvedExecutable;
     final currentExecutablePathUri = Uri.file(currentExecutablePathString);
     if (!currentExecutablePathUri.isAbsolute) {
-      throw 'Got invalid, unsupported or relative path to running executable. Expected absolute path.';
+      throw FormatException(
+          'Got invalid, unsupported or relative path to running executable.'
+          'Expected absolute path.');
     }
 
     final currentScriptPathUri = currentPlatform.script;
     final currentScriptPathString = currentScriptPathUri.toFilePath();
-    if (!currentScriptPathString.isEmpty && !currentScriptPathUri.isAbsolute) {
-      throw 'Got invalid, unsupported or relative path to melos. Expected absolute path.';
+    if (currentScriptPathString.isNotEmpty &&
+        !currentScriptPathUri.isAbsolute) {
+      throw FormatException(
+          'Got invalid, unsupported or relative path to melos.'
+          'Expected absolute path.');
     }
 
     // Determine if melos is running as script or compiled binary
-    final isScriptPathAvailable = !currentScriptPathString.isEmpty;
+    final isScriptPathAvailable = currentScriptPathString.isNotEmpty;
     final isCompiledMelosRunning =
         currentExecutablePathUri == currentScriptPathUri;
 
