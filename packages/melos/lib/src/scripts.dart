@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
+import 'common/platform.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
 import 'package.dart';
@@ -318,7 +319,8 @@ class Script {
     if (exec == null) {
       return scriptCommand;
     } else {
-      final execCommand = ['melos', 'exec'];
+      /// `dart melos.dart exec` or `melos exec` with absolute paths
+      final execCommand = [..._determineMelosExecutablePaths(), 'exec'];
 
       if (exec.concurrency != null) {
         execCommand.addAll(['--concurrency', '${exec.concurrency}']);
@@ -336,6 +338,47 @@ class Script {
 
       return execCommand;
     }
+  }
+
+  /// Identifies path of currently running melos and reuses it for nested script execution.
+  ///
+  /// Starting melos by just calling `melos` via shell
+  /// would use the first found binary found in `$PATH`,
+  /// i.e. usually the globally activated version. If there is one.
+  ///
+  /// This can cause issues when melos is started with `dart run melos`,
+  /// which will prefer the melos version specified via (dev_)dependencies.
+  /// So the initially started melos binary/script and the one used for melos script execution
+  /// could differ.
+  ///
+  /// Besides ensuring starting the same melos as currently running,
+  /// this furthermore enables use of melos in environments
+  /// where `.pub-cache/bin` should/must not be put in `$PATH`.
+  List<String> _determineMelosExecutablePaths() {
+    final currentExecutablePathString = currentPlatform.resolvedExecutable;
+    final currentExecutablePathUri = Uri.file(currentExecutablePathString);
+    if (!currentExecutablePathUri.isAbsolute) {
+      throw 'Got invalid, unsupported or relative path to running executable. Expected absolute path.';
+    }
+
+    final currentScriptPathUri = currentPlatform.script;
+    final currentScriptPathString = currentScriptPathUri.toFilePath();
+    if (!currentScriptPathString.isEmpty && !currentScriptPathUri.isAbsolute) {
+      throw 'Got invalid, unsupported or relative path to melos. Expected absolute path.';
+    }
+
+    // Determine if melos is running as script or compiled binary
+    final isScriptPathAvailable = !currentScriptPathString.isEmpty;
+    final isCompiledMelosRunning =
+        currentExecutablePathUri == currentScriptPathUri;
+
+    if (!isScriptPathAvailable || isCompiledMelosRunning) {
+      return [currentExecutablePathString];
+    }
+
+    // currentExecutablePathString => path to dart binary
+    // currentScriptPathUri => path to melos.dart
+    return [currentExecutablePathString, currentScriptPathString];
   }
 
   /// Validates the script. Throws a [MelosConfigException] if the script is
