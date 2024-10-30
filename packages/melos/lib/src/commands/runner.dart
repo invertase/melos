@@ -45,23 +45,14 @@ import '../workspace.dart';
 import '../workspace_configs.dart';
 
 part 'bootstrap.dart';
-
 part 'clean.dart';
-
 part 'exec.dart';
-
 part 'list.dart';
-
 part 'publish.dart';
-
 part 'run.dart';
-
 part 'version.dart';
-
 part 'analyze.dart';
-
 part 'format.dart';
-
 part 'init.dart';
 
 enum CommandWithLifecycle {

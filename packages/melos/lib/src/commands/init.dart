@@ -28,7 +28,7 @@ mixin _InitMixin on _Melos {
     }
 
     final dartVersion = utils.currentDartVersion('dart');
-    final melosYaml = <String, dynamic>{
+    final melosYaml = <String, Object?>{
       'name': qualifiedWorkspaceName,
       'packages': [if (useAppDir) 'apps/*', 'packages/*'],
       if (packages.isNotEmpty) 'packages': packages,
@@ -54,7 +54,7 @@ mixin _InitMixin on _Melos {
     );
 
     logger.log(
-      'Initialized Melos workspace in ${dir.path}\n'
+      'Initialized Melos workspace in ${dir.path}.\n'
       'Run the following commands to bootstrap the workspace:\n'
       '  cd ${dir.path}\n'
       '  melos bootstrap',

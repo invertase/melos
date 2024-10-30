@@ -11,20 +11,20 @@ class InitCommand extends MelosCommand {
     argParser.addOption(
       'directory',
       abbr: 'd',
-      help: 'Directory name to create project in. Defaults to workspace name',
+      help: 'Directory to create project in. Defaults to the workspace name.',
     );
 
     argParser.addMultiOption(
       'packages',
       abbr: 'p',
-      help: 'Comma separated packages to add in top level `packages` array',
+      help: 'Comma separated packages to add in top level `packages` array.',
     );
 
     argParser.addOption(
       'project',
       abbr: 'P',
-      help:
-          'Project name to be used in pubspec.yaml. Defaults to workspace name',
+      help: 'Project name to be used in pubspec.yaml. '
+          'Defaults to the workspace name.',
     );
   }
 
