@@ -17,7 +17,7 @@ class InitCommand extends MelosCommand {
     argParser.addMultiOption(
       'packages',
       abbr: 'p',
-      help: 'Comma separated packages to add in top level `packages` array.',
+      help: 'Comma separated glob paths to add to the melos workspace.',
     );
 
     argParser.addOption(
