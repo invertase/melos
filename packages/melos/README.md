@@ -164,6 +164,7 @@ The following projects are using Melos:
 - [jhomlala/alice](https://github.com/jhomlala/alice)
 - [powersync/powersync.dart](https://github.com/powersync-ja/powersync.dart)
 - [rodydavis/signals.dart](https://github.com/rodydavis/signals.dart)
+- [foss42/apidash](https://github.com/foss42/apidash)
 
 > Submit a PR if you'd like to add your project to the list. Update the
 > [README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md)
