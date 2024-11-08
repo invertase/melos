@@ -313,14 +313,8 @@ String pubspecPathForDirectory(String directory) =>
 String pubspecOverridesPathForDirectory(String directory) =>
     p.join(directory, 'pubspec_overrides.yaml');
 
-String relativePath(String path, String from) {
-  if (currentPlatform.isWindows) {
-    return p.windows
-        .normalize(p.relative(path, from: from))
-        .replaceAll(r'\', r'\\');
-  }
-  return p.normalize(p.relative(path, from: from));
-}
+String relativePath(String path, String from) =>
+    p.normalize(p.relative(path, from: from)).replaceAll(r'\', '/');
 
 String listAsPaddedTable(List<List<String>> table, {int paddingSize = 1}) {
   final output = <String>[];
