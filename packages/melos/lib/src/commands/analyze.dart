@@ -37,13 +37,25 @@ mixin _AnalyzeMixin on _Melos {
       concurrency: concurrency,
     ).join(' ');
     final useGroupBuffer = concurrency != 1 && packages.length != 1;
+    final dartPackageCount = packages.where((e) => !e.isFlutterPackage).length;
+    final flutterPackageCount =
+        packages.where((e) => e.isFlutterPackage).length;
 
     logger.command('melos analyze', withDollarSign: true);
 
-    logger
-        .child(targetStyle(analyzeArgsString))
-        .child('$runningLabel (in ${packages.length} packages)')
-        .newLine();
+    if (dartPackageCount > 0) {
+      logger
+          .child(targetStyle(analyzeArgsString))
+          .child('$runningLabel (in $dartPackageCount packages)')
+          .newLine();
+    }
+
+    if (flutterPackageCount > 0) {
+      logger
+          .child(targetStyle(analyzeArgsString.replaceFirst('dart', 'flutter')))
+          .child('$runningLabel (in $flutterPackageCount packages)')
+          .newLine();
+    }
 
     await pool.forEach<Package, void>(packages, (package) async {
       final group = useGroupBuffer ? package.name : null;
@@ -55,6 +67,7 @@ mixin _AnalyzeMixin on _Melos {
         workspace,
         package,
         _getAnalyzeArgs(
+          package: package,
           workspace: workspace,
           fatalInfos: fatalInfos,
           fatalWarnings: fatalWarnings,
@@ -101,6 +114,7 @@ mixin _AnalyzeMixin on _Melos {
   List<String> _getAnalyzeArgs({
     required MelosWorkspace workspace,
     required bool fatalInfos,
+    Package? package,
     bool? fatalWarnings,
     // Note: The `concurrency` argument is intentionally set to a default value
     // of 1 to prevent its direct use by the `startCommand` function. It is
@@ -110,7 +124,7 @@ mixin _AnalyzeMixin on _Melos {
   }) {
     final options = _getOptionsArgs(fatalInfos, fatalWarnings, concurrency);
     return <String>[
-      if (workspace.isFlutterWorkspace)
+      if (package?.isFlutterPackage ?? false)
         workspace.sdkTool('flutter')
       else
         workspace.sdkTool('dart'),
