@@ -277,6 +277,34 @@ $ melos analyze
       expect(regex.hasMatch(logger.output.normalizeNewLines()), isTrue);
     });
 
+    test('should run analysis with using flutter', () async {
+      final workspaceDir = await createTemporaryWorkspace();
+
+      await createProject(
+        workspaceDir,
+        PubSpec(
+          name: 'a',
+          dependencies: {
+            'c': HostedReference(VersionConstraint.any),
+            'flutter': const SdkReference('flutter'),
+          },
+        ),
+      );
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+      await melos.analyze(concurrency: 2);
+
+      final regex =
+          RegExp(r'\$ melos analyze\s+└> flutter analyze --concurrency 2');
+
+      expect(regex.hasMatch(logger.output.normalizeNewLines()), isTrue);
+    });
+
     test('should run analysis with --concurrency 2 flag', () async {
       await melos.analyze(concurrency: 2);
 

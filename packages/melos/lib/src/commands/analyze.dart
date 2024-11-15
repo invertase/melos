@@ -110,7 +110,10 @@ mixin _AnalyzeMixin on _Melos {
   }) {
     final options = _getOptionsArgs(fatalInfos, fatalWarnings, concurrency);
     return <String>[
-      workspace.sdkTool('dart'),
+      if (workspace.isFlutterWorkspace)
+        workspace.sdkTool('flutter')
+      else
+        workspace.sdkTool('dart'),
       'analyze',
       options,
     ];
