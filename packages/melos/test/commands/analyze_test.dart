@@ -350,7 +350,6 @@ $ melos analyze
 
     test('should run analysis using dart', () async {
       final workspaceDir = await createTemporaryWorkspace();
-
       await createProject(
         workspaceDir,
         const PubSpec(
