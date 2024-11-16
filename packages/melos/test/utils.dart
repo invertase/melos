@@ -103,9 +103,7 @@ MelosWorkspaceConfig _defaultWorkspaceConfigBuilder(String path) =>
       packages: [
         createGlob('packages/**', currentDirectoryPath: path),
       ],
-      path: currentPlatform.isWindows
-          ? p.windows.normalize(path).replaceAll(r'\', r'\\')
-          : path,
+      path: path,
     );
 
 Future<Directory> createTemporaryWorkspace({
@@ -116,9 +114,7 @@ Future<Directory> createTemporaryWorkspace({
   final tempDir = createTempDir(p.join(Directory.current.path, '.dart_tool'));
   addTearDown(() => deleteEntry(tempDir));
 
-  final workspacePath = currentPlatform.isWindows
-      ? p.windows.normalize(tempDir).replaceAll(r'\', r'\\')
-      : tempDir;
+  final workspacePath = tempDir;
 
   await createProject(
     Directory(workspacePath),

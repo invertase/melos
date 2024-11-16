@@ -2,7 +2,6 @@ import 'package:glob/glob.dart';
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
-import 'package:melos/src/common/platform.dart';
 import 'package:path/path.dart' as p;
 import 'package:pubspec/pubspec.dart';
 import 'package:test/test.dart';
@@ -137,9 +136,7 @@ void main() {
               Glob('packages/ab*'),
             ],
           },
-          path: currentPlatform.isWindows
-              ? p.windows.normalize(path).replaceAll(r'\', r'\\')
-              : path,
+          path: path,
         );
       }
 
