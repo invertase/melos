@@ -534,7 +534,6 @@ String? mergeMelosPubspecOverrides(
     }
   }
 
-  // TODO(Lukas): Check these ifs
   if (melosDependencyOverrides.isNotEmpty) {
     // Now melosDependencyOverrides only contains new dependencies that need to
     // be added to the `pubspec_overrides.yaml` file.
