@@ -280,20 +280,20 @@ $ melos analyze
 
       await createProject(
         workspaceDir,
-        const PubSpec(
-          name: 'a',
+        Pubspec(
+          'a',
           dependencies: {
-            'flutter': SdkReference('flutter'),
+            'flutter': SdkDependency('flutter'),
           },
         ),
       );
 
       await createProject(
         workspaceDir,
-        PubSpec(
-          name: 'b',
+        Pubspec(
+          'b',
           dependencies: {
-            'a': HostedReference(VersionConstraint.any),
+            'a': HostedDependency(version: VersionConstraint.any),
           },
         ),
       );
@@ -324,10 +324,10 @@ $ melos analyze
 
       await createProject(
         workspaceDir,
-        const PubSpec(
-          name: 'a',
+        Pubspec(
+          'a',
           dependencies: {
-            'flutter': SdkReference('flutter'),
+            'flutter': SdkDependency('flutter'),
           },
         ),
       );
@@ -350,9 +350,7 @@ $ melos analyze
       final workspaceDir = await createTemporaryWorkspace();
       await createProject(
         workspaceDir,
-        const PubSpec(
-          name: 'a',
-        ),
+        Pubspec('a'),
       );
 
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
