@@ -57,12 +57,12 @@ mixin _ExecMixin on _Melos {
           p.normalize('$exampleParentPackagePath/pubspec.yaml');
 
       if (fileExists(exampleParentPubspecPath)) {
-        final exampleParentPackage = PubSpec.fromYamlString(
+        final exampleParentPackage = Pubspec.parse(
           await readTextFileAsync(exampleParentPubspecPath),
         );
 
         environment[EnvironmentVariableKey.melosParentPackageName] =
-            exampleParentPackage.name!;
+            exampleParentPackage.name;
         environment[EnvironmentVariableKey.melosParentPackageVersion] =
             (exampleParentPackage.version ?? Version.none).toString();
         environment[EnvironmentVariableKey.melosParentPackagePath] =

@@ -1,11 +1,12 @@
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
-import 'package:pubspec/pubspec.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 
+import '../common/extensions/dependency.dart';
+import '../common/extensions/environment.dart';
 import '../common/glob.dart';
 import '../common/glob_equality.dart';
-import '../common/utils.dart';
 import '../common/validation.dart';
 import '../lifecycle_hooks/lifecycle_hooks.dart';
 
@@ -48,29 +49,11 @@ class BootstrapCommandConfigs {
         ) ??
         false;
 
-    final environment = assertKeyIsA<Map<Object?, Object?>?>(
-      key: 'environment',
-      map: yaml,
-    ).let(Environment.fromJson);
-
-    final dependencies = assertKeyIsA<Map<Object?, Object?>?>(
-      key: 'dependencies',
-      map: yaml,
-    )?.map(
-      (key, value) => MapEntry(
-        key.toString(),
-        DependencyReference.fromJson(value),
-      ),
-    );
-
-    final devDependencies = assertKeyIsA<Map<Object?, Object?>?>(
-      key: 'dev_dependencies',
-      map: yaml,
-    )?.map(
-      (key, value) => MapEntry(
-        key.toString(),
-        DependencyReference.fromJson(value),
-      ),
+    // Create a dummy pubspec name to be able to extract the constraints using
+    // the pubspec parser.
+    final bootstrapConstraints = Pubspec.fromJson(
+      {'name': 'bootstrap', ...yaml},
+      lenient: true,
     );
 
     final dependencyOverridePaths = assertListIsA<String>(
@@ -93,13 +76,17 @@ class BootstrapCommandConfigs {
         ? LifecycleHooks.fromYaml(hooksMap, workspacePath: workspacePath)
         : LifecycleHooks.empty;
 
+    final environment = bootstrapConstraints.environment ?? {};
+    final dependencies = bootstrapConstraints.dependencies;
+    final devDependencies = bootstrapConstraints.devDependencies;
+
     return BootstrapCommandConfigs(
       runPubGetInParallel: runPubGetInParallel,
       runPubGetOffline: runPubGetOffline,
       enforceLockfile: enforceLockfile,
-      environment: environment,
-      dependencies: dependencies,
-      devDependencies: devDependencies,
+      environment: environment.isEmpty ? null : environment,
+      dependencies: dependencies.isEmpty ? null : dependencies,
+      devDependencies: devDependencies.isEmpty ? null : devDependencies,
       dependencyOverridePaths: dependencyOverridePaths
           .map(
             (override) =>
@@ -134,10 +121,10 @@ class BootstrapCommandConfigs {
   final Environment? environment;
 
   /// Dependencies to be synced between all packages.
-  final Map<String, DependencyReference>? dependencies;
+  final Map<String, Dependency>? dependencies;
 
   /// Dev dependencies to be synced between all packages.
-  final Map<String, DependencyReference>? devDependencies;
+  final Map<String, Dependency>? devDependencies;
 
   /// A list of [Glob]s for paths that contain packages to be used as dependency
   /// overrides for all packages managed in the Melos workspace.
@@ -152,14 +139,9 @@ class BootstrapCommandConfigs {
       'runPubGetOffline': runPubGetOffline,
       'enforceLockfile': enforceLockfile,
       if (environment != null) 'environment': environment!.toJson(),
-      if (dependencies != null)
-        'dependencies': dependencies!.map(
-          (key, value) => MapEntry(key, value.toJson()),
-        ),
+      if (dependencies != null) 'dependencies': dependencies!.toJson(),
       if (devDependencies != null)
-        'dev_dependencies': devDependencies!.map(
-          (key, value) => MapEntry(key, value.toJson()),
-        ),
+        'dev_dependencies': devDependencies!.toJson(),
       if (dependencyOverridePaths.isNotEmpty)
         'dependencyOverridePaths':
             dependencyOverridePaths.map((path) => path.toString()).toList(),
@@ -175,11 +157,8 @@ class BootstrapCommandConfigs {
       other.runPubGetOffline == runPubGetOffline &&
       other.enforceLockfile == enforceLockfile &&
       // Extracting equality from environment here as it does not implement ==
-      other.environment?.sdkConstraint == environment?.sdkConstraint &&
-      const DeepCollectionEquality().equals(
-        other.environment?.unParsedYaml,
-        environment?.unParsedYaml,
-      ) &&
+      other.environment.sdkConstraint == environment.sdkConstraint &&
+      const DeepCollectionEquality().equals(other.environment, environment) &&
       const DeepCollectionEquality().equals(other.dependencies, dependencies) &&
       const DeepCollectionEquality()
           .equals(other.devDependencies, devDependencies) &&
@@ -195,10 +174,8 @@ class BootstrapCommandConfigs {
       enforceLockfile.hashCode ^
       // Extracting hashCode from environment here as it does not implement
       // hashCode
-      (environment?.sdkConstraint).hashCode ^
-      const DeepCollectionEquality().hash(
-        environment?.unParsedYaml,
-      ) ^
+      environment.sdkConstraint.hashCode ^
+      const DeepCollectionEquality().hash(environment) ^
       const DeepCollectionEquality().hash(dependencies) ^
       const DeepCollectionEquality().hash(devDependencies) ^
       const DeepCollectionEquality(GlobEquality())

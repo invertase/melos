@@ -5,7 +5,7 @@ import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
-import 'package:pubspec/pubspec.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
 import '../matchers.dart';
@@ -18,19 +18,19 @@ void main() {
 
       final aDir = await createProject(
         workspaceDir,
-        const PubSpec(name: 'a'),
+        Pubspec('a'),
       );
       writeTextFile(p.join(aDir.path, 'log.txt'), '');
 
       final bDir = await createProject(
         workspaceDir,
-        const PubSpec(name: 'b'),
+        Pubspec('b'),
       );
       writeTextFile(p.join(bDir.path, 'log.txt'), '');
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'c'),
+        Pubspec('c'),
       );
 
       final logger = TestLogger();
@@ -96,21 +96,21 @@ ${'-' * terminalWidth}
 
         final a = await createProject(
           workspaceDir,
-          const PubSpec(name: 'a'),
+          Pubspec('a'),
         );
 
         createDelayedExitFile(a, delay: 1000);
 
         final b = await createProject(
           workspaceDir,
-          const PubSpec(name: 'b'),
+          Pubspec('b'),
         );
 
         createDelayedExitFile(b, delay: 500);
 
         final c = await createProject(
           workspaceDir,
-          const PubSpec(name: 'c'),
+          Pubspec('c'),
         );
         createDelayedExitFile(c);
 
@@ -158,21 +158,21 @@ ${'-' * terminalWidth}
 
         final a = await createProject(
           workspaceDir,
-          const PubSpec(name: 'a'),
+          Pubspec('a'),
         );
 
         createDelayedExitFile(a, delay: 1000);
 
         final b = await createProject(
           workspaceDir,
-          const PubSpec(name: 'b'),
+          Pubspec('b'),
         );
 
         createDelayedExitFile(b, delay: 500);
 
         final c = await createProject(
           workspaceDir,
-          const PubSpec(name: 'c'),
+          Pubspec('c'),
         );
         createDelayedExitFile(c);
 
@@ -220,17 +220,17 @@ ${'-' * terminalWidth}
 
         await createProject(
           workspaceDir,
-          const PubSpec(name: 'a'),
+          Pubspec('a'),
         );
 
         await createProject(
           workspaceDir,
-          const PubSpec(name: 'b'),
+          Pubspec('b'),
         );
 
         await createProject(
           workspaceDir,
-          const PubSpec(name: 'c'),
+          Pubspec('c'),
         );
 
         final logger = TestLogger();
@@ -275,17 +275,17 @@ ${'-' * terminalWidth}
 
         await createProject(
           workspaceDir,
-          const PubSpec(name: 'a'),
+          Pubspec('a'),
         );
 
         await createProject(
           workspaceDir,
-          const PubSpec(name: 'b'),
+          Pubspec('b'),
         );
 
         await createProject(
           workspaceDir,
-          const PubSpec(name: 'c'),
+          Pubspec('c'),
         );
 
         final result = await Process.run(
@@ -305,22 +305,26 @@ ${'-' * terminalWidth}
 
         await createProject(
           workspaceDir,
-          PubSpec(
-            name: 'a',
-            dependencies: {'c': HostedReference(VersionConstraint.any)},
+          Pubspec(
+            'a',
+            dependencies: {
+              'c': HostedDependency(version: VersionConstraint.any),
+            },
           ),
         );
 
         await createProject(
           workspaceDir,
-          const PubSpec(name: 'b'),
+          Pubspec('b'),
         );
 
         await createProject(
           workspaceDir,
-          PubSpec(
-            name: 'c',
-            dependencies: {'b': HostedReference(VersionConstraint.any)},
+          Pubspec(
+            'c',
+            dependencies: {
+              'b': HostedDependency(version: VersionConstraint.any),
+            },
           ),
         );
 
@@ -367,23 +371,27 @@ ${'-' * terminalWidth}
 
           await createProject(
             workspaceDir,
-            PubSpec(
-              name: 'a',
-              dependencies: {'b': HostedReference(VersionConstraint.any)},
+            Pubspec(
+              'a',
+              dependencies: {
+                'b': HostedDependency(version: VersionConstraint.any),
+              },
             ),
           );
 
           await createProject(
             workspaceDir,
-            PubSpec(
-              name: 'b',
-              dependencies: {'a': HostedReference(VersionConstraint.any)},
+            Pubspec(
+              'b',
+              dependencies: {
+                'a': HostedDependency(version: VersionConstraint.any),
+              },
             ),
           );
 
           await createProject(
             workspaceDir,
-            const PubSpec(name: 'c'),
+            Pubspec('c'),
           );
 
           final logger = TestLogger();
@@ -430,39 +438,47 @@ ${'-' * terminalWidth}
 
           await createProject(
             workspaceDir,
-            PubSpec(
-              name: 'a',
-              dependencies: {'b': HostedReference(VersionConstraint.any)},
+            Pubspec(
+              'a',
+              dependencies: {
+                'b': HostedDependency(version: VersionConstraint.any),
+              },
             ),
           );
 
           await createProject(
             workspaceDir,
-            PubSpec(
-              name: 'b',
-              dependencies: {'c': HostedReference(VersionConstraint.any)},
+            Pubspec(
+              'b',
+              dependencies: {
+                'c': HostedDependency(version: VersionConstraint.any),
+              },
             ),
           );
 
           await createProject(
             workspaceDir,
-            PubSpec(
-              name: 'c',
-              dependencies: {'d': HostedReference(VersionConstraint.any)},
+            Pubspec(
+              'c',
+              dependencies: {
+                'd': HostedDependency(version: VersionConstraint.any),
+              },
             ),
           );
 
           await createProject(
             workspaceDir,
-            PubSpec(
-              name: 'd',
-              dependencies: {'a': HostedReference(VersionConstraint.any)},
+            Pubspec(
+              'd',
+              dependencies: {
+                'a': HostedDependency(version: VersionConstraint.any),
+              },
             ),
           );
 
           await createProject(
             workspaceDir,
-            const PubSpec(name: 'e'),
+            Pubspec('e'),
           );
 
           final logger = TestLogger();
@@ -509,22 +525,26 @@ ${'-' * terminalWidth}
 
         await createProject(
           workspaceDir,
-          PubSpec(
-            name: 'a',
-            dependencies: {'c': HostedReference(VersionConstraint.any)},
+          Pubspec(
+            'a',
+            dependencies: {
+              'c': HostedDependency(version: VersionConstraint.any),
+            },
           ),
         );
 
         await createProject(
           workspaceDir,
-          const PubSpec(name: 'b'),
+          Pubspec('b'),
         );
 
         await createProject(
           workspaceDir,
-          PubSpec(
-            name: 'c',
-            dependencies: {'b': HostedReference(VersionConstraint.any)},
+          Pubspec(
+            'c',
+            dependencies: {
+              'b': HostedDependency(version: VersionConstraint.any),
+            },
           ),
         );
 
@@ -569,23 +589,27 @@ ${'-' * terminalWidth}
 
         final aDir = await createProject(
           workspaceDir,
-          PubSpec(
-            name: 'a',
-            dependencies: {'c': HostedReference(VersionConstraint.any)},
+          Pubspec(
+            'a',
+            dependencies: {
+              'c': HostedDependency(version: VersionConstraint.any),
+            },
           ),
         );
         writeTextFile(p.join(aDir.path, 'log.txt'), '');
 
         await createProject(
           workspaceDir,
-          const PubSpec(name: 'b'),
+          Pubspec('b'),
         );
 
         final cDir = await createProject(
           workspaceDir,
-          PubSpec(
-            name: 'c',
-            dependencies: {'b': HostedReference(VersionConstraint.any)},
+          Pubspec(
+            'c',
+            dependencies: {
+              'b': HostedDependency(version: VersionConstraint.any),
+            },
           ),
         );
         writeTextFile(p.join(cDir.path, 'log.txt'), '');

@@ -523,7 +523,7 @@ void main() {
       () {
         expect(
           () => MelosWorkspaceConfig(
-            name: '',
+            name: 'melos_test',
             packages: const [],
             commands: const CommandConfigs(
               version: VersionCommandConfigs(linkToCommits: true),
@@ -539,7 +539,7 @@ void main() {
         () {
       expect(
         () => MelosWorkspaceConfig(
-          name: '',
+          name: 'melos_test',
           repository: GitHubRepository(owner: 'invertase', name: 'melos'),
           packages: const [],
           commands: const CommandConfigs(

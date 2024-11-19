@@ -5,7 +5,7 @@ import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:melos/src/lifecycle_hooks/publish.dart';
 import 'package:pub_semver/pub_semver.dart';
-import 'package:pubspec/pubspec.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/expect.dart';
 import 'package:test/scaffolding.dart';
 
@@ -81,7 +81,7 @@ void main() {
           for (final package in ['a', 'b']) {
             await createProject(
               workspaceDir,
-              PubSpec(name: package),
+              Pubspec(package),
               path: 'packages',
             );
           }
@@ -132,7 +132,7 @@ Package _dummyPackage(String name, {List<String> deps = const []}) {
     pathRelativeToWorkspace: '',
     version: Version(1, 0, 0),
     publishTo: null,
-    pubSpec: const PubSpec(),
+    pubspec: Pubspec('melos_test'),
     categories: [],
   );
 }

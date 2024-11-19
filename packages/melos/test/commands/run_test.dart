@@ -9,7 +9,7 @@ import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:platform/platform.dart';
-import 'package:pubspec/pubspec.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
 import '../matchers.dart';
@@ -43,13 +43,13 @@ void main() {
 
         final aDir = await createProject(
           workspaceDir,
-          const PubSpec(name: 'a'),
+          Pubspec('a'),
         );
         writeTextFile(p.join(aDir.path, 'log.txt'), '');
 
         await createProject(
           workspaceDir,
-          const PubSpec(name: 'b'),
+          Pubspec('b'),
         );
 
         final logger = TestLogger();
@@ -120,18 +120,18 @@ melos run test_script
 
           final aDir = await createProject(
             workspaceDir,
-            const PubSpec(name: 'a'),
+            Pubspec('a'),
           );
           writeTextFile(p.join(aDir.path, 'log.txt'), '');
 
           await createProject(
             workspaceDir,
-            const PubSpec(name: 'b'),
+            Pubspec('b'),
           );
 
           final cDir = await createProject(
             workspaceDir,
-            const PubSpec(name: 'c'),
+            Pubspec('c'),
           );
           writeTextFile(p.join(cDir.path, 'log.txt'), '');
 
@@ -251,7 +251,7 @@ melos run hello
         ),
       );
 
-      await createProject(workspaceDir, const PubSpec(name: 'a'));
+      await createProject(workspaceDir, Pubspec('a'));
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -323,7 +323,7 @@ melos run hello
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'a'),
+        Pubspec('a'),
       );
 
       final logger = TestLogger();
@@ -385,7 +385,7 @@ melos run test_script
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'a'),
+        Pubspec('a'),
       );
 
       final logger = TestLogger();
@@ -420,7 +420,7 @@ melos run test_script
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'a'),
+        Pubspec('a'),
       );
 
       final logger = TestLogger();
@@ -463,7 +463,7 @@ it should list the contents including the package named "this is package A".
 
         await createProject(
           workspaceDir,
-          const PubSpec(name: 'this is package A'),
+          Pubspec('this is package A'),
         );
 
         final logger = TestLogger();
@@ -510,7 +510,7 @@ it should list the contents including the package named "this is package A".
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'a'),
+        Pubspec('a'),
       );
 
       final logger = TestLogger();
@@ -576,7 +576,7 @@ SUCCESS
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'a'),
+        Pubspec('a'),
       );
 
       final logger = TestLogger();
@@ -619,7 +619,7 @@ SUCCESS
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'a'),
+        Pubspec('a'),
       );
 
       final logger = TestLogger();
@@ -678,19 +678,17 @@ SUCCESS
 
       aDir = await createProject(
         workspaceDir,
-        const PubSpec(name: 'a'),
+        Pubspec('a'),
       );
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'b'),
+        Pubspec('b'),
       );
 
       await createProject(
         workspaceDir,
-        const PubSpec(
-          name: 'c',
-        ),
+        Pubspec('c'),
       );
 
       writeTextFile(
@@ -784,19 +782,17 @@ SUCCESS
 
       aDir = await createProject(
         workspaceDir,
-        const PubSpec(name: 'a'),
+        Pubspec('a'),
       );
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'b'),
+        Pubspec('b'),
       );
 
       await createProject(
         workspaceDir,
-        const PubSpec(
-          name: 'c',
-        ),
+        Pubspec('c'),
       );
 
       final logger = TestLogger();
@@ -856,19 +852,17 @@ SUCCESS
 
       aDir = await createProject(
         workspaceDir,
-        const PubSpec(name: 'a'),
+        Pubspec('a'),
       );
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'b'),
+        Pubspec('b'),
       );
 
       await createProject(
         workspaceDir,
-        const PubSpec(
-          name: 'c',
-        ),
+        Pubspec('c'),
       );
 
       writeTextFile(
@@ -962,7 +956,7 @@ SUCCESS
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'a'),
+        Pubspec('a'),
       );
 
       final logger = TestLogger();

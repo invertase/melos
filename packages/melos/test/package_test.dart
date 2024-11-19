@@ -7,7 +7,7 @@ import 'package:melos/src/common/pub_credential.dart';
 import 'package:melos/src/package.dart';
 import 'package:platform/platform.dart';
 import 'package:pub_semver/pub_semver.dart';
-import 'package:pubspec/pubspec.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
 import 'mock_env.dart';
@@ -254,7 +254,7 @@ void main() {
             pathRelativeToWorkspace: 'test',
             version: Version(1, 0, 0),
             publishTo: Uri(),
-            pubSpec: const PubSpec(),
+            pubspec: Pubspec('melos_test'),
             categories: category,
           );
         }
