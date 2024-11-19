@@ -275,6 +275,106 @@ $ melos analyze
       expect(regex.hasMatch(logger.output.normalizeNewLines()), isTrue);
     });
 
+    test('should run analysis using flutter & dart', () async {
+      final workspaceDir = await createTemporaryWorkspace();
+
+      await createProject(
+        workspaceDir,
+        const PubSpec(
+          name: 'a',
+          dependencies: {
+            'flutter': SdkReference('flutter'),
+          },
+        ),
+      );
+
+      await createProject(
+        workspaceDir,
+        PubSpec(
+          name: 'b',
+          dependencies: {
+            'a': HostedReference(VersionConstraint.any),
+          },
+        ),
+      );
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+      await melos.analyze(concurrency: 2);
+
+      expect(
+        logger.output
+            .normalizeNewLines()
+            .contains('flutter analyze --concurrency 2'),
+        isTrue,
+      );
+
+      final dartRegex =
+          RegExp(r'\$ melos analyze\s+└> dart analyze --concurrency 2');
+
+      expect(dartRegex.hasMatch(logger.output.normalizeNewLines()), isTrue);
+    });
+
+    test('should run analysis using flutter', () async {
+      final workspaceDir = await createTemporaryWorkspace();
+
+      await createProject(
+        workspaceDir,
+        const PubSpec(
+          name: 'a',
+          dependencies: {
+            'flutter': SdkReference('flutter'),
+          },
+        ),
+      );
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+      await melos.analyze(concurrency: 2);
+
+      final flutterRegex =
+          RegExp(r'\$ melos analyze\s+└> flutter analyze --concurrency 2');
+
+      expect(flutterRegex.hasMatch(logger.output.normalizeNewLines()), isTrue);
+    });
+
+    test('should run analysis using dart', () async {
+      final workspaceDir = await createTemporaryWorkspace();
+      await createProject(
+        workspaceDir,
+        const PubSpec(
+          name: 'a',
+        ),
+      );
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+      await melos.analyze(concurrency: 2);
+
+      expect(
+        logger.output
+            .normalizeNewLines()
+            .contains('flutter analyze --concurrency 2'),
+        isFalse,
+      );
+
+      final dartRegex =
+          RegExp(r'\$ melos analyze\s+└> dart analyze --concurrency 2');
+      expect(dartRegex.hasMatch(logger.output.normalizeNewLines()), isTrue);
+    });
+
     test('should run analysis with --concurrency 2 flag', () async {
       await melos.analyze(concurrency: 2);
 

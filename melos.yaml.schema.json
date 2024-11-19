@@ -421,6 +421,26 @@
               }
             }
           ]
+        },
+        {
+          "type": "object",
+          "required": ["steps"],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "A unique identifier for the script."
+            },
+            "description": {
+              "type": "string",
+              "description": "A short description, shown when using `melos run` with no argument."
+            },
+            "steps": {
+              "type": "array",
+              "description": "A list of commands to execute sequentially, enabling complex workflows.",
+              "items": { "type": "string" }
+            }
+          }
         }
       ]
     },
