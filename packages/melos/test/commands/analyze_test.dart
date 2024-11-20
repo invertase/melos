@@ -4,7 +4,7 @@ import 'package:melos/melos.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
-import 'package:pubspec/pubspec.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
 import '../matchers.dart';
@@ -22,22 +22,20 @@ void main() {
 
       aDir = await createProject(
         workspaceDir,
-        PubSpec(
-          name: 'a',
-          dependencies: {'c': HostedReference(VersionConstraint.any)},
+        Pubspec(
+          'a',
+          dependencies: {'c': HostedDependency(version: VersionConstraint.any)},
         ),
       );
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'b'),
+        Pubspec('b'),
       );
 
       await createProject(
         workspaceDir,
-        const PubSpec(
-          name: 'c',
-        ),
+        Pubspec('c'),
       );
 
       logger = TestLogger();
@@ -282,20 +280,20 @@ $ melos analyze
 
       await createProject(
         workspaceDir,
-        const PubSpec(
-          name: 'a',
+        Pubspec(
+          'a',
           dependencies: {
-            'flutter': SdkReference('flutter'),
+            'flutter': SdkDependency('flutter'),
           },
         ),
       );
 
       await createProject(
         workspaceDir,
-        PubSpec(
-          name: 'b',
+        Pubspec(
+          'b',
           dependencies: {
-            'a': HostedReference(VersionConstraint.any),
+            'a': HostedDependency(version: VersionConstraint.any),
           },
         ),
       );
@@ -326,10 +324,10 @@ $ melos analyze
 
       await createProject(
         workspaceDir,
-        const PubSpec(
-          name: 'a',
+        Pubspec(
+          'a',
           dependencies: {
-            'flutter': SdkReference('flutter'),
+            'flutter': SdkDependency('flutter'),
           },
         ),
       );
@@ -352,9 +350,7 @@ $ melos analyze
       final workspaceDir = await createTemporaryWorkspace();
       await createProject(
         workspaceDir,
-        const PubSpec(
-          name: 'a',
-        ),
+        Pubspec('a'),
       );
 
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);

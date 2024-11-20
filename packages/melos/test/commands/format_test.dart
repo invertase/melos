@@ -8,7 +8,7 @@ import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
-import 'package:pubspec/pubspec.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
 import '../matchers.dart';
@@ -26,21 +26,21 @@ void main() {
 
       aDir = await createProject(
         workspaceDir,
-        PubSpec(
-          name: 'a',
-          dependencies: {'c': HostedReference(VersionConstraint.any)},
+        Pubspec(
+          'a',
+          dependencies: {'c': HostedDependency(version: VersionConstraint.any)},
         ),
       );
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'b'),
+        Pubspec('b'),
       );
 
       await createProject(
         workspaceDir,
-        const PubSpec(
-          name: 'c',
+        Pubspec(
+          'c',
         ),
       );
 
@@ -320,7 +320,7 @@ $ melos format
 
         final aDir = await createProject(
           workspaceDir,
-          const PubSpec(name: 'a'),
+          Pubspec('a'),
         );
 
         const code = '''
@@ -374,7 +374,7 @@ $ melos format
 
         final aDir = await createProject(
           workspaceDir,
-          const PubSpec(name: 'a'),
+          Pubspec('a'),
         );
 
         const code = '''

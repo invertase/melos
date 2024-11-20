@@ -3,7 +3,7 @@ import 'package:melos/melos.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
-import 'package:pubspec/pubspec.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
 import '../matchers.dart';
@@ -20,13 +20,12 @@ void main() {
         ),
       );
 
-      final packageADir =
-          await createProject(workspaceDir, const PubSpec(name: 'a'));
+      final packageADir = await createProject(workspaceDir, Pubspec('a'));
       final packageBDir = await createProject(
         workspaceDir,
-        PubSpec(
-          name: 'b',
-          dependencies: {'a': HostedReference(VersionConstraint.any)},
+        Pubspec(
+          'b',
+          dependencies: {'a': HostedDependency(version: VersionConstraint.any)},
         ),
       );
       final pubspecOverrides =

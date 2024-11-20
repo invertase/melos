@@ -11,9 +11,11 @@ import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
-import 'package:pubspec/pubspec.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
+
+import 'pubspec_extension.dart';
 
 class TestLogger extends StandardLogger {
   final _buffer = StringBuffer();
@@ -118,10 +120,11 @@ Future<Directory> createTemporaryWorkspace({
 
   await createProject(
     Directory(workspacePath),
-    PubSpec(
-      name: 'workspace',
+    Pubspec(
+      'workspace',
+      environment: defaultTestEnvironment,
       devDependencies: {
-        'melos': PathReference(Directory.current.path),
+        'melos': PathDependency(Directory.current.path),
       },
     ),
     path: '.',
@@ -145,22 +148,18 @@ Future<Directory> createTemporaryWorkspace({
 
 Future<Directory> createProject(
   Directory workspace,
-  PubSpec partialPubSpec, {
+  Pubspec partialPubspec, {
   String? path,
   bool createLockfile = false,
 }) async {
-  final pubSpec = partialPubSpec.environment != null
-      ? partialPubSpec
-      : partialPubSpec.copy(
-          environment: Environment.fromJson(<Object?, Object?>{
-            'sdk': '>=3.0.0 <4.0.0',
-          }),
+  final pubspec = partialPubspec.environment != null &&
+          partialPubspec.environment!.isNotEmpty
+      ? partialPubspec
+      : partialPubspec.copyWith(
+          environment: {
+            'sdk': defaultTestEnvironment['sdk'],
+          },
         );
-
-  assert(
-    pubSpec.name != null,
-    'Pubspecs of generated projects must have a name',
-  );
 
   final projectDirectory = Directory(
     p.joinAll([
@@ -169,14 +168,14 @@ Future<Directory> createProject(
         path
       else ...[
         'packages',
-        pubSpec.name!,
+        pubspec.name,
       ],
     ]),
   );
 
   ensureDir(projectDirectory.path);
 
-  await pubSpec.save(projectDirectory);
+  await pubspec.save(projectDirectory);
 
   if (createLockfile) {
     final lockfile = p.join(projectDirectory.path, 'pubspec.lock');
@@ -187,7 +186,7 @@ Future<Directory> createProject(
   // supports Android.
   // If it is, create an empty main class file to appease flutter pub
   // get in case an add-to-app module is present in the workspace
-  final flutterNode = pubSpec.unParsedYaml?['flutter'] as Map<String, Object?>?;
+  final flutterNode = pubspec.flutter;
   final pluginNode = flutterNode?['plugin'] as Map<String, Object?>?;
   final platformsNode = pluginNode?['platforms'] as Map<String, Object?>?;
   final androidPluginNode = platformsNode?['android'] as Map<String, Object?>?;
@@ -279,20 +278,20 @@ class PackageDependencyConfig {
   }
 }
 
-PubSpec pubSpecFromJsonFile({
+Pubspec pubspecFromJsonFile({
   String path = 'test/test_assets/',
   required String fileName,
 }) {
   final filePath = '$path$fileName';
   final jsonAsString = readTextFile(filePath);
-  return PubSpec.fromJson(json.decode(jsonAsString) as Map);
+  return Pubspec.fromJson(json.decode(jsonAsString) as Map);
 }
 
-PubSpec pubSpecFromYamlFile({
+Pubspec pubspecFromYamlFile({
   required String directory,
 }) {
   final filePath = pubspecPathForDirectory(directory);
-  return PubSpec.fromYamlString(readTextFile(filePath));
+  return Pubspec.parse(readTextFile(filePath));
 }
 
 /// Builder to build a [MelosWorkspace] that is entirely virtual and only exists
@@ -337,10 +336,10 @@ class VirtualWorkspaceBuilder {
   /// workspace root. Per default packages are located at
   /// [defaultPackagesPath]/$PACKAGE_NAME$.
   void addPackage(
-    String pubSpecYaml, {
+    String pubspecYaml, {
     String? path,
   }) {
-    _packages.add(_VirtualPackage(pubSpecYaml, path: path));
+    _packages.add(_VirtualPackage(pubspecYaml, path: path));
   }
 
   /// Build the workspace based on the current configuration of this builder.
@@ -374,19 +373,19 @@ class VirtualWorkspaceBuilder {
     final packageMap = <String, Package>{};
 
     for (final package in packages) {
-      final pubSpec = PubSpec.fromYamlString(package.pubSpecYaml);
-      final name = pubSpec.name!;
+      final pubspec = Pubspec.parse(package.pubspecYaml);
+      final name = pubspec.name;
       final pathRelativeToWorkspace =
           package.path ?? '$defaultPackagesPath/$name';
       packageMap[name] = Package(
-        pubSpec: pubSpec,
+        pubspec: pubspec,
         name: name,
         path: '$path/$pathRelativeToWorkspace',
-        version: pubSpec.version ?? Version.none,
-        publishTo: pubSpec.publishTo,
-        dependencies: pubSpec.dependencies.keys.toList(),
-        devDependencies: pubSpec.devDependencies.keys.toList(),
-        dependencyOverrides: pubSpec.dependencyOverrides.keys.toList(),
+        version: pubspec.version ?? Version.none,
+        publishTo: pubspec.publishTo.let(Uri.parse),
+        dependencies: pubspec.dependencies.keys.toList(),
+        devDependencies: pubspec.devDependencies.keys.toList(),
+        dependencyOverrides: pubspec.dependencyOverrides.keys.toList(),
         packageMap: packageMap,
         pathRelativeToWorkspace: pathRelativeToWorkspace,
         categories: [],
@@ -397,13 +396,17 @@ class VirtualWorkspaceBuilder {
   }
 }
 
+final defaultTestEnvironment = {
+  'sdk': VersionConstraint.parse('>=2.12.0 <3.0.0'),
+};
+
 class _VirtualPackage {
   _VirtualPackage(
-    this.pubSpecYaml, {
+    this.pubspecYaml, {
     this.path,
   });
 
-  final String pubSpecYaml;
+  final String pubspecYaml;
 
   final String? path;
 }

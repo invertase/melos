@@ -6,7 +6,7 @@ import 'package:melos/src/command_configs/command_configs.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
-import 'package:pubspec/pubspec.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
 import '../utils.dart';
@@ -39,15 +39,15 @@ void main() {
       );
       await createProject(
         workspaceDir,
-        PubSpec(name: 'a', version: Version(0, 0, 1)),
+        Pubspec('a', version: Version(0, 0, 1)),
       );
       await createProject(
         workspaceDir,
-        PubSpec(
-          name: 'b',
+        Pubspec(
+          'b',
           version: Version(0, 0, 1),
           dependencies: {
-            'a': HostedReference(VersionConstraint.any),
+            'a': HostedDependency(version: VersionConstraint.any),
           },
         ),
       );

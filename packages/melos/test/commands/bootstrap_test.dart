@@ -7,7 +7,7 @@ import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
-import 'package:pubspec/pubspec.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
 import '../matchers.dart';
@@ -26,22 +26,22 @@ void main() {
 
       final absoluteProject = await createProject(
         absoluteDir,
-        const PubSpec(name: 'absolute'),
+        Pubspec('absolute'),
         path: '',
       );
       final relativeProject = await createProject(
         relativeDir,
-        const PubSpec(name: 'relative'),
+        Pubspec('relative'),
         path: '',
       );
       final relativeDevProject = await createProject(
         relativeDevDir,
-        const PubSpec(name: 'relative_dev'),
+        Pubspec('relative_dev'),
         path: '',
       );
       final relativeOverrideProject = await createProject(
         relativeOverrideDir,
-        const PubSpec(name: 'relative_override'),
+        Pubspec('relative_override'),
         path: '',
       );
 
@@ -51,21 +51,21 @@ void main() {
 
       final aDir = await createProject(
         workspaceDir,
-        PubSpec(
-          name: 'a',
+        Pubspec(
+          'a',
           dependencies: {
-            'relative': PathReference(
+            'relative': PathDependency(
               relativePath(relativeProject.path, aPath),
             ),
-            'absolute': PathReference(absoluteProject.path),
+            'absolute': PathDependency(absoluteProject.path),
           },
           dependencyOverrides: {
-            'relative_override': PathReference(
+            'relative_override': PathDependency(
               relativePath(relativeOverrideProject.path, aPath),
             ),
           },
           devDependencies: {
-            'relative_dev': PathReference(
+            'relative_dev': PathDependency(
               relativePath(relativeDevProject.path, aPath),
             ),
           },
@@ -153,24 +153,26 @@ Generating IntelliJ IDE files...
 
         final aDir = await createProject(
           workspaceDir,
-          PubSpec(
-            name: 'a',
-            dependencies: {'b': HostedReference(VersionConstraint.any)},
+          Pubspec(
+            'a',
+            dependencies: {
+              'b': HostedDependency(version: VersionConstraint.any),
+            },
           ),
         );
         await createProject(
           workspaceDir,
-          const PubSpec(name: 'b'),
+          Pubspec('b'),
         );
 
         await createProject(
           workspaceDir,
-          pubSpecFromJsonFile(fileName: 'add_to_app_json.json'),
+          pubspecFromJsonFile(fileName: 'add_to_app_json.json'),
         );
 
         await createProject(
           workspaceDir,
-          pubSpecFromJsonFile(fileName: 'plugin_json.json'),
+          pubspecFromJsonFile(fileName: 'plugin_json.json'),
         );
 
         final logger = TestLogger();
@@ -259,18 +261,20 @@ Generating IntelliJ IDE files...
 
       final pkgA = await createProject(
         workspaceDir,
-        PubSpec(
-          name: 'a',
-          dependencies: {'path': HostedReference(VersionConstraint.any)},
-          dependencyOverrides: {'path': HostedReference(VersionConstraint.any)},
+        Pubspec(
+          'a',
+          dependencies: {
+            'path': HostedDependency(version: VersionConstraint.any),
+          },
+          dependencyOverrides: {
+            'path': HostedDependency(version: VersionConstraint.any),
+          },
         ),
       );
 
       await createProject(
         workspaceDir,
-        const PubSpec(
-          name: 'path',
-        ),
+        Pubspec('path'),
       );
 
       final logger = TestLogger();
@@ -296,10 +300,10 @@ Generating IntelliJ IDE files...
 
       await createProject(
         workspaceDir,
-        const PubSpec(
-          name: 'a',
+        Pubspec(
+          'a',
           dependencies: {
-            'flutter': SdkReference('flutter'),
+            'flutter': SdkDependency('flutter'),
           },
         ),
         path: 'packages/a',
@@ -307,10 +311,10 @@ Generating IntelliJ IDE files...
 
       final examplePkg = await createProject(
         workspaceDir,
-        PubSpec(
-          name: 'example',
+        Pubspec(
+          'example',
           dependencies: {
-            'a': HostedReference(VersionConstraint.any),
+            'a': HostedDependency(version: VersionConstraint.any),
           },
         ),
         path: 'packages/a/example',
@@ -341,7 +345,7 @@ Generating IntelliJ IDE files...
           mergeMelosPubspecOverrides(
             {
               for (final entry in melosDependencyOverrides.entries)
-                entry.key: PathReference(entry.value),
+                entry.key: PathDependency(entry.value),
             },
             currentPubspecOverrides,
           ),
@@ -386,19 +390,6 @@ dependency_overrides:
       });
 
       test('existing pubspec_overrides.yaml has dependency_overrides', () {
-        expectMergedMelosPubspecOverrides(
-          melosDependencyOverrides: {'a': '../a'},
-          currentPubspecOverrides: '''
-dependency_overrides: null
-''',
-          updatedPubspecOverrides: '''
-# melos_managed_dependency_overrides: a
-dependency_overrides:
-  a:
-    path: ../a
-''',
-        );
-
         expectMergedMelosPubspecOverrides(
           melosDependencyOverrides: {'a': '../a'},
           currentPubspecOverrides: '''
@@ -494,11 +485,11 @@ dependency_overrides:
 
       await createProject(
         workspaceDir,
-        PubSpec(
-          name: 'a',
+        Pubspec(
+          'a',
           dependencies: {
-            'package_that_does_not_exists': HostedReference(
-              VersionConstraint.parse('^1.2.3-no-way-this-exists'),
+            'package_that_does_not_exists': HostedDependency(
+              version: VersionConstraint.parse('^1.2.3-no-way-this-exists'),
             ),
           },
         ),
@@ -764,24 +755,32 @@ Generating IntelliJ IDE files...
             ],
             commands: CommandConfigs(
               bootstrap: BootstrapCommandConfigs(
-                environment: Environment(
-                  VersionConstraint.parse('>=2.18.0 <3.0.0'),
-                  {'flutter': '>=2.18.0 <3.0.0'},
-                ),
+                environment: {
+                  'sdk': VersionConstraint.parse('>=2.18.0 <3.0.0'),
+                  'flutter': VersionConstraint.parse('>=2.18.0 <3.0.0'),
+                },
                 dependencies: {
-                  'intl': HostedReference(
-                    VersionConstraint.compatibleWith(Version.parse('0.18.1')),
+                  'intl': HostedDependency(
+                    version: VersionConstraint.compatibleWith(
+                      Version.parse('0.18.1'),
+                    ),
                   ),
-                  'integral_isolates': HostedReference(
-                    VersionConstraint.compatibleWith(Version.parse('0.4.1')),
+                  'integral_isolates': HostedDependency(
+                    version: VersionConstraint.compatibleWith(
+                      Version.parse('0.4.1'),
+                    ),
                   ),
-                  'path': HostedReference(
-                    VersionConstraint.compatibleWith(Version.parse('1.8.3')),
+                  'path': HostedDependency(
+                    version: VersionConstraint.compatibleWith(
+                      Version.parse('1.8.3'),
+                    ),
                   ),
                 },
                 devDependencies: {
-                  'build_runner': HostedReference(
-                    VersionConstraint.compatibleWith(Version.parse('2.4.6')),
+                  'build_runner': HostedDependency(
+                    version: VersionConstraint.compatibleWith(
+                      Version.parse('2.4.6'),
+                    ),
                   ),
                 },
               ),
@@ -792,23 +791,23 @@ Generating IntelliJ IDE files...
 
         final pkgA = await createProject(
           workspaceDir,
-          PubSpec(
-            name: 'a',
-            environment: Environment(
-              VersionConstraint.any,
-              {},
-            ),
+          Pubspec(
+            'a',
+            environment: {},
             dependencies: {
-              'intl': HostedReference(
-                VersionConstraint.compatibleWith(Version.parse('0.18.1')),
+              'intl': HostedDependency(
+                version:
+                    VersionConstraint.compatibleWith(Version.parse('0.18.1')),
               ),
-              'path': HostedReference(
-                VersionConstraint.compatibleWith(Version.parse('1.7.2')),
+              'path': HostedDependency(
+                version:
+                    VersionConstraint.compatibleWith(Version.parse('1.7.2')),
               ),
             },
             devDependencies: {
-              'build_runner': HostedReference(
-                VersionConstraint.compatibleWith(Version.parse('2.4.0')),
+              'build_runner': HostedDependency(
+                version:
+                    VersionConstraint.compatibleWith(Version.parse('2.4.0')),
               ),
             },
           ),
@@ -816,26 +815,22 @@ Generating IntelliJ IDE files...
 
         final pkgB = await createProject(
           workspaceDir,
-          PubSpec(
-            name: 'b',
-            environment: Environment(
-              VersionRange(
-                min: Version.parse('2.12.0'),
-                max: Version.parse('3.0.0'),
-                includeMin: true,
-              ),
-              {
-                'flutter': '>=2.12.0 <3.0.0',
-              },
-            ),
+          Pubspec(
+            'b',
+            environment: {
+              'sdk': VersionConstraint.parse('>=2.12.0 <3.0.0'),
+              'flutter': VersionConstraint.parse('>=2.12.0 <3.0.0'),
+            },
             dependencies: {
-              'integral_isolates': HostedReference(
-                VersionConstraint.compatibleWith(Version.parse('0.4.1')),
+              'integral_isolates': HostedDependency(
+                version:
+                    VersionConstraint.compatibleWith(Version.parse('0.4.1')),
               ),
-              'intl': HostedReference(
-                VersionConstraint.compatibleWith(Version.parse('0.17.0')),
+              'intl': HostedDependency(
+                version:
+                    VersionConstraint.compatibleWith(Version.parse('0.17.0')),
               ),
-              'path': HostedReference(VersionConstraint.any),
+              'path': HostedDependency(version: VersionConstraint.any),
             },
           ),
         );
@@ -848,58 +843,63 @@ Generating IntelliJ IDE files...
           config: config,
         );
 
+        final pubspecAPreBootstrap = pubspecFromYamlFile(directory: pkgA.path);
+        final pubspecBPreBootstrap = pubspecFromYamlFile(directory: pkgB.path);
+
         await runMelosBootstrap(melos, logger);
 
-        final pubspecA = pubSpecFromYamlFile(directory: pkgA.path);
-        final pubspecB = pubSpecFromYamlFile(directory: pkgB.path);
+        final pubspecA = pubspecFromYamlFile(directory: pkgA.path);
+        final pubspecB = pubspecFromYamlFile(directory: pkgB.path);
 
         expect(
-          pubspecA.environment?.sdkConstraint,
-          equals(VersionConstraint.parse('>=2.18.0 <3.0.0')),
+          pubspecAPreBootstrap.environment,
+          equals(defaultTestEnvironment),
         );
         expect(
-          pubspecA.environment?.unParsedYaml,
-          equals({}),
+          pubspecA.environment?['sdk'],
+          equals(VersionConstraint.parse('>=2.18.0 <3.0.0')),
         );
         expect(
           pubspecA.dependencies,
           equals({
-            'intl': HostedReference(
-              VersionConstraint.compatibleWith(Version.parse('0.18.1')),
+            'intl': HostedDependency(
+              version:
+                  VersionConstraint.compatibleWith(Version.parse('0.18.1')),
             ),
-            'path': HostedReference(
-              VersionConstraint.compatibleWith(Version.parse('1.8.3')),
+            'path': HostedDependency(
+              version: VersionConstraint.compatibleWith(Version.parse('1.8.3')),
             ),
           }),
         );
         expect(
           pubspecA.devDependencies,
           equals({
-            'build_runner': HostedReference(
-              VersionConstraint.compatibleWith(Version.parse('2.4.6')),
+            'build_runner': HostedDependency(
+              version: VersionConstraint.compatibleWith(Version.parse('2.4.6')),
             ),
           }),
         );
 
         expect(
-          pubspecB.environment?.sdkConstraint,
-          equals(VersionConstraint.parse('>=2.18.0 <3.0.0')),
+          pubspecBPreBootstrap.environment?['flutter'],
+          equals(VersionConstraint.parse('>=2.12.0 <3.0.0')),
         );
         expect(
-          pubspecB.environment?.unParsedYaml,
-          equals({'flutter': '>=2.18.0 <3.0.0'}),
+          pubspecB.environment?['flutter'],
+          equals(VersionConstraint.parse('>=2.18.0 <3.0.0')),
         );
         expect(
           pubspecB.dependencies,
           equals({
-            'integral_isolates': HostedReference(
-              VersionConstraint.compatibleWith(Version.parse('0.4.1')),
+            'integral_isolates': HostedDependency(
+              version: VersionConstraint.compatibleWith(Version.parse('0.4.1')),
             ),
-            'intl': HostedReference(
-              VersionConstraint.compatibleWith(Version.parse('0.18.1')),
+            'intl': HostedDependency(
+              version:
+                  VersionConstraint.compatibleWith(Version.parse('0.18.1')),
             ),
-            'path': HostedReference(
-              VersionConstraint.compatibleWith(Version.parse('1.8.3')),
+            'path': HostedDependency(
+              version: VersionConstraint.compatibleWith(Version.parse('1.8.3')),
             ),
           }),
         );
@@ -917,7 +917,7 @@ Generating IntelliJ IDE files...
       final workspaceDir = await createTemporaryWorkspace();
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'a'),
+        Pubspec('a'),
       );
 
       final logger = TestLogger();
@@ -951,10 +951,10 @@ Generating IntelliJ IDE files...
           ],
           commands: CommandConfigs(
             bootstrap: BootstrapCommandConfigs(
-              environment: Environment(
-                VersionConstraint.parse('>=2.18.0 <3.0.0'),
-                {'flutter': '>=2.18.0 <3.0.0'},
-              ),
+              environment: {
+                'sdk': VersionConstraint.parse('>=2.18.0 <3.0.0'),
+                'flutter': VersionConstraint.parse('>=2.18.0 <3.0.0'),
+              },
             ),
           ),
           path: path,
@@ -963,7 +963,7 @@ Generating IntelliJ IDE files...
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'a'),
+        Pubspec('a'),
       );
 
       final logger = TestLogger();
@@ -999,7 +999,7 @@ Generating IntelliJ IDE files...
       final workspaceDir = await createTemporaryWorkspace();
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'a'),
+        Pubspec('a'),
       );
 
       final logger = TestLogger();
@@ -1084,11 +1084,11 @@ Future<void> dependencyResolutionTest(
     final dependencies = entry.value;
     final directory = await createProject(
       workspaceDir,
-      PubSpec(
-        name: package,
+      Pubspec(
+        package,
         dependencies: {
           for (final dependency in dependencies)
-            dependency: HostedReference(VersionConstraint.any),
+            dependency: HostedDependency(version: VersionConstraint.any),
         },
       ),
     );

@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:melos/src/common/intellij_project.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:path/path.dart' as p;
-import 'package:pubspec/pubspec.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
 import '../utils.dart';
@@ -66,10 +66,10 @@ void main() {
       final tempDir = createTestTempDir();
       await createProject(
         tempDir,
-        const PubSpec(
-          name: 'test',
+        Pubspec(
+          'test',
           dependencies: {
-            'flutter': SdkReference('flutter'),
+            'flutter': SdkDependency('flutter'),
           },
         ),
         path: 'packages/test',
