@@ -4,11 +4,13 @@ import 'package:melos/melos.dart';
 import 'package:melos/src/command_configs/command_configs.dart';
 import 'package:melos/src/commands/runner.dart';
 import 'package:melos/src/common/glob.dart';
+import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
+import 'package:yaml/yaml.dart';
 
 import '../matchers.dart';
 import '../utils.dart';
@@ -745,7 +747,7 @@ Generating IntelliJ IDE files...
     });
 
     test(
-      'applies dependencies from melos config',
+      'applies shared dependencies from melos config',
       () async {
         final workspaceDir = await createTemporaryWorkspace(
           configBuilder: (path) => MelosWorkspaceConfig(
@@ -910,6 +912,51 @@ Generating IntelliJ IDE files...
       },
       timeout: const Timeout(Duration(days: 2)),
     );
+
+    test('correctly inlines shared dependencies', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
+          createYamlMap(
+            {
+              'command': {
+                'bootstrap': {
+                  'dependencies': {
+                    'flame': '^1.21.0',
+                  },
+                },
+              },
+            },
+            defaults: configMapDefaults,
+          ),
+          path: path,
+        ),
+      );
+
+      final pkgA = await createProject(
+        workspaceDir,
+        Pubspec(
+          'a',
+          dependencies: {
+            'flame': HostedDependency(version: VersionConstraint.any),
+          },
+        ),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      await runMelosBootstrap(melos, logger);
+
+      final pubspecContent = _pubspecContent(pkgA);
+      expect(
+        (pubspecContent['dependencies']! as YamlMap)['flame'],
+        '^1.21.0',
+      );
+    });
   });
 
   group('melos bs --skip-linking', () {
@@ -1141,4 +1188,9 @@ Future<void> dependencyResolutionTest(
   await runMelosBootstrap(melos, logger);
 
   await Future.wait<void>(packages.keys.map(validatePackage));
+}
+
+YamlMap _pubspecContent(io.Directory directory) {
+  final source = readTextFile(pubspecPath(directory.path));
+  return loadYaml(source) as YamlMap;
 }

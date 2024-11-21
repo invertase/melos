@@ -9,6 +9,18 @@ extension DependencyExtension on Dependency {
     return null;
   }
 
+  /// Whether the json can be inlined with its parent.
+  ///
+  /// For example for [HostedDependency] the version shouldn't be on a separate
+  /// line when only the version is defined.
+  bool get inlineVersion {
+    if (this is HostedDependency) {
+      return (this as HostedDependency).hosted == null &&
+          versionConstraint != null;
+    }
+    return false;
+  }
+
   Object toJson() {
     final self = this;
     if (self is PathDependency) {
@@ -34,15 +46,17 @@ extension PathDependencyExtension on PathDependency {
 }
 
 extension HostedDependencyExtension on HostedDependency {
-  Map<String, dynamic> toJson() {
-    return {
-      'version': version.toString(),
-      if (hosted != null)
-        'hosted': {
-          'name': hosted!.declaredName,
-          'url': hosted!.url?.toString(),
-        },
-    };
+  Object toJson() {
+    return inlineVersion
+        ? version.toString()
+        : {
+            'version': version.toString(),
+            if (hosted != null)
+              'hosted': {
+                'name': hosted!.declaredName,
+                'url': hosted!.url?.toString(),
+              },
+          };
   }
 }
 
