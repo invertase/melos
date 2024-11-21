@@ -219,6 +219,10 @@ String packageConfigPath(String packageRoot) {
   );
 }
 
+String pubspecPath(String directory) {
+  return p.join(directory, 'pubspec.yaml');
+}
+
 PackageConfig packageConfigForPackageAt(Directory dir) {
   final source = readTextFile(packageConfigPath(dir.path));
   return PackageConfig.fromJson(json.decode(source) as Map<String, Object?>);
