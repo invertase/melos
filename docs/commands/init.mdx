@@ -1,0 +1,91 @@
+---
+title: Init Command
+description: Learn more about the `init` command in Melos.
+---
+
+# Init Command
+
+The `init` command initializes a new Melos workspace. It creates the necessary configuration files and directory structure for your monorepo.
+
+## Basic Usage
+
+```bash
+melos init [workspace_name]
+```
+
+If no workspace name is provided, you'll be prompted to enter one. By default, it uses the current directory name.
+
+## Options
+
+### --directory (-d)
+Specifies the directory where the workspace should be created. If not provided, defaults to the workspace name.
+
+```bash
+melos init my_workspace --directory custom_dir
+```
+
+### --packages (-p)
+Defines additional glob patterns for package directories to include in the workspace. Can be specified multiple times.
+
+```bash
+melos init --packages "modules/*" --packages "libs/*"
+```
+
+### --project (-P)
+Sets the project name to be used in the pubspec.yaml file. If not provided, defaults to the workspace name.
+
+```bash
+melos init --project my_project_name
+```
+
+## Interactive Setup
+
+When running `melos init`, you'll be guided through an interactive setup process that will:
+
+1. Prompt for a workspace name (if not provided)
+2. Ask for a directory location
+3. Request a project name
+4. Ask if you want to include an `apps` directory
+
+## Created Files
+
+The command creates the following structure:
+
+```
+<directory>/
+├── melos.yaml    # Workspace configuration
+├── pubspec.yaml  # Root package configuration
+└── packages/     # Packages directory
+└── apps/        # Apps directory (optional)
+```
+
+### melos.yaml
+Contains the workspace configuration with:
+- Workspace name
+- Package locations (glob patterns)
+- Default package includes
+
+### pubspec.yaml
+Contains the root package configuration with:
+- Project name
+- Dart SDK constraints
+- Melos as a dev dependency
+
+## Example
+
+```bash
+# Basic initialization
+melos init my_workspace
+
+# Custom initialization with options
+melos init my_workspace \
+  --directory custom_dir \
+  --packages "modules/*" \
+  --project custom_project_name
+```
+
+After initialization, you can bootstrap your workspace by running:
+```bash
+cd <directory>
+melos bootstrap
+```
