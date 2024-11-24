@@ -2,6 +2,9 @@
     "name": "d",
     "description": "An example plugin",
     "version": "0.0.1",
+    "environment": {
+        "sdk": ">=3.0.0 <4.0.0"
+    },
     "flutter": {
         "plugin": {
             "platforms": {

@@ -284,12 +284,15 @@ class IntellijProject {
     await Future.forEach(_workspace.filteredPackages.values, (package) async {
       if (!package.isFlutterApp) return;
 
-      final generatedRunConfiguration =
-          injectTemplateVariables(flutterTestTemplate, {
-        'flutterRunName': "Flutter Run -&gt; '${package.name}'",
-        'flutterRunMainDartPathRelative':
-            p.join(package.pathRelativeToWorkspace, 'lib', 'main.dart'),
-      });
+      final generatedRunConfiguration = injectTemplateVariables(
+        flutterTestTemplate,
+        {
+          'flutterRunName': "Flutter Run -&gt; '${package.name}'",
+          'flutterRunMainDartPathRelative': p
+              .join(package.pathRelativeToWorkspace, 'lib', 'main.dart')
+              .replaceAll(r'\', '/'),
+        },
+      );
       final outputFile = p.join(
         pathDotIdea,
         'runConfigurations',

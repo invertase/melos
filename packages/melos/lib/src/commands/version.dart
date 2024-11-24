@@ -458,9 +458,9 @@ mixin _VersionMixin on _RunMixin {
     MelosWorkspace workspace,
   ) {
     final currentVersionConstraint =
-        (package.pubSpec.dependencies[dependencyName] ??
-                package.pubSpec.devDependencies[dependencyName])
-            ?._versionConstraint;
+        (package.pubspec.dependencies[dependencyName] ??
+                package.pubspec.devDependencies[dependencyName])
+            ?.versionConstraint;
     final hasExactVersionConstraint = currentVersionConstraint is Version;
     if (hasExactVersionConstraint) {
       // If the package currently has an exact version constraint, we respect
@@ -511,14 +511,13 @@ mixin _VersionMixin on _RunMixin {
     VersionRange dependencyVersion,
     MelosWorkspace workspace,
   ) async {
-    final dependencyReference = package.pubSpec.dependencies[dependencyName];
+    final dependencyReference = package.pubspec.dependencies[dependencyName];
     final devDependencyReference =
-        package.pubSpec.devDependencies[dependencyName];
+        package.pubspec.devDependencies[dependencyName];
 
     if (dependencyReference != null &&
-        dependencyReference is! GitReference &&
-        dependencyReference is! HostedReference &&
-        dependencyReference is! ExternalHostedReference) {
+        dependencyReference is! GitDependency &&
+        dependencyReference is! HostedDependency) {
       logger.warning(
         'Skipping updating dependency $dependencyName for package '
         '${package.name} - '
@@ -528,9 +527,8 @@ mixin _VersionMixin on _RunMixin {
       return;
     }
     if (devDependencyReference != null &&
-        devDependencyReference is! GitReference &&
-        devDependencyReference is! HostedReference &&
-        devDependencyReference is! ExternalHostedReference) {
+        devDependencyReference is! GitDependency &&
+        devDependencyReference is! HostedDependency) {
       logger.warning(
         'Skipping updating dev dependency $dependencyName for package '
         '${package.name} - '
@@ -543,20 +541,11 @@ mixin _VersionMixin on _RunMixin {
     final pubspec = pubspecPathForDirectory(package.path);
     final contents = await readTextFileAsync(pubspec);
 
-    final isExternalHostedReference =
-        dependencyReference is ExternalHostedReference ||
-            devDependencyReference is ExternalHostedReference;
-    final isGitReference = dependencyReference is GitReference ||
-        devDependencyReference is GitReference;
+    final isGitReference = dependencyReference is GitDependency ||
+        devDependencyReference is GitDependency;
 
-    var updatedContents = contents;
-    if (isExternalHostedReference) {
-      updatedContents = contents.replaceAllMapped(
-        hostedDependencyVersionReplaceRegex(dependencyName),
-        (match) => '${match.group(1)}$dependencyVersion',
-      );
-    } else if (isGitReference &&
-        workspace.config.commands.version.updateGitTagRefs) {
+    final String updatedContents;
+    if (isGitReference && workspace.config.commands.version.updateGitTagRefs) {
       updatedContents = contents.replaceAllMapped(
         dependencyTagReplaceRegex(dependencyName),
         (match) => '${match.group(1)}$dependencyName-'
@@ -890,17 +879,5 @@ class PackageNotFoundException extends MelosException {
   @override
   String toString() {
     return 'PackageNotFoundException: The package $packageName';
-  }
-}
-
-extension on DependencyReference {
-  VersionConstraint? get _versionConstraint {
-    final self = this;
-    if (self is HostedReference) {
-      return self.versionConstraint;
-    } else if (self is ExternalHostedReference) {
-      return self.versionConstraint;
-    }
-    return null;
   }
 }

@@ -8,7 +8,7 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 import 'package:pub_semver/pub_semver.dart';
-import 'package:pubspec/pubspec.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 
 import 'common/environment_variable_key.dart';
 import 'common/exception.dart';
@@ -534,9 +534,8 @@ class PackageMap {
     await Future.wait<void>(
       pubspecFiles.map((pubspecFile) async {
         final pubspecDirPath = pubspecFile.parent.path;
-        final pubSpec = await PubSpec.load(pubspecFile.parent);
-
-        final name = pubSpec.name!;
+        final pubspec = Pubspec.parse(pubspecFile.readAsStringSync());
+        final name = pubspec.name;
 
         if (packageMap.containsKey(name)) {
           throw MelosConfigException(
@@ -569,13 +568,13 @@ The packages that caused the problem are:
           name: name,
           path: pubspecDirPath,
           pathRelativeToWorkspace: relativePath(pubspecDirPath, workspacePath),
-          version: pubSpec.version ?? Version.none,
-          publishTo: pubSpec.publishTo,
+          version: pubspec.version ?? Version.none,
+          publishTo: pubspec.publishTo.let(Uri.parse),
           packageMap: packageMap,
-          dependencies: pubSpec.dependencies.keys.toList(),
-          devDependencies: pubSpec.devDependencies.keys.toList(),
-          dependencyOverrides: pubSpec.dependencyOverrides.keys.toList(),
-          pubSpec: pubSpec,
+          dependencies: pubspec.dependencies.keys.toList(),
+          devDependencies: pubspec.devDependencies.keys.toList(),
+          dependencyOverrides: pubspec.dependencyOverrides.keys.toList(),
+          pubspec: pubspec,
           categories: filteredCategories,
         );
       }),
@@ -852,7 +851,7 @@ class Package {
     required this.pathRelativeToWorkspace,
     required this.version,
     required this.publishTo,
-    required this.pubSpec,
+    required this.pubspec,
     required this.categories,
   })  : _packageMap = packageMap,
         assert(p.isAbsolute(path));
@@ -867,7 +866,7 @@ class Package {
   final String name;
   final Version version;
   final String path;
-  final PubSpec pubSpec;
+  final Pubspec pubspec;
   final List<String> categories;
 
   /// Package path as a normalized sting relative to the root of the workspace.
@@ -959,7 +958,7 @@ class Package {
   /// Returns whether this package is private (publish_to set to 'none').
   bool get isPrivate {
     // Unversioned package, assuming private, e.g. example apps.
-    if (pubSpec.version == null) return true;
+    if (pubspec.version == null) return true;
 
     return publishTo.toString() == 'none';
   }
@@ -1012,7 +1011,7 @@ class Package {
     if (!isFlutterPackage) return false;
 
     // Must not have a Flutter plugin definition in its pubspec.yaml.
-    if (pubSpec.flutter?.plugin != null) return false;
+    if (pubspec.flutterPlugin != null) return false;
 
     return fileExists(p.join(path, 'lib', 'main.dart'));
   }
@@ -1057,7 +1056,7 @@ class Package {
   ///
   /// This is determined by whether the pubspec contains a flutter.plugin
   /// definition.
-  bool get isFlutterPlugin => pubSpec.flutter?.plugin != null;
+  bool get isFlutterPlugin => pubspec.flutterPlugin != null;
 
   /// Returns whether this package supports Flutter for Android.
   bool get flutterPluginSupportsAndroid {
@@ -1121,7 +1120,7 @@ class Package {
           platform == kLinux,
     );
 
-    return pubSpec.flutter?.plugin?.platforms?[platform] != null;
+    return pubspec.flutterPlugin?.platforms?[platform] != null;
   }
 
   @override
@@ -1165,18 +1164,9 @@ Map<String, Package> _transitivelyRelatedPackages({
   return result;
 }
 
-extension on PubSpec {
-  Flutter? get flutter =>
-      (unParsedYaml?['flutter'] as Map<Object?, Object?>?).let(Flutter.new);
-}
-
-class Flutter {
-  Flutter(this._flutter);
-
-  final Map<Object?, Object?> _flutter;
-
-  Plugin? get plugin =>
-      (_flutter['plugin'] as Map<Object?, Object?>?).let(Plugin.new);
+extension on Pubspec {
+  Plugin? get flutterPlugin =>
+      (flutter?['plugin'] as Map<Object?, Object?>?).let(Plugin.new);
 }
 
 class Plugin {

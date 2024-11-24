@@ -2,9 +2,8 @@ import 'package:glob/glob.dart';
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
-import 'package:melos/src/common/platform.dart';
 import 'package:path/path.dart' as p;
-import 'package:pubspec/pubspec.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
 import 'utils.dart';
@@ -16,13 +15,13 @@ void main() {
 
       final aDir = await createProject(
         workspaceDir,
-        const PubSpec(name: 'a'),
+        Pubspec('a'),
       );
       ensureDir(p.join(aDir.path, 'test'));
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'b'),
+        Pubspec('b'),
       );
 
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -52,13 +51,13 @@ void main() {
 
       final aDir = await createProject(
         workspaceDir,
-        const PubSpec(name: 'a'),
+        Pubspec('a'),
       );
       writeTextFile(p.join(aDir.path, 'log.txt'), '');
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'b'),
+        Pubspec('b'),
       );
 
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -88,12 +87,12 @@ void main() {
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'a'),
+        Pubspec('a'),
       );
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'b'),
+        Pubspec('b'),
       );
 
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -137,9 +136,7 @@ void main() {
               Glob('packages/ab*'),
             ],
           },
-          path: currentPlatform.isWindows
-              ? p.windows.normalize(path).replaceAll(r'\', r'\\')
-              : path,
+          path: path,
         );
       }
 
@@ -149,23 +146,23 @@ void main() {
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'a'),
+        Pubspec('a'),
       );
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'ab'),
+        Pubspec('ab'),
       );
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'abc'),
+        Pubspec('abc'),
       );
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'b'),
+        Pubspec('b'),
       );
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'c'),
+        Pubspec('c'),
       );
 
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
