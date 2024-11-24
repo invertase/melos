@@ -5,7 +5,7 @@ mixin _InitMixin on _Melos {
     String workspaceName, {
     required String directory,
     required List<String> packages,
-    bool useAppDir = false,
+    required bool useAppDir,
   }) async {
     late final String qualifiedWorkspaceName;
     if (workspaceName == '.') {
