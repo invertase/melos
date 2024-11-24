@@ -5,7 +5,9 @@ description: Learn more about the `init` command in Melos.
 
 # Init Command
 
-The `init` command initializes a new Melos workspace. It creates the necessary configuration files and directory structure for your monorepo.
+The `init` command initializes a new Melos workspace.
+It creates the necessary configuration files and
+directory structure for your monorepo.
 
 ## Basic Usage
 
@@ -13,19 +15,25 @@ The `init` command initializes a new Melos workspace. It creates the necessary c
 melos init [workspace_name]
 ```
 
-If no workspace name is provided, you'll be prompted to enter one. By default, it uses the current directory name.
+If no workspace name is provided, you'll be prompted to enter one.
+By default, it uses the current directory name.
 
 ## Options
 
 ### --directory (-d)
-Specifies the directory where the workspace should be created. If not provided, you'll be prompted to enter one. Defaults to the workspace name, or current directory ('.') if the workspace name matches the current directory name.
+Specifies the directory where the workspace should be created.
+If not provided, you'll be prompted to enter one.
+Defaults to the workspace name, or current directory ('.')
+if the workspace name matches the current directory name.
 
 ```bash
 melos init my_workspace --directory custom_dir
 ```
 
 ### --packages (-p)
-Defines additional glob patterns for package directories to include in the workspace. Accepts comma-separated values and can be specified multiple times.
+Defines additional glob patterns for package directories
+to include in the workspace. Accepts comma-separated values and can be
+specified multiple times.
 
 ```bash
 melos init --packages "modules/*" --packages "libs/*"
@@ -33,10 +41,13 @@ melos init --packages "modules/*" --packages "libs/*"
 
 ## Interactive Setup
 
-When running `melos init`, you'll be guided through an interactive setup process that will:
+When running `melos init`, you'll be guided through
+an interactive setup process that will:
 
-1. Prompt for a workspace name (if not provided, defaults to current directory name)
-2. Ask for a directory location (defaults to workspace name, or '.' if matching current directory)
+1. Prompt for a workspace name 
+(if not provided, defaults to current directory name)
+2. Ask for a directory location 
+(defaults to workspace name, or '.' if matching current directory)
 3. Ask if you want to include an `apps` directory (defaults to true)
 
 ## Created Files
@@ -48,7 +59,7 @@ The command creates the following structure:
 ├── melos.yaml    # Workspace configuration
 ├── pubspec.yaml  # Root package configuration
 ├── packages/     # Packages directory (always created)
-└── apps/        # Apps directory (created if confirmed during setup)
+└── apps/         # Apps directory (created if confirmed during setup)
 ```
 
 ### melos.yaml
