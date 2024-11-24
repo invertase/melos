@@ -87,7 +87,6 @@ class Melos extends _Melos
 
 abstract class _Melos {
   MelosLogger get logger;
-
   MelosWorkspaceConfig get config;
 
   Future<MelosWorkspace> createWorkspace({

@@ -5,7 +5,6 @@ mixin _InitMixin on _Melos {
     String workspaceName, {
     required String directory,
     required List<String> packages,
-    required String project,
     bool useAppDir = false,
   }) async {
     late final String qualifiedWorkspaceName;
@@ -34,7 +33,7 @@ mixin _InitMixin on _Melos {
       if (packages.isNotEmpty) 'packages': packages,
     };
     final pubspecYaml = <String, dynamic>{
-      'name': project,
+      'name': qualifiedWorkspaceName,
       'environment': {
         'sdk': '>=$dartVersion <${dartVersion.major + 1}.0.0',
       },
@@ -55,8 +54,8 @@ mixin _InitMixin on _Melos {
 
     logger.log(
       'Initialized Melos workspace in ${dir.path}.\n'
-      'Run the following commands to bootstrap the workspace:\n'
-      '  cd ${dir.path}\n'
+      'Run the following commands to bootstrap the workspace when you have created some packages and/or apps:\n'
+      '${isCurrentDir ? '' : '  cd ${dir.path}\n'}'
       '  melos bootstrap',
     );
   }

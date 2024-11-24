@@ -19,13 +19,6 @@ class InitCommand extends MelosCommand {
       abbr: 'p',
       help: 'Comma separated glob paths to add to the melos workspace.',
     );
-
-    argParser.addOption(
-      'project',
-      abbr: 'P',
-      help: 'Project name to be used in pubspec.yaml. '
-          'Defaults to the workspace name.',
-    );
   }
 
   @override
@@ -48,13 +41,8 @@ class InitCommand extends MelosCommand {
           defaultsTo: workspaceDefault != workspaceName ? workspaceName : '.',
         );
     final packages = argResults!['packages'] as List<String>?;
-    final project = argResults!['project'] as String? ??
-        promptInput(
-          'Enter the project name',
-          defaultsTo: workspaceName,
-        );
     final useAppsDir = promptBool(
-      message: 'Do you want to add the apps directory to the list of packages?',
+      message: 'Do you want to add the apps directory?',
       defaultsTo: true,
     );
 
@@ -64,7 +52,6 @@ class InitCommand extends MelosCommand {
       workspaceName,
       directory: directory,
       packages: packages ?? const [],
-      project: project,
       useAppDir: useAppsDir,
     );
   }
