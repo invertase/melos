@@ -17,6 +17,7 @@ import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
+import '../../version.g.dart';
 import '../command_configs/command_configs.dart';
 import '../command_runner/version.dart';
 import '../common/aggregate_changelog.dart';
@@ -51,6 +52,7 @@ part 'bootstrap.dart';
 part 'clean.dart';
 part 'exec.dart';
 part 'format.dart';
+part 'init.dart';
 part 'list.dart';
 part 'publish.dart';
 part 'run.dart';
@@ -73,7 +75,8 @@ class Melos extends _Melos
         _VersionMixin,
         _PublishMixin,
         _AnalyzeMixin,
-        _FormatMixin {
+        _FormatMixin,
+        _InitMixin {
   Melos({
     required this.config,
     Logger? logger,

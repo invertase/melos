@@ -376,6 +376,17 @@ class MelosWorkspaceConfig {
           commands: CommandConfigs.empty,
         );
 
+  @visibleForTesting
+  MelosWorkspaceConfig.emptyWith({
+    String? name,
+    String? path,
+  }) : this(
+          name: name ?? 'Melos',
+          packages: [],
+          path: path ?? Directory.current.path,
+          commands: CommandConfigs.empty,
+        );
+
   /// Loads the [MelosWorkspaceConfig] for the workspace at [workspaceRoot].
   static Future<MelosWorkspaceConfig> fromWorkspaceRoot(
     Directory workspaceRoot,
