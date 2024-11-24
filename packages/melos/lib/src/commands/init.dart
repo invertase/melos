@@ -18,7 +18,7 @@ mixin _InitMixin on _Melos {
     final dir = Directory(directory);
     if (!isCurrentDir && dir.existsSync()) {
       throw StateError('Directory $directory already exists');
-    } else if (!isCurrentDir) {
+    } else {
       dir.createSync(recursive: true);
       Directory(p.join(dir.absolute.path, 'packages')).createSync();
       if (useAppDir) {
