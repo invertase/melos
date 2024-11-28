@@ -86,15 +86,20 @@ melos bootstrap --diff="main"
 
 ## Bootstrap flags
 
-- The `--no-example` flag is used to exclude flutter package's example's dependencies (https://github.com/dart-lang/pub/pull/3856)
+- The `--no-example` flag is used to exclude flutter package's example's dependencies
+  (https://github.com/dart-lang/pub/pull/3856)
     - This will run `pub get` with the `--no-example` flag.
 - The `--enforce-lockfile` flag is used to enforce versions from `.lock` files.
     - Ensure .lock files exist, as failure may occur if they're not checked in.
+- The `--no-enforce-lockfile` flag is used to disregard versions from `.lock` files if
+  `enforce-lockfile` is configured in the `melos.yaml` file.
 - The `--skip-linking` flag is used to skip the local linking of workspace packages.
+- The `--offline` flag is used to only resolve dependencies from the local cache by running
+  `pub get` with the `--offline` flag.
 
 
-In addition to the above flags, the `melos bootstrap` command supports a few different flags that can be defined in
- your `melos.yaml` file.
+In addition to the above flags, the `melos bootstrap` command supports a few different flags that
+can be defined in your `melos.yaml` file.
 
 
 ### Shared dependencies

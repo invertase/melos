@@ -8,6 +8,7 @@ class FormatCommand extends MelosCommand {
     argParser.addFlag(
       'set-exit-if-changed',
       negatable: false,
+      defaultsTo: null,
       help: 'Return exit code 1 if there are any formatting changes.',
     );
     argParser.addOption(
@@ -19,6 +20,10 @@ class FormatCommand extends MelosCommand {
           '[write]              Overwrite formatted files on disk.\n',
       abbr: 'o',
     );
+    argParser.addOption(
+      'line-length',
+      help: 'The line length to format the code to.',
+    );
   }
 
   @override
@@ -29,9 +34,14 @@ class FormatCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    final setExitIfChanged = argResults?['set-exit-if-changed'] as bool;
+    final setExitIfChanged = argResults?['set-exit-if-changed'] as bool?;
     final output = argResults?['output'] as String?;
     final concurrency = int.parse(argResults!['concurrency'] as String);
+    final lineLength = switch (argResults?['line-length']) {
+      final int length => length,
+      final String length => int.tryParse(length),
+      _ => null,
+    };
 
     final melos = Melos(logger: logger, config: config);
 
@@ -41,6 +51,7 @@ class FormatCommand extends MelosCommand {
       concurrency: concurrency,
       setExitIfChanged: setExitIfChanged,
       output: output,
+      lineLength: lineLength,
     );
   }
 }

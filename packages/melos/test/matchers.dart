@@ -20,7 +20,16 @@ Matcher ignoringDependencyMessages(String expected) {
           .where(
             (line) =>
                 !line.startsWith('Resolving dependencies...') &&
-                !line.startsWith('Got dependencies!'),
+                !line.startsWith('Downloading packages...') &&
+                !line.startsWith('Got dependencies!') &&
+                // Removes lines like "  pub_updater 0.4.0 (0.5.0 available)"
+                !(line.startsWith('  ') && line.contains(' available)')) &&
+                !line.contains(
+                  'newer versions incompatible with dependency constraints',
+                ) &&
+                !line.startsWith(
+                  'Try `dart pub outdated` for more information.',
+                ),
           )
           .join('\n');
       return ignoringAnsii(expected).matches(normalizedActual, {});

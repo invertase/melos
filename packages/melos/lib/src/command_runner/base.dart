@@ -79,6 +79,14 @@ abstract class MelosCommand extends Command<void> {
     );
 
     argParser.addMultiOption(
+      filterOptionCategory,
+      valueHelp: 'glob',
+      help:
+          'Include only packages with categories matching the given glob. This '
+          'option can be repeated.',
+    );
+
+    argParser.addMultiOption(
       filterOptionIgnore,
       valueHelp: 'glob',
       help: 'Exclude packages with names matching the given glob. This option '
@@ -151,6 +159,7 @@ abstract class MelosCommand extends Command<void> {
 
     final diff = diffEnabled ? argResults![filterOptionDiff] as String? : null;
     final scope = argResults![filterOptionScope] as List<String>? ?? [];
+    final categories = argResults![filterOptionCategory] as List<String>? ?? [];
     final ignore = argResults![filterOptionIgnore] as List<String>? ?? [];
 
     return PackageFilters(
@@ -161,6 +170,9 @@ abstract class MelosCommand extends Command<void> {
           .map((e) => createGlob(e, currentDirectoryPath: workingDirPath))
           .toList()
         ..addAll(config.ignore),
+      categories: categories
+          .map((e) => createGlob(e, currentDirectoryPath: workingDirPath))
+          .toList(),
       diff: diff,
       includePrivatePackages: argResults![filterOptionPrivate] as bool?,
       published: argResults![filterOptionPublished] as bool?,

@@ -34,6 +34,13 @@ bases into multi-package repositories (sometimes called
 **Melos is a tool that optimizes the workflow around managing multi-package
 repositories with git and Pub.**
 
+## Github Action
+
+If you're planning on using Melos in your GitHub Actions workflows, you can use
+the [Melos Action](https://github.com/marketplace/actions/melos-action)
+to run Melos commands, this action also supports automatic versioning and
+publishing directly from your workflows.
+
 ## What does a Melos workspace look like?
 
 A default file structure looks something like this:
@@ -102,6 +109,12 @@ configuration file if the default is unsuitable.
     - Include only packages that depend on a specific package.
   - `--no-depends-on=<noDependantPackageName>`
     - Include only packages that _don't_ depend on a specific package.
+  - `--include-dependencies`
+    - Expands the filtered list of packages to include those packages'
+      transitive dependencies (ignoring filters).
+  - `--include-dependents`
+    - Expands the filtered list of packages to include those packages'
+      transitive dependents (ignoring filters).
 - ♨️ Advanced support for IntelliJ IDEs with automatic creation of
   [run configurations for workspace defined scripts and more](https://melos.invertase.dev/~melos-latest/ide-support)
   on workspace bootstrap.
@@ -148,6 +161,10 @@ The following projects are using Melos:
 - [FlutterGen/flutter_gen](https://github.com/FlutterGen/flutter_gen)
 - [canonical/ubuntu-desktop-provision](https://github.com/canonical/ubuntu-desktop-provision)
 - [ubuntu/app-center](https://github.com/ubuntu/app-center)
+- [jhomlala/alice](https://github.com/jhomlala/alice)
+- [powersync/powersync.dart](https://github.com/powersync-ja/powersync.dart)
+- [rodydavis/signals.dart](https://github.com/rodydavis/signals.dart)
+- [foss42/apidash](https://github.com/foss42/apidash)
 
 > Submit a PR if you'd like to add your project to the list. Update the
 > [README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md)

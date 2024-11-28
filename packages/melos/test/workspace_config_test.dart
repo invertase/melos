@@ -162,6 +162,39 @@ void main() {
           ),
         );
       });
+
+      test('can decode packageFilters values', () {
+        expect(
+          VersionCommandConfigs.fromYaml(
+            const {
+              'changelogs': [
+                {
+                  'path': 'FOO_CHANGELOG.md',
+                  'packageFilters': {
+                    'flutter': true,
+                    'includeDependencies': true,
+                    'includeDependents': true,
+                  },
+                }
+              ],
+            },
+            workspacePath: '.',
+          ),
+          VersionCommandConfigs(
+            aggregateChangelogs: [
+              AggregateChangelogConfig.workspace(),
+              AggregateChangelogConfig(
+                path: 'FOO_CHANGELOG.md',
+                packageFilters: PackageFilters(
+                  flutter: true,
+                  includeDependencies: true,
+                  includeDependents: true,
+                ),
+              ),
+            ],
+          ),
+        );
+      });
     });
   });
 
@@ -490,7 +523,7 @@ void main() {
       () {
         expect(
           () => MelosWorkspaceConfig(
-            name: '',
+            name: 'melos_test',
             packages: const [],
             commands: const CommandConfigs(
               version: VersionCommandConfigs(linkToCommits: true),
@@ -506,7 +539,7 @@ void main() {
         () {
       expect(
         () => MelosWorkspaceConfig(
-          name: '',
+          name: 'melos_test',
           repository: GitHubRepository(owner: 'invertase', name: 'melos'),
           packages: const [],
           commands: const CommandConfigs(

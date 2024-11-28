@@ -22,6 +22,7 @@ class VersionCommandConfigs {
     List<AggregateChangelogConfig>? aggregateChangelogs,
     this.fetchTags = true,
     this.hooks = VersionLifecycleHooks.empty,
+    this.includeDateInChangelogEntry = false,
   }) : _aggregateChangelogs = aggregateChangelogs;
 
   factory VersionCommandConfigs.fromYaml(
@@ -156,6 +157,19 @@ class VersionCommandConfigs {
       path: 'command/version/changelogCommitBodies',
     );
 
+    final changelogFormat = assertKeyIsA<Map<Object?, Object?>?>(
+          key: 'changelogFormat',
+          map: yaml,
+          path: 'command/version',
+        ) ??
+        const {};
+
+    final includeDate = assertKeyIsA<bool?>(
+      key: 'includeDate',
+      map: changelogFormat,
+      path: 'command/version/changelogFormat',
+    );
+
     return VersionCommandConfigs(
       branch: branch,
       message: message,
@@ -169,6 +183,7 @@ class VersionCommandConfigs {
       aggregateChangelogs: aggregateChangelogs,
       fetchTags: fetchTags ?? true,
       hooks: hooks,
+      includeDateInChangelogEntry: includeDate ?? false,
     );
   }
 
@@ -217,6 +232,9 @@ class VersionCommandConfigs {
   /// Lifecycle hooks for this command.
   final VersionLifecycleHooks hooks;
 
+  /// Whether to include the date in the changelog entry in format `yyyy-MM-dd`.
+  final bool includeDateInChangelogEntry;
+
   Map<String, Object?> toJson() {
     return {
       if (branch != null) 'branch': branch,
@@ -229,6 +247,9 @@ class VersionCommandConfigs {
           aggregateChangelogs.map((config) => config.toJson()).toList(),
       'fetchTags': fetchTags,
       'hooks': hooks.toJson(),
+      'changelogFormat': {
+        'includeDate': includeDateInChangelogEntry,
+      },
     };
   }
 
@@ -246,7 +267,8 @@ class VersionCommandConfigs {
       const DeepCollectionEquality()
           .equals(other.aggregateChangelogs, aggregateChangelogs) &&
       other.fetchTags == fetchTags &&
-      other.hooks == hooks;
+      other.hooks == hooks &&
+      other.includeDateInChangelogEntry == includeDateInChangelogEntry;
 
   @override
   int get hashCode =>
@@ -260,7 +282,8 @@ class VersionCommandConfigs {
       releaseUrl.hashCode ^
       const DeepCollectionEquality().hash(aggregateChangelogs) ^
       fetchTags.hashCode ^
-      hooks.hashCode;
+      hooks.hashCode ^
+      includeDateInChangelogEntry.hashCode;
 
   @override
   String toString() {
@@ -276,6 +299,7 @@ VersionCommandConfigs(
   aggregateChangelogs: $aggregateChangelogs,
   fetchTags: $fetchTags,
   hooks: $hooks,
+  includeDateInChangelogEntry: $includeDateInChangelogEntry,
 )''';
   }
 }

@@ -46,6 +46,15 @@ repeated.
 melos exec --ignore="*internal*" -- flutter build ios
 ```
 
+## --category
+
+Filter packages based on categories declared in the `melos.yaml` file.
+
+```bash
+# Run `flutter build ios` on all packages in the "examples" category.
+melos exec --category="examples" -- flutter build ios
+```
+
 ## --diff
 
 Filter packages based on whether there were changes between a commit and the
@@ -102,3 +111,20 @@ melos exec --depends-on="flutter" --depends-on="firebase_core" -- flutter test
 
 Use `--no-depends-on` to filter packages that do not depend on the given
 dependencies.
+
+## --include-dependencies
+
+Takes the filtered list of packages, and expands them to include those packages'
+transitive dependencies (ignoring filters).
+
+```bash
+melos list --scope=some_package --include-dependencies
+```
+
+## --include-dependents
+Takes the filtered list of packages, and expands them to include those packages'
+transitive dependents (ignoring filters).
+
+```bash
+melos list --scope=some_package --include-dependents
+```

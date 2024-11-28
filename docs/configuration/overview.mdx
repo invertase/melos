@@ -110,10 +110,24 @@ ignore:
   - 'packages/**/example'
 ```
 
-<Info>
-  You can also expand the scope of packages on a per-command basis via the
-  [`--scope` filter](/filters#--scope) flag.
-</Info>
+## categories
+
+Categories are used to group packages together.
+
+To define custom package categories, add a `categories` section in your `melos.yaml` file.
+Under this section, you can specify category names as keys, and their corresponding values
+should be lists of glob patterns that match the packages you want to include in each category.
+
+```yaml
+# melos.yaml
+
+categories:
+  examples:
+    - packages/example*
+  alpha:
+    - packages/feature_a/*
+    - packages/feature_b
+```
 
 ## ide/intellij
 
@@ -181,11 +195,16 @@ The default is `false`.
 
 ### enforceLockfile
 
-Whether to run `pub get` with the `--enforce-lockfile` option or not, to force getting the versions specified in the `pubspec.lock` file.
+Whether to run `pub get` with the `--enforce-lockfile` option or not, to force getting the versions
+specified in the `pubspec.lock` file.
 
-This is useful in CI environments or when you want to ensure that all environments/machines are using the same package versions.
+This is useful in CI environments or when you want to ensure that all environments/machines are
+using the same package versions.
 
 The default is `false`.
+
+To temporarily override this `melos bootstrap --no-enforce-lockfile / --enforce-lockfile` can be
+used.
 
 ## command/version
 
@@ -345,3 +364,40 @@ command:
   version:
     fetchTags: false
 ```
+
+### changelogCommitBodies
+
+Configuration for including commit bodies in the changelog.
+
+```yaml
+command:
+  version:
+    changelogCommitBodies:
+      include: true
+      onlyBreaking: false
+```
+
+#### include
+
+Whether to include commit bodies in the changelog. Defaults to `false`.
+
+#### onlyBreaking
+
+Whether to include only breaking changes in the changelog. Defaults to `true`.
+
+### changelogFormat
+
+Configure the format of the generated CHANGELOG.md.
+
+```yaml
+command:
+  version:
+    changelogFormat:
+      includeDate: true
+```
+
+#### includeDate
+
+Whether to include the date in the generated CHANGELOG.md. Defaults to `false`.
+
+With enabled, changelog entry header will include the date in the `yyyy-MM-dd` format.

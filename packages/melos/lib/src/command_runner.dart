@@ -13,6 +13,7 @@ import 'command_runner/bootstrap.dart';
 import 'command_runner/clean.dart';
 import 'command_runner/exec.dart';
 import 'command_runner/format.dart';
+import 'command_runner/init.dart';
 import 'command_runner/list.dart';
 import 'command_runner/publish.dart';
 import 'command_runner/run.dart';
@@ -38,7 +39,8 @@ class MelosCommandRunner extends CommandRunner<void> {
       : super(
           'melos',
           'A CLI tool for managing Dart & Flutter projects with multiple '
-              'packages.',
+              'packages.\n\n'
+              'To get started with Melos, run "melos init".',
           usageLineLength: terminalWidth,
         ) {
     argParser.addFlag(
@@ -55,6 +57,7 @@ class MelosCommandRunner extends CommandRunner<void> {
           'the special value "auto".',
     );
 
+    addCommand(InitCommand(config));
     addCommand(ExecCommand(config));
     addCommand(BootstrapCommand(config));
     addCommand(CleanCommand(config));
@@ -154,6 +157,7 @@ Future<MelosWorkspaceConfig> _resolveConfig(
 }
 
 bool _shouldUseEmptyConfig(List<String> arguments) {
+  if (arguments.firstOrNull == 'init') return true;
   final willShowHelp = arguments.isEmpty ||
       arguments.contains('--help') ||
       arguments.contains('-h');

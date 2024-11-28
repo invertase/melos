@@ -5,8 +5,9 @@ mixin _FormatMixin on _Melos {
     GlobalOptions? global,
     PackageFilters? packageFilters,
     int concurrency = 1,
-    bool setExitIfChanged = false,
+    bool? setExitIfChanged,
     String? output,
+    int? lineLength,
   }) async {
     final workspace =
         await createWorkspace(global: global, packageFilters: packageFilters);
@@ -18,6 +19,7 @@ mixin _FormatMixin on _Melos {
       concurrency: concurrency,
       setExitIfChanged: setExitIfChanged,
       output: output,
+      lineLength: lineLength,
     );
   }
 
@@ -25,16 +27,24 @@ mixin _FormatMixin on _Melos {
     MelosWorkspace workspace,
     Iterable<Package> packages, {
     required int concurrency,
-    required bool setExitIfChanged,
+    bool? setExitIfChanged,
     String? output,
+    int? lineLength,
   }) async {
+    final formatConfig = workspace.config.commands.format;
+
+    final effectiveSetExitIfChanged =
+        setExitIfChanged ?? formatConfig.setExitIfChanged;
+    final effectiveLineLength = lineLength ?? formatConfig.lineLength;
+
     final failures = <String, int?>{};
     final pool = Pool(concurrency);
     final formatArgs = [
       'dart',
       'format',
-      if (setExitIfChanged) '--set-exit-if-changed',
+      if (effectiveSetExitIfChanged ?? false) '--set-exit-if-changed',
       if (output != null) '--output $output',
+      if (effectiveLineLength != null) '--line-length $effectiveLineLength',
       '.',
     ];
     final formatArgsString = formatArgs.join(' ');

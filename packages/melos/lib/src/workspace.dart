@@ -49,12 +49,14 @@ class MelosWorkspace {
       workspacePath: workspaceConfig.path,
       packages: workspaceConfig.packages,
       ignore: workspaceConfig.ignore,
+      categories: workspaceConfig.categories,
       logger: logger,
     );
     final dependencyOverridePackages = await PackageMap.resolvePackages(
       workspacePath: workspaceConfig.path,
       packages: workspaceConfig.commands.bootstrap.dependencyOverridePaths,
       ignore: const [],
+      categories: const {},
       logger: logger,
     );
 

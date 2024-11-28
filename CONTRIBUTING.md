@@ -33,7 +33,7 @@ Melos is a tool that optimizes the workflow around managing multi-package reposi
 
 - If you have suggestions for improvements to the documentation or examples (or something else), we would love to hear about it.
 - As always first file a [GitHub issue](https://github.com/invertase/melos/issues/new).
-- Implement the changes to the documentation, please read the [How To](#how-to-contribute).
+- Implement the changes to the documentation, please read the [Docs](#docs) section.
 
 ## How To Contribute
 
@@ -82,6 +82,14 @@ melos --help
 - Push your new branch to your own fork into the same remote branch
  (e.g. `git push origin my-username.my-new-feature`, replace `origin` if you use another remote.)
 
+### Docs
+
+When editing the documentation, once you have submitted your Pull Request (PR)
+and pipeline has passed, you can preview your changes on:
+https://melos.invertase.dev/~{PR_NUMBER}.
+- For example a PR with number 123, you can preview on: https://melos.invertase.dev/~123
+- For more information, see the [docs.page documentation](https://use.docs.page/previews#custom-domain).
+
 ### Open a pull request
 
 To send us a pull request:
@@ -96,4 +104,3 @@ guide.
 
 Please also enable **“Allow edits by maintainers”**, this will help to speed-up the review
 process as well.
-

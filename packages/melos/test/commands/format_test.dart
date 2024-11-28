@@ -2,10 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:melos/melos.dart';
+import 'package:melos/src/command_configs/command_configs.dart';
+import 'package:melos/src/command_configs/format.dart';
+import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
-import 'package:pubspec/pubspec.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
 import '../matchers.dart';
@@ -23,21 +26,21 @@ void main() {
 
       aDir = await createProject(
         workspaceDir,
-        PubSpec(
-          name: 'a',
-          dependencies: {'c': HostedReference(VersionConstraint.any)},
+        Pubspec(
+          'a',
+          dependencies: {'c': HostedDependency(version: VersionConstraint.any)},
         ),
       );
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'b'),
+        Pubspec('b'),
       );
 
       await createProject(
         workspaceDir,
-        const PubSpec(
-          name: 'c',
+        Pubspec(
+          'c',
         ),
       );
 
@@ -262,6 +265,153 @@ $ melos format
         // not indicative of a test failure.
         skip: 'Differ at offset 1261',
       );
+    });
+
+    test('should run format with --line-length flag', () async {
+      const code = '''
+void main() {
+  print('a very long line that should be wrapped with default dart settings but we use a longer line length');
+}
+''';
+
+      writeTextFile(
+        p.join(aDir.path, 'main.dart'),
+        code,
+      );
+
+      final result = await Process.run(
+        'melos',
+        ['format', '--set-exit-if-changed', '--line-length', '150'],
+        workingDirectory: workspaceDir.path,
+        runInShell: Platform.isWindows,
+        stdoutEncoding: utf8,
+        stderrEncoding: utf8,
+      );
+
+      expect(result.exitCode, equals(0));
+
+      expect(
+        result.stdout,
+        contains(
+          r'''
+$ melos format
+  └> dart format --set-exit-if-changed --line-length 150 .
+     └> SUCCESS''',
+        ),
+      );
+    });
+
+    group('config', () {
+      test('should run format with lineLength configValue', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_workspace',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            commands: const CommandConfigs(
+              format: FormatCommandConfigs(
+                lineLength: 150,
+              ),
+            ),
+          ),
+        );
+
+        final aDir = await createProject(
+          workspaceDir,
+          Pubspec('a'),
+        );
+
+        const code = '''
+void main() {
+  print('a very long line that should be wrapped with default dart settings but we use a longer line length');
+}
+''';
+
+        writeTextFile(
+          p.join(aDir.path, 'main.dart'),
+          code,
+        );
+
+        final result = await Process.run(
+          'melos',
+          ['format', '--set-exit-if-changed'],
+          workingDirectory: workspaceDir.path,
+          runInShell: Platform.isWindows,
+          stdoutEncoding: utf8,
+          stderrEncoding: utf8,
+        );
+
+        expect(result.exitCode, equals(0));
+
+        expect(
+          result.stdout,
+          contains(
+            r'''
+$ melos format
+  └> dart format --set-exit-if-changed --line-length 150 .
+     └> SUCCESS''',
+          ),
+        );
+      });
+
+      test('should run format with setExitIfChanged configValue', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_workspace',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            commands: const CommandConfigs(
+              format: FormatCommandConfigs(
+                setExitIfChanged: true,
+              ),
+            ),
+          ),
+        );
+
+        final aDir = await createProject(
+          workspaceDir,
+          Pubspec('a'),
+        );
+
+        const code = '''
+void main() {
+  print('a very long line that should be wrapped with default dart settings and will throw because of the setExitIfChanged flag');
+}
+''';
+
+        writeTextFile(
+          p.join(aDir.path, 'main.dart'),
+          code,
+        );
+
+        final result = await Process.run(
+          'melos',
+          ['format'],
+          workingDirectory: workspaceDir.path,
+          runInShell: Platform.isWindows,
+          stdoutEncoding: utf8,
+          stderrEncoding: utf8,
+        );
+
+        expect(result.exitCode, equals(1));
+
+        expect(result.stdout, contains('Formatted 1 file (1 changed)'));
+
+        expect(
+          result.stdout,
+          contains(
+            r'''
+$ melos format
+  └> dart format --set-exit-if-changed .
+     └> FAILED (in 1 packages)
+        └> a (with exit code 1)''',
+          ),
+        );
+      });
     });
   });
 }

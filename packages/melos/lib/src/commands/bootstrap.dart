@@ -5,8 +5,9 @@ mixin _BootstrapMixin on _CleanMixin {
     GlobalOptions? global,
     PackageFilters? packageFilters,
     bool noExample = false,
-    bool enforceLockfile = false,
+    bool? enforceLockfile,
     bool skipLinking = false,
+    bool offline = false,
   }) async {
     final workspace =
         await createWorkspace(global: global, packageFilters: packageFilters);
@@ -16,8 +17,14 @@ mixin _BootstrapMixin on _CleanMixin {
       CommandWithLifecycle.bootstrap,
       () async {
         final bootstrapCommandConfig = workspace.config.commands.bootstrap;
+        final runOffline = bootstrapCommandConfig.runPubGetOffline || offline;
+        late final hasLockFile =
+            File(p.join(workspace.path, 'pubspec.lock')).existsSync();
+        final enforceLockfileConfigValue =
+            workspace.config.commands.bootstrap.enforceLockfile;
         final shouldEnforceLockfile =
-            bootstrapCommandConfig.enforceLockfile || enforceLockfile;
+            (enforceLockfile ?? enforceLockfileConfigValue) && hasLockFile;
+
         final pubCommandForLogging = [
           ...pubCommandExecArgs(
             useFlutter: workspace.isFlutterWorkspace,
@@ -25,7 +32,7 @@ mixin _BootstrapMixin on _CleanMixin {
           ),
           'get',
           if (noExample) '--no-example',
-          if (bootstrapCommandConfig.runPubGetOffline) '--offline',
+          if (runOffline) '--offline',
           if (shouldEnforceLockfile) '--enforce-lockfile',
         ].join(' ');
 
@@ -69,7 +76,7 @@ mixin _BootstrapMixin on _CleanMixin {
 
             await _linkPackagesWithPubspecOverrides(
               workspace,
-              enforceLockfile: enforceLockfile,
+              enforceLockfile: shouldEnforceLockfile,
               noExample: noExample,
             );
 
@@ -149,21 +156,22 @@ mixin _BootstrapMixin on _CleanMixin {
   ) async {
     final allTransitiveDependencies =
         package.allTransitiveDependenciesInWorkspace;
-    final melosDependencyOverrides = <String, DependencyReference>{};
+    final melosDependencyOverrides = <String, Dependency>{};
 
     // Traversing all packages so that transitive dependencies for the
     // bootstrapped packages are setup properly.
     for (final otherPackage in workspace.allPackages.values) {
       if (allTransitiveDependencies.containsKey(otherPackage.name)) {
-        melosDependencyOverrides[otherPackage.name] =
-            PathReference(utils.relativePath(otherPackage.path, package.path));
+        melosDependencyOverrides[otherPackage.name] = PathDependency(
+          utils.relativePath(otherPackage.path, package.path),
+        );
       }
     }
 
     // Add custom workspace overrides.
     for (final dependencyOverride
         in workspace.dependencyOverridePackages.values) {
-      melosDependencyOverrides[dependencyOverride.name] = PathReference(
+      melosDependencyOverrides[dependencyOverride.name] = PathDependency(
         utils.relativePath(dependencyOverride.path, package.path),
       );
     }
@@ -171,7 +179,7 @@ mixin _BootstrapMixin on _CleanMixin {
     // Add existing dependency overrides from pubspec.yaml last, overwriting
     // overrides that would be made by Melos, to provide granular control at a
     // package level.
-    melosDependencyOverrides.addAll(package.pubSpec.dependencyOverrides);
+    melosDependencyOverrides.addAll(package.pubspec.dependencyOverrides);
 
     // Load current pubspec_overrides.yaml.
     final pubspecOverridesFile =
@@ -203,8 +211,12 @@ mixin _BootstrapMixin on _CleanMixin {
     required bool enforceLockfile,
     required bool noExample,
   }) async {
+    late final hasLockFile =
+        File(p.join(package.path, 'pubspec.lock')).existsSync();
+    final enforceLockfileConfigValue =
+        workspace.config.commands.bootstrap.enforceLockfile;
     final shouldEnforceLockfile =
-        workspace.config.commands.bootstrap.enforceLockfile || enforceLockfile;
+        (enforceLockfileConfigValue || enforceLockfile) && hasLockFile;
     final command = [
       ...pubCommandExecArgs(
         useFlutter: package.isFlutterPackage,
@@ -251,9 +263,9 @@ mixin _BootstrapMixin on _CleanMixin {
 
   Future<void> _setSharedDependenciesForPackage(
     Package package, {
-    required Environment? environment,
-    required Map<String, DependencyReference>? dependencies,
-    required Map<String, DependencyReference>? devDependencies,
+    required Map<String, VersionConstraint?>? environment,
+    required Map<String, Dependency>? dependencies,
+    required Map<String, Dependency>? devDependencies,
   }) async {
     final packagePubspecFile = utils.pubspecPathForDirectory(package.path);
     final packagePubspecContents = await readTextFileAsync(packagePubspecFile);
@@ -262,20 +274,20 @@ mixin _BootstrapMixin on _CleanMixin {
     final updatedEnvironment = _updateEnvironment(
       pubspecEditor: pubspecEditor,
       workspaceEnvironment: environment,
-      packageEnvironment: package.pubSpec.environment,
+      packageEnvironment: package.pubspec.environment,
     );
 
     final updatedDependenciesCount = _updateDependencies(
       pubspecEditor: pubspecEditor,
       workspaceDependencies: dependencies,
-      packageDependencies: package.pubSpec.dependencies,
+      packageDependencies: package.pubspec.dependencies,
       pubspecKey: 'dependencies',
     );
 
     final updatedDevDependenciesCount = _updateDependencies(
       pubspecEditor: pubspecEditor,
       workspaceDependencies: devDependencies,
-      packageDependencies: package.pubSpec.devDependencies,
+      packageDependencies: package.pubspec.devDependencies,
       pubspecKey: 'dev_dependencies',
     );
 
@@ -316,29 +328,25 @@ mixin _BootstrapMixin on _CleanMixin {
       pubspecEditor.update(
         ['environment', 'sdk'],
         wrapAsYamlNode(
-          workspaceEnvironment.sdkConstraint.toString(),
+          workspaceEnvironment.sdkConstraint,
           collectionStyle: CollectionStyle.BLOCK,
         ),
       );
       didUpdate = true;
     }
 
-    final workspaceUnParsedYaml = workspaceEnvironment.unParsedYaml;
-    final packageUnParsedYaml = packageEnvironment.unParsedYaml;
-    if (workspaceUnParsedYaml != null && packageUnParsedYaml != null) {
-      for (final entry in workspaceUnParsedYaml.entries) {
-        if (!packageUnParsedYaml.containsKey(entry.key)) continue;
-        if (packageUnParsedYaml[entry.key] == entry.value) continue;
+    for (final entry in workspaceEnvironment.entries) {
+      if (!packageEnvironment.containsKey(entry.key)) continue;
+      if (packageEnvironment[entry.key] == entry.value) continue;
 
-        pubspecEditor.update(
-          ['environment', entry.key],
-          wrapAsYamlNode(
-            entry.value.toString(),
-            collectionStyle: CollectionStyle.BLOCK,
-          ),
-        );
-        didUpdate = true;
-      }
+      pubspecEditor.update(
+        ['environment', entry.key],
+        wrapAsYamlNode(
+          entry.value.toString(),
+          collectionStyle: CollectionStyle.BLOCK,
+        ),
+      );
+      didUpdate = true;
     }
 
     return didUpdate;
@@ -354,8 +362,8 @@ mixin _BootstrapMixin on _CleanMixin {
 
   int _updateDependencies({
     required YamlEditor pubspecEditor,
-    required Map<String, DependencyReference>? workspaceDependencies,
-    required Map<String, DependencyReference> packageDependencies,
+    required Map<String, Dependency>? workspaceDependencies,
+    required Map<String, Dependency> packageDependencies,
     required String pubspecKey,
   }) {
     if (workspaceDependencies == null) return 0;
@@ -465,7 +473,7 @@ final _managedDependencyOverridesRegex = RegExp(
 /// [melosDependencyOverrides] must contain a mapping of workspace package names
 /// to their paths relative to the package.
 ///
-/// [pubspecOverridesContents] are the current contents of the package's
+/// [pubspecOverridesContent] are the current contents of the package's
 /// `pubspec_overrides.yaml` and may be `null` if the file does not exist.
 ///
 /// Whitespace and comments in an existing `pubspec_overrides.yaml` file are
@@ -487,21 +495,18 @@ final _managedDependencyOverridesRegex = RegExp(
 /// obsolete from `dependency_overrides` and the marker comment.
 @visibleForTesting
 String? mergeMelosPubspecOverrides(
-  Map<String, DependencyReference> melosDependencyOverrides,
-  String? pubspecOverridesContents,
+  Map<String, Dependency> melosDependencyOverrides,
+  String? pubspecOverridesContent,
 ) {
-  // ignore: parameter_assignments
-  pubspecOverridesContents ??= '';
-
-  final pubspecOverridesEditor = YamlEditor(pubspecOverridesContents);
+  final pubspecOverridesEditor = YamlEditor(pubspecOverridesContent ?? '');
   final pubspecOverrides = pubspecOverridesEditor
       .parseAt([], orElse: () => wrapAsYamlNode(null)).value as Object?;
-  final dependencyOverrides = pubspecOverrides is Map &&
-          pubspecOverrides['dependency_overrides'] is Map
-      ? {...pubspecOverrides['dependency_overrides'] as Map<Object?, Object?>}
-      : null;
+
+  final dependencyOverrides = pubspecOverridesContent?.isEmpty ?? true
+      ? null
+      : PubspecOverrides.parse(pubspecOverridesContent!).dependencyOverrides;
   final currentManagedDependencyOverrides = _managedDependencyOverridesRegex
-          .firstMatch(pubspecOverridesContents)
+          .firstMatch(pubspecOverridesContent ?? '')
           ?.group(1)
           ?.split(',')
           .toSet() ??
@@ -510,7 +515,7 @@ String? mergeMelosPubspecOverrides(
 
   if (dependencyOverrides != null) {
     for (final dependencyOverride in dependencyOverrides.entries.toList()) {
-      final packageName = dependencyOverride.key!;
+      final packageName = dependencyOverride.key;
 
       if (currentManagedDependencyOverrides.contains(packageName)) {
         // This dependency override is managed by melos and might need to be
@@ -518,14 +523,13 @@ String? mergeMelosPubspecOverrides(
 
         if (melosDependencyOverrides.containsKey(packageName)) {
           // Update changed dependency override.
-          final currentRef =
-              DependencyReference.fromJson(dependencyOverride.value);
+          final currentRef = dependencyOverride.value;
           final newRef = melosDependencyOverrides[packageName];
           if (currentRef != newRef) {
             pubspecOverridesEditor.update(
               ['dependency_overrides', packageName],
               wrapAsYamlNode(
-                newRef!.toJson() as Object,
+                newRef!.toJson(),
                 collectionStyle: CollectionStyle.BLOCK,
               ),
             );
@@ -557,8 +561,7 @@ String? mergeMelosPubspecOverrides(
           {
             'dependency_overrides': {
               for (final dependencyOverride in melosDependencyOverrides.entries)
-                dependencyOverride.key:
-                    dependencyOverride.value.toJson() as Object,
+                dependencyOverride.key: dependencyOverride.value.toJson(),
             },
           },
           collectionStyle: CollectionStyle.BLOCK,
@@ -571,8 +574,7 @@ String? mergeMelosPubspecOverrides(
           wrapAsYamlNode(
             {
               for (final dependencyOverride in melosDependencyOverrides.entries)
-                dependencyOverride.key:
-                    dependencyOverride.value.toJson() as Object,
+                dependencyOverride.key: dependencyOverride.value.toJson(),
             },
             collectionStyle: CollectionStyle.BLOCK,
           ),
@@ -582,7 +584,7 @@ String? mergeMelosPubspecOverrides(
           pubspecOverridesEditor.update(
             ['dependency_overrides', dependencyOverride.key],
             wrapAsYamlNode(
-              dependencyOverride.value.toJson() as Object,
+              dependencyOverride.value.toJson(),
               collectionStyle: CollectionStyle.BLOCK,
             ),
           );

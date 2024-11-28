@@ -3,10 +3,17 @@ description:
   A tool for managing Dart & Flutter repositories with multiple packages
   (monorepo). Supports automated versioning via Conventional Commits. Inspired
   by JavaScripts Lerna package.
-version: 5.2.2
+version: 6.2.0
 homepage: https://melos.invertase.dev/~melos-latest
 repository: https://github.com/invertase/melos/tree/main/packages/melos
 issue_tracker: https://github.com/invertase/melos/issues
+
+topics:
+  - tool
+  - repository-management
+  - cli
+  - monorepo
+  - lerna
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -26,6 +33,7 @@ dependencies:
   glob: ^2.1.2
   graphs: ^2.3.1
   http: ^1.1.0
+  intl: ^0.19.0
   meta: ^1.10.0
   mustache_template: ^2.0.0
   path: ^1.8.3
@@ -34,7 +42,7 @@ dependencies:
   prompts: ^2.0.0
   pub_semver: ^2.1.4
   pub_updater: ^0.4.0
-  pubspec: ^2.3.0
+  pubspec_parse: ^1.3.0
   string_scanner: ^1.2.0
   yaml: ^3.1.2
   yaml_edit: ^2.1.1

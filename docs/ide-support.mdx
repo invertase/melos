@@ -19,6 +19,17 @@ workspace, and will create flutter and dart Run configurations for your
 
 ![Generated Run configurations](/assets/intellij-run-configurations.png)
 
+### `melos.yaml`
+
+Autocompletion and validation of `melos.yaml` can be enabled in IntelliJ by
+going to `Settings` > `Languages & Frameworks` > `Schemas and DTDs` >
+`JSON Schema Mappings` and adding the Melos schema:
+- Schema url: https://raw.githubusercontent.com/blaugold/melos-code/main/melos.yaml.schema.json
+- Schema version: JSON Schema version 7
+- File: Select `melos.yaml`
+
+![Schema settings](/assets/intellij-schema-settings.png)
+
 ## VS Code
 
 The [Melos extension][melos-code] integrates Melos with VS Code.

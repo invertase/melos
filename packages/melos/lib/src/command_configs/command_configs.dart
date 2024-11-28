@@ -4,6 +4,7 @@ import '../common/utils.dart';
 import '../common/validation.dart';
 import 'bootstrap.dart';
 import 'clean.dart';
+import 'format.dart';
 import 'publish.dart';
 import 'version.dart';
 
@@ -19,6 +20,7 @@ class CommandConfigs {
     this.clean = CleanCommandConfigs.empty,
     this.version = VersionCommandConfigs.empty,
     this.publish = PublishCommandConfigs.empty,
+    this.format = FormatCommandConfigs.empty,
   });
 
   factory CommandConfigs.fromYaml(
@@ -50,6 +52,12 @@ class CommandConfigs {
       path: 'command',
     );
 
+    final formatMap = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'format',
+      map: yaml,
+      path: 'command',
+    );
+
     return CommandConfigs(
       bootstrap: BootstrapCommandConfigs.fromYaml(
         bootstrapMap ?? const {},
@@ -69,6 +77,7 @@ class CommandConfigs {
         workspacePath: workspacePath,
         repositoryIsConfigured: repositoryIsConfigured,
       ),
+      format: FormatCommandConfigs.fromYaml(formatMap ?? const {}),
     );
   }
 
@@ -78,6 +87,7 @@ class CommandConfigs {
   final CleanCommandConfigs clean;
   final VersionCommandConfigs version;
   final PublishCommandConfigs publish;
+  final FormatCommandConfigs format;
 
   Map<String, Object?> toJson() {
     return {
@@ -85,6 +95,7 @@ class CommandConfigs {
       'clean': clean.toJson(),
       'version': version.toJson(),
       'publish': publish.toJson(),
+      'format': format.toJson(),
     };
   }
 
@@ -95,7 +106,8 @@ class CommandConfigs {
       other.bootstrap == bootstrap &&
       other.clean == clean &&
       other.version == version &&
-      other.publish == publish;
+      other.publish == publish &&
+      other.format == format;
 
   @override
   int get hashCode => Object.hash(
@@ -104,6 +116,7 @@ class CommandConfigs {
         clean,
         version,
         publish,
+        format,
       );
 
   @override
@@ -114,6 +127,7 @@ CommandConfigs(
   clean: ${clean.toString().indent('  ')},
   version: ${version.toString().indent('  ')},
   publish: ${publish.toString().indent('  ')},
+  format: ${format.toString().indent('  ')},
 )
 ''';
   }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:cli_util/cli_logging.dart';
 
@@ -64,6 +66,48 @@ class MelosLogger with _DelegateLogger {
       return;
     }
 
+    write(message);
+  }
+
+  void logAndCompleteBasedOnMarkers(
+    String message,
+    String successMarker,
+    String failureMarker,
+    Completer<void>? completer, {
+    bool isError = false,
+  }) {
+    final modifiedMessage = _processMessageBasedOnMarkers(
+      message,
+      successMarker,
+      failureMarker,
+      completer,
+    );
+    _logMessage(modifiedMessage, isError);
+  }
+
+  String _processMessageBasedOnMarkers(
+    String message,
+    String successMarker,
+    String failureMarker,
+    Completer<void>? completer,
+  ) {
+    if (message.contains(successMarker)) {
+      completer?.complete();
+      return message.replaceAll(successMarker, '');
+    }
+
+    if (message.contains(failureMarker)) {
+      completer?.complete();
+      return message.replaceAll(failureMarker, '');
+    }
+
+    return message;
+  }
+
+  void _logMessage(String message, bool isError) {
+    if (isError) {
+      error(message);
+    }
     write(message);
   }
 

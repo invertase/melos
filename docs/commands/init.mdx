@@ -1,0 +1,93 @@
+---
+title: Init Command
+description: Learn more about the `init` command in Melos.
+---
+
+# Init Command
+
+The `init` command initializes a new Melos workspace.
+It creates the necessary configuration files and
+directory structure for your monorepo.
+
+## Basic Usage
+
+```bash
+melos init [workspace_name]
+```
+
+If no workspace name is provided, you'll be prompted to enter one.
+By default, it uses the current directory name.
+
+## Options
+
+### --directory (-d)
+Specifies the directory where the workspace should be created.
+If not provided, you'll be prompted to enter one.
+Defaults to the workspace name, or current directory ('.')
+if the workspace name matches the current directory name.
+
+```bash
+melos init my_workspace --directory custom_dir
+```
+
+### --packages (-p)
+Defines additional glob patterns for package directories
+to include in the workspace. Accepts comma-separated values and can be
+specified multiple times.
+
+```bash
+melos init --packages "modules/*" --packages "libs/*"
+```
+
+## Interactive Setup
+
+When running `melos init`, you'll be guided through
+an interactive setup process that will:
+
+1. Prompt for a workspace name 
+(if not provided, defaults to current directory name)
+2. Ask for a directory location 
+(defaults to workspace name, or '.' if matching current directory)
+3. Ask if you want to include an `apps` directory (defaults to true)
+
+## Created Files
+
+The command creates the following structure:
+
+```
+<directory>/
+├── melos.yaml    # Workspace configuration
+├── pubspec.yaml  # Root package configuration
+├── packages/     # Packages directory (always created)
+└── apps/         # Apps directory (created if confirmed during setup)
+```
+
+### melos.yaml
+Contains the workspace configuration with:
+- Workspace name
+- Package locations (defaults to ['packages/*'] and optionally 'apps/*')
+- Additional package glob patterns (if specified via --packages)
+
+### pubspec.yaml
+Contains the root package configuration with:
+- Project name (same as workspace name)
+- Dart SDK constraints (based on current Dart version)
+- Melos as a dev dependency
+
+## Example
+
+```bash
+# Basic initialization
+melos init my_workspace
+
+# Custom initialization with options
+melos init my_workspace \
+  --directory custom_dir \
+  --packages "modules/*"
+```
+
+After initialization, you can bootstrap your workspace by running:
+```bash
+cd <directory>
+melos bootstrap
+```

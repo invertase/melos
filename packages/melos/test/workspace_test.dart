@@ -9,7 +9,7 @@ import 'package:melos/src/common/utils.dart';
 import 'package:melos/src/workspace.dart';
 import 'package:path/path.dart' as p;
 import 'package:platform/platform.dart';
-import 'package:pubspec/pubspec.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
 import 'matchers.dart';
@@ -25,20 +25,20 @@ void main() {
 
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'a'),
+        Pubspec('a'),
       );
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'example'),
+        Pubspec('example'),
         path: 'packages/a/example',
       );
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'b'),
+        Pubspec('b'),
       );
       await createProject(
         workspaceDir,
-        const PubSpec(name: 'example'),
+        Pubspec('example'),
         path: 'packages/b/example',
       );
 
@@ -81,8 +81,7 @@ The packages that caused the problem are:
           },
         ),
       );
-      final projectDir =
-          await createProject(workspaceDir, const PubSpec(name: 'a'));
+      final projectDir = await createProject(workspaceDir, Pubspec('a'));
 
       final result = await Process.run(
         'melos',
@@ -153,7 +152,7 @@ The packages that caused the problem are:
 
         await createProject(
           workspaceDir,
-          const PubSpec(name: 'a'),
+          Pubspec('a'),
           path: '.',
         );
 
@@ -176,7 +175,7 @@ The packages that caused the problem are:
           ),
         );
 
-        await createProject(workspaceDir, const PubSpec(name: 'a'));
+        await createProject(workspaceDir, Pubspec('a'));
 
         final workspace = await MelosWorkspace.fromConfig(
           await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir),

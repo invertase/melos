@@ -13,15 +13,18 @@ import 'package:mustache_template/mustache.dart';
 import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 import 'package:pub_semver/pub_semver.dart';
-import 'package:pubspec/pubspec.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
+import '../../version.g.dart';
 import '../command_configs/command_configs.dart';
 import '../command_runner/version.dart';
 import '../common/aggregate_changelog.dart';
 import '../common/environment_variable_key.dart';
 import '../common/exception.dart';
+import '../common/extensions/dependency.dart';
+import '../common/extensions/environment.dart';
 import '../common/git.dart';
 import '../common/git_commit.dart';
 import '../common/git_repository.dart';
@@ -29,7 +32,9 @@ import '../common/glob.dart';
 import '../common/intellij_project.dart';
 import '../common/io.dart';
 import '../common/pending_package_update.dart';
+import '../common/persistent_shell.dart';
 import '../common/platform.dart';
+import '../common/pubspec_overrides.dart';
 import '../common/utils.dart' as utils;
 import '../common/utils.dart';
 import '../common/versioning.dart' as versioning;
@@ -42,15 +47,16 @@ import '../scripts.dart';
 import '../workspace.dart';
 import '../workspace_configs.dart';
 
+part 'analyze.dart';
 part 'bootstrap.dart';
 part 'clean.dart';
 part 'exec.dart';
+part 'format.dart';
+part 'init.dart';
 part 'list.dart';
 part 'publish.dart';
 part 'run.dart';
 part 'version.dart';
-part 'analyze.dart';
-part 'format.dart';
 
 enum CommandWithLifecycle {
   bootstrap,
@@ -69,7 +75,8 @@ class Melos extends _Melos
         _VersionMixin,
         _PublishMixin,
         _AnalyzeMixin,
-        _FormatMixin {
+        _FormatMixin,
+        _InitMixin {
   Melos({
     required this.config,
     Logger? logger,

@@ -26,6 +26,7 @@ const globalOptionSdkPath = 'sdk-path';
 const autoSdkPathOptionValue = 'auto';
 
 const filterOptionScope = 'scope';
+const filterOptionCategory = 'category';
 const filterOptionIgnore = 'ignore';
 const filterOptionDirExists = 'dir-exists';
 const filterOptionFileExists = 'file-exists';
@@ -72,6 +73,10 @@ final melosPackageUri = Uri.parse('package:melos/melos.dart');
 final _camelCasedDelimiterRegExp = RegExp(r'[_\s-]+');
 
 extension StringUtils on String {
+  String addStepPrefixEmoji() {
+    return '➡️ step: $this';
+  }
+
   String indent(String indent) {
     final split = this.split('\n');
 

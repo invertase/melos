@@ -120,6 +120,35 @@ void main() {
     );
   });
 
+  group('includeDateInChangelogEntry', () {
+    test('should not include date by default', () {
+      final changelogEntryDate = DateTime.now().toFormattedString();
+
+      final workspace = buildWorkspaceWithRepository();
+      final package = workspace.allPackages['test_pkg']!;
+      final commit = testCommit(message: 'feat: a');
+
+      expect(
+        renderCommitPackageUpdate(workspace, package, commit),
+        isNot(contains(changelogEntryDate)),
+      );
+    });
+
+    test('should include date when enabled', () {
+      final changelogEntryDate = DateTime.now().toFormattedString();
+
+      final workspace =
+          buildWorkspaceWithRepository(includeDateInChangelogEntry: true);
+      final package = workspace.allPackages['test_pkg']!;
+      final commit = testCommit(message: 'feat: a');
+
+      expect(
+        renderCommitPackageUpdate(workspace, package, commit),
+        contains(changelogEntryDate),
+      );
+    });
+  });
+
   test('when repository is specified, adds links to referenced issues/PRs', () {
     final workspace = buildWorkspaceWithRepository();
     final package = workspace.allPackages['test_pkg']!;
@@ -137,6 +166,7 @@ MelosWorkspace buildWorkspaceWithRepository({
   bool includeScopes = false,
   bool linkToCommits = false,
   bool includeCommitId = false,
+  bool includeDateInChangelogEntry = false,
 }) {
   final workspaceBuilder = VirtualWorkspaceBuilder(
     '''
@@ -146,6 +176,8 @@ MelosWorkspace buildWorkspaceWithRepository({
         includeScopes: $includeScopes
         includeCommitId: $includeCommitId
         linkToCommits: $linkToCommits
+        changelogFormat:
+          includeDate: $includeDateInChangelogEntry
     ''',
   )..addPackage(
       '''
