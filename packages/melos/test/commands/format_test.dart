@@ -6,6 +6,7 @@ import 'package:melos/src/command_configs/command_configs.dart';
 import 'package:melos/src/command_configs/format.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
+import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
@@ -59,37 +60,37 @@ void main() {
       expect(
         logger.output.normalizeNewLines(),
         ignoringAnsii(
-          r'''
-$ melos format
+          matches(
+            RegExp(
+              RegExp.escape('''
+\$ melos format
   └> dart format .
      └> RUNNING (in 3 packages)
 
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 a:
-Formatted no files in 0.01 seconds.
+Formatted no files in 0.''') + r'\d{2}' + RegExp.escape('''
+ seconds.
 a: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 b:
-Formatted no files in 0.01 seconds.
+Formatted no files in 0.''') + r'\d{2}' + RegExp.escape('''
+ seconds.
 b: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 c:
-Formatted no files in 0.01 seconds.
+Formatted no files in 0.''') + r'\d{2}' + RegExp.escape('''
+ seconds.
 c: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 
-$ melos format
+\$ melos format
   └> dart format .
      └> SUCCESS
-''',
+'''),
+            ),
+          ),
         ),
-        // Skip this test if it fails due to a difference in the execution time
-        // reported for formatting files.
-        // The execution time, such as "0.01 seconds" in the line "Formatted 1
-        // file (1 changed) in 0.01 seconds.",
-        // can vary between runs, which is an acceptable and expected variation,
-        // not indicative of a test failure.
-        skip: ' Differ at offset 182',
       );
     });
 
@@ -128,42 +129,42 @@ $ melos format
       expect(
         logger.output.normalizeNewLines(),
         ignoringAnsii(
-          r'''
-$ melos format
+          matches(
+            RegExp(
+              RegExp.escape('''
+\$ melos format
   └> dart format --output show .
      └> RUNNING (in 3 packages)
 
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 a:
 void main() {
   for (var i = 0; i < 10; i++) {
-    print('hello ${i + 1}');
+    print('hello \${i + 1}');
   }
 }
-Formatted 1 file (1 changed) in 0.07 seconds.
+Formatted 1 file (1 changed) in 0.''') + r'\d{2}' + RegExp.escape('''
+ seconds.
 a: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 b:
-Formatted no files in 0.00 seconds.
+Formatted no files in 0.''') + r'\d{2}' + RegExp.escape('''
+ seconds.
 b: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 c:
-Formatted no files in 0.00 seconds.
+Formatted no files in 0.''') + r'\d{2}' + RegExp.escape('''
+ seconds.
 c: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 
-$ melos format
+\$ melos format
   └> dart format --output show .
      └> SUCCESS
-''',
+'''),
+            ),
+          ),
         ),
-        // Skip this test if it fails due to a difference in the execution time
-        // reported for formatting files.
-        // The execution time, such as "0.07 seconds" in the line "Formatted 1
-        // file (1 changed) in 0.07 seconds.",
-        // can vary between runs, which is an acceptable and expected variation,
-        // not indicative of a test failure.
-        skip: 'Differ at offset 293',
       );
     });
 
@@ -189,7 +190,7 @@ $ melos format
       expect(result.exitCode, equals(1));
       expect(
         result.stdout,
-        ignoringAnsii(r'''
+        ignoringDependencyMessages('''
 Resolving dependencies...
 + ansi_styles 0.3.2+1
 + args 2.4.2
@@ -234,25 +235,25 @@ Resolving dependencies...
 Changed 40 dependencies!
 2 packages have newer versions incompatible with dependency constraints.
 Try `dart pub outdated` for more information.
-$ melos format
+\$ melos format
   └> dart format --set-exit-if-changed --output none .
      └> RUNNING (in 3 packages)
 
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 a:
 Changed main.dart
 Formatted 1 file (1 changed) in 0.09 seconds.
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 b:
 Formatted no files in 0.00 seconds.
 b: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 c:
 Formatted no files in 0.00 seconds.
 c: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 
-$ melos format
+\$ melos format
   └> dart format --set-exit-if-changed --output none .
      └> FAILED (in 1 packages)
         └> a (with exit code 1)
@@ -263,6 +264,8 @@ $ melos format
         // file (1 changed) in 0.09 seconds.",
         // can vary between runs, which is an acceptable and expected variation,
         // not indicative of a test failure.
+        // Addendum: This test case should be rewritten to not be sensitive to
+        // version updates to the dependencies.
         skip: 'Differ at offset 1261',
       );
     });
