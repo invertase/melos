@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/io.dart';
+import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
@@ -64,12 +65,12 @@ void main() {
       expect(
         logger.output.normalizeNewLines(),
         ignoringAnsii(
-          r'''
-$ melos analyze
+          '''
+\$ melos analyze
   └> dart analyze --fatal-infos
      └> RUNNING (in 3 packages)
 
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 a:
 Analyzing a...
 
@@ -77,19 +78,19 @@ Analyzing a...
    info - main.dart:5:10 - Missing a newline at the end of the file. Try adding a newline at the end of the file. - eol_at_end_of_file
 
 2 issues found.
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 b:
 Analyzing b...
 No issues found!
 b: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 c:
 Analyzing c...
 No issues found!
 c: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 
-$ melos analyze
+\$ melos analyze
   └> dart analyze --fatal-infos
      └> FAILED (in 1 packages)
         └> a (with exit code 1)
@@ -114,12 +115,12 @@ $ melos analyze
 
       expect(
         logger.output.normalizeNewLines(),
-        ignoringAnsii(r'''
-$ melos analyze
+        ignoringAnsii('''
+\$ melos analyze
   └> dart analyze --fatal-warnings
      └> RUNNING (in 3 packages)
 
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 a:
 Analyzing a...
 
@@ -133,19 +134,19 @@ warning - main.dart:3:16 - The value of the local variable 'age' isn't used. Try
    info - main.dart:5:10 - Missing a newline at the end of the file. Try adding a newline at the end of the file. - eol_at_end_of_file
 
 8 issues found.
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 b:
 Analyzing b...
 No issues found!
 b: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 c:
 Analyzing c...
 No issues found!
 c: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 
-$ melos analyze
+\$ melos analyze
   └> dart analyze --fatal-warnings
      └> FAILED (in 1 packages)
         └> a (with exit code 2)
@@ -169,12 +170,12 @@ $ melos analyze
 
       expect(
         logger.output.normalizeNewLines(),
-        ignoringAnsii(r'''
-$ melos analyze
+        ignoringAnsii('''
+\$ melos analyze
   └> dart analyze --no-fatal-warnings
      └> RUNNING (in 3 packages)
 
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 a:
 Analyzing a...
 
@@ -189,19 +190,19 @@ warning - main.dart:3:16 - The value of the local variable 'age' isn't used. Try
 
 8 issues found.
 a: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 b:
 Analyzing b...
 No issues found!
 b: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 c:
 Analyzing c...
 No issues found!
 c: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 
-$ melos analyze
+\$ melos analyze
   └> dart analyze --no-fatal-warnings
      └> SUCCESS
 '''),
@@ -225,12 +226,12 @@ $ melos analyze
 
       expect(
         logger.output.normalizeNewLines(),
-        ignoringAnsii(r'''
-$ melos analyze
+        ignoringAnsii('''
+\$ melos analyze
   └> dart analyze --fatal-infos --fatal-warnings
      └> RUNNING (in 3 packages)
 
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 a:
 Analyzing a...
 
@@ -244,19 +245,19 @@ warning - main.dart:3:16 - The value of the local variable 'age' isn't used. Try
    info - main.dart:5:10 - Missing a newline at the end of the file. Try adding a newline at the end of the file. - eol_at_end_of_file
 
 8 issues found.
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 b:
 Analyzing b...
 No issues found!
 b: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 c:
 Analyzing c...
 No issues found!
 c: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 
-$ melos analyze
+\$ melos analyze
   └> dart analyze --fatal-infos --fatal-warnings
      └> FAILED (in 1 packages)
         └> a (with exit code 2)
@@ -378,29 +379,29 @@ $ melos analyze
 
       expect(
         logger.output.normalizeNewLines(),
-        ignoringAnsii(r'''
-$ melos analyze
+        ignoringAnsii('''
+\$ melos analyze
   └> dart analyze --concurrency 2
      └> RUNNING (in 3 packages)
 
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 a:
 Analyzing a...
 No issues found!
 a: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 b:
 Analyzing b...
 No issues found!
 b: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 c:
 Analyzing c...
 No issues found!
 c: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 
-$ melos analyze
+\$ melos analyze
   └> dart analyze --concurrency 2
      └> SUCCESS
 '''),
@@ -424,12 +425,12 @@ $ melos analyze
 
       expect(
         logger.output.normalizeNewLines(),
-        ignoringAnsii(r'''
-$ melos analyze
+        ignoringAnsii('''
+\$ melos analyze
   └> dart analyze --fatal-infos --concurrency 2
      └> RUNNING (in 3 packages)
 
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 a:
 Analyzing a...
 
@@ -437,19 +438,19 @@ Analyzing a...
    info - main.dart:5:10 - Missing a newline at the end of the file. Try adding a newline at the end of the file. - eol_at_end_of_file
 
 2 issues found.
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 b:
 Analyzing b...
 No issues found!
 b: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 c:
 Analyzing c...
 No issues found!
 c: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 
-$ melos analyze
+\$ melos analyze
   └> dart analyze --fatal-infos --concurrency 2
      └> FAILED (in 1 packages)
         └> a (with exit code 1)

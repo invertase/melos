@@ -273,22 +273,22 @@ melos run hello
       expect(
         logger.output.normalizeNewLines(),
         ignoringDependencyMessages(
-          r'''
+          '''
 melos run hello
   └> melos exec -- "echo foo bar baz"
      └> RUNNING
 
-$ melos exec
+\$ melos exec
   └> echo foo bar baz
      └> RUNNING (in 1 packages)
 
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 a:
 foo bar baz
 a: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 
-$ melos exec
+\$ melos exec
   └> echo foo bar baz
      └> SUCCESS
 
@@ -721,7 +721,7 @@ melos run hello_script
   └> dart analyze 
      └> RUNNING (in 3 packages)
 
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 a:
 Analyzing a...
 
@@ -730,17 +730,17 @@ Analyzing a...
 
 2 issues found.
 a: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 b:
 Analyzing b...
 No issues found!
 b: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 c:
 Analyzing c...
 No issues found!
 c: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 
 \$ melos analyze
   └> dart analyze 
@@ -895,7 +895,7 @@ melos run hello_script
   └> dart analyze --fatal-infos
      └> RUNNING (in 3 packages)
 
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 a:
 Analyzing a...
 
@@ -903,17 +903,17 @@ Analyzing a...
    info - main.dart:5:10 - Missing a newline at the end of the file. Try adding a newline at the end of the file. - eol_at_end_of_file
 
 2 issues found.
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 b:
 Analyzing b...
 No issues found!
 b: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 c:
 Analyzing c...
 No issues found!
 c: SUCCESS
---------------------------------------------------------------------------------
+${'-' * terminalWidth}
 
 \$ melos analyze
   └> dart analyze --fatal-infos
