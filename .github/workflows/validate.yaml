@@ -7,7 +7,7 @@ on:
       - main
 
 env:
-  FLUTTER_MIN_VERSION: '3.25.4'
+  FLUTTER_MIN_VERSION: '3.24.5'
 
 jobs:
   analyze:
