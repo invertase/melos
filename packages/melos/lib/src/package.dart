@@ -531,7 +531,7 @@ class PackageMap {
 
     final packageMap = <String, Package>{};
 
-    await Stream.fromIterable(pubspecFiles).parallel((pubspecFile) async {
+    for (final pubspecFile in pubspecFiles) {
       final pubspecDirPath = pubspecFile.parent.path;
       final pubspec = Pubspec.parse(pubspecFile.readAsStringSync());
       final name = pubspec.name;
@@ -576,7 +576,7 @@ The packages that caused the problem are:
         pubspec: pubspec,
         categories: filteredCategories,
       );
-    }).drain<void>();
+    }
 
     return PackageMap(packageMap, logger);
   }
