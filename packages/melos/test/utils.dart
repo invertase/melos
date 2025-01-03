@@ -152,8 +152,7 @@ Future<Directory> createProject(
   String? path,
   bool createLockfile = false,
 }) async {
-  final pubspec = partialPubspec.environment != null &&
-          partialPubspec.environment!.isNotEmpty
+  final pubspec = partialPubspec.environment.isNotEmpty
       ? partialPubspec
       : partialPubspec.copyWith(
           environment: {

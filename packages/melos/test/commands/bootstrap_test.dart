@@ -858,7 +858,7 @@ Generating IntelliJ IDE files...
           equals(defaultTestEnvironment),
         );
         expect(
-          pubspecA.environment?['sdk'],
+          pubspecA.environment['sdk'],
           equals(VersionConstraint.parse('>=2.18.0 <3.0.0')),
         );
         expect(
@@ -883,11 +883,11 @@ Generating IntelliJ IDE files...
         );
 
         expect(
-          pubspecBPreBootstrap.environment?['flutter'],
+          pubspecBPreBootstrap.environment['flutter'],
           equals(VersionConstraint.parse('>=2.12.0 <3.0.0')),
         );
         expect(
-          pubspecB.environment?['flutter'],
+          pubspecB.environment['flutter'],
           equals(VersionConstraint.parse('>=2.18.0 <3.0.0')),
         );
         expect(
