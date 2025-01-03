@@ -24,6 +24,8 @@ Matcher ignoringDependencyMessages(String expected) {
                 !line.startsWith('Got dependencies!') &&
                 // Removes lines like "  pub_updater 0.4.0 (0.5.0 available)"
                 !(line.startsWith('  ') && line.contains(' available)')) &&
+                !line.startsWith('No dependencies would change in') &&
+                !line.startsWith('Would change') &&
                 !line.contains(
                   'newer versions incompatible with dependency constraints',
                 ) &&
