@@ -76,7 +76,8 @@ class BootstrapCommandConfigs {
         ? LifecycleHooks.fromYaml(hooksMap, workspacePath: workspacePath)
         : LifecycleHooks.empty;
 
-    final environment = bootstrapConstraints.environment;
+    // ignore: dead_null_aware_expression
+    final environment = bootstrapConstraints.environment ?? {};
     final dependencies = bootstrapConstraints.dependencies;
     final devDependencies = bootstrapConstraints.devDependencies;
 
