@@ -531,15 +531,14 @@ class PackageMap {
 
     final packageMap = <String, Package>{};
 
-    await Future.wait<void>(
-      pubspecFiles.map((pubspecFile) async {
-        final pubspecDirPath = pubspecFile.parent.path;
-        final pubspec = Pubspec.parse(pubspecFile.readAsStringSync());
-        final name = pubspec.name;
+    for (final pubspecFile in pubspecFiles) {
+      final pubspecDirPath = pubspecFile.parent.path;
+      final pubspec = Pubspec.parse(pubspecFile.readAsStringSync());
+      final name = pubspec.name;
 
-        if (packageMap.containsKey(name)) {
-          throw MelosConfigException(
-            '''
+      if (packageMap.containsKey(name)) {
+        throw MelosConfigException(
+          '''
 Multiple packages with the name `$name` found in the workspace, which is unsupported.
 To fix this problem, consider renaming your packages to have a unique name.
 
@@ -547,38 +546,37 @@ The packages that caused the problem are:
 - $name at ${printablePath(relativePath(pubspecDirPath, workspacePath))}
 - $name at ${printablePath(relativePath(packageMap[name]!.path, workspacePath))}
 ''',
-          );
-        }
-
-        final filteredCategories = <String>[];
-
-        categories.forEach((key, value) {
-          final isCategoryMatching = value.any(
-            (category) => category.matches(
-              relativePath(pubspecDirPath, workspacePath),
-            ),
-          );
-
-          if (isCategoryMatching) {
-            filteredCategories.add(key);
-          }
-        });
-
-        packageMap[name] = Package(
-          name: name,
-          path: pubspecDirPath,
-          pathRelativeToWorkspace: relativePath(pubspecDirPath, workspacePath),
-          version: pubspec.version ?? Version.none,
-          publishTo: pubspec.publishTo.let(Uri.parse),
-          packageMap: packageMap,
-          dependencies: pubspec.dependencies.keys.toList(),
-          devDependencies: pubspec.devDependencies.keys.toList(),
-          dependencyOverrides: pubspec.dependencyOverrides.keys.toList(),
-          pubspec: pubspec,
-          categories: filteredCategories,
         );
-      }),
-    );
+      }
+
+      final filteredCategories = <String>[];
+
+      categories.forEach((key, value) {
+        final isCategoryMatching = value.any(
+          (category) => category.matches(
+            relativePath(pubspecDirPath, workspacePath),
+          ),
+        );
+
+        if (isCategoryMatching) {
+          filteredCategories.add(key);
+        }
+      });
+
+      packageMap[name] = Package(
+        name: name,
+        path: pubspecDirPath,
+        pathRelativeToWorkspace: relativePath(pubspecDirPath, workspacePath),
+        version: pubspec.version ?? Version.none,
+        publishTo: pubspec.publishTo.let(Uri.parse),
+        packageMap: packageMap,
+        dependencies: pubspec.dependencies.keys.toList(),
+        devDependencies: pubspec.devDependencies.keys.toList(),
+        dependencyOverrides: pubspec.dependencyOverrides.keys.toList(),
+        pubspec: pubspec,
+        categories: filteredCategories,
+      );
+    }
 
     return PackageMap(packageMap, logger);
   }
