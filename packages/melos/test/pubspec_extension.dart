@@ -74,7 +74,7 @@ extension PubspecExtension on Pubspec {
           screenshots?.map((screenshot) => screenshot.toJson()).toList(),
       'documentation': documentation,
       'environment':
-          environment?.map((key, value) => MapEntry(key, value?.toString())),
+          environment.map((key, value) => MapEntry(key, value?.toString())),
       'dependencies':
           dependencies.map((key, value) => MapEntry(key, value.toJson())),
       'dev_dependencies':
