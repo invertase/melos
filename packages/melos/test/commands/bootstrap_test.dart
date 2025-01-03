@@ -401,9 +401,9 @@ dependency_overrides:
           updatedPubspecOverrides: '''
 # melos_managed_dependency_overrides: a
 dependency_overrides:
+  x: any
   a:
     path: ../a
-  x: any
 ''',
         );
       });
