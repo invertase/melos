@@ -16,7 +16,7 @@ topics:
   - lerna
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ">=3.2.0 <4.0.0"
 
 executables:
   melos:
@@ -42,7 +42,7 @@ dependencies:
   prompts: ^2.0.0
   pub_semver: ^2.1.4
   pub_updater: ^0.4.0
-  pubspec_parse: ^1.3.0
+  pubspec_parse: ^1.4.0
   string_scanner: ^1.2.0
   yaml: ^3.1.2
   yaml_edit: ^2.1.1

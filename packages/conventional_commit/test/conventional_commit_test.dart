@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 import 'package:conventional_commit/conventional_commit.dart';
 import 'package:test/test.dart';
 
@@ -413,9 +412,9 @@ void main() {
       );
       // Footers should exclude the breaking change footer.
       expect(
-        commitWithBodyParsed.footers.firstWhereOrNull(
-          (element) => element.contains('BREAKING'),
-        ),
+        commitWithBodyParsed.footers
+            .where((element) => element.contains('BREAKING'))
+            .firstOrNull,
         isNull,
       );
       expect(
@@ -432,9 +431,9 @@ void main() {
           ConventionalCommit.tryParse(commitMessageWithoutBodyExample)!;
       // Header should not leak into footers.
       expect(
-        commitWithoutBodyParsed.footers.firstWhereOrNull(
-          (element) => element.contains('refactor: did something'),
-        ),
+        commitWithoutBodyParsed.footers
+            .where((element) => element.contains('refactor: did something'))
+            .firstOrNull,
         isNull,
       );
       expect(
