@@ -1,3 +1,18 @@
+## 6.3.0
+
+ - **REFACTOR**: Use the pubspec_parse package for parsing ([#794](https://github.com/invertase/melos/issues/794)). ([df0c2940](https://github.com/invertase/melos/commit/df0c29407dfcbc402eb8a2f4fff84b0e4f445e37))
+ - **FIX**: too many open files while creating a workspace ([#804](https://github.com/invertase/melos/issues/804)). ([db822814](https://github.com/invertase/melos/commit/db822814294528875f7f388d4a1ad4dec3892b07))
+ - **FIX**: failing tests due to Flutter upgrade to version 3.27. ([#812](https://github.com/invertase/melos/issues/812)). ([0d1e044b](https://github.com/invertase/melos/commit/0d1e044bacec6b746941edfc2c6098fe708e2631))
+ - **FIX**: Fixed output tests that failed on some terminals ([#799](https://github.com/invertase/melos/issues/799)). ([e074cb04](https://github.com/invertase/melos/commit/e074cb0444445bc76470fd972535f31ee968a9c8))
+ - **FIX**: Simple hosted dependencies should be inlined ([#795](https://github.com/invertase/melos/issues/795)). ([83909a7f](https://github.com/invertase/melos/commit/83909a7f6a21690a9de4124e94ea9dabeb2e9208))
+ - **FIX**: Use `/` in relative path for Windows ([#788](https://github.com/invertase/melos/issues/788)). ([7f96e02e](https://github.com/invertase/melos/commit/7f96e02ead4c9f04e477c4c4c6e3c7714a98a5df))
+ - **FIX**: Run `flutter analyze` for flutter packages ([#793](https://github.com/invertase/melos/issues/793)). ([e804822d](https://github.com/invertase/melos/commit/e804822ded17522b3a185c4f2c037b1d71afbcd5))
+ - **FIX**: Use text script rather than fixed script paths ([#789](https://github.com/invertase/melos/issues/789)). ([bc2da5fd](https://github.com/invertase/melos/commit/bc2da5fdf5cd982ecc115bc0dbe0804be1e96a86))
+ - **FEAT**: Init command ([#780](https://github.com/invertase/melos/issues/780)). ([399a0164](https://github.com/invertase/melos/commit/399a0164d70820cb372b8b60857e430808e931d7))
+ - **DOCS**: Add API Dash to list of projects using Melos ([#786](https://github.com/invertase/melos/issues/786)). ([0572dba1](https://github.com/invertase/melos/commit/0572dba1c7739120c00ceacfd1cd7b3ee421c420))
+ - **DOCS**: wrong melos action link ([#772](https://github.com/invertase/melos/issues/772)). ([7e16f26c](https://github.com/invertase/melos/commit/7e16f26c57cc149b960b7ce330672219a14d8c43))
+ - **DOCS**: Add link to the Melos GitHub action ([#771](https://github.com/invertase/melos/issues/771)). ([76f2264a](https://github.com/invertase/melos/commit/76f2264a7c8728c923484baea6352b32024e90c1))
+
 ## 6.2.0
 
  - **FIX**: Propagate error code when fail fast is enabled ([#762](https://github.com/invertase/melos/issues/762)). ([ed6243bd](https://github.com/invertase/melos/commit/ed6243bd0882c61d82a79a35c95e1e1e9e874921))
