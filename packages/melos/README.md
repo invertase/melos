@@ -34,6 +34,32 @@ bases into multi-package repositories (sometimes called
 **Melos is a tool that optimizes the workflow around managing multi-package
 repositories with git and Pub.**
 
+## Migrate to Melos 7.x.x
+
+Since the [pub workspaces](https://dart.dev/tools/pub/workspaces) feature has
+been released, Melos has been updated to rely on that instead of creating
+`pubspec_overrides.yaml` files and thus some migration is needed.
+
+The main difference is that you now have to add `resolution: workspace` to all
+of your packages' `pubspec.yaml` files and add a list of all your packages to
+the root `pubspec.yaml` file, similar to this:
+
+```yaml
+name: my_workspace
+publish_to: none
+environment:
+  sdk: ^3.6.0
+workspace:
+  - packages/helper
+  - packages/client_package
+  - packages/server_package
+dev_dependencies:
+  melos: ^7.0.0
+```
+
+> [!NOTE]
+> You have to use Dart SDK 3.6.0 or newer to use pub workspaces.
+
 ## Github Action
 
 If you're planning on using Melos in your GitHub Actions workflows, you can use
