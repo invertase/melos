@@ -14,7 +14,9 @@ import '../utils.dart';
 void main() {
   group('exec', () {
     test('supports package filters', () async {
-      final workspaceDir = await createTemporaryWorkspace();
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a', 'b', 'c'],
+      );
 
       final aDir = await createProject(
         workspaceDir,
@@ -92,7 +94,9 @@ ${'-' * terminalWidth}
       }
 
       test('get cancel on first fail when fail fast is enabled', () async {
-        final workspaceDir = await createTemporaryWorkspace();
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b', 'c'],
+        );
 
         final a = await createProject(
           workspaceDir,
@@ -154,7 +158,9 @@ ${'-' * terminalWidth}
       });
 
       test('keep running when fail fast is not enabled', () async {
-        final workspaceDir = await createTemporaryWorkspace();
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b', 'c'],
+        );
 
         final a = await createProject(
           workspaceDir,
@@ -216,7 +222,9 @@ ${'-' * terminalWidth}
 
     group('fail fast', () {
       test('print error codes correctly', () async {
-        final workspaceDir = await createTemporaryWorkspace();
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b', 'c'],
+        );
 
         await createProject(
           workspaceDir,
@@ -271,7 +279,9 @@ ${'-' * terminalWidth}
       });
 
       test('propagate error code when fail fast is enabled', () async {
-        final workspaceDir = await createTemporaryWorkspace();
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b', 'c'],
+        );
 
         await createProject(
           workspaceDir,
@@ -301,7 +311,9 @@ ${'-' * terminalWidth}
 
     group('order dependents', () {
       test('sorts execution order topologically', () async {
-        final workspaceDir = await createTemporaryWorkspace();
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b', 'c'],
+        );
 
         await createProject(
           workspaceDir,
@@ -367,7 +379,9 @@ ${'-' * terminalWidth}
       test(
         'sorts execution order topologically with cyclic dependencies',
         () async {
-          final workspaceDir = await createTemporaryWorkspace();
+          final workspaceDir = await createTemporaryWorkspace(
+            workspacePackages: ['a', 'b', 'c'],
+          );
 
           await createProject(
             workspaceDir,
@@ -434,7 +448,9 @@ ${'-' * terminalWidth}
       test(
         'sorts execution order topologically with larger cyclic dependencies',
         () async {
-          final workspaceDir = await createTemporaryWorkspace();
+          final workspaceDir = await createTemporaryWorkspace(
+            workspacePackages: ['a', 'b', 'c', 'd', 'e'],
+          );
 
           await createProject(
             workspaceDir,
@@ -521,7 +537,9 @@ ${'-' * terminalWidth}
       );
 
       test('fails fast if dependencies fail', () async {
-        final workspaceDir = await createTemporaryWorkspace();
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b', 'c'],
+        );
 
         await createProject(
           workspaceDir,
@@ -585,7 +603,9 @@ ${'-' * terminalWidth}
       });
 
       test('does not fail fast if dependencies is not run', () async {
-        final workspaceDir = await createTemporaryWorkspace();
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b', 'c'],
+        );
 
         final aDir = await createProject(
           workspaceDir,

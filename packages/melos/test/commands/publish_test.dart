@@ -76,6 +76,7 @@ void main() {
                 ),
               ),
             ),
+            workspacePackages: ['a', 'b'],
           );
 
           for (final package in ['a', 'b']) {

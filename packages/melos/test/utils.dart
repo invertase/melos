@@ -109,20 +109,29 @@ MelosWorkspaceConfig _defaultWorkspaceConfigBuilder(String path) =>
     );
 
 Future<Directory> createTemporaryWorkspace({
+  required List<String> workspacePackages,
   TestWorkspaceConfigBuilder configBuilder = _defaultWorkspaceConfigBuilder,
   bool runPubGet = false,
   bool createLockfile = false,
+  bool withExamples = false,
 }) async {
   final tempDir = createTempDir(p.join(Directory.current.path, '.dart_tool'));
   addTearDown(() => deleteEntry(tempDir));
 
   final workspacePath = tempDir;
+  final workspacePackagesPaths = workspacePackages
+      .map((name) => name.contains('packages') ? name : 'packages/$name');
 
   await createProject(
     Directory(workspacePath),
     Pubspec(
       'workspace',
       environment: defaultTestEnvironment,
+      workspace: [
+        ...workspacePackagesPaths,
+        if (withExamples)
+          ...workspacePackagesPaths.map((path) => '$path/example'),
+      ],
       devDependencies: {
         'melos': PathDependency(Directory.current.path),
       },
@@ -151,14 +160,17 @@ Future<Directory> createProject(
   Pubspec partialPubspec, {
   String? path,
   bool createLockfile = false,
+  bool inWorkspace = true,
 }) async {
-  final pubspec = partialPubspec.environment.isNotEmpty
-      ? partialPubspec
-      : partialPubspec.copyWith(
-          environment: {
+  final pubspec = partialPubspec.copyWith(
+    environment: partialPubspec.environment.isEmpty
+        ? {
             'sdk': defaultTestEnvironment['sdk'],
-          },
-        );
+          }
+        : null,
+    resolution:
+        inWorkspace && partialPubspec.name != 'workspace' ? 'workspace' : null,
+  );
 
   final projectDirectory = Directory(
     p.joinAll([
@@ -222,6 +234,8 @@ String pubspecPath(String directory) {
   return p.join(directory, 'pubspec.yaml');
 }
 
+/// Most of the time [dir] should be the root of the monorepo, after the move to
+/// pub workspaces has been done.
 PackageConfig packageConfigForPackageAt(Directory dir) {
   final source = readTextFile(packageConfigPath(dir.path));
   return PackageConfig.fromJson(json.decode(source) as Map<String, Object?>);
@@ -356,16 +370,35 @@ class VirtualWorkspaceBuilder {
     );
 
     final packageMap = _buildVirtualPackageMap(_packages, logger);
+    final rootPackage = _buildRootPackage(config, logger);
 
     return MelosWorkspace(
       name: config.name,
       path: config.path,
       config: config,
+      rootPackage: rootPackage,
       allPackages: packageMap,
       filteredPackages: packageMap,
       dependencyOverridePackages: _buildVirtualPackageMap(const [], logger),
       logger: logger,
       sdkPath: sdkPath,
+    );
+  }
+
+  Package _buildRootPackage(MelosWorkspaceConfig config, MelosLogger logger) {
+    final pubspec = Pubspec.fromJson({'name': config.name});
+    return Package(
+      pubspec: pubspec,
+      name: config.name,
+      path: config.path,
+      version: Version.none,
+      publishTo: null,
+      dependencies: [],
+      devDependencies: ['melos'],
+      dependencyOverrides: [],
+      packageMap: {},
+      pathRelativeToWorkspace: '.',
+      categories: [],
     );
   }
 
@@ -400,7 +433,7 @@ class VirtualWorkspaceBuilder {
 }
 
 final defaultTestEnvironment = {
-  'sdk': VersionConstraint.parse('>=2.12.0 <3.0.0'),
+  'sdk': VersionConstraint.parse('^3.6.0'),
 };
 
 class _VirtualPackage {
