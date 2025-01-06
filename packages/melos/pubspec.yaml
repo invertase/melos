@@ -38,7 +38,7 @@ dependencies:
   intl: any
   meta: any
   mustache_template: ^2.0.0
-  path: ^1.9.1
+  path: any
   platform: ^3.1.6
   pool: ^1.5.1
   prompts: ^2.0.0
