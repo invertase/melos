@@ -44,6 +44,15 @@ The main difference is that you now have to add `resolution: workspace` to all
 of your packages' `pubspec.yaml` files and add a list of all your packages to
 the root `pubspec.yaml` file, similar to this:
 
+Package `pubspec.yaml` file:
+```yaml
+name: my_package
+environment:
+  sdk: ^3.6.0
+resolution: workspace
+```
+
+Workspace root `pubspec.yaml` file:
 ```yaml
 name: my_workspace
 publish_to: none

@@ -7,8 +7,8 @@ description: Learn more about the `bootstrap` command in Melos.
 
 <Info>Supports all [Melos filtering](/filters) flags.</Info>
 
-This command initializes the workspace, links local packages together and
-installs remaining package dependencies.
+This command initializes the workspace and installs remaining package
+dependencies.
 
 ```bash
 melos bootstrap
@@ -16,39 +16,34 @@ melos bootstrap
 melos bs
 ```
 
-Bootstrapping has two primary functions:
+Bootstrapping has three primary functions:
 
 1. Installing all package dependencies (internally using `pub get`).
-2. Locally linking any packages together via path dependency overrides _without
-   having to edit your pubspec.yaml_.
+2. Syncing shared dependencies between packages.
+3. Running any bootstrap lifecycle scripts.
 
 ## Why is bootstrapping required?
 
-In normal projects, packages can be linked by providing a `path` within the
-`pubspec.yaml`. This works for small projects however presents a problem at
-scale. Packages cannot be published with a locally defined path, meaning once
-you're ready to publish your packages you'll need to manually update all the
-packages `pubspec.yaml` files with the versions. If your packages are also
-tightly coupled (dependencies of each other), you'll also have to manually check
-which versions should be updated. Even with a few of packages this can become a
-long and error-prone task.
-
-Melos solves this problem by overriding local files which the Dart analyzer uses
-to read packages from. If a local package exists (defined in the `melos.yaml`
-file) and a different local package has it listed as a dependency, it will be
-linked regardless of whether a version has been specified.
+After the [Pub Workspaces feature](https://dart.dev/tools/pub/workspaces) was
+introduced in Dart 3.6.0, it is no longer strictly necessary to run `melos
+bootstrap`, since all the packages are already linked together. However, there
+are still some benefits to running `melos bootstrap`, because you need to run
+`pub get` in each package to initialize the workspace, and `melos bootstrap`
+will do that for you.
 
 ### Benefits
 
-- All local packages in the repository can be interlinked by Melos to point to
-  their local directories rather than 'remote' _without pubspec.yaml
-  modifications_.
+Why would I want to use a monorepo?
+
+- All local packages in the repository can be interlinked to point to their
+  local directories rather than 'remote' _without pubspec.yaml modifications_.
   - **Example Scenario**: In a repository, package `A` depends on package `B`.
     Both packages `A` & `B` exist in the monorepo. However, if you `pub get`
     inside package `A`, `pub` will retrieve package `B` from the pub.dev
-    registry as it's unaware of `B` existing locally. However, with Melos, it's
-    aware that package `B` exists locally too, so it will generate the various
-    pub files to point to a relative path in the local repository.
+    registry as it's unaware of `B` existing locally. However, with Melos and
+    pub workspaces, it's aware that package `B` exists locally too, so it will
+    generate the various pub files to point to a relative path in the local
+    repository.
     - If you wanted to use pub you could of course define a dependency override
       in the pubspec of package `A` that sets a path for package `B` but, then
       you'd have to do this manually every time and then manually remove it
@@ -86,20 +81,19 @@ melos bootstrap --diff="main"
 
 ## Bootstrap flags
 
-- The `--no-example` flag is used to exclude flutter package's example's dependencies
-  (https://github.com/dart-lang/pub/pull/3856)
+- The `--no-example` flag is used to exclude flutter package's example's
+  dependencies (https://github.com/dart-lang/pub/pull/3856)
     - This will run `pub get` with the `--no-example` flag.
 - The `--enforce-lockfile` flag is used to enforce versions from `.lock` files.
     - Ensure .lock files exist, as failure may occur if they're not checked in.
-- The `--no-enforce-lockfile` flag is used to disregard versions from `.lock` files if
-  `enforce-lockfile` is configured in the `melos.yaml` file.
-- The `--skip-linking` flag is used to skip the local linking of workspace packages.
-- The `--offline` flag is used to only resolve dependencies from the local cache by running
-  `pub get` with the `--offline` flag.
+- The `--no-enforce-lockfile` flag is used to disregard versions from `.lock`
+  files if `enforce-lockfile` is configured in the `melos.yaml` file.
+- The `--offline` flag is used to only resolve dependencies from the local
+  cache by running `pub get` with the `--offline` flag.
 
 
-In addition to the above flags, the `melos bootstrap` command supports a few different flags that
-can be defined in your `melos.yaml` file.
+In addition to the above flags, the `melos bootstrap` command supports a few
+different configurations that can be defined in your `melos.yaml` file.
 
 
 ### Shared dependencies
