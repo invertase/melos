@@ -1,5 +1,4 @@
 name: melos
-publish_to: none
 description:
   A tool for managing Dart & Flutter repositories with multiple packages
   (monorepo). Supports automated versioning via Conventional Commits. Inspired
@@ -44,10 +43,7 @@ dependencies:
   prompts: ^2.0.0
   pub_semver: ^2.1.5
   pub_updater: ^0.5.0
-  pubspec_parse:
-    git:
-      url: https://github.com/dart-lang/tools.git
-      path: pkgs/pubspec_parse
+  pubspec_parse: ^1.5.0
   string_scanner: ^1.3.0
   yaml: ^3.1.3
   yaml_edit: ^2.2.2
