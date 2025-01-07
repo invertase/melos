@@ -1,5 +1,4 @@
 name: melos
-publish_to: none
 description:
   A tool for managing Dart & Flutter repositories with multiple packages
   (monorepo). Supports automated versioning via Conventional Commits. Inspired
