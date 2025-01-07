@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2025-01-07
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - [`conventional_commit` - `v0.7.0-dev.0`](#conventional_commit---v070-dev0)
+ - [`melos` - `v7.0.0-dev.0`](#melos---v700-dev0)
+
+Packages with other changes:
+
+ - There are no other changes in this release.
+
+---
+
+#### `conventional_commit` - `v0.7.0-dev.0`
+
+ - **BREAKING** **FEAT**: Migrate to use the Pub workspaces feature ([#816](https://github.com/invertase/melos/issues/816)). ([3602d904](https://github.com/invertase/melos/commit/3602d904fbde7f3fc7d918ab8413483efef42b20))
+
+#### `melos` - `v7.0.0-dev.0`
+
+ - **BREAKING** **FEAT**: Migrate to use the Pub workspaces feature ([#816](https://github.com/invertase/melos/issues/816)). ([3602d904](https://github.com/invertase/melos/commit/3602d904fbde7f3fc7d918ab8413483efef42b20))
+
+
 ## 2025-01-04
 
 ### Changes
