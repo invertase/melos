@@ -1,3 +1,9 @@
+## 7.0.0-dev.0
+
+> Note: This release has breaking changes.
+
+ - **BREAKING** **FEAT**: Migrate to use the Pub workspaces feature ([#816](https://github.com/invertase/melos/issues/816)). ([3602d904](https://github.com/invertase/melos/commit/3602d904fbde7f3fc7d918ab8413483efef42b20))
+
 ## 6.3.0
 
  - **REFACTOR**: Use the pubspec_parse package for parsing ([#794](https://github.com/invertase/melos/issues/794)). ([df0c2940](https://github.com/invertase/melos/commit/df0c29407dfcbc402eb8a2f4fff84b0e4f445e37))
