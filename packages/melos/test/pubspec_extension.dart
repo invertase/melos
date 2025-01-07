@@ -21,6 +21,8 @@ extension PubspecExtension on Pubspec {
     List<Screenshot>? screenshots,
     String? documentation,
     Map<String, VersionConstraint?>? environment,
+    List<String>? workspace,
+    String? resolution,
     Map<String, Dependency>? dependencies,
     Map<String, Dependency>? devDependencies,
     Map<String, Dependency>? dependencyOverrides,
@@ -40,6 +42,8 @@ extension PubspecExtension on Pubspec {
       screenshots: screenshots ?? this.screenshots,
       documentation: documentation ?? this.documentation,
       environment: environment ?? this.environment,
+      workspace: workspace ?? this.workspace,
+      resolution: resolution ?? this.resolution,
       dependencies: dependencies ?? this.dependencies,
       devDependencies: devDependencies ?? this.devDependencies,
       dependencyOverrides: dependencyOverrides ?? this.dependencyOverrides,
@@ -75,6 +79,8 @@ extension PubspecExtension on Pubspec {
       'documentation': documentation,
       'environment':
           environment.map((key, value) => MapEntry(key, value?.toString())),
+      'workspace': workspace,
+      'resolution': resolution,
       'dependencies':
           dependencies.map((key, value) => MapEntry(key, value.toJson())),
       'dev_dependencies':

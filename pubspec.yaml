@@ -1,7 +1,10 @@
 name: melos_workspace
+workspace:
+  - packages/conventional_commit
+  - packages/melos
 
 environment:
-  sdk: ">=3.2.0 <4.0.0"
+  sdk: ">=3.6.0 <4.0.0"
 
 # This allows us to use melos on itself during development.
 executables:
@@ -10,5 +13,5 @@ executables:
 dev_dependencies:
   melos:
     path: packages/melos
-  path: ^1.9.0
-  yaml: ^3.1.2
+  path: ^1.9.1
+  yaml: ^3.1.3

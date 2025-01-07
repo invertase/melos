@@ -6,11 +6,10 @@ import 'package:melos/src/package.dart';
 import 'package:melos/src/workspace_configs.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
 import '../matchers.dart';
-import '../mock_fs.dart';
-import '../mock_workspace_fs.dart';
 import '../utils.dart';
 
 void main() {
@@ -22,14 +21,15 @@ void main() {
     group('with no format option', () {
       test(
         'logs public packages by default',
-        withMockFs(() async {
-          final workspaceDir = createMockWorkspaceFs(
-            packages: [
-              MockPackageFs(name: 'a', version: Version.none),
-              MockPackageFs(name: 'b', version: Version.none),
-            ],
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            workspacePackages: ['a', 'b'],
           );
 
+          await createProject(workspaceDir, Pubspec('a'));
+          await createProject(workspaceDir, Pubspec('b'));
+
+          final logger = TestLogger();
           final config =
               await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
           final melos = Melos(logger: logger, config: config);
@@ -45,26 +45,21 @@ b
 ''',
             ),
           );
-        }),
+        },
       );
 
       test(
         'logs private packages by default',
-        withMockFs(() async {
-          final workspaceDir = createMockWorkspaceFs(
-            packages: [
-              MockPackageFs(name: 'a', version: Version.none),
-              // b has no version, so it is considered private
-              MockPackageFs(name: 'b'),
-              // c has a version but publish_to:none so is private
-              MockPackageFs(
-                name: 'c',
-                version: Version.none,
-                publishToNone: true,
-              ),
-            ],
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            workspacePackages: ['a', 'b', 'c'],
           );
 
+          await createProject(workspaceDir, Pubspec('a'));
+          await createProject(workspaceDir, Pubspec('b'));
+          await createProject(workspaceDir, Pubspec('c', publishTo: 'none'));
+
+          final logger = TestLogger();
           final config =
               await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
           final melos = Melos(logger: logger, config: config);
@@ -81,19 +76,19 @@ c
 ''',
             ),
           );
-        }),
+        },
       );
 
       test(
         'applies package filters',
-        withMockFs(() async {
-          final workspaceDir = createMockWorkspaceFs(
-            packages: [
-              MockPackageFs(name: 'a'),
-              MockPackageFs(name: 'b'),
-              MockPackageFs(name: 'c'),
-            ],
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            workspacePackages: ['a', 'b', 'c'],
           );
+
+          await createProject(workspaceDir, Pubspec('a'));
+          await createProject(workspaceDir, Pubspec('b'));
+          await createProject(workspaceDir, Pubspec('c'));
 
           final config =
               await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -117,19 +112,25 @@ c
 ''',
             ),
           );
-        }),
+        },
       );
 
       test(
         'supports long flag for extra information',
-        withMockFs(() async {
-          final workspaceDir = createMockWorkspaceFs(
-            packages: [
-              MockPackageFs(name: 'a', version: Version(1, 2, 3)),
-              MockPackageFs(name: 'b', dependencies: ['a']),
-              MockPackageFs(name: 'long_name'),
-            ],
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            workspacePackages: ['a', 'b', 'long_name'],
           );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 2, 3)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec('b', dependencies: {'a': HostedDependency()}),
+          );
+          await createProject(workspaceDir, Pubspec('long_name'));
 
           final config =
               await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -149,21 +150,21 @@ long_name 0.0.0 packages/long_name PRIVATE
 ''',
             ),
           );
-        }),
+        },
       );
     });
 
     group('parsable', () {
       test(
         'relativePaths flag prints relative paths only if true',
-        withMockFs(() async {
-          final workspaceDir = createMockWorkspaceFs(
-            packages: [
-              MockPackageFs(name: 'a'),
-              MockPackageFs(name: 'b'),
-              MockPackageFs(name: 'c'),
-            ],
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            workspacePackages: ['a', 'b', 'c'],
           );
+
+          await createProject(workspaceDir, Pubspec('a'));
+          await createProject(workspaceDir, Pubspec('b'));
+          await createProject(workspaceDir, Pubspec('c'));
 
           final config =
               await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -183,22 +184,24 @@ packages/c
 ''',
             ),
           );
-        }),
+        },
       );
 
       test(
         'full package path is printed by default if relativePaths is false or '
         'not set',
-        withMockFs(() async {
-          final packages = [
-            MockPackageFs(name: 'a'),
-            MockPackageFs(name: 'b'),
-            MockPackageFs(name: 'c'),
-          ];
-          final workspaceDir = createMockWorkspaceFs(
-            packages: packages,
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            workspacePackages: ['a', 'b', 'c'],
           );
-          final packagePaths = packages
+
+          final packageDirs = [
+            await createProject(workspaceDir, Pubspec('a')),
+            await createProject(workspaceDir, Pubspec('b')),
+            await createProject(workspaceDir, Pubspec('c')),
+          ];
+
+          final packagePaths = packageDirs
               .map((package) => p.join(workspaceDir.path, package.path))
               .map(p.canonicalize);
 
@@ -217,26 +220,29 @@ ${packagePaths.join('\n')}
 ''',
             ),
           );
-        }),
+        },
       );
     });
 
     group('graph', () {
       test(
         'reports all dependencies in workspace',
-        withMockFs(() async {
-          final workspaceDir = createMockWorkspaceFs(
-            packages: [
-              MockPackageFs(name: 'a'),
-              MockPackageFs(name: 'b'),
-              MockPackageFs(name: 'c'),
-              MockPackageFs(
-                name: 'd',
-                dependencies: ['a'],
-                devDependencies: ['b'],
-                dependencyOverrides: ['c'],
-              ),
-            ],
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            workspacePackages: ['a', 'b', 'c', 'd'],
+          );
+
+          await createProject(workspaceDir, Pubspec('a'));
+          await createProject(workspaceDir, Pubspec('b'));
+          await createProject(workspaceDir, Pubspec('c'));
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'd',
+              dependencies: {'a': HostedDependency()},
+              devDependencies: {'b': HostedDependency()},
+              dependencyOverrides: {'c': HostedDependency()},
+            ),
           );
 
           final config =
@@ -261,26 +267,29 @@ ${packagePaths.join('\n')}
 }
 ''',
           );
-        }),
+        },
       );
     });
 
     group('json', () {
       test(
         'reports all dependencies in workspace',
-        withMockFs(() async {
-          final workspaceDir = createMockWorkspaceFs(
-            packages: [
-              MockPackageFs(name: 'a'),
-              MockPackageFs(name: 'b'),
-              MockPackageFs(name: 'c'),
-              MockPackageFs(
-                name: 'd',
-                dependencies: ['a'],
-                devDependencies: ['b'],
-                dependencyOverrides: ['c'],
-              ),
-            ],
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            workspacePackages: ['a', 'b', 'c', 'd'],
+          );
+
+          await createProject(workspaceDir, Pubspec('a'));
+          await createProject(workspaceDir, Pubspec('b'));
+          await createProject(workspaceDir, Pubspec('c'));
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'd',
+              dependencies: {'a': HostedDependency()},
+              devDependencies: {'b': HostedDependency()},
+              dependencyOverrides: {'c': HostedDependency()},
+            ),
           );
 
           final config =
@@ -324,26 +333,29 @@ ${packagePaths.join('\n')}
               },
             ],
           );
-        }),
+        },
       );
     });
 
     group('gviz', () {
       test(
         'reports all dependencies in workspace',
-        withMockFs(() async {
-          final workspaceDir = createMockWorkspaceFs(
-            packages: [
-              MockPackageFs(name: 'a'),
-              MockPackageFs(name: 'b'),
-              MockPackageFs(name: 'c'),
-              MockPackageFs(
-                name: 'd',
-                dependencies: ['a'],
-                devDependencies: ['b'],
-                dependencyOverrides: ['c'],
-              ),
-            ],
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            workspacePackages: ['a', 'b', 'c', 'd'],
+          );
+
+          await createProject(workspaceDir, Pubspec('a'));
+          await createProject(workspaceDir, Pubspec('b'));
+          await createProject(workspaceDir, Pubspec('c'));
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'd',
+              dependencies: {'a': HostedDependency()},
+              devDependencies: {'b': HostedDependency()},
+              dependencyOverrides: {'c': HostedDependency()},
+            ),
           );
 
           final config =
@@ -376,7 +388,7 @@ digraph packages {
 }
 ''',
           );
-        }),
+        },
       );
     });
   });

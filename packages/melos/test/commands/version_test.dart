@@ -36,6 +36,7 @@ void main() {
           );
       final workspaceDir = await createTemporaryWorkspace(
         configBuilder: workspaceConfig,
+        workspacePackages: ['a', 'b'],
       );
       await createProject(
         workspaceDir,

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:melos/melos.dart';
 import 'package:melos/src/commands/runner.dart';
 import 'package:melos/src/common/environment_variable_key.dart';
@@ -22,7 +20,6 @@ void main() {
       'supports passing package filter options to "melos exec" scripts',
       () async {
         final workspaceDir = await createTemporaryWorkspace(
-          runPubGet: true,
           configBuilder: (path) => MelosWorkspaceConfig(
             path: path,
             name: 'test_package',
@@ -39,18 +36,14 @@ void main() {
               ),
             }),
           ),
+          workspacePackages: ['a', 'b'],
         );
 
-        final aDir = await createProject(
-          workspaceDir,
-          Pubspec('a'),
-        );
+        final aDir = await createProject(workspaceDir, Pubspec('a'));
         writeTextFile(p.join(aDir.path, 'log.txt'), '');
 
-        await createProject(
-          workspaceDir,
-          Pubspec('b'),
-        );
+        await createProject(workspaceDir, Pubspec('b'));
+        await runPubGet(workspaceDir.path);
 
         final logger = TestLogger();
         final config =
@@ -99,7 +92,6 @@ melos run test_script
       withMockPlatform(
         () async {
           final workspaceDir = await createTemporaryWorkspace(
-            runPubGet: true,
             configBuilder: (path) => MelosWorkspaceConfig(
               path: path,
               name: 'test_package',
@@ -116,24 +108,15 @@ melos run test_script
                 ),
               }),
             ),
+            workspacePackages: ['a', 'b', 'c'],
           );
 
-          final aDir = await createProject(
-            workspaceDir,
-            Pubspec('a'),
-          );
+          final aDir = await createProject(workspaceDir, Pubspec('a'));
           writeTextFile(p.join(aDir.path, 'log.txt'), '');
-
-          await createProject(
-            workspaceDir,
-            Pubspec('b'),
-          );
-
-          final cDir = await createProject(
-            workspaceDir,
-            Pubspec('c'),
-          );
+          await createProject(workspaceDir, Pubspec('b'));
+          final cDir = await createProject(workspaceDir, Pubspec('c'));
           writeTextFile(p.join(cDir.path, 'log.txt'), '');
+          await runPubGet(workspaceDir.path);
 
           final logger = TestLogger();
           final config =
@@ -181,7 +164,6 @@ melos run test_script
 
     test('supports passing additional arguments to scripts', () async {
       final workspaceDir = await createTemporaryWorkspace(
-        runPubGet: true,
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
           name: 'test_package',
@@ -195,6 +177,7 @@ melos run test_script
             ),
           }),
         ),
+        workspacePackages: [],
       );
 
       final logger = TestLogger();
@@ -234,7 +217,6 @@ melos run hello
 
     test('supports passing additional arguments to scripts (exec)', () async {
       final workspaceDir = await createTemporaryWorkspace(
-        runPubGet: true,
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
           name: 'test_package',
@@ -249,9 +231,11 @@ melos run hello
             ),
           }),
         ),
+        workspacePackages: ['a'],
       );
 
       await createProject(workspaceDir, Pubspec('a'));
+      await runPubGet(workspaceDir.path);
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -302,7 +286,6 @@ melos run hello
 
     test('supports running "melos exec" script with "exec" options', () async {
       final workspaceDir = await createTemporaryWorkspace(
-        runPubGet: true,
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
           name: 'test_package',
@@ -319,12 +302,11 @@ melos run hello
             ),
           }),
         ),
+        workspacePackages: ['a'],
       );
 
-      await createProject(
-        workspaceDir,
-        Pubspec('a'),
-      );
+      await createProject(workspaceDir, Pubspec('a'));
+      await runPubGet(workspaceDir.path);
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -368,7 +350,6 @@ melos run test_script
     test('throws an error if neither run, steps, nor exec are provided',
         () async {
       final workspaceDir = await createTemporaryWorkspace(
-        runPubGet: true,
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
           name: 'test_package',
@@ -381,12 +362,11 @@ melos run test_script
             ),
           }),
         ),
+        workspacePackages: ['a'],
       );
 
-      await createProject(
-        workspaceDir,
-        Pubspec('a'),
-      );
+      await createProject(workspaceDir, Pubspec('a'));
+      await runPubGet(workspaceDir.path);
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -402,7 +382,6 @@ melos run test_script
         'throws an error if neither run or steps are provided, and exec '
         'are options', () async {
       final workspaceDir = await createTemporaryWorkspace(
-        runPubGet: true,
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
           name: 'test_package',
@@ -416,12 +395,11 @@ melos run test_script
             ),
           }),
         ),
+        workspacePackages: ['a'],
       );
 
-      await createProject(
-        workspaceDir,
-        Pubspec('a'),
-      );
+      await createProject(workspaceDir, Pubspec('a'));
+      await runPubGet(workspaceDir.path);
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -435,17 +413,14 @@ melos run test_script
   });
 
   group('multiple scripts', () {
-    late Directory aDir;
-
     test(
       '''
 Verify that multiple script steps are executed sequentially in a persistent 
 shell. When the script changes directory to "packages" and runs "ls -la", 
-it should list the contents including the package named "this is package A".
+it should list the contents including the package named "this_is_package_a".
           ''',
       () async {
         final workspaceDir = await createTemporaryWorkspace(
-          runPubGet: true,
           configBuilder: (path) => MelosWorkspaceConfig(
             path: path,
             name: 'test_package',
@@ -459,12 +434,11 @@ it should list the contents including the package named "this is package A".
               ),
             }),
           ),
+          workspacePackages: ['this_is_package_a'],
         );
 
-        await createProject(
-          workspaceDir,
-          Pubspec('this is package A'),
-        );
+        await createProject(workspaceDir, Pubspec('this_is_package_a'));
+        await runPubGet(workspaceDir.path);
 
         final logger = TestLogger();
         final config =
@@ -478,7 +452,7 @@ it should list the contents including the package named "this is package A".
 
         expect(
           logger.output.normalizeNewLines(),
-          contains('this is package A'),
+          contains('this_is_package_a'),
         );
       },
       timeout: const Timeout(Duration(minutes: 1)),
@@ -488,7 +462,6 @@ it should list the contents including the package named "this is package A".
         'verifies that a melos script can successfully call another '
         'script as a step and execute commands', () async {
       final workspaceDir = await createTemporaryWorkspace(
-        runPubGet: true,
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
           name: 'test_package',
@@ -506,12 +479,11 @@ it should list the contents including the package named "this is package A".
             ),
           }),
         ),
+        workspacePackages: ['a'],
       );
 
-      await createProject(
-        workspaceDir,
-        Pubspec('a'),
-      );
+      await createProject(workspaceDir, Pubspec('a'));
+      await runPubGet(workspaceDir.path);
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -551,7 +523,6 @@ SUCCESS
         'throws an error if a script defined with steps also includes exec '
         'options', () async {
       final workspaceDir = await createTemporaryWorkspace(
-        runPubGet: true,
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
           name: 'test_package',
@@ -572,12 +543,11 @@ SUCCESS
             ),
           }),
         ),
+        workspacePackages: ['a'],
       );
 
-      await createProject(
-        workspaceDir,
-        Pubspec('a'),
-      );
+      await createProject(workspaceDir, Pubspec('a'));
+      await runPubGet(workspaceDir.path);
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -597,7 +567,6 @@ SUCCESS
         'steps, and ensures all commands in those steps are executed '
         'successfully', () async {
       final workspaceDir = await createTemporaryWorkspace(
-        runPubGet: true,
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
           name: 'test_package',
@@ -615,12 +584,11 @@ SUCCESS
             ),
           }),
         ),
+        workspacePackages: ['a'],
       );
 
-      await createProject(
-        workspaceDir,
-        Pubspec('a'),
-      );
+      await createProject(workspaceDir, Pubspec('a'));
+      await runPubGet(workspaceDir.path);
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -660,7 +628,6 @@ SUCCESS
         'melos commands, and ensures the script is successfully executed',
         () async {
       final workspaceDir = await createTemporaryWorkspace(
-        runPubGet: true,
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
           name: 'test_package',
@@ -674,22 +641,13 @@ SUCCESS
             ),
           }),
         ),
+        workspacePackages: ['a', 'b', 'c'],
       );
 
-      aDir = await createProject(
-        workspaceDir,
-        Pubspec('a'),
-      );
-
-      await createProject(
-        workspaceDir,
-        Pubspec('b'),
-      );
-
-      await createProject(
-        workspaceDir,
-        Pubspec('c'),
-      );
+      final aDir = await createProject(workspaceDir, Pubspec('a'));
+      await createProject(workspaceDir, Pubspec('b'));
+      await createProject(workspaceDir, Pubspec('c'));
+      await runPubGet(workspaceDir.path);
 
       writeTextFile(
         p.join(aDir.path, 'main.dart'),
@@ -760,7 +718,6 @@ SUCCESS
         'a script with a name equal to a melos command,  and ensures the '
         'script group successfully runs instead of the command', () async {
       final workspaceDir = await createTemporaryWorkspace(
-        runPubGet: true,
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
           name: 'test_package',
@@ -778,22 +735,13 @@ SUCCESS
             ),
           }),
         ),
+        workspacePackages: ['a', 'b', 'c'],
       );
 
-      aDir = await createProject(
-        workspaceDir,
-        Pubspec('a'),
-      );
-
-      await createProject(
-        workspaceDir,
-        Pubspec('b'),
-      );
-
-      await createProject(
-        workspaceDir,
-        Pubspec('c'),
-      );
+      await createProject(workspaceDir, Pubspec('a'));
+      await createProject(workspaceDir, Pubspec('b'));
+      await createProject(workspaceDir, Pubspec('c'));
+      await runPubGet(workspaceDir.path);
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -834,7 +782,6 @@ SUCCESS
         'melos commands with flags, and ensures the script is successfully '
         'executed', () async {
       final workspaceDir = await createTemporaryWorkspace(
-        runPubGet: true,
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
           name: 'test_package',
@@ -848,22 +795,13 @@ SUCCESS
             ),
           }),
         ),
+        workspacePackages: ['a', 'b', 'c'],
       );
 
-      aDir = await createProject(
-        workspaceDir,
-        Pubspec('a'),
-      );
-
-      await createProject(
-        workspaceDir,
-        Pubspec('b'),
-      );
-
-      await createProject(
-        workspaceDir,
-        Pubspec('c'),
-      );
+      final aDir = await createProject(workspaceDir, Pubspec('a'));
+      await createProject(workspaceDir, Pubspec('b'));
+      await createProject(workspaceDir, Pubspec('c'));
+      await runPubGet(workspaceDir.path);
 
       writeTextFile(
         p.join(aDir.path, 'main.dart'),
@@ -934,7 +872,6 @@ SUCCESS
         'calls itself through another script, leading to a recursive call',
         () async {
       final workspaceDir = await createTemporaryWorkspace(
-        runPubGet: true,
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
           name: 'test_package',
@@ -952,12 +889,11 @@ SUCCESS
             ),
           }),
         ),
+        workspacePackages: ['a'],
       );
 
-      await createProject(
-        workspaceDir,
-        Pubspec('a'),
-      );
+      await createProject(workspaceDir, Pubspec('a'));
+      await runPubGet(workspaceDir.path);
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);

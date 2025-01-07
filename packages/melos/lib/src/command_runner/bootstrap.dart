@@ -19,11 +19,6 @@ class BootstrapCommand extends MelosCommand {
           'lockfile versions.',
     );
     argParser.addFlag(
-      'skip-linking',
-      negatable: false,
-      help: 'Skips locally linking workspace packages.',
-    );
-    argParser.addFlag(
       'offline',
       negatable: false,
       help: 'Run pub get with --offline to resolve dependencies from local '
@@ -50,7 +45,6 @@ class BootstrapCommand extends MelosCommand {
       packageFilters: parsePackageFilters(config.path),
       enforceLockfile: argResults?['enforce-lockfile'] as bool?,
       noExample: argResults?['no-example'] as bool,
-      skipLinking: argResults?['skip-linking'] as bool,
       offline: argResults?['offline'] as bool,
     );
   }

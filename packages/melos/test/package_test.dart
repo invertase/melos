@@ -11,8 +11,6 @@ import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
 import 'mock_env.dart';
-import 'mock_fs.dart';
-import 'mock_workspace_fs.dart';
 import 'utils.dart';
 
 const pubPackageJson = '''
@@ -61,25 +59,24 @@ void main() {
     late MelosWorkspace workspace;
 
     setUp(() async {
-      IOOverrides.global = MockFs();
+      final workspaceDir =
+          await createTemporaryWorkspace(workspacePackages: ['melos']);
 
-      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
-        createMockWorkspaceFs(
-          packages: [
-            MockPackageFs(
-              name: 'melos',
-              version: Version(0, 0, 0),
-            ),
-          ],
-        ),
+      await createProject(
+        workspaceDir,
+        Pubspec('melos', version: Version(0, 0, 0)),
       );
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final logger = TestLogger();
+      final melos = Melos(logger: logger, config: config);
+      await melos.bootstrap();
+
       workspace = await MelosWorkspace.fromConfig(
         config,
-        logger: TestLogger().toMelosLogger(),
+        logger: logger.toMelosLogger(),
       );
     });
-
-    tearDown(() => IOOverrides.global = null);
 
     group('When requests published packages', () {
       final pubCredentialStoreMock = PubCredentialStore([]);

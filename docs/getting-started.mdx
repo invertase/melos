@@ -8,6 +8,12 @@ description: Learn how to start using Melos in your project
 Melos requires a few one-off steps to be completed before you can start using
 it.
 
+## Pub Workspaces
+
+First start by reading the short Pub Workspaces guide for how to get your
+monorepo ready to be used with Melos and Pub Workspaces, the guide can be
+found on the [Dart website](https://dart.dev/tools/pub/workspaces).
+
 ## Installation
 
 Install Melos as a
@@ -59,10 +65,17 @@ now:
 
 ```yaml
 name: my_project
-
+publish_to: none
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: ^3.6.0
+workspace:
+  - packages/helper
+  - packages/client_package
+  - packages/server_package
 ```
+
+Where `packages/helper`, `packages/client_package` and `packages/server_package`
+are the paths to the packages in your workspace.
 
 The corresponding `pubspec.lock` file should also be committed. Make sure to
 exclude it from the `.gitignore` file.
@@ -71,6 +84,18 @@ Add Melos as a development dependency by running the following command:
 
 ```bash
 dart pub add melos --dev
+```
+
+### Configure your packages
+
+Next, in all your packages `pubspec.yaml` files, add the
+`resolution: workspace` field:
+
+```yaml
+name: my_package
+resolution: workspace
+
+...
 ```
 
 ### Configure the workspace
@@ -90,43 +115,23 @@ The `packages` list should contain paths to the individual packages within your
 project. Each path can be defined using the
 [glob](https://docs.python.org/3/library/glob.html) pattern expansion format.
 
-Melos generates `pubspec_overrides.yaml` files to link local packages for
-development. Typically these files should be ignored by git. To ignore these
-files, add the following to your `.gitignore` file:
-
-```
-pubspec_overrides.yaml
-```
-
 ## Bootstrapping
 
-Once installed & setup, Melos needs to be bootstrapped. Bootstrapping has 2
-primary roles:
+Once installed & setup, Melos needs to be bootstrapped. Bootstrapping has
+three primary functions:
 
 1. Installing all package dependencies (internally using `pub get`).
-2. Locally linking any packages together.
+2. Syncing shared dependencies between packages.
+3. Running any bootstrap lifecycle scripts.
 
-Bootstrap your project by running the following command: 
+Bootstrap your project by running the following command:
 
 ```bash
 melos bootstrap
 ```
 
-### Why do I need to bootstrap?
-
-In normal projects, packages can be linked by providing a `path` within the
-`pubspec.yaml`. This works for small projects however presents a problem at
-scale. Packages cannot be published with a locally defined path, meaning once
-you're ready to publish your packages you'll need to manually update all the
-packages `pubspec.yaml` files with the versions. If your packages are also
-tightly coupled (dependencies of each other), you'll also have to manually check
-which versions should be updated. Even with a few packages this can become a
-long and error-prone task.
-
-Melos solves this problem by overriding local files which the Dart analyzer uses
-to read packages from. If a local package exists (defined in the `melos.yaml`
-file) and a different local package has it listed as a dependency, it will be
-linked regardless of whether a version has been specified.
+If you wonder why bootrapping is needed you can read more about it in the
+[Bootstrap section](/commands/bootstrap).
 
 ## Next steps
 
@@ -146,15 +151,16 @@ packages:
   - packages/**
 
 scripts:
-  analyze:
-    exec: dart analyze .
+  generate:
+    run: melos exec -c 1 --depends-on build_runner -- dart run build_runner build
 ```
 
-Then execute the command by running `melos run analyze`.
+Then execute the command by running `melos generate`.
 
 If you're looking for some inspiration as to what scripts can help with, check
 out the
-[FlutterFire repository](https://github.com/firebase/flutterfire/blob/master/melos.yaml).
+[FlutterFire repository](https://github.com/firebase/flutterfire/blob/main/melos.yaml)
+or the [Flame repository](https://github.com/flame-engine/flame/blob/main/melos.yaml).
 
 If you are using VS Code, there is an [extension](/ide-support#vs-code)
 available, to integrate Melos with VS Code.

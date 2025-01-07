@@ -23,7 +23,9 @@ void main() {
     late Directory aDir;
 
     setUp(() async {
-      workspaceDir = await createTemporaryWorkspace();
+      workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a', 'b', 'c'],
+      );
 
       aDir = await createProject(
         workspaceDir,
@@ -319,6 +321,7 @@ $ melos format
               ),
             ),
           ),
+          workspacePackages: ['a'],
         );
 
         final aDir = await createProject(
@@ -373,6 +376,7 @@ $ melos format
               ),
             ),
           ),
+          workspacePackages: ['a'],
         );
 
         final aDir = await createProject(

@@ -19,7 +19,9 @@ void main() {
     late Directory aDir;
 
     setUp(() async {
-      workspaceDir = await createTemporaryWorkspace();
+      workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a', 'b', 'c'],
+      );
 
       aDir = await createProject(
         workspaceDir,
@@ -277,7 +279,9 @@ ${'-' * terminalWidth}
     });
 
     test('should run analysis using flutter & dart', () async {
-      final workspaceDir = await createTemporaryWorkspace();
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a', 'b'],
+      );
 
       await createProject(
         workspaceDir,
@@ -321,7 +325,9 @@ ${'-' * terminalWidth}
     });
 
     test('should run analysis using flutter', () async {
-      final workspaceDir = await createTemporaryWorkspace();
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+      );
 
       await createProject(
         workspaceDir,
@@ -348,7 +354,9 @@ ${'-' * terminalWidth}
     });
 
     test('should run analysis using dart', () async {
-      final workspaceDir = await createTemporaryWorkspace();
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+      );
       await createProject(
         workspaceDir,
         Pubspec('a'),

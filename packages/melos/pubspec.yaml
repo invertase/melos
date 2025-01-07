@@ -1,4 +1,5 @@
 name: melos
+publish_to: none
 description:
   A tool for managing Dart & Flutter repositories with multiple packages
   (monorepo). Supports automated versioning via Conventional Commits. Inspired
@@ -7,6 +8,7 @@ version: 6.3.0
 homepage: https://melos.invertase.dev/~melos-latest
 repository: https://github.com/invertase/melos/tree/main/packages/melos
 issue_tracker: https://github.com/invertase/melos/issues
+resolution: workspace
 
 topics:
   - tool
@@ -16,37 +18,40 @@ topics:
   - lerna
 
 environment:
-  sdk: ">=3.2.0 <4.0.0"
+  sdk: ^3.6.0
 
 executables:
   melos:
 
 dependencies:
   ansi_styles: ^0.3.2+1
-  args: ^2.4.2
+  args: ^2.6.0
   async: ^2.11.0
   cli_launcher: ^0.3.1
-  cli_util: ^0.4.1
-  collection: ^1.18.0
+  cli_util: ^0.4.2
+  collection: any
   conventional_commit: ^0.6.0+1
-  file: ^7.0.0
+  file: ^7.0.1
   glob: ^2.1.2
-  graphs: ^2.3.1
-  http: ^1.1.0
-  intl: ^0.19.0
-  meta: ^1.10.0
+  graphs: ^2.3.2
+  http: ^1.2.2
+  intl: any
+  meta: any
   mustache_template: ^2.0.0
-  path: ^1.8.3
-  platform: ^3.1.4
+  path: any
+  platform: ^3.1.6
   pool: ^1.5.1
   prompts: ^2.0.0
-  pub_semver: ^2.1.4
-  pub_updater: ^0.4.0
-  pubspec_parse: ^1.4.0
-  string_scanner: ^1.2.0
-  yaml: ^3.1.2
-  yaml_edit: ^2.1.1
+  pub_semver: ^2.1.5
+  pub_updater: ^0.5.0
+  pubspec_parse:
+    git:
+      url: https://github.com/dart-lang/tools.git
+      path: pkgs/pubspec_parse
+  string_scanner: ^1.3.0
+  yaml: ^3.1.3
+  yaml_edit: ^2.2.2
 
 dev_dependencies:
-  mockito: ^5.4.2
-  test: ^1.24.9
+  mockito: ^5.4.5
+  test: any

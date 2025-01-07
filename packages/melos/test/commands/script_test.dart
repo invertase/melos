@@ -22,6 +22,7 @@ void main() {
             'test_script3': Script(name: 'test_script3', run: ''),
           }),
         ),
+        workspacePackages: [],
       );
 
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -48,6 +49,7 @@ void main() {
             'test_script3': Script(name: 'test_script3', run: ''),
           }),
         ),
+        workspacePackages: [],
       );
 
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -68,6 +70,7 @@ void main() {
             'clean': Script(name: 'clean', run: ''),
           }),
         ),
+        workspacePackages: [],
       );
 
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
