@@ -11,6 +11,27 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 Packages with breaking changes:
 
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v7.0.0-dev.1`](#melos---v700-dev1)
+
+---
+
+#### `melos` - `v7.0.0-dev.1`
+
+ - **FIX**: Only run pub get in workspace root ([#822](https://github.com/invertase/melos/issues/822)). ([abb1e539](https://github.com/invertase/melos/commit/abb1e539fc7d036d786a5740317080f5d70f63b9))
+
+
+## 2025-01-07
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
  - [`melos` - `v7.0.0-dev.0`](#melos---v700-dev0)
 
 Packages with other changes:
