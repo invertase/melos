@@ -15,6 +15,27 @@ Packages with breaking changes:
 
 Packages with other changes:
 
+ - [`melos` - `v7.0.0-dev.2`](#melos---v700-dev2)
+
+---
+
+#### `melos` - `v7.0.0-dev.2`
+
+ - Relaxing file and platform dependency constraints
+
+
+## 2025-01-07
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
  - [`melos` - `v7.0.0-dev.1`](#melos---v700-dev1)
 
 ---
