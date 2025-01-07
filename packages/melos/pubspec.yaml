@@ -30,7 +30,7 @@ dependencies:
   cli_util: ^0.4.2
   collection: any
   conventional_commit: ^0.6.0+1
-  file: ^7.0.1
+  file: ^7.0.0
   glob: ^2.1.2
   graphs: ^2.3.2
   http: ^1.2.2
@@ -38,7 +38,7 @@ dependencies:
   meta: any
   mustache_template: ^2.0.0
   path: any
-  platform: ^3.1.6
+  platform: ^3.1.5
   pool: ^1.5.1
   prompts: ^2.0.0
   pub_semver: ^2.1.5
