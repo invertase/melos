@@ -27,9 +27,9 @@ Bootstrapping has three primary functions:
 After the [Pub Workspaces feature](https://dart.dev/tools/pub/workspaces) was
 introduced in Dart 3.6.0, it is no longer strictly necessary to run `melos
 bootstrap`, since all the packages are already linked together. However, there
-are still some benefits to running `melos bootstrap`, because you need to run
-`pub get` in each package to initialize the workspace, and `melos bootstrap`
-will do that for you.
+are still some benefits to running `melos bootstrap`, if you for example want
+to set up shared dependencies or attaching your own setup scripts to the
+bootstrap hooks.
 
 ### Benefits
 
