@@ -60,7 +60,7 @@ mixin _BootstrapMixin on _CleanMixin {
           }
 
           logger.log(
-            'Running "$pubCommandForLogging" in workspace packages...',
+            'Running "$pubCommandForLogging" in workspace...',
           );
 
           await _runPubGetForWorkspace(
@@ -107,23 +107,6 @@ mixin _BootstrapMixin on _CleanMixin {
       runOffline: runOffline,
       enforceLockfile: enforceLockfile,
     );
-
-    final filteredPackages = workspace.filteredPackages.values;
-    await Stream.fromIterable(filteredPackages).parallel(
-      (package) async {
-        await runPubGetForPackage(
-          workspace,
-          package,
-          noExample: noExample,
-          runOffline: runOffline,
-          enforceLockfile: enforceLockfile,
-        );
-
-        _logPackagePubGetSuccess(package);
-      },
-      parallelism:
-          workspace.config.commands.bootstrap.runPubGetInParallel ? null : 1,
-    ).drain<void>();
   }
 
   @visibleForTesting
@@ -308,12 +291,6 @@ mixin _BootstrapMixin on _CleanMixin {
     }
 
     return dependenciesToUpdate.length;
-  }
-
-  void _logPackagePubGetSuccess(Package package) {
-    logger.child(packageNameStyle(package.name), prefix: '$checkLabel ').child(
-          packagePathStyle(printablePath(package.pathRelativeToWorkspace)),
-        );
   }
 
   void _logBootstrapException(
