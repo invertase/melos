@@ -1,3 +1,7 @@
+## 7.0.0-dev.2
+
+ - Relaxing file and platform dependency constraints
+
 ## 7.0.0-dev.1
 
  - **FIX**: Only run pub get in workspace root ([#822](https://github.com/invertase/melos/issues/822)). ([abb1e539](https://github.com/invertase/melos/commit/abb1e539fc7d036d786a5740317080f5d70f63b9))
