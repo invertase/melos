@@ -21,7 +21,7 @@ class EnvironmentVariableKey {
 
   /// This user-defined environment has a path to the Dart/Flutter SDK to use.
   /// This environment variable has precedence over the `sdkPath` option in
-  /// `melos.yaml`, but is overridden by the command line option `--sdk-path`.
+  /// `pubspec.yaml`, but is overridden by the command line option `--sdk-path`.
   static const String melosSdkPath = 'MELOS_SDK_PATH';
 
   static const String melosTerminalWidth = 'MELOS_TERMINAL_WIDTH';

@@ -4,7 +4,7 @@ import 'package:meta/meta.dart';
 import '../../melos.dart';
 import '../common/validation.dart';
 import '../lifecycle_hooks/version.dart';
-import '../workspace_configs.dart';
+import '../workspace_config.dart';
 
 /// Configurations for `melos version`.
 @immutable

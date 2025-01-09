@@ -22,7 +22,7 @@ import 'common/exception.dart';
 import 'common/utils.dart' as utils;
 import 'common/utils.dart';
 import 'logging.dart';
-import 'workspace_configs.dart';
+import 'workspace_config.dart';
 
 /// A class that can run Melos commands.
 ///
@@ -51,7 +51,7 @@ class MelosCommandRunner extends CommandRunner<void> {
       globalOptionSdkPath,
       help: 'Path to the Dart/Flutter SDK that should be used. This command '
           'line option has precedence over the `sdkPath` option in the '
-          '`melos.yaml` configuration file and the `MELOS_SDK_PATH` '
+          '`pubspec.yaml` configuration file and the `MELOS_SDK_PATH` '
           'environment variable. To use the system-wide SDK, provide '
           'the special value "auto".',
     );

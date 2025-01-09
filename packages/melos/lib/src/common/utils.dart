@@ -17,7 +17,6 @@ import '../package.dart';
 import '../workspace.dart';
 import 'environment_variable_key.dart';
 import 'exception.dart';
-import 'io.dart';
 import 'platform.dart';
 
 const globalOptionVerbose = 'verbose';
@@ -298,14 +297,8 @@ Future<String> getMelosRoot() async {
   return p.normalize('${melosPackageFileUri!.toFilePath()}/../..');
 }
 
-String melosYamlPathForDirectory(String directory) =>
-    p.join(directory, 'melos.yaml');
-
 String melosStatePathForDirectory(String directory) =>
     p.join(directory, '.melos');
-
-String melosOverridesYamlPathForDirectory(String directory) =>
-    p.join(directory, 'melos_overrides.yaml');
 
 String pubspecPathForDirectory(String directory) =>
     p.join(directory, 'pubspec.yaml');
@@ -416,10 +409,6 @@ String link(Uri url, String text) {
     return '\x1B]8;;$url\x07$text\x1B]8;;\x07';
   }
 }
-
-/// Simple check to see if the [Directory] qualifies as a plugin repository.
-bool isWorkspaceDirectory(String directory) =>
-    fileExists(melosYamlPathForDirectory(directory));
 
 Future<Process> startCommandRaw(
   List<String> command, {

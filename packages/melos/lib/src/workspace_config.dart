@@ -4,7 +4,9 @@ import 'package:ansi_styles/ansi_styles.dart';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:yaml/yaml.dart';
+import 'package:yaml_edit/yaml_edit.dart';
 
 import '../melos.dart';
 import 'command_configs/command_configs.dart';
@@ -157,7 +159,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
     return {
       'isWorkspaceChangelog': isWorkspaceChangelog,
       'path': path,
-      'packageFilters': packageFilters,
+      'packageFilters': packageFilters.toJson(),
       'description': description,
     };
   }
@@ -209,19 +211,21 @@ class MelosWorkspaceConfig {
   }
 
   factory MelosWorkspaceConfig.fromYaml(
-    Map<Object?, Object?> yaml, {
+    Map<Object?, Object?> pubspecYaml, {
     required String path,
   }) {
-    final name = assertKeyIsA<String>(key: 'name', map: yaml);
+    final name = assertKeyIsA<String>(key: 'name', map: pubspecYaml);
     if (!isValidPubPackageName(name)) {
       throw MelosConfigException(
         'The name $name is not a valid pub package name.',
       );
     }
 
+    final melosYaml = pubspecYaml['melos'] as Map<Object?, Object?>? ?? {};
+
     HostedGitRepository? repository;
-    if (yaml.containsKey('repository')) {
-      final repositoryYaml = yaml['repository'];
+    if (melosYaml.containsKey('repository')) {
+      final repositoryYaml = melosYaml['repository'];
 
       if (repositoryYaml is Map<Object?, Object?>) {
         final type = assertKeyIsA<String>(
@@ -256,48 +260,40 @@ class MelosWorkspaceConfig {
           throw MelosConfigException(e.toString());
         }
       } else if (repositoryYaml is String) {
-        Uri repositoryUrl;
-        try {
-          repositoryUrl = Uri.parse(repositoryYaml);
-        } on FormatException catch (e) {
-          throw MelosConfigException(
-            'The repository URL $repositoryYaml is not a valid URL:\n $e',
-          );
-        }
-
-        try {
-          repository = parseHostedGitRepositoryUrl(repositoryUrl);
-        } on FormatException catch (e) {
-          throw MelosConfigException(e.toString());
-        }
+        repository = _urlToRepository(repositoryYaml);
       } else if (repositoryYaml != null) {
         throw MelosConfigException(
           'The repository value must be a string or repository spec',
         );
       }
+    } else if (pubspecYaml.containsKey('repository')) {
+      final repositoryYaml = pubspecYaml['repository'];
+      if (repositoryYaml is String) {
+        repository = _urlToRepository(repositoryYaml);
+      }
     }
 
     final packages = assertListIsA<String>(
-      key: 'packages',
-      map: yaml,
-      isRequired: true,
+      key: 'workspace',
+      map: pubspecYaml,
+      isRequired: false,
       assertItemIsA: (index, value) => assertIsA<String>(
         value: value,
         index: index,
-        path: 'packages',
+        path: 'workspace',
       ),
     );
 
     final categories = assertMapIsA<String, List<String>>(
       key: 'categories',
-      map: yaml,
+      map: melosYaml,
       isRequired: false,
       assertKey: (value) => assertIsA<String>(
         value: value,
       ),
       assertValue: (key, value) => assertListIsA<String>(
         key: key!,
-        map: (yaml['categories'] ?? {}) as Map<Object?, Object?>,
+        map: (melosYaml['categories'] ?? {}) as Map<Object?, Object?>,
         isRequired: false,
         assertItemIsA: (index, value) => assertIsA<String>(
           value: value,
@@ -308,7 +304,7 @@ class MelosWorkspaceConfig {
 
     final ignore = assertListIsA<String>(
       key: 'ignore',
-      map: yaml,
+      map: melosYaml,
       isRequired: false,
       assertItemIsA: (index, value) => assertIsA<String>(
         value: value,
@@ -319,22 +315,22 @@ class MelosWorkspaceConfig {
 
     final scriptsMap = assertKeyIsA<Map<Object?, Object?>?>(
       key: 'scripts',
-      map: yaml,
+      map: melosYaml,
     );
 
     final ideMap = assertKeyIsA<Map<Object?, Object?>?>(
       key: 'ide',
-      map: yaml,
+      map: melosYaml,
     );
 
     final commandMap = assertKeyIsA<Map<Object?, Object?>?>(
       key: 'command',
-      map: yaml,
+      map: melosYaml,
     );
 
     final sdkPath = assertKeyIsA<String?>(
       key: 'sdkPath',
-      map: yaml,
+      map: melosYaml,
     );
 
     return MelosWorkspaceConfig(
@@ -391,14 +387,14 @@ class MelosWorkspaceConfig {
   static Future<MelosWorkspaceConfig> fromWorkspaceRoot(
     Directory workspaceRoot,
   ) async {
-    final melosYamlFile = File(melosYamlPathForDirectory(workspaceRoot.path));
+    final rootPubspecFile = File(pubspecPathForDirectory(workspaceRoot.path));
 
-    if (!melosYamlFile.existsSync()) {
+    if (!rootPubspecFile.existsSync()) {
       throw UnresolvedWorkspace(
         multiLine([
-          'Found no melos.yaml file in "${workspaceRoot.path}".',
+          'Found no pubspec.yaml file in "${workspaceRoot.path}".',
           '',
-          'You must have a ${AnsiStyles.bold('melos.yaml')} file in the root '
+          'You must have a ${AnsiStyles.bold('pubspec.yaml')} file in the root '
               'of your workspace.',
           '',
           'For more information, see: '
@@ -407,69 +403,49 @@ class MelosWorkspaceConfig {
       );
     }
 
-    Object? melosYamlContents;
+    late final Object? rootPubspecContent;
     try {
-      melosYamlContents = loadYamlNode(
-        await melosYamlFile.readAsString(),
-        sourceUrl: melosYamlFile.uri,
+      rootPubspecContent = loadYamlNode(
+        await rootPubspecFile.readAsString(),
+        sourceUrl: rootPubspecFile.uri,
       ).toPlainObject();
     } on YamlException catch (error) {
-      throw MelosConfigException('Failed to parse melos.yaml:\n$error');
+      throw MelosConfigException('Failed to parse root pubspec.yaml:\n$error');
     }
 
-    if (melosYamlContents is! Map<Object?, Object?>) {
-      throw MelosConfigException('melos.yaml must contain a YAML map.');
+    if (rootPubspecContent is! Map<Object?, Object?>) {
+      throw MelosConfigException('pubspec.yaml must contain a valid YAML.');
     }
 
-    final melosOverridesYamlFile =
-        File(melosOverridesYamlPathForDirectory(workspaceRoot.path));
-    if (melosOverridesYamlFile.existsSync()) {
-      Object? melosOverridesYamlContents;
-      try {
-        melosOverridesYamlContents = loadYamlNode(
-          await melosOverridesYamlFile.readAsString(),
-          sourceUrl: melosOverridesYamlFile.uri,
-        ).toPlainObject();
-      } on YamlException catch (error) {
-        throw MelosConfigException(
-          'Failed to parse melos_overrides.yaml:\n$error',
-        );
-      }
-
-      if (melosOverridesYamlContents is! Map<Object?, Object?>) {
-        throw MelosConfigException(
-          'melos_overrides.yaml must contain a YAML map.',
-        );
-      }
-
-      mergeMap(melosYamlContents, melosOverridesYamlContents);
+    if (rootPubspecContent['melos'] is! Map<Object?, Object?>?) {
+      throw MelosConfigException(
+        'If a melos section is present in the root pubspec.yaml file, it must '
+        'be a map.',
+      );
     }
 
     return MelosWorkspaceConfig.fromYaml(
-      melosYamlContents,
+      rootPubspecContent,
       path: workspaceRoot.path,
-    )..validatePhysicalWorkspace();
+    );
   }
 
   /// Handles the case where a workspace could not be found in the [current]
   /// or a parent directory by throwing an error with a helpful message.
   static Future<Never> handleWorkspaceNotFound(Directory current) async {
-    final legacyWorkspace = await _findMelosYaml(current);
+    final legacyWorkspace = await _findRootPubspec(current);
     if (legacyWorkspace != null) {
       throw UnresolvedWorkspace(
         multiLine([
-          'Found a melos.yaml file in "${legacyWorkspace.path}" but no local '
-              'installation of Melos.',
+          'From version 7.0.0, the ${AnsiStyles.bold('melos')} package must be '
+              'added as a dev_dependency in the root '
+              '${AnsiStyles.bold('pubspec.yaml')} file.',
           '',
-          'From version 3.0.0, the ${AnsiStyles.bold('melos')} package must be '
-              'installed in a ${AnsiStyles.bold('pubspec.yaml')} file next to '
-              'the melos.yaml file.',
-          '',
-          'For more information on migrating to version 3.0.0, see: '
-              'https://melos.invertase.dev/guides/migrations#200-to-300',
-          '',
-          'To migrate at a later time, ensure you have version 2.9.0 or below '
-              'installed: dart pub global activate melos 2.9.0',
+          'For more information on migrating to version 7.0.0, see: '
+              'https://melos.invertase.dev/guides/migrations#6xx-to-7xx'
+              '',
+          'To migrate at a later time, ensure you have version 6.3.0 or below '
+              'installed: dart pub global activate melos 6.3.0',
         ]),
       );
     }
@@ -485,14 +461,34 @@ class MelosWorkspaceConfig {
     );
   }
 
-  static Future<Directory?> _findMelosYaml(Directory start) async {
-    final melosYamlFile = File(melosYamlPathForDirectory(start.path));
-    if (melosYamlFile.existsSync()) {
-      return start;
+  static Future<Directory?> _findRootPubspec(Directory start) async {
+    final rootPubspecFile = File(pubspecPathForDirectory(start.path));
+    if (rootPubspecFile.existsSync()) {
+      final pubspec = Pubspec.parse(rootPubspecFile.readAsStringSync());
+      if (pubspec.devDependencies.keys.contains('melos')) {
+        return start;
+      }
     }
 
     final parent = start.parent;
-    return parent.path == start.path ? null : _findMelosYaml(parent);
+    return parent.path == start.path ? null : _findRootPubspec(parent);
+  }
+
+  static HostedGitRepository _urlToRepository(String repositoryYaml) {
+    Uri repositoryUrl;
+    try {
+      repositoryUrl = Uri.parse(repositoryYaml);
+    } on FormatException catch (e) {
+      throw MelosConfigException(
+        'The repository URL $repositoryYaml is not a valid URL:\n $e',
+      );
+    }
+
+    try {
+      return parseHostedGitRepositoryUrl(repositoryUrl);
+    } on FormatException catch (e) {
+      throw MelosConfigException(e.toString());
+    }
   }
 
   /// The absolute path to the workspace folder.
@@ -548,10 +544,11 @@ class MelosWorkspaceConfig {
     }
 
     scripts.validate();
+    _validatePhysicalWorkspace();
   }
 
   /// Validates the physical workspace on the file system.
-  void validatePhysicalWorkspace() {
+  void _validatePhysicalWorkspace() {
     if (!dirExists(path)) {
       throw MelosConfigException(
         'The path $path does not point to a directory',
@@ -588,21 +585,25 @@ class MelosWorkspaceConfig {
 
   Map<String, Object> toJson() {
     return {
-      'name': name,
-      'path': path,
-      if (repository != null) 'repository': repository!,
-      'packages': packages.map((p) => p.toString()).toList(),
-      'categories': categories.map((category, packages) {
-        return MapEntry(
-          category,
-          packages.map((p) => p.pattern).toList(),
-        );
-      }),
-      if (ignore.isNotEmpty) 'ignore': ignore.map((p) => p.toString()).toList(),
-      if (scripts.isNotEmpty) 'scripts': scripts.toJson(),
-      'ide': ide.toJson(),
-      'command': commands.toJson(),
+      'melos': {
+        if (repository != null) 'repository': repository!,
+        'categories': categories.map((category, packages) {
+          return MapEntry(
+            category,
+            packages.map((p) => p.pattern).toList(),
+          );
+        }),
+        if (ignore.isNotEmpty)
+          'ignore': ignore.map((p) => p.toString()).toList(),
+        if (scripts.isNotEmpty) 'scripts': scripts.toJson(),
+        'ide': ide.toJson(),
+        'command': commands.toJson(),
+      },
     };
+  }
+
+  YamlNode toYaml() {
+    return wrapAsYamlNode(toJson());
   }
 
   @override

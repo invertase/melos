@@ -37,7 +37,6 @@ mixin _BootstrapMixin on _CleanMixin {
           ..newLine();
 
         final filteredPackages = workspace.filteredPackages.values;
-        // TODO(spydon): Add resolution: workspace to pubspecs
 
         try {
           if (bootstrapCommandConfig.environment != null ||

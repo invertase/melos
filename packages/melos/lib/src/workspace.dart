@@ -13,7 +13,7 @@ import 'common/validation.dart';
 import 'global_options.dart';
 import 'logging.dart';
 import 'package.dart';
-import 'workspace_configs.dart';
+import 'workspace_config.dart';
 
 class IdeWorkspace {
   IdeWorkspace._(this._workspace);
@@ -89,14 +89,14 @@ class MelosWorkspace {
 
   final MelosLogger logger;
 
-  /// An optional name as defined in "melos.yaml". This name is used for logging
+  /// The name defined in the root "pubspec.yaml". This name is used for logging
   /// purposes and also used when generating certain IDE files.
   final String name;
 
   /// Full file path to the location of this workspace.
   final String path;
 
-  /// Configuration as defined in the "melos.yaml" file if it exists.
+  /// Configuration as defined in the "pubspec.yaml" file.
   final MelosWorkspaceConfig config;
 
   /// The root package of this workspace.
