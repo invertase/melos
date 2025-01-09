@@ -264,6 +264,14 @@ mixin _BootstrapMixin on _CleanMixin {
     return didUpdate;
   }
 
+  bool _areDependenciesEqual(Dependency? a, Dependency? b) {
+    if (a is GitDependency && b is GitDependency) {
+      return a == b && a.path == b.path;
+    } else {
+      return a == b;
+    }
+  }
+
   int _updateDependencies({
     required YamlEditor pubspecEditor,
     required Map<String, Dependency>? workspaceDependencies,
@@ -275,7 +283,13 @@ mixin _BootstrapMixin on _CleanMixin {
     // dependencies that have a different version specified in the workspace.
     final dependenciesToUpdate = workspaceDependencies.entries.where((entry) {
       if (!packageDependencies.containsKey(entry.key)) return false;
-      if (packageDependencies[entry.key] == entry.value) return false;
+      // TODO: We may want to replace the `pubspec` dependency with something
+      // else that is actively maintained, so we don't have to provide our own
+      // equality logic.
+      // See: https://github.com/invertase/melos/discussions/663
+      if (_areDependenciesEqual(packageDependencies[entry.key], entry.value)) {
+        return false;
+      }
       return true;
     });
 

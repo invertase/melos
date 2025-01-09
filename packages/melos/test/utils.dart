@@ -74,7 +74,7 @@ class TestLogger extends StandardLogger {
 }
 
 Directory createTestTempDir() {
-  final dir = createTempDir(Directory.systemTemp.path, 'melos_test_');
+  final dir = Directory.systemTemp.createTempSync('melos_test_').path;
   addTearDown(() => deleteEntry(dir));
   return Directory(dir);
 }
