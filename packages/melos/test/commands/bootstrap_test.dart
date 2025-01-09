@@ -180,8 +180,7 @@ Generating IntelliJ IDE files...
 
       final workspaceDirectory = await createTemporaryWorkspace(
         workspacePackages: [
-          'dependency1',
-          'dependency2',
+          'git_references',
         ],
       );
 
@@ -199,7 +198,7 @@ Generating IntelliJ IDE files...
           dependencies: {
             'dependency': GitDependency(
               Uri.parse(initialReference['git']!['url']!),
-              path: initialReference['git']!['path']!,
+              path: initialReference['git']!['path'],
             ),
           },
         ),
@@ -228,7 +227,7 @@ Generating IntelliJ IDE files...
 
       await runMelosBootstrap(melosBeforeChangingPath, logger);
 
-      final packageConfig = packageConfigForPackageAt(package);
+      final packageConfig = packageConfigForPackageAt(workspaceDirectory);
       final dependencyPackage = packageConfig.packages.singleWhere(
         (package) => package.name == 'dependency',
       );
@@ -265,7 +264,8 @@ Generating IntelliJ IDE files...
 
       await runMelosBootstrap(melosAfterChangingPath, logger);
 
-      final alteredPackageConfig = packageConfigForPackageAt(package);
+      final alteredPackageConfig =
+          packageConfigForPackageAt(workspaceDirectory);
       final alteredDependencyPackage = alteredPackageConfig.packages
           .singleWhere((package) => package.name == 'dependency');
 
@@ -325,23 +325,7 @@ Generating IntelliJ IDE files...
 melos bootstrap
   └> ${workspaceDir.path}
 
-Running "flutter pub get" in workspace packages...''',
-                '''
-  ✓ a
-    └> packages/a
-''',
-                '''
-  ✓ b
-    └> packages/b
-''',
-                '''
-  ✓ c
-    └> packages/c
-''',
-                '''
-  ✓ d
-    └> packages/d
-''',
+Running "flutter pub get" in workspace...''',
                 '''
   > SUCCESS
 
@@ -355,11 +339,11 @@ Generating IntelliJ IDE files...
           ),
         );
 
-        final aConfig = packageConfigForPackageAt(aDir);
+        final aConfig = packageConfigForPackageAt(workspaceDir);
 
         expect(
           aConfig.packages.firstWhere((p) => p.name == 'b').rootUri,
-          '../../b',
+          '../packages/b',
         );
       },
       timeout:
@@ -410,7 +394,8 @@ Generating IntelliJ IDE files...
 
     test('bootstrap flutter example packages', () async {
       final workspaceDir = await createTemporaryWorkspace(
-        workspacePackages: ['a', 'a/example'],
+        workspacePackages: ['a'],
+        withExamples: true,
       );
 
       await createProject(
