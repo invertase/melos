@@ -452,10 +452,10 @@ mixin _VersionMixin on _RunMixin {
       if (packageNode.value == null) continue;
 
       if (packageNode is YamlMap) {
-        // Handle nested version case:
+        // Handle nested version case.
         editor.update([dependencyType, package.name, 'version'], version);
       } else {
-        // Handle inline version case:
+        // Handle inline version case.
         editor.update([dependencyType, package.name], version);
       }
 
