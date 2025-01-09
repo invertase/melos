@@ -1,4 +1,4 @@
-import 'dart:io' as io;
+import 'dart:io';
 
 import 'package:melos/melos.dart';
 import 'package:melos/src/command_configs/command_configs.dart';
@@ -152,29 +152,29 @@ Generating IntelliJ IDE files...
       () async {
         final temporaryGitRepositoryPath = createTestTempDir().absolute.path;
 
-        await io.Process.run(
+        await Process.run(
           'git',
           ['init'],
           workingDirectory: temporaryGitRepositoryPath,
         );
 
         await createProject(
-          io.Directory('$temporaryGitRepositoryPath/dependency1'),
+          Directory('$temporaryGitRepositoryPath/dependency1'),
           Pubspec('dependency'),
         );
 
         await createProject(
-          io.Directory('$temporaryGitRepositoryPath/dependency2'),
+          Directory('$temporaryGitRepositoryPath/dependency2'),
           Pubspec('dependency'),
         );
 
-        await io.Process.run(
+        await Process.run(
           'git',
           ['add', '-A'],
           workingDirectory: temporaryGitRepositoryPath,
         );
 
-        await io.Process.run(
+        await Process.run(
           'git',
           ['commit', '--message="Initial commit"'],
           workingDirectory: temporaryGitRepositoryPath,
@@ -277,7 +277,7 @@ Generating IntelliJ IDE files...
         );
       },
       // This test works locally, but we can't create git repositories in CI.
-      skip: true,
+      skip: Platform.environment.containsKey('CI'),
     );
 
     test(
@@ -351,8 +351,7 @@ Generating IntelliJ IDE files...
           '../packages/b',
         );
       },
-      timeout:
-          io.Platform.isLinux ? const Timeout(Duration(seconds: 45)) : null,
+      timeout: Platform.isLinux ? const Timeout(Duration(seconds: 45)) : null,
     );
 
     test('respects user dependency_overrides', () async {
@@ -988,7 +987,7 @@ Future<void> runMelosBootstrap(
   }
 }
 
-YamlMap _pubspecContent(io.Directory directory) {
+YamlMap _pubspecContent(Directory directory) {
   final source = readTextFile(pubspecPath(directory.path));
   return loadYaml(source) as YamlMap;
 }
