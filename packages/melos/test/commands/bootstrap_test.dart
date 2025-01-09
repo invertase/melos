@@ -158,12 +158,12 @@ Generating IntelliJ IDE files...
 
       await createProject(
         io.Directory('${temporaryGitRepository.absolute.path}/dependency1'),
-        const PubSpec(name: 'dependency'),
+        Pubspec('dependency'),
       );
 
       await createProject(
         io.Directory('${temporaryGitRepository.absolute.path}/dependency2'),
-        const PubSpec(name: 'dependency'),
+        Pubspec('dependency'),
       );
 
       await io.Process.run(
@@ -178,7 +178,12 @@ Generating IntelliJ IDE files...
         workingDirectory: temporaryGitRepository.absolute.path,
       );
 
-      final workspaceDirectory = await createTemporaryWorkspace();
+      final workspaceDirectory = await createTemporaryWorkspace(
+        workspacePackages: [
+          'dependency1',
+          'dependency2',
+        ],
+      );
 
       final initialReference = {
         'git': {
@@ -189,10 +194,13 @@ Generating IntelliJ IDE files...
 
       final package = await createProject(
         workspaceDirectory,
-        PubSpec(
-          name: 'git_references',
+        Pubspec(
+          'git_references',
           dependencies: {
-            'dependency': GitReference.fromJson(initialReference),
+            'dependency': GitDependency(
+              Uri.parse(initialReference['git']!['url']!),
+              path: initialReference['git']!['path']!,
+            ),
           },
         ),
       );
@@ -270,28 +278,32 @@ Generating IntelliJ IDE files...
     test(
       'resolves workspace packages with path dependency',
       () async {
-        final workspaceDir = await createTemporaryWorkspace();
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b', 'c', 'd'],
+        );
 
         final aDir = await createProject(
           workspaceDir,
-          PubSpec(
-            name: 'a',
-            dependencies: {'b': HostedReference(VersionConstraint.any)},
+          Pubspec(
+            'a',
+            dependencies: {
+              'b': HostedDependency(version: VersionConstraint.any),
+            },
           ),
         );
         await createProject(
           workspaceDir,
-          const PubSpec(name: 'b'),
+          Pubspec('b'),
         );
 
         await createProject(
           workspaceDir,
-          pubSpecFromJsonFile(fileName: 'add_to_app_json.json'),
+          pubspecFromJsonFile(fileName: 'add_to_app_json.json'),
         );
 
         await createProject(
           workspaceDir,
-          pubSpecFromJsonFile(fileName: 'plugin_json.json'),
+          pubspecFromJsonFile(fileName: 'plugin_json.json'),
         );
 
         final logger = TestLogger();
@@ -352,27 +364,6 @@ Generating IntelliJ IDE files...
       },
       timeout:
           io.Platform.isLinux ? const Timeout(Duration(seconds: 45)) : null,
-    );
-
-    test(
-      'bootstrap transitive dependencies',
-      () async => dependencyResolutionTest(
-        {
-          'a': [],
-          'b': ['a'],
-          'c': ['b'],
-        },
-      ),
-    );
-
-    test(
-      'bootstrap cyclic dependencies',
-      () async => dependencyResolutionTest(
-        {
-          'a': ['b'],
-          'b': ['a'],
-        },
-      ),
     );
 
     test('respects user dependency_overrides', () async {

@@ -265,8 +265,8 @@ mixin _BootstrapMixin on _CleanMixin {
     return didUpdate;
   }
 
-  bool _areDependenciesEqual(DependencyReference? a, DependencyReference? b) {
-    if (a is GitReference && b is GitReference) {
+  bool _areDependenciesEqual(Dependency? a, Dependency? b) {
+    if (a is GitDependency && b is GitDependency) {
       return a == b && a.path == b.path;
     } else {
       return a == b;
