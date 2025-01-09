@@ -306,7 +306,7 @@ class NoPackageFoundScriptException implements MelosException {
   @override
   String toString() {
     return 'NoPackageFoundScriptException: No package found that matches with '
-        'the filters defined in the melos.yaml for script $scriptName.';
+        'the filters defined in the pubspec.yaml for script $scriptName.';
   }
 }
 
@@ -320,7 +320,7 @@ class ScriptNotFoundException implements MelosException {
   String toString() {
     final builder = StringBuffer(
       'ScriptNotFoundException: The script $scriptName could not be found in '
-      "the 'melos.yaml' file.",
+      "the 'pubspec.yaml' file.",
     );
 
     for (final scriptName in availableScriptNames) {
@@ -337,7 +337,7 @@ class NoScriptException implements MelosException {
   @override
   String toString() {
     return 'NoScriptException: This workspace has no scripts defined in its '
-        "'melos.yaml' file.";
+        "'pubspec.yaml' file.";
   }
 }
 

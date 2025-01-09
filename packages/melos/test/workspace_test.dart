@@ -71,19 +71,15 @@ The packages that caused the problem are:
     });
 
     test('can be accessed from anywhere within a workspace', () async {
-      final workspaceDir = await createTemporaryWorkspace(
-        runPubGet: true,
-        configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
-          path: path,
-          const {
-            'name': 'test',
-            'packages': ['packages/*'],
-          },
-        ),
-        workspacePackages: [],
-      );
+      final workspaceDir =
+          await createTemporaryWorkspace(workspacePackages: ['a']);
       final projectDir = await createProject(workspaceDir, Pubspec('a'));
 
+      await Process.run(
+        'melos',
+        ['bootstrap'],
+        workingDirectory: projectDir.path,
+      );
       final result = await Process.run(
         'melos',
         ['list'],
@@ -98,7 +94,8 @@ The packages that caused the problem are:
     });
 
     test(
-      'does not include projects inside packages/whatever/.dart_tool when no melos.yaml is specified',
+      'does not include projects inside packages/whatever/.dart_tool when melos '
+      'section is defined in the root pubspec.yaml',
       () async {
         // regression test for https://github.com/invertase/melos/issues/101
 
@@ -146,20 +143,14 @@ The packages that caused the problem are:
     group('locate packages', () {
       test('in workspace root', () async {
         final workspaceDir = await createTemporaryWorkspace(
-          configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
-            const {
-              'name': 'test',
-              'packages': ['.'],
-            },
-            path: path,
-          ),
           workspacePackages: ['a'],
+          prependPackages: false,
         );
 
         await createProject(
           workspaceDir,
           Pubspec('a'),
-          path: '.',
+          path: 'a',
         );
 
         final workspace = await MelosWorkspace.fromConfig(

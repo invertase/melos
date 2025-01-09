@@ -17,7 +17,7 @@ class RunCommand extends MelosCommand {
 
   @override
   final String description =
-      'Run a script by name defined in the workspace melos.yaml config file.';
+      'Run a script by name defined in the workspace pubspec.yaml config file.';
 
   @override
   final String invocation = 'melos run <name>';

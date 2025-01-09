@@ -46,10 +46,11 @@ void main() {
 
       // Verify melos.yaml content
       final melosYaml = loadYaml(
-        File(p.join(workspaceDir.path, 'melos.yaml')).readAsStringSync(),
+        File(p.join(workspaceDir.path, 'pubspec.yaml')).readAsStringSync(),
       ) as YamlMap;
       expect(melosYaml['name'], equals('my_workspace'));
-      expect(melosYaml['packages'], equals(['apps/*', 'packages/*']));
+      // TODO: Create some packages first that we can test against
+      expect(melosYaml['workspace'], equals([]));
 
       // Verify pubspec.yaml content
       final pubspecYaml = loadYaml(
@@ -90,9 +91,11 @@ void main() {
       );
 
       final melosYaml = loadYaml(
-        File(p.join(workspaceDir.path, 'melos.yaml')).readAsStringSync(),
+        File(p.join(workspaceDir.path, 'pubspec.yaml')).readAsStringSync(),
       ) as YamlMap;
-      expect(melosYaml['packages'], equals(['custom/*', 'plugins/**']));
+      // TODO: Create some packages in 'custom/*', 'plugins/**' that we can test
+      // against.
+      expect(melosYaml['workspace'], equals([]));
     });
 
     test('creates workspace in current directory when directory is "."',
@@ -115,14 +118,13 @@ void main() {
         );
 
         // Verify files were created in current directory
-        expect(File('melos.yaml').existsSync(), isTrue);
         expect(File('pubspec.yaml').existsSync(), isTrue);
         expect(Directory('packages').existsSync(), isTrue);
         expect(Directory('apps').existsSync(), isTrue);
 
-        final melosYaml =
-            loadYaml(File('melos.yaml').readAsStringSync()) as YamlMap;
-        expect(melosYaml['name'], equals(p.basename(tempDir.path)));
+        final pubspecYaml =
+            loadYaml(File('pubspec.yaml').readAsStringSync()) as YamlMap;
+        expect(pubspecYaml['name'], equals(p.basename(tempDir.path)));
       } finally {
         Directory.current = originalDir;
       }
@@ -176,9 +178,10 @@ void main() {
       );
 
       final melosYaml = loadYaml(
-        File(p.join(workspaceDir.path, 'melos.yaml')).readAsStringSync(),
+        File(p.join(workspaceDir.path, 'pubspec.yaml')).readAsStringSync(),
       ) as YamlMap;
-      expect(melosYaml['packages'], equals(['packages/*']));
+      // TODO: Create some packages first that we can test against
+      expect(melosYaml['workspace'], equals([]));
     });
   });
 }

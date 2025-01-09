@@ -1,5 +1,5 @@
 import '../commands/runner.dart';
-import '../workspace_configs.dart';
+import '../workspace_config.dart';
 import 'base.dart';
 
 class ScriptCommand extends MelosCommand {
@@ -38,7 +38,7 @@ class ScriptCommand extends MelosCommand {
 
   @override
   String get description =>
-      'Run scripts by name defined in the workspace melos.yaml config file.';
+      'Run scripts by name defined in the workspace pubspec.yaml config file.';
 
   @override
   final String invocation = 'melos <script>';

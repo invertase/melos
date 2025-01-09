@@ -518,7 +518,9 @@ class PackageMap {
   }) async {
     return PackageMap.resolvePackages(
       workspacePath: workspacePath,
-      packages: [createGlob('.', currentDirectoryPath: workspacePath)],
+      packages: [
+        createGlob('.', currentDirectoryPath: workspacePath),
+      ],
       ignore: [],
       categories: {},
       logger: logger,

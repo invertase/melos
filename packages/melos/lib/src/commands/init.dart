@@ -27,11 +27,14 @@ mixin _InitMixin on _Melos {
     }
 
     final dartVersion = utils.currentDartVersion('dart');
-    final melosYaml = <String, Object?>{
-      'name': qualifiedWorkspaceName,
-      'packages': [if (useAppDir) 'apps/*', 'packages/*'],
-      if (packages.isNotEmpty) 'packages': packages,
-    };
+    final packages = await PackageMap.resolvePackages(
+      workspacePath: dir.path,
+      packages: [Glob('packages/**'), if (useAppDir) Glob('apps/**')],
+      ignore: [],
+      categories: {},
+      logger: logger,
+    );
+
     final pubspecYaml = <String, dynamic>{
       'name': qualifiedWorkspaceName,
       'environment': {
@@ -40,14 +43,12 @@ mixin _InitMixin on _Melos {
       'dev_dependencies': {
         'melos': '^$melosVersion',
       },
+      'workspace': packages.values.map((p) => p.path).toList(),
+      'melos': '',
     };
 
-    final melosFile = File(p.join(dir.absolute.path, 'melos.yaml'));
     final pubspecFile = File(p.join(dir.absolute.path, 'pubspec.yaml'));
 
-    melosFile.writeAsStringSync(
-      (YamlEditor('')..update([], melosYaml)).toString(),
-    );
     pubspecFile.writeAsStringSync(
       (YamlEditor('')..update([], pubspecYaml)).toString(),
     );
