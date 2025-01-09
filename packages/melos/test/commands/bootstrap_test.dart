@@ -191,7 +191,7 @@ Generating IntelliJ IDE files...
         },
       };
 
-      final package = await createProject(
+      await createProject(
         workspaceDirectory,
         Pubspec(
           'git_references',
@@ -282,7 +282,7 @@ Generating IntelliJ IDE files...
           workspacePackages: ['a', 'b', 'c', 'd'],
         );
 
-        final aDir = await createProject(
+        await createProject(
           workspaceDir,
           Pubspec(
             'a',
