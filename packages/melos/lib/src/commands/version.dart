@@ -432,10 +432,35 @@ mixin _VersionMixin on _RunMixin {
     final pubspec = pubspecPathForDirectory(package.path);
     final contents = await readTextFileAsync(pubspec);
 
-    final updatedContents =
-        contents.replaceAllMapped(versionReplaceRegex, (match) {
-      return '${match.group(1)}$version${match.group(3)}';
-    });
+    final editor = YamlEditor(contents);
+
+    var updatedContents = contents;
+
+    for (final dependencyType in ['dependencies', 'dev_dependencies']) {
+      final dependencySection = editor.parseAt(
+        [dependencyType],
+        orElse: () => wrapAsYamlNode(null),
+      );
+
+      if (dependencySection.value == null) continue;
+
+      final packageNode = editor.parseAt(
+        [dependencyType, package.name],
+        orElse: () => wrapAsYamlNode(null),
+      );
+
+      if (packageNode.value == null) continue;
+
+      if (packageNode is YamlMap) {
+        // Handle nested version case:
+        editor.update([dependencyType, package.name, 'version'], version);
+      } else {
+        // Handle inline version case:
+        editor.update([dependencyType, package.name], version);
+      }
+
+      updatedContents = editor.toString();
+    }
 
     // Sanity check that contents actually changed.
     if (contents == updatedContents) {
