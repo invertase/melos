@@ -73,8 +73,12 @@ class TestLogger extends StandardLogger {
   }
 }
 
-Directory createTestTempDir() {
-  final dir = Directory.systemTemp.createTempSync('melos_test_').path;
+Directory createTestTempDir({bool isLocal = false}) {
+  final dir = (isLocal
+          ? Directory(p.join(Directory.current.path, '.dart_tool'))
+          : Directory.systemTemp)
+      .createTempSync('melos_test_')
+      .path;
   addTearDown(() => deleteEntry(dir));
   return Directory(dir);
 }
@@ -113,8 +117,9 @@ Future<Directory> createTemporaryWorkspace({
   bool createLockfile = false,
   bool withExamples = false,
   bool prependPackages = true,
+  bool useLocalTmpDirectory = false,
 }) async {
-  final workspacePath = createTestTempDir().path;
+  final workspacePath = createTestTempDir(isLocal: useLocalTmpDirectory).path;
   addTearDown(() => deleteEntry(workspacePath));
 
   final workspacePackagesPaths = workspacePackages

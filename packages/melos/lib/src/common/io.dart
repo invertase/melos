@@ -88,13 +88,6 @@ String ensureDir(String dir) {
   return dir;
 }
 
-/// Creates a temp directory in [base], whose name will be [prefix] with
-/// characters appended to it to make a unique name.
-///
-/// Returns the path of the created directory.
-String createTempDir(String base, [String? prefix]) =>
-    Directory(base).createTempSync(prefix).path;
-
 /// Copies a file [from] the source file [to] the destination file.
 void copyFile(String from, String to, {bool recursive = false}) {
   if (recursive) {
