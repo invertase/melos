@@ -210,11 +210,13 @@ Generating IntelliJ IDE files...
         final initialConfig = MelosWorkspaceConfig.fromYaml(
           {
             'name': 'test',
-            'packages': const ['packages/**'],
-            'command': {
-              'bootstrap': {
-                'dependencies': {
-                  'dependency': initialReference,
+            'workspace': const ['packages/git_references'],
+            'melos': {
+              'command': {
+                'bootstrap': {
+                  'dependencies': {
+                    'dependency': initialReference,
+                  },
                 },
               },
             },
@@ -242,14 +244,16 @@ Generating IntelliJ IDE files...
         final configWithChangedPath = MelosWorkspaceConfig.fromYaml(
           {
             'name': 'test',
-            'packages': const ['packages/**'],
-            'command': {
-              'bootstrap': {
-                'dependencies': {
-                  'dependency': {
-                    'git': {
-                      'url': 'file://$temporaryGitRepositoryPath',
-                      'path': 'dependency2/packages/dependency',
+            'workspace': const ['packages/git_references'],
+            'melos': {
+              'command': {
+                'bootstrap': {
+                  'dependencies': {
+                    'dependency': {
+                      'git': {
+                        'url': 'file://$temporaryGitRepositoryPath',
+                        'path': 'dependency2/packages/dependency',
+                      },
                     },
                   },
                 },
