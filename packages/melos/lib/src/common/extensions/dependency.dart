@@ -50,12 +50,14 @@ extension HostedDependencyExtension on HostedDependency {
     return inlineVersion
         ? version.toString()
         : {
-            'version': version.toString(),
-            if (hosted != null)
-              'hosted': {
-                'name': hosted!.declaredName,
-                'url': hosted!.url?.toString(),
-              },
+            'hosted': {
+              'version': version.toString(),
+              if (hosted != null)
+                'hosted': {
+                  'name': hosted!.declaredName,
+                  'url': hosted!.url?.toString(),
+                },
+            },
           };
   }
 }
@@ -63,9 +65,11 @@ extension HostedDependencyExtension on HostedDependency {
 extension GitDependencyExtension on GitDependency {
   Map<String, dynamic> toJson() {
     return {
-      'url': url.toString(),
-      if (ref != null) 'ref': ref,
-      if (path != null) 'path': path,
+      'git': {
+        'url': url.toString(),
+        if (ref != null) 'ref': ref,
+        if (path != null) 'path': path,
+      },
     };
   }
 }

@@ -1,4 +1,4 @@
-import 'dart:io' as io;
+import 'dart:io';
 
 import 'package:melos/melos.dart';
 import 'package:melos/src/command_configs/command_configs.dart';
@@ -147,6 +147,213 @@ Generating IntelliJ IDE files...
       );
     });
 
+    test(
+      'properly compares the path changes on git references',
+      () async {
+        final temporaryGitRepositoryPath = createTestTempDir().absolute.path;
+
+        await Process.run(
+          'git',
+          ['init'],
+          workingDirectory: temporaryGitRepositoryPath,
+        );
+
+        await createProject(
+          Directory('$temporaryGitRepositoryPath/dependency1'),
+          Pubspec('dependency'),
+        );
+
+        await createProject(
+          Directory('$temporaryGitRepositoryPath/dependency2'),
+          Pubspec('dependency'),
+        );
+
+        await Process.run(
+          'git',
+          ['add', '-A'],
+          workingDirectory: temporaryGitRepositoryPath,
+        );
+
+        await Process.run(
+          'git',
+          ['commit', '--message="Initial commit"'],
+          workingDirectory: temporaryGitRepositoryPath,
+        );
+
+        final workspaceDirectory = await createTemporaryWorkspace(
+          workspacePackages: [
+            'git_references',
+          ],
+        );
+
+        final initialReference = {
+          'git': {
+            'url': 'file://$temporaryGitRepositoryPath',
+            'path': 'dependency1/packages/dependency',
+          },
+        };
+
+        await createProject(
+          workspaceDirectory,
+          Pubspec(
+            'git_references',
+            dependencies: {
+              'dependency': GitDependency(
+                Uri.parse(initialReference['git']!['url']!),
+                path: initialReference['git']!['path'],
+              ),
+            },
+          ),
+        );
+
+        final logger = TestLogger();
+        final initialConfig = MelosWorkspaceConfig.fromYaml(
+          {
+            'name': 'test',
+            'packages': const ['packages/**'],
+            'command': {
+              'bootstrap': {
+                'dependencies': {
+                  'dependency': initialReference,
+                },
+              },
+            },
+          },
+          path: workspaceDirectory.path,
+        );
+
+        final melosBeforeChangingPath = Melos(
+          logger: logger,
+          config: initialConfig,
+        );
+
+        await runMelosBootstrap(melosBeforeChangingPath, logger);
+
+        final packageConfig = packageConfigForPackageAt(workspaceDirectory);
+        final dependencyPackage = packageConfig.packages.singleWhere(
+          (package) => package.name == 'dependency',
+        );
+
+        expect(
+          dependencyPackage.rootUri,
+          contains('dependency1/packages/dependency'),
+        );
+
+        final configWithChangedPath = MelosWorkspaceConfig.fromYaml(
+          {
+            'name': 'test',
+            'packages': const ['packages/**'],
+            'command': {
+              'bootstrap': {
+                'dependencies': {
+                  'dependency': {
+                    'git': {
+                      'url': 'file://$temporaryGitRepositoryPath',
+                      'path': 'dependency2/packages/dependency',
+                    },
+                  },
+                },
+              },
+            },
+          },
+          path: workspaceDirectory.path,
+        );
+
+        final melosAfterChangingPath = Melos(
+          logger: logger,
+          config: configWithChangedPath,
+        );
+
+        await runMelosBootstrap(melosAfterChangingPath, logger);
+
+        final alteredPackageConfig =
+            packageConfigForPackageAt(workspaceDirectory);
+        final alteredDependencyPackage = alteredPackageConfig.packages
+            .singleWhere((package) => package.name == 'dependency');
+
+        expect(
+          alteredDependencyPackage.rootUri,
+          contains('dependency2/packages/dependency'),
+        );
+      },
+      // This test works locally, but we can't create git repositories in CI.
+      skip: Platform.environment.containsKey('CI'),
+    );
+
+    test(
+      'resolves workspace packages with path dependency',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b', 'c', 'd'],
+        );
+
+        await createProject(
+          workspaceDir,
+          Pubspec(
+            'a',
+            dependencies: {
+              'b': HostedDependency(version: VersionConstraint.any),
+            },
+          ),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b'),
+        );
+
+        await createProject(
+          workspaceDir,
+          pubspecFromJsonFile(fileName: 'add_to_app_json.json'),
+        );
+
+        await createProject(
+          workspaceDir,
+          pubspecFromJsonFile(fileName: 'plugin_json.json'),
+        );
+
+        final logger = TestLogger();
+        final config =
+            await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        await runMelosBootstrap(melos, logger);
+
+        expect(
+          logger.output,
+          ignoringAnsii(
+            allOf(
+              [
+                '''
+melos bootstrap
+  └> ${workspaceDir.path}
+
+Running "flutter pub get" in workspace...''',
+                '''
+  > SUCCESS
+
+Generating IntelliJ IDE files...
+  > SUCCESS
+
+ -> 4 packages bootstrapped
+''',
+              ].map(contains).toList(),
+            ),
+          ),
+        );
+
+        final aConfig = packageConfigForPackageAt(workspaceDir);
+
+        expect(
+          aConfig.packages.firstWhere((p) => p.name == 'b').rootUri,
+          '../packages/b',
+        );
+      },
+      timeout: Platform.isLinux ? const Timeout(Duration(seconds: 45)) : null,
+    );
+
     test('respects user dependency_overrides', () async {
       final workspaceDir = await createTemporaryWorkspace(
         workspacePackages: ['a'],
@@ -191,7 +398,8 @@ Generating IntelliJ IDE files...
 
     test('bootstrap flutter example packages', () async {
       final workspaceDir = await createTemporaryWorkspace(
-        workspacePackages: ['a', 'a/example'],
+        workspacePackages: ['a'],
+        withExamples: true,
       );
 
       await createProject(
@@ -779,7 +987,7 @@ Future<void> runMelosBootstrap(
   }
 }
 
-YamlMap _pubspecContent(io.Directory directory) {
+YamlMap _pubspecContent(Directory directory) {
   final source = readTextFile(pubspecPath(directory.path));
   return loadYaml(source) as YamlMap;
 }

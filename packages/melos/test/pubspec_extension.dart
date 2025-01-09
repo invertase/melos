@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:melos/src/common/extensions/dependency.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
@@ -97,47 +98,6 @@ extension on Screenshot {
     return {
       'path': path,
       'description': description,
-    };
-  }
-}
-
-extension DependencyExtension on Dependency {
-  Map<String, dynamic> toJson() {
-    if (this is SdkDependency) {
-      final sdkDep = this as SdkDependency;
-      return {
-        'sdk': sdkDep.sdk,
-        'version': sdkDep.version.toString(),
-      };
-    } else if (this is GitDependency) {
-      final gitDep = this as GitDependency;
-      return {
-        'url': gitDep.url.toString(),
-        'ref': gitDep.ref,
-        'path': gitDep.path,
-      };
-    } else if (this is PathDependency) {
-      final pathDep = this as PathDependency;
-      return {
-        'path': pathDep.path,
-      };
-    } else if (this is HostedDependency) {
-      final hostedDep = this as HostedDependency;
-      return {
-        'version': hostedDep.version.toString(),
-        if (hostedDep.hosted != null) 'hosted': hostedDep.hosted?.toJson(),
-      };
-    } else {
-      throw UnsupportedError('Unknown Dependency type');
-    }
-  }
-}
-
-extension HostedDetailsExtension on HostedDetails {
-  Map<String, dynamic> toJson() {
-    return {
-      'name': declaredName,
-      'url': url?.toString(),
     };
   }
 }
