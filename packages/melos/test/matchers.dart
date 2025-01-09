@@ -36,7 +36,6 @@ Matcher ignoringDependencyMessages(String expected) {
           .join('\n');
       return ignoringAnsii(expected).matches(normalizedActual, {});
     },
-    'ignores dependency resolution messages',
   );
 }
 

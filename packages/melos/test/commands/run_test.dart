@@ -668,6 +668,7 @@ SUCCESS
       );
 
       await melos.run(scriptName: 'hello_script', noSelect: true);
+      print(logger.output.normalizeNewLines());
 
       expect(
         logger.output.normalizeNewLines(),
