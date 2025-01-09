@@ -44,7 +44,7 @@ void main() {
       );
       expect(Directory(p.join(workspaceDir.path, 'apps')).existsSync(), isTrue);
 
-      // Verify melos.yaml content
+      // Verify pubspec.yaml content
       final melosYaml = loadYaml(
         File(p.join(workspaceDir.path, 'pubspec.yaml')).readAsStringSync(),
       ) as YamlMap;

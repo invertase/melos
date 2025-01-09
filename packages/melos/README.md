@@ -37,22 +37,17 @@ repositories with git and Pub.**
 ## Migrate to Melos 7.x.x
 
 Since the [pub workspaces](https://dart.dev/tools/pub/workspaces) feature has
-been released, Melos has been updated to rely on that instead of creating
+been released, Melos has been updated to rely on that, instead of creating
 `pubspec_overrides.yaml` files and thus some migration is needed.
 
-The main difference is that you now have to add `resolution: workspace` to all
-of your packages' `pubspec.yaml` files and add a list of all your packages to
-the root `pubspec.yaml` file, similar to this:
+The main difference is that:
+1. There is no longer a `melos.yaml` file, only the root `pubspec.yaml`
+2. You now have to add `resolution: workspace` to all of your packages'
+   `pubspec.yaml` files.
+3. You now have to add a list of all your packages to the root `pubspec.yaml`
+   file.
 
-Package `pubspec.yaml` file:
-```yaml
-name: my_package
-environment:
-  sdk: ^3.6.0
-resolution: workspace
-```
-
-Workspace root `pubspec.yaml` file:
+After the migration your root `pubspec.yaml` file would now look something like this:
 ```yaml
 name: my_workspace
 publish_to: none
@@ -64,6 +59,19 @@ workspace:
   - packages/server_package
 dev_dependencies:
   melos: ^7.0.0
+
+melos:
+  # All of the content of your previous melos.yaml file
+  # (Except for the packages and name)
+```
+
+
+And this is what the `pubspec.yaml` file of a package would look like:
+```yaml
+name: my_package
+environment:
+  sdk: ^3.6.0
+resolution: workspace
 ```
 
 > [!NOTE]
@@ -82,7 +90,7 @@ A default file structure looks something like this:
 
 ```
 my-melos-repo/
-  melos.yaml
+  pubspec.yaml
   packages/
     package-1/
       pubspec.yaml
@@ -90,19 +98,21 @@ my-melos-repo/
       pubspec.yaml
 ```
 
-The location of your packages can be configured via the `melos.yaml`
-configuration file if the default is unsuitable.
+The location of your packages needs be configured via the `workspace`
+section in your root `pubspec.yaml` file, see the
+[pub workspaces](https://dart.dev/tools/pub/workspaces) documentation for more
+information.
 
 ## What can Melos do?
 
 - 🔗 Link local packages in your workspace together without adding dependency
-  overrides.
+  overrides (achieved by pub workspaces).
 - 📦 Automatically version, create changelogs and publish your packages using
   [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
-- 📜 Pre-define advanced custom scripts for your workspace in your `melos.yaml`
-  configuration to use via `melos run [scriptName]`. Anyone contributing to your
-  workspace can just run `melos run` to be prompted to select a script from a
-  list with descriptions of each script.
+- 📜 Pre-define advanced custom scripts for your workspace in your root
+  `pubspec.yaml` configuration to use via `melos run [scriptName]`. Anyone
+  contributing to your workspace can just run `melos run` to be prompted to
+  select a script from a list with descriptions of each script.
   - Scripts can even
     [prompt to select a package](https://melos.invertase.dev/~melos-latest/configuration/scripts#packagefilters)
     to run against with pre-defined filters.
@@ -233,13 +243,11 @@ Global options:
 -h, --help        Print this usage information.
     --verbose     Enable verbose logging.
     --sdk-path    Path to the Dart/Flutter SDK that should be used. This command line option has
-                  precedence over the `sdkPath` option in the `melos.yaml` configuration file and the
-                  `MELOS_SDK_PATH` environment variable. To use the system-wide SDK, provide the
-                  special value "auto".
+                  precedence over the `sdkPath` option in the root `pubspec.yaml` configuration
+                  file and the `MELOS_SDK_PATH` environment variable. To use the system-wide SDK,
+                  provide the special value "auto".
 
 Available commands:
-  analyze     Analyzes all packages in your project for potential issues in a single run. Optionally
-              configure severity levels. Supports all package filtering options.
   bootstrap   Initialize the workspace, link local packages together and install remaining package
               dependencies. Supports all package filtering options.
   clean       Clean this workspace and all packages. This deletes the temporary pub & ide files such
@@ -249,7 +257,7 @@ Available commands:
   list        List local packages in various output formats. Supports all package filtering options.
   publish     Publish any unpublished packages or package versions in your repository to pub.dev. Dry
               run is on by default.
-  run         Run a script by name defined in the workspace melos.yaml config file.
+  run         Run a script by name defined in the workspace pubspec.yaml config file.
   version     Automatically version and generate changelogs based on the Conventional Commits
               specification. Supports all package filtering options.
 

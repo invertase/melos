@@ -8,22 +8,17 @@ description: How to migrate between major versions of Melos.
 ## 6.x.x to 7.x.x
 
 Since the [pub workspaces](https://dart.dev/tools/pub/workspaces) feature has
-been released, Melos has been updated to rely on that instead of creating
+been released, Melos has been updated to rely on that, instead of creating
 `pubspec_overrides.yaml` files and thus some migration is needed.
 
-The main difference is that you now have to add `resolution: workspace` to all
-of your packages' `pubspec.yaml` files and add a list of all your packages to
-the root `pubspec.yaml` file, similar to this:
+The main difference is that:
+1. There is no longer a `melos.yaml` file, only the root `pubspec.yaml`
+2. You now have to add `resolution: workspace` to all of your packages'
+   `pubspec.yaml` files.
+3. You now have to add a list of all your packages to the root `pubspec.yaml`
+   file.
 
-Package `pubspec.yaml` file:
-```yaml
-name: my_package
-environment:
-  sdk: ^3.6.0
-resolution: workspace
-```
-
-Workspace root `pubspec.yaml` file:
+After the migration your root `pubspec.yaml` file would now look something like this:
 ```yaml
 name: my_workspace
 publish_to: none
@@ -35,6 +30,19 @@ workspace:
   - packages/server_package
 dev_dependencies:
   melos: ^7.0.0
+
+melos:
+  # All of the content of your previous melos.yaml file
+  # (Except for the packages and name)
+```
+
+
+And this is what the `pubspec.yaml` file of a package would look like:
+```yaml
+name: my_package
+environment:
+  sdk: ^3.6.0
+resolution: workspace
 ```
 
 > [!NOTE]

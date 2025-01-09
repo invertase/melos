@@ -1,30 +1,20 @@
 ---
 title: Configuration overview
-description: Configure Melos using the `melos.yaml` file.
+description: Configure Melos using the `pubspec.yaml` file.
 ---
 
 # Configuration Overview
 
-Every project requires a `melos.yaml` project in the root. The below outlines
-all the configurable fields and their purpose.
-
-Additionally, projects may include a `melos_overrides.yaml` file to override any
-`melos.yaml` field. This is useful for making untracked customizations to a
-project.
-
-## name
-
-<Warning>Required</Warning>
-
-The name of this project for display purposes within IO environments and IDEs.
-
-```yaml
-name: my_project
-```
+Every workspace requires a `pubspec.yaml` file in the root. The below outlines
+all the configurable fields for the `melos` section of the `pubspec.yaml` file.
 
 ## repository
 
 The URL of the git repository that contains the Melos workspace.
+
+If this is defined on the top level in the pubspec file you don't have to
+define it here, but if it's not just a URL you have to define it in the
+`melos` section, since pubspec only supports strings for the repository field.
 
 Supported hosts:
 
@@ -34,25 +24,27 @@ Supported hosts:
 - Azure DevOps (https://dev.azure.com)
 
 ```yaml
-repository: https://github.com/invertase/melos
+melos:
+  repository: https://github.com/invertase/melos
 ```
 
 When using a self-hosted GitHub, GitLab, Bitbucket or Azure DevOps instance,
 you can specify the repository location like this:
 
 ```yaml
-repository:
-  type: gitlab
-  origin: https://gitlab.example.dev
-  owner: invertase
-  name: melos
+melos:
+  repository:
+    type: gitlab
+    origin: https://gitlab.example.dev
+    owner: invertase
+    name: melos
 ```
 
 ## sdkPath
 
 Path to the Dart/Flutter SDK that should be used.
 
-Relative paths are resolved relative to the `melos.yaml` file.
+Relative paths are resolved relative to the root `pubspec.yaml` file.
 
 To use the system-wide SDK, provide the special value "auto".
 
@@ -61,47 +53,19 @@ highest to lowest is:
 
 1. `--sdk-path` global command line option
 2. `MELOS_SDK_PATH` environment variable
-3. `sdkPath` in `melos.yaml`
+3. `sdkPath` in the `melos` section in the root `pubspec.yaml`
 
 ```yaml
-sdkPath: .fvm/flutter_sdk
-```
-
-## packages
-
-<Warning>Required</Warning>
-
-A list of paths to local packages that are included in the Melos workspace. Each
-entry can be a specific path or a [glob] pattern.
-
-```yaml
-packages:
-  # Include the package in the workspace root.
-  - .
-  # Include all packages inside the `packages` directory that are direct children.
-  - packages/*
-  # Include all packages inside the `packages` directory and all descendants.
-  - packages/**
-```
-
-<Info>
-  You can also reduce the scope of packages on a per-command basis via the
-  [`--scope` filter](/filters#--scope) flag.
-</Info>
-
-Avoid recursive wildcards (`**`) as they require walking large parts of the
-file system and can be slow. If you have packages at multiple levels of depth,
-consider using multiple patterns instead:
-
-```yaml
-packages:
-  - packages/*
-  - packages/*/example
+melos:
+  sdkPath: .fvm/flutter_sdk
 ```
 
 ## ignore
 
 A list of paths to local packages that are excluded from the Melos workspace.
+Do note that they are not excluded for the Dart/Flutter tooling, but only for
+Melos scripts.
+
 Each entry can be a specific path or a [glob] pattern.
 
 ```yaml
@@ -114,19 +78,19 @@ ignore:
 
 Categories are used to group packages together.
 
-To define custom package categories, add a `categories` section in your `melos.yaml` file.
-Under this section, you can specify category names as keys, and their corresponding values
-should be lists of glob patterns that match the packages you want to include in each category.
+To define custom package categories, add a `categories` section in your root
+`pubspec.yaml` file. Under this section, you can specify category names as keys,
+and their corresponding values should be lists of glob patterns that match the
+packages you want to include in each category.
 
 ```yaml
-# melos.yaml
-
-categories:
-  examples:
-    - packages/example*
-  alpha:
-    - packages/feature_a/*
-    - packages/feature_b
+melos:
+  categories:
+    examples:
+      - packages/example*
+    alpha:
+      - packages/feature_a/*
+      - packages/feature_b
 ```
 
 ## ide/intellij
@@ -141,9 +105,10 @@ experience when working in a Melos workspace.
 The default is `true`.
 
 ```yaml
-ide:
-  intellij:
-    enabled: false
+melos:
+  ide:
+    intellij:
+      enabled: false
 ```
 
 ### moduleNamePrefix
@@ -175,8 +140,9 @@ be a specific path or a [glob] pattern.
 workspace root.
 
 ```yaml
-dependencyOverridePaths:
-  - '../external_project/packages/**'
+melos:
+  dependencyOverridePaths:
+    - '../external_project/packages/**'
 ```
 
 ### runPubGetInParallel
@@ -242,9 +208,10 @@ If specified, prevents `melos version` from being used inside branches other
 than the one specified.
 
 ```yaml
-command:
-  version:
-    branch: main
+melos:
+  command:
+    version:
+      branch: main
 ```
 
 ### includeScopes
@@ -253,9 +220,10 @@ Whether to include conventional commit scopes in the generated CHANGELOG.md.
 Defaults to `true`.
 
 ```yaml
-command:
-  version:
-    includeScopes: false
+melos:
+  command:
+    version:
+      includeScopes: false
 ```
 
 ### includeCommitId
@@ -264,9 +232,10 @@ Whether to add short commit ids to commits (no links) in the CHANGELOG.md that
 is generated by `melos version`.
 
 ```yaml
-command:
-  version:
-    includeCommitId: true
+melos:
+  command:
+    version:
+      includeCommitId: true
 ```
 
 ### linkToCommits
@@ -278,9 +247,10 @@ Enabling this option, requires
 [`repository`](/configuration/overview#repository) to be specified.
 
 ```yaml
-command:
-  version:
-    linkToCommits: false
+melos:
+  command:
+    version:
+      linkToCommits: false
 ```
 
 ### workspaceChangelog
@@ -289,9 +259,10 @@ Whether to additionally build a CHANGELOG.md at the root of the workspace when
 running `melos version`. Defaults to `true`.
 
 ```yaml
-command:
-  version:
-    workspaceChangelog: false
+melos:
+  command:
+    version:
+      workspaceChangelog: false
 ```
 
 ### changelogs
@@ -300,14 +271,15 @@ Configure aggregate changelogs which document the changes made to multiple
 packages.
 
 ```yaml
-command:
-  version:
-    changelogs:
-      - path: FOO_CHANGELOG.md
-        description: |
-          All notable changes to foo packages will be documented in this file.
-        packageFilters:
-          scope: foo_*
+melos:
+  command:
+    version:
+      changelogs:
+        - path: FOO_CHANGELOG.md
+          description: |
+            All notable changes to foo packages will be documented in this file.
+          packageFilters:
+            scope: foo_*
 ```
 
 #### path
@@ -342,9 +314,10 @@ See the
 for more information.
 
 ```yaml
-command:
-  version:
-    updateGitTagRefs: true
+melos:
+  command:
+    version:
+      updateGitTagRefs: true
 ```
 
 ### releaseUrl
@@ -360,9 +333,10 @@ Whether to fetch tags from the `origin` remote before versioning. Defaults to
 `true`.
 
 ```yaml
-command:
-  version:
-    fetchTags: false
+melos:
+  command:
+    version:
+      fetchTags: false
 ```
 
 ### changelogCommitBodies
@@ -370,11 +344,12 @@ command:
 Configuration for including commit bodies in the changelog.
 
 ```yaml
-command:
-  version:
-    changelogCommitBodies:
-      include: true
-      onlyBreaking: false
+melos:
+  command:
+    version:
+      changelogCommitBodies:
+        include: true
+        onlyBreaking: false
 ```
 
 #### include
@@ -390,10 +365,11 @@ Whether to include only breaking changes in the changelog. Defaults to `true`.
 Configure the format of the generated CHANGELOG.md.
 
 ```yaml
-command:
-  version:
-    changelogFormat:
-      includeDate: true
+melos:
+  command:
+    version:
+      changelogFormat:
+        includeDate: true
 ```
 
 #### includeDate

@@ -1,7 +1,7 @@
 ---
 title: Defining workspace scripts
 description:
-  Defining workspace scripts in Melos via the `melos.yaml` scripts definition.
+  Defining workspace scripts in Melos via the `scripts` section in the root `pubspec.yaml`.
 ---
 
 # Workspace Scripts
@@ -9,12 +9,17 @@ description:
 Workspace scripts can be executed with `melos run` or will be executed as
 lifecycle hooks of some specific Melos commands.
 
+Remember, the scripts go in the `scripts` section under the `melos` section in
+the root `pubspec.yaml` file. For readability the `melos` section is omitted in
+all examples below except for the first one.
+
 With the simple syntax, only the name of the script and the command to execute
 needs to be specified:
 
 ```yaml
-scripts:
-  hello: echo 'Hello World'
+melos:
+  scripts:
+    hello: echo 'Hello World'
 ```
 
 The extends syntax allows for a more complex configuration of a script:
@@ -164,7 +169,7 @@ executed, as well as at other interesting points in the command's execution.
 All commands that support hooks, support at least the `pre` and `post` hook.
 
 Hooks are configured in the `hooks` section of a command's configuration in the
-`melos.yaml` file.
+root `pubspec.yaml` file.
 
 ```yaml
 command:

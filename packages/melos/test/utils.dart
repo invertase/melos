@@ -355,7 +355,7 @@ class VirtualWorkspaceBuilder {
   })  : logger = (logger ?? TestLogger()).toMelosLogger(),
         path = path ?? Directory.systemTemp.createTempSync('melos_test_').path;
 
-  /// The contents of the melos.yaml file, to configure the workspace.
+  /// The contents of the melos section in the root `pubspec.yaml` file.
   final String melosYaml;
 
   /// The absolute path to the workspace.
