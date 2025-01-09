@@ -96,9 +96,10 @@ void main() {
         workingDirectory: workspaceDir.path,
       );
 
+      final prefix = Platform.isMacOS ? '/private' : '';
       expect(
         logger.output.normalizeNewLines(),
-        ignoringAnsii('$testDir\n'),
+        ignoringAnsii('$prefix$testDir\n'),
       );
     });
   });
