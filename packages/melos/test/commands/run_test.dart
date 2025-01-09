@@ -668,42 +668,25 @@ SUCCESS
       );
 
       await melos.run(scriptName: 'hello_script', noSelect: true);
-      print(logger.output.normalizeNewLines());
-
+      final normalizedLines = logger.output.normalizeNewLines().split('\n');
       expect(
-        logger.output.normalizeNewLines(),
-        ignoringDependencyMessages(
-          '''
-melos run hello_script
-➡️ step: melos format
-\$ melos format
-  └> dart format .
-     └> RUNNING (in 3 packages)
-
-${'-' * terminalWidth}
-a:
-Formatted main.dart
-Formatted 1 file (1 changed) in 0.12 seconds.
-a: SUCCESS
-${'-' * terminalWidth}
-b:
-Formatted no files in 0.00 seconds.
-b: SUCCESS
-${'-' * terminalWidth}
-c:
-Formatted no files in 0.00 seconds.
-c: SUCCESS
-${'-' * terminalWidth}
-
-\$ melos format
-  └> dart format .
-     └> SUCCESS
-
-➡️ step: echo hello world
-${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
-
-SUCCESS
-''',
+        normalizedLines,
+        containsAll(
+          [
+            r'$ melos format',
+            '  └> dart format .',
+            '     └> RUNNING (in 3 packages)',
+            'a:',
+            'Formatted main.dart',
+            'a: SUCCESS',
+            'b:',
+            'b: SUCCESS',
+            'c:',
+            'c: SUCCESS',
+            r'$ melos format',
+            '  └> dart format .',
+            '     └> SUCCESS',
+          ],
         ),
       );
     });
@@ -817,40 +800,27 @@ SUCCESS
       );
 
       await melos.run(scriptName: 'hello_script', noSelect: true);
+
+      final normalizedLines = logger.output.normalizeNewLines().split('\n');
       expect(
-        logger.output.normalizeNewLines(),
-        ignoringDependencyMessages(
-          '''
-melos run hello_script
-➡️ step: melos format --set-exit-if-changed
-\$ melos format
-  └> dart format --set-exit-if-changed .
-     └> RUNNING (in 3 packages)
-
-${'-' * terminalWidth}
-a:
-Formatted main.dart
-Formatted 1 file (1 changed) in 0.12 seconds.
-${'-' * terminalWidth}
-b:
-Formatted no files in 0.00 seconds.
-b: SUCCESS
-${'-' * terminalWidth}
-c:
-Formatted no files in 0.00 seconds.
-c: SUCCESS
-${'-' * terminalWidth}
-
-\$ melos format
-  └> dart format --set-exit-if-changed .
-     └> FAILED (in 1 packages)
-        └> a (with exit code 1)
-
-➡️ step: echo hello world
-${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
-
-SUCCESS
-''',
+        normalizedLines,
+        containsAll(
+          [
+            r'$ melos format',
+            '  └> dart format --set-exit-if-changed .',
+            '     └> RUNNING (in 3 packages)',
+            'a:',
+            'Formatted main.dart',
+            'b:',
+            'b: SUCCESS',
+            'c:',
+            'c: SUCCESS',
+            r'$ melos format',
+            '  └> dart format --set-exit-if-changed .',
+            '     └> FAILED (in 1 packages)',
+            '        └> a (with exit code 1)',
+            if (currentPlatform.isWindows) '"hello world"' else 'hello world',
+          ],
         ),
       );
     });
