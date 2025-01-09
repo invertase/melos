@@ -148,34 +148,46 @@ Generating IntelliJ IDE files...
     });
 
     test('properly compares the path changes on git references', () async {
-      final temporaryGitRepository = createTestTempDir();
+      final temporaryGitRepositoryPath = createTestTempDir().absolute.path;
+
+      await io.Process.run(
+        'git',
+        [
+          'config',
+          '--global',
+          '--add',
+          'safe.directory',
+          temporaryGitRepositoryPath,
+        ],
+      );
+      // TODO: Add teardown for the git config
 
       await io.Process.run(
         'git',
         ['init'],
-        workingDirectory: temporaryGitRepository.absolute.path,
+        workingDirectory: temporaryGitRepositoryPath,
       );
 
       await createProject(
-        io.Directory('${temporaryGitRepository.absolute.path}/dependency1'),
+        io.Directory('$temporaryGitRepositoryPath/dependency1'),
         Pubspec('dependency'),
       );
 
       await createProject(
-        io.Directory('${temporaryGitRepository.absolute.path}/dependency2'),
+        io.Directory('$temporaryGitRepositoryPath/dependency2'),
         Pubspec('dependency'),
       );
 
       await io.Process.run(
         'git',
         ['add', '-A'],
-        workingDirectory: temporaryGitRepository.absolute.path,
+        workingDirectory: temporaryGitRepositoryPath,
       );
 
       await io.Process.run(
         'git',
         ['commit', '--message="Initial commit"'],
-        workingDirectory: temporaryGitRepository.absolute.path,
+        workingDirectory: temporaryGitRepositoryPath,
       );
 
       final workspaceDirectory = await createTemporaryWorkspace(
@@ -186,7 +198,7 @@ Generating IntelliJ IDE files...
 
       final initialReference = {
         'git': {
-          'url': 'file://${temporaryGitRepository.absolute.path}',
+          'url': 'file://$temporaryGitRepositoryPath',
           'path': 'dependency1/packages/dependency',
         },
       };
@@ -246,7 +258,7 @@ Generating IntelliJ IDE files...
               'dependencies': {
                 'dependency': {
                   'git': {
-                    'url': 'file://${temporaryGitRepository.absolute.path}',
+                    'url': 'file://$temporaryGitRepositoryPath',
                     'path': 'dependency2/packages/dependency',
                   },
                 },
