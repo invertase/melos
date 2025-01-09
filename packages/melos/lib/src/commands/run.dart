@@ -245,7 +245,6 @@ mixin _RunMixin on _Melos {
     final command = step.split(' ')[0];
 
     const melosCommands = {
-      'analyze',
       'format',
       'bs',
       'bootstrap',

@@ -46,7 +46,6 @@ import '../scripts.dart';
 import '../workspace.dart';
 import '../workspace_config.dart';
 
-part 'analyze.dart';
 part 'bootstrap.dart';
 part 'clean.dart';
 part 'exec.dart';
@@ -73,7 +72,6 @@ class Melos extends _Melos
         _ExecMixin,
         _VersionMixin,
         _PublishMixin,
-        _AnalyzeMixin,
         _FormatMixin,
         _InitMixin {
   Melos({
