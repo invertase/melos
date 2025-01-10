@@ -1,3 +1,12 @@
+## 7.0.0-dev.3
+
+> Note: This release has breaking changes.
+
+ - **FIX**: Run examples from own directory ([#834](https://github.com/invertase/melos/issues/834)). ([e4ade765](https://github.com/invertase/melos/commit/e4ade765dfa4cf5f791cf22993474693230fd3d0))
+ - **FIX**: fix git dependencies comparison on bootstrap ([#659](https://github.com/invertase/melos/issues/659)). ([c5238cd0](https://github.com/invertase/melos/commit/c5238cd0eed8723e053717c21baa9361ccff7733))
+ - **FIX**: Fixed versioning for nested version fields ([#831](https://github.com/invertase/melos/issues/831)). ([4def2093](https://github.com/invertase/melos/commit/4def20937be9f50c28630c40a069475da8223a40))
+ - **BREAKING** **FEAT**: Remove melos.yaml in favor of the root pubspec.yaml ([#832](https://github.com/invertase/melos/issues/832)). ([ade758c2](https://github.com/invertase/melos/commit/ade758c23fee626ae60a275eddfde04fd73187af))
+
 ## 7.0.0-dev.2
 
  - Relaxing file and platform dependency constraints
