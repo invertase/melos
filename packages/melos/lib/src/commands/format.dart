@@ -134,7 +134,7 @@ mixin _FormatMixin on _Melos {
       logger: logger,
       environment: environment,
       workingDirectory: package.path,
-      prefix: prefixLogs ? packagePrefix : null,
+      logPrefix: prefixLogs ? packagePrefix : null,
     );
   }
 }

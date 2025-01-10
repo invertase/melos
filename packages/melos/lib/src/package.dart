@@ -987,29 +987,8 @@ class Package {
     return pubClient.fetchPackage(name);
   }
 
-  /// The example [Package] contained within this package, if any.
-  ///
-  /// A package is considered to be an example if it is located in the `example`
-  /// directory of the [enclosingPackage].
-  late final Package? examplePackage = () {
-    final examplePath = p.join(path, 'example');
-    return _packageMap.values
-        .firstWhereOrNull((package) => p.equals(package.path, examplePath));
-  }();
-
-  /// The [Package] that encloses this package, if any.
-  ///
-  /// A package is considered to be the enclosing package if this package is
-  /// located in a direct child directory of the enclosing package.
-  late final Package? enclosingPackage = () {
-    final enclosingPackagePath = p.dirname(path);
-    return _packageMap.values.firstWhereOrNull(
-      (package) => p.equals(package.path, enclosingPackagePath),
-    );
-  }();
-
-  /// Whether this package is an example package as defined by [examplePackage].
-  bool get isExample => enclosingPackage?.examplePackage == this;
+  /// Whether this package is an example package.
+  bool get isExample => p.dirname(path).endsWith('example');
 
   /// Returns whether this package is a Flutter app.
   ///
