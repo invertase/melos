@@ -7,6 +7,7 @@ import 'package:ansi_styles/ansi_styles.dart';
 import 'package:async/async.dart';
 import 'package:cli_util/cli_logging.dart';
 import 'package:file/local.dart';
+import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 import 'package:mustache_template/mustache.dart';
 import 'package:path/path.dart' as p;
@@ -43,9 +44,8 @@ import '../logging.dart';
 import '../package.dart';
 import '../scripts.dart';
 import '../workspace.dart';
-import '../workspace_configs.dart';
+import '../workspace_config.dart';
 
-part 'analyze.dart';
 part 'bootstrap.dart';
 part 'clean.dart';
 part 'exec.dart';
@@ -72,7 +72,6 @@ class Melos extends _Melos
         _ExecMixin,
         _VersionMixin,
         _PublishMixin,
-        _AnalyzeMixin,
         _FormatMixin,
         _InitMixin {
   Melos({

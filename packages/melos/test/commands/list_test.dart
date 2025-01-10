@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:melos/src/commands/runner.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/package.dart';
-import 'package:melos/src/workspace_configs.dart';
+import 'package:melos/src/workspace_config.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';

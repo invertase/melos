@@ -7,7 +7,7 @@ import '../common/utils.dart';
 import '../global_options.dart';
 import '../logging.dart';
 import '../package.dart';
-import '../workspace_configs.dart';
+import '../workspace_config.dart';
 
 abstract class MelosCommand extends Command<void> {
   MelosCommand(this.config);
@@ -20,7 +20,7 @@ abstract class MelosCommand extends Command<void> {
   late final logger =
       MelosLogger(global.verbose ? Logger.verbose() : Logger.standard());
 
-  /// The `melos.yaml` configuration for this command. see
+  /// The `pubspec.yaml` configuration for this command. see
   /// [ArgParser.allowTrailingOptions]
   bool get allowTrailingOptions => true;
 

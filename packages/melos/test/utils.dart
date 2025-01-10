@@ -2,18 +2,18 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:cli_util/cli_logging.dart';
+import 'package:glob/glob.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart' as http_testing;
 import 'package:melos/melos.dart';
-import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
-import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
+import 'package:yaml_edit/yaml_edit.dart';
 
 import 'pubspec_extension.dart';
 
@@ -73,8 +73,12 @@ class TestLogger extends StandardLogger {
   }
 }
 
-Directory createTestTempDir() {
-  final dir = Directory.systemTemp.createTempSync('melos_test_').path;
+Directory createTestTempDir({bool isLocal = false}) {
+  final dir = (isLocal
+          ? Directory(p.join(Directory.current.path, '.dart_tool'))
+          : Directory.systemTemp)
+      .createTempSync('melos_test_')
+      .path;
   addTearDown(() => deleteEntry(dir));
   return Directory(dir);
 }
@@ -101,10 +105,8 @@ typedef TestWorkspaceConfigBuilder = MelosWorkspaceConfig Function(String path);
 
 MelosWorkspaceConfig _defaultWorkspaceConfigBuilder(String path) =>
     MelosWorkspaceConfig(
-      name: 'Melos',
-      packages: [
-        createGlob('packages/**', currentDirectoryPath: path),
-      ],
+      name: 'workspace',
+      packages: const <Glob>[],
       path: path,
     );
 
@@ -114,18 +116,25 @@ Future<Directory> createTemporaryWorkspace({
   bool runPubGet = false,
   bool createLockfile = false,
   bool withExamples = false,
+  bool prependPackages = true,
+  bool useLocalTmpDirectory = false,
 }) async {
-  final tempDir = createTempDir(p.join(Directory.current.path, '.dart_tool'));
-  addTearDown(() => deleteEntry(tempDir));
+  final workspacePath = createTestTempDir(isLocal: useLocalTmpDirectory).path;
+  addTearDown(() => deleteEntry(workspacePath));
 
-  final workspacePath = tempDir;
   final workspacePackagesPaths = workspacePackages
-      .map((name) => name.contains('packages') ? name : 'packages/$name');
+      .map(
+        (name) => (!prependPackages || name.contains('packages'))
+            ? name
+            : 'packages/$name',
+      )
+      .toList();
 
   await createProject(
     Directory(workspacePath),
     Pubspec(
       'workspace',
+      repository: Uri.tryParse('https://github.com/invertase/melos'),
       environment: defaultTestEnvironment,
       workspace: [
         ...workspacePackagesPaths,
@@ -136,7 +145,7 @@ Future<Directory> createTemporaryWorkspace({
         'melos': PathDependency(Directory.current.path),
       },
     ),
-    path: '.',
+    path: workspacePath,
     createLockfile: createLockfile,
   );
 
@@ -144,15 +153,12 @@ Future<Directory> createTemporaryWorkspace({
     await _runPubGet(workspacePath);
   }
 
-  final config =
-      (configBuilder(workspacePath)..validatePhysicalWorkspace()).toJson();
+  final pubspecFile = File(p.join(workspacePath, 'pubspec.yaml'));
+  final config = YamlEditor('')
+    ..update([], configBuilder(workspacePath).toYaml());
+  pubspecFile.writeAsStringSync(config.toString(), mode: FileMode.append);
 
-  writeTextFile(
-    p.join(workspacePath, 'melos.yaml'),
-    prettyEncodeJson(config),
-  );
-
-  return Directory(tempDir);
+  return Directory(workspacePath);
 }
 
 Future<Directory> createProject(
@@ -220,6 +226,32 @@ Future<Directory> createProject(
   }
 
   return projectDirectory;
+}
+
+/// Does the same as [createTemporaryWorkspace], but returns the resulting
+/// [MelosWorkspace] instance instead of the directory.
+Future<MelosWorkspace> createTemporaryMelosWorkspace({
+  required List<String> workspacePackages,
+  TestWorkspaceConfigBuilder configBuilder = _defaultWorkspaceConfigBuilder,
+  bool runPubGet = false,
+  bool createLockfile = false,
+  bool withExamples = false,
+  bool prependPackages = true,
+  MelosLogger? logger,
+}) async {
+  final workspacePath = await createTemporaryWorkspace(
+    workspacePackages: workspacePackages,
+    configBuilder: configBuilder,
+    runPubGet: runPubGet,
+    createLockfile: createLockfile,
+    withExamples: withExamples,
+    prependPackages: prependPackages,
+  );
+  final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspacePath);
+  return MelosWorkspace.fromConfig(
+    config,
+    logger: logger ?? TestLogger().toMelosLogger(),
+  );
 }
 
 String packageConfigPath(String packageRoot) {
@@ -321,10 +353,9 @@ class VirtualWorkspaceBuilder {
     this.sdkPath,
     Logger? logger,
   })  : logger = (logger ?? TestLogger()).toMelosLogger(),
-        path =
-            path ?? (currentPlatform.isWindows ? r'\\workspace' : '/workspace');
+        path = path ?? Directory.systemTemp.createTempSync('melos_test_').path;
 
-  /// The contents of the melos.yaml file, to configure the workspace.
+  /// The contents of the melos section in the root `pubspec.yaml` file.
   final String melosYaml;
 
   /// The absolute path to the workspace.
@@ -342,7 +373,6 @@ class VirtualWorkspaceBuilder {
 
   Map<String, Object?> get _defaultWorkspaceConfig => {
         'name': 'virtual-workspace',
-        'packages': ['$defaultPackagesPath/**'],
       };
 
   final List<_VirtualPackage> _packages = [];
@@ -361,11 +391,11 @@ class VirtualWorkspaceBuilder {
 
   /// Build the workspace based on the current configuration of this builder.
   MelosWorkspace build() {
+    final pubspecConfig = _defaultWorkspaceConfig;
+    pubspecConfig['melos'] =
+        loadYaml(melosYaml) as Map<Object?, Object?>? ?? {};
     final config = MelosWorkspaceConfig.fromYaml(
-      {
-        ..._defaultWorkspaceConfig,
-        ...loadYaml(melosYaml) as Map<Object?, Object?>? ?? {},
-      },
+      pubspecConfig,
       path: path,
     );
 
@@ -386,7 +416,10 @@ class VirtualWorkspaceBuilder {
   }
 
   Package _buildRootPackage(MelosWorkspaceConfig config, MelosLogger logger) {
-    final pubspec = Pubspec.fromJson({'name': config.name});
+    final pubspec = Pubspec(
+      config.name,
+      workspace: config.packages.map((g) => g.pattern).toList(),
+    );
     return Package(
       pubspec: pubspec,
       name: config.name,

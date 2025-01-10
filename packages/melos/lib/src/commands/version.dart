@@ -403,7 +403,7 @@ mixin _VersionMixin on _RunMixin {
 
       if (repository == null) {
         logger.warning(
-          'No repository configured in melos.yaml to generate a '
+          'No repository configured in the pubspec.yaml file to generate a '
           'release for.',
         );
       } else if (repository is! SupportsManualRelease) {

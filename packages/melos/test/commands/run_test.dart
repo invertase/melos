@@ -637,7 +637,7 @@ SUCCESS
           scripts: const Scripts({
             'hello_script': Script(
               name: 'hello_script',
-              steps: ['analyze', 'echo "hello world"'],
+              steps: ['format', 'echo "hello world"'],
             ),
           }),
         ),
@@ -668,47 +668,25 @@ SUCCESS
       );
 
       await melos.run(scriptName: 'hello_script', noSelect: true);
-
+      final normalizedLines = logger.output.normalizeNewLines().split('\n');
       expect(
-        logger.output.normalizeNewLines(),
-        ignoringDependencyMessages(
-          '''
-melos run hello_script
-➡️ step: melos analyze
-\$ melos analyze
-  └> dart analyze 
-     └> RUNNING (in 3 packages)
-
-${'-' * terminalWidth}
-a:
-Analyzing a...
-
-   info - main.dart:3:13 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
-   info - main.dart:5:10 - Missing a newline at the end of the file. Try adding a newline at the end of the file. - eol_at_end_of_file
-
-2 issues found.
-a: SUCCESS
-${'-' * terminalWidth}
-b:
-Analyzing b...
-No issues found!
-b: SUCCESS
-${'-' * terminalWidth}
-c:
-Analyzing c...
-No issues found!
-c: SUCCESS
-${'-' * terminalWidth}
-
-\$ melos analyze
-  └> dart analyze 
-     └> SUCCESS
-
-➡️ step: echo hello world
-${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
-
-SUCCESS
-''',
+        normalizedLines,
+        containsAll(
+          [
+            r'$ melos format',
+            '  └> dart format .',
+            '     └> RUNNING (in 3 packages)',
+            'a:',
+            'Formatted main.dart',
+            'a: SUCCESS',
+            'b:',
+            'b: SUCCESS',
+            'c:',
+            'c: SUCCESS',
+            r'$ melos format',
+            '  └> dart format .',
+            '     └> SUCCESS',
+          ],
         ),
       );
     });
@@ -791,7 +769,7 @@ SUCCESS
           scripts: const Scripts({
             'hello_script': Script(
               name: 'hello_script',
-              steps: ['analyze --fatal-infos', 'echo "hello world"'],
+              steps: ['format --set-exit-if-changed', 'echo "hello world"'],
             ),
           }),
         ),
@@ -823,46 +801,26 @@ SUCCESS
 
       await melos.run(scriptName: 'hello_script', noSelect: true);
 
+      final normalizedLines = logger.output.normalizeNewLines().split('\n');
       expect(
-        logger.output.normalizeNewLines(),
-        ignoringDependencyMessages(
-          '''
-melos run hello_script
-➡️ step: melos analyze --fatal-infos
-\$ melos analyze
-  └> dart analyze --fatal-infos
-     └> RUNNING (in 3 packages)
-
-${'-' * terminalWidth}
-a:
-Analyzing a...
-
-   info - main.dart:3:13 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
-   info - main.dart:5:10 - Missing a newline at the end of the file. Try adding a newline at the end of the file. - eol_at_end_of_file
-
-2 issues found.
-${'-' * terminalWidth}
-b:
-Analyzing b...
-No issues found!
-b: SUCCESS
-${'-' * terminalWidth}
-c:
-Analyzing c...
-No issues found!
-c: SUCCESS
-${'-' * terminalWidth}
-
-\$ melos analyze
-  └> dart analyze --fatal-infos
-     └> FAILED (in 1 packages)
-        └> a (with exit code 1)
-
-➡️ step: echo hello world
-${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
-
-SUCCESS
-''',
+        normalizedLines,
+        containsAll(
+          [
+            r'$ melos format',
+            '  └> dart format --set-exit-if-changed .',
+            '     └> RUNNING (in 3 packages)',
+            'a:',
+            'Formatted main.dart',
+            'b:',
+            'b: SUCCESS',
+            'c:',
+            'c: SUCCESS',
+            r'$ melos format',
+            '  └> dart format --set-exit-if-changed .',
+            '     └> FAILED (in 1 packages)',
+            '        └> a (with exit code 1)',
+            if (currentPlatform.isWindows) '"hello world"' else 'hello world',
+          ],
         ),
       );
     });

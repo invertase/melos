@@ -77,7 +77,7 @@ List<T> assertListIsA<T>({
     throw MelosConfigException.missingKey(key: key, path: path);
   }
 
-  if (collection != null && collection.isEmpty) {
+  if (isRequired && collection != null && collection.isEmpty) {
     throw MelosConfigException(
       'The $key list is empty but at least one value was expected.',
     );
@@ -109,7 +109,8 @@ Map<T, V> assertMapIsA<T, V>({
   };
 }
 
-/// Thrown when `melos.yaml` configuration is malformed.
+/// Thrown when the melos section of the root `pubspec.yaml` configuration is
+/// malformed.
 class MelosConfigException implements MelosException {
   MelosConfigException(this.message);
 
@@ -149,5 +150,5 @@ class MelosConfigException implements MelosException {
   final String message;
 
   @override
-  String toString() => 'melos.yaml: $message';
+  String toString() => 'pubspec.yaml: $message';
 }

@@ -3,10 +3,11 @@ import 'package:melos/src/command_configs/command_configs.dart';
 import 'package:melos/src/common/git_repository.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/platform.dart';
-import 'package:melos/src/workspace_configs.dart';
+import 'package:melos/src/workspace_config.dart';
 import 'package:test/test.dart';
 
 import 'matchers.dart';
+import 'utils.dart';
 
 void main() {
   group('BootstrapCommandConfigs', () {
@@ -535,21 +536,24 @@ void main() {
       },
     );
 
-    test('accepts commands.version.linkToCommits == true if repository exists',
-        () {
-      expect(
-        () => MelosWorkspaceConfig(
-          name: 'melos_test',
-          repository: GitHubRepository(owner: 'invertase', name: 'melos'),
-          packages: const [],
-          commands: const CommandConfigs(
-            version: VersionCommandConfigs(linkToCommits: true),
+    test(
+      'accepts commands.version.linkToCommits == true if repository exists',
+      () async {
+        final workspace = await createTemporaryWorkspace(workspacePackages: []);
+        expect(
+          () => MelosWorkspaceConfig(
+            name: 'melos_test',
+            repository: GitHubRepository(owner: 'invertase', name: 'melos'),
+            packages: const [],
+            commands: const CommandConfigs(
+              version: VersionCommandConfigs(linkToCommits: true),
+            ),
+            path: workspace.path,
           ),
-          path: testWorkspacePath,
-        ),
-        returnsNormally,
-      );
-    });
+          returnsNormally,
+        );
+      },
+    );
 
     group('fromYaml', () {
       test('throws if name is missing', () {
@@ -606,22 +610,23 @@ void main() {
         testName('hello=world');
       });
 
-      test('accepts valid dart package name', () {
+      test('accepts valid dart package name', () async {
+        final workspace = await createTemporaryWorkspace(workspacePackages: []);
         MelosWorkspaceConfig.fromYaml(
           createYamlMap({'name': 'hello_world'}, defaults: configMapDefaults),
-          path: testWorkspacePath,
+          path: workspace.path,
         );
         MelosWorkspaceConfig.fromYaml(
           createYamlMap({'name': 'hello2'}, defaults: configMapDefaults),
-          path: testWorkspacePath,
+          path: workspace.path,
         );
         MelosWorkspaceConfig.fromYaml(
           createYamlMap({'name': 'HELLO'}, defaults: configMapDefaults),
-          path: testWorkspacePath,
+          path: workspace.path,
         );
         MelosWorkspaceConfig.fromYaml(
           createYamlMap({'name': 'hello-world'}, defaults: configMapDefaults),
-          path: testWorkspacePath,
+          path: workspace.path,
         );
       });
 
@@ -731,13 +736,14 @@ void main() {
         );
       });
 
-      test('accepts a GitHub repository', () {
+      test('accepts a GitHub repository', () async {
+        final workspace = await createTemporaryWorkspace(workspacePackages: []);
         final config = MelosWorkspaceConfig.fromYaml(
           createYamlMap(
             {'repository': 'https://github.com/invertase/melos'},
             defaults: configMapDefaults,
           ),
-          path: testWorkspacePath,
+          path: workspace.path,
         );
         final repository = config.repository! as GitHubRepository;
 
@@ -764,5 +770,5 @@ Map<String, Object?> createYamlMap(
 /// Default values used by [MelosWorkspaceConfig.fromYaml].
 const configMapDefaults = {
   'name': 'mono-root',
-  'packages': ['packages/*'],
+  'workspace': <String>[],
 };

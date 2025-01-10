@@ -210,11 +210,13 @@ Generating IntelliJ IDE files...
         final initialConfig = MelosWorkspaceConfig.fromYaml(
           {
             'name': 'test',
-            'packages': const ['packages/**'],
-            'command': {
-              'bootstrap': {
-                'dependencies': {
-                  'dependency': initialReference,
+            'workspace': const ['packages/git_references'],
+            'melos': {
+              'command': {
+                'bootstrap': {
+                  'dependencies': {
+                    'dependency': initialReference,
+                  },
                 },
               },
             },
@@ -242,14 +244,16 @@ Generating IntelliJ IDE files...
         final configWithChangedPath = MelosWorkspaceConfig.fromYaml(
           {
             'name': 'test',
-            'packages': const ['packages/**'],
-            'command': {
-              'bootstrap': {
-                'dependencies': {
-                  'dependency': {
-                    'git': {
-                      'url': 'file://$temporaryGitRepositoryPath',
-                      'path': 'dependency2/packages/dependency',
+            'workspace': const ['packages/git_references'],
+            'melos': {
+              'command': {
+                'bootstrap': {
+                  'dependencies': {
+                    'dependency': {
+                      'git': {
+                        'url': 'file://$temporaryGitRepositoryPath',
+                        'path': 'dependency2/packages/dependency',
+                      },
                     },
                   },
                 },
@@ -504,9 +508,11 @@ e-Because a depends on package_that_does_not_exists any which doesn't exist (cou
         configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
           createYamlMap(
             {
-              'command': {
-                'bootstrap': {
-                  'runPubGetOffline': true,
+              'melos': {
+                'command': {
+                  'bootstrap': {
+                    'runPubGetOffline': true,
+                  },
                 },
               },
             },
@@ -555,9 +561,11 @@ Generating IntelliJ IDE files...
         configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
           createYamlMap(
             {
-              'command': {
-                'bootstrap': {
-                  'enforceLockfile': true,
+              'melos': {
+                'command': {
+                  'bootstrap': {
+                    'enforceLockfile': true,
+                  },
                 },
               },
             },
@@ -616,9 +624,11 @@ Generating IntelliJ IDE files...
         configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
           createYamlMap(
             {
-              'command': {
-                'bootstrap': {
-                  'enforceLockfile': true,
+              'melos': {
+                'command': {
+                  'bootstrap': {
+                    'enforceLockfile': true,
+                  },
                 },
               },
             },
@@ -672,9 +682,11 @@ Generating IntelliJ IDE files...
         configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
           createYamlMap(
             {
-              'command': {
-                'bootstrap': {
-                  'enforceLockfile': true,
+              'melos': {
+                'command': {
+                  'bootstrap': {
+                    'enforceLockfile': true,
+                  },
                 },
               },
             },
@@ -891,10 +903,12 @@ Generating IntelliJ IDE files...
         configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
           createYamlMap(
             {
-              'command': {
-                'bootstrap': {
-                  'dependencies': {
-                    'flame': '^1.21.0',
+              'melos': {
+                'command': {
+                  'bootstrap': {
+                    'dependencies': {
+                      'flame': '^1.21.0',
+                    },
                   },
                 },
               },
