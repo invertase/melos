@@ -35,18 +35,18 @@ The path of the package that's currently executing a script (when using
 
 ### `MELOS_PARENT_PACKAGE_NAME`
 
-The name of the parent package of the current package that's currently executing
-a script (when using `melos exec`).
+The name of the parent package of the example that's currently being executed
+in a script (when using `melos exec`).
 
 ### `MELOS_PARENT_PACKAGE_VERSION`
 
-The version of the parent package of the current package that's currently
-executing a script (when using `melos exec`).
+The version of the parent package of the example that's currently being executed
+in a script (when using `melos exec`).
 
 ### `MELOS_PARENT_PACKAGE_PATH`
 
-The path of the parent package of the current package that's currently executing
-a script (when using `melos exec`).
+The path of the parent package of the example that's currently being executed
+in a script (when using `melos exec`).
 
 ### `MELOS_PUBLISH_DRY_RUN`
 
@@ -55,13 +55,14 @@ Whether the current publish is a dry run or not. This is `true` when running
 
 #### What is a 'parent package'
 
-If a package exists in a directory that is also a child of another package, then
-its parent is the 'parent package'. For example; the package `firebase_auth` has
-a `example` directory that is also a package, when running a `melos exec` script
-in the `example` package then the parent package would be `firebase_auth`.
+If an example package exists in a directory that is a child of another package,
+then its parent is the 'parent package'. For example; the package
+`firebase_auth` has an `example` directory that is also a package, when running
+a `melos exec` script in the `example` package then the parent package would be
+`firebase_auth`.
 
 Note, this 'parent package' functionality only currently works when the 'child
-package' name ends with `example`
+package' name ends with `example`.
 
 ## User Defined
 

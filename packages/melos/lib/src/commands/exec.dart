@@ -78,7 +78,7 @@ mixin _ExecMixin on _Melos {
       logger: logger,
       environment: environment,
       workingDirectory: package.path,
-      prefix: prefixLogs ? packagePrefix : null,
+      logPrefix: prefixLogs ? packagePrefix : null,
       // The parent env is injected manually above
       includeParentEnvironment: false,
     );

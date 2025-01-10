@@ -440,7 +440,7 @@ List<int> get runningPids => UnmodifiableListView(_runningPids);
 
 Future<int> startCommand(
   List<String> command, {
-  String? prefix,
+  String? logPrefix,
   Map<String, String> environment = const {},
   String? workingDirectory,
   bool onlyOutputOnError = false,
@@ -466,14 +466,14 @@ Future<int> startCommand(
   var stdoutStream = process.stdout;
   var stderrStream = process.stderr;
 
-  if (prefix != null && prefix.isNotEmpty) {
+  if (logPrefix != null && logPrefix.isNotEmpty) {
     final pluginPrefixTransformer =
         StreamTransformer<String, String>.fromHandlers(
       handleData: (data, sink) {
         const lineSplitter = LineSplitter();
         var lines = lineSplitter.convert(data);
         lines = lines
-            .map((line) => '$prefix$line${line.contains('\n') ? '' : '\n'}')
+            .map((line) => '$logPrefix$line${line.contains('\n') ? '' : '\n'}')
             .toList();
         sink.add(lines.join());
       },
