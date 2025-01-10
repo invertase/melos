@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2025-01-10
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v6.3.1`](#melos---v631)
+
+---
+
+#### `melos` - `v6.3.1`
+
+ - **FIX**: git dependency overrides should have top-level git field. ([4bb8a415](https://github.com/invertase/melos/commit/4bb8a41583dc6618219792fd27dc9f997ae05860))
+
+
 ## 2025-01-04
 
 ### Changes

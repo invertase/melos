@@ -1,3 +1,7 @@
+## 6.3.1
+
+ - **FIX**: git dependency overrides should have top-level git field. ([4bb8a415](https://github.com/invertase/melos/commit/4bb8a41583dc6618219792fd27dc9f997ae05860))
+
 ## 6.3.0
 
  - **REFACTOR**: Use the pubspec_parse package for parsing ([#794](https://github.com/invertase/melos/issues/794)). ([df0c2940](https://github.com/invertase/melos/commit/df0c29407dfcbc402eb8a2f4fff84b0e4f445e37))
