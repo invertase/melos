@@ -322,6 +322,15 @@ String relativePath(String path, String from) {
   return p.normalize(p.relative(path, from: from));
 }
 
+String relativePathForPubspec(String path, String from) {
+  if (currentPlatform.isWindows) {
+    return p.windows
+        .normalize(p.relative(path, from: from))
+        .replaceAll(r'\', '/');
+  }
+  return p.normalize(p.relative(path, from: from));
+}
+
 String listAsPaddedTable(List<List<String>> table, {int paddingSize = 1}) {
   final output = <String>[];
   final maxColumnSizes = <int, int>{};

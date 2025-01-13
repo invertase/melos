@@ -163,7 +163,7 @@ mixin _BootstrapMixin on _CleanMixin {
     for (final otherPackage in workspace.allPackages.values) {
       if (allTransitiveDependencies.containsKey(otherPackage.name)) {
         melosDependencyOverrides[otherPackage.name] = PathDependency(
-          utils.relativePath(otherPackage.path, package.path),
+          utils.relativePathForPubspec(otherPackage.path, package.path),
         );
       }
     }
@@ -172,7 +172,7 @@ mixin _BootstrapMixin on _CleanMixin {
     for (final dependencyOverride
         in workspace.dependencyOverridePackages.values) {
       melosDependencyOverrides[dependencyOverride.name] = PathDependency(
-        utils.relativePath(dependencyOverride.path, package.path),
+        utils.relativePathForPubspec(dependencyOverride.path, package.path),
       );
     }
 
