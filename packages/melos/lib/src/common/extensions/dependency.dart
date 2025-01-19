@@ -9,18 +9,6 @@ extension DependencyExtension on Dependency {
     return null;
   }
 
-  /// Whether the json can be inlined with its parent.
-  ///
-  /// For example for [HostedDependency] the version shouldn't be on a separate
-  /// line when only the version is defined.
-  bool get inlineVersion {
-    if (this is HostedDependency) {
-      return (this as HostedDependency).hosted == null &&
-          versionConstraint != null;
-    }
-    return false;
-  }
-
   Object toJson() {
     final self = this;
     if (self is PathDependency) {
@@ -47,30 +35,40 @@ extension PathDependencyExtension on PathDependency {
 
 extension HostedDependencyExtension on HostedDependency {
   Object toJson() {
-    return inlineVersion
+    return _inlineVersion
         ? version.toString()
         : {
-            'hosted': {
-              'version': version.toString(),
-              if (hosted != null)
-                'hosted': {
-                  'name': hosted!.declaredName,
-                  'url': hosted!.url?.toString(),
-                },
-            },
+            'hosted': hosted!.url?.toString(),
+            'version': version.toString(),
           };
+  }
+
+  /// Whether the json can be inlined with its parent.
+  ///
+  /// For example for [HostedDependency] the version shouldn't be on a separate
+  /// line when only the version is defined.
+  bool get _inlineVersion {
+    return hosted == null;
   }
 }
 
 extension GitDependencyExtension on GitDependency {
   Map<String, dynamic> toJson() {
     return {
-      'git': {
-        'url': url.toString(),
-        if (ref != null) 'ref': ref,
-        if (path != null) 'path': path,
-      },
+      'git': _inlineUrl
+          ? url.toString()
+          : {
+              'url': url.toString(),
+              if (ref != null) 'ref': ref,
+              if (path != null) 'path': path,
+            },
     };
+  }
+
+  /// Whether the url can be inlined with its parent.
+  /// This happens when the [ref] and [path] are null.
+  bool get _inlineUrl {
+    return ref == null && path == null;
   }
 }
 
