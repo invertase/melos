@@ -1,3 +1,8 @@
+## 7.0.0-dev.4
+
+ - **FIX**: Version package correctly ([#842](https://github.com/invertase/melos/issues/842)). ([a9fde62b](https://github.com/invertase/melos/commit/a9fde62bb2ae5a8599b72a7d792170995db9d64c))
+ - **FIX**: Properly format Git and HostedDependency ([#841](https://github.com/invertase/melos/issues/841)). ([a699139a](https://github.com/invertase/melos/commit/a699139aa1d984010b40ae12f2a14bd994df7b7c))
+
 ## 7.0.0-dev.3
 
 > Note: This release has breaking changes.
