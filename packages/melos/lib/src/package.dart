@@ -65,11 +65,6 @@ enum PackageType {
   flutterApp,
 }
 
-RegExp versionReplaceRegex = RegExp(
-  r'''^(version\s?:\s*?['"]?)(?<version>[\w\-.+_]{5,})(.*$)''',
-  multiLine: true,
-);
-
 const _versionRegExp = r'''\d+\.\d+\.\d+[\w\-.+_]*''';
 
 const _versionConstraintRegExp =

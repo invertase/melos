@@ -433,47 +433,8 @@ mixin _VersionMixin on _RunMixin {
     final contents = await readTextFileAsync(pubspec);
 
     final editor = YamlEditor(contents);
-
-    var updatedContents = contents;
-
-    for (final dependencyType in ['dependencies', 'dev_dependencies']) {
-      final dependencySection = editor.parseAt(
-        [dependencyType],
-        orElse: () => wrapAsYamlNode(null),
-      );
-
-      if (dependencySection.value == null) continue;
-
-      final packageNode = editor.parseAt(
-        [dependencyType, package.name],
-        orElse: () => wrapAsYamlNode(null),
-      );
-
-      if (packageNode.value == null) continue;
-
-      if (packageNode is YamlMap) {
-        // Handle nested version case.
-        editor.update([dependencyType, package.name, 'version'], version);
-      } else {
-        // Handle inline version case.
-        editor.update([dependencyType, package.name], version);
-      }
-
-      updatedContents = editor.toString();
-    }
-
-    // Sanity check that contents actually changed.
-    if (contents == updatedContents) {
-      logger.trace(
-        'Failed to update a pubspec.yaml version to $version for package '
-        '${package.name}. '
-        'You should probably report this issue with a copy of your '
-        'pubspec.yaml file.',
-      );
-      return;
-    }
-
-    await writeTextFileAsync(pubspec, updatedContents);
+    editor.update(['version'], version.toString());
+    await writeTextFileAsync(pubspec, editor.toString());
   }
 
   Future<void> _setDependencyVersionForDependentPackage(

@@ -19,23 +19,54 @@ void main() {
   });
 
   group('version', () {
+    test('Correctly updates package version', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: _workspaceConfigBuilder,
+        workspacePackages: ['a'],
+        useLocalTmpDirectory: true,
+      );
+      await createProject(
+        workspaceDir,
+        Pubspec('a', version: Version(0, 0, 1)),
+      );
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(config: config, logger: logger);
+
+      await melos.bootstrap();
+      await melos.version(
+        updateDependentsConstraints: false,
+        updateDependentsVersions: false,
+        versionPrivatePackages: true,
+        gitCommit: false,
+        gitTag: false,
+        force: true,
+        manualVersions: {
+          'a': ManualVersionChange(Version(0, 1, 0)),
+        },
+      );
+
+      final loggerOutput = logger.output;
+      expect(
+        loggerOutput,
+        contains(
+          AnsiStyles.strip('''
+The following 1 packages will be updated:
+'''),
+        ),
+      );
+
+      final pubspec = Pubspec.parse(
+        File(p.join(workspaceDir.path, 'packages/a/pubspec.yaml'))
+            .readAsStringSync(),
+      );
+      expect(pubspec.version, Version(0, 1, 0));
+    });
+
     // Regression test for: https://github.com/invertase/melos/issues/531
     test('--no-dependent-versions does not modify workspace changelog',
         () async {
-      MelosWorkspaceConfig workspaceConfig(String path) => MelosWorkspaceConfig(
-            path: path,
-            name: 'test_workspace',
-            packages: [
-              createGlob('packages/**', currentDirectoryPath: path),
-            ],
-            commands: const CommandConfigs(
-              version: VersionCommandConfigs(
-                fetchTags: false,
-              ),
-            ),
-          );
       final workspaceDir = await createTemporaryWorkspace(
-        configBuilder: workspaceConfig,
+        configBuilder: _workspaceConfigBuilder,
         workspacePackages: ['a', 'b'],
         useLocalTmpDirectory: true,
       );
@@ -107,4 +138,19 @@ The following 1 packages will be updated:
       );
     });
   });
+}
+
+MelosWorkspaceConfig _workspaceConfigBuilder(String path) {
+  return MelosWorkspaceConfig(
+    path: path,
+    name: 'test_workspace',
+    packages: [
+      createGlob('packages/**', currentDirectoryPath: path),
+    ],
+    commands: const CommandConfigs(
+      version: VersionCommandConfigs(
+        fetchTags: false,
+      ),
+    ),
+  );
 }
