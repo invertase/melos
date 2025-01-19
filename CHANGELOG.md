@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2025-01-19
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v6.3.2`](#melos---v632)
+
+---
+
+#### `melos` - `v6.3.2`
+
+ - **FIX**: Correct formatting for Git and HostedDependency. ([21d793fb](https://github.com/invertase/melos/commit/21d793fb5eab1c20529eaa58bea8f20d0548b425))
+
+
 ## 2025-01-10
 
 ### Changes

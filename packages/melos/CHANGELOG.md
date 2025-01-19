@@ -1,3 +1,7 @@
+## 6.3.2
+
+ - **FIX**: Correct formatting for Git and HostedDependency. ([21d793fb](https://github.com/invertase/melos/commit/21d793fb5eab1c20529eaa58bea8f20d0548b425))
+
 ## 6.3.1
 
  - **FIX**: git dependency overrides should have top-level git field. ([4bb8a415](https://github.com/invertase/melos/commit/4bb8a41583dc6618219792fd27dc9f997ae05860))
