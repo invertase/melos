@@ -63,5 +63,5 @@ body:
     attributes:
       label: Other
       options:
-        - label: I'm interested in working on a PR for this:
+        - label: I'm interested in working on a PR for this.
 
