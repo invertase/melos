@@ -57,3 +57,11 @@ body:
       label: Additional context and comments
       description: |
         Anything else you want to say?
+
+  - type: checkboxes
+    id: other
+    attributes:
+      label: Other
+      options:
+        - label: I'm interested in working on a PR for this:
+
