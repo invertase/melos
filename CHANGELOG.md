@@ -3,6 +3,29 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2025-01-24
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v7.0.0-dev.5`](#melos---v700-dev5)
+
+---
+
+#### `melos` - `v7.0.0-dev.5`
+
+ - **FIX**: Fix externally hosted versioning ([#852](https://github.com/invertase/melos/issues/852)). ([40476ed5](https://github.com/invertase/melos/commit/40476ed51dfbc669d83223dd7b067174d2ac0abc))
+ - **FEAT**: Rollback on failed shared dependency resolution ([#848](https://github.com/invertase/melos/issues/848)). ([949c2f6c](https://github.com/invertase/melos/commit/949c2f6c77b6bae92e29a03fc452417b558010f0))
+ - **DOCS**: Rearrange repos using melos ([#845](https://github.com/invertase/melos/issues/845)). ([f744da86](https://github.com/invertase/melos/commit/f744da860c5fde166f16c624f5cf5058c62d4370))
+
+
 ## 2025-01-19
 
 ### Changes
