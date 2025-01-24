@@ -946,6 +946,139 @@ Generating IntelliJ IDE files...
     });
   });
 
+  test(
+    'rollbacks applied shared dependencies on resolution failure',
+    () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a', 'b'],
+        configBuilder: (path) => MelosWorkspaceConfig(
+          name: 'Melos',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          commands: CommandConfigs(
+            bootstrap: BootstrapCommandConfigs(
+              environment: {
+                'sdk': VersionConstraint.parse('>=3.6.0 <4.0.0'),
+                'flutter': VersionConstraint.parse('>=2.18.0 <3.0.0'),
+              },
+              dependencies: {
+                'flame': HostedDependency(
+                  version: VersionConstraint.compatibleWith(
+                    // Should fail since the version is not compatible with
+                    // the flutter version.
+                    Version.parse('0.1.0'),
+                  ),
+                ),
+              },
+              devDependencies: {
+                'flame_lint': HostedDependency(
+                  version: VersionConstraint.compatibleWith(
+                    Version.parse('1.2.1'),
+                  ),
+                ),
+              },
+            ),
+          ),
+          path: path,
+        ),
+      );
+
+      final pkgA = await createProject(
+        workspaceDir,
+        Pubspec(
+          'a',
+          environment: {},
+          dependencies: {
+            'flame': HostedDependency(
+              version:
+                  VersionConstraint.compatibleWith(Version.parse('1.23.0')),
+            ),
+          },
+          devDependencies: {
+            'flame_lint': HostedDependency(
+              version: VersionConstraint.compatibleWith(Version.parse('1.2.0')),
+            ),
+          },
+        ),
+      );
+
+      final pkgB = await createProject(
+        workspaceDir,
+        Pubspec(
+          'b',
+          environment: {
+            'sdk': VersionConstraint.parse('>=2.12.0 <3.0.0'),
+            'flutter': VersionConstraint.parse('>=2.12.0 <3.0.0'),
+          },
+          dependencies: {
+            'flame': HostedDependency(
+              version:
+                  VersionConstraint.compatibleWith(Version.parse('1.23.0')),
+            ),
+            'integral_isolates': HostedDependency(
+              version: VersionConstraint.compatibleWith(Version.parse('0.4.1')),
+            ),
+            'intl': HostedDependency(
+              version:
+                  VersionConstraint.compatibleWith(Version.parse('0.17.0')),
+            ),
+            'path': HostedDependency(version: VersionConstraint.any),
+          },
+        ),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      final pubspecAPreBootstrap = pubspecFromYamlFile(directory: pkgA.path);
+      final pubspecBPreBootstrap = pubspecFromYamlFile(directory: pkgB.path);
+
+      await expectLater(
+        () => runMelosBootstrap(melos, logger),
+        throwsA(isA<BootstrapException>()),
+      );
+
+      final pubspecA = pubspecFromYamlFile(directory: pkgA.path);
+      final pubspecB = pubspecFromYamlFile(directory: pkgB.path);
+
+      expect(
+        pubspecAPreBootstrap.environment,
+        equals(defaultTestEnvironment),
+      );
+      expect(
+        pubspecA.environment['sdk'],
+        equals(pubspecAPreBootstrap.environment['sdk']),
+      );
+      expect(
+        pubspecA.dependencies,
+        equals(pubspecAPreBootstrap.dependencies),
+      );
+      expect(
+        pubspecA.devDependencies,
+        equals(pubspecAPreBootstrap.devDependencies),
+      );
+
+      expect(
+        pubspecBPreBootstrap.environment['flutter'],
+        equals(VersionConstraint.parse('>=2.12.0 <3.0.0')),
+      );
+      expect(
+        pubspecB.dependencies,
+        equals(pubspecBPreBootstrap.dependencies),
+      );
+      expect(
+        pubspecB.devDependencies,
+        equals(pubspecBPreBootstrap.devDependencies),
+      );
+    },
+    timeout: const Timeout(Duration(minutes: 20)),
+  );
+
   group('melos bs --offline', () {
     test('should run pub get with --offline', () async {
       final workspaceDir = await createTemporaryWorkspace(
