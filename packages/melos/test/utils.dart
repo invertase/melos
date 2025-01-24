@@ -328,8 +328,8 @@ class PackageDependencyConfig {
 }
 
 Pubspec pubspecFromJsonFile({
-  String path = 'test/test_assets/',
   required String fileName,
+  String path = 'test/test_assets/',
 }) {
   final filePath = '$path$fileName';
   final jsonAsString = readTextFile(filePath);

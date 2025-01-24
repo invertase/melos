@@ -74,11 +74,21 @@ class ListCommand extends MelosCommand {
 
     var kind = ListOutputKind.column;
 
-    if (parsable) kind = ListOutputKind.parsable;
-    if (json) kind = ListOutputKind.json;
-    if (graph) kind = ListOutputKind.graph;
-    if (gviz) kind = ListOutputKind.gviz;
-    if (cycles) kind = ListOutputKind.cycles;
+    if (parsable) {
+      kind = ListOutputKind.parsable;
+    }
+    if (json) {
+      kind = ListOutputKind.json;
+    }
+    if (graph) {
+      kind = ListOutputKind.graph;
+    }
+    if (gviz) {
+      kind = ListOutputKind.gviz;
+    }
+    if (cycles) {
+      kind = ListOutputKind.cycles;
+    }
 
     return melos.list(
       long: long,

@@ -157,7 +157,9 @@ mixin _VersionMixin on _RunMixin {
 
     if (asStableRelease) {
       for (final package in workspace.filteredPackages.values) {
-        if (!package.version.isPreRelease) continue;
+        if (!package.version.isPreRelease) {
+          continue;
+        }
 
         pendingPackageUpdates.add(
           MelosPendingPackageUpdate(
@@ -742,7 +744,9 @@ mixin _VersionMixin on _RunMixin {
     final packageCommits = <String, List<RichGitCommit>>{};
     await Pool(10).forEach<Package, void>(workspace.filteredPackages.values,
         (package) async {
-      if (!versionPrivatePackages && package.isPrivate) return;
+      if (!versionPrivatePackages && package.isPrivate) {
+        return;
+      }
 
       final commits = await gitCommitsForPackage(
         package,

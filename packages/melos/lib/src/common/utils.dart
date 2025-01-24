@@ -49,7 +49,9 @@ const publishOptionForce = 'force';
 
 extension Let<T> on T? {
   R? let<R>(R Function(T value) cb) {
-    if (this == null) return null;
+    if (this == null) {
+      return null;
+    }
 
     return cb(this as T);
   }
@@ -104,12 +106,16 @@ extension StringUtils on String {
   }
 
   String get capitalized {
-    if (isEmpty) return this;
+    if (isEmpty) {
+      return this;
+    }
     return '${this[0].toUpperCase()}${substring(1)}';
   }
 
   String get camelCased {
-    if (isEmpty) return this;
+    if (isEmpty) {
+      return this;
+    }
     var isFirstWord = true;
     return splitMapJoin(
       _camelCasedDelimiterRegExp,
@@ -336,10 +342,14 @@ String listAsPaddedTable(List<List<String>> table, {int paddingSize = 1}) {
       final colWidth = maxColumnSizes[i]! + paddingSize;
       final cellWidth = AnsiStyles.strip(column).length;
       var padding = colWidth - cellWidth;
-      if (padding < paddingSize) padding = paddingSize;
+      if (padding < paddingSize) {
+        padding = paddingSize;
+      }
 
       // last cell of the list, no need for padding
-      if (i + 1 >= row.length) padding = 0;
+      if (i + 1 >= row.length) {
+        padding = 0;
+      }
 
       rowBuffer.write('$column${List.filled(padding, ' ').join()}');
       i++;
@@ -440,12 +450,12 @@ List<int> get runningPids => UnmodifiableListView(_runningPids);
 
 Future<int> startCommand(
   List<String> command, {
+  required MelosLogger logger,
   String? logPrefix,
   Map<String, String> environment = const {},
   String? workingDirectory,
   bool onlyOutputOnError = false,
   bool includeParentEnvironment = true,
-  required MelosLogger logger,
   String? group,
 }) async {
   final processedCommand = command

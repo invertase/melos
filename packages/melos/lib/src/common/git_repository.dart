@@ -55,9 +55,9 @@ mixin SupportsManualRelease on HostedGitRepository {
 @immutable
 class GitHubRepository extends HostedGitRepository with SupportsManualRelease {
   GitHubRepository({
-    String origin = defaultOrigin,
     required this.owner,
     required this.name,
+    String origin = defaultOrigin,
   }) : origin = removeTrailingSlash(origin);
 
   factory GitHubRepository.fromUrl(Uri uri) {
@@ -138,9 +138,9 @@ GitHubRepository(
 @immutable
 class GitLabRepository extends HostedGitRepository {
   GitLabRepository({
-    String origin = defaultOrigin,
     required this.owner,
     required this.name,
+    String origin = defaultOrigin,
   }) : origin = removeTrailingSlash(origin);
 
   factory GitLabRepository.fromUrl(Uri uri) {
@@ -202,9 +202,9 @@ GitLabRepository(
 
 class BitbucketRepository extends HostedGitRepository {
   BitbucketRepository({
-    String origin = defaultOrigin,
     required this.owner,
     required this.name,
+    String origin = defaultOrigin,
   }) : origin = removeTrailingSlash(origin);
 
   factory BitbucketRepository.fromUrl(Uri uri) {

@@ -193,8 +193,12 @@ extension ChangelogStringBufferExtension on StringBuffer {
 
         final version = update.workspace.config.commands.version;
 
-        if (!version.includeCommitBody) continue;
-        if (parsedMessage.body == null) continue;
+        if (!version.includeCommitBody) {
+          continue;
+        }
+        if (parsedMessage.body == null) {
+          continue;
+        }
 
         final shouldWriteBody =
             !version.commitBodyOnlyBreaking || parsedMessage.isBreakingChange;
@@ -225,7 +229,9 @@ List<RichGitCommit> _filteredAndSortedCommits(
     final r = a.parsedMessage.isBreakingChange
         .toString()
         .compareTo(b.parsedMessage.isBreakingChange.toString());
-    if (r != 0) return r;
+    if (r != 0) {
+      return r;
+    }
     return b.parsedMessage.type!.compareTo(a.parsedMessage.type!);
   });
 

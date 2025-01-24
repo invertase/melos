@@ -101,7 +101,9 @@ void copyFile(String from, String to, {bool recursive = false}) {
 /// The [File] class overwrites the symlink targets when writing to a file,
 /// which is never what we want, so this delete the symlink first if necessary.
 void deleteIfLink(String file) {
-  if (!linkExists(file)) return;
+  if (!linkExists(file)) {
+    return;
+  }
   Link(file).deleteSync();
 }
 
@@ -180,7 +182,9 @@ void _attempt(
       break;
     } on FileSystemException catch (error) {
       final reason = getErrorReason(error);
-      if (reason == null) rethrow;
+      if (reason == null) {
+        rethrow;
+      }
 
       if (i < maxRetries - 1) {
         sleep(const Duration(milliseconds: 50));

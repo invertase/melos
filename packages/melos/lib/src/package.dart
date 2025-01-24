@@ -639,7 +639,9 @@ The packages that caused the problem are:
   ///
   /// This is the default packages behaviour when a workspace is loaded.
   Future<PackageMap> applyFilters(PackageFilters? filters) async {
-    if (filters == null) return this;
+    if (filters == null) {
+      return this;
+    }
 
     var packageList = await values
         .applyIgnore(filters.ignore)
@@ -674,7 +676,9 @@ The packages that caused the problem are:
 
 extension IterablePackageExt on Iterable<Package> {
   Iterable<Package> applyIgnore(List<Glob> ignore) {
-    if (ignore.isEmpty) return this;
+    if (ignore.isEmpty) {
+      return this;
+    }
 
     return where((package) {
       return ignore.every((glob) => !glob.matches(package.name));
@@ -682,7 +686,9 @@ extension IterablePackageExt on Iterable<Package> {
   }
 
   Iterable<Package> applyDirExists(List<String> directoryPaths) {
-    if (directoryPaths.isEmpty) return this;
+    if (directoryPaths.isEmpty) {
+      return this;
+    }
 
     // Directory exists packages filter, multiple filters behaviour is 'AND'.
     return where((package) {
@@ -694,7 +700,9 @@ extension IterablePackageExt on Iterable<Package> {
   }
 
   Iterable<Package> applyFileExists(List<String> filePaths) {
-    if (filePaths.isEmpty) return this;
+    if (filePaths.isEmpty) {
+      return this;
+    }
 
     return where((package) {
       final fileExistsMatched = filePaths.any((fileExistsPath) {
@@ -718,7 +726,9 @@ extension IterablePackageExt on Iterable<Package> {
   /// If `include` is true, only include private packages. If false, only
   /// include public packages. If null, does nothing.
   Iterable<Package> filterPrivatePackages({bool? include}) {
-    if (include == null) return this;
+    if (include == null) {
+      return this;
+    }
 
     return where((package) => include == package.isPrivate);
   }
@@ -731,7 +741,9 @@ extension IterablePackageExt on Iterable<Package> {
   Future<Iterable<Package>> filterPublishedPackages({
     required bool? published,
   }) async {
-    if (published == null) return this;
+    if (published == null) {
+      return this;
+    }
 
     final pool = Pool(10);
     final packagesFilteredWithPublishStatus = <Package>[];
@@ -753,7 +765,9 @@ extension IterablePackageExt on Iterable<Package> {
     String? diff,
     MelosLogger logger,
   ) async {
-    if (diff == null) return this;
+    if (diff == null) {
+      return this;
+    }
 
     return Pool(10)
         .forEach(this, (package) async {
@@ -771,7 +785,9 @@ extension IterablePackageExt on Iterable<Package> {
   /// If `include` is true, only null-safe packages. If false, only include
   /// packages that are not null-safe. If null, does nothing.
   Iterable<Package> filterNullSafe({required bool? nullSafe}) {
-    if (nullSafe == null) return this;
+    if (nullSafe == null) {
+      return this;
+    }
 
     return where((package) {
       final version = package.version;
@@ -784,7 +800,9 @@ extension IterablePackageExt on Iterable<Package> {
   }
 
   Iterable<Package> applyScope(List<Glob> scope) {
-    if (scope.isEmpty) return this;
+    if (scope.isEmpty) {
+      return this;
+    }
 
     return where((package) {
       return scope.any(
@@ -794,7 +812,9 @@ extension IterablePackageExt on Iterable<Package> {
   }
 
   Iterable<Package> applyCategories(List<Glob> appliedCategories) {
-    if (appliedCategories.isEmpty) return this;
+    if (appliedCategories.isEmpty) {
+      return this;
+    }
 
     return where((package) {
       return package.categories.any(
@@ -806,7 +826,9 @@ extension IterablePackageExt on Iterable<Package> {
   }
 
   Iterable<Package> applyDependsOn(List<String> dependsOn) {
-    if (dependsOn.isEmpty) return this;
+    if (dependsOn.isEmpty) {
+      return this;
+    }
 
     return where((package) {
       return dependsOn.every((element) {
@@ -817,7 +839,9 @@ extension IterablePackageExt on Iterable<Package> {
   }
 
   Iterable<Package> applyNoDependsOn(List<String> noDependsOn) {
-    if (noDependsOn.isEmpty) return this;
+    if (noDependsOn.isEmpty) {
+      return this;
+    }
 
     return where((package) {
       return noDependsOn.every((element) {
@@ -834,7 +858,9 @@ extension IterablePackageExt on Iterable<Package> {
     // We apply both dependents and includeDependencies at the same time, as if
     // both flags are enabled, this could otherwise include the dependencies
     // of the dependents – which is undesired.
-    if (!includeDependents && !includeDependencies) return this;
+    if (!includeDependents && !includeDependencies) {
+      return this;
+    }
 
     return {
       for (final package in this) ...[
@@ -952,9 +978,15 @@ class Package {
 
   /// Type of this package, e.g. [PackageType.flutterApp].
   PackageType get type {
-    if (isFlutterApp) return PackageType.flutterApp;
-    if (isFlutterPlugin) return PackageType.flutterPlugin;
-    if (isFlutterPackage) return PackageType.flutterPackage;
+    if (isFlutterApp) {
+      return PackageType.flutterApp;
+    }
+    if (isFlutterPlugin) {
+      return PackageType.flutterPlugin;
+    }
+    if (isFlutterPackage) {
+      return PackageType.flutterPackage;
+    }
     return PackageType.dartPackage;
   }
 
@@ -966,7 +998,9 @@ class Package {
   /// Returns whether this package is private (publish_to set to 'none').
   bool get isPrivate {
     // Unversioned package, assuming private, e.g. example apps.
-    if (pubspec.version == null) return true;
+    if (pubspec.version == null) {
+      return true;
+    }
 
     return publishTo.toString() == 'none';
   }
@@ -995,47 +1029,63 @@ class Package {
   /// - c) a lib/main.dart file exists in the package.
   bool get isFlutterApp {
     // Must directly depend on the Flutter SDK.
-    if (!isFlutterPackage) return false;
+    if (!isFlutterPackage) {
+      return false;
+    }
 
     // Must not have a Flutter plugin definition in its pubspec.yaml.
-    if (pubspec.flutterPlugin != null) return false;
+    if (pubspec.flutterPlugin != null) {
+      return false;
+    }
 
     return fileExists(p.join(path, 'lib', 'main.dart'));
   }
 
   /// Returns whether this package supports Flutter for Android.
   bool get flutterAppSupportsAndroid {
-    if (!isFlutterApp) return false;
+    if (!isFlutterApp) {
+      return false;
+    }
     return _flutterAppSupportsPlatform(kAndroid);
   }
 
   /// Returns whether this package supports Flutter for Web.
   bool get flutterAppSupportsWeb {
-    if (!isFlutterApp) return false;
+    if (!isFlutterApp) {
+      return false;
+    }
     return _flutterAppSupportsPlatform(kWeb);
   }
 
   /// Returns whether this package supports Flutter for Windows.
   bool get flutterAppSupportsWindows {
-    if (!isFlutterApp) return false;
+    if (!isFlutterApp) {
+      return false;
+    }
     return _flutterAppSupportsPlatform(kWindows);
   }
 
   /// Returns whether this package supports Flutter for MacOS.
   bool get flutterAppSupportsMacos {
-    if (!isFlutterApp) return false;
+    if (!isFlutterApp) {
+      return false;
+    }
     return _flutterAppSupportsPlatform(kMacos);
   }
 
   /// Returns whether this package supports Flutter for iOS.
   bool get flutterAppSupportsIos {
-    if (!isFlutterApp) return false;
+    if (!isFlutterApp) {
+      return false;
+    }
     return _flutterAppSupportsPlatform(kIos);
   }
 
   /// Returns whether this package supports Flutter for Linux.
   bool get flutterAppSupportsLinux {
-    if (!isFlutterApp) return false;
+    if (!isFlutterApp) {
+      return false;
+    }
     return _flutterAppSupportsPlatform(kLinux);
   }
 
@@ -1047,37 +1097,49 @@ class Package {
 
   /// Returns whether this package supports Flutter for Android.
   bool get flutterPluginSupportsAndroid {
-    if (!isFlutterPlugin) return false;
+    if (!isFlutterPlugin) {
+      return false;
+    }
     return _flutterPluginSupportsPlatform(kAndroid);
   }
 
   /// Returns whether this package supports Flutter for Web.
   bool get flutterPluginSupportsWeb {
-    if (!isFlutterPlugin) return false;
+    if (!isFlutterPlugin) {
+      return false;
+    }
     return _flutterPluginSupportsPlatform(kWeb);
   }
 
   /// Returns whether this package supports Flutter for Windows.
   bool get flutterPluginSupportsWindows {
-    if (!isFlutterPlugin) return false;
+    if (!isFlutterPlugin) {
+      return false;
+    }
     return _flutterPluginSupportsPlatform(kWindows);
   }
 
   /// Returns whether this package supports Flutter for MacOS.
   bool get flutterPluginSupportsMacos {
-    if (!isFlutterPlugin) return false;
+    if (!isFlutterPlugin) {
+      return false;
+    }
     return _flutterPluginSupportsPlatform(kMacos);
   }
 
   /// Returns whether this package supports Flutter for iOS.
   bool get flutterPluginSupportsIos {
-    if (!isFlutterPlugin) return false;
+    if (!isFlutterPlugin) {
+      return false;
+    }
     return _flutterPluginSupportsPlatform(kIos);
   }
 
   /// Returns whether this package supports Flutter for Linux.
   bool get flutterPluginSupportsLinux {
-    if (!isFlutterPlugin) return false;
+    if (!isFlutterPlugin) {
+      return false;
+    }
     return _flutterPluginSupportsPlatform(kLinux);
   }
 

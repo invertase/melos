@@ -114,7 +114,9 @@ class IntellijProject {
     String fileName, {
     String? templateCategory,
   }) async {
-    if (_cacheTemplates[fileName] != null) return _cacheTemplates[fileName]!;
+    if (_cacheTemplates[fileName] != null) {
+      return _cacheTemplates[fileName]!;
+    }
 
     String templatesRootPath;
     if (templateCategory != null) {
@@ -282,7 +284,9 @@ class IntellijProject {
     );
 
     await Future.forEach(_workspace.filteredPackages.values, (package) async {
-      if (!package.isFlutterApp) return;
+      if (!package.isFlutterApp) {
+        return;
+      }
 
       final generatedRunConfiguration = injectTemplateVariables(
         flutterTestTemplate,
