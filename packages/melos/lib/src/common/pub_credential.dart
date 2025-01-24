@@ -102,7 +102,9 @@ class PubCredential {
   }
 
   String? getAuthHeader() {
-    if (!isValid()) return null;
+    if (!isValid()) {
+      return null;
+    }
     return 'Bearer $_tokenValue';
   }
 }

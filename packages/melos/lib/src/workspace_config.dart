@@ -133,9 +133,9 @@ IntelliJConfig(
 @immutable
 class AggregateChangelogConfig {
   const AggregateChangelogConfig({
-    this.isWorkspaceChangelog = false,
     required this.path,
     required this.packageFilters,
+    this.isWorkspaceChangelog = false,
     this.description,
   });
 
@@ -198,9 +198,9 @@ class MelosWorkspaceConfig {
   MelosWorkspaceConfig({
     required this.path,
     required this.name,
+    required this.packages,
     this.sdkPath,
     this.repository,
-    required this.packages,
     this.categories = const {},
     this.ignore = const [],
     this.scripts = Scripts.empty,

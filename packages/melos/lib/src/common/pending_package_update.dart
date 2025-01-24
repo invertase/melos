@@ -34,10 +34,10 @@ class MelosPendingPackageUpdate {
     this.package,
     this.commits,
     this.reason, {
+    required this.logger,
     this.prerelease = false,
     this.graduate = false,
     this.preid,
-    required this.logger,
   })  : manualVersion = null,
         userChangelogMessage = null;
 
@@ -46,8 +46,8 @@ class MelosPendingPackageUpdate {
     this.package,
     this.commits,
     this.manualVersion, {
-    this.userChangelogMessage,
     required this.logger,
+    this.userChangelogMessage,
   })  : reason = PackageUpdateReason.manual,
         prerelease = false,
         graduate = false,

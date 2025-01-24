@@ -90,7 +90,9 @@ FutureOr<void> melosEntryPoint(
     logger.log(melosVersion);
 
     // No version checks on CIs.
-    if (utils.isCI) return;
+    if (utils.isCI) {
+      return;
+    }
 
     // Check for updates.
     final pubUpdater = PubUpdater();
@@ -155,7 +157,9 @@ Future<MelosWorkspaceConfig> _resolveConfig(
 }
 
 bool _shouldUseEmptyConfig(List<String> arguments) {
-  if (arguments.firstOrNull == 'init') return true;
+  if (arguments.firstOrNull == 'init') {
+    return true;
+  }
   final willShowHelp = arguments.isEmpty ||
       arguments.contains('--help') ||
       arguments.contains('-h');

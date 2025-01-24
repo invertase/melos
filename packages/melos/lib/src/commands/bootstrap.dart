@@ -261,8 +261,12 @@ mixin _BootstrapMixin on _CleanMixin {
     }
 
     for (final entry in workspaceEnvironment.entries) {
-      if (!packageEnvironment.containsKey(entry.key)) continue;
-      if (packageEnvironment[entry.key] == entry.value) continue;
+      if (!packageEnvironment.containsKey(entry.key)) {
+        continue;
+      }
+      if (packageEnvironment[entry.key] == entry.value) {
+        continue;
+      }
 
       pubspecEditor.update(
         ['environment', entry.key],
@@ -291,11 +295,15 @@ mixin _BootstrapMixin on _CleanMixin {
     required Map<String, Dependency> packageDependencies,
     required String pubspecKey,
   }) {
-    if (workspaceDependencies == null) return 0;
+    if (workspaceDependencies == null) {
+      return 0;
+    }
     // Filter out the packages that do not exist in package and only the
     // dependencies that have a different version specified in the workspace.
     final dependenciesToUpdate = workspaceDependencies.entries.where((entry) {
-      if (!packageDependencies.containsKey(entry.key)) return false;
+      if (!packageDependencies.containsKey(entry.key)) {
+        return false;
+      }
       // TODO: We may want to replace the `pubspec` dependency with something
       // else that is actively maintained, so we don't have to provide our own
       // equality logic.
@@ -353,7 +361,9 @@ mixin _BootstrapMixin on _CleanMixin {
         .map((line) {
           var lineWithWorkspacePackagesHighlighted = line;
           for (final workspacePackage in workspace.allPackages.values) {
-            if (workspacePackage.name == package.name) continue;
+            if (workspacePackage.name == package.name) {
+              continue;
+            }
             lineWithWorkspacePackagesHighlighted =
                 lineWithWorkspacePackagesHighlighted.replaceAll(
               '${workspacePackage.name} ',

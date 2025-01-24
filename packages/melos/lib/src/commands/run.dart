@@ -8,7 +8,9 @@ mixin _RunMixin on _Melos {
     bool noSelect = false,
     List<String> extraArgs = const [],
   }) async {
-    if (config.scripts.keys.isEmpty) throw NoScriptException._();
+    if (config.scripts.keys.isEmpty) {
+      throw NoScriptException._();
+    }
 
     scriptName ??= await _pickScript(config);
     final script = config.scripts[scriptName];
@@ -217,10 +219,10 @@ mixin _RunMixin on _Melos {
 
   Future<void> _runMultipleScripts(
     Script script, {
-    GlobalOptions? global,
-    bool noSelect = false,
     required Scripts scripts,
     required List<String> steps,
+    GlobalOptions? global,
+    bool noSelect = false,
   }) async {
     final workspace = await createWorkspace(
       global: global,

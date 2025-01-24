@@ -7,10 +7,10 @@ import 'package:path/path.dart' as p;
 /// Workaround for https://github.com/dart-lang/glob/issues/52
 Glob createGlob(
   String pattern, {
+  required String currentDirectoryPath,
   p.Context? context,
   bool recursive = false,
   bool? caseSensitive,
-  required String currentDirectoryPath,
 }) {
   context ??= p.Context(
     style: p.context.style,

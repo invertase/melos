@@ -106,7 +106,9 @@ mixin _PublishMixin on _ExecMixin {
 
     if (!force) {
       final shouldContinue = promptBool();
-      if (!shouldContinue) throw CancelledException();
+      if (!shouldContinue) {
+        throw CancelledException();
+      }
       logger.newLine();
     }
 
@@ -126,7 +128,9 @@ mixin _PublishMixin on _ExecMixin {
 
     await pool.forEach<Package, void>(workspace.filteredPackages.values,
         (package) async {
-      if (package.isPrivate) return;
+      if (package.isPrivate) {
+        return;
+      }
 
       final pubPackage = await package.getPublishedPackage();
       final versions = pubPackage?.prioritizedVersions.reversed

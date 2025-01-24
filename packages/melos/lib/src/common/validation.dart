@@ -4,12 +4,14 @@ library validation;
 import 'exception.dart';
 
 T assertIsA<T>({
+  required Object? value,
   int? index,
   Object? key,
   String? path,
-  required Object? value,
 }) {
-  if (value is T) return value;
+  if (value is T) {
+    return value;
+  }
 
   throw MelosConfigException.invalidType(
     index: index,
@@ -21,9 +23,9 @@ T assertIsA<T>({
 }
 
 T assertKeyIsA<T>({
-  String? path,
   required Object key,
   required Map<Object?, Object?> map,
+  String? path,
 }) {
   if (null is! T && !map.containsKey(key)) {
     throw MelosConfigException.missingKey(key: key, path: path);
@@ -33,15 +35,17 @@ T assertKeyIsA<T>({
 }
 
 List<String> assertListOrString({
-  String? path,
   required Object key,
   required Map<Object?, Object?> map,
+  String? path,
   bool isRequired = false,
 }) {
   final value = map[key];
 
   if (value == null) {
-    if (isRequired) throw MelosConfigException.missingKey(key: key, path: path);
+    if (isRequired) {
+      throw MelosConfigException.missingKey(key: key, path: path);
+    }
     return [];
   }
 
@@ -65,11 +69,11 @@ List<String> assertListOrString({
 }
 
 List<T> assertListIsA<T>({
-  String? path,
   required Object key,
   required Map<Object?, Object?> map,
   required bool isRequired,
   required T Function(int index, Object? value) assertItemIsA,
+  String? path,
 }) {
   final collection = assertKeyIsA<Iterable<Object?>?>(key: key, map: map);
 
@@ -90,12 +94,12 @@ List<T> assertListIsA<T>({
 }
 
 Map<T, V> assertMapIsA<T, V>({
-  String? path,
   required Object key,
   required Map<Object?, Object?> map,
   required bool isRequired,
   required T Function(Object? value) assertKey,
   required V Function(Object? key, Object? value) assertValue,
+  String? path,
 }) {
   final collection = assertKeyIsA<Map<Object?, Object?>?>(key: key, map: map);
 
@@ -125,9 +129,9 @@ class MelosConfigException implements MelosException {
 
   MelosConfigException.invalidType({
     required Object expectedType,
+    required Object? value,
     Object? key,
     int? index,
-    required Object? value,
     String? path,
   }) : this(
           '${_descriptor(key: key, index: index, path: path)} '
@@ -136,11 +140,15 @@ class MelosConfigException implements MelosException {
 
   static String _descriptor({Object? key, String? path, int? index}) {
     if (key != null) {
-      if (path == null) return 'The property $key';
+      if (path == null) {
+        return 'The property $key';
+      }
       return 'The property $key at $path';
     }
     if (index != null) {
-      if (path == null) return 'The index $index';
+      if (path == null) {
+        return 'The index $index';
+      }
       return 'The index $index at $path';
     }
 

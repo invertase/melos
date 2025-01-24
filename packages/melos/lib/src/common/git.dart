@@ -82,9 +82,9 @@ Future<ProcessResult> gitExecuteCommand({
 /// Optionally specify [tagReleaseType] to specify [TagReleaseType].
 Future<List<String>> gitTagsForPackage(
   Package package, {
+  required MelosLogger logger,
   TagReleaseType tagReleaseType = TagReleaseType.all,
   String preid = 'dev',
-  required MelosLogger logger,
 }) async {
   final filterPattern =
       gitTagFilterPattern(package.name, tagReleaseType, preid: preid);
@@ -130,8 +130,8 @@ Future<bool> gitTagCreate(
   String tag,
   String message, {
   required String workingDirectory,
-  String? commitId,
   required MelosLogger logger,
+  String? commitId,
 }) async {
   if (await gitTagExists(
     tag,
@@ -171,11 +171,13 @@ Future<bool> gitTagCreate(
 ///       are requested.
 Future<String?> gitLatestTagForPackage(
   Package package, {
-  String preid = 'dev',
   required MelosLogger logger,
+  String preid = 'dev',
 }) async {
   // Package doesn't have a version, skip.
-  if (package.version.toString() == '0.0.0') return null;
+  if (package.version.toString() == '0.0.0') {
+    return null;
+  }
 
   final currentVersionTag =
       gitTagForPackageVersion(package.name, package.version.toString());
@@ -202,7 +204,9 @@ Future<String?> gitLatestTagForPackage(
     preid: preid,
     logger: logger,
   );
-  if (tags.isEmpty) return null;
+  if (tags.isEmpty) {
+    return null;
+  }
 
   return tags.first;
 }
@@ -256,8 +260,8 @@ final _gitVersionRangeShortHandRegExp = RegExp(r'^.+\.{2,3}.+$');
 /// Diff also supports specifying a range of commits, e.g. `HEAD~5..HEAD`.
 Future<List<GitCommit>> gitCommitsForPackage(
   Package package, {
-  String? diff,
   required MelosLogger logger,
+  String? diff,
 }) async {
   final revisionRange =
       await _resolveRevisionRange(package, diff: diff, logger: logger);
@@ -355,9 +359,9 @@ Future<void> gitRemoteUpdate({
 /// branch.
 Future<bool> gitIsBehindUpstream({
   required String workingDirectory,
+  required MelosLogger logger,
   String remote = 'origin',
   String? branch,
-  required MelosLogger logger,
 }) async {
   await gitRemoteUpdate(workingDirectory: workingDirectory, logger: logger);
 
