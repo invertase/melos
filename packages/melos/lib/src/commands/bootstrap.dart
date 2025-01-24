@@ -37,6 +37,7 @@ mixin _BootstrapMixin on _CleanMixin {
           ..newLine();
 
         final filteredPackages = workspace.filteredPackages.values;
+        final rollbackPubspecContent = <String, String>{};
 
         try {
           if (bootstrapCommandConfig.environment != null ||
@@ -44,18 +45,21 @@ mixin _BootstrapMixin on _CleanMixin {
               bootstrapCommandConfig.devDependencies != null) {
             logger.log('Updating common dependencies in workspace packages...');
 
-            await Stream.fromIterable(filteredPackages).parallel((package) {
+            await Stream.fromIterable(filteredPackages)
+                .parallel((package) async {
+              final pubspecPath = utils.pubspecPathForDirectory(package.path);
+              final pubspecContent = await readTextFileAsync(pubspecPath);
+              rollbackPubspecContent[pubspecPath] = pubspecContent;
+
               return _setSharedDependenciesForPackage(
                 package,
+                pubspecPath: pubspecPath,
+                pubspecContent: pubspecContent,
                 environment: bootstrapCommandConfig.environment,
                 dependencies: bootstrapCommandConfig.dependencies,
                 devDependencies: bootstrapCommandConfig.devDependencies,
               );
             }).drain<void>();
-
-            logger
-              ..child(successLabel, prefix: '> ')
-              ..newLine();
           }
 
           logger.log(
@@ -73,6 +77,18 @@ mixin _BootstrapMixin on _CleanMixin {
             ..child(successLabel, prefix: '> ')
             ..newLine();
         } on BootstrapException catch (exception) {
+          if (rollbackPubspecContent.isNotEmpty) {
+            logger.log(
+              'Dependency resolution failed, rolling back changes to '
+              'the pubspec.yaml files...',
+            );
+
+            await Stream.fromIterable(rollbackPubspecContent.entries)
+                .parallel((entry) async {
+              await writeTextFileAsync(entry.key, entry.value);
+            }).drain<void>();
+          }
+
           _logBootstrapException(exception, workspace);
           rethrow;
         }
@@ -175,13 +191,13 @@ mixin _BootstrapMixin on _CleanMixin {
 
   Future<void> _setSharedDependenciesForPackage(
     Package package, {
+    required String pubspecPath,
+    required String pubspecContent,
     required Map<String, VersionConstraint?>? environment,
     required Map<String, Dependency>? dependencies,
     required Map<String, Dependency>? devDependencies,
   }) async {
-    final packagePubspecFile = utils.pubspecPathForDirectory(package.path);
-    final packagePubspecContents = await readTextFileAsync(packagePubspecFile);
-    final pubspecEditor = YamlEditor(packagePubspecContents);
+    final pubspecEditor = YamlEditor(pubspecContent);
 
     final updatedEnvironment = _updateEnvironment(
       pubspecEditor: pubspecEditor,
@@ -204,10 +220,7 @@ mixin _BootstrapMixin on _CleanMixin {
     );
 
     if (pubspecEditor.edits.isNotEmpty) {
-      await writeTextFileAsync(
-        packagePubspecFile,
-        pubspecEditor.toString(),
-      );
+      await writeTextFileAsync(pubspecPath, pubspecEditor.toString());
 
       final message = <String>[
         if (updatedEnvironment) 'Updated environment',
