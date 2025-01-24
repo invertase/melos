@@ -499,13 +499,13 @@ mixin _VersionMixin on _RunMixin {
     VersionRange dependencyVersion,
     MelosWorkspace workspace,
   ) async {
-    final dependencyReference = package.pubspec.dependencies[dependencyName];
-    final devDependencyReference =
-        package.pubspec.devDependencies[dependencyName];
+    final normalDependency = package.pubspec.dependencies[dependencyName];
+    final devDependency = package.pubspec.devDependencies[dependencyName];
+    final dependency = normalDependency ?? devDependency;
 
-    if (dependencyReference != null &&
-        dependencyReference is! GitDependency &&
-        dependencyReference is! HostedDependency) {
+    if (dependency != null &&
+        dependency is! GitDependency &&
+        dependency is! HostedDependency) {
       logger.warning(
         'Skipping updating dependency $dependencyName for package '
         '${package.name} - '
@@ -514,40 +514,36 @@ mixin _VersionMixin on _RunMixin {
       );
       return;
     }
-    if (devDependencyReference != null &&
-        devDependencyReference is! GitDependency &&
-        devDependencyReference is! HostedDependency) {
-      logger.warning(
-        'Skipping updating dev dependency $dependencyName for package '
-        '${package.name} - '
-        'the version is a Map definition and is most likely a dependency that '
-        'is importing from a path or git remote.',
+
+    final pubspecPath = pubspecPathForDirectory(package.path);
+    final pubspecContent = await readTextFileAsync(pubspecPath);
+
+    final isExternalHostedDependency =
+        dependency is HostedDependency && dependency.hosted != null;
+    final isGitDependency = dependency is GitDependency;
+
+    var updatedContents = pubspecContent;
+    if (isExternalHostedDependency) {
+      updatedContents = pubspecContent.replaceAllMapped(
+        hostedDependencyVersionReplaceRegex(dependencyName),
+        (match) => '${match.group(1)}$dependencyVersion',
       );
-      return;
-    }
-
-    final pubspec = pubspecPathForDirectory(package.path);
-    final contents = await readTextFileAsync(pubspec);
-
-    final isGitReference = dependencyReference is GitDependency ||
-        devDependencyReference is GitDependency;
-
-    final String updatedContents;
-    if (isGitReference && workspace.config.commands.version.updateGitTagRefs) {
-      updatedContents = contents.replaceAllMapped(
+    } else if (isGitDependency &&
+        workspace.config.commands.version.updateGitTagRefs) {
+      updatedContents = pubspecContent.replaceAllMapped(
         dependencyTagReplaceRegex(dependencyName),
         (match) => '${match.group(1)}$dependencyName-'
             'v${dependencyVersion.min ?? dependencyVersion.max!}',
       );
     } else {
-      updatedContents = contents.replaceAllMapped(
+      updatedContents = pubspecContent.replaceAllMapped(
         dependencyVersionReplaceRegex(dependencyName),
         (match) => '${match.group(1)}$dependencyVersion',
       );
     }
 
     // Sanity check that contents actually changed.
-    if (contents == updatedContents) {
+    if (pubspecContent == updatedContents) {
       logger.warning(
         'Failed to update dependency $dependencyName version to '
         '$dependencyVersion for package ${package.name}, '
@@ -557,7 +553,7 @@ mixin _VersionMixin on _RunMixin {
       return;
     }
 
-    await writeTextFileAsync(pubspec, updatedContents);
+    await writeTextFileAsync(pubspecPath, updatedContents);
   }
 
   void _logNewVersionTable(
