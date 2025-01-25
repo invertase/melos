@@ -32,10 +32,14 @@ mixin _CleanMixin on _Melos {
     final pathsToClean = [
       ...cleanablePubFilePaths,
       '.dart_tool',
-    ];
+    ].map((relativePath) => p.join(package.path, relativePath));
 
-    for (final generatedPubFilePath in pathsToClean) {
-      deleteEntry(p.join(package.path, generatedPubFilePath));
+    for (final path in pathsToClean) {
+      try {
+        deleteEntry(path);
+      } catch (error) {
+        logger.warning('Failed to delete $path: $error');
+      }
     }
   }
 
