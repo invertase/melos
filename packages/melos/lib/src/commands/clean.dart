@@ -32,26 +32,34 @@ mixin _CleanMixin on _Melos {
     final pathsToClean = [
       ...cleanablePubFilePaths,
       '.dart_tool',
-    ];
+    ].map((relativePath) => p.join(package.path, relativePath));
 
-    for (final generatedPubFilePath in pathsToClean) {
-      deleteEntry(p.join(package.path, generatedPubFilePath));
+    for (final path in pathsToClean) {
+      try {
+        deleteEntry(path);
+      } catch (error) {
+        logger.warning('Failed to delete $path: $error');
+      }
     }
   }
 
   Future<void> cleanIntelliJ(MelosWorkspace workspace) async {
-    if (dirExists(workspace.ide.intelliJ.runConfigurationsDir.path)) {
-      final melosXmlGlob = createGlob(
-        p.join(
-          workspace.ide.intelliJ.runConfigurationsDir.path,
-          '$kRunConfigurationPrefix*.xml',
-        ),
-        currentDirectoryPath: workspace.path,
-      );
+    final runConfigDir = workspace.ide.intelliJ.runConfigurationsDir.path;
+    if (!dirExists(runConfigDir)) return;
 
-      await for (final melosXmlFile
-          in melosXmlGlob.listFileSystem(const LocalFileSystem())) {
-        deleteEntry(melosXmlFile.path);
+    final melosXmlGlob = createGlob(
+      p.join(runConfigDir, '$kRunConfigurationPrefix*.xml'),
+      currentDirectoryPath: workspace.path,
+    );
+
+    await for (final runConfigFile
+        in melosXmlGlob.listFileSystem(const LocalFileSystem())) {
+      try {
+        deleteEntry(runConfigFile.path);
+      } catch (error) {
+        logger.warning(
+          'Failed to delete IntelliJ run config ${runConfigFile.path}: $error',
+        );
       }
     }
   }
