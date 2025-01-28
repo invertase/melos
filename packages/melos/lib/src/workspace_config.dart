@@ -105,7 +105,7 @@ class IntelliJConfig {
   static const empty = IntelliJConfig();
   static const _defaultModuleNamePrefix = 'melos_';
   static const _defaultEnabled = true;
-  static const _defaultExecuteInTerminal = true;
+  static const _defaultExecuteInTerminal = false;
 
   final bool enabled;
 
