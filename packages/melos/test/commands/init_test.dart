@@ -50,7 +50,7 @@ void main() {
       ) as YamlMap;
       expect(melosYaml['name'], equals('my_workspace'));
       // TODO: Create some packages first that we can test against
-      expect(melosYaml['workspace'], equals([]));
+      expect(melosYaml['workspace'], isNull);
 
       // Verify pubspec.yaml content
       final pubspecYaml = loadYaml(
@@ -95,7 +95,7 @@ void main() {
       ) as YamlMap;
       // TODO: Create some packages in 'custom/*', 'plugins/**' that we can test
       // against.
-      expect(melosYaml['workspace'], equals([]));
+      expect(melosYaml['workspace'], isNull);
     });
 
     test('creates workspace in current directory when directory is "."',
@@ -181,7 +181,7 @@ void main() {
         File(p.join(workspaceDir.path, 'pubspec.yaml')).readAsStringSync(),
       ) as YamlMap;
       // TODO: Create some packages first that we can test against
-      expect(melosYaml['workspace'], equals([]));
+      expect(melosYaml['workspace'], isNull);
     });
   });
 }
