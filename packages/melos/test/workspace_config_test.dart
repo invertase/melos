@@ -337,10 +337,10 @@ void main() {
       );
     });
 
-    test('executeInTerminal is false by default', () {
+    test('executeInTerminal is true by default', () {
       expect(
         IDEConfigs.empty.intelliJ.executeInTerminal,
-        false,
+        true,
       );
     });
 
@@ -353,7 +353,7 @@ void main() {
               .having(
                 (e) => e.intelliJ.executeInTerminal,
                 'intelliJ.executeInTerminal',
-                false,
+                true,
               ),
         );
       });
