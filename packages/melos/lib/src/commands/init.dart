@@ -50,7 +50,12 @@ mixin _InitMixin on _Melos {
     final pubspecFile = File(p.join(dir.absolute.path, 'pubspec.yaml'));
 
     pubspecFile.writeAsStringSync(
-      (YamlEditor('')..update([], pubspecYaml)).toString(),
+      // YamlEditor adds empty strings and empty lists to the pubspec.yaml file
+      // if the value is empty. This is a workaround to remove them.
+      (YamlEditor('')..update([], pubspecYaml))
+          .toString()
+          .replaceFirst('""', '')
+          .replaceFirst('[]', ''),
     );
 
     logger.log(
