@@ -140,6 +140,10 @@ void main() {
         final pubspecYaml =
             loadYaml(File('pubspec.yaml').readAsStringSync()) as YamlMap;
         expect(pubspecYaml['name'], equals(p.basename(tempDir.path)));
+        expect(
+          pubspecYaml['workspace'],
+          equals(['apps/test_app', 'packages/test_package']),
+        );
       } finally {
         Directory.current = originalDir;
       }

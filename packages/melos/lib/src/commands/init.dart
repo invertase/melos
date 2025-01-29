@@ -15,7 +15,7 @@ mixin _InitMixin on _Melos {
     }
 
     final isCurrentDir = directory == '.';
-    final dir = Directory(directory);
+    final dir = isCurrentDir ? Directory.current : Directory(directory);
     if (!isCurrentDir && dir.existsSync()) {
       throw StateError('Directory $directory already exists');
     } else {
@@ -43,7 +43,13 @@ mixin _InitMixin on _Melos {
       'dev_dependencies': {
         'melos': '^$melosVersion',
       },
-      'workspace': packages.values.map((p) => p.path).toList(),
+      'workspace': packages.values
+          .map(
+            (p) => p.path
+                .replaceFirst(dir.absolute.path, '.')
+                .replaceFirst('./', ''),
+          )
+          .toList(),
       'melos': '',
     };
 
