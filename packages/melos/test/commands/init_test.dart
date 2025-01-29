@@ -7,6 +7,24 @@ import 'package:yaml/yaml.dart';
 
 import '../utils.dart';
 
+Future<void> _createPackages(Directory dir) async {
+  final packageDir = Directory(p.join(dir.absolute.path, 'packages'));
+  packageDir.createSync(recursive: true);
+  await Process.run(
+    'dart',
+    ['create', 'test_package'],
+    workingDirectory: packageDir.absolute.path,
+  );
+
+  final appDir = Directory(p.join(dir.absolute.path, 'apps'));
+  appDir.createSync(recursive: true);
+  await Process.run(
+    'dart',
+    ['create', 'test_app'],
+    workingDirectory: appDir.absolute.path,
+  );
+}
+
 void main() {
   group('init', () {
     late TestLogger logger;
@@ -49,7 +67,6 @@ void main() {
         File(p.join(workspaceDir.path, 'pubspec.yaml')).readAsStringSync(),
       ) as YamlMap;
       expect(melosYaml['name'], equals('my_workspace'));
-      // TODO: Create some packages first that we can test against
       expect(melosYaml['workspace'], isNull);
 
       // Verify pubspec.yaml content
@@ -93,8 +110,6 @@ void main() {
       final melosYaml = loadYaml(
         File(p.join(workspaceDir.path, 'pubspec.yaml')).readAsStringSync(),
       ) as YamlMap;
-      // TODO: Create some packages in 'custom/*', 'plugins/**' that we can test
-      // against.
       expect(melosYaml['workspace'], isNull);
     });
 
@@ -109,7 +124,7 @@ void main() {
       final originalDir = Directory.current;
       try {
         Directory.current = tempDir;
-
+        await _createPackages(tempDir);
         await melos.init(
           '.',
           directory: '.',
@@ -180,7 +195,6 @@ void main() {
       final melosYaml = loadYaml(
         File(p.join(workspaceDir.path, 'pubspec.yaml')).readAsStringSync(),
       ) as YamlMap;
-      // TODO: Create some packages first that we can test against
       expect(melosYaml['workspace'], isNull);
     });
   });
