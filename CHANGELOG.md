@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2025-02-01
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v7.0.0-dev.6`](#melos---v700-dev6)
+
+---
+
+#### `melos` - `v7.0.0-dev.6`
+
+ - **REFACTOR**: optimize clean command by precomputing paths to clean ([#855](https://github.com/invertase/melos/issues/855)). ([daba40d4](https://github.com/invertase/melos/commit/daba40d47a13999a9c5ca389a4a389afea931e91))
+ - **FIX**: Melos init adding empty string / list in pubspec.yaml ([#856](https://github.com/invertase/melos/issues/856)). ([50b102b3](https://github.com/invertase/melos/commit/50b102b3dd1e1b24e56006bdc9761ebbc94a97d7))
+ - **FIX**: Fix externally hosted versioning ([#852](https://github.com/invertase/melos/issues/852)). ([40476ed5](https://github.com/invertase/melos/commit/40476ed51dfbc669d83223dd7b067174d2ac0abc))
+ - **FEAT**: Add support for executeInTerminal for IntelliJ run configs ([#857](https://github.com/invertase/melos/issues/857)). ([b6acf504](https://github.com/invertase/melos/commit/b6acf5040d98405f2c67846d0c55c47dae6b1b02))
+
+
 ## 2025-01-24
 
 ### Changes
