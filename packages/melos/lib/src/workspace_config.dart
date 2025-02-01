@@ -65,6 +65,7 @@ class IntelliJConfig {
   const IntelliJConfig({
     this.enabled = _defaultEnabled,
     this.moduleNamePrefix = _defaultModuleNamePrefix,
+    this.executeInTerminal = _defaultExecuteInTerminal,
   });
 
   factory IntelliJConfig.fromYaml(Object? yaml) {
@@ -79,9 +80,17 @@ class IntelliJConfig {
       final enabled = yaml.containsKey('enabled')
           ? assertKeyIsA<bool>(key: 'enabled', map: yaml, path: 'ide/intellij')
           : _defaultEnabled;
+      final executeInTerminal = yaml.containsKey('executeInTerminal')
+          ? assertKeyIsA<bool>(
+              key: 'executeInTerminal',
+              map: yaml,
+              path: 'ide/intellij',
+            )
+          : _defaultExecuteInTerminal;
       return IntelliJConfig(
         enabled: enabled,
         moduleNamePrefix: moduleNamePrefix,
+        executeInTerminal: executeInTerminal,
       );
     } else {
       final enabled = assertIsA<bool>(
@@ -96,15 +105,19 @@ class IntelliJConfig {
   static const empty = IntelliJConfig();
   static const _defaultModuleNamePrefix = 'melos_';
   static const _defaultEnabled = true;
+  static const _defaultExecuteInTerminal = true;
 
   final bool enabled;
 
   final String moduleNamePrefix;
 
+  final bool executeInTerminal;
+
   Object? toJson() {
     return {
       'enabled': enabled,
       'moduleNamePrefix': moduleNamePrefix,
+      'executeInTerminal': executeInTerminal,
     };
   }
 
@@ -113,11 +126,15 @@ class IntelliJConfig {
       other is IntelliJConfig &&
       runtimeType == other.runtimeType &&
       other.enabled == enabled &&
-      other.moduleNamePrefix == moduleNamePrefix;
+      other.moduleNamePrefix == moduleNamePrefix &&
+      other.executeInTerminal == executeInTerminal;
 
   @override
   int get hashCode =>
-      runtimeType.hashCode ^ enabled.hashCode ^ moduleNamePrefix.hashCode;
+      runtimeType.hashCode ^
+      enabled.hashCode ^
+      moduleNamePrefix.hashCode ^
+      executeInTerminal.hashCode;
 
   @override
   String toString() {
@@ -125,6 +142,7 @@ class IntelliJConfig {
 IntelliJConfig(
   enabled: $enabled,
   moduleNamePrefix: $moduleNamePrefix,
+  executeInTerminal: $executeInTerminal,
 )
 ''';
   }
