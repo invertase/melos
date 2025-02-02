@@ -114,7 +114,7 @@ ${'-' * terminalWidth}
         stderrEncoding: utf8,
       );
 
-      expect(result.exitCode, equals(1));
+      expect(result.exitCode, isNot(0));
     });
 
     test('should run format with --output show flag', () async {

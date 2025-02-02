@@ -15,7 +15,7 @@ mixin _InitMixin on _Melos {
     }
 
     final isCurrentDir = directory == '.';
-    final dir = Directory(directory);
+    final dir = isCurrentDir ? Directory.current : Directory(directory);
     if (!isCurrentDir && dir.existsSync()) {
       throw StateError('Directory $directory already exists');
     } else {
@@ -43,14 +43,25 @@ mixin _InitMixin on _Melos {
       'dev_dependencies': {
         'melos': '^$melosVersion',
       },
-      'workspace': packages.values.map((p) => p.path).toList(),
+      'workspace': packages.values
+          .map(
+            (p) => p.path
+                .replaceFirst(dir.absolute.path, '.')
+                .replaceFirst('./', ''),
+          )
+          .toList(),
       'melos': '',
     };
 
     final pubspecFile = File(p.join(dir.absolute.path, 'pubspec.yaml'));
 
     pubspecFile.writeAsStringSync(
-      (YamlEditor('')..update([], pubspecYaml)).toString(),
+      // YamlEditor adds empty strings and empty lists to the pubspec.yaml file
+      // if the value is empty. This is a workaround to remove them.
+      (YamlEditor('')..update([], pubspecYaml))
+          .toString()
+          .replaceFirst('""', '')
+          .replaceFirst('[]', ''),
     );
 
     logger.log(

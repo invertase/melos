@@ -143,8 +143,8 @@ class IntellijProject {
         'fileurl="file://\$PROJECT_DIR\$/$imlPath" '
         'filepath="\$PROJECT_DIR\$/$imlPath" '
         '/>';
-    // Pad to preserve formatting on generated file. Indent x6.
-    return '      $module';
+    // Pad to preserve formatting on generated file.
+    return module.padLeft(6);
   }
 
   Future<void> forceWriteToFile(String filePath, String fileContents) async {
@@ -265,6 +265,8 @@ class IntellijProject {
         'scriptName': scriptName,
         'scriptArgs': scriptArgs,
         'scriptPath': getMelosBinForIde(),
+        'executeInTerminal':
+            _workspace.config.ide.intelliJ.executeInTerminal.toString(),
       });
 
       final outputFile = p.join(

@@ -337,12 +337,24 @@ void main() {
       );
     });
 
+    test('executeInTerminal is true by default', () {
+      expect(
+        IDEConfigs.empty.intelliJ.executeInTerminal,
+        true,
+      );
+    });
+
     group('fromYaml', () {
       test('supports empty map', () {
         expect(
           IDEConfigs.fromYaml(const {}),
           isA<IDEConfigs>()
-              .having((e) => e.intelliJ.enabled, 'intelliJ.enabled', true),
+              .having((e) => e.intelliJ.enabled, 'intelliJ.enabled', true)
+              .having(
+                (e) => e.intelliJ.executeInTerminal,
+                'intelliJ.executeInTerminal',
+                true,
+              ),
         );
       });
 
