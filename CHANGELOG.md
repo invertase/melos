@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2025-02-03
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v7.0.0-dev.7`](#melos---v700-dev7)
+
+---
+
+#### `melos` - `v7.0.0-dev.7`
+
+ - **FIX**: Remove old pubspec_overrides entries on `clean` ([#861](https://github.com/invertase/melos/issues/861)). ([d5a6ea67](https://github.com/invertase/melos/commit/d5a6ea678f31d38ed19b441ea31ac0d83a8ee789))
+ - **DOCS**: add ReactiveX/rxdart to README and docs ([#859](https://github.com/invertase/melos/issues/859)). ([303883b6](https://github.com/invertase/melos/commit/303883b6af807ac077b58db3099c704f257e908a))
+
+
 ## 2025-02-01
 
 ### Changes

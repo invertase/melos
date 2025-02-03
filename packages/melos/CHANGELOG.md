@@ -1,3 +1,8 @@
+## 7.0.0-dev.7
+
+ - **FIX**: Remove old pubspec_overrides entries on `clean` ([#861](https://github.com/invertase/melos/issues/861)). ([d5a6ea67](https://github.com/invertase/melos/commit/d5a6ea678f31d38ed19b441ea31ac0d83a8ee789))
+ - **DOCS**: add ReactiveX/rxdart to README and docs ([#859](https://github.com/invertase/melos/issues/859)). ([303883b6](https://github.com/invertase/melos/commit/303883b6af807ac077b58db3099c704f257e908a))
+
 ## 7.0.0-dev.6
 
  - **REFACTOR**: optimize clean command by precomputing paths to clean ([#855](https://github.com/invertase/melos/issues/855)). ([daba40d4](https://github.com/invertase/melos/commit/daba40d47a13999a9c5ca389a4a389afea931e91))
