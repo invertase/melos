@@ -7,6 +7,7 @@ mixin _BootstrapMixin on _CleanMixin {
     bool noExample = false,
     bool? enforceLockfile,
     bool offline = false,
+    BootstrapMode mode = BootstrapMode.get,
   }) async {
     final workspace =
         await createWorkspace(global: global, packageFilters: packageFilters);
@@ -21,10 +22,12 @@ mixin _BootstrapMixin on _CleanMixin {
             File(p.join(workspace.path, 'pubspec.lock')).existsSync();
         final enforceLockfileConfigValue =
             workspace.config.commands.bootstrap.enforceLockfile;
-        final shouldEnforceLockfile =
-            (enforceLockfile ?? enforceLockfileConfigValue) && hasLockFile;
+        final shouldEnforceLockfile = (mode == BootstrapMode.get) &&
+            (enforceLockfile ?? enforceLockfileConfigValue) &&
+            hasLockFile;
 
-        final pubCommandForLogging = _buildPubGetCommand(
+        final pubCommandForLogging = _buildPubCommand(
+          mode: mode,
           workspace: workspace,
           noExample: noExample,
           runOffline: runOffline,
@@ -67,6 +70,7 @@ mixin _BootstrapMixin on _CleanMixin {
           );
 
           await _runPubGetForWorkspace(
+            mode,
             workspace,
             noExample: noExample,
             runOffline: runOffline,
@@ -110,12 +114,14 @@ mixin _BootstrapMixin on _CleanMixin {
   }
 
   Future<void> _runPubGetForWorkspace(
+    BootstrapMode mode,
     MelosWorkspace workspace, {
     required bool noExample,
     required bool runOffline,
     required bool enforceLockfile,
   }) async {
     await runPubGetForPackage(
+      mode,
       workspace,
       workspace.rootPackage,
       noExample: noExample,
@@ -126,13 +132,15 @@ mixin _BootstrapMixin on _CleanMixin {
 
   @visibleForTesting
   Future<void> runPubGetForPackage(
+    BootstrapMode mode,
     MelosWorkspace workspace,
     Package package, {
     required bool noExample,
     required bool runOffline,
     required bool enforceLockfile,
   }) async {
-    final command = _buildPubGetCommand(
+    final command = _buildPubCommand(
+      mode: mode,
       workspace: workspace,
       noExample: noExample,
       runOffline: runOffline,
@@ -171,7 +179,8 @@ mixin _BootstrapMixin on _CleanMixin {
     }
   }
 
-  List<String> _buildPubGetCommand({
+  List<String> _buildPubCommand({
+    required BootstrapMode mode,
     required MelosWorkspace workspace,
     required bool noExample,
     required bool runOffline,
@@ -182,7 +191,7 @@ mixin _BootstrapMixin on _CleanMixin {
         useFlutter: workspace.isFlutterWorkspace,
         workspace: workspace,
       ),
-      'get',
+      mode.name,
       if (noExample) '--no-example',
       if (runOffline) '--offline',
       if (enforceLockfile) '--enforce-lockfile',
@@ -409,5 +418,20 @@ class BootstrapException implements MelosException {
   String toString() {
     return 'BootstrapException: $message: ${package.name} at '
         '${package.path}.';
+  }
+}
+
+enum BootstrapMode {
+  get,
+  upgrade,
+  downgrade;
+
+  factory BootstrapMode.fromString(String value) {
+    return switch (value) {
+      'get' => BootstrapMode.get,
+      'upgrade' => BootstrapMode.upgrade,
+      'downgrade' => BootstrapMode.downgrade,
+      _ => throw ArgumentError('Invalid mode specified'),
+    };
   }
 }

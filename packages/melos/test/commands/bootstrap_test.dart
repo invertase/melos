@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:melos/melos.dart';
 import 'package:melos/src/command_configs/command_configs.dart';
+import 'package:melos/src/commands/runner.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
@@ -589,6 +590,7 @@ Generating IntelliJ IDE files...
       );
 
       await melos.runPubGetForPackage(
+        BootstrapMode.get,
         workspace,
         workspace.rootPackage,
         noExample: true,

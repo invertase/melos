@@ -6,10 +6,16 @@ import 'base.dart';
 class BootstrapCommand extends MelosCommand {
   BootstrapCommand(super.config) {
     setupPackageFilterParser();
+    argParser.addOption(
+      'mode',
+      allowed: const ['get', 'upgrade', 'downgrade'],
+      defaultsTo: 'get',
+      help: 'Run pub get, pub upgrade, or pub downgrade',
+    );
     argParser.addFlag(
       'no-example',
       negatable: false,
-      help: 'Run pub get with/without example pub get',
+      help: 'Run with/without fetching example dependencies.',
     );
     argParser.addFlag(
       'enforce-lockfile',
@@ -21,8 +27,7 @@ class BootstrapCommand extends MelosCommand {
     argParser.addFlag(
       'offline',
       negatable: false,
-      help: 'Run pub get with --offline to resolve dependencies from local '
-          'cache.',
+      help: 'Run with --offline to resolve dependencies from local cache.',
     );
   }
 
@@ -41,6 +46,7 @@ class BootstrapCommand extends MelosCommand {
   FutureOr<void>? run() {
     final melos = Melos(logger: logger, config: config);
     return melos.bootstrap(
+      mode: BootstrapMode.fromString(argResults?['mode'] as String? ?? 'get'),
       global: global,
       packageFilters: parsePackageFilters(config.path),
       enforceLockfile: argResults?['enforce-lockfile'] as bool?,
