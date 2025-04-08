@@ -73,7 +73,7 @@ class MelosLogger with _DelegateLogger {
     String message,
     String successMarker,
     String failureMarker,
-    Completer<void>? completer, {
+    Completer<int>? completer, {
     bool isError = false,
   }) {
     final modifiedMessage = _processMessageBasedOnMarkers(
@@ -89,15 +89,16 @@ class MelosLogger with _DelegateLogger {
     String message,
     String successMarker,
     String failureMarker,
-    Completer<void>? completer,
+    Completer<int>? completer,
   ) {
     if (message.contains(successMarker)) {
-      completer?.complete();
+      completer?.complete(0);
       return message.replaceAll(successMarker, '');
     }
 
     if (message.contains(failureMarker)) {
-      completer?.complete();
+      // TODO: Somehow pass the correct failure exit code here.
+      completer?.complete(1);
       return message.replaceAll(failureMarker, '');
     }
 

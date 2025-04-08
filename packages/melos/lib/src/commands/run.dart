@@ -31,13 +31,21 @@ mixin _RunMixin on _Melos {
 
       _detectRecursiveScriptCalls(script);
 
-      await _runMultipleScripts(
+      final exitCode = await _runMultipleScripts(
         script,
         global: global,
         noSelect: noSelect,
         scripts: config.scripts,
         steps: script.steps!,
       );
+
+      final resultLogger = logger.child(script.name);
+
+      if (exitCode != 0) {
+        resultLogger.child(failedLabel);
+        throw ScriptException._(script.name);
+      }
+      resultLogger.child(successLabel);
       return;
     }
 
@@ -217,7 +225,7 @@ mixin _RunMixin on _Melos {
     );
   }
 
-  Future<void> _runMultipleScripts(
+  Future<int> _runMultipleScripts(
     Script script, {
     required Scripts scripts,
     required List<String> steps,
@@ -238,7 +246,7 @@ mixin _RunMixin on _Melos {
       ...script.env,
     };
 
-    await _executeScriptSteps(steps, scripts, script, environment);
+    return _executeScriptSteps(steps, scripts, script, environment);
   }
 
   /// Checks if the given [step] is a recognized Melos command.
@@ -270,7 +278,7 @@ mixin _RunMixin on _Melos {
     return step;
   }
 
-  Future<void> _executeScriptSteps(
+  Future<int> _executeScriptSteps(
     List<String> steps,
     Scripts scripts,
     Script script,
@@ -284,17 +292,24 @@ mixin _RunMixin on _Melos {
 
     await shell.startShell();
     logger.command('melos run ${script.name}');
+    var exitCode = 0;
 
     for (final step in steps) {
       final scriptCommand = _buildScriptCommand(step, scripts);
 
-      final shouldContinue = await shell.sendCommand(scriptCommand);
-      if (!shouldContinue) {
+      exitCode = await shell.sendCommand(scriptCommand);
+      if (exitCode != 0) {
         break;
       }
     }
 
-    await shell.stopShell();
+    await shell.stopShell(exitCode);
+    if (exitCode == 0) {
+      logger.log(successLabel);
+    } else {
+      logger.log(failedLabel);
+    }
+    return exitCode;
   }
 }
 

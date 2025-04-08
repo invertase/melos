@@ -19,7 +19,7 @@ class PersistentShell {
   final Map<String, String> environment;
   final String? workingDirectory;
   late final Process _process;
-  Completer<void>? _commandCompleter;
+  Completer<int>? _commandCompleter;
   final String _successEndMarker = '__SUCCESS_COMMAND_END__';
   final String _failureEndMarker = '__FAILURE_COMMAND_END__';
 
@@ -40,9 +40,9 @@ class PersistentShell {
     _listenToProcessStream(_process.stderr, isError: true);
   }
 
-  Future<bool> sendCommand(String command) async {
+  Future<int> sendCommand(String command) {
     assert(_commandCompleter == null, 'A command is already in progress.');
-    _commandCompleter = Completer<void>();
+    _commandCompleter = Completer<int>();
 
     final fullCommand = _buildFullCommand(command);
     _process.stdin.writeln(fullCommand);
@@ -50,22 +50,16 @@ class PersistentShell {
     return _awaitCommandCompletion();
   }
 
-  Future<void> stopShell() async {
-    await _process.stdin.close();
-    final exitCode = await _process.exitCode;
-    if (exitCode == 0) {
-      logger.log(successLabel);
-      return;
-    }
-    logger.log(failedLabel);
+  Future<void> stopShell(int exitCode) {
+    return _process.stdin.close();
   }
 
-  Future<bool> _awaitCommandCompletion() async {
+  Future<int> _awaitCommandCompletion() async {
     try {
-      await _commandCompleter!.future;
-      return true;
+      final exitCode = await _commandCompleter!.future;
+      return exitCode;
     } catch (e) {
-      return false;
+      return 1;
     } finally {
       _commandCompleter = null;
     }
@@ -95,14 +89,10 @@ class PersistentShell {
     final echoFailure = 'echo $_failureEndMarker';
 
     if (_isWindows) {
-      return '''
-      $echoCommand && $command || VER>NUL && if %ERRORLEVEL% NEQ 0 ($echoFailure) else ($echoSuccess)
-    ''';
+      return '$echoCommand & $command & '
+          'if %errorlevel%==0 ($echoSuccess) else ($echoFailure)';
     }
 
-    return '''
-   $echoCommand && $command || true && if [ \$? -ne 0 ]; 
-    then $echoFailure; else $echoSuccess; fi
-  ''';
+    return '$echoCommand && $command && $echoSuccess || $echoFailure';
   }
 }
