@@ -76,7 +76,7 @@ class PersistentShell {
         _successEndMarker,
         _failureEndMarker,
         _commandCompleter,
-        fromErrorStream: isErrorStream,
+        asError: isErrorStream,
       );
     });
   }

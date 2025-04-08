@@ -39,12 +39,7 @@ mixin _RunMixin on _Melos {
         steps: script.steps!,
       );
 
-      if (exitCode != 0) {
-        await logger.flushGroupBufferIfNeed();
-        final resultLogger = logger.child(script.name);
-        resultLogger.child(failedLabel);
-        throw ScriptException._(script.name);
-      }
+      await _handleExitCode(exitCode, script.name);
       return;
     }
 
@@ -68,16 +63,21 @@ mixin _RunMixin on _Melos {
       extraArgs: extraArgs,
     );
 
-    logger.newLine();
-    logger.command('melos run ${script.name}');
-    final resultLogger = logger.child(scriptSourceCode);
+    await _handleExitCode(exitCode, script.name);
+  }
 
+  Future<void> _handleExitCode(
+    int exitCode,
+    String scriptName,
+  ) async {
+    await logger.flushGroupBufferIfNeed();
+    logger.newLine();
     if (exitCode != 0) {
-      await logger.flushGroupBufferIfNeed();
-      resultLogger.child(failedLabel);
-      throw ScriptException._(script.name);
+      logger.log(scriptName);
+      logger.child(failedLabel);
+      throw ScriptException._(scriptName);
     }
-    resultLogger.child(successLabel);
+    logger.child(successLabel);
   }
 
   /// Detects recursive script calls within the provided [script].

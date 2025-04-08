@@ -74,10 +74,10 @@ class MelosLogger with _DelegateLogger {
     String successMarker,
     String failureMarker,
     Completer<int>? completer, {
-    bool fromErrorStream = false,
+    bool asError = false,
   }) {
     if (!message.contains(successMarker) && !message.contains(failureMarker)) {
-      _logMessage(message, fromErrorStream);
+      _logMessage(message, asError);
       return;
     }
 
@@ -85,15 +85,16 @@ class MelosLogger with _DelegateLogger {
     final updatedMessage =
         message.replaceAll(successMarker, '').replaceAll(failureMarker, '');
 
-    _logMessage(updatedMessage, fromErrorStream);
+    _logMessage(updatedMessage, asError);
     completer?.complete(isSuccess ? 0 : 1);
   }
 
   void _logMessage(String message, bool isError) {
     if (isError) {
       error(message);
+    } else {
+      write(message);
     }
-    write(message);
   }
 
   void command(String command, {bool withDollarSign = false}) {
