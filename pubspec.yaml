@@ -72,9 +72,10 @@ melos:
     intellij: true
 
   scripts:
+    # Move back to test once you can overwrite scripts
     test_real:
       description: Run tests in a specific package.
-      run: dart test
+      run: dart test --concurrency=1
       exec:
         concurrency: 1
       packageFilters:
