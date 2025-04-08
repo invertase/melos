@@ -916,7 +916,9 @@ SUCCESS
 melos run test_script
 ➡️ step: absolute_bogus_command
 
-FAILED
+e-ERROR: /bin/sh: 1: absolute_bogus_command: not found
+e-
+/bin/sh: 1: absolute_bogus_command: not found
   └> test_script
      └> FAILED
 ''',

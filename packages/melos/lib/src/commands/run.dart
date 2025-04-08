@@ -40,6 +40,7 @@ mixin _RunMixin on _Melos {
       );
 
       if (exitCode != 0) {
+        await logger.flushGroupBufferIfNeed();
         final resultLogger = logger.child(script.name);
         resultLogger.child(failedLabel);
         throw ScriptException._(script.name);
@@ -72,6 +73,7 @@ mixin _RunMixin on _Melos {
     final resultLogger = logger.child(scriptSourceCode);
 
     if (exitCode != 0) {
+      await logger.flushGroupBufferIfNeed();
       resultLogger.child(failedLabel);
       throw ScriptException._(script.name);
     }
@@ -302,11 +304,6 @@ mixin _RunMixin on _Melos {
     }
 
     await shell.stopShell();
-    if (exitCode == 0) {
-      logger.log(successLabel);
-    } else {
-      logger.log(failedLabel);
-    }
     return exitCode;
   }
 }

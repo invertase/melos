@@ -37,7 +37,7 @@ class PersistentShell {
     );
 
     _listenToProcessStream(_process.stdout);
-    _listenToProcessStream(_process.stderr, isError: true);
+    _listenToProcessStream(_process.stderr, isErrorStream: true);
   }
 
   Future<int> sendCommand(String command) {
@@ -67,7 +67,7 @@ class PersistentShell {
 
   void _listenToProcessStream(
     Stream<List<int>> stream, {
-    bool isError = false,
+    bool isErrorStream = false,
   }) {
     stream.listen((event) {
       final output = utf8.decode(event, allowMalformed: true);
@@ -76,7 +76,7 @@ class PersistentShell {
         _successEndMarker,
         _failureEndMarker,
         _commandCompleter,
-        isError: isError,
+        fromErrorStream: isErrorStream,
       );
     });
   }
