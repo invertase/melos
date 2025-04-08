@@ -78,7 +78,7 @@ jobs:
       - name: Install Tools
         run: ./.github/workflows/scripts/install-tools.sh
       - name: Run Tests
-        run: melos test --no-select
+        run: melos test_real --no-select
 
   test_macos:
     runs-on: macos-latest

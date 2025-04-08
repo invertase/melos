@@ -72,7 +72,7 @@ melos:
     intellij: true
 
   scripts:
-    test:
+    test_real:
       description: Run tests in a specific package.
       run: dart test
       exec:
