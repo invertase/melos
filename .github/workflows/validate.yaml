@@ -78,7 +78,7 @@ jobs:
       - name: Install Tools
         run: ./.github/workflows/scripts/install-tools.sh
       - name: Run Tests
-        run: melos test_real --no-select
+        run: melos test
 
   test_macos:
     runs-on: macos-latest
@@ -94,7 +94,7 @@ jobs:
       - name: Install Tools
         run: ./.github/workflows/scripts/install-tools.sh
       - name: Run Tests
-        run: melos test --no-select
+        run: melos test
 
   test_windows:
     runs-on: windows-latest
@@ -114,4 +114,4 @@ jobs:
         # When using PowerShell, the exit code is not propagated correctly.
         # Even running `CMD /C melos ...` from PowerShell does not work.
         shell: cmd
-        run: melos test --no-select
+        run: melos test
