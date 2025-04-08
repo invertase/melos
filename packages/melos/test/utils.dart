@@ -489,5 +489,10 @@ class HttpClientMock extends http_testing.MockClient {
 }
 
 extension StringTestExtension on String {
-  String normalizeNewLines() => replaceAll('\r\n', '\n');
+  String normalizeLines() => replaceAll('\r\n', '\n').removeAnsiCodes();
+
+  String removeAnsiCodes() {
+    final ansiEscapePattern = RegExp(r'\x1B\[[0-9;]*[a-zA-Z]');
+    return replaceAll(ansiEscapePattern, '');
+  }
 }

@@ -103,7 +103,7 @@ void main() {
             'melos publish [post]',
             'post',
           ];
-          final output = logger.output.normalizeNewLines().split('\n');
+          final output = logger.output.normalizeLines().split('\n');
           var previousIndex = -1;
 
           for (final line in order) {
