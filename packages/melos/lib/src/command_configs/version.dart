@@ -203,7 +203,7 @@ class VersionCommandConfigs {
   /// Whether to add commits ids in the generated CHANGELOG.md.
   final bool includeCommitId;
 
-  /// Wheter to include commit bodies in the generated CHANGELOG.md.
+  /// Whether to include commit bodies in the generated CHANGELOG.md.
   final bool includeCommitBody;
 
   /// Whether to only include commit bodies for breaking changes.
