@@ -98,7 +98,7 @@ void main() {
 
       final prefix = Platform.isMacOS ? '/private' : '';
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output.normalizeLines(),
         ignoringAnsii('$prefix$testDir\n'),
       );
     });

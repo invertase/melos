@@ -56,7 +56,7 @@ void main() {
         await melos.run(scriptName: 'test_script', noSelect: true);
 
         expect(
-          logger.output.normalizeNewLines(),
+          logger.output.normalizeLines(),
           ignoringDependencyMessages(
             '''
 melos run test_script
@@ -129,7 +129,7 @@ melos run test_script
           await melos.run(scriptName: 'test_script', noSelect: true);
 
           expect(
-            logger.output.normalizeNewLines(),
+            logger.output.normalizeLines(),
             ignoringDependencyMessages(
               '''
 melos run test_script
@@ -198,7 +198,7 @@ melos run test_script
       );
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output.normalizeLines(),
         ignoringDependencyMessages(
           '''
 melos run hello
@@ -255,7 +255,7 @@ melos run hello
       );
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output.normalizeLines(),
         ignoringDependencyMessages(
           '''
 melos run hello
@@ -318,7 +318,7 @@ melos run hello
       await melos.run(scriptName: 'test_script', noSelect: true);
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output.normalizeLines(),
         ignoringDependencyMessages(
           '''
 melos run test_script
@@ -451,7 +451,7 @@ it should list the contents including the package named "this_is_package_a".
         await melos.run(scriptName: 'cd_script', noSelect: true);
 
         expect(
-          logger.output.normalizeNewLines(),
+          logger.output.normalizeLines(),
           contains('this_is_package_a'),
         );
       },
@@ -495,7 +495,7 @@ it should list the contents including the package named "this_is_package_a".
       await melos.run(scriptName: 'hello_script', noSelect: true);
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output.normalizeLines(),
         ignoringDependencyMessages(
           '''
 melos run hello_script
@@ -600,7 +600,7 @@ SUCCESS
       await melos.run(scriptName: 'hello_script', noSelect: true);
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output.normalizeLines(),
         ignoringDependencyMessages(
           '''
 melos run hello_script
@@ -668,7 +668,7 @@ SUCCESS
       );
 
       await melos.run(scriptName: 'hello_script', noSelect: true);
-      final normalizedLines = logger.output.normalizeNewLines().split('\n');
+      final normalizedLines = logger.output.normalizeLines().split('\n');
       expect(
         normalizedLines,
         containsAll(
@@ -731,7 +731,7 @@ SUCCESS
       await melos.run(scriptName: 'hello_script', noSelect: true);
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output.normalizeLines(),
         ignoringDependencyMessages(
           '''
 melos run hello_script
@@ -801,7 +801,7 @@ SUCCESS
 
       await melos.run(scriptName: 'hello_script', noSelect: true);
 
-      final normalizedLines = logger.output.normalizeNewLines().split('\n');
+      final normalizedLines = logger.output.normalizeLines().split('\n');
       expect(
         normalizedLines,
         containsAll(
