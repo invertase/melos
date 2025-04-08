@@ -74,7 +74,7 @@ melos:
   scripts:
     test:
       description: Run tests in a specific package.
-      run: dart test
+      run: dart test --concurrency=1
       exec:
         concurrency: 1
       packageFilters:
