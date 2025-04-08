@@ -756,9 +756,9 @@ SUCCESS
     });
 
     test(
-        'verifies that a melos script can call another script containing '
-        'melos commands with flags, and ensures the script is successfully '
-        'executed', () async {
+        'verifies that a script can call another script containing commands '
+        'with flags, and ensures the first script is successfully executed, '
+        'but terminates on failure.', () async {
       final workspaceDir = await createTemporaryWorkspace(
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
@@ -799,7 +799,10 @@ SUCCESS
         config: config,
       );
 
-      await melos.run(scriptName: 'hello_script', noSelect: true);
+      await expectLater(
+        () => melos.run(scriptName: 'hello_script', noSelect: true),
+        throwsA(const TypeMatcher<ScriptException>()),
+      );
 
       final normalizedLines = logger.output.normalizeLines().split('\n');
       expect(
@@ -819,10 +822,15 @@ SUCCESS
             '  └> dart format --set-exit-if-changed .',
             '     └> FAILED (in 1 packages)',
             '        └> a (with exit code 1)',
-            if (currentPlatform.isWindows) '"hello world"' else 'hello world',
           ],
         ),
       );
+      expect(
+        normalizedLines,
+        isNot(
+          contains(currentPlatform.isWindows ? '"hello world"' : 'hello world'),
+        ),
+      ); // Ensure the script didn't run
     });
 
     test(
@@ -863,6 +871,56 @@ SUCCESS
       expect(
         () => melos.run(scriptName: 'hello_script', noSelect: true),
         throwsA(const TypeMatcher<RecursiveScriptCallException>()),
+      );
+    });
+  });
+
+  group('steps', () {
+    test('failing step will result in early exit and error code 1', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: const Scripts({
+            'test_script': Script(
+              name: 'test_script',
+              steps: ['absolute_bogus_command', 'echo "test_script_2"'],
+            ),
+          }),
+        ),
+        workspacePackages: ['a'],
+      );
+
+      await createProject(workspaceDir, Pubspec('a'));
+      await runPubGet(workspaceDir.path);
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      await expectLater(
+        () => melos.run(scriptName: 'test_script', noSelect: true),
+        throwsA(const TypeMatcher<ScriptException>()),
+      );
+
+      expect(
+        logger.output.normalizeLines(),
+        ignoringDependencyMessages(
+          '''
+melos run test_script
+➡️ step: absolute_bogus_command
+
+FAILED
+  └> test_script
+     └> FAILED
+''',
+        ),
       );
     });
   });

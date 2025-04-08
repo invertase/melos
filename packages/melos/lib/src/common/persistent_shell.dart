@@ -50,7 +50,7 @@ class PersistentShell {
     return _awaitCommandCompletion();
   }
 
-  Future<void> stopShell(int exitCode) {
+  Future<void> stopShell() {
     return _process.stdin.close();
   }
 

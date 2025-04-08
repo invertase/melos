@@ -39,13 +39,11 @@ mixin _RunMixin on _Melos {
         steps: script.steps!,
       );
 
-      final resultLogger = logger.child(script.name);
-
       if (exitCode != 0) {
+        final resultLogger = logger.child(script.name);
         resultLogger.child(failedLabel);
         throw ScriptException._(script.name);
       }
-      resultLogger.child(successLabel);
       return;
     }
 
@@ -303,7 +301,7 @@ mixin _RunMixin on _Melos {
       }
     }
 
-    await shell.stopShell(exitCode);
+    await shell.stopShell();
     if (exitCode == 0) {
       logger.log(successLabel);
     } else {
