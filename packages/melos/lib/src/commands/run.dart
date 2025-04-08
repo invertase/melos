@@ -55,6 +55,7 @@ mixin _RunMixin on _Melos {
 
     logger.command('melos run ${script.name}');
     logger.child(scriptSourceCode).child(runningLabel).newLine();
+    await logger.flushGroupBufferIfNeed();
 
     final exitCode = await _runScript(
       script,
@@ -71,13 +72,12 @@ mixin _RunMixin on _Melos {
     String scriptName,
   ) async {
     await logger.flushGroupBufferIfNeed();
-    logger.newLine();
     if (exitCode != 0) {
+      logger.newLine();
       logger.log(scriptName);
       logger.child(failedLabel);
       throw ScriptException._(scriptName);
     }
-    logger.child(successLabel);
   }
 
   /// Detects recursive script calls within the provided [script].

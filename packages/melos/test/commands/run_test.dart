@@ -76,10 +76,6 @@ ${'-' * terminalWidth}
 \$ melos exec
   └> echo hello
      └> SUCCESS
-
-melos run test_script
-  └> melos exec -- "echo hello"
-     └> SUCCESS
 ''',
           ),
         );
@@ -149,10 +145,6 @@ ${'-' * terminalWidth}
 \$ melos exec
   └> echo hello
      └> SUCCESS
-
-melos run test_script
-  └> melos exec -- "echo hello"
-     └> SUCCESS
 ''',
             ),
           );
@@ -206,10 +198,6 @@ melos run hello
      └> RUNNING
 
 foo bar baz
-
-melos run hello
-  └> echo foo bar baz
-     └> SUCCESS
 ''',
         ),
       );
@@ -275,10 +263,6 @@ ${'-' * terminalWidth}
 \$ melos exec
   └> echo foo bar baz
      └> SUCCESS
-
-melos run hello
-  └> melos exec -- "echo foo bar baz"
-     └> SUCCESS
 ''',
         ),
       );
@@ -337,10 +321,6 @@ ${'-' * terminalWidth}
 
 \$ melos exec
   └> echo "hello"
-     └> SUCCESS
-
-melos run test_script
-  └> melos exec --concurrency 1 -- "echo \\"hello\\""
      └> SUCCESS
 ''',
         ),
@@ -506,14 +486,8 @@ melos run test_script
 
 ${currentPlatform.isWindows ? '"test_script"' : 'test_script'}
 
-melos run test_script
-  └> echo "test_script"
-     └> SUCCESS
-
 ➡️ step: echo hello world
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
-
-SUCCESS
 ''',
         ),
       );
@@ -616,8 +590,6 @@ SUCCESS
 
 ➡️ step: echo hello world
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
-
-SUCCESS
 ''',
         ),
       );
@@ -683,9 +655,6 @@ SUCCESS
             'b: SUCCESS',
             'c:',
             'c: SUCCESS',
-            r'$ melos format',
-            '  └> dart format .',
-            '     └> SUCCESS',
           ],
         ),
       );

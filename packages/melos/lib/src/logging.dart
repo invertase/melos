@@ -85,7 +85,9 @@ class MelosLogger with _DelegateLogger {
     final updatedMessage =
         message.replaceAll(successMarker, '').replaceAll(failureMarker, '');
 
-    _logMessage(updatedMessage, asError);
+    if (updatedMessage.isNotEmpty) {
+      _logMessage(updatedMessage, asError);
+    }
     completer?.complete(isSuccess ? 0 : 1);
   }
 
@@ -281,7 +283,7 @@ class MelosLogger with _DelegateLogger {
     }
 
     _groupBuffer.clear();
-    return Future.delayed(const Duration(milliseconds: 100));
+    return Future.delayed(const Duration(milliseconds: 10));
   }
 }
 
