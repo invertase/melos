@@ -886,7 +886,10 @@ SUCCESS
         containsAllInOrder([
           'melos run test_script',
           '➡️  Step: absolute_bogus_command',
-          'e-ERROR: /bin/sh: 1: absolute_bogus_command: not found',
+          if (currentPlatform.isLinux)
+            'e-ERROR: /bin/sh: 1: absolute_bogus_command: not found',
+          if (currentPlatform.isMacOS)
+            'e-ERROR: /bin/sh: line 1: absolute_bogus_command: not found',
           'e-',
           'test_script',
           '  └> FAILED',
