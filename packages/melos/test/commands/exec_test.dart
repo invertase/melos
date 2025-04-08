@@ -51,7 +51,7 @@ void main() {
       );
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output.normalizeLines(),
         ignoringAnsii(
           '''
 \$ melos exec
@@ -135,7 +135,7 @@ ${'-' * terminalWidth}
         );
 
         expect(
-          logger.output.normalizeNewLines(),
+          logger.output.normalizeLines(),
           ignoringAnsii(
             '''
 \$ melos exec
@@ -198,7 +198,7 @@ ${'-' * terminalWidth}
         );
 
         expect(
-          logger.output.normalizeNewLines(),
+          logger.output.normalizeLines(),
           ignoringAnsii(
             '''
 \$ melos exec
@@ -256,7 +256,7 @@ ${'-' * terminalWidth}
         );
 
         expect(
-          logger.output.normalizeNewLines(),
+          logger.output.normalizeLines(),
           ignoringAnsii(
             '''
 \$ melos exec
@@ -355,7 +355,7 @@ ${'-' * terminalWidth}
         );
 
         expect(
-          logger.output.normalizeNewLines(),
+          logger.output.normalizeLines(),
           ignoringAnsii(
             '''
 \$ melos exec
@@ -423,7 +423,7 @@ ${'-' * terminalWidth}
           );
 
           expect(
-            logger.output.normalizeNewLines(),
+            logger.output.normalizeLines(),
             ignoringAnsii(
               '''
 \$ melos exec
@@ -512,7 +512,7 @@ ${'-' * terminalWidth}
           );
 
           expect(
-            logger.output.normalizeNewLines(),
+            logger.output.normalizeLines(),
             ignoringAnsii(
               '''
 \$ melos exec
@@ -581,7 +581,7 @@ ${'-' * terminalWidth}
         );
 
         expect(
-          logger.output.normalizeNewLines(),
+          logger.output.normalizeLines(),
           ignoringAnsii(
             '''
 \$ melos exec
@@ -652,7 +652,7 @@ ${'-' * terminalWidth}
         );
 
         expect(
-          logger.output.normalizeNewLines(),
+          logger.output.normalizeLines(),
           ignoringAnsii(
             '''
 \$ melos exec

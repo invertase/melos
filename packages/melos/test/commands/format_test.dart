@@ -60,7 +60,7 @@ void main() {
       await melos.format();
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output.normalizeLines(),
         ignoringAnsii(
           matches(
             RegExp(
@@ -129,7 +129,7 @@ ${'-' * terminalWidth}
       await melos.format(output: 'show');
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output.normalizeLines(),
         ignoringAnsii(
           matches(
             RegExp(
