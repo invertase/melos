@@ -64,19 +64,23 @@ mixin _RunMixin on _Melos {
       extraArgs: extraArgs,
     );
 
-    await _handleExitCode(exitCode, script.name);
+    await _handleExitCode(exitCode, script.name, logSuccess: false);
   }
 
   Future<void> _handleExitCode(
     int exitCode,
-    String scriptName,
-  ) async {
+    String scriptName, {
+    bool logSuccess = true,
+  }) async {
     await logger.flushGroupBufferIfNeed();
     if (exitCode != 0) {
       logger.newLine();
       logger.log(scriptName);
       logger.child(failedLabel);
       throw ScriptException._(scriptName);
+    }
+    if (logSuccess) {
+      logger.log(successLabel);
     }
   }
 

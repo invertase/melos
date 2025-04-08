@@ -50,7 +50,8 @@ class PersistentShell {
     return _awaitCommandCompletion();
   }
 
-  Future<void> stopShell() {
+  Future<void> stopShell() async {
+    await _process.stdin.flush();
     return _process.stdin.close();
   }
 

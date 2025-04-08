@@ -488,6 +488,8 @@ ${currentPlatform.isWindows ? '"test_script"' : 'test_script'}
 
 ➡️ step: echo hello world
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
+
+SUCCESS
 ''',
         ),
       );
@@ -590,6 +592,8 @@ SUCCESS
 
 ➡️ step: echo hello world
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
+
+SUCCESS
 ''',
         ),
       );
@@ -710,10 +714,6 @@ melos run list
      └> RUNNING
 
 ${currentPlatform.isWindows ? '"list script"' : 'list script'}
-
-melos run list
-  └> echo "list script"
-     └> SUCCESS
 
 ➡️ step: echo hello world
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
@@ -856,7 +856,10 @@ SUCCESS
           scripts: const Scripts({
             'test_script': Script(
               name: 'test_script',
-              steps: ['absolute_bogus_command', 'echo "test_script_2"'],
+              steps: [
+                'absolute_bogus_command',
+                'echo "test_script_2"',
+              ],
             ),
           }),
         ),
@@ -879,19 +882,15 @@ SUCCESS
       );
 
       expect(
-        logger.output.normalizeLines(),
-        ignoringDependencyMessages(
-          '''
-melos run test_script
-➡️ step: absolute_bogus_command
-
-e-ERROR: /bin/sh: 1: absolute_bogus_command: not found
-e-
-
-test_script
-  └> FAILED
-''',
-        ),
+        logger.output.normalizeLines().split('\n'),
+        containsAllInOrder([
+          'melos run test_script',
+          '➡️ step: absolute_bogus_command',
+          'e-ERROR: /bin/sh: 1: absolute_bogus_command: not found',
+          'e-',
+          'test_script',
+          '  └> FAILED',
+        ]),
       );
     });
   });

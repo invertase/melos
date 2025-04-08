@@ -97,3 +97,8 @@ melos:
 
     upgrade: melos exec flutter pub upgrade
 
+    my_steps:
+      steps:
+        - "echo 1 && blalblabl"
+        - "echo 2"
+
