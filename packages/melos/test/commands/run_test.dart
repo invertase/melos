@@ -479,14 +479,14 @@ it should list the contents including the package named "this_is_package_a".
         ignoringDependencyMessages(
           '''
 melos run hello_script
-➡️ step: melos run test_script
+➡️  step: melos run test_script
 melos run test_script
   └> echo "test_script"
      └> RUNNING
 
 ${currentPlatform.isWindows ? '"test_script"' : 'test_script'}
 
-➡️ step: echo hello world
+➡️  step: echo hello world
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
 
 SUCCESS
@@ -580,17 +580,17 @@ SUCCESS
         ignoringDependencyMessages(
           '''
 melos run hello_script
-➡️ step: melos run test_script
+➡️  step: melos run test_script
 melos run test_script
-➡️ step: echo test_script_1
+➡️  step: echo test_script_1
 ${currentPlatform.isWindows ? '"test_script_1"' : 'test_script_1'}
 
-➡️ step: echo test_script_2
+➡️  step: echo test_script_2
 ${currentPlatform.isWindows ? '"test_script_2"' : 'test_script_2'}
 
 SUCCESS
 
-➡️ step: echo hello world
+➡️  step: echo hello world
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
 
 SUCCESS
@@ -708,14 +708,14 @@ SUCCESS
         ignoringDependencyMessages(
           '''
 melos run hello_script
-➡️ step: melos run list
+➡️  step: melos run list
 melos run list
   └> echo "list script"
      └> RUNNING
 
 ${currentPlatform.isWindows ? '"list script"' : 'list script'}
 
-➡️ step: echo hello world
+➡️  step: echo hello world
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
 
 SUCCESS
@@ -885,7 +885,7 @@ SUCCESS
         logger.output.normalizeLines().split('\n'),
         containsAllInOrder([
           'melos run test_script',
-          '➡️ step: absolute_bogus_command',
+          '➡️  step: absolute_bogus_command',
           'e-ERROR: /bin/sh: 1: absolute_bogus_command: not found',
           'e-',
           'test_script',
