@@ -1,3 +1,9 @@
+## 7.0.0-dev.8
+
+ - **FIX**: Fail early on steps and return error code ([#891](https://github.com/invertase/melos/issues/891)). ([7161ce8f](https://github.com/invertase/melos/commit/7161ce8fd8703b628c798cd17abc933817338110))
+ - **DOCS**: add jaspr to projects ([#881](https://github.com/invertase/melos/issues/881)). ([926b6215](https://github.com/invertase/melos/commit/926b62158b5d400fdbd2f9c342b379e0545f04f9))
+ - **DOCS**: Add Stac to the list of projects using Melos. ([#864](https://github.com/invertase/melos/issues/864)). ([8838863e](https://github.com/invertase/melos/commit/8838863ef167af59ab462080b8ff586628e84c8f))
+
 ## 7.0.0-dev.7
 
  - **FIX**: Remove old pubspec_overrides entries on `clean` ([#861](https://github.com/invertase/melos/issues/861)). ([d5a6ea67](https://github.com/invertase/melos/commit/d5a6ea678f31d38ed19b441ea31ac0d83a8ee789))
