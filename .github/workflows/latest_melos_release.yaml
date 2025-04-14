@@ -11,5 +11,5 @@ jobs:
   release_docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: git push -f origin HEAD:melos-latest
