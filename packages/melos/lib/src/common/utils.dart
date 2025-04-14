@@ -75,7 +75,7 @@ final _camelCasedDelimiterRegExp = RegExp(r'[_\s-]+');
 
 extension StringUtils on String {
   String addStepPrefixEmoji() {
-    return '➡️ step: $this';
+    return '➡️  Step: $this';
   }
 
   String indent(String indent) {

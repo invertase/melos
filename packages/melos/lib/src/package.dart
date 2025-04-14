@@ -903,7 +903,7 @@ class Package {
   final Pubspec pubspec;
   final List<String> categories;
 
-  /// Package path as a normalized sting relative to the root of the workspace.
+  /// Package path as a normalized string relative to the root of the workspace.
   /// e.g. "packages/firebase_database".
   final String pathRelativeToWorkspace;
 

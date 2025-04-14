@@ -73,42 +73,30 @@ class MelosLogger with _DelegateLogger {
     String message,
     String successMarker,
     String failureMarker,
-    Completer<void>? completer, {
-    bool isError = false,
+    Completer<int>? completer, {
+    bool asError = false,
   }) {
-    final modifiedMessage = _processMessageBasedOnMarkers(
-      message,
-      successMarker,
-      failureMarker,
-      completer,
-    );
-    _logMessage(modifiedMessage, isError);
-  }
-
-  String _processMessageBasedOnMarkers(
-    String message,
-    String successMarker,
-    String failureMarker,
-    Completer<void>? completer,
-  ) {
-    if (message.contains(successMarker)) {
-      completer?.complete();
-      return message.replaceAll(successMarker, '');
+    if (!message.contains(successMarker) && !message.contains(failureMarker)) {
+      _logMessage(message, asError);
+      return;
     }
 
-    if (message.contains(failureMarker)) {
-      completer?.complete();
-      return message.replaceAll(failureMarker, '');
-    }
+    final isSuccess = message.contains(successMarker);
+    final updatedMessage =
+        message.replaceAll(successMarker, '').replaceAll(failureMarker, '');
 
-    return message;
+    if (updatedMessage.isNotEmpty) {
+      _logMessage(updatedMessage, asError);
+    }
+    completer?.complete(isSuccess ? 0 : 1);
   }
 
   void _logMessage(String message, bool isError) {
     if (isError) {
       error(message);
+    } else {
+      write(message);
     }
-    write(message);
   }
 
   void command(String command, {bool withDollarSign = false}) {
@@ -280,7 +268,7 @@ class MelosLogger with _DelegateLogger {
     _groupBuffer[group] = [...previous, _GroupBufferWriteMessage(message)];
   }
 
-  void flushGroupBufferIfNeed() {
+  Future<void> flushGroupBufferIfNeed() {
     for (final entry in _groupBuffer.entries) {
       for (final value in entry.value) {
         switch (value) {
@@ -295,6 +283,7 @@ class MelosLogger with _DelegateLogger {
     }
 
     _groupBuffer.clear();
+    return Future.delayed(const Duration(milliseconds: 10));
   }
 }
 

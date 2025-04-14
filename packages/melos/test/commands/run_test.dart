@@ -56,7 +56,7 @@ void main() {
         await melos.run(scriptName: 'test_script', noSelect: true);
 
         expect(
-          logger.output.normalizeNewLines(),
+          logger.output.normalizeLines(),
           ignoringDependencyMessages(
             '''
 melos run test_script
@@ -75,10 +75,6 @@ ${'-' * terminalWidth}
 
 \$ melos exec
   └> echo hello
-     └> SUCCESS
-
-melos run test_script
-  └> melos exec -- "echo hello"
      └> SUCCESS
 ''',
           ),
@@ -129,7 +125,7 @@ melos run test_script
           await melos.run(scriptName: 'test_script', noSelect: true);
 
           expect(
-            logger.output.normalizeNewLines(),
+            logger.output.normalizeLines(),
             ignoringDependencyMessages(
               '''
 melos run test_script
@@ -148,10 +144,6 @@ ${'-' * terminalWidth}
 
 \$ melos exec
   └> echo hello
-     └> SUCCESS
-
-melos run test_script
-  └> melos exec -- "echo hello"
      └> SUCCESS
 ''',
             ),
@@ -198,7 +190,7 @@ melos run test_script
       );
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output.normalizeLines(),
         ignoringDependencyMessages(
           '''
 melos run hello
@@ -206,10 +198,6 @@ melos run hello
      └> RUNNING
 
 foo bar baz
-
-melos run hello
-  └> echo foo bar baz
-     └> SUCCESS
 ''',
         ),
       );
@@ -255,7 +243,7 @@ melos run hello
       );
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output.normalizeLines(),
         ignoringDependencyMessages(
           '''
 melos run hello
@@ -274,10 +262,6 @@ ${'-' * terminalWidth}
 
 \$ melos exec
   └> echo foo bar baz
-     └> SUCCESS
-
-melos run hello
-  └> melos exec -- "echo foo bar baz"
      └> SUCCESS
 ''',
         ),
@@ -318,7 +302,7 @@ melos run hello
       await melos.run(scriptName: 'test_script', noSelect: true);
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output.normalizeLines(),
         ignoringDependencyMessages(
           '''
 melos run test_script
@@ -337,10 +321,6 @@ ${'-' * terminalWidth}
 
 \$ melos exec
   └> echo "hello"
-     └> SUCCESS
-
-melos run test_script
-  └> melos exec --concurrency 1 -- "echo \\"hello\\""
      └> SUCCESS
 ''',
         ),
@@ -451,7 +431,7 @@ it should list the contents including the package named "this_is_package_a".
         await melos.run(scriptName: 'cd_script', noSelect: true);
 
         expect(
-          logger.output.normalizeNewLines(),
+          logger.output.normalizeLines(),
           contains('this_is_package_a'),
         );
       },
@@ -495,22 +475,18 @@ it should list the contents including the package named "this_is_package_a".
       await melos.run(scriptName: 'hello_script', noSelect: true);
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output.normalizeLines(),
         ignoringDependencyMessages(
           '''
 melos run hello_script
-➡️ step: melos run test_script
+➡️  Step: melos run test_script
 melos run test_script
   └> echo "test_script"
      └> RUNNING
 
 ${currentPlatform.isWindows ? '"test_script"' : 'test_script'}
 
-melos run test_script
-  └> echo "test_script"
-     └> SUCCESS
-
-➡️ step: echo hello world
+➡️  Step: echo hello world
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
 
 SUCCESS
@@ -600,21 +576,21 @@ SUCCESS
       await melos.run(scriptName: 'hello_script', noSelect: true);
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output.normalizeLines(),
         ignoringDependencyMessages(
           '''
 melos run hello_script
-➡️ step: melos run test_script
+➡️  Step: melos run test_script
 melos run test_script
-➡️ step: echo test_script_1
+➡️  Step: echo test_script_1
 ${currentPlatform.isWindows ? '"test_script_1"' : 'test_script_1'}
 
-➡️ step: echo test_script_2
+➡️  Step: echo test_script_2
 ${currentPlatform.isWindows ? '"test_script_2"' : 'test_script_2'}
 
 SUCCESS
 
-➡️ step: echo hello world
+➡️  Step: echo hello world
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
 
 SUCCESS
@@ -668,7 +644,7 @@ SUCCESS
       );
 
       await melos.run(scriptName: 'hello_script', noSelect: true);
-      final normalizedLines = logger.output.normalizeNewLines().split('\n');
+      final normalizedLines = logger.output.normalizeLines().split('\n');
       expect(
         normalizedLines,
         containsAll(
@@ -683,9 +659,6 @@ SUCCESS
             'b: SUCCESS',
             'c:',
             'c: SUCCESS',
-            r'$ melos format',
-            '  └> dart format .',
-            '     └> SUCCESS',
           ],
         ),
       );
@@ -731,22 +704,18 @@ SUCCESS
       await melos.run(scriptName: 'hello_script', noSelect: true);
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output.normalizeLines(),
         ignoringDependencyMessages(
           '''
 melos run hello_script
-➡️ step: melos run list
+➡️  Step: melos run list
 melos run list
   └> echo "list script"
      └> RUNNING
 
 ${currentPlatform.isWindows ? '"list script"' : 'list script'}
 
-melos run list
-  └> echo "list script"
-     └> SUCCESS
-
-➡️ step: echo hello world
+➡️  Step: echo hello world
 ${currentPlatform.isWindows ? '"hello world"' : 'hello world'}
 
 SUCCESS
@@ -756,9 +725,9 @@ SUCCESS
     });
 
     test(
-        'verifies that a melos script can call another script containing '
-        'melos commands with flags, and ensures the script is successfully '
-        'executed', () async {
+        'verifies that a script can call another script containing commands '
+        'with flags, and ensures the first script is successfully executed, '
+        'but terminates on failure.', () async {
       final workspaceDir = await createTemporaryWorkspace(
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
@@ -799,9 +768,12 @@ SUCCESS
         config: config,
       );
 
-      await melos.run(scriptName: 'hello_script', noSelect: true);
+      await expectLater(
+        () => melos.run(scriptName: 'hello_script', noSelect: true),
+        throwsA(const TypeMatcher<ScriptException>()),
+      );
 
-      final normalizedLines = logger.output.normalizeNewLines().split('\n');
+      final normalizedLines = logger.output.normalizeLines().split('\n');
       expect(
         normalizedLines,
         containsAll(
@@ -819,10 +791,15 @@ SUCCESS
             '  └> dart format --set-exit-if-changed .',
             '     └> FAILED (in 1 packages)',
             '        └> a (with exit code 1)',
-            if (currentPlatform.isWindows) '"hello world"' else 'hello world',
           ],
         ),
       );
+      expect(
+        normalizedLines,
+        isNot(
+          contains(currentPlatform.isWindows ? '"hello world"' : 'hello world'),
+        ),
+      ); // Ensure the script didn't run
     });
 
     test(
@@ -863,6 +840,60 @@ SUCCESS
       expect(
         () => melos.run(scriptName: 'hello_script', noSelect: true),
         throwsA(const TypeMatcher<RecursiveScriptCallException>()),
+      );
+    });
+  });
+
+  group('steps', () {
+    test('failing step will result in early exit and error code 1', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: const Scripts({
+            'test_script': Script(
+              name: 'test_script',
+              steps: [
+                'absolute_bogus_command',
+                'echo "test_script_2"',
+              ],
+            ),
+          }),
+        ),
+        workspacePackages: ['a'],
+      );
+
+      await createProject(workspaceDir, Pubspec('a'));
+      await runPubGet(workspaceDir.path);
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      await expectLater(
+        () => melos.run(scriptName: 'test_script', noSelect: true),
+        throwsA(const TypeMatcher<ScriptException>()),
+      );
+
+      expect(
+        logger.output.normalizeLines().split('\n'),
+        containsAllInOrder([
+          'melos run test_script',
+          '➡️  Step: absolute_bogus_command',
+          if (currentPlatform.isLinux)
+            'e-ERROR: /bin/sh: 1: absolute_bogus_command: not found',
+          if (currentPlatform.isMacOS)
+            'e-ERROR: /bin/sh: line 1: absolute_bogus_command: command not found',
+          'e-',
+          'test_script',
+          '  └> FAILED',
+        ]),
       );
     });
   });

@@ -224,6 +224,8 @@ The following projects are using Melos:
 - [foss42/apidash](https://github.com/foss42/apidash)
 - [ReactiveX/rxdart](https://github.com/ReactiveX/rxdart)
 - [StacDev/stac](https://github.com/StacDev/stac)
+- [Jaspr](https://github.com/schultek/jaspr)
+- [starknet.dart](https://github.com/focustree/starknet.dart)
 
 > Submit a PR if you'd like to add your project to the list. Update the
 > [README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md)
