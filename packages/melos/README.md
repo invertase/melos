@@ -226,6 +226,7 @@ The following projects are using Melos:
 - [StacDev/stac](https://github.com/StacDev/stac)
 - [Jaspr](https://github.com/schultek/jaspr)
 - [starknet.dart](https://github.com/focustree/starknet.dart)
+- [flyerhq/flutter_chat_ui](https://github.com/flyerhq/flutter_chat_ui)
 
 > Submit a PR if you'd like to add your project to the list. Update the
 > [README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md)
