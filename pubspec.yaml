@@ -5,7 +5,7 @@ workspace:
   - packages/melos
 
 environment:
-  sdk: ^3.8.0
+  sdk: ^3.9.0
 
 # This allows us to use melos on itself during development.
 executables:
@@ -27,31 +27,31 @@ melos:
   command:
     bootstrap:
       environment:
-        sdk: ^3.8.0
+        sdk: ^3.9.0
       dependencies:
         ansi_styles: ^0.3.2+1
-        args: ^2.6.0
-        cli_launcher: ^0.3.1
+        args: ^2.7.0
+        cli_launcher: ^0.3.2+1
         cli_util: ^0.4.2
         collection: any
-        file: ^7.0.0
-        glob: ^2.1.2
+        file: ^7.0.1
+        glob: ^2.1.3
         graphs: ^2.3.2
-        http: ^1.2.2
+        http: ^1.5.0
         meta: any
         mustache_template: ^2.0.0
         path: any
-        platform: ^3.1.5
+        platform: ^3.1.6
         pool: ^1.5.1
         prompts: ^2.0.0
-        pub_semver: ^2.1.5
+        pub_semver: ^2.2.0
         pub_updater: ^0.5.0
         pubspec_parse: ^1.5.0
-        string_scanner: ^1.3.0
+        string_scanner: ^1.4.1
         yaml: ^3.1.3
         yaml_edit: ^2.2.2
       dev_dependencies:
-        mockito: ^5.4.5
+        mockito: ^5.5.0
         test: any
         path: ^1.9.1
         yaml: ^3.1.3
@@ -95,4 +95,3 @@ melos:
       run: dart pub global activate melos --overwrite
 
     upgrade: melos exec flutter pub upgrade
-
