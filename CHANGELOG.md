@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2025-05-25
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`conventional_commit` - `v0.6.0+2`](#conventional_commit---v0602)
+ - [`melos` - `v6.3.3`](#melos---v633)
+
+---
+
+#### `conventional_commit` - `v0.6.0+2`
+
+ - **FIX**: Bump to SDK 3.8.0. ([5d7521fe](https://github.com/invertase/melos/commit/5d7521fe48d35f1e2905a2a147d8f1d363b1133d))
+
+#### `melos` - `v6.3.3`
+
+ - **FIX**: Bump to SDK 3.8.0. ([5d7521fe](https://github.com/invertase/melos/commit/5d7521fe48d35f1e2905a2a147d8f1d363b1133d))
+
+
 ## 2025-01-19
 
 ### Changes

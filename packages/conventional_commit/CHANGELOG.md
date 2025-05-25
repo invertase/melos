@@ -1,3 +1,7 @@
+## 0.6.0+2
+
+ - **FIX**: Bump to SDK 3.8.0. ([5d7521fe](https://github.com/invertase/melos/commit/5d7521fe48d35f1e2905a2a147d8f1d363b1133d))
+
 ## 0.6.0+1
 
  - **FIX**: commit scopes that contain "-" should be treated as valid scopes ([#496](https://github.com/invertase/melos/issues/496)). ([615c208e](https://github.com/invertase/melos/commit/615c208e08bb6c7a4c159fe0a06561b0b42edd50))

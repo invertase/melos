@@ -1,3 +1,7 @@
+## 6.3.3
+
+ - **FIX**: Bump to SDK 3.8.0. ([5d7521fe](https://github.com/invertase/melos/commit/5d7521fe48d35f1e2905a2a147d8f1d363b1133d))
+
 ## 6.3.2
 
  - **FIX**: Correct formatting for Git and HostedDependency. ([21d793fb](https://github.com/invertase/melos/commit/21d793fb5eab1c20529eaa58bea8f20d0548b425))
