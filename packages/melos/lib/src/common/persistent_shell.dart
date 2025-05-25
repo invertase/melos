@@ -83,8 +83,9 @@ class PersistentShell {
   }
 
   String _buildFullCommand(String command) {
-    final formattedScriptStep =
-        targetStyle(command.addStepPrefixEmoji().withoutTrailing('\n'));
+    final formattedScriptStep = targetStyle(
+      command.addStepPrefixEmoji().withoutTrailing('\n'),
+    );
     final echoCommand = 'echo "$formattedScriptStep"';
     final echoSuccess = 'echo $_successEndMarker';
     final echoFailure = 'echo $_failureEndMarker';

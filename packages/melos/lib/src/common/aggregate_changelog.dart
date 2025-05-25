@@ -24,7 +24,8 @@ class AggregateChangelog {
   final List<MelosPendingPackageUpdate> pendingPackageUpdates;
   final String path;
 
-  String get _changelogFileHeader => '''
+  String get _changelogFileHeader =>
+      '''
 # Change Log
 
 ${description?.withoutTrailing('\n') ?? ''}
@@ -37,21 +38,25 @@ ${description?.withoutTrailing('\n') ?? ''}
   String _packageVersionMarkdownAnchor(MelosPendingPackageUpdate update) {
     // ignore: prefer_interpolation_to_compose_strings
     return '#' +
-        _packageVersionTitle(update)
-            .replaceAll(' ', '-')
-            .replaceAll(RegExp('[^a-zA-Z_0-9-]'), '');
+        _packageVersionTitle(
+          update,
+        ).replaceAll(' ', '-').replaceAll(RegExp('[^a-zA-Z_0-9-]'), '');
   }
 
   String get markdown {
     final body = StringBuffer();
-    final dependencyOnlyPackages = pendingPackageUpdates
-        .where((update) => update.reason == PackageUpdateReason.dependency);
-    final graduatedPackages = pendingPackageUpdates
-        .where((update) => update.reason == PackageUpdateReason.graduate);
-    final packagesWithBreakingChanges =
-        pendingPackageUpdates.where((update) => update.hasBreakingChanges);
-    final packagesWithOtherChanges =
-        pendingPackageUpdates.where((update) => !update.hasBreakingChanges);
+    final dependencyOnlyPackages = pendingPackageUpdates.where(
+      (update) => update.reason == PackageUpdateReason.dependency,
+    );
+    final graduatedPackages = pendingPackageUpdates.where(
+      (update) => update.reason == PackageUpdateReason.graduate,
+    );
+    final packagesWithBreakingChanges = pendingPackageUpdates.where(
+      (update) => update.hasBreakingChanges,
+    );
+    final packagesWithOtherChanges = pendingPackageUpdates.where(
+      (update) => !update.hasBreakingChanges,
+    );
 
     body.writeln(_changelogFileHeader);
     body.writeln('## $newEntryTitle');

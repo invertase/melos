@@ -5,8 +5,10 @@ mixin _CleanMixin on _Melos {
     GlobalOptions? global,
     PackageFilters? packageFilters,
   }) async {
-    final workspace =
-        await createWorkspace(global: global, packageFilters: packageFilters);
+    final workspace = await createWorkspace(
+      global: global,
+      packageFilters: packageFilters,
+    );
 
     return _runLifecycle(
       workspace,
@@ -69,8 +71,9 @@ mixin _CleanMixin on _Melos {
         currentDirectoryPath: workspace.path,
       );
 
-      await for (final melosXmlFile
-          in melosXmlGlob.listFileSystem(const LocalFileSystem())) {
+      await for (final melosXmlFile in melosXmlGlob.listFileSystem(
+        const LocalFileSystem(),
+      )) {
         deleteEntry(melosXmlFile.path);
       }
     }
@@ -113,13 +116,17 @@ String? _mergeMelosPubspecOverrides(
     multiLine: true,
   );
   final pubspecOverridesEditor = YamlEditor(pubspecOverridesContent ?? '');
-  final pubspecOverrides = pubspecOverridesEditor
-      .parseAt([], orElse: () => wrapAsYamlNode(null)).value as Object?;
+  final pubspecOverrides =
+      pubspecOverridesEditor
+              .parseAt([], orElse: () => wrapAsYamlNode(null))
+              .value
+          as Object?;
 
   final dependencyOverrides = pubspecOverridesContent?.isEmpty ?? true
       ? null
       : PubspecOverrides.parse(pubspecOverridesContent!).dependencyOverrides;
-  final currentManagedDependencyOverrides = managedDependencyOverridesRegex
+  final currentManagedDependencyOverrides =
+      managedDependencyOverridesRegex
           .firstMatch(pubspecOverridesContent ?? '')
           ?.group(1)
           ?.split(',')
@@ -221,9 +228,9 @@ String? _mergeMelosPubspecOverrides(
     // in the managed dependencies marker comment.
     final setOfManagedDependenciesChanged =
         !const DeepCollectionEquality.unordered().equals(
-      currentManagedDependencyOverrides,
-      newManagedDependencyOverrides,
-    );
+          currentManagedDependencyOverrides,
+          newManagedDependencyOverrides,
+        );
     if (setOfManagedDependenciesChanged) {
       if (newManagedDependencyOverrides.isEmpty) {
         // When there are no managed dependencies, remove the marker comment.
@@ -231,13 +238,15 @@ String? _mergeMelosPubspecOverrides(
       } else {
         if (!managedDependencyOverridesRegex.hasMatch(result)) {
           // When there is no marker comment, add one.
-          result = '# $managedDependencyOverridesMarker: '
+          result =
+              '# $managedDependencyOverridesMarker: '
               '${newManagedDependencyOverrides.join(',')}\n$result';
         } else {
           // When there is a marker comment, update it.
           result = result.replaceFirstMapped(
             managedDependencyOverridesRegex,
-            (match) => '# $managedDependencyOverridesMarker: '
+            (match) =>
+                '# $managedDependencyOverridesMarker: '
                 '${newManagedDependencyOverrides.join(',')}\n',
           );
         }

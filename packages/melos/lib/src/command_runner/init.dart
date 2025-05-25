@@ -30,12 +30,14 @@ class InitCommand extends MelosCommand {
   @override
   Future<void> run() {
     final workspaceDefault = p.basename(Directory.current.absolute.path);
-    final workspaceName = argResults!.rest.firstOrNull ??
+    final workspaceName =
+        argResults!.rest.firstOrNull ??
         promptInput(
           'Enter your workspace name',
           defaultsTo: workspaceDefault,
         );
-    final directory = argResults!['directory'] as String? ??
+    final directory =
+        argResults!['directory'] as String? ??
         promptInput(
           'Enter the directory',
           defaultsTo: workspaceDefault != workspaceName ? workspaceName : '.',

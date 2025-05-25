@@ -14,18 +14,19 @@ void main() {
     'generates correct path for package at root in modules.xml ',
     () async {
       final tempDir = createTestTempDir();
-      final workspaceBuilder = VirtualWorkspaceBuilder(
-        path: tempDir.path,
-        '''
+      final workspaceBuilder =
+          VirtualWorkspaceBuilder(
+            path: tempDir.path,
+            '''
         packages:
           - .
         ''',
-      )..addPackage(
-          '''
+          )..addPackage(
+            '''
           name: root
           ''',
-          path: '.',
-        );
+            path: '.',
+          );
       final workspace = workspaceBuilder.build();
       final project = IntellijProject.fromWorkspace(workspace);
       await project.generate();
@@ -39,18 +40,19 @@ void main() {
     'always generates iml paths with `/`',
     () async {
       final tempDir = createTestTempDir();
-      final workspaceBuilder = VirtualWorkspaceBuilder(
-        path: tempDir.path,
-        '''
+      final workspaceBuilder =
+          VirtualWorkspaceBuilder(
+            path: tempDir.path,
+            '''
         packages:
           - .
         ''',
-      )..addPackage(
-          '''
+          )..addPackage(
+            '''
           name: test
           ''',
-          path: 'test',
-        );
+            path: 'test',
+          );
       final workspace = workspaceBuilder.build();
       final project = IntellijProject.fromWorkspace(workspace);
       await project.generate();
@@ -86,8 +88,9 @@ void main() {
         ''',
       );
       workspaceBuilder.addPackage(
-        File(p.join(tempDir.path, 'packages', 'test', 'pubspec.yaml'))
-            .readAsStringSync(),
+        File(
+          p.join(tempDir.path, 'packages', 'test', 'pubspec.yaml'),
+        ).readAsStringSync(),
       );
       final workspace = workspaceBuilder.build();
       final project = IntellijProject.fromWorkspace(workspace);

@@ -26,7 +26,8 @@ class VersionCommand extends MelosCommand {
       'prerelease',
       abbr: 'p',
       negatable: false,
-      help: 'Version any packages with changes as a prerelease. Cannot be '
+      help:
+          'Version any packages with changes as a prerelease. Cannot be '
           'combined with graduate flag. Applies only to Conventional '
           'Commits based versioning.',
     );
@@ -59,7 +60,8 @@ class VersionCommand extends MelosCommand {
       'dependent-versions',
       abbr: 'D',
       defaultsTo: true,
-      help: 'Make a new patch version and changelog entry in packages that are '
+      help:
+          'Make a new patch version and changelog entry in packages that are '
           'updated due to "--dependent-constraints" changes. Only usable '
           'with "--dependent-constraints" enabled.',
     );
@@ -67,28 +69,32 @@ class VersionCommand extends MelosCommand {
       'git-tag-version',
       abbr: 't',
       defaultsTo: true,
-      help: 'By default, melos version will tag the release. Pass '
+      help:
+          'By default, melos version will tag the release. Pass '
           '--no-git-tag-version to disable the behaviour.',
     );
     argParser.addFlag(
       'git-commit-version',
       abbr: 'C',
       defaultsTo: true,
-      help: 'By default, melos version will commit changes to pubspec.yaml and '
+      help:
+          'By default, melos version will commit changes to pubspec.yaml and '
           'changelog files. Pass --no-git-commit-version to disable the '
           'behaviour, passing this also implies --no-git-tag-version.',
     );
     argParser.addFlag(
       'release-url',
       abbr: 'r',
-      help: 'Generate and print a link to the prefilled release creation page '
+      help:
+          'Generate and print a link to the prefilled release creation page '
           'for each package after versioning',
     );
     argParser.addOption(
       'message',
       abbr: 'm',
       valueHelp: 'msg',
-      help: "Use the given <msg> as the release's commit message. If the "
+      help:
+          "Use the given <msg> as the release's commit message. If the "
           'message contains {$packageVersionsTemplateVar}, it will be '
           'replaced by the list of newly versioned package names.\n'
           'If --message is not provided, the message will default to '
@@ -116,7 +122,8 @@ class VersionCommand extends MelosCommand {
     );
     argParser.addOption(
       'dependent-preid',
-      help: 'This option is the same as --preid, but only applies to packages '
+      help:
+          'This option is the same as --preid, but only applies to packages '
           'that are versioned due to a change in a dependency version. '
           'When this option is not provided but the --preid option is, the '
           'value of the --preid option will be used instead.',
@@ -124,7 +131,8 @@ class VersionCommand extends MelosCommand {
     argParser.addMultiOption(
       'manual-version',
       abbr: 'V',
-      help: 'Manually specify a version change for a package. Can be used '
+      help:
+          'Manually specify a version change for a package. Can be used '
           'multiple times. Each value must be in the format '
           '"<package name>:<major|patch|minor|build|exactVersion>". '
           'Cannot be combined with --graduate or --prerelease flag.',
@@ -140,7 +148,8 @@ class VersionCommand extends MelosCommand {
       'Commits specification. Supports all package filtering options.';
 
   @override
-  final String invocation = '''
+  final String invocation =
+      '''
  ${AnsiStyles.bold('melos version')}
           Version packages automatically using the Conventional Commits specification.
 
@@ -159,8 +168,10 @@ class VersionCommand extends MelosCommand {
     final commit = argResults!['git-commit-version'] as bool;
     final releaseUrl = argResults!.optional('release-url') as bool?;
     final changelog = argResults!['changelog'] as bool;
-    final commitMessage =
-        (argResults!['message'] as String?)?.replaceAll(r'\n', '\n');
+    final commitMessage = (argResults!['message'] as String?)?.replaceAll(
+      r'\n',
+      '\n',
+    );
 
     if (argResults!.rest.isNotEmpty) {
       if (argResults!.rest.length != 2) {
@@ -253,8 +264,9 @@ class VersionCommand extends MelosCommand {
       return ManualVersionChange.incrementBuildNumber();
     }
 
-    final semverReleaseType = SemverReleaseType.values
-        .firstWhereOrNull((releaseType) => releaseType.name == argument);
+    final semverReleaseType = SemverReleaseType.values.firstWhereOrNull(
+      (releaseType) => releaseType.name == argument,
+    );
     if (semverReleaseType != null) {
       return ManualVersionChange.incrementBySemverReleaseType(
         semverReleaseType,

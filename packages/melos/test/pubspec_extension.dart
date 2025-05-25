@@ -54,8 +54,9 @@ extension PubspecExtension on Pubspec {
 
   /// Saves the pubspec to the [projectDirectory].
   Future<void> save(Directory projectDirectory) async {
-    final ioSink =
-        File(p.join(projectDirectory.path, 'pubspec.yaml')).openWrite();
+    final ioSink = File(
+      p.join(projectDirectory.path, 'pubspec.yaml'),
+    ).openWrite();
     try {
       const YamlToString().writeYamlString(toJson(), ioSink);
     } finally {
@@ -75,19 +76,24 @@ extension PubspecExtension on Pubspec {
       'funding': funding?.map((uri) => uri.toString()).toList(),
       'topics': topics,
       'ignored_advisories': ignoredAdvisories,
-      'screenshots':
-          screenshots?.map((screenshot) => screenshot.toJson()).toList(),
+      'screenshots': screenshots
+          ?.map((screenshot) => screenshot.toJson())
+          .toList(),
       'documentation': documentation,
-      'environment':
-          environment.map((key, value) => MapEntry(key, value?.toString())),
+      'environment': environment.map(
+        (key, value) => MapEntry(key, value?.toString()),
+      ),
       'workspace': workspace,
       'resolution': resolution,
-      'dependencies':
-          dependencies.map((key, value) => MapEntry(key, value.toJson())),
-      'dev_dependencies':
-          devDependencies.map((key, value) => MapEntry(key, value.toJson())),
-      'dependency_overrides': dependencyOverrides
-          .map((key, value) => MapEntry(key, value.toJson())),
+      'dependencies': dependencies.map(
+        (key, value) => MapEntry(key, value.toJson()),
+      ),
+      'dev_dependencies': devDependencies.map(
+        (key, value) => MapEntry(key, value.toJson()),
+      ),
+      'dependency_overrides': dependencyOverrides.map(
+        (key, value) => MapEntry(key, value.toJson()),
+      ),
       'flutter': flutter,
     }..removeWhere((_, value) => value == null);
   }

@@ -123,9 +123,9 @@ class MelosConfigException implements MelosException {
     int? index,
     String? path,
   }) : this(
-          '${_descriptor(key: key, index: index, path: path)} '
-          'is required but missing',
-        );
+         '${_descriptor(key: key, index: index, path: path)} '
+         'is required but missing',
+       );
 
   MelosConfigException.invalidType({
     required Object expectedType,
@@ -134,9 +134,9 @@ class MelosConfigException implements MelosException {
     int? index,
     String? path,
   }) : this(
-          '${_descriptor(key: key, index: index, path: path)} '
-          'is expected to be a $expectedType but got $value',
-        );
+         '${_descriptor(key: key, index: index, path: path)} '
+         'is expected to be a $expectedType but got $value',
+       );
 
   static String _descriptor({Object? key, String? path, int? index}) {
     if (key != null) {

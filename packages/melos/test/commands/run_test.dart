@@ -46,8 +46,9 @@ void main() {
         await runPubGet(workspaceDir.path);
 
         final logger = TestLogger();
-        final config =
-            await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
         final melos = Melos(
           logger: logger,
           config: config,
@@ -115,8 +116,9 @@ ${'-' * terminalWidth}
           await runPubGet(workspaceDir.path);
 
           final logger = TestLogger();
-          final config =
-              await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
           final melos = Melos(
             logger: logger,
             config: config,
@@ -327,39 +329,42 @@ ${'-' * terminalWidth}
       );
     });
 
-    test('throws an error if neither run, steps, nor exec are provided',
-        () async {
-      final workspaceDir = await createTemporaryWorkspace(
-        configBuilder: (path) => MelosWorkspaceConfig(
-          path: path,
-          name: 'test_package',
-          packages: [
-            createGlob('packages/**', currentDirectoryPath: path),
-          ],
-          scripts: const Scripts({
-            'test_script': Script(
-              name: 'test_script',
-            ),
-          }),
-        ),
-        workspacePackages: ['a'],
-      );
-
-      await createProject(workspaceDir, Pubspec('a'));
-      await runPubGet(workspaceDir.path);
-
-      final logger = TestLogger();
-      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
-      final melos = Melos(
-        logger: logger,
-        config: config,
-      );
-
-      expect(() => melos.run(scriptName: 'test_script'), throwsException);
-    });
-
     test(
-        'throws an error if neither run or steps are provided, and exec '
+      'throws an error if neither run, steps, nor exec are provided',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: const Scripts({
+              'test_script': Script(
+                name: 'test_script',
+              ),
+            }),
+          ),
+          workspacePackages: ['a'],
+        );
+
+        await createProject(workspaceDir, Pubspec('a'));
+        await runPubGet(workspaceDir.path);
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        expect(() => melos.run(scriptName: 'test_script'), throwsException);
+      },
+    );
+
+    test('throws an error if neither run or steps are provided, and exec '
         'are options', () async {
       final workspaceDir = await createTemporaryWorkspace(
         configBuilder: (path) => MelosWorkspaceConfig(
@@ -421,8 +426,9 @@ it should list the contents including the package named "this_is_package_a".
         await runPubGet(workspaceDir.path);
 
         final logger = TestLogger();
-        final config =
-            await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
         final melos = Melos(
           logger: logger,
           config: config,
@@ -438,8 +444,7 @@ it should list the contents including the package named "this_is_package_a".
       timeout: const Timeout(Duration(minutes: 1)),
     );
 
-    test(
-        'verifies that a melos script can successfully call another '
+    test('verifies that a melos script can successfully call another '
         'script as a step and execute commands', () async {
       final workspaceDir = await createTemporaryWorkspace(
         configBuilder: (path) => MelosWorkspaceConfig(
@@ -495,8 +500,7 @@ SUCCESS
       );
     });
 
-    test(
-        'throws an error if a script defined with steps also includes exec '
+    test('throws an error if a script defined with steps also includes exec '
         'options', () async {
       final workspaceDir = await createTemporaryWorkspace(
         configBuilder: (path) => MelosWorkspaceConfig(
@@ -538,8 +542,7 @@ SUCCESS
       );
     });
 
-    test(
-        'verifies that a melos script can call another script containing '
+    test('verifies that a melos script can call another script containing '
         'steps, and ensures all commands in those steps are executed '
         'successfully', () async {
       final workspaceDir = await createTemporaryWorkspace(
@@ -600,72 +603,74 @@ SUCCESS
     });
 
     test(
-        'verifies that a melos script can call another script containing '
-        'melos commands, and ensures the script is successfully executed',
-        () async {
-      final workspaceDir = await createTemporaryWorkspace(
-        configBuilder: (path) => MelosWorkspaceConfig(
-          path: path,
-          name: 'test_package',
-          packages: [
-            createGlob('packages/**', currentDirectoryPath: path),
-          ],
-          scripts: const Scripts({
-            'hello_script': Script(
-              name: 'hello_script',
-              steps: ['format', 'echo "hello world"'],
-            ),
-          }),
-        ),
-        workspacePackages: ['a', 'b', 'c'],
-      );
+      'verifies that a melos script can call another script containing '
+      'melos commands, and ensures the script is successfully executed',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: const Scripts({
+              'hello_script': Script(
+                name: 'hello_script',
+                steps: ['format', 'echo "hello world"'],
+              ),
+            }),
+          ),
+          workspacePackages: ['a', 'b', 'c'],
+        );
 
-      final aDir = await createProject(workspaceDir, Pubspec('a'));
-      await createProject(workspaceDir, Pubspec('b'));
-      await createProject(workspaceDir, Pubspec('c'));
-      await runPubGet(workspaceDir.path);
+        final aDir = await createProject(workspaceDir, Pubspec('a'));
+        await createProject(workspaceDir, Pubspec('b'));
+        await createProject(workspaceDir, Pubspec('c'));
+        await runPubGet(workspaceDir.path);
 
-      writeTextFile(
-        p.join(aDir.path, 'main.dart'),
-        r'''
+        writeTextFile(
+          p.join(aDir.path, 'main.dart'),
+          r'''
         void main() {
           for (var i = 0; i < 10; i++) {
             print('hello ${i + 1}');
           }
         }
       ''',
-      );
+        );
 
-      final logger = TestLogger();
-      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
-      final melos = Melos(
-        logger: logger,
-        config: config,
-      );
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
 
-      await melos.run(scriptName: 'hello_script', noSelect: true);
-      final normalizedLines = logger.output.normalizeLines().split('\n');
-      expect(
-        normalizedLines,
-        containsAll(
-          [
-            r'$ melos format',
-            '  └> dart format .',
-            '     └> RUNNING (in 3 packages)',
-            'a:',
-            'Formatted main.dart',
-            'a: SUCCESS',
-            'b:',
-            'b: SUCCESS',
-            'c:',
-            'c: SUCCESS',
-          ],
-        ),
-      );
-    });
+        await melos.run(scriptName: 'hello_script', noSelect: true);
+        final normalizedLines = logger.output.normalizeLines().split('\n');
+        expect(
+          normalizedLines,
+          containsAll(
+            [
+              r'$ melos format',
+              '  └> dart format .',
+              '     └> RUNNING (in 3 packages)',
+              'a:',
+              'Formatted main.dart',
+              'a: SUCCESS',
+              'b:',
+              'b: SUCCESS',
+              'c:',
+              'c: SUCCESS',
+            ],
+          ),
+        );
+      },
+    );
 
-    test(
-        'verifies that a Melos script can call another script containing '
+    test('verifies that a Melos script can call another script containing '
         'a script with a name equal to a melos command,  and ensures the '
         'script group successfully runs instead of the command', () async {
       final workspaceDir = await createTemporaryWorkspace(
@@ -724,8 +729,7 @@ SUCCESS
       );
     });
 
-    test(
-        'verifies that a script can call another script containing commands '
+    test('verifies that a script can call another script containing commands '
         'with flags, and ensures the first script is successfully executed, '
         'but terminates on failure.', () async {
       final workspaceDir = await createTemporaryWorkspace(
@@ -803,45 +807,48 @@ SUCCESS
     });
 
     test(
-        'throw an error if correctly identifies when a script indirectly '
-        'calls itself through another script, leading to a recursive call',
-        () async {
-      final workspaceDir = await createTemporaryWorkspace(
-        configBuilder: (path) => MelosWorkspaceConfig(
-          path: path,
-          name: 'test_package',
-          packages: [
-            createGlob('packages/**', currentDirectoryPath: path),
-          ],
-          scripts: const Scripts({
-            'hello_script': Script(
-              name: 'hello_script',
-              steps: ['test_script', 'echo "hello world"'],
-            ),
-            'test_script': Script(
-              name: 'test_script',
-              steps: ['echo "test_script_1"', 'hello_script'],
-            ),
-          }),
-        ),
-        workspacePackages: ['a'],
-      );
+      'throw an error if correctly identifies when a script indirectly '
+      'calls itself through another script, leading to a recursive call',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: const Scripts({
+              'hello_script': Script(
+                name: 'hello_script',
+                steps: ['test_script', 'echo "hello world"'],
+              ),
+              'test_script': Script(
+                name: 'test_script',
+                steps: ['echo "test_script_1"', 'hello_script'],
+              ),
+            }),
+          ),
+          workspacePackages: ['a'],
+        );
 
-      await createProject(workspaceDir, Pubspec('a'));
-      await runPubGet(workspaceDir.path);
+        await createProject(workspaceDir, Pubspec('a'));
+        await runPubGet(workspaceDir.path);
 
-      final logger = TestLogger();
-      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
-      final melos = Melos(
-        logger: logger,
-        config: config,
-      );
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
 
-      expect(
-        () => melos.run(scriptName: 'hello_script', noSelect: true),
-        throwsA(const TypeMatcher<RecursiveScriptCallException>()),
-      );
-    });
+        expect(
+          () => melos.run(scriptName: 'hello_script', noSelect: true),
+          throwsA(const TypeMatcher<RecursiveScriptCallException>()),
+        );
+      },
+    );
   });
 
   group('steps', () {

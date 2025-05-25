@@ -101,14 +101,16 @@ class GitHubRepository extends HostedGitRepository with SupportsManualRelease {
     String? body,
     bool? isPreRelease,
   }) {
-    return url.resolve('releases/new').replace(
-      queryParameters: <String, String>{
-        if (tag != null) 'tag': tag,
-        if (title != null) 'title': title,
-        if (body != null) 'body': body,
-        if (isPreRelease != null) 'prerelease': '$isPreRelease',
-      },
-    );
+    return url
+        .resolve('releases/new')
+        .replace(
+          queryParameters: <String, String>{
+            if (tag != null) 'tag': tag,
+            if (title != null) 'title': title,
+            if (body != null) 'body': body,
+            if (isPreRelease != null) 'prerelease': '$isPreRelease',
+          },
+        );
   }
 
   @override
@@ -255,8 +257,9 @@ class AzureDevOpsRepository extends HostedGitRepository {
   }) : origin = removeTrailingSlash(origin);
 
   factory AzureDevOpsRepository.fromUrl(Uri uri) {
-    final match = RegExp(r'(https://dev.azure.com/.+)/(.+)/_git/(.+)/?$')
-        .firstMatch(uri.toString());
+    final match = RegExp(
+      r'(https://dev.azure.com/.+)/(.+)/_git/(.+)/?$',
+    ).firstMatch(uri.toString());
     if (match != null) {
       return AzureDevOpsRepository(
         origin: match.group(1)!,
@@ -267,8 +270,9 @@ class AzureDevOpsRepository extends HostedGitRepository {
 
     // Azure DevOps has also an older URL format, see
     // https://learn.microsoft.com/en-us/azure/devops/extend/develop/work-with-urls
-    final matchOld = RegExp(r'(https://.+\.visualstudio.com)/(.+)/_git/(.+)/?$')
-        .firstMatch(uri.toString());
+    final matchOld = RegExp(
+      r'(https://.+\.visualstudio.com)/(.+)/_git/(.+)/?$',
+    ).firstMatch(uri.toString());
     if (matchOld != null) {
       return AzureDevOpsRepository(
         origin: matchOld.group(1)!,

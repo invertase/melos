@@ -97,19 +97,20 @@ abstract class _Melos {
   }) async {
     var filterWithEnv = packageFilters;
 
-    if (currentPlatform.environment
-        .containsKey(EnvironmentVariableKey.melosPackages)) {
+    if (currentPlatform.environment.containsKey(
+      EnvironmentVariableKey.melosPackages,
+    )) {
       // MELOS_PACKAGES environment variable is a comma delimited list of
       // package names - used to scope the `packageFilters` if it is present.
       // This can be user defined or can come from package selection in
       // `melos run`.
-      final filteredPackagesScopeFromEnv =
-          currentPlatform.environment[EnvironmentVariableKey.melosPackages]!
-              .split(',')
-              .map(
-                (e) => createGlob(e, currentDirectoryPath: config.path),
-              )
-              .toList();
+      final filteredPackagesScopeFromEnv = currentPlatform
+          .environment[EnvironmentVariableKey.melosPackages]!
+          .split(',')
+          .map(
+            (e) => createGlob(e, currentDirectoryPath: config.path),
+          )
+          .toList();
 
       filterWithEnv = packageFilters == null
           ? PackageFilters(scope: filteredPackagesScopeFromEnv)
@@ -121,8 +122,7 @@ abstract class _Melos {
       global: global,
       packageFilters: filterWithEnv,
       logger: logger,
-    ))
-      ..validate();
+    ))..validate();
   }
 
   Future<void> _runLifecycle(

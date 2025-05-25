@@ -50,8 +50,10 @@ final List<String> cleanablePubFilePaths = [
   '.dart_tool${currentPlatform.pathSeparator}version',
 ];
 
-final _isValidPubPackageNameRegExp =
-    RegExp(r'^[a-z][a-z\d_-]*$', caseSensitive: false);
+final _isValidPubPackageNameRegExp = RegExp(
+  r'^[a-z][a-z\d_-]*$',
+  caseSensitive: false,
+);
 
 /// Returns whether the given [name] is a valid pub package name.
 bool isValidPubPackageName(String name) =>
@@ -108,15 +110,15 @@ class PackageFilters {
     bool? flutter,
     this.includeDependencies = false,
     this.includeDependents = false,
-  })  : dependsOn = [
-          ...dependsOn,
-          // ignore: use_if_null_to_convert_nulls_to_bools
-          if (flutter == true) 'flutter',
-        ],
-        noDependsOn = [
-          ...noDependsOn,
-          if (flutter == false) 'flutter',
-        ];
+  }) : dependsOn = [
+         ...dependsOn,
+         // ignore: use_if_null_to_convert_nulls_to_bools
+         if (flutter == true) 'flutter',
+       ],
+       noDependsOn = [
+         ...noDependsOn,
+         if (flutter == false) 'flutter',
+       ];
 
   factory PackageFilters.fromYaml(
     Map<Object?, Object?> yaml, {
@@ -171,14 +173,16 @@ class PackageFilters {
       path: path,
     );
 
-    final includeDependents = assertKeyIsA<bool?>(
+    final includeDependents =
+        assertKeyIsA<bool?>(
           key: filterOptionIncludeDependents.camelCased,
           map: yaml,
           path: path,
         ) ??
         false;
 
-    final includeDependencies = assertKeyIsA<bool?>(
+    final includeDependencies =
+        assertKeyIsA<bool?>(
           key: filterOptionIncludeDependencies.camelCased,
           map: yaml,
           path: path,
@@ -323,8 +327,9 @@ class PackageFilters {
       if (scope.isNotEmpty)
         filterOptionScope.camelCased: scope.map((e) => e.toString()).toList(),
       if (categories.isNotEmpty)
-        filterOptionCategory.camelCased:
-            scope.map((e) => e.toString()).toList(),
+        filterOptionCategory.camelCased: scope
+            .map((e) => e.toString())
+            .toList(),
       if (ignore.isNotEmpty)
         filterOptionIgnore.camelCased: ignore.map((e) => e.toString()).toList(),
       if (dirExists.isNotEmpty) filterOptionDirExists.camelCased: dirExists,
@@ -479,7 +484,7 @@ class InvalidPackageFiltersException extends MelosException {
 // Not using MapView to prevent map mutation
 class PackageMap {
   PackageMap(Map<String, Package> packages, this._logger)
-      : _map = _packagesSortedByName(packages);
+    : _map = _packagesSortedByName(packages);
 
   static const _commonIgnorePatterns = [
     '**/.dart_tool/**',
@@ -771,8 +776,11 @@ extension IterablePackageExt on Iterable<Package> {
 
     return Pool(10)
         .forEach(this, (package) async {
-          final hasDiff =
-              await gitHasDiffInPackage(package, diff: diff, logger: logger);
+          final hasDiff = await gitHasDiffInPackage(
+            package,
+            diff: diff,
+            logger: logger,
+          );
           return MapEntry(package, hasDiff);
         })
         .where((event) => event.value)
@@ -887,8 +895,8 @@ class Package {
     required this.publishTo,
     required this.pubspec,
     required this.categories,
-  })  : _packageMap = packageMap,
-        assert(p.isAbsolute(path));
+  }) : _packageMap = packageMap,
+       assert(p.isAbsolute(path));
 
   final Map<String, Package> _packageMap;
 
@@ -957,17 +965,18 @@ class Package {
 
   late final Map<String, Package> allTransitiveDependenciesInWorkspace =
       _transitivelyRelatedPackages(
-    root: this,
-    directlyRelatedPackages: (package, isRoot) => isRoot
-        ? package.allDependenciesInWorkspace
-        : package.dependenciesInWorkspace,
-  );
+        root: this,
+        directlyRelatedPackages: (package, isRoot) => isRoot
+            ? package.allDependenciesInWorkspace
+            : package.dependenciesInWorkspace,
+      );
 
   late final Map<String, Package> allTransitiveDependentsInWorkspace =
       _transitivelyRelatedPackages(
-    root: this,
-    directlyRelatedPackages: (package, _) => package.allDependentsInWorkspace,
-  );
+        root: this,
+        directlyRelatedPackages: (package, _) =>
+            package.allDependentsInWorkspace,
+      );
 
   Map<String, Package> _packagesInWorkspaceForNames(List<String> names) {
     return {
@@ -1187,7 +1196,7 @@ Map<String, Package> _transitivelyRelatedPackages({
   required Package root,
   // ignore: avoid_positional_boolean_parameters
   required Map<String, Package> Function(Package, bool isRoot)
-      directlyRelatedPackages,
+  directlyRelatedPackages,
 }) {
   final result = <String, Package>{};
   final workingSet = directlyRelatedPackages(root, true).values.toList();

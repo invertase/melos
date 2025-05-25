@@ -30,8 +30,9 @@ void main() {
           await createProject(workspaceDir, Pubspec('b'));
 
           final logger = TestLogger();
-          final config =
-              await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
           final melos = Melos(logger: logger, config: config);
 
           await melos.list();
@@ -60,8 +61,9 @@ b
           await createProject(workspaceDir, Pubspec('c', publishTo: 'none'));
 
           final logger = TestLogger();
-          final config =
-              await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
           final melos = Melos(logger: logger, config: config);
 
           await melos.list();
@@ -90,8 +92,9 @@ c
           await createProject(workspaceDir, Pubspec('b'));
           await createProject(workspaceDir, Pubspec('c'));
 
-          final config =
-              await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
           final melos = Melos(logger: logger, config: config);
 
           await melos.list(
@@ -132,8 +135,9 @@ c
           );
           await createProject(workspaceDir, Pubspec('long_name'));
 
-          final config =
-              await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
           final melos = Melos(logger: logger, config: config);
 
           await melos.list(
@@ -166,8 +170,9 @@ long_name 0.0.0 packages/long_name PRIVATE
           await createProject(workspaceDir, Pubspec('b'));
           await createProject(workspaceDir, Pubspec('c'));
 
-          final config =
-              await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
           final melos = Melos(logger: logger, config: config);
           await melos.list(
             kind: ListOutputKind.parsable,
@@ -205,8 +210,9 @@ packages/c
               .map((package) => p.join(workspaceDir.path, package.path))
               .map(p.canonicalize);
 
-          final config =
-              await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
           final melos = Melos(logger: logger, config: config);
           await melos.list(
             kind: ListOutputKind.parsable,
@@ -245,8 +251,9 @@ ${packagePaths.join('\n')}
             ),
           );
 
-          final config =
-              await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
           final melos = Melos(logger: logger, config: config);
           await melos.list(
             kind: ListOutputKind.graph,
@@ -292,8 +299,9 @@ ${packagePaths.join('\n')}
             ),
           );
 
-          final config =
-              await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
           final melos = Melos(logger: logger, config: config);
           await melos.list(
             kind: ListOutputKind.json,
@@ -358,8 +366,9 @@ ${packagePaths.join('\n')}
             ),
           );
 
-          final config =
-              await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
           final melos = Melos(logger: logger, config: config);
           await melos.list(
             kind: ListOutputKind.gviz,

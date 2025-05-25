@@ -53,8 +53,9 @@ mixin _ExecMixin on _Melos {
 
     if (package.isExample) {
       final exampleParentPackagePath = p.normalize('${package.path}/..');
-      final exampleParentPubspecPath =
-          p.normalize('$exampleParentPackagePath/pubspec.yaml');
+      final exampleParentPubspecPath = p.normalize(
+        '$exampleParentPackagePath/pubspec.yaml',
+      );
 
       if (fileExists(exampleParentPubspecPath)) {
         final exampleParentPackage = Pubspec.parse(
@@ -100,8 +101,9 @@ mixin _ExecMixin on _Melos {
       // TODO: This is not really the right way to do this. Cyclic dependencies
       // are handled in a way that is specific for publishing.
       sortPackagesForPublishing(sortedPackages);
-      hasImpactfulCycles =
-          findCyclicDependenciesInWorkspace(sortedPackages).isNotEmpty;
+      hasImpactfulCycles = findCyclicDependenciesInWorkspace(
+        sortedPackages,
+      ).isNotEmpty;
     }
 
     final calculatedConcurrency = hasImpactfulCycles ? 1 : concurrency;
@@ -192,13 +194,14 @@ mixin _ExecMixin on _Melos {
     final resultLogger = logger.child(targetStyle(execArgsString));
 
     if (failures.isNotEmpty) {
-      final failuresLogger =
-          resultLogger.child('$failedLabel (in ${failures.length} packages)');
+      final failuresLogger = resultLogger.child(
+        '$failedLabel (in ${failures.length} packages)',
+      );
       for (final packageName in failures.keys) {
         failuresLogger.child(
           '${errorPackageNameStyle(packageName)} '
           '${failures[packageName] == null ? '(dependency failed)' : '('
-              'with exit code ${failures[packageName]})'}',
+                    'with exit code ${failures[packageName]})'}',
         );
       }
 
@@ -224,8 +227,9 @@ mixin _ExecMixin on _Melos {
       }
 
       if (canceled.isNotEmpty) {
-        final canceledLogger = resultLogger
-            .child('$canceledLabel (in ${canceled.length} packages)');
+        final canceledLogger = resultLogger.child(
+          '$canceledLabel (in ${canceled.length} packages)',
+        );
         for (final packageName in canceled) {
           canceledLogger.child(
             '${errorPackageNameStyle(packageName)} (due to failFast)',

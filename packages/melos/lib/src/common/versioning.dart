@@ -83,8 +83,9 @@ Version nextStableVersion(
       return currentVersion.nextPatch;
     case SemverReleaseType.patch:
       // Bump the build number, or set it if it does not exist.
-      final currentBuild =
-          currentVersion.build.length == 1 ? currentVersion.build[0] as int : 0;
+      final currentBuild = currentVersion.build.length == 1
+          ? currentVersion.build[0] as int
+          : 0;
       return Version(
         currentVersion.major,
         currentVersion.minor,
@@ -242,8 +243,10 @@ Version nextVersion(
     // Going from non-null to a first nullsafety release then the convention
     // here is that a major version is created regardless of the requested
     // release type.
-    final nextMajorStable =
-        nextStableVersion(currentVersion, SemverReleaseType.major);
+    final nextMajorStable = nextStableVersion(
+      currentVersion,
+      SemverReleaseType.major,
+    );
 
     return Version(
       nextMajorStable.major,
@@ -266,8 +269,10 @@ Version nextVersion(
     // Going from non-nullsafety prerelease to a first nullsafety release then
     // the convention here is that a major version is created regardless of the
     // requested release type.
-    var baseVersion =
-        nextStableVersion(currentVersion, SemverReleaseType.major);
+    var baseVersion = nextStableVersion(
+      currentVersion,
+      SemverReleaseType.major,
+    );
     // Otherwise if it's already an old format nullsafety prerelease version
     // then use the current version and don't major version bump it.
     if (currentVersion.preRelease[0] == 'nullsafety') {
@@ -370,10 +375,9 @@ class ManualVersionChange {
 
   factory ManualVersionChange.incrementBySemverReleaseType(
     SemverReleaseType releaseType,
-  ) =>
-      ManualVersionChange._(
-        (currentVersion) => nextVersion(currentVersion, releaseType),
-      );
+  ) => ManualVersionChange._(
+    (currentVersion) => nextVersion(currentVersion, releaseType),
+  );
 
   factory ManualVersionChange.incrementBuildNumber() =>
       ManualVersionChange._(incrementBuildNumber);

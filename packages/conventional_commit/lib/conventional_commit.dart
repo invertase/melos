@@ -4,8 +4,10 @@ final _conventionalCommitHeaderRegex = RegExp(
   r'(?<type>[a-zA-Z0-9_]+)(\((?<scope>[a-zA-Z0-9\-_,\s\*]+)\))?(?<breaking>!)?: ?(?<description>.+)',
 );
 
-final _breakingChangeRegex =
-    RegExp(r'^BREAKING(\sCHANGE)?:\s(?<description>.*$)', multiLine: true);
+final _breakingChangeRegex = RegExp(
+  r'^BREAKING(\sCHANGE)?:\s(?<description>.*$)',
+  multiLine: true,
+);
 
 final _footerRegex = RegExp(
   r'^(?<footer>(?:[a-z-A-Z0-9\-]+|BREAKING\sCHANGE)(?::\s|\s#).*$)',
@@ -74,7 +76,8 @@ class ConventionalCommit {
         .toList();
     final description = headerMatch.namedGroup('description')!.trim();
 
-    final isBreakingChange = headerMatch.namedGroup('breaking') != null ||
+    final isBreakingChange =
+        headerMatch.namedGroup('breaking') != null ||
         commitMessage.contains('BREAKING: ') ||
         commitMessage.contains('BREAKING CHANGE: ');
 
@@ -86,8 +89,9 @@ class ConventionalCommit {
       // precedence over config files.
       if (commitMessage.contains('BREAKING: ') ||
           commitMessage.contains('BREAKING CHANGE: ')) {
-        final breakingChangeMatch =
-            _breakingChangeRegex.firstMatch(commitMessage);
+        final breakingChangeMatch = _breakingChangeRegex.firstMatch(
+          commitMessage,
+        );
         if (breakingChangeMatch == null) {
           breakingChangeDescription = description;
         } else {
@@ -102,8 +106,11 @@ class ConventionalCommit {
       }
     }
 
-    final commitWithoutHeader =
-        commitMessage.split('\n').skip(1).toList().join('\n');
+    final commitWithoutHeader = commitMessage
+        .split('\n')
+        .skip(1)
+        .toList()
+        .join('\n');
 
     var footers = _footerRegex
         .allMatches(commitWithoutHeader)

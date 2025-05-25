@@ -120,7 +120,8 @@ mixin _RunMixin on _Melos {
 
     final scriptChoices = scripts.map((script) {
       final styledName = AnsiStyles.cyan(script.name);
-      final styledDescription = script.description.let((description) {
+      final styledDescription =
+          script.description.let((description) {
             final formattedDescription = AnsiStyles.gray(
               description.trim().split('\n').join('\n       '),
             );
@@ -149,14 +150,15 @@ mixin _RunMixin on _Melos {
     bool noSelect = false,
     List<String> extraArgs = const [],
   }) async {
-    final workspace = await createWorkspace(
-      global: global,
-      packageFilters: script.packageFilters?.copyWithUpdatedIgnore([
-        ...script.packageFilters!.ignore,
-        ...config.ignore,
-      ]),
-    )
-      ..validate();
+    final workspace =
+        await createWorkspace(
+            global: global,
+            packageFilters: script.packageFilters?.copyWithUpdatedIgnore([
+              ...script.packageFilters!.ignore,
+              ...config.ignore,
+            ]),
+          )
+          ..validate();
 
     final environment = {
       EnvironmentVariableKey.melosRootPath: config.path,
@@ -209,8 +211,9 @@ mixin _RunMixin on _Melos {
         );
       }
 
-      final selectedPackageIndex =
-          choices.length > 1 ? choices.indexOf(selectedPackage) : 1;
+      final selectedPackageIndex = choices.length > 1
+          ? choices.indexOf(selectedPackage)
+          : 1;
       // Comma delimited string of packages selected (all or a single package).
       final packagesEnv = selectedPackageIndex == 0 && choices.length > 1
           ? packages.map((e) => e.name).toList().join(',')
@@ -236,10 +239,11 @@ mixin _RunMixin on _Melos {
     GlobalOptions? global,
     bool noSelect = false,
   }) async {
-    final workspace = await createWorkspace(
-      global: global,
-    )
-      ..validate();
+    final workspace =
+        await createWorkspace(
+            global: global,
+          )
+          ..validate();
 
     final environment = {
       EnvironmentVariableKey.melosRootPath: config.path,

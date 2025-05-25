@@ -13,7 +13,8 @@ class FormatCommand extends MelosCommand {
     );
     argParser.addOption(
       'output',
-      help: 'Set where to write formatted output.\n'
+      help:
+          'Set where to write formatted output.\n'
           '[json]               Print code and selection as JSON.\n'
           '[none]               Discard output.\n'
           '[show]               Print code to terminal.\n'

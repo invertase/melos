@@ -141,7 +141,7 @@ void main() {
                   'path': 'FOO_CHANGELOG.md',
                   'packageFilters': {'flutter': true},
                   'description': 'Changelog for all foo packages.',
-                }
+                },
               ],
             },
             workspacePath: '.',
@@ -176,7 +176,7 @@ void main() {
                     'includeDependencies': true,
                     'includeDependents': true,
                   },
-                }
+                },
               ],
             },
             workspacePath: '.',
@@ -368,8 +368,11 @@ void main() {
       test('accepts booleans as intelliJ keys', () {
         expect(
           IDEConfigs.fromYaml(const {'intellij': true}),
-          isA<IDEConfigs>()
-              .having((e) => e.intelliJ.enabled, 'intelliJ.enabled', true),
+          isA<IDEConfigs>().having(
+            (e) => e.intelliJ.enabled,
+            'intelliJ.enabled',
+            true,
+          ),
         );
       });
     });
@@ -734,19 +737,21 @@ void main() {
         );
       });
 
-      test('throws if repository is not from a supported git repository host',
-          () {
-        expect(
-          () => MelosWorkspaceConfig.fromYaml(
-            createYamlMap(
-              {'repository': 'https://example.com'},
-              defaults: configMapDefaults,
+      test(
+        'throws if repository is not from a supported git repository host',
+        () {
+          expect(
+            () => MelosWorkspaceConfig.fromYaml(
+              createYamlMap(
+                {'repository': 'https://example.com'},
+                defaults: configMapDefaults,
+              ),
+              path: testWorkspacePath,
             ),
-            path: testWorkspacePath,
-          ),
-          throwsMelosConfigException(),
-        );
-      });
+            throwsMelosConfigException(),
+          );
+        },
+      );
 
       test('accepts a GitHub repository', () async {
         final workspace = await createTemporaryWorkspace(workspacePackages: []);
@@ -766,8 +771,9 @@ void main() {
   });
 }
 
-final testWorkspacePath =
-    currentPlatform.isWindows ? r'\\workspace' : '/workspace';
+final testWorkspacePath = currentPlatform.isWindows
+    ? r'\\workspace'
+    : '/workspace';
 
 Map<String, Object?> createYamlMap(
   Map<String, Object?> source, {

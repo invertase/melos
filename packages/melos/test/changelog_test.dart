@@ -137,8 +137,9 @@ void main() {
     test('should include date when enabled', () {
       final changelogEntryDate = DateTime.now().toFormattedString();
 
-      final workspace =
-          buildWorkspaceWithRepository(includeDateInChangelogEntry: true);
+      final workspace = buildWorkspaceWithRepository(
+        includeDateInChangelogEntry: true,
+      );
       final package = workspace.allPackages['test_pkg']!;
       final commit = testCommit(message: 'feat: a');
 
@@ -168,8 +169,9 @@ MelosWorkspace buildWorkspaceWithRepository({
   bool includeCommitId = false,
   bool includeDateInChangelogEntry = false,
 }) {
-  final workspaceBuilder = VirtualWorkspaceBuilder(
-    '''
+  final workspaceBuilder =
+      VirtualWorkspaceBuilder(
+        '''
     repository: https://github.com/a/b
     command:
       version:
@@ -179,22 +181,22 @@ MelosWorkspace buildWorkspaceWithRepository({
         changelogFormat:
           includeDate: $includeDateInChangelogEntry
     ''',
-  )..addPackage(
-      '''
+      )..addPackage(
+        '''
       name: test_pkg
       ''',
-    );
+      );
   return workspaceBuilder.build();
 }
 
 RichGitCommit testCommit({required String message}) => RichGitCommit.tryParse(
-      GitCommit(
-        author: 'a',
-        id: 'b2841394a48cd7d84a4966a788842690e543b2ef',
-        date: DateTime.now(),
-        message: message,
-      ),
-    )!;
+  GitCommit(
+    author: 'a',
+    id: 'b2841394a48cd7d84a4966a788842690e543b2ef',
+    date: DateTime.now(),
+    message: message,
+  ),
+)!;
 
 String renderCommitPackageUpdate(
   MelosWorkspace workspace,

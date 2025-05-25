@@ -21,7 +21,8 @@ class ExecCommand extends MelosCommand {
     argParser.addFlag(
       'order-dependents',
       abbr: 'o',
-      help: 'Whether exec should order the execution of the script in multiple '
+      help:
+          'Whether exec should order the execution of the script in multiple '
           'packages based on the dependency graph of the packages. The script '
           'will be executed in leaf packages first and then in packages that '
           'depend on them and so on. This is useful for example, for a script '

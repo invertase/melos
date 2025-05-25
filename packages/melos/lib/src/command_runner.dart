@@ -35,13 +35,13 @@ import 'workspace_config.dart';
 /// ```
 class MelosCommandRunner extends CommandRunner<void> {
   MelosCommandRunner(MelosWorkspaceConfig config)
-      : super(
-          'melos',
-          'A CLI tool for managing Dart & Flutter projects with multiple '
-              'packages.\n\n'
-              'To get started with Melos, run "melos init".',
-          usageLineLength: terminalWidth,
-        ) {
+    : super(
+        'melos',
+        'A CLI tool for managing Dart & Flutter projects with multiple '
+            'packages.\n\n'
+            'To get started with Melos, run "melos init".',
+        usageLineLength: terminalWidth,
+      ) {
     argParser.addFlag(
       globalOptionVerbose,
       negatable: false,
@@ -49,7 +49,8 @@ class MelosCommandRunner extends CommandRunner<void> {
     );
     argParser.addOption(
       globalOptionSdkPath,
-      help: 'Path to the Dart/Flutter SDK that should be used. This command '
+      help:
+          'Path to the Dart/Flutter SDK that should be used. This command '
           'line option has precedence over the `sdkPath` option in the '
           '`pubspec.yaml` configuration file and the `MELOS_SDK_PATH` '
           'environment variable. To use the system-wide SDK, provide '
@@ -107,7 +108,8 @@ FutureOr<void> melosEntryPoint(
 
       if (isGlobal) {
         final shouldUpdate = utils.promptBool(
-          message: 'There is a new version of $packageName available '
+          message:
+              'There is a new version of $packageName available '
               '($latestVersion). Would you like to update?',
           defaultsTo: true,
           defaultsToWithoutPrompt: false,
@@ -128,8 +130,10 @@ FutureOr<void> melosEntryPoint(
     return;
   }
   try {
-    final config =
-        await _resolveConfig(arguments, context.localInstallation?.packageRoot);
+    final config = await _resolveConfig(
+      arguments,
+      context.localInstallation?.packageRoot,
+    );
     await MelosCommandRunner(config).run(arguments);
   } on MelosException catch (err) {
     stderr.writeln(err.toString());
@@ -160,7 +164,8 @@ bool _shouldUseEmptyConfig(List<String> arguments) {
   if (arguments.firstOrNull == 'init') {
     return true;
   }
-  final willShowHelp = arguments.isEmpty ||
+  final willShowHelp =
+      arguments.isEmpty ||
       arguments.contains('--help') ||
       arguments.contains('-h');
   return willShowHelp;

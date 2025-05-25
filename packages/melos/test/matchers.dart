@@ -48,7 +48,7 @@ Matcher ignoringAnsii(Object? matcher) {
 
 class _IgnoringAnsii extends CustomMatcher {
   _IgnoringAnsii(Object? matcher)
-      : super('String ignoring Ansii', 'String', matcher);
+    : super('String ignoring Ansii', 'String', matcher);
 
   @override
   Object? featureValueOf(covariant String actual) {
@@ -58,7 +58,7 @@ class _IgnoringAnsii extends CustomMatcher {
 
 class _PackageNameMatcher extends CustomMatcher {
   _PackageNameMatcher(Object? matcher)
-      : super('package named', 'name', matcher);
+    : super('package named', 'name', matcher);
 
   @override
   Object? featureValueOf(Object? actual) => (actual! as Package).name;

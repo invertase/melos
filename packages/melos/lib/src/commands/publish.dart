@@ -9,8 +9,10 @@ mixin _PublishMixin on _ExecMixin {
     // yes
     bool force = false,
   }) async {
-    final workspace =
-        await createWorkspace(global: global, packageFilters: packageFilters);
+    final workspace = await createWorkspace(
+      global: global,
+      packageFilters: packageFilters,
+    );
 
     return _runLifecycle(workspace, CommandWithLifecycle.publish, () {
       return _publish(
@@ -36,8 +38,9 @@ mixin _PublishMixin on _ExecMixin {
     logger.command('melos publish${dryRun ? " --$publishOptionDryRun" : ''}');
     logger.child(targetStyle(workspace.path)).newLine();
 
-    final readRegistryProgress =
-        logger.progress('Reading pub registry for package information');
+    final readRegistryProgress = logger.progress(
+      'Reading pub registry for package information',
+    );
 
     Map<String, String?> latestPublishedVersionForPackages;
 
@@ -126,8 +129,9 @@ mixin _PublishMixin on _ExecMixin {
     final pool = Pool(10);
     final latestPackageVersion = <String, String?>{};
 
-    await pool.forEach<Package, void>(workspace.filteredPackages.values,
-        (package) async {
+    await pool.forEach<Package, void>(workspace.filteredPackages.values, (
+      package,
+    ) async {
       if (package.isPrivate) {
         return;
       }
@@ -148,10 +152,12 @@ mixin _PublishMixin on _ExecMixin {
         final preid = package.version.preRelease.length == 4
             ? package.version.preRelease[2] as String
             : package.version.preRelease[0] as String;
-        final versionsWithPreid =
-            versions.where((version) => version.contains(preid)).toList();
-        latestPackageVersion[package.name] =
-            versionsWithPreid.isEmpty ? versions[0] : versionsWithPreid[0];
+        final versionsWithPreid = versions
+            .where((version) => version.contains(preid))
+            .toList();
+        latestPackageVersion[package.name] = versionsWithPreid.isEmpty
+            ? versions[0]
+            : versionsWithPreid[0];
       } else {
         latestPackageVersion[package.name] = versions[0];
       }
@@ -198,8 +204,10 @@ mixin _PublishMixin on _ExecMixin {
           ..newLine()
           ..log('Creating git tags for any versions not already created... ');
         await Future.forEach(unpublishedPackages, (package) async {
-          final tag =
-              gitTagForPackageVersion(package.name, package.version.toString());
+          final tag = gitTagForPackageVersion(
+            package.name,
+            package.version.toString(),
+          );
           await gitTagCreate(
             tag,
             'Publish $tag.',
