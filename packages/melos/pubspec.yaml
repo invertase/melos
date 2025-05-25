@@ -29,7 +29,7 @@ dependencies:
   cli_launcher: ^0.3.1
   cli_util: ^0.4.2
   collection: any
-  conventional_commit: ^0.6.1+1
+  conventional_commit: ^0.6.1
   file: ^7.0.0
   glob: ^2.1.2
   graphs: ^2.3.2
