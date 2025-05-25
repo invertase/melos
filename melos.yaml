@@ -11,7 +11,7 @@ categories:
 command:
   bootstrap:
     environment:
-      sdk: ">=3.2.0 <4.0.0"
+      sdk: ^3.8.0
     dependencies:
       ansi_styles: ^0.3.2+1
       args: ^2.4.2
@@ -30,7 +30,7 @@ command:
       pool: ^1.5.1
       prompts: ^2.0.0
       pub_semver: ^2.1.4
-      pub_updater: ^0.4.0
+      pub_updater: ^0.5.0
       pubspec_parse: ^1.4.0
       string_scanner: ^1.2.0
       yaml: ^3.1.2

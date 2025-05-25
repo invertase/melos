@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:melos/melos.dart';
 import 'package:melos/src/command_configs/command_configs.dart';
+import 'package:melos/src/common/changelog.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
@@ -20,89 +21,95 @@ void main() {
 
   group('version', () {
     // Regression test for: https://github.com/invertase/melos/issues/531
-    test('--no-dependent-versions does not modify workspace changelog',
-        () async {
-      MelosWorkspaceConfig workspaceConfig(String path) => MelosWorkspaceConfig(
-            path: path,
-            name: 'test_workspace',
-            packages: [
-              createGlob('packages/**', currentDirectoryPath: path),
-            ],
-            commands: const CommandConfigs(
-              version: VersionCommandConfigs(
-                fetchTags: false,
+    test(
+      '--no-dependent-versions does not modify workspace changelog',
+      () async {
+        MelosWorkspaceConfig workspaceConfig(String path) =>
+            MelosWorkspaceConfig(
+              path: path,
+              name: 'test_workspace',
+              packages: [createGlob('packages/**', currentDirectoryPath: path)],
+              commands: const CommandConfigs(
+                version: VersionCommandConfigs(fetchTags: false),
               ),
-            ),
-          );
-      final workspaceDir = await createTemporaryWorkspace(
-        configBuilder: workspaceConfig,
-      );
-      await createProject(
-        workspaceDir,
-        Pubspec('a', version: Version(0, 0, 1)),
-      );
-      await createProject(
-        workspaceDir,
-        Pubspec(
-          'b',
-          version: Version(0, 0, 1),
-          dependencies: {
-            'a': HostedDependency(version: VersionConstraint.any),
-          },
-        ),
-      );
-      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
-      final melos = Melos(config: config, logger: logger);
+            );
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: workspaceConfig,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(0, 0, 1)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec(
+            'b',
+            version: Version(0, 0, 1),
+            dependencies: {
+              'a': HostedDependency(version: VersionConstraint.any),
+            },
+          ),
+        );
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
 
-      await melos.bootstrap();
-      await melos.version(
-        updateDependentsConstraints: false,
-        updateDependentsVersions: false,
-        versionPrivatePackages: true,
-        gitCommit: false,
-        gitTag: false,
-        force: true,
-        manualVersions: {
-          'a': ManualVersionChange(Version(0, 1, 0)),
-        },
-      );
+        await melos.bootstrap();
+        await melos.version(
+          updateDependentsConstraints: false,
+          updateDependentsVersions: false,
+          versionPrivatePackages: true,
+          gitCommit: false,
+          gitTag: false,
+          force: true,
+          manualVersions: {'a': ManualVersionChange(Version(0, 1, 0))},
+        );
 
-      final workspaceChangelogContent = File(
-        p.join(workspaceDir.path, 'CHANGELOG.md'),
-      ).readAsStringSync();
+        final workspaceChangelogContent = File(
+          p.join(workspaceDir.path, 'CHANGELOG.md'),
+        ).readAsStringSync();
 
-      final loggerOutput = logger.output;
-      expect(
-        loggerOutput,
-        contains(
-          AnsiStyles.strip('''
-The following 1 packages will be updated:
-'''),
-        ),
-      );
-
-      expect(
-        workspaceChangelogContent,
-        isNot(
+        final loggerOutput = logger.output;
+        expect(
+          loggerOutput,
           contains(
             AnsiStyles.strip('''
+The following 1 packages will be updated:
+'''),
+          ),
+        );
+
+        expect(
+          workspaceChangelogContent,
+          isNot(
+            contains(
+              AnsiStyles.strip('''
 > Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
 
  - `b` - `v0.0.1+1`
 '''),
+            ),
           ),
-        ),
-      );
-      expect(
-        workspaceChangelogContent,
-        contains(
-          AnsiStyles.strip('''
+        );
+        expect(
+          workspaceChangelogContent,
+          contains(
+            AnsiStyles.strip('''
 #### `a` - `v0.1.0`
 
  - Bump "a" to `0.1.0`.
 '''),
-        ),
-      );
+          ),
+        );
+      },
+    );
+
+    test('DateTimeExtension correctly formats date', () {
+      final formattedDate = DateTime(2023, 10, 10, 12, 30).toFormattedString();
+      expect(formattedDate, '2023-10-10');
+      final dateWithZero = DateTime(2029, 1, 1, 12, 30).toFormattedString();
+      expect(dateWithZero, '2029-01-01');
     });
   });
 }
