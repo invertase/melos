@@ -1,3 +1,7 @@
+## 0.6.1+1
+
+ - **FIX**: Update to Dart SDK 3.8.0 and preserve trailing commas ([#908](https://github.com/invertase/melos/issues/908)). ([eecfa4ea](https://github.com/invertase/melos/commit/eecfa4ea7caff55a58ad98d712213320285a0039))
+
 ## 0.6.1
 
 > Note: This release has breaking changes.

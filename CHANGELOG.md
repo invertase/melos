@@ -3,6 +3,35 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2025-05-25
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`conventional_commit` - `v0.6.1+1`](#conventional_commit---v0611)
+ - [`melos` - `v7.0.0-dev.9`](#melos---v700-dev9)
+
+---
+
+#### `conventional_commit` - `v0.6.1+1`
+
+ - **FIX**: Update to Dart SDK 3.8.0 and preserve trailing commas ([#908](https://github.com/invertase/melos/issues/908)). ([eecfa4ea](https://github.com/invertase/melos/commit/eecfa4ea7caff55a58ad98d712213320285a0039))
+
+#### `melos` - `v7.0.0-dev.9`
+
+ - **FIX**: Update to Dart SDK 3.8.0 and preserve trailing commas ([#908](https://github.com/invertase/melos/issues/908)). ([eecfa4ea](https://github.com/invertase/melos/commit/eecfa4ea7caff55a58ad98d712213320285a0039))
+ - **FIX**: Tags from origin should be source of truth ([#902](https://github.com/invertase/melos/issues/902)). ([9589803c](https://github.com/invertase/melos/commit/9589803c6bba66a65aa1263c0028d6f66f31c0b2))
+ - **DOCS**: add flutter_chat_ui ([#903](https://github.com/invertase/melos/issues/903)). ([190caf74](https://github.com/invertase/melos/commit/190caf741280401385fc0a6e309419c1d5e37417))
+ - **DOCS**: add starknet.dart in projects list ([#896](https://github.com/invertase/melos/issues/896)). ([9faa3152](https://github.com/invertase/melos/commit/9faa3152547235e13225caf97c75b2e27c9d1980))
+
+
 ## 2025-04-09
 
 ### Changes

@@ -1,3 +1,10 @@
+## 7.0.0-dev.9
+
+ - **FIX**: Update to Dart SDK 3.8.0 and preserve trailing commas ([#908](https://github.com/invertase/melos/issues/908)). ([eecfa4ea](https://github.com/invertase/melos/commit/eecfa4ea7caff55a58ad98d712213320285a0039))
+ - **FIX**: Tags from origin should be source of truth ([#902](https://github.com/invertase/melos/issues/902)). ([9589803c](https://github.com/invertase/melos/commit/9589803c6bba66a65aa1263c0028d6f66f31c0b2))
+ - **DOCS**: add flutter_chat_ui ([#903](https://github.com/invertase/melos/issues/903)). ([190caf74](https://github.com/invertase/melos/commit/190caf741280401385fc0a6e309419c1d5e37417))
+ - **DOCS**: add starknet.dart in projects list ([#896](https://github.com/invertase/melos/issues/896)). ([9faa3152](https://github.com/invertase/melos/commit/9faa3152547235e13225caf97c75b2e27c9d1980))
+
 ## 7.0.0-dev.8
 
  - **FIX**: Fail early on steps and return error code ([#891](https://github.com/invertase/melos/issues/891)). ([7161ce8f](https://github.com/invertase/melos/commit/7161ce8fd8703b628c798cd17abc933817338110))
