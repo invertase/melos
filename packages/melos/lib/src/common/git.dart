@@ -102,8 +102,8 @@ Future<List<String>> gitTagsForPackage(
       .where((e) => e.isNotEmpty)
       .where((tag) {
         if (tagReleaseType == TagReleaseType.stable) {
-          // TODO(Salakar) This is probably not the best way to determine if a tag
-          // is pre-release or not.
+          // TODO(Salakar) This is probably not the best way to determine if a
+          // tag is pre-release or not.
           // Should we parse it, extract the version and pass it through to
           // pub_semver?
           return !tag.contains('-$preid.');

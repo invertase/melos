@@ -613,8 +613,8 @@ mixin _VersionMixin on _RunMixin {
                                         .indexOf('.') +
                                     1,
                               );
-                          return 'updated with ${AnsiStyles.underline(semverType)} '
-                              'changes';
+                          return 'updated with '
+                              '${AnsiStyles.underline(semverType)} changes';
                         case PackageUpdateReason.dependency:
                           if (pendingUpdate.reason ==
                                   PackageUpdateReason.dependency &&
@@ -666,8 +666,8 @@ mixin _VersionMixin on _RunMixin {
               package,
               pendingPackageUpdate.package.name,
               // Note if we're not updating dependent versions then we use the
-              // current version rather than the next version as the next version
-              // would never have been applied.
+              // current version rather than the next version as the next
+              // version would never have been applied.
               (pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
                       !updateDependentsVersions)
                   ? pendingPackageUpdate.package.version

@@ -273,12 +273,12 @@ ${'-' * terminalWidth}
      └> FAILED (in 1 packages)
         └> a (with exit code 1)
 '''),
-          // Skip this test if it fails due to a difference in the execution time
-          // reported for formatting files.
+          // Skip this test if it fails due to a difference in the execution
+          // time reported for formatting files.
           // The execution time, such as "0.09 seconds" in the line "Formatted 1
           // file (1 changed) in 0.09 seconds.",
-          // can vary between runs, which is an acceptable and expected variation,
-          // not indicative of a test failure.
+          // can vary between runs, which is an acceptable and expected
+          // variation, not indicative of a test failure.
           // Addendum: This test case should be rewritten to not be sensitive to
           // version updates to the dependencies.
           skip: 'Differ at offset 1261',
