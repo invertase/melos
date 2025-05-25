@@ -138,7 +138,8 @@ class VersionCommandConfigs {
           )
         : VersionLifecycleHooks.empty;
 
-    final changelogCommitBodiesEntry = assertKeyIsA<Map<Object?, Object?>?>(
+    final changelogCommitBodiesEntry =
+        assertKeyIsA<Map<Object?, Object?>?>(
           key: 'changelogCommitBodies',
           map: yaml,
           path: 'command/version',
@@ -157,7 +158,8 @@ class VersionCommandConfigs {
       path: 'command/version/changelogCommitBodies',
     );
 
-    final changelogFormat = assertKeyIsA<Map<Object?, Object?>?>(
+    final changelogFormat =
+        assertKeyIsA<Map<Object?, Object?>?>(
           key: 'changelogFormat',
           map: yaml,
           path: 'command/version',
@@ -243,8 +245,9 @@ class VersionCommandConfigs {
       'includeCommitId': includeCommitId,
       'linkToCommits': linkToCommits,
       'updateGitTagRefs': updateGitTagRefs,
-      'aggregateChangelogs':
-          aggregateChangelogs.map((config) => config.toJson()).toList(),
+      'aggregateChangelogs': aggregateChangelogs
+          .map((config) => config.toJson())
+          .toList(),
       'fetchTags': fetchTags,
       'hooks': hooks.toJson(),
       'changelogFormat': {
@@ -264,8 +267,10 @@ class VersionCommandConfigs {
       other.linkToCommits == linkToCommits &&
       other.updateGitTagRefs == updateGitTagRefs &&
       other.releaseUrl == releaseUrl &&
-      const DeepCollectionEquality()
-          .equals(other.aggregateChangelogs, aggregateChangelogs) &&
+      const DeepCollectionEquality().equals(
+        other.aggregateChangelogs,
+        aggregateChangelogs,
+      ) &&
       other.fetchTags == fetchTags &&
       other.hooks == hooks &&
       other.includeDateInChangelogEntry == includeDateInChangelogEntry;

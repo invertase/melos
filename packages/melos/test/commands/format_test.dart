@@ -71,17 +71,23 @@ void main() {
 
 ${'-' * terminalWidth}
 a:
-Formatted no files in 0.''') + r'\d{2}' + RegExp.escape('''
+Formatted no files in 0.''') +
+                  r'\d{2}' +
+                  RegExp.escape('''
  seconds.
 a: SUCCESS
 ${'-' * terminalWidth}
 b:
-Formatted no files in 0.''') + r'\d{2}' + RegExp.escape('''
+Formatted no files in 0.''') +
+                  r'\d{2}' +
+                  RegExp.escape('''
  seconds.
 b: SUCCESS
 ${'-' * terminalWidth}
 c:
-Formatted no files in 0.''') + r'\d{2}' + RegExp.escape('''
+Formatted no files in 0.''') +
+                  r'\d{2}' +
+                  RegExp.escape('''
  seconds.
 c: SUCCESS
 ${'-' * terminalWidth}
@@ -145,17 +151,23 @@ void main() {
     print('hello \${i + 1}');
   }
 }
-Formatted 1 file (1 changed) in 0.''') + r'\d{2}' + RegExp.escape('''
+Formatted 1 file (1 changed) in 0.''') +
+                  r'\d{2}' +
+                  RegExp.escape('''
  seconds.
 a: SUCCESS
 ${'-' * terminalWidth}
 b:
-Formatted no files in 0.''') + r'\d{2}' + RegExp.escape('''
+Formatted no files in 0.''') +
+                  r'\d{2}' +
+                  RegExp.escape('''
  seconds.
 b: SUCCESS
 ${'-' * terminalWidth}
 c:
-Formatted no files in 0.''') + r'\d{2}' + RegExp.escape('''
+Formatted no files in 0.''') +
+                  r'\d{2}' +
+                  RegExp.escape('''
  seconds.
 c: SUCCESS
 ${'-' * terminalWidth}
@@ -170,29 +182,30 @@ ${'-' * terminalWidth}
       );
     });
 
-    test('should run format with --output none and --set-exit-if-changed flag',
-        () async {
-      writeTextFile(
-        p.join(aDir.path, 'main.dart'),
-        r'''
+    test(
+      'should run format with --output none and --set-exit-if-changed flag',
+      () async {
+        writeTextFile(
+          p.join(aDir.path, 'main.dart'),
+          r'''
         void main() {for (var i = 0; i < 10; i++) {print('hello ${i + 1}');}
         }
       ''',
-      );
+        );
 
-      final result = await Process.run(
-        'melos',
-        ['format', '--output', 'none', '--set-exit-if-changed'],
-        workingDirectory: workspaceDir.path,
-        runInShell: Platform.isWindows,
-        stdoutEncoding: utf8,
-        stderrEncoding: utf8,
-      );
+        final result = await Process.run(
+          'melos',
+          ['format', '--output', 'none', '--set-exit-if-changed'],
+          workingDirectory: workspaceDir.path,
+          runInShell: Platform.isWindows,
+          stdoutEncoding: utf8,
+          stderrEncoding: utf8,
+        );
 
-      expect(result.exitCode, equals(1));
-      expect(
-        result.stdout,
-        ignoringDependencyMessages('''
+        expect(result.exitCode, equals(1));
+        expect(
+          result.stdout,
+          ignoringDependencyMessages('''
 Resolving dependencies...
 + ansi_styles 0.3.2+1
 + args 2.4.2
@@ -260,17 +273,18 @@ ${'-' * terminalWidth}
      └> FAILED (in 1 packages)
         └> a (with exit code 1)
 '''),
-        // Skip this test if it fails due to a difference in the execution time
-        // reported for formatting files.
-        // The execution time, such as "0.09 seconds" in the line "Formatted 1
-        // file (1 changed) in 0.09 seconds.",
-        // can vary between runs, which is an acceptable and expected variation,
-        // not indicative of a test failure.
-        // Addendum: This test case should be rewritten to not be sensitive to
-        // version updates to the dependencies.
-        skip: 'Differ at offset 1261',
-      );
-    });
+          // Skip this test if it fails due to a difference in the execution
+          // time reported for formatting files.
+          // The execution time, such as "0.09 seconds" in the line "Formatted 1
+          // file (1 changed) in 0.09 seconds.",
+          // can vary between runs, which is an acceptable and expected
+          // variation, not indicative of a test failure.
+          // Addendum: This test case should be rewritten to not be sensitive to
+          // version updates to the dependencies.
+          skip: 'Differ at offset 1261',
+        );
+      },
+    );
 
     test('should run format with --line-length flag', () async {
       const code = '''

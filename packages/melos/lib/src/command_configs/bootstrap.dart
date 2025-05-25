@@ -28,21 +28,24 @@ class BootstrapCommandConfigs {
     Map<Object?, Object?> yaml, {
     required String workspacePath,
   }) {
-    final runPubGetInParallel = assertKeyIsA<bool?>(
+    final runPubGetInParallel =
+        assertKeyIsA<bool?>(
           key: 'runPubGetInParallel',
           map: yaml,
           path: 'command/bootstrap',
         ) ??
         true;
 
-    final runPubGetOffline = assertKeyIsA<bool?>(
+    final runPubGetOffline =
+        assertKeyIsA<bool?>(
           key: 'runPubGetOffline',
           map: yaml,
           path: 'command/bootstrap',
         ) ??
         false;
 
-    final enforceLockfile = assertKeyIsA<bool?>(
+    final enforceLockfile =
+        assertKeyIsA<bool?>(
           key: 'enforceLockfile',
           map: yaml,
           path: 'command/bootstrap',
@@ -143,8 +146,9 @@ class BootstrapCommandConfigs {
       if (devDependencies != null)
         'dev_dependencies': devDependencies!.toJson(),
       if (dependencyOverridePaths.isNotEmpty)
-        'dependencyOverridePaths':
-            dependencyOverridePaths.map((path) => path.toString()).toList(),
+        'dependencyOverridePaths': dependencyOverridePaths
+            .map((path) => path.toString())
+            .toList(),
       'hooks': hooks.toJson(),
     };
   }
@@ -160,10 +164,13 @@ class BootstrapCommandConfigs {
       other.environment.sdkConstraint == environment.sdkConstraint &&
       const DeepCollectionEquality().equals(other.environment, environment) &&
       const DeepCollectionEquality().equals(other.dependencies, dependencies) &&
-      const DeepCollectionEquality()
-          .equals(other.devDependencies, devDependencies) &&
-      const DeepCollectionEquality(GlobEquality())
-          .equals(other.dependencyOverridePaths, dependencyOverridePaths) &&
+      const DeepCollectionEquality().equals(
+        other.devDependencies,
+        devDependencies,
+      ) &&
+      const DeepCollectionEquality(
+        GlobEquality(),
+      ).equals(other.dependencyOverridePaths, dependencyOverridePaths) &&
       other.hooks == hooks;
 
   @override
@@ -178,8 +185,9 @@ class BootstrapCommandConfigs {
       const DeepCollectionEquality().hash(environment) ^
       const DeepCollectionEquality().hash(dependencies) ^
       const DeepCollectionEquality().hash(devDependencies) ^
-      const DeepCollectionEquality(GlobEquality())
-          .hash(dependencyOverridePaths) ^
+      const DeepCollectionEquality(
+        GlobEquality(),
+      ).hash(dependencyOverridePaths) ^
       hooks.hashCode;
 
   @override

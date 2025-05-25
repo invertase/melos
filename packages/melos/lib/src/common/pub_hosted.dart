@@ -16,8 +16,8 @@ import 'pub_hosted_package.dart';
 /// `PUB_HOSTED_URL` environment variable.
 /// https://dart.dev/tools/pub/environment-variables
 Uri get defaultPubUrl => Uri.parse(
-      currentPlatform.environment['PUB_HOSTED_URL'] ?? 'https://pub.dev',
-    );
+  currentPlatform.environment['PUB_HOSTED_URL'] ?? 'https://pub.dev',
+);
 
 class PubHostedClient extends http.BaseClient {
   @visibleForTesting

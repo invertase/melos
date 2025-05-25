@@ -25,8 +25,10 @@ void main() {
       // We assume that the test is executed with the version of Dart that
       // is on the path, which is what the dart_wrapper uses. The wrapper
       // just makes it easy to construct an absolute path.
-      final dartWrapper =
-          p.join(Directory.current.path, 'test/test_assets/dart_wrapper');
+      final dartWrapper = p.join(
+        Directory.current.path,
+        'test/test_assets/dart_wrapper',
+      );
       expect(
         currentDartVersion(dartWrapper),
         Version.parse(Platform.version.split(' ')[0]),

@@ -17,13 +17,15 @@ void main() {
         isTrue,
       );
       expect(
-        ConventionalCommit.tryParse('refactor(scope): foo bar')!
-            .isVersionableCommit,
+        ConventionalCommit.tryParse(
+          'refactor(scope): foo bar',
+        )!.isVersionableCommit,
         isTrue,
       );
       expect(
-        ConventionalCommit.tryParse('revert(scope,dope)!: foo bar')!
-            .isVersionableCommit,
+        ConventionalCommit.tryParse(
+          'revert(scope,dope)!: foo bar',
+        )!.isVersionableCommit,
         isTrue,
       );
       expect(
@@ -31,23 +33,27 @@ void main() {
         isTrue,
       );
       expect(
-        ConventionalCommit.tryParse('ci(scope,dope): foo bar')!
-            .isVersionableCommit,
+        ConventionalCommit.tryParse(
+          'ci(scope,dope): foo bar',
+        )!.isVersionableCommit,
         isFalse,
       );
       expect(
-        ConventionalCommit.tryParse('Merged PR 1337: bar foo')!
-            .isVersionableCommit,
+        ConventionalCommit.tryParse(
+          'Merged PR 1337: bar foo',
+        )!.isVersionableCommit,
         isFalse,
       );
       expect(
-        ConventionalCommit.tryParse('Merged PR 1337: fix(1338): bar foo')!
-            .isVersionableCommit,
+        ConventionalCommit.tryParse(
+          'Merged PR 1337: fix(1338): bar foo',
+        )!.isVersionableCommit,
         isTrue,
       );
       expect(
-        ConventionalCommit.tryParse('Merged PR: fix(*): bar foo')!
-            .isVersionableCommit,
+        ConventionalCommit.tryParse(
+          'Merged PR: fix(*): bar foo',
+        )!.isVersionableCommit,
         isTrue,
       );
       expect(
@@ -66,13 +72,15 @@ void main() {
         equals(SemverReleaseType.patch),
       );
       expect(
-        ConventionalCommit.tryParse('refactor(scope): foo bar')!
-            .semverReleaseType,
+        ConventionalCommit.tryParse(
+          'refactor(scope): foo bar',
+        )!.semverReleaseType,
         equals(SemverReleaseType.patch),
       );
       expect(
-        ConventionalCommit.tryParse('feat(scope,dope): foo bar')!
-            .semverReleaseType,
+        ConventionalCommit.tryParse(
+          'feat(scope,dope): foo bar',
+        )!.semverReleaseType,
         equals(SemverReleaseType.minor),
       );
     });
@@ -154,7 +162,8 @@ class VersioningTestCase extends VersioningTestCaseBase {
     expect(
       resolveNextVersion().toString(),
       equals(expectedVersion),
-      reason: 'The version created did not match the version expected by '
+      reason:
+          'The version created did not match the version expected by '
           'this test case: $this.',
     );
   }
@@ -174,18 +183,18 @@ class NullSafetyTestCase extends VersioningTestCase {
     super.expectedVersion,
     super.requestedReleaseType,
   ) : super(
-          requestedPreId: 'nullsafety',
-          shouldMakePrereleaseVersion: true,
-        );
+        requestedPreId: 'nullsafety',
+        shouldMakePrereleaseVersion: true,
+      );
 }
 
 class UnsupportedPreReleaseTestCase extends VersioningTestCaseBase {
   const UnsupportedPreReleaseTestCase(String currentVersion)
-      : super(
-          currentVersion,
-          SemverReleaseType.patch,
-          shouldMakePrereleaseVersion: true,
-        );
+    : super(
+        currentVersion,
+        SemverReleaseType.patch,
+        shouldMakePrereleaseVersion: true,
+      );
 
   @override
   String get title => 'the version $currentVersion should be unsupported';
@@ -195,7 +204,8 @@ class UnsupportedPreReleaseTestCase extends VersioningTestCaseBase {
     expect(
       resolveNextVersion,
       throwsA(isA<UnsupportedError>()),
-      reason: 'Creating a new version should have thrown an exception, '
+      reason:
+          'Creating a new version should have thrown an exception, '
           'but it did not: $this.',
     );
   }

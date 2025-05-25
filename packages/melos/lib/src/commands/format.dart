@@ -9,8 +9,10 @@ mixin _FormatMixin on _Melos {
     String? output,
     int? lineLength,
   }) async {
-    final workspace =
-        await createWorkspace(global: global, packageFilters: packageFilters);
+    final workspace = await createWorkspace(
+      global: global,
+      packageFilters: packageFilters,
+    );
     final packages = workspace.filteredPackages.values;
 
     await _formatForAllPackages(
@@ -98,13 +100,14 @@ mixin _FormatMixin on _Melos {
     final resultLogger = logger.child(targetStyle(formatArgsString));
 
     if (failures.isNotEmpty) {
-      final failuresLogger =
-          resultLogger.child('$failedLabel (in ${failures.length} packages)');
+      final failuresLogger = resultLogger.child(
+        '$failedLabel (in ${failures.length} packages)',
+      );
       for (final packageName in failures.keys) {
         failuresLogger.child(
           '${errorPackageNameStyle(packageName)} '
           '${failures[packageName] == null ? '(dependency failed)' : '('
-              'with exit code ${failures[packageName]})'}',
+                    'with exit code ${failures[packageName]})'}',
         );
       }
       exitCode = 1;

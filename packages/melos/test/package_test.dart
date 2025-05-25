@@ -37,8 +37,9 @@ void main() {
       '0.10.0',
       '0.0.10',
     ];
-    final testedVersionRanges =
-        testedVersions.map((version) => '^$version').toList();
+    final testedVersionRanges = testedVersions
+        .map((version) => '^$version')
+        .toList();
 
     group('dependencyVersion', () {
       testedVersions.forEach(testDependencyVersionReplaceRegex);
@@ -59,8 +60,9 @@ void main() {
     late MelosWorkspace workspace;
 
     setUp(() async {
-      final workspaceDir =
-          await createTemporaryWorkspace(workspacePackages: ['melos']);
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['melos'],
+      );
 
       await createProject(
         workspaceDir,
@@ -361,7 +363,8 @@ void testDependencyVersionReplaceRegex(String version) {
 
     final regExp = dependencyVersionReplaceRegex(dependencyName);
 
-    final input = '''
+    final input =
+        '''
 dependencies:
   $dependencyName: $version
 ''';
@@ -384,7 +387,8 @@ void testHostedDependencyVersionReplaceRegex(String version) {
 
     final regExp = hostedDependencyVersionReplaceRegex(dependencyName);
 
-    final input = '''
+    final input =
+        '''
 dependencies:
   $dependencyName:
     version: $version
@@ -409,7 +413,8 @@ void testDependencyTagReplaceRegex(String version) {
 
     final regExp = dependencyTagReplaceRegex(dependencyName);
 
-    final input = '''
+    final input =
+        '''
 dependencies:
   $dependencyName:
     git:

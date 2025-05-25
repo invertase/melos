@@ -71,8 +71,9 @@ The packages that caused the problem are:
     });
 
     test('can be accessed from anywhere within a workspace', () async {
-      final workspaceDir =
-          await createTemporaryWorkspace(workspacePackages: ['a']);
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+      );
       final projectDir = await createProject(workspaceDir, Pubspec('a'));
 
       await Process.run(
@@ -109,8 +110,9 @@ The packages that caused the problem are:
           Pubspec('b'),
         );
 
-        final config =
-            await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceRootDir);
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceRootDir,
+        );
         final workspace = await MelosWorkspace.fromConfig(
           config,
           logger: TestLogger().toMelosLogger(),
@@ -196,20 +198,22 @@ The packages that caused the problem are:
         );
       });
 
-      test('prepend SDK bin directory to ${EnvironmentVariableKey.path}',
-          () async {
-        withMockPlatform(
-          () {
-            final workspace = VirtualWorkspaceBuilder(
-              '',
-              sdkPath: '/sdk',
-            ).build();
-            expect(workspace.path, '/sdk$pathEnvVarSeparator/bin');
-          },
-          platform: FakePlatform.fromPlatform(const LocalPlatform())
-            ..environment[EnvironmentVariableKey.path] = '/bin',
-        );
-      });
+      test(
+        'prepend SDK bin directory to ${EnvironmentVariableKey.path}',
+        () async {
+          withMockPlatform(
+            () {
+              final workspace = VirtualWorkspaceBuilder(
+                '',
+                sdkPath: '/sdk',
+              ).build();
+              expect(workspace.path, '/sdk$pathEnvVarSeparator/bin');
+            },
+            platform: FakePlatform.fromPlatform(const LocalPlatform())
+              ..environment[EnvironmentVariableKey.path] = '/bin',
+          );
+        },
+      );
     });
 
     group('package filtering', () {
@@ -227,8 +231,9 @@ The packages that caused the problem are:
             );
             await createProject(workspaceDir, Pubspec('b'));
 
-            final config =
-                await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+            final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+              workspaceDir,
+            );
             final workspace = await MelosWorkspace.fromConfig(
               config,
               packageFilters: PackageFilters(
@@ -257,8 +262,9 @@ The packages that caused the problem are:
             );
             await createProject(workspaceDir, Pubspec('b'));
 
-            final config =
-                await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+            final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+              workspaceDir,
+            );
             final workspace = await MelosWorkspace.fromConfig(
               config,
               packageFilters: PackageFilters(
@@ -297,8 +303,9 @@ The packages that caused the problem are:
             );
             await createProject(workspaceDir, Pubspec('c'));
 
-            final config =
-                await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+            final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+              workspaceDir,
+            );
             final workspace = await MelosWorkspace.fromConfig(
               config,
               packageFilters: PackageFilters(
@@ -348,8 +355,9 @@ The packages that caused the problem are:
             );
             await createProject(workspaceDir, Pubspec('d'));
 
-            final config =
-                await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+            final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+              workspaceDir,
+            );
             final workspace = await MelosWorkspace.fromConfig(
               config,
               packageFilters: PackageFilters(
@@ -384,8 +392,9 @@ The packages that caused the problem are:
             );
             await createProject(workspaceDir, Pubspec('b'));
 
-            final config =
-                await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+            final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+              workspaceDir,
+            );
             final workspace = await MelosWorkspace.fromConfig(
               config,
               packageFilters: PackageFilters(
@@ -414,8 +423,9 @@ The packages that caused the problem are:
             );
             await createProject(workspaceDir, Pubspec('b'));
 
-            final config =
-                await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+            final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+              workspaceDir,
+            );
             final workspace = await MelosWorkspace.fromConfig(
               config,
               packageFilters: PackageFilters(
@@ -452,8 +462,9 @@ The packages that caused the problem are:
             );
             await createProject(workspaceDir, Pubspec('c'));
 
-            final config =
-                await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+            final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+              workspaceDir,
+            );
             final workspace = await MelosWorkspace.fromConfig(
               config,
               packageFilters: PackageFilters(
@@ -503,8 +514,9 @@ The packages that caused the problem are:
             );
             await createProject(workspaceDir, Pubspec('d'));
 
-            final config =
-                await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+            final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+              workspaceDir,
+            );
             final workspace = await MelosWorkspace.fromConfig(
               config,
               packageFilters: PackageFilters(

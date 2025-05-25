@@ -64,13 +64,13 @@ like this:
 name: my_workspace
 publish_to: none
 environment:
-  sdk: ^3.6.0
+  sdk: ^3.8.0
 workspace:
   - packages/helper
   - packages/client_package
   - packages/server_package
 dev_dependencies:
-  melos: ^7.0.0
+  melos: ^7.0.0-dev.9
 
 melos:
   # All of the content of your previous melos.yaml file
@@ -82,7 +82,7 @@ And this is what the `pubspec.yaml` file of a package would look like:
 ```yaml
 name: my_package
 environment:
-  sdk: ^3.6.0
+  sdk: ^3.8.0
 resolution: workspace
 ```
 

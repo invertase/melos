@@ -132,11 +132,12 @@ extension StringUtils on String {
 }
 
 int get terminalWidth {
-  if (currentPlatform.environment
-      .containsKey(EnvironmentVariableKey.melosTerminalWidth)) {
+  if (currentPlatform.environment.containsKey(
+    EnvironmentVariableKey.melosTerminalWidth,
+  )) {
     return int.tryParse(
-          currentPlatform
-              .environment[EnvironmentVariableKey.melosTerminalWidth]!,
+          currentPlatform.environment[EnvironmentVariableKey
+              .melosTerminalWidth]!,
           radix: 10,
         ) ??
         80;
@@ -172,8 +173,9 @@ Version currentDartVersion(String dartTool) {
   final stderr = result.stderr as String;
   final versionOutput = stdout.trim().isEmpty ? stderr : stdout;
 
-  final versionString =
-      _dartSdkVersionRegexp.matchAsPrefix(versionOutput)?.group(1);
+  final versionString = _dartSdkVersionRegexp
+      .matchAsPrefix(versionOutput)
+      ?.group(1);
   if (versionString == null) {
     throw Exception('Unable to parse Dart version from:\n$versionOutput');
   }
@@ -479,15 +481,17 @@ Future<int> startCommand(
   if (logPrefix != null && logPrefix.isNotEmpty) {
     final pluginPrefixTransformer =
         StreamTransformer<String, String>.fromHandlers(
-      handleData: (data, sink) {
-        const lineSplitter = LineSplitter();
-        var lines = lineSplitter.convert(data);
-        lines = lines
-            .map((line) => '$logPrefix$line${line.contains('\n') ? '' : '\n'}')
-            .toList();
-        sink.add(lines.join());
-      },
-    );
+          handleData: (data, sink) {
+            const lineSplitter = LineSplitter();
+            var lines = lineSplitter.convert(data);
+            lines = lines
+                .map(
+                  (line) => '$logPrefix$line${line.contains('\n') ? '' : '\n'}',
+                )
+                .toList();
+            sink.add(lines.join());
+          },
+        );
 
     stdoutStream = process.stdout
         .transform<String>(utf8.decoder)
@@ -712,19 +716,22 @@ extension Utf8StreamUtils on Stream<List<int>> {
   }) async {
     final bufferedLines = <String>[];
     final stopwatch = Stopwatch()..start();
-    return transform(utf8.decoder).transform(const LineSplitter()).map((line) {
-      if (stopwatch.elapsed >= timeout) {
-        if (bufferedLines.isNotEmpty) {
-          bufferedLines.forEach(log);
-          bufferedLines.clear();
-        }
-        log(line);
-      } else {
-        bufferedLines.add(line);
-      }
+    return transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .map((line) {
+          if (stopwatch.elapsed >= timeout) {
+            if (bufferedLines.isNotEmpty) {
+              bufferedLines.forEach(log);
+              bufferedLines.clear();
+            }
+            log(line);
+          } else {
+            bufferedLines.add(line);
+          }
 
-      return line;
-    }).join('\n');
+          return line;
+        })
+        .join('\n');
   }
 }
 

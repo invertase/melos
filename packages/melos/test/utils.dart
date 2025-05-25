@@ -74,11 +74,12 @@ class TestLogger extends StandardLogger {
 }
 
 Directory createTestTempDir({bool isLocal = false}) {
-  final dir = (isLocal
-          ? Directory(p.join(Directory.current.path, '.dart_tool'))
-          : Directory.systemTemp)
-      .createTempSync('melos_test_')
-      .path;
+  final dir =
+      (isLocal
+              ? Directory(p.join(Directory.current.path, '.dart_tool'))
+              : Directory.systemTemp)
+          .createTempSync('melos_test_')
+          .path;
   addTearDown(() => deleteEntry(dir));
   return Directory(dir);
 }
@@ -174,8 +175,9 @@ Future<Directory> createProject(
             'sdk': defaultTestEnvironment['sdk'],
           }
         : null,
-    resolution:
-        inWorkspace && partialPubspec.name != 'workspace' ? 'workspace' : null,
+    resolution: inWorkspace && partialPubspec.name != 'workspace'
+        ? 'workspace'
+        : null,
   );
 
   final projectDirectory = Directory(
@@ -281,14 +283,14 @@ class PackageConfig {
   });
 
   PackageConfig.fromJson(Map<String, Object?> json)
-      : this._(
-          json,
-          generator: json['generator']! as String,
-          packages: (json['packages']! as List)
-              .cast<Map<String, Object?>>()
-              .map(PackageDependencyConfig.fromJson)
-              .toList(),
-        );
+    : this._(
+        json,
+        generator: json['generator']! as String,
+        packages: (json['packages']! as List)
+            .cast<Map<String, Object?>>()
+            .map(PackageDependencyConfig.fromJson)
+            .toList(),
+      );
 
   final Map<String, Object?> _map;
   final List<PackageDependencyConfig> packages;
@@ -309,12 +311,12 @@ class PackageDependencyConfig {
   });
 
   PackageDependencyConfig.fromJson(Map<String, Object?> json)
-      : this._(
-          json,
-          name: json['name']! as String,
-          rootUri: json['rootUri']! as String,
-          packageUri: json['packageUri']! as String,
-        );
+    : this._(
+        json,
+        name: json['name']! as String,
+        rootUri: json['rootUri']! as String,
+        packageUri: json['packageUri']! as String,
+      );
 
   final String name;
   final String rootUri;
@@ -352,8 +354,8 @@ class VirtualWorkspaceBuilder {
     this.defaultPackagesPath = 'packages',
     this.sdkPath,
     Logger? logger,
-  })  : logger = (logger ?? TestLogger()).toMelosLogger(),
-        path = path ?? Directory.systemTemp.createTempSync('melos_test_').path;
+  }) : logger = (logger ?? TestLogger()).toMelosLogger(),
+       path = path ?? Directory.systemTemp.createTempSync('melos_test_').path;
 
   /// The contents of the melos section in the root `pubspec.yaml` file.
   final String melosYaml;
@@ -372,8 +374,8 @@ class VirtualWorkspaceBuilder {
   final String? sdkPath;
 
   Map<String, Object?> get _defaultWorkspaceConfig => {
-        'name': 'virtual-workspace',
-      };
+    'name': 'virtual-workspace',
+  };
 
   final List<_VirtualPackage> _packages = [];
 

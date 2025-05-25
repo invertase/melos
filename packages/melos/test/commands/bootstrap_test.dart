@@ -17,8 +17,7 @@ import '../workspace_config_test.dart';
 
 void main() {
   group('bootstrap', () {
-    test(
-        'supports path dependencies in the pubspec for dependencies that '
+    test('supports path dependencies in the pubspec for dependencies that '
         'are not part of the workspace', () async {
       final absoluteDir = createTestTempDir();
       final relativeDir = createTestTempDir();
@@ -270,8 +269,9 @@ Generating IntelliJ IDE files...
 
         await runMelosBootstrap(melosAfterChangingPath, logger);
 
-        final alteredPackageConfig =
-            packageConfigForPackageAt(workspaceDirectory);
+        final alteredPackageConfig = packageConfigForPackageAt(
+          workspaceDirectory,
+        );
         final alteredDependencyPackage = alteredPackageConfig.packages
             .singleWhere((package) => package.name == 'dependency');
 
@@ -316,8 +316,9 @@ Generating IntelliJ IDE files...
         );
 
         final logger = TestLogger();
-        final config =
-            await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
         final melos = Melos(
           logger: logger,
           config: config,
@@ -438,8 +439,9 @@ Generating IntelliJ IDE files...
       await runMelosBootstrap(melos, logger);
 
       final workspacePkgConfig = packageConfigForPackageAt(workspaceDir);
-      final aPkgDependencyConfig = workspacePkgConfig.packages
-          .firstWhere((package) => package.name == 'a');
+      final aPkgDependencyConfig = workspacePkgConfig.packages.firstWhere(
+        (package) => package.name == 'a',
+      );
       expect(aPkgDependencyConfig.rootUri, '../packages/a');
     });
 
@@ -478,8 +480,11 @@ Generating IntelliJ IDE files...
       await expectLater(
         melos.bootstrap(),
         throwsA(
-          isA<BootstrapException>()
-              .having((e) => e.package.name, 'package.name', 'workspace'),
+          isA<BootstrapException>().having(
+            (e) => e.package.name,
+            'package.name',
+            'workspace',
+          ),
         ),
       );
 
@@ -617,50 +622,53 @@ Generating IntelliJ IDE files...
       );
     });
 
-    test('can run pub get --no-enforce-lockfile when enforced in config',
-        () async {
-      final workspaceDir = await createTemporaryWorkspace(
-        workspacePackages: [],
-        configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
-          createYamlMap(
-            {
-              'melos': {
-                'command': {
-                  'bootstrap': {
-                    'enforceLockfile': true,
+    test(
+      'can run pub get --no-enforce-lockfile when enforced in config',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: [],
+          configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {
+                'melos': {
+                  'command': {
+                    'bootstrap': {
+                      'enforceLockfile': true,
+                    },
                   },
                 },
               },
-            },
-            defaults: configMapDefaults,
+              defaults: configMapDefaults,
+            ),
+            path: path,
           ),
-          path: path,
-        ),
-        createLockfile: true,
-      );
+          createLockfile: true,
+        );
 
-      final logger = TestLogger();
-      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
-      final workspace = await MelosWorkspace.fromConfig(
-        config,
-        logger: logger.toMelosLogger(),
-      );
-      final melos = Melos(logger: logger, config: config);
-      final pubExecArgs = pubCommandExecArgs(
-        useFlutter: workspace.isFlutterWorkspace,
-        workspace: workspace,
-      );
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final workspace = await MelosWorkspace.fromConfig(
+          config,
+          logger: logger.toMelosLogger(),
+        );
+        final melos = Melos(logger: logger, config: config);
+        final pubExecArgs = pubCommandExecArgs(
+          useFlutter: workspace.isFlutterWorkspace,
+          workspace: workspace,
+        );
 
-      await runMelosBootstrap(
-        melos,
-        logger,
-        enforceLockfile: false,
-      );
+        await runMelosBootstrap(
+          melos,
+          logger,
+          enforceLockfile: false,
+        );
 
-      expect(
-        logger.output,
-        ignoringAnsii(
-          '''
+        expect(
+          logger.output,
+          ignoringAnsii(
+            '''
 melos bootstrap
   └> ${workspaceDir.path}
 
@@ -672,9 +680,10 @@ Generating IntelliJ IDE files...
 
  -> 0 packages bootstrapped
 ''',
-        ),
-      );
-    });
+          ),
+        );
+      },
+    );
 
     test('can run pub get --enforce-lockfile without lockfile', () async {
       final workspaceDir = await createTemporaryWorkspace(
@@ -782,18 +791,21 @@ Generating IntelliJ IDE files...
             environment: {},
             dependencies: {
               'intl': HostedDependency(
-                version:
-                    VersionConstraint.compatibleWith(Version.parse('0.18.1')),
+                version: VersionConstraint.compatibleWith(
+                  Version.parse('0.18.1'),
+                ),
               ),
               'path': HostedDependency(
-                version:
-                    VersionConstraint.compatibleWith(Version.parse('1.7.2')),
+                version: VersionConstraint.compatibleWith(
+                  Version.parse('1.7.2'),
+                ),
               ),
             },
             devDependencies: {
               'flame_lint': HostedDependency(
-                version:
-                    VersionConstraint.compatibleWith(Version.parse('1.2.0')),
+                version: VersionConstraint.compatibleWith(
+                  Version.parse('1.2.0'),
+                ),
               ),
             },
           ),
@@ -809,12 +821,14 @@ Generating IntelliJ IDE files...
             },
             dependencies: {
               'integral_isolates': HostedDependency(
-                version:
-                    VersionConstraint.compatibleWith(Version.parse('0.4.1')),
+                version: VersionConstraint.compatibleWith(
+                  Version.parse('0.4.1'),
+                ),
               ),
               'intl': HostedDependency(
-                version:
-                    VersionConstraint.compatibleWith(Version.parse('0.17.0')),
+                version: VersionConstraint.compatibleWith(
+                  Version.parse('0.17.0'),
+                ),
               ),
               'path': HostedDependency(version: VersionConstraint.any),
             },
@@ -822,8 +836,9 @@ Generating IntelliJ IDE files...
         );
 
         final logger = TestLogger();
-        final config =
-            await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
         final melos = Melos(
           logger: logger,
           config: config,
@@ -849,8 +864,9 @@ Generating IntelliJ IDE files...
           pubspecA.dependencies,
           equals({
             'intl': HostedDependency(
-              version:
-                  VersionConstraint.compatibleWith(Version.parse('0.18.1')),
+              version: VersionConstraint.compatibleWith(
+                Version.parse('0.18.1'),
+              ),
             ),
             'path': HostedDependency(
               version: VersionConstraint.compatibleWith(Version.parse('1.8.3')),
@@ -881,8 +897,9 @@ Generating IntelliJ IDE files...
               version: VersionConstraint.compatibleWith(Version.parse('0.4.1')),
             ),
             'intl': HostedDependency(
-              version:
-                  VersionConstraint.compatibleWith(Version.parse('0.18.1')),
+              version: VersionConstraint.compatibleWith(
+                Version.parse('0.18.1'),
+              ),
             ),
             'path': HostedDependency(
               version: VersionConstraint.compatibleWith(Version.parse('1.8.3')),
@@ -991,8 +1008,9 @@ Generating IntelliJ IDE files...
           environment: {},
           dependencies: {
             'flame': HostedDependency(
-              version:
-                  VersionConstraint.compatibleWith(Version.parse('1.23.0')),
+              version: VersionConstraint.compatibleWith(
+                Version.parse('1.23.0'),
+              ),
             ),
           },
           devDependencies: {
@@ -1013,15 +1031,17 @@ Generating IntelliJ IDE files...
           },
           dependencies: {
             'flame': HostedDependency(
-              version:
-                  VersionConstraint.compatibleWith(Version.parse('1.23.0')),
+              version: VersionConstraint.compatibleWith(
+                Version.parse('1.23.0'),
+              ),
             ),
             'integral_isolates': HostedDependency(
               version: VersionConstraint.compatibleWith(Version.parse('0.4.1')),
             ),
             'intl': HostedDependency(
-              version:
-                  VersionConstraint.compatibleWith(Version.parse('0.17.0')),
+              version: VersionConstraint.compatibleWith(
+                Version.parse('0.17.0'),
+              ),
             ),
             'path': HostedDependency(version: VersionConstraint.any),
           },

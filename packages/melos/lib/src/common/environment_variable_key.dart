@@ -29,18 +29,18 @@ class EnvironmentVariableKey {
   static const String path = 'PATH';
 
   static List<String> allMelosKeys() => [
-        melosRootPath,
-        melosPackageName,
-        melosPackageVersion,
-        melosPackagePath,
-        melosParentPackageName,
-        melosParentPackageVersion,
-        melosParentPackagePath,
-        melosPublishDryRun,
-        melosScript,
-        melosTest,
-        melosPackages,
-        melosSdkPath,
-        melosTerminalWidth,
-      ];
+    melosRootPath,
+    melosPackageName,
+    melosPackageVersion,
+    melosPackagePath,
+    melosParentPackageName,
+    melosParentPackageVersion,
+    melosParentPackagePath,
+    melosPublishDryRun,
+    melosScript,
+    melosTest,
+    melosPackages,
+    melosSdkPath,
+    melosTerminalWidth,
+  ];
 }

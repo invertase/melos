@@ -1,4 +1,3 @@
-import 'package:intl/intl.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
@@ -55,7 +54,7 @@ class Changelog {
 
 class MelosChangelog extends Changelog {
   MelosChangelog(this.update, MelosLogger logger)
-      : super(update.package, update.nextVersion, logger);
+    : super(update.package, update.nextVersion, logger);
 
   final MelosPendingPackageUpdate update;
 
@@ -226,9 +225,9 @@ List<RichGitCommit> _filteredAndSortedCommits(
 
   // Sort so that Breaking Changes appear at the top.
   commits.sort((a, b) {
-    final r = a.parsedMessage.isBreakingChange
-        .toString()
-        .compareTo(b.parsedMessage.isBreakingChange.toString());
+    final r = a.parsedMessage.isBreakingChange.toString().compareTo(
+      b.parsedMessage.isBreakingChange.toString(),
+    );
     if (r != 0) {
       return r;
     }
@@ -250,11 +249,10 @@ extension on String {
   }
 }
 
-extension DateTimeExt on DateTime {
+extension DateTimeExtension on DateTime {
   /// Returns a formatted string in the format `yyyy-MM-dd`.
   @internal
   String toFormattedString() {
-    final format = DateFormat('yyyy-MM-dd');
-    return format.format(this);
+    return toIso8601String().substring(0, 10);
   }
 }

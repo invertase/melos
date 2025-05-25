@@ -158,15 +158,15 @@ class AggregateChangelogConfig {
   });
 
   AggregateChangelogConfig.workspace()
-      : this(
-          isWorkspaceChangelog: true,
-          path: 'CHANGELOG.md',
-          packageFilters: PackageFilters(),
-          description: '''
+    : this(
+        isWorkspaceChangelog: true,
+        path: 'CHANGELOG.md',
+        packageFilters: PackageFilters(),
+        description: '''
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 ''',
-        );
+      );
 
   final bool isWorkspaceChangelog;
   final String path;
@@ -383,23 +383,23 @@ class MelosWorkspaceConfig {
   }
 
   MelosWorkspaceConfig.empty()
-      : this(
-          name: 'Melos',
-          packages: [],
-          path: Directory.current.path,
-          commands: CommandConfigs.empty,
-        );
+    : this(
+        name: 'Melos',
+        packages: [],
+        path: Directory.current.path,
+        commands: CommandConfigs.empty,
+      );
 
   @visibleForTesting
   MelosWorkspaceConfig.emptyWith({
     String? name,
     String? path,
   }) : this(
-          name: name ?? 'Melos',
-          packages: [],
-          path: path ?? Directory.current.path,
-          commands: CommandConfigs.empty,
-        );
+         name: name ?? 'Melos',
+         packages: [],
+         path: path ?? Directory.current.path,
+         commands: CommandConfigs.empty,
+       );
 
   /// Loads the [MelosWorkspaceConfig] for the workspace at [workspaceRoot].
   static Future<MelosWorkspaceConfig> fromWorkspaceRoot(
@@ -581,10 +581,12 @@ class MelosWorkspaceConfig {
       other.path == path &&
       other.name == name &&
       other.repository == repository &&
-      const DeepCollectionEquality(GlobEquality())
-          .equals(other.packages, packages) &&
-      const DeepCollectionEquality(GlobEquality())
-          .equals(other.ignore, ignore) &&
+      const DeepCollectionEquality(
+        GlobEquality(),
+      ).equals(other.packages, packages) &&
+      const DeepCollectionEquality(
+        GlobEquality(),
+      ).equals(other.ignore, ignore) &&
       other.scripts == scripts &&
       other.ide == ide &&
       other.commands == commands;

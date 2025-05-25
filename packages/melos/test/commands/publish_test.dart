@@ -87,8 +87,9 @@ void main() {
             );
           }
 
-          final config =
-              await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
           final melos = Melos(
             logger: logger,
             config: config,

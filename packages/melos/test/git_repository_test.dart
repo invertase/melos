@@ -169,8 +169,7 @@ void main() {
         expect(repo.url, Uri.parse('https://gitlab.invertase.dev/a/b/c/'));
       });
 
-      test(
-          'parse GitLab repository spec with sub-path and nested groups '
+      test('parse GitLab repository spec with sub-path and nested groups '
           'correctly', () {
         final repo = GitLabRepository(
           origin: 'https://invertase.dev/gitlab',
@@ -269,8 +268,7 @@ void main() {
         expect(repo.url, Uri.parse('https://bitbucket.invertase.dev/a/b/c/'));
       });
 
-      test(
-          'parse Bitbucket repository spec with sub-path and nested groups '
+      test('parse Bitbucket repository spec with sub-path and nested groups '
           'correctly', () {
         final repo = BitbucketRepository(
           origin: 'https://invertase.dev/bitbucket',
@@ -450,14 +448,16 @@ void main() {
 
   group('parseHostedGitRepositoryUrl', () {
     test('parses GitHub repository URL', () {
-      final repo =
-          parseHostedGitRepositoryUrl(Uri.parse('https://github.com/a/b'));
+      final repo = parseHostedGitRepositoryUrl(
+        Uri.parse('https://github.com/a/b'),
+      );
       expect(repo, isA<GitHubRepository>());
     });
 
     test('parses GitLab repository URL', () {
-      final repo =
-          parseHostedGitRepositoryUrl(Uri.parse('https://gitlab.com/a/b'));
+      final repo = parseHostedGitRepositoryUrl(
+        Uri.parse('https://gitlab.com/a/b'),
+      );
       expect(repo, isA<GitLabRepository>());
     });
 

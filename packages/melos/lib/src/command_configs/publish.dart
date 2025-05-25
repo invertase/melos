@@ -137,7 +137,8 @@ class PublishCommandConfigs {
           )
         : PublishLifecycleHooks.empty;
 
-    final changelogCommitBodiesEntry = assertKeyIsA<Map<Object?, Object?>?>(
+    final changelogCommitBodiesEntry =
+        assertKeyIsA<Map<Object?, Object?>?>(
           key: 'changelogCommitBodies',
           map: yaml,
           path: 'command/publish',
@@ -225,8 +226,9 @@ class PublishCommandConfigs {
       'includeCommitId': includeCommitId,
       'linkToCommits': linkToCommits,
       'updateGitTagRefs': updateGitTagRefs,
-      'aggregateChangelogs':
-          aggregateChangelogs.map((config) => config.toJson()).toList(),
+      'aggregateChangelogs': aggregateChangelogs
+          .map((config) => config.toJson())
+          .toList(),
       'fetchTags': fetchTags,
       'hooks': hooks.toJson(),
     };
@@ -243,8 +245,10 @@ class PublishCommandConfigs {
       other.linkToCommits == linkToCommits &&
       other.updateGitTagRefs == updateGitTagRefs &&
       other.releaseUrl == releaseUrl &&
-      const DeepCollectionEquality()
-          .equals(other.aggregateChangelogs, aggregateChangelogs) &&
+      const DeepCollectionEquality().equals(
+        other.aggregateChangelogs,
+        aggregateChangelogs,
+      ) &&
       other.fetchTags == fetchTags &&
       other.hooks == hooks;
 

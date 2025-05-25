@@ -13,7 +13,8 @@ class BootstrapCommand extends MelosCommand {
     );
     argParser.addFlag(
       'enforce-lockfile',
-      help: 'Run pub get with --enforce-lockfile to enforce versions from '
+      help:
+          'Run pub get with --enforce-lockfile to enforce versions from '
           '.lock files, ensure .lockfile exist for all packages.\n'
           '--no-enforce-lockfile can be used to temporarily disregard the '
           'lockfile versions.',
@@ -21,7 +22,8 @@ class BootstrapCommand extends MelosCommand {
     argParser.addFlag(
       'offline',
       negatable: false,
-      help: 'Run pub get with --offline to resolve dependencies from local '
+      help:
+          'Run pub get with --offline to resolve dependencies from local '
           'cache.',
     );
   }

@@ -8,8 +8,10 @@ mixin _BootstrapMixin on _CleanMixin {
     bool? enforceLockfile,
     bool offline = false,
   }) async {
-    final workspace =
-        await createWorkspace(global: global, packageFilters: packageFilters);
+    final workspace = await createWorkspace(
+      global: global,
+      packageFilters: packageFilters,
+    );
 
     return _runLifecycle(
       workspace,
@@ -17,8 +19,9 @@ mixin _BootstrapMixin on _CleanMixin {
       () async {
         final bootstrapCommandConfig = workspace.config.commands.bootstrap;
         final runOffline = bootstrapCommandConfig.runPubGetOffline || offline;
-        late final hasLockFile =
-            File(p.join(workspace.path, 'pubspec.lock')).existsSync();
+        late final hasLockFile = File(
+          p.join(workspace.path, 'pubspec.lock'),
+        ).existsSync();
         final enforceLockfileConfigValue =
             workspace.config.commands.bootstrap.enforceLockfile;
         final shouldEnforceLockfile =
@@ -45,8 +48,9 @@ mixin _BootstrapMixin on _CleanMixin {
               bootstrapCommandConfig.devDependencies != null) {
             logger.log('Updating common dependencies in workspace packages...');
 
-            await Stream.fromIterable(filteredPackages)
-                .parallel((package) async {
+            await Stream.fromIterable(filteredPackages).parallel((
+              package,
+            ) async {
               final pubspecPath = utils.pubspecPathForDirectory(package.path);
               final pubspecContent = await readTextFileAsync(pubspecPath);
               rollbackPubspecContent[pubspecPath] = pubspecContent;
@@ -83,8 +87,9 @@ mixin _BootstrapMixin on _CleanMixin {
               'the pubspec.yaml files...',
             );
 
-            await Stream.fromIterable(rollbackPubspecContent.entries)
-                .parallel((entry) async {
+            await Stream.fromIterable(rollbackPubspecContent.entries).parallel((
+              entry,
+            ) async {
               await writeTextFileAsync(entry.key, entry.value);
             }).drain<void>();
           }
@@ -366,9 +371,9 @@ mixin _BootstrapMixin on _CleanMixin {
             }
             lineWithWorkspacePackagesHighlighted =
                 lineWithWorkspacePackagesHighlighted.replaceAll(
-              '${workspacePackage.name} ',
-              '${AnsiStyles.yellowBright(workspacePackage.name)} ',
-            );
+                  '${workspacePackage.name} ',
+                  '${AnsiStyles.yellowBright(workspacePackage.name)} ',
+                );
           }
           return lineWithWorkspacePackagesHighlighted;
         })

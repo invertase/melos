@@ -66,10 +66,10 @@ class ExecOptions {
   final bool? orderDependents;
 
   Map<String, Object?> toJson() => {
-        if (concurrency != null) 'concurrency': concurrency,
-        if (failFast != null) 'failFast': failFast,
-        if (orderDependents != null) 'orderDependents': orderDependents,
-      };
+    if (concurrency != null) 'concurrency': concurrency,
+    if (failFast != null) 'failFast': failFast,
+    if (orderDependents != null) 'orderDependents': orderDependents,
+  };
 
   @override
   bool operator ==(Object other) =>
@@ -87,7 +87,8 @@ class ExecOptions {
       orderDependents.hashCode;
 
   @override
-  String toString() => '''
+  String toString() =>
+      '''
 ExecOptions(
   concurrency: $concurrency,
   failFast: $failFast,
@@ -205,7 +206,8 @@ class Script {
             value: entry.key,
             key: 'env',
             path: scriptPath,
-          ): entry.value.toString(),
+          ): entry.value
+              .toString(),
     };
 
     final packageFiltersMap = assertKeyIsA<Map<Object?, Object?>?>(

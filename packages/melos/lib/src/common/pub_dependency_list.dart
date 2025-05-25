@@ -52,7 +52,7 @@ class PubDependencyList extends VersionedEntry {
 
   final Map<String, Version> sdks;
   final Map<String, Map<VersionedEntry, Map<String, VersionConstraint>>>
-      sections;
+  sections;
 
   Map<VersionedEntry, Map<String, VersionConstraint>> get allEntries =>
       CombinedMapView(sections.values);
@@ -65,7 +65,7 @@ final _usageLine = RegExp('- ($_pkgName) (.+)\n');
 final _depLine = RegExp('  - ($_pkgName) (.+)\n');
 
 MapEntry<String, Map<VersionedEntry, Map<String, VersionConstraint>>>
-    _scanSection(StringScanner scanner) {
+_scanSection(StringScanner scanner) {
   scanner.expect(_sectionHeaderLine, name: 'section header');
   final header = scanner.lastMatch![1]!;
 
@@ -79,8 +79,9 @@ MapEntry<String, Map<VersionedEntry, Map<String, VersionConstraint>>>
     final deps = entries[entry] = {};
 
     while (scanner.scan(_depLine)) {
-      deps[scanner.lastMatch![1]!] =
-          VersionConstraint.parse(scanner.lastMatch![2]!);
+      deps[scanner.lastMatch![1]!] = VersionConstraint.parse(
+        scanner.lastMatch![2]!,
+      );
     }
   }
 
@@ -96,8 +97,8 @@ class VersionedEntry {
   const VersionedEntry(this.name, this.version);
 
   VersionedEntry.copy(VersionedEntry other)
-      : name = other.name,
-        version = other.version;
+    : name = other.name,
+      version = other.version;
 
   factory VersionedEntry.fromMatch(Match match) {
     return VersionedEntry(

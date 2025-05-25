@@ -86,8 +86,11 @@ Future<List<String>> gitTagsForPackage(
   TagReleaseType tagReleaseType = TagReleaseType.all,
   String preid = 'dev',
 }) async {
-  final filterPattern =
-      gitTagFilterPattern(package.name, tagReleaseType, preid: preid);
+  final filterPattern = gitTagFilterPattern(
+    package.name,
+    tagReleaseType,
+    preid: preid,
+  );
   final processResult = await gitExecuteCommand(
     arguments: ['tag', '-l', '--sort=-creatordate', filterPattern],
     workingDirectory: package.path,
@@ -98,15 +101,16 @@ Future<List<String>> gitTagsForPackage(
       .map((e) => e.trim())
       .where((e) => e.isNotEmpty)
       .where((tag) {
-    if (tagReleaseType == TagReleaseType.stable) {
-      // TODO(Salakar) This is probably not the best way to determine if a tag
-      // is pre-release or not.
-      // Should we parse it, extract the version and pass it through to
-      // pub_semver?
-      return !tag.contains('-$preid.');
-    }
-    return true;
-  }).toList();
+        if (tagReleaseType == TagReleaseType.stable) {
+          // TODO(Salakar) This is probably not the best way to determine if a
+          // tag is pre-release or not.
+          // Should we parse it, extract the version and pass it through to
+          // pub_semver?
+          return !tag.contains('-$preid.');
+        }
+        return true;
+      })
+      .toList();
 }
 
 /// Check a tag exists.
@@ -179,8 +183,10 @@ Future<String?> gitLatestTagForPackage(
     return null;
   }
 
-  final currentVersionTag =
-      gitTagForPackageVersion(package.name, package.version.toString());
+  final currentVersionTag = gitTagForPackageVersion(
+    package.name,
+    package.version.toString(),
+  );
   if (await gitTagExists(
     currentVersionTag,
     workingDirectory: package.path,
@@ -263,8 +269,11 @@ Future<List<GitCommit>> gitCommitsForPackage(
   required MelosLogger logger,
   String? diff,
 }) async {
-  final revisionRange =
-      await _resolveRevisionRange(package, diff: diff, logger: logger);
+  final revisionRange = await _resolveRevisionRange(
+    package,
+    diff: diff,
+    logger: logger,
+  );
 
   logger.trace(
     '[GIT] Getting commits for package ${package.name} for revision range '
@@ -305,8 +314,11 @@ Future<bool> gitHasDiffInPackage(
   required String? diff,
   required MelosLogger logger,
 }) async {
-  final revisionRange =
-      await _resolveRevisionRange(package, diff: diff, logger: logger);
+  final revisionRange = await _resolveRevisionRange(
+    package,
+    diff: diff,
+    logger: logger,
+  );
 
   logger.trace(
     '[GIT] Getting $diff diff for package ${package.name}.',
@@ -365,7 +377,8 @@ Future<bool> gitIsBehindUpstream({
 }) async {
   await gitRemoteUpdate(workingDirectory: workingDirectory, logger: logger);
 
-  final localBranch = branch ??
+  final localBranch =
+      branch ??
       await gitGetCurrentBranchName(
         workingDirectory: workingDirectory,
         logger: logger,
@@ -383,8 +396,10 @@ Future<bool> gitIsBehindUpstream({
     workingDirectory: workingDirectory,
     logger: logger,
   );
-  final leftRightCounts =
-      (processResult.stdout as String).split('\t').map<int>(int.parse).toList();
+  final leftRightCounts = (processResult.stdout as String)
+      .split('\t')
+      .map<int>(int.parse)
+      .toList();
   final behindCount = leftRightCounts[0];
   final aheadCount = leftRightCounts[1];
   final isBehind = behindCount > 0;

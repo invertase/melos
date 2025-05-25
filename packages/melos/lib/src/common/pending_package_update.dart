@@ -38,8 +38,8 @@ class MelosPendingPackageUpdate {
     this.prerelease = false,
     this.graduate = false,
     this.preid,
-  })  : manualVersion = null,
-        userChangelogMessage = null;
+  }) : manualVersion = null,
+       userChangelogMessage = null;
 
   const MelosPendingPackageUpdate.manual(
     this.workspace,
@@ -48,10 +48,10 @@ class MelosPendingPackageUpdate {
     this.manualVersion, {
     required this.logger,
     this.userChangelogMessage,
-  })  : reason = PackageUpdateReason.manual,
-        prerelease = false,
-        graduate = false,
-        preid = null;
+  }) : reason = PackageUpdateReason.manual,
+       prerelease = false,
+       graduate = false,
+       preid = null;
 
   /// Commits that triggered this pending update. Can be empty if
   /// [PackageUpdateReason] is [PackageUpdateReason.dependency].

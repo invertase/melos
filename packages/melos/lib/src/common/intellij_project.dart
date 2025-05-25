@@ -19,7 +19,7 @@ const String _kTmplExtension = '.tmpl';
 class IntellijProject {
   /// Build a new [IntellijProject] from a [MelosWorkspace].
   IntellijProject.fromWorkspace(MelosWorkspace workspace)
-      : _workspace = workspace;
+    : _workspace = workspace;
 
   final MelosWorkspace _workspace;
 
@@ -139,7 +139,8 @@ class IntellijProject {
         : '$moduleName.iml';
     // Use `/` instead of `\` no matter what platform is.
     imlPath = imlPath.replaceAll(r'\', '/');
-    final module = '<module '
+    final module =
+        '<module '
         'fileurl="file://\$PROJECT_DIR\$/$imlPath" '
         'filepath="\$PROJECT_DIR\$/$imlPath" '
         '/>';
@@ -257,17 +258,21 @@ class IntellijProject {
 
     await Future.forEach(runConfigurations.keys, (scriptName) async {
       final scriptArgs = runConfigurations[scriptName]!;
-      final pathSafeScriptArgs =
-          scriptArgs.replaceAll(RegExp('[^A-Za-z0-9]'), '_');
+      final pathSafeScriptArgs = scriptArgs.replaceAll(
+        RegExp('[^A-Za-z0-9]'),
+        '_',
+      );
 
-      final generatedRunConfiguration =
-          injectTemplateVariables(melosScriptTemplate, {
-        'scriptName': scriptName,
-        'scriptArgs': scriptArgs,
-        'scriptPath': getMelosBinForIde(),
-        'executeInTerminal':
-            _workspace.config.ide.intelliJ.executeInTerminal.toString(),
-      });
+      final generatedRunConfiguration = injectTemplateVariables(
+        melosScriptTemplate,
+        {
+          'scriptName': scriptName,
+          'scriptArgs': scriptArgs,
+          'scriptPath': getMelosBinForIde(),
+          'executeInTerminal': _workspace.config.ide.intelliJ.executeInTerminal
+              .toString(),
+        },
+      );
 
       final outputFile = p.join(
         pathDotIdea,
@@ -322,12 +327,16 @@ class IntellijProject {
         return;
       }
 
-      final generatedRunConfiguration =
-          injectTemplateVariables(flutterTestTemplate, {
-        'flutterTestsName': "Flutter Test -&gt; '${package.name}'",
-        'flutterTestsRelativePath':
-            p.join(package.pathRelativeToWorkspace, 'test'),
-      });
+      final generatedRunConfiguration = injectTemplateVariables(
+        flutterTestTemplate,
+        {
+          'flutterTestsName': "Flutter Test -&gt; '${package.name}'",
+          'flutterTestsRelativePath': p.join(
+            package.pathRelativeToWorkspace,
+            'test',
+          ),
+        },
+      );
       final outputFile = p.join(
         pathDotIdea,
         'runConfigurations',

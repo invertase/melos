@@ -111,13 +111,13 @@ class CommandConfigs {
 
   @override
   int get hashCode => Object.hash(
-        runtimeType,
-        bootstrap,
-        clean,
-        version,
-        publish,
-        format,
-      );
+    runtimeType,
+    bootstrap,
+    clean,
+    version,
+    publish,
+    format,
+  );
 
   @override
   String toString() {

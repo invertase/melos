@@ -17,8 +17,9 @@ abstract class MelosCommand extends Command<void> {
   /// The global Melos options parsed from the command line.
   late final global = _parseGlobalOptions();
 
-  late final logger =
-      MelosLogger(global.verbose ? Logger.verbose() : Logger.standard());
+  late final logger = MelosLogger(
+    global.verbose ? Logger.verbose() : Logger.standard(),
+  );
 
   /// The `pubspec.yaml` configuration for this command. see
   /// [ArgParser.allowTrailingOptions]
@@ -41,7 +42,8 @@ abstract class MelosCommand extends Command<void> {
   void setupPackageFilterParser() {
     argParser.addFlag(
       filterOptionPrivate,
-      help: 'Whether to include or exclude packages with `publish_to: "none"`. '
+      help:
+          'Whether to include or exclude packages with `publish_to: "none"`. '
           'By default, the filter has no effect.',
       defaultsTo: null,
     );
@@ -49,7 +51,8 @@ abstract class MelosCommand extends Command<void> {
     argParser.addFlag(
       filterOptionPublished,
       defaultsTo: null,
-      help: 'Filter packages where the current local package version exists on '
+      help:
+          'Filter packages where the current local package version exists on '
           'pub.dev. Or "-no-published" to filter packages that have not had '
           'their current version published yet.',
     );
@@ -66,7 +69,8 @@ abstract class MelosCommand extends Command<void> {
     argParser.addFlag(
       filterOptionFlutter,
       defaultsTo: null,
-      help: 'Filter packages where the package depends on the Flutter SDK. Or '
+      help:
+          'Filter packages where the package depends on the Flutter SDK. Or '
           '"-no-flutter" to filter packages that do not depend on the Flutter '
           'SDK.',
     );
@@ -74,7 +78,8 @@ abstract class MelosCommand extends Command<void> {
     argParser.addMultiOption(
       filterOptionScope,
       valueHelp: 'glob',
-      help: 'Include only packages with names matching the given glob. This '
+      help:
+          'Include only packages with names matching the given glob. This '
           'option can be repeated.',
     );
 
@@ -89,14 +94,16 @@ abstract class MelosCommand extends Command<void> {
     argParser.addMultiOption(
       filterOptionIgnore,
       valueHelp: 'glob',
-      help: 'Exclude packages with names matching the given glob. This option '
+      help:
+          'Exclude packages with names matching the given glob. This option '
           'can be repeated.',
     );
 
     argParser.addOption(
       filterOptionDiff,
       valueHelp: 'ref',
-      help: 'Filter packages based on whether there were changes between a '
+      help:
+          'Filter packages based on whether there were changes between a '
           'commit and the current HEAD or within a range of commits. A range '
           'of commits can be specified using the git short hand syntax '
           '`<start-commit>..<end-commit>` and `<start-commit>...<end-commit>`',
@@ -105,7 +112,8 @@ abstract class MelosCommand extends Command<void> {
     argParser.addMultiOption(
       filterOptionDirExists,
       valueHelp: 'dirRelativeToPackageRoot',
-      help: 'Include only packages where a specific directory exists inside '
+      help:
+          'Include only packages where a specific directory exists inside '
           'the package.',
     );
 
@@ -119,21 +127,24 @@ abstract class MelosCommand extends Command<void> {
     argParser.addMultiOption(
       filterOptionDependsOn,
       valueHelp: 'dependentPackageName',
-      help: 'Include only packages that depend on a specific package. This '
+      help:
+          'Include only packages that depend on a specific package. This '
           'option can be repeated, to further filter the list of packages.',
     );
 
     argParser.addMultiOption(
       filterOptionNoDependsOn,
       valueHelp: 'noDependantPackageName',
-      help: "Include only packages that *don't* depend on a specific package. "
+      help:
+          "Include only packages that *don't* depend on a specific package. "
           'This option can be repeated.',
     );
 
     argParser.addFlag(
       filterOptionIncludeDependents,
       negatable: false,
-      help: 'Include all transitive dependents for each package that matches '
+      help:
+          'Include all transitive dependents for each package that matches '
           'the other filters. The included packages skip --ignore and '
           '--diff checks.',
     );
@@ -141,7 +152,8 @@ abstract class MelosCommand extends Command<void> {
     argParser.addFlag(
       filterOptionIncludeDependencies,
       negatable: false,
-      help: 'Include all transitive dependencies for each package that '
+      help:
+          'Include all transitive dependencies for each package that '
           'matches the other filters. The included packages skip --ignore '
           'and --diff checks.',
     );
@@ -166,10 +178,11 @@ abstract class MelosCommand extends Command<void> {
       scope: scope
           .map((e) => createGlob(e, currentDirectoryPath: workingDirPath))
           .toList(),
-      ignore: ignore
-          .map((e) => createGlob(e, currentDirectoryPath: workingDirPath))
-          .toList()
-        ..addAll(config.ignore),
+      ignore:
+          ignore
+              .map((e) => createGlob(e, currentDirectoryPath: workingDirPath))
+              .toList()
+            ..addAll(config.ignore),
       categories: categories
           .map((e) => createGlob(e, currentDirectoryPath: workingDirPath))
           .toList(),

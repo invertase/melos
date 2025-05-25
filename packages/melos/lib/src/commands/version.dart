@@ -127,14 +127,16 @@ mixin _VersionMixin on _RunMixin {
       diff: packageFilters?.diff,
     );
 
-    final packagesWithVersionableCommits =
-        _getPackagesWithVersionableCommits(packageCommits);
+    final packagesWithVersionableCommits = _getPackagesWithVersionableCommits(
+      packageCommits,
+    );
 
     for (final packageName in manualVersions.keys) {
       if (!workspace.allPackages.keys.contains(packageName)) {
         exitCode = 1;
-        logger
-            .error('package "$packageName" does not exist in this workspace.');
+        logger.error(
+          'package "$packageName" does not exist in this workspace.',
+        );
         return;
       }
     }
@@ -175,15 +177,17 @@ mixin _VersionMixin on _RunMixin {
         );
 
         final packageUnscoped = workspace.allPackages[package.name]!;
-        dependentPackagesToVersion
-            .addAll(packageUnscoped.dependentsInWorkspace.values);
+        dependentPackagesToVersion.addAll(
+          packageUnscoped.dependentsInWorkspace.values,
+        );
       }
     }
 
     for (final package in packagesToVersion) {
       final packageUnscoped = workspace.allPackages[package.name]!;
-      dependentPackagesToVersion
-          .addAll(packageUnscoped.dependentsInWorkspace.values);
+      dependentPackagesToVersion.addAll(
+        packageUnscoped.dependentsInWorkspace.values,
+      );
 
       // Add dependentsInWorkspace dependents in the workspace until no more are
       // added.
@@ -192,8 +196,9 @@ mixin _VersionMixin on _RunMixin {
         final packagesCountBefore = dependentPackagesToVersion.length;
         final packages = <Package>{...dependentPackagesToVersion};
         for (final dependentPackage in packages) {
-          dependentPackagesToVersion
-              .addAll(dependentPackage.dependentsInWorkspace.values);
+          dependentPackagesToVersion.addAll(
+            dependentPackage.dependentsInWorkspace.values,
+          );
         }
         packagesAdded = dependentPackagesToVersion.length - packagesCountBefore;
       }
@@ -225,7 +230,8 @@ mixin _VersionMixin on _RunMixin {
               );
 
               promptForMessage = promptBool(
-                message: 'Do you want to provide an additional changelog entry '
+                message:
+                    'Do you want to provide an additional changelog entry '
                     'message?',
                 defaultsToWithoutPrompt: false,
               );
@@ -411,12 +417,14 @@ mixin _VersionMixin on _RunMixin {
       } else if (repository is! SupportsManualRelease) {
         logger.warning('Repository does not support releases urls');
       } else {
-        final pendingPackageReleases = pendingPackageUpdates.map((update) {
-          return link(
-            repository.releaseUrlForUpdate(update),
-            update.package.name,
-          );
-        }).join(ansiStylesDisabled ? '\n' : ', ');
+        final pendingPackageReleases = pendingPackageUpdates
+            .map((update) {
+              return link(
+                repository.releaseUrlForUpdate(update),
+                update.package.name,
+              );
+            })
+            .join(ansiStylesDisabled ? '\n' : ', ');
 
         logger.success(
           'Make sure you create a release for each new package version:'
@@ -475,8 +483,10 @@ mixin _VersionMixin on _RunMixin {
     // to semver without the actual major, minor & patch versions changing.
     // e.g. >=1.2.0-1.0.nullsafety.0 <1.2.0-2.0.nullsafety.0
     if (version.toString().contains('.nullsafety.')) {
-      final nextMajorFromCurrentVersion =
-          versioning.nextVersion(version, SemverReleaseType.major);
+      final nextMajorFromCurrentVersion = versioning.nextVersion(
+        version,
+        SemverReleaseType.major,
+      );
 
       versionConstraint = VersionRange(
         min: version,
@@ -532,7 +542,8 @@ mixin _VersionMixin on _RunMixin {
         workspace.config.commands.version.updateGitTagRefs) {
       updatedContents = pubspecContent.replaceAllMapped(
         dependencyTagReplaceRegex(dependencyName),
-        (match) => '${match.group(1)}$dependencyName-'
+        (match) =>
+            '${match.group(1)}$dependencyName-'
             'v${dependencyVersion.min ?? dependencyVersion.max!}',
       );
     } else {
@@ -570,51 +581,54 @@ mixin _VersionMixin on _RunMixin {
             AnsiStyles.underline.bold('Updated Version'),
             AnsiStyles.underline.bold('Update Reason'),
           ],
-          ...pendingPackageUpdates.where((pendingUpdate) {
-            if (pendingUpdate.reason == PackageUpdateReason.dependency &&
-                !updateDependentsVersions &&
-                !updateDependentsConstraints) {
-              return false;
-            }
-            return true;
-          }).map((pendingUpdate) {
-            return [
-              AnsiStyles.italic(pendingUpdate.package.name),
-              AnsiStyles.dim(pendingUpdate.currentVersion.toString()),
-              if (pendingUpdate.reason == PackageUpdateReason.dependency &&
-                  !updateDependentsVersions)
-                '-'
-              else
-                AnsiStyles.green(pendingUpdate.nextVersion.toString()),
-              AnsiStyles.italic(
-                (() {
-                  switch (pendingUpdate.reason) {
-                    case PackageUpdateReason.manual:
-                      return 'manual versioning';
-                    case PackageUpdateReason.commit:
-                      final semverType =
-                          pendingUpdate.semverReleaseType!.toString().substring(
+          ...pendingPackageUpdates
+              .where((pendingUpdate) {
+                if (pendingUpdate.reason == PackageUpdateReason.dependency &&
+                    !updateDependentsVersions &&
+                    !updateDependentsConstraints) {
+                  return false;
+                }
+                return true;
+              })
+              .map((pendingUpdate) {
+                return [
+                  AnsiStyles.italic(pendingUpdate.package.name),
+                  AnsiStyles.dim(pendingUpdate.currentVersion.toString()),
+                  if (pendingUpdate.reason == PackageUpdateReason.dependency &&
+                      !updateDependentsVersions)
+                    '-'
+                  else
+                    AnsiStyles.green(pendingUpdate.nextVersion.toString()),
+                  AnsiStyles.italic(
+                    (() {
+                      switch (pendingUpdate.reason) {
+                        case PackageUpdateReason.manual:
+                          return 'manual versioning';
+                        case PackageUpdateReason.commit:
+                          final semverType = pendingUpdate.semverReleaseType!
+                              .toString()
+                              .substring(
                                 pendingUpdate.semverReleaseType!
                                         .toString()
                                         .indexOf('.') +
                                     1,
                               );
-                      return 'updated with ${AnsiStyles.underline(semverType)} '
-                          'changes';
-                    case PackageUpdateReason.dependency:
-                      if (pendingUpdate.reason ==
-                              PackageUpdateReason.dependency &&
-                          !updateDependentsVersions) {
-                        return 'dependency constraints changed';
+                          return 'updated with '
+                              '${AnsiStyles.underline(semverType)} changes';
+                        case PackageUpdateReason.dependency:
+                          if (pendingUpdate.reason ==
+                                  PackageUpdateReason.dependency &&
+                              !updateDependentsVersions) {
+                            return 'dependency constraints changed';
+                          }
+                          return 'dependency was updated';
+                        case PackageUpdateReason.graduate:
+                          return 'graduate to stable';
                       }
-                      return 'dependency was updated';
-                    case PackageUpdateReason.graduate:
-                      return 'graduate to stable';
-                  }
-                })(),
-              ),
-            ];
-          }),
+                    })(),
+                  ),
+                ];
+              }),
         ],
         paddingSize: 3,
       ),
@@ -642,23 +656,26 @@ mixin _VersionMixin on _RunMixin {
 
       // Update dependents.
       if (updateDependentsConstraints) {
-        await Future.forEach([
-          ...pendingPackageUpdate.package.dependentsInWorkspace.values,
-          ...pendingPackageUpdate.package.devDependentsInWorkspace.values,
-        ], (package) {
-          return _setDependencyVersionForDependentPackage(
-            package,
-            pendingPackageUpdate.package.name,
-            // Note if we're not updating dependent versions then we use the
-            // current version rather than the next version as the next version
-            // would never have been applied.
-            (pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
-                    !updateDependentsVersions)
-                ? pendingPackageUpdate.package.version
-                : pendingPackageUpdate.nextVersion,
-            workspace,
-          );
-        });
+        await Future.forEach(
+          [
+            ...pendingPackageUpdate.package.dependentsInWorkspace.values,
+            ...pendingPackageUpdate.package.devDependentsInWorkspace.values,
+          ],
+          (package) {
+            return _setDependencyVersionForDependentPackage(
+              package,
+              pendingPackageUpdate.package.name,
+              // Note if we're not updating dependent versions then we use the
+              // current version rather than the next version as the next
+              // version would never have been applied.
+              (pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
+                      !updateDependentsVersions)
+                  ? pendingPackageUpdate.package.version
+                  : pendingPackageUpdate.nextVersion,
+              workspace,
+            );
+          },
+        );
       }
 
       // Update changelogs if requested.
@@ -671,8 +688,9 @@ mixin _VersionMixin on _RunMixin {
 
     if (updateChangelog) {
       await Future.wait(
-        workspace.config.commands.version.aggregateChangelogs
-            .map((changelogConfig) {
+        workspace.config.commands.version.aggregateChangelogs.map((
+          changelogConfig,
+        ) {
           return _writeAggregateChangelog(
             workspace,
             changelogConfig,
@@ -695,8 +713,9 @@ mixin _VersionMixin on _RunMixin {
       today.day.toString().padLeft(2, '0'),
     ].join('-');
 
-    final packages =
-        await workspace.allPackages.applyFilters(config.packageFilters);
+    final packages = await workspace.allPackages.applyFilters(
+      config.packageFilters,
+    );
     // ignore: parameter_assignments
     pendingPackageUpdates = pendingPackageUpdates
         .where((update) => packages[update.package.name] != null)
@@ -738,8 +757,9 @@ mixin _VersionMixin on _RunMixin {
     required String? diff,
   }) async {
     final packageCommits = <String, List<RichGitCommit>>{};
-    await Pool(10).forEach<Package, void>(workspace.filteredPackages.values,
-        (package) async {
+    await Pool(10).forEach<Package, void>(workspace.filteredPackages.values, (
+      package,
+    ) async {
       if (!versionPrivatePackages && package.isPrivate) {
         return;
       }
@@ -843,16 +863,19 @@ mixin _VersionMixin on _RunMixin {
           logger: logger,
         );
       }
-      await Future.forEach([
-        ...pendingPackageUpdate.package.dependentsInWorkspace.values,
-        ...pendingPackageUpdate.package.devDependentsInWorkspace.values,
-      ], (dependentPackage) async {
-        await gitAdd(
-          'pubspec.yaml',
-          workingDirectory: dependentPackage.path,
-          logger: logger,
-        );
-      });
+      await Future.forEach(
+        [
+          ...pendingPackageUpdate.package.dependentsInWorkspace.values,
+          ...pendingPackageUpdate.package.devDependentsInWorkspace.values,
+        ],
+        (dependentPackage) async {
+          await gitAdd(
+            'pubspec.yaml',
+            workingDirectory: dependentPackage.path,
+            logger: logger,
+          );
+        },
+      );
     });
   }
 }

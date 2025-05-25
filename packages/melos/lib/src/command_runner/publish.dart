@@ -14,7 +14,8 @@ class PublishCommand extends MelosCommand {
     argParser.addFlag(
       publishOptionGitTagVersion,
       abbr: 't',
-      help: 'Add any missing git tags for release. '
+      help:
+          'Add any missing git tags for release. '
           'Note tags are only created if --no-dry-run is also set.',
     );
     argParser.addFlag(

@@ -11,8 +11,10 @@ mixin _ListMixin on _Melos {
     PackageFilters? packageFilters,
     ListOutputKind kind = ListOutputKind.column,
   }) async {
-    final workspace =
-        await createWorkspace(global: global, packageFilters: packageFilters);
+    final workspace = await createWorkspace(
+      global: global,
+      packageFilters: packageFilters,
+    );
 
     switch (kind) {
       case ListOutputKind.graph:
@@ -44,8 +46,8 @@ mixin _ListMixin on _Melos {
   void _listGraph(MelosWorkspace workspace) {
     final jsonGraph = <String, List<String>>{};
     for (final package in workspace.filteredPackages.values) {
-      jsonGraph[package.name] =
-          package.allDependenciesInWorkspace.keys.toList();
+      jsonGraph[package.name] = package.allDependenciesInWorkspace.keys
+          .toList();
     }
 
     const encoder = JsonEncoder.withIndent('  ');
@@ -234,13 +236,13 @@ mixin _ListMixin on _Melos {
 
     final groupedPackages = workspace.filteredPackages.values
         .fold<Map<String, List<Package>>>({}, (grouped, package) {
-      final namespace = p.dirname(package.pathRelativeToWorkspace);
+          final namespace = p.dirname(package.pathRelativeToWorkspace);
 
-      grouped.putIfAbsent(namespace, () => []);
-      grouped[namespace]!.add(package);
+          grouped.putIfAbsent(namespace, () => []);
+          grouped[namespace]!.add(package);
 
-      return grouped;
-    });
+          return grouped;
+        });
 
     groupedPackages.forEach((namespace, packagesInGroup) {
       buffer.add('  subgraph "cluster $namespace" {');
@@ -269,8 +271,9 @@ mixin _ListMixin on _Melos {
     } else {
       logger.stdout('🚨 ${cycles.length} cycles in dependencies found:');
       for (final cycle in cycles) {
-        logger
-            .stdout('[ ${cycle.map((package) => package.name).join(' -> ')} ]');
+        logger.stdout(
+          '[ ${cycle.map((package) => package.name).join(' -> ')} ]',
+        );
       }
       exitCode = 1;
     }

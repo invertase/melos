@@ -20,8 +20,9 @@ class IdeWorkspace {
 
   final MelosWorkspace _workspace;
 
-  late final IntellijProject intelliJ =
-      IntellijProject.fromWorkspace(_workspace);
+  late final IntellijProject intelliJ = IntellijProject.fromWorkspace(
+    _workspace,
+  );
 }
 
 /// A representation of a workspace.
@@ -120,8 +121,9 @@ class MelosWorkspace {
   late final IdeWorkspace ide = IdeWorkspace._(this);
 
   /// Returns true if this workspace contains ANY Flutter package.
-  late final bool isFlutterWorkspace =
-      allPackages.values.any((package) => package.isFlutterPackage);
+  late final bool isFlutterWorkspace = allPackages.values.any(
+    (package) => package.isFlutterPackage,
+  );
 
   /// Path to the Dart/Flutter SDK, if specified by the user.
   final String? sdkPath;
