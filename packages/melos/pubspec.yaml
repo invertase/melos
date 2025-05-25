@@ -17,7 +17,7 @@ topics:
   - lerna
 
 environment:
-  sdk: ^3.6.0
+  sdk: ^3.8.0
 
 executables:
   melos:
@@ -34,7 +34,6 @@ dependencies:
   glob: ^2.1.2
   graphs: ^2.3.2
   http: ^1.2.2
-  intl: any
   meta: any
   mustache_template: ^2.0.0
   path: any
@@ -49,6 +48,5 @@ dependencies:
   yaml_edit: ^2.2.2
 
 dev_dependencies:
-  flame_lint: ^1.3.0
   mockito: ^5.4.5
   test: any

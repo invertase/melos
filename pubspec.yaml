@@ -5,7 +5,7 @@ workspace:
   - packages/melos
 
 environment:
-  sdk: ">=3.6.0 <4.0.0"
+  sdk: ^3.8.0
 
 # This allows us to use melos on itself during development.
 executables:
@@ -27,7 +27,7 @@ melos:
   command:
     bootstrap:
       environment:
-        sdk: ^3.6.0
+        sdk: ^3.8.0
       dependencies:
         ansi_styles: ^0.3.2+1
         args: ^2.6.0
