@@ -21,11 +21,11 @@ jobs:
           else
             echo "op_comment=false" >> $GITHUB_ENV
           fi
-      - name: Add 'needs triage' label if OP responded
+      - name: Add 'needs attention' label if OP responded
         if: env.op_comment == 'true'
         uses: actions-ecosystem/action-add-labels@v1
         with:
-          labels: 'needs triage'
+          labels: 'needs attention'
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       - name: Remove 'blocked waiting for response' label if OP responded
