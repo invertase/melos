@@ -24,6 +24,18 @@ via [pub.dev](https://pub.dev/) so it can be used from anywhere on your system:
 dart pub global activate melos
 ```
 
+<Warning>
+  If using Git Bash on Windows, `melos` will not be callable directly as it
+  will have a `*.bat` extension. You can update your `~/.bash_profile` with
+  the following function to call melos with arguments:
+
+  ```bash
+  function melos() {
+    melos.bat $@
+  }
+  ```
+</Warning>
+
 ## Setup a workspace
 
 Melos is designed to work with a workspace. A workspace is a directory which
