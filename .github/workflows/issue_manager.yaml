@@ -1,0 +1,49 @@
+name: Issue Manager
+
+on:
+  issue_comment:
+    types: [created]
+  issues:
+    types: [opened]
+
+jobs:
+  label-op-response:
+    if: github.event_name == 'issue_comment'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if the comment is from the OP
+        id: check-op
+        run: |
+          OP=${{ github.event.issue.user.login }}
+          COMMENTER=${{ github.event.comment.user.login }}
+          if [ "$OP" = "$COMMENTER" ]; then
+            echo "op_comment=true" >> $GITHUB_ENV
+          else
+            echo "op_comment=false" >> $GITHUB_ENV
+          fi
+      - name: Add 'needs triage' label if OP responded
+        if: env.op_comment == 'true'
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: 'needs triage'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      - name: Remove 'blocked waiting for response' label if OP responded
+        if: env.op_comment == 'true'
+        uses: actions-ecosystem/action-remove-labels@v1
+        with:
+          labels: 'blocked: waiting for response'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+  label-new-issue:
+    if: github.event.action == 'opened'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Add 'needs triage' label to new issue
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          labels: 'needs triage'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
