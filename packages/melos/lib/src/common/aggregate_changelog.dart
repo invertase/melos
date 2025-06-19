@@ -157,7 +157,9 @@ ${description?.withoutTrailing('\n') ?? ''}
   Future<String> read() async {
     if (fileExists(absolutePath)) {
       final contents = await readTextFileAsync(absolutePath);
-      return contents.replaceFirst(_changelogFileHeader, '');
+      return contents
+          .replaceAll('\r\n', '\n')
+          .replaceFirst(_changelogFileHeader, '');
     }
     return '';
   }
