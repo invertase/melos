@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2025-08-15
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v7.0.0`](#melos---v700)
+
+---
+
+#### `melos` - `v7.0.0`
+
+ - **FIX**: Avoid duplicated "Change Log" file header on Windows due to CRLF (closes [#710](https://github.com/invertase/melos/issues/710)) ([#915](https://github.com/invertase/melos/issues/915)). ([4b840c7d](https://github.com/invertase/melos/commit/4b840c7d090ba6dbddb6473c119f4e02055ddb81))
+
+
 ## 2025-05-25
 
 ### Changes

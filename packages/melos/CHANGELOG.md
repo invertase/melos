@@ -1,3 +1,7 @@
+## 7.0.0
+
+ - **FIX**: Avoid duplicated "Change Log" file header on Windows due to CRLF (closes [#710](https://github.com/invertase/melos/issues/710)) ([#915](https://github.com/invertase/melos/issues/915)). ([4b840c7d](https://github.com/invertase/melos/commit/4b840c7d090ba6dbddb6473c119f4e02055ddb81))
+
 ## 7.0.0-dev.9
 
  - **FIX**: Update to Dart SDK 3.8.0 and preserve trailing commas ([#908](https://github.com/invertase/melos/issues/908)). ([eecfa4ea](https://github.com/invertase/melos/commit/eecfa4ea7caff55a58ad98d712213320285a0039))
