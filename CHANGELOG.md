@@ -3,6 +3,50 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2025-08-15
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - [`melos` - `v7.0.0`](#melos---v700)
+
+---
+
+#### `melos` - `v7.0.0`
+This version has all the changes from the `7.0.0-dev.x` releases, and is the first stable release
+of Melos that uses the Pub workspaces feature.
+
+> Note: This release has breaking changes.
+
+- **FIX**: Update to Dart SDK 3.8.0 and preserve trailing commas ([#908](https://github.com/invertase/melos/issues/908)). ([eecfa4ea](https://github.com/invertase/melos/commit/eecfa4ea7caff55a58ad98d712213320285a0039))
+- **FIX**: Tags from origin should be source of truth ([#902](https://github.com/invertase/melos/issues/902)). ([9589803c](https://github.com/invertase/melos/commit/9589803c6bba66a65aa1263c0028d6f66f31c0b2))
+- **DOCS**: add flutter_chat_ui ([#903](https://github.com/invertase/melos/issues/903)). ([190caf74](https://github.com/invertase/melos/commit/190caf741280401385fc0a6e309419c1d5e37417))
+- **DOCS**: add starknet.dart in projects list ([#896](https://github.com/invertase/melos/issues/896)). ([9faa3152](https://github.com/invertase/melos/commit/9faa3152547235e13225caf97c75b2e27c9d1980))
+- **FIX**: Fail early on steps and return error code ([#891](https://github.com/invertase/melos/issues/891)). ([7161ce8f](https://github.com/invertase/melos/commit/7161ce8fd8703b628c798cd17abc933817338110))
+- **DOCS**: add jaspr to projects ([#881](https://github.com/invertase/melos/issues/881)). ([926b6215](https://github.com/invertase/melos/commit/926b62158b5d400fdbd2f9c342b379e0545f04f9))
+- **DOCS**: Add Stac to the list of projects using Melos. ([#864](https://github.com/invertase/melos/issues/864)). ([8838863e](https://github.com/invertase/melos/commit/8838863ef167af59ab462080b8ff586628e84c8f))
+- **FIX**: Remove old pubspec_overrides entries on `clean` ([#861](https://github.com/invertase/melos/issues/861)). ([d5a6ea67](https://github.com/invertase/melos/commit/d5a6ea678f31d38ed19b441ea31ac0d83a8ee789))
+- **DOCS**: add ReactiveX/rxdart to README and docs ([#859](https://github.com/invertase/melos/issues/859)). ([303883b6](https://github.com/invertase/melos/commit/303883b6af807ac077b58db3099c704f257e908a))
+- **REFACTOR**: optimize clean command by precomputing paths to clean ([#855](https://github.com/invertase/melos/issues/855)). ([daba40d4](https://github.com/invertase/melos/commit/daba40d47a13999a9c5ca389a4a389afea931e91))
+- **FIX**: Melos init adding empty string / list in pubspec.yaml ([#856](https://github.com/invertase/melos/issues/856)). ([50b102b3](https://github.com/invertase/melos/commit/50b102b3dd1e1b24e56006bdc9761ebbc94a97d7))
+- **FIX**: Fix externally hosted versioning ([#852](https://github.com/invertase/melos/issues/852)). ([40476ed5](https://github.com/invertase/melos/commit/40476ed51dfbc669d83223dd7b067174d2ac0abc))
+- **FEAT**: Add support for executeInTerminal for IntelliJ run configs ([#857](https://github.com/invertase/melos/issues/857)). ([b6acf504](https://github.com/invertase/melos/commit/b6acf5040d98405f2c67846d0c55c47dae6b1b02))
+- **FEAT**: Rollback on failed shared dependency resolution ([#848](https://github.com/invertase/melos/issues/848)). ([949c2f6c](https://github.com/invertase/melos/commit/949c2f6c77b6bae92e29a03fc452417b558010f0))
+- **DOCS**: Rearrange repos using melos ([#845](https://github.com/invertase/melos/issues/845)). ([f744da86](https://github.com/invertase/melos/commit/f744da860c5fde166f16c624f5cf5058c62d4370))
+- **FIX**: Version package correctly ([#842](https://github.com/invertase/melos/issues/842)). ([a9fde62b](https://github.com/invertase/melos/commit/a9fde62bb2ae5a8599b72a7d792170995db9d64c))
+- **FIX**: Properly format Git and HostedDependency ([#841](https://github.com/invertase/melos/issues/841)). ([a699139a](https://github.com/invertase/melos/commit/a699139aa1d984010b40ae12f2a14bd994df7b7c))
+- **FIX**: Run examples from own directory ([#834](https://github.com/invertase/melos/issues/834)). ([e4ade765](https://github.com/invertase/melos/commit/e4ade765dfa4cf5f791cf22993474693230fd3d0))
+- **FIX**: fix git dependencies comparison on bootstrap ([#659](https://github.com/invertase/melos/issues/659)). ([c5238cd0](https://github.com/invertase/melos/commit/c5238cd0eed8723e053717c21baa9361ccff7733))
+- **FIX**: Fixed versioning for nested version fields ([#831](https://github.com/invertase/melos/issues/831)). ([4def2093](https://github.com/invertase/melos/commit/4def20937be9f50c28630c40a069475da8223a40))
+- **BREAKING** **FEAT**: Remove melos.yaml in favor of the root pubspec.yaml ([#832](https://github.com/invertase/melos/issues/832)). ([ade758c2](https://github.com/invertase/melos/commit/ade758c23fee626ae60a275eddfde04fd73187af))
+- **FIX**: Relaxing file and platform dependency constraints
+- **FIX**: Only run pub get in workspace root ([#822](https://github.com/invertase/melos/issues/822)). ([abb1e539](https://github.com/invertase/melos/commit/abb1e539fc7d036d786a5740317080f5d70f63b9))
+- **BREAKING** **FEAT**: Migrate to use the Pub workspaces feature ([#816](https://github.com/invertase/melos/issues/816)). ([3602d904](https://github.com/invertase/melos/commit/3602d904fbde7f3fc7d918ab8413483efef42b20))
+
+
 ## 2025-05-25
 
 ### Changes
