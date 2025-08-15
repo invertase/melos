@@ -23,7 +23,7 @@ After the migration your root `pubspec.yaml` file would now look something like 
 name: my_workspace
 publish_to: none
 environment:
-  sdk: ^3.8.0
+  sdk: ^3.9.0
 workspace:
   - packages/helper
   - packages/client_package
@@ -41,12 +41,14 @@ And this is what the `pubspec.yaml` file of a package would look like:
 ```yaml
 name: my_package
 environment:
-  sdk: ^3.8.0
+  sdk: ^3.9.0
 resolution: workspace
 ```
 
 > [!NOTE]
-> You have to use Dart SDK 3.6.0 or newer to use pub workspaces.
+> You have to use Dart SDK 3.9.0 or newer to use pub workspaces reliably.
+> If you are using an older version of the Dart SDK, you can still use Melos
+> with pub workspaces, but then you have to rely on the `7.0.0-dev.x` versions.
 
 ## 3.0.0 to 4.0.0
 
