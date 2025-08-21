@@ -5,6 +5,7 @@ import 'package:melos/melos.dart';
 import 'package:melos/src/common/http.dart';
 import 'package:melos/src/common/pub_credential.dart';
 import 'package:melos/src/package.dart';
+import 'package:path/path.dart' as p;
 import 'package:platform/platform.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
@@ -482,6 +483,93 @@ void main() {
         combined['conflicting_name']!.path,
         '/test/packages/conflicting_name',
       );
+    });
+
+    test('preserves categories from root package', () async {
+      final logger = TestLogger().toMelosLogger();
+
+      // Create packages map manually
+      final packageA = Package(
+        name: 'package_a',
+        path: '/test/packages/package_a',
+        pathRelativeToWorkspace: 'packages/package_a',
+        version: Version.parse('1.0.0'),
+        publishTo: null,
+        packageMap: {},
+        dependencies: [],
+        devDependencies: [],
+        dependencyOverrides: [],
+        pubspec: Pubspec('package_a'),
+        categories: ['packages'],
+      );
+
+      final originalPackages = PackageMap({
+        'package_a': packageA,
+      }, logger);
+
+      final rootPackage = Package(
+        name: 'root_package',
+        path: '/test',
+        pathRelativeToWorkspace: '.',
+        version: Version.parse('1.0.0'),
+        publishTo: null,
+        packageMap: {},
+        dependencies: [],
+        devDependencies: [],
+        dependencyOverrides: [],
+        pubspec: Pubspec('root_package'),
+        categories: ['app'], // root package already has categories
+      );
+
+      final combined = PackageMap.combineWithRoot(
+        originalPackages,
+        rootPackage,
+      );
+
+      expect(combined.length, 2);
+      expect(combined.keys, contains('root_package'));
+      
+      // Check that root package categories are preserved
+      final rootPkg = combined['root_package']!;
+      expect(rootPkg.categories, contains('app'));
+      expect(rootPkg.categories, hasLength(1));
+    });
+  });
+
+  group('PackageMap.resolveRootPackage', () {
+    test('assigns categories to root package based on workspace configuration', () async {
+      final logger = TestLogger().toMelosLogger();
+      final tempDir = await createTemporaryWorkspace(workspacePackages: []);
+
+      // Create a pubspec.yaml for the root package
+      final rootPubspec = File(p.join(tempDir.path, 'pubspec.yaml'));
+      await rootPubspec.writeAsString('''
+name: test_workspace
+environment:
+  sdk: ^3.0.0
+''');
+
+      // Define categories that should match the root package
+      final workspaceCategories = {
+        'app': [Glob('.')],
+        'backend': [Glob('backend/**')],
+        'packages': [Glob('packages/**')],
+      };
+
+      final rootPackage = await PackageMap.resolveRootPackage(
+        workspacePath: tempDir.path,
+        logger: logger,
+        categories: workspaceCategories,
+      );
+
+      expect(rootPackage.name, 'test_workspace');
+      expect(rootPackage.categories, contains('app'));
+      expect(rootPackage.categories, hasLength(1));
+      expect(rootPackage.categories, isNot(contains('backend')));
+      expect(rootPackage.categories, isNot(contains('packages')));
+
+      // Cleanup
+      await tempDir.delete(recursive: true);
     });
   });
 }

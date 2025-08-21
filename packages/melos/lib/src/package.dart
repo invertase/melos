@@ -515,6 +515,7 @@ class PackageMap {
   static Future<Package> resolveRootPackage({
     required String workspacePath,
     required MelosLogger logger,
+    Map<String, List<Glob>> categories = const {},
   }) async {
     return PackageMap.resolvePackages(
       workspacePath: workspacePath,
@@ -522,7 +523,7 @@ class PackageMap {
         createGlob('.', currentDirectoryPath: workspacePath),
       ],
       ignore: [],
-      categories: {},
+      categories: categories,
       logger: logger,
     ).then((packageMap) => packageMap.values.first);
   }

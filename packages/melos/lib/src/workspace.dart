@@ -65,6 +65,7 @@ class MelosWorkspace {
     final rootPackage = await PackageMap.resolveRootPackage(
       workspacePath: workspaceConfig.path,
       logger: logger,
+      categories: workspaceConfig.categories,
     );
 
     // Combine root package with workspace packages if enabled
