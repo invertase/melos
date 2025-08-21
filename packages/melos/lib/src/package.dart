@@ -596,6 +596,28 @@ The packages that caused the problem are:
     return PackageMap(packageMap, logger);
   }
 
+  /// Combines a [PackageMap] with a root package if the root package 
+  /// name doesn't conflict with existing packages.
+  // ignore: prefer_constructors_over_static_methods
+  static PackageMap combineWithRoot(
+    PackageMap packages, 
+    Package rootPackage,
+  ) {
+    final combinedMap = Map<String, Package>.from(packages._map);
+    
+    if (!combinedMap.containsKey(rootPackage.name)) {
+      combinedMap[rootPackage.name] = rootPackage;
+    } else {
+      packages._logger.warning(
+        'Root package "${rootPackage.name}" has the same name as an existing '
+        'workspace package. Root package will be ignored. Consider renaming '
+        'one of the packages to avoid this conflict.',
+      );
+    }
+    
+    return PackageMap(combinedMap, packages._logger);
+  }
+
   static Future<List<File>> _resolvePubspecFiles({
     required String workspacePath,
     required List<Glob> packages,

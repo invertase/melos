@@ -354,6 +354,136 @@ void main() {
       });
     });
   });
+
+  group('PackageMap.combineWithRoot', () {
+    test('adds root package when no name conflict', () async {
+      final logger = TestLogger().toMelosLogger();
+
+      // Create packages map manually
+      final packageA = Package(
+        name: 'package_a',
+        path: '/test/packages/package_a',
+        pathRelativeToWorkspace: 'packages/package_a',
+        version: Version.parse('1.0.0'),
+        publishTo: null,
+        packageMap: {},
+        dependencies: [],
+        devDependencies: [],
+        dependencyOverrides: [],
+        pubspec: Pubspec('package_a'),
+        categories: [],
+      );
+
+      final packageB = Package(
+        name: 'package_b',
+        path: '/test/packages/package_b',
+        pathRelativeToWorkspace: 'packages/package_b',
+        version: Version.parse('1.0.0'),
+        publishTo: null,
+        packageMap: {},
+        dependencies: [],
+        devDependencies: [],
+        dependencyOverrides: [],
+        pubspec: Pubspec('package_b'),
+        categories: [],
+      );
+
+      final originalPackages = PackageMap({
+        'package_a': packageA,
+        'package_b': packageB,
+      }, logger);
+
+      final rootPackage = Package(
+        name: 'root_package',
+        path: '/test',
+        pathRelativeToWorkspace: '.',
+        version: Version.parse('1.0.0'),
+        publishTo: null,
+        packageMap: {},
+        dependencies: [],
+        devDependencies: [],
+        dependencyOverrides: [],
+        pubspec: Pubspec('root_package'),
+        categories: [],
+      );
+
+      final combined = PackageMap.combineWithRoot(
+        originalPackages,
+        rootPackage,
+      );
+
+      expect(combined.length, 3);
+      expect(combined.keys, contains('root_package'));
+      expect(combined.keys, contains('package_a'));
+      expect(combined.keys, contains('package_b'));
+    });
+
+    test('ignores root package when name conflicts', () async {
+      final logger = TestLogger().toMelosLogger();
+
+      // Create packages map with conflicting name
+      final conflictingPackage = Package(
+        name: 'conflicting_name',
+        path: '/test/packages/conflicting_name',
+        pathRelativeToWorkspace: 'packages/conflicting_name',
+        version: Version.parse('1.0.0'),
+        publishTo: null,
+        packageMap: {},
+        dependencies: [],
+        devDependencies: [],
+        dependencyOverrides: [],
+        pubspec: Pubspec('conflicting_name'),
+        categories: [],
+      );
+
+      final packageB = Package(
+        name: 'package_b',
+        path: '/test/packages/package_b',
+        pathRelativeToWorkspace: 'packages/package_b',
+        version: Version.parse('1.0.0'),
+        publishTo: null,
+        packageMap: {},
+        dependencies: [],
+        devDependencies: [],
+        dependencyOverrides: [],
+        pubspec: Pubspec('package_b'),
+        categories: [],
+      );
+
+      final originalPackages = PackageMap({
+        'conflicting_name': conflictingPackage,
+        'package_b': packageB,
+      }, logger);
+
+      final rootPackage = Package(
+        name: 'conflicting_name',
+        path: '/test',
+        pathRelativeToWorkspace: '.',
+        version: Version.parse('1.0.0'),
+        publishTo: null,
+        packageMap: {},
+        dependencies: [],
+        devDependencies: [],
+        dependencyOverrides: [],
+        pubspec: Pubspec('conflicting_name'),
+        categories: [],
+      );
+
+      final combined = PackageMap.combineWithRoot(
+        originalPackages,
+        rootPackage,
+      );
+
+      expect(combined.length, 2);
+      expect(combined.keys, contains('conflicting_name'));
+      expect(combined.keys, contains('package_b'));
+      // Ensure the workspace package is kept, not the root package
+      expect(
+        combined['conflicting_name']!.path,
+        '/test/packages/conflicting_name',
+      );
+    });
+  });
 }
 
 void testDependencyVersionReplaceRegex(String version) {

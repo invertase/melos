@@ -224,6 +224,7 @@ class MelosWorkspaceConfig {
     this.scripts = Scripts.empty,
     this.ide = IDEConfigs.empty,
     this.commands = CommandConfigs.empty,
+    this.useRootAsPackage = false,
   }) {
     _validate();
   }
@@ -351,6 +352,11 @@ class MelosWorkspaceConfig {
       map: melosYaml,
     );
 
+    final useRootAsPackage = assertKeyIsA<bool?>(
+      key: 'use_root_as_package',
+      map: melosYaml,
+    ) ?? false;
+
     return MelosWorkspaceConfig(
       path: path,
       name: name,
@@ -379,6 +385,7 @@ class MelosWorkspaceConfig {
               workspacePath: path,
               repositoryIsConfigured: repository != null,
             ),
+      useRootAsPackage: useRootAsPackage,
     );
   }
 
@@ -388,17 +395,20 @@ class MelosWorkspaceConfig {
         packages: [],
         path: Directory.current.path,
         commands: CommandConfigs.empty,
+        useRootAsPackage: false,
       );
 
   @visibleForTesting
   MelosWorkspaceConfig.emptyWith({
     String? name,
     String? path,
+    bool? useRootAsPackage,
   }) : this(
          name: name ?? 'Melos',
          packages: [],
          path: path ?? Directory.current.path,
          commands: CommandConfigs.empty,
+         useRootAsPackage: useRootAsPackage ?? false,
        );
 
   /// Loads the [MelosWorkspaceConfig] for the workspace at [workspaceRoot].
@@ -547,6 +557,10 @@ class MelosWorkspaceConfig {
   /// the command line option or the environment variable.
   final String? sdkPath;
 
+  /// Whether to include the repository root as a package in the workspace.
+  /// Defaults to false.
+  final bool useRootAsPackage;
+
   /// Validates this workspace configuration for consistency.
   void _validate() {
     final workspaceDir = Directory(path);
@@ -581,6 +595,8 @@ class MelosWorkspaceConfig {
       other.path == path &&
       other.name == name &&
       other.repository == repository &&
+      other.sdkPath == sdkPath &&
+      other.useRootAsPackage == useRootAsPackage &&
       const DeepCollectionEquality(
         GlobEquality(),
       ).equals(other.packages, packages) &&
@@ -597,6 +613,8 @@ class MelosWorkspaceConfig {
       path.hashCode ^
       name.hashCode ^
       repository.hashCode ^
+      sdkPath.hashCode ^
+      useRootAsPackage.hashCode ^
       const DeepCollectionEquality(GlobEquality()).hash(packages) &
           const DeepCollectionEquality(GlobEquality()).hash(ignore) ^
       scripts.hashCode ^
@@ -607,6 +625,8 @@ class MelosWorkspaceConfig {
     return {
       'melos': {
         if (repository != null) 'repository': repository!,
+        if (sdkPath != null) 'sdkPath': sdkPath!,
+        if (useRootAsPackage) 'use_root_as_package': useRootAsPackage,
         'categories': categories.map((category, packages) {
           return MapEntry(
             category,
@@ -633,6 +653,8 @@ MelosWorkspaceConfig(
   path: $path,
   name: $name,
   repository: $repository,
+  sdkPath: $sdkPath,
+  useRootAsPackage: $useRootAsPackage,
   categories: $categories,
   packages: $packages,
   ignore: $ignore,
