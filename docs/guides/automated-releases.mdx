@@ -144,9 +144,9 @@ This behavior can be disabled by passing `--no-git-tag-version`.
 #### Hook
 
 After updating `pubspec.yaml` files and changelogs but before creating the
-version commit, the `command/version/hooks/preCommit` script in `melos.yaml` is
-executed. This allows you to run custom code before the version commit is
-created.
+version commit, the `command/version/hooks/preCommit` script in root
+`pubspec.yaml` is executed. This allows you to run custom code before the
+version commit is created.
 
 Note that you have to stage changes that you make in the hook and want to have
 included in the version commit yourself.
@@ -200,12 +200,13 @@ melos version --release-url
 melos version -r
 ```
 
-To enable this feature permanently, add the following to your `melos.yaml`:
+To enable this feature permanently, add the following to your root `pubspec.yaml`:
 
 ```yaml
-command:
-  version:
-    releaseUrl: true
+melos:
+  command:
+    version:
+      releaseUrl: true
 ```
 
 ## Git Hosted Packages
@@ -217,7 +218,7 @@ accordingly.
 
 To use this feature enable
 [`command/version/updateGitTagRefs`](/configuration/overview#updategittagrefs)
-in `melos.yaml`
+in your root `pubspec.yaml`
 
 Take the following git dependency:
 

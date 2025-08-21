@@ -59,10 +59,11 @@ The command to execute.
 
 ## steps
 
-Enables the combination of multiple scripts within a single script definition
-for complex workflows. In the example below, the pre-commit script is
+Steps enables the combination of multiple scripts within a single script
+definition for complex workflows. In the example below, the pre-commit script is
 configured to sequentially invoke a simple command echo 'hello world',
-followed by Melos commands: format and analyze, each with specific arguments.
+followed by the Melos command to format your workspace and a command to run
+tests through Dart, each command with their specific arguments.
 
 ```yaml
 scripts:
@@ -71,7 +72,7 @@ scripts:
     steps:
       - echo 'hello world'
       - format --output none --set-exit-if-changed
-      - analyze --fatal-infos
+      - dart test --fail-fast .
 ```
 
 Note: When utilizing the `steps`, it's important to understand that options 

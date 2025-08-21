@@ -44,19 +44,20 @@ melos clean --flutter
 ## Adding a postclean lifecycle script
 
 Melos supports various command lifecycle hooks that can be defined in your
-`melos.yaml`.
+root `pubspec.yaml`.
 
 For example, if you needed to cleanup any generated files, e.g. from a build
 runner, automatically after `melos clean` is ran, you can add a `post` hook
 script.
 
 ```yaml
-# melos.yaml
+# root pubspec.yaml
 # ...
-command:
-  clean:
-    hooks:
-      post: rm packages/foo/lib/src/generated_file.g.dart
+melos:
+  command:
+    clean:
+      hooks:
+        post: rm packages/foo/lib/src/generated_file.g.dart
 # ...
 ```
 
