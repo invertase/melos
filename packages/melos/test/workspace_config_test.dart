@@ -767,6 +767,61 @@ void main() {
         expect(repository.owner, 'invertase');
         expect(repository.name, 'melos');
       });
+
+      test('useRootAsPackage defaults to false', () async {
+        final workspace = await createTemporaryWorkspace(workspacePackages: []);
+        final config = MelosWorkspaceConfig.fromYaml(
+          createYamlMap({}, defaults: configMapDefaults),
+          path: workspace.path,
+        );
+
+        expect(config.useRootAsPackage, false);
+      });
+
+      test('useRootAsPackage can be set to true', () async {
+        final workspace = await createTemporaryWorkspace(workspacePackages: []);
+        final config = MelosWorkspaceConfig.fromYaml(
+          createYamlMap(
+            {
+              'melos': {'useRootAsPackage': true},
+            },
+            defaults: configMapDefaults,
+          ),
+          path: workspace.path,
+        );
+
+        expect(config.useRootAsPackage, true);
+      });
+
+      test('useRootAsPackage can be set to false explicitly', () async {
+        final workspace = await createTemporaryWorkspace(workspacePackages: []);
+        final config = MelosWorkspaceConfig.fromYaml(
+          createYamlMap(
+            {
+              'melos': {'useRootAsPackage': false},
+            },
+            defaults: configMapDefaults,
+          ),
+          path: workspace.path,
+        );
+
+        expect(config.useRootAsPackage, false);
+      });
+
+      test('throws if useRootAsPackage is not a boolean', () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {
+                'melos': {'useRootAsPackage': 'not_a_bool'},
+              },
+              defaults: configMapDefaults,
+            ),
+            path: testWorkspacePath,
+          ),
+          throwsMelosConfigException(),
+        );
+      });
     });
   });
 }

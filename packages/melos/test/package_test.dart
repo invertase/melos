@@ -5,6 +5,7 @@ import 'package:melos/melos.dart';
 import 'package:melos/src/common/http.dart';
 import 'package:melos/src/common/pub_credential.dart';
 import 'package:melos/src/package.dart';
+import 'package:path/path.dart' as p;
 import 'package:platform/platform.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
@@ -353,6 +354,217 @@ void main() {
         expect(copy.published, filters.published);
       });
     });
+  });
+
+  group('PackageMap.addPackage', () {
+    test('adds package when no name conflict', () async {
+      final logger = TestLogger().toMelosLogger();
+
+      // Create packages map manually
+      final packageA = Package(
+        name: 'package_a',
+        path: '/test/packages/package_a',
+        pathRelativeToWorkspace: 'packages/package_a',
+        version: Version.parse('1.0.0'),
+        publishTo: null,
+        packageMap: {},
+        dependencies: [],
+        devDependencies: [],
+        dependencyOverrides: [],
+        pubspec: Pubspec('package_a'),
+        categories: [],
+      );
+
+      final packageB = Package(
+        name: 'package_b',
+        path: '/test/packages/package_b',
+        pathRelativeToWorkspace: 'packages/package_b',
+        version: Version.parse('1.0.0'),
+        publishTo: null,
+        packageMap: {},
+        dependencies: [],
+        devDependencies: [],
+        dependencyOverrides: [],
+        pubspec: Pubspec('package_b'),
+        categories: [],
+      );
+
+      final originalPackages = PackageMap({
+        'package_a': packageA,
+        'package_b': packageB,
+      }, logger);
+
+      final newPackage = Package(
+        name: 'new_package',
+        path: '/test',
+        pathRelativeToWorkspace: '.',
+        version: Version.parse('1.0.0'),
+        publishTo: null,
+        packageMap: {},
+        dependencies: [],
+        devDependencies: [],
+        dependencyOverrides: [],
+        pubspec: Pubspec('new_package'),
+        categories: [],
+      );
+
+      final combined = originalPackages.addPackage(newPackage);
+
+      expect(combined.length, 3);
+      expect(combined.keys, contains('new_package'));
+      expect(combined.keys, contains('package_a'));
+      expect(combined.keys, contains('package_b'));
+    });
+
+    test('ignores package when name conflicts', () async {
+      final logger = TestLogger().toMelosLogger();
+
+      // Create packages map with conflicting name
+      final conflictingPackage = Package(
+        name: 'conflicting_name',
+        path: '/test/packages/conflicting_name',
+        pathRelativeToWorkspace: 'packages/conflicting_name',
+        version: Version.parse('1.0.0'),
+        publishTo: null,
+        packageMap: {},
+        dependencies: [],
+        devDependencies: [],
+        dependencyOverrides: [],
+        pubspec: Pubspec('conflicting_name'),
+        categories: [],
+      );
+
+      final packageB = Package(
+        name: 'package_b',
+        path: '/test/packages/package_b',
+        pathRelativeToWorkspace: 'packages/package_b',
+        version: Version.parse('1.0.0'),
+        publishTo: null,
+        packageMap: {},
+        dependencies: [],
+        devDependencies: [],
+        dependencyOverrides: [],
+        pubspec: Pubspec('package_b'),
+        categories: [],
+      );
+
+      final originalPackages = PackageMap({
+        'conflicting_name': conflictingPackage,
+        'package_b': packageB,
+      }, logger);
+
+      final newPackage = Package(
+        name: 'conflicting_name',
+        path: '/test',
+        pathRelativeToWorkspace: '.',
+        version: Version.parse('1.0.0'),
+        publishTo: null,
+        packageMap: {},
+        dependencies: [],
+        devDependencies: [],
+        dependencyOverrides: [],
+        pubspec: Pubspec('conflicting_name'),
+        categories: [],
+      );
+
+      final combined = originalPackages.addPackage(newPackage);
+
+      expect(combined.length, 2);
+      expect(combined.keys, contains('conflicting_name'));
+      expect(combined.keys, contains('package_b'));
+      // Ensure the original package is kept, not the new package
+      expect(
+        combined['conflicting_name']!.path,
+        '/test/packages/conflicting_name',
+      );
+    });
+
+    test('preserves categories from added package', () async {
+      final logger = TestLogger().toMelosLogger();
+
+      // Create packages map manually
+      final packageA = Package(
+        name: 'package_a',
+        path: '/test/packages/package_a',
+        pathRelativeToWorkspace: 'packages/package_a',
+        version: Version.parse('1.0.0'),
+        publishTo: null,
+        packageMap: {},
+        dependencies: [],
+        devDependencies: [],
+        dependencyOverrides: [],
+        pubspec: Pubspec('package_a'),
+        categories: ['packages'],
+      );
+
+      final originalPackages = PackageMap({
+        'package_a': packageA,
+      }, logger);
+
+      final newPackage = Package(
+        name: 'new_package',
+        path: '/test',
+        pathRelativeToWorkspace: '.',
+        version: Version.parse('1.0.0'),
+        publishTo: null,
+        packageMap: {},
+        dependencies: [],
+        devDependencies: [],
+        dependencyOverrides: [],
+        pubspec: Pubspec('new_package'),
+        categories: ['app'], // package already has categories
+      );
+
+      final combined = originalPackages.addPackage(newPackage);
+
+      expect(combined.length, 2);
+      expect(combined.keys, contains('new_package'));
+
+      // Check that package categories are preserved
+      final newPkg = combined['new_package']!;
+      expect(newPkg.categories, contains('app'));
+      expect(newPkg.categories, hasLength(1));
+    });
+  });
+
+  group('PackageMap.resolveRootPackage', () {
+    test(
+      'assigns categories to root package based on workspace configuration',
+      () async {
+        final logger = TestLogger().toMelosLogger();
+        final tempDir = await createTemporaryWorkspace(workspacePackages: []);
+
+        // Create a pubspec.yaml for the root package
+        final rootPubspec = File(p.join(tempDir.path, 'pubspec.yaml'));
+        await rootPubspec.writeAsString('''
+name: test_workspace
+environment:
+  sdk: ^3.0.0
+''');
+
+        // Define categories that should match the root package
+        final workspaceCategories = {
+          'app': [Glob('.')],
+          'backend': [Glob('backend/**')],
+          'packages': [Glob('packages/**')],
+        };
+
+        final rootPackage = await PackageMap.resolveRootPackage(
+          workspacePath: tempDir.path,
+          logger: logger,
+          categories: workspaceCategories,
+        );
+
+        expect(rootPackage.name, 'test_workspace');
+        expect(rootPackage.categories, contains('app'));
+        expect(rootPackage.categories, hasLength(1));
+        expect(rootPackage.categories, isNot(contains('backend')));
+        expect(rootPackage.categories, isNot(contains('packages')));
+
+        // Cleanup
+        await tempDir.delete(recursive: true);
+      },
+    );
   });
 }
 
