@@ -519,7 +519,7 @@ void main() {
 
       expect(combined.length, 2);
       expect(combined.keys, contains('new_package'));
-      
+
       // Check that package categories are preserved
       final newPkg = combined['new_package']!;
       expect(newPkg.categories, contains('app'));
@@ -528,40 +528,43 @@ void main() {
   });
 
   group('PackageMap.resolveRootPackage', () {
-    test('assigns categories to root package based on workspace configuration', () async {
-      final logger = TestLogger().toMelosLogger();
-      final tempDir = await createTemporaryWorkspace(workspacePackages: []);
+    test(
+      'assigns categories to root package based on workspace configuration',
+      () async {
+        final logger = TestLogger().toMelosLogger();
+        final tempDir = await createTemporaryWorkspace(workspacePackages: []);
 
-      // Create a pubspec.yaml for the root package
-      final rootPubspec = File(p.join(tempDir.path, 'pubspec.yaml'));
-      await rootPubspec.writeAsString('''
+        // Create a pubspec.yaml for the root package
+        final rootPubspec = File(p.join(tempDir.path, 'pubspec.yaml'));
+        await rootPubspec.writeAsString('''
 name: test_workspace
 environment:
   sdk: ^3.0.0
 ''');
 
-      // Define categories that should match the root package
-      final workspaceCategories = {
-        'app': [Glob('.')],
-        'backend': [Glob('backend/**')],
-        'packages': [Glob('packages/**')],
-      };
+        // Define categories that should match the root package
+        final workspaceCategories = {
+          'app': [Glob('.')],
+          'backend': [Glob('backend/**')],
+          'packages': [Glob('packages/**')],
+        };
 
-      final rootPackage = await PackageMap.resolveRootPackage(
-        workspacePath: tempDir.path,
-        logger: logger,
-        categories: workspaceCategories,
-      );
+        final rootPackage = await PackageMap.resolveRootPackage(
+          workspacePath: tempDir.path,
+          logger: logger,
+          categories: workspaceCategories,
+        );
 
-      expect(rootPackage.name, 'test_workspace');
-      expect(rootPackage.categories, contains('app'));
-      expect(rootPackage.categories, hasLength(1));
-      expect(rootPackage.categories, isNot(contains('backend')));
-      expect(rootPackage.categories, isNot(contains('packages')));
+        expect(rootPackage.name, 'test_workspace');
+        expect(rootPackage.categories, contains('app'));
+        expect(rootPackage.categories, hasLength(1));
+        expect(rootPackage.categories, isNot(contains('backend')));
+        expect(rootPackage.categories, isNot(contains('packages')));
 
-      // Cleanup
-      await tempDir.delete(recursive: true);
-    });
+        // Cleanup
+        await tempDir.delete(recursive: true);
+      },
+    );
   });
 }
 
