@@ -59,10 +59,12 @@ To migrate to Melos 7.x.x a few steps are needed:
 > so that the team can prioritize this feature.
 
 > [!NOTE]
-> **Root packages migration:** If your existing project uses the repository root as a package, 
-> you can enable `useRootAsPackage: true` in the melos configuration 
-> to maintain this behavior, or restructure your project to move the main 
-> application to a subdirectory. See the [Configuration Overview](https://melos.invertase.dev/~melos-latest/configuration/overview#useRootAsPackage) for details.
+> **Root packages migration:** If your existing project uses the repository
+> root as a package, you can enable `useRootAsPackage: true` in the melos
+> configuration to maintain this behavior, or restructure your project to
+> move the main application to a subdirectory. See the
+> [Configuration Overview](https://melos.invertase.dev/~melos-latest/configuration/overview#useRootAsPackage)
+> for details.
 
 After the migration, your root `pubspec.yaml` file would now look something
 like this:
