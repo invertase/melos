@@ -598,12 +598,12 @@ The packages that caused the problem are:
   }
 
   /// Adds a package to this PackageMap, returning a new PackageMap.
-  /// 
+  ///
   /// If a package with the same name already exists, a warning is logged
   /// and the existing package is kept.
   PackageMap addPackage(Package package) {
     final combinedMap = Map<String, Package>.from(_map);
-    
+
     if (!combinedMap.containsKey(package.name)) {
       combinedMap[package.name] = package;
     } else {
@@ -613,7 +613,7 @@ The packages that caused the problem are:
         'one of the packages to avoid this conflict.',
       );
     }
-    
+
     return PackageMap(combinedMap, _logger);
   }
 

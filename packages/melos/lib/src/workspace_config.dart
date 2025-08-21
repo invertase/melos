@@ -352,10 +352,12 @@ class MelosWorkspaceConfig {
       map: melosYaml,
     );
 
-    final useRootAsPackage = assertKeyIsA<bool?>(
-      key: 'useRootAsPackage',
-      map: melosYaml,
-    ) ?? false;
+    final useRootAsPackage =
+        assertKeyIsA<bool?>(
+          key: 'useRootAsPackage',
+          map: melosYaml,
+        ) ??
+        false;
 
     return MelosWorkspaceConfig(
       path: path,

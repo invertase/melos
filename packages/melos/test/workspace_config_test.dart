@@ -774,7 +774,7 @@ void main() {
           createYamlMap({}, defaults: configMapDefaults),
           path: workspace.path,
         );
-        
+
         expect(config.useRootAsPackage, false);
       });
 
@@ -782,12 +782,14 @@ void main() {
         final workspace = await createTemporaryWorkspace(workspacePackages: []);
         final config = MelosWorkspaceConfig.fromYaml(
           createYamlMap(
-            {'melos': {'useRootAsPackage': true}},
+            {
+              'melos': {'useRootAsPackage': true},
+            },
             defaults: configMapDefaults,
           ),
           path: workspace.path,
         );
-        
+
         expect(config.useRootAsPackage, true);
       });
 
@@ -795,12 +797,14 @@ void main() {
         final workspace = await createTemporaryWorkspace(workspacePackages: []);
         final config = MelosWorkspaceConfig.fromYaml(
           createYamlMap(
-            {'melos': {'useRootAsPackage': false}},
+            {
+              'melos': {'useRootAsPackage': false},
+            },
             defaults: configMapDefaults,
           ),
           path: workspace.path,
         );
-        
+
         expect(config.useRootAsPackage, false);
       });
 
@@ -808,7 +812,9 @@ void main() {
         expect(
           () => MelosWorkspaceConfig.fromYaml(
             createYamlMap(
-              {'melos': {'useRootAsPackage': 'not_a_bool'}},
+              {
+                'melos': {'useRootAsPackage': 'not_a_bool'},
+              },
               defaults: configMapDefaults,
             ),
             path: testWorkspacePath,
