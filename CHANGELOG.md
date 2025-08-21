@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2025-08-21
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v7.1.0`](#melos---v710)
+
+---
+
+#### `melos` - `v7.1.0`
+
+ - **FEAT**: Add useRootAsPackage for Melos 7.x root package support ([#927](https://github.com/invertase/melos/issues/927)). ([ade8443d](https://github.com/invertase/melos/commit/ade8443d7194dc3c6caa124467eb6af498364974))
+
+
 ## 2025-08-15
 
 ### Changes

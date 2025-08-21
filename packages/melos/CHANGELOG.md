@@ -1,3 +1,7 @@
+## 7.1.0
+
+ - **FEAT**: Add useRootAsPackage for Melos 7.x root package support ([#927](https://github.com/invertase/melos/issues/927)). ([ade8443d](https://github.com/invertase/melos/commit/ade8443d7194dc3c6caa124467eb6af498364974))
+
 ## 7.0.0
 
 This version has all the changes from the `7.0.0-dev.x` releases, and is the first stable release
