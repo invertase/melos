@@ -353,7 +353,7 @@ class MelosWorkspaceConfig {
     );
 
     final useRootAsPackage = assertKeyIsA<bool?>(
-      key: 'use_root_as_package',
+      key: 'useRootAsPackage',
       map: melosYaml,
     ) ?? false;
 
@@ -626,7 +626,7 @@ class MelosWorkspaceConfig {
       'melos': {
         if (repository != null) 'repository': repository!,
         if (sdkPath != null) 'sdkPath': sdkPath!,
-        if (useRootAsPackage) 'use_root_as_package': useRootAsPackage,
+        if (useRootAsPackage) 'useRootAsPackage': useRootAsPackage,
         'categories': categories.map((category, packages) {
           return MapEntry(
             category,
