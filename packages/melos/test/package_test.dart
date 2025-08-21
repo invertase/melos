@@ -356,8 +356,8 @@ void main() {
     });
   });
 
-  group('PackageMap.combineWithRoot', () {
-    test('adds root package when no name conflict', () async {
+  group('PackageMap.addPackage', () {
+    test('adds package when no name conflict', () async {
       final logger = TestLogger().toMelosLogger();
 
       // Create packages map manually
@@ -394,8 +394,8 @@ void main() {
         'package_b': packageB,
       }, logger);
 
-      final rootPackage = Package(
-        name: 'root_package',
+      final newPackage = Package(
+        name: 'new_package',
         path: '/test',
         pathRelativeToWorkspace: '.',
         version: Version.parse('1.0.0'),
@@ -404,22 +404,19 @@ void main() {
         dependencies: [],
         devDependencies: [],
         dependencyOverrides: [],
-        pubspec: Pubspec('root_package'),
+        pubspec: Pubspec('new_package'),
         categories: [],
       );
 
-      final combined = PackageMap.combineWithRoot(
-        originalPackages,
-        rootPackage,
-      );
+      final combined = originalPackages.addPackage(newPackage);
 
       expect(combined.length, 3);
-      expect(combined.keys, contains('root_package'));
+      expect(combined.keys, contains('new_package'));
       expect(combined.keys, contains('package_a'));
       expect(combined.keys, contains('package_b'));
     });
 
-    test('ignores root package when name conflicts', () async {
+    test('ignores package when name conflicts', () async {
       final logger = TestLogger().toMelosLogger();
 
       // Create packages map with conflicting name
@@ -456,7 +453,7 @@ void main() {
         'package_b': packageB,
       }, logger);
 
-      final rootPackage = Package(
+      final newPackage = Package(
         name: 'conflicting_name',
         path: '/test',
         pathRelativeToWorkspace: '.',
@@ -470,22 +467,19 @@ void main() {
         categories: [],
       );
 
-      final combined = PackageMap.combineWithRoot(
-        originalPackages,
-        rootPackage,
-      );
+      final combined = originalPackages.addPackage(newPackage);
 
       expect(combined.length, 2);
       expect(combined.keys, contains('conflicting_name'));
       expect(combined.keys, contains('package_b'));
-      // Ensure the workspace package is kept, not the root package
+      // Ensure the original package is kept, not the new package
       expect(
         combined['conflicting_name']!.path,
         '/test/packages/conflicting_name',
       );
     });
 
-    test('preserves categories from root package', () async {
+    test('preserves categories from added package', () async {
       final logger = TestLogger().toMelosLogger();
 
       // Create packages map manually
@@ -507,8 +501,8 @@ void main() {
         'package_a': packageA,
       }, logger);
 
-      final rootPackage = Package(
-        name: 'root_package',
+      final newPackage = Package(
+        name: 'new_package',
         path: '/test',
         pathRelativeToWorkspace: '.',
         version: Version.parse('1.0.0'),
@@ -517,22 +511,19 @@ void main() {
         dependencies: [],
         devDependencies: [],
         dependencyOverrides: [],
-        pubspec: Pubspec('root_package'),
-        categories: ['app'], // root package already has categories
+        pubspec: Pubspec('new_package'),
+        categories: ['app'], // package already has categories
       );
 
-      final combined = PackageMap.combineWithRoot(
-        originalPackages,
-        rootPackage,
-      );
+      final combined = originalPackages.addPackage(newPackage);
 
       expect(combined.length, 2);
-      expect(combined.keys, contains('root_package'));
+      expect(combined.keys, contains('new_package'));
       
-      // Check that root package categories are preserved
-      final rootPkg = combined['root_package']!;
-      expect(rootPkg.categories, contains('app'));
-      expect(rootPkg.categories, hasLength(1));
+      // Check that package categories are preserved
+      final newPkg = combined['new_package']!;
+      expect(newPkg.categories, contains('app'));
+      expect(newPkg.categories, hasLength(1));
     });
   });
 

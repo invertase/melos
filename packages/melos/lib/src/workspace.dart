@@ -48,7 +48,7 @@ class MelosWorkspace {
     PackageFilters? packageFilters,
     required MelosLogger logger,
   }) async {
-    var allPackages = await PackageMap.resolvePackages(
+    final packages = await PackageMap.resolvePackages(
       workspacePath: workspaceConfig.path,
       packages: workspaceConfig.packages,
       ignore: workspaceConfig.ignore,
@@ -68,10 +68,10 @@ class MelosWorkspace {
       categories: workspaceConfig.categories,
     );
 
-    // Combine root package with workspace packages if enabled
-    if (workspaceConfig.useRootAsPackage) {
-      allPackages = PackageMap.combineWithRoot(allPackages, rootPackage);
-    }
+    // Add root package to workspace packages if enabled
+    final allPackages = workspaceConfig.useRootAsPackage
+        ? packages.addPackage(rootPackage)
+        : packages;
 
     final filteredPackages = await allPackages.applyFilters(packageFilters);
 
