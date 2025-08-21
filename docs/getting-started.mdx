@@ -126,6 +126,28 @@ melos bootstrap
 If you wonder why bootstrapping is needed you can read more about it in the
 [Bootstrap section](/commands/bootstrap).
 
+## Single package projects (non-monorepo)
+
+Melos can also be used for single package projects to leverage its features
+like versioning, publishing, and changelog generation. This is useful when you
+want to use Melos tools but don't have a monorepo structure.
+
+For single package setup, just add `useRootAsPackage: true` to your 
+`pubspec.yaml`:
+
+```yaml
+name: my_single_package
+publish_to: none
+environment:
+  sdk: ^3.9.0
+
+dev_dependencies:
+  melos: ^7.0.0
+
+melos:
+  useRootAsPackage: true
+```
+
 ## Next steps
 
 Once successfully bootstrapped, you can develop your packages side-by-side with

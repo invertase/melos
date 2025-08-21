@@ -84,10 +84,19 @@ melos:
 - Legacy projects migrating from Melos 6.x that have main application in root
 - Projects where the primary Flutter app lives at repository root
 - When you need to apply category-based filtering to root packages
+- Single package projects (non-monorepo) that want to use Melos features like
+  versioning, publishing, and changelog generation
+
+**Single package setup:**
+For non-monorepo projects, you can use an empty workspace with
+`useRootAsPackage: true`.
+
+This allows you to leverage Melos features like `melos version`,
+`melos publish`, and `melos run` on a single package project.
 
 **Note:** While we recommend keeping the root directory focused on workspace
-configuration, this option provides flexibility for existing project
-structures.
+configuration for monorepos, this option provides flexibility for existing
+project structures and enables single package usage.
 
 ## ignore
 
