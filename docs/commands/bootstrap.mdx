@@ -87,61 +87,63 @@ melos bootstrap --diff="main"
 - The `--enforce-lockfile` flag is used to enforce versions from `.lock` files.
     - Ensure .lock files exist, as failure may occur if they're not checked in.
 - The `--no-enforce-lockfile` flag is used to disregard versions from `.lock`
-  files if `enforce-lockfile` is configured in the `melos.yaml` file.
+  files if `enforce-lockfile` is configured in the root `pubspec.yaml` file.
 - The `--offline` flag is used to only resolve dependencies from the local
   cache by running `pub get` with the `--offline` flag.
 
 
 In addition to the above flags, the `melos bootstrap` command supports a few
-different configurations that can be defined in your `melos.yaml` file.
+different configurations that can be defined in your root `pubspec.yaml` file.
 
 
 ### Shared dependencies
 
 If you want to share dependency versions between your packages in your Melos
 project, just add the dependencies you wish to share between the packages to
-your bootstrap config in your `melos.yaml` file.
+your bootstrap config in your root `pubspec.yaml` file.
 
 If a dependency from `environment`, `dependencies` or `dev_dependencies` in
-your `melos.yaml` exists in a package, the dependency version in this
+your root `pubspec.yaml` exists in a package, the dependency version in this
 package will be updated to match the version defined in your
 bootstrap config every time `melos bootstrap` is run.
 
 ```yaml
-# melos.yaml
+# root pubspec.yaml
 # ...
-command:
-  bootstrap:
-    environment:
-      sdk: ">=3.0.0 <4.0.0"
-      flutter: ">=3.0.0 <4.0.0"
-    dependencies:
-      collection: ^1.18.0
-      integral_isolates: any
-      uni_links2:
-      uni_links_macos:
-        git: https://github.com/SamJakob/uni_links_macos.git
-    
-    dev_dependencies:
-      build_runner: ^2.3.3
+melos:
+  command:
+    bootstrap:
+      environment:
+        sdk: ">=3.0.0 <4.0.0"
+        flutter: ">=3.0.0 <4.0.0"
+      dependencies:
+        collection: ^1.18.0
+        integral_isolates: any
+        uni_links2:
+        uni_links_macos:
+          git: https://github.com/SamJakob/uni_links_macos.git
+
+      dev_dependencies:
+        build_runner: ^2.3.3
 # ...
 ```
 
 ## Adding a post bootstrap lifecycle script
 
 Melos supports various command [lifecycle hooks](/configuration/scripts#hooks)
-that can be defined in your `melos.yaml`.
+that can be defined in your root `pubspec.yaml`.
 
 For example, if you needed to run something such as a build runner automatically
 after `melos bootstrap` is run, you can add a `post` hook script:
 
 ```yaml
-# melos.yaml
+# root pubspec.yaml
 # ...
-command:
-  bootstrap:
-    hooks:
-      post: dart pub run build_runner build
+melos:
+  command:
+    bootstrap:
+      hooks:
+        post: dart pub run build_runner build
 # ...
 ```
 
