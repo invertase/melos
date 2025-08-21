@@ -55,6 +55,53 @@ resolution: workspace
 Since `flutter/dart analyze` now runs in the full pub workspace, the
 `melos analyze` command has been removed,
 
+### Root packages
+
+In Melos 6.x, you could include the repository root (`.`) as a package in the
+workspace by listing it in the `packages` configuration. In Melos 7.x with
+pub workspaces, this behavior is not supported by default.
+
+If your project uses the repository root as a package, you have two options:
+
+#### Option 1: Enable `useRootAsPackage`
+
+Recommended for existing projects.
+
+Add the `useRootAsPackage` option to maintain existing behavior:
+
+```yaml
+# pubspec.yaml
+name: my_workspace
+publish_to: none
+environment:
+  sdk: ^3.9.0
+workspace:
+  - packages/helper
+  - packages/client_package
+
+melos:
+  useRootAsPackage: true
+  categories:
+    app:
+      - "."
+    packages:
+      - "packages/**"
+```
+
+This allows the root package to participate in workspace operations such as
+scripts, filtering, and categorization.
+
+#### Option 2: Restructure (Recommended for new projects)
+
+Move your root application into a subdirectory:
+
+1. Create an `apps/` or `app/` directory
+2. Move your main application code there
+3. Update your workspace configuration accordingly
+
+This approach provides better separation between workspace configuration and
+application code.
+
 ## 3.0.0 to 4.0.0
 
 ### `--no-git-tag-version` behavior change
