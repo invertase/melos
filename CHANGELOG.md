@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2025-09-12
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v7.1.1`](#melos---v711)
+
+---
+
+#### `melos` - `v7.1.1`
+
+ - **FIX**: Allow underscore as packagename ([#936](https://github.com/invertase/melos/issues/936)). ([8cae3163](https://github.com/invertase/melos/commit/8cae3163c886d2baa77750827590989401ea6705))
+
+
 ## 2025-08-21
 
 ### Changes

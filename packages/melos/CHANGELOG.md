@@ -1,3 +1,7 @@
+## 7.1.1
+
+ - **FIX**: Allow underscore as packagename ([#936](https://github.com/invertase/melos/issues/936)). ([8cae3163](https://github.com/invertase/melos/commit/8cae3163c886d2baa77750827590989401ea6705))
+
 ## 7.1.0
 
  - **FEAT**: Add useRootAsPackage for Melos 7.x root package support ([#927](https://github.com/invertase/melos/issues/927)). ([ade8443d](https://github.com/invertase/melos/commit/ade8443d7194dc3c6caa124467eb6af498364974))
