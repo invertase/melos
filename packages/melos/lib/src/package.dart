@@ -51,7 +51,7 @@ final List<String> cleanablePubFilePaths = [
 ];
 
 final _isValidPubPackageNameRegExp = RegExp(
-  r'^[a-z][a-z\d_-]*$',
+  r'^[a-z_][a-z\d_-]*$',
   caseSensitive: false,
 );
 
