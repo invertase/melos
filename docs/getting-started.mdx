@@ -44,8 +44,11 @@ directory must contain a `pubspec.yaml` file defining the workspace.
 
 ### Recommended directory structure
 
-When using Melos you shouldn't currently have an app/package in the root of the
+When using Melos it's recommended to not have an app/package in the root of the
 workspace, since that is where the configuration for the workspace will live.
+If you want to you can still do it though, and Melos will work just fine, when
+using `useRootAsPackage: true` it is even required, see
+[here](/configuration/overview#userootaspackage).
 
 The following is the recommended workspace directory structure:
 
