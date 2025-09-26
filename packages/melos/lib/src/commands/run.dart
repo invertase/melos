@@ -6,8 +6,15 @@ mixin _RunMixin on _Melos {
     GlobalOptions? global,
     String? scriptName,
     bool noSelect = false,
+    bool listScripts = false,
     List<String> extraArgs = const [],
   }) async {
+    if (listScripts && scriptName == null) {
+      logger.command('melos run --list');
+      logger.newLine();
+      config.scripts.forEach((_, script) => logger.log(script.name));
+      return;
+    }
     if (config.scripts.keys.isEmpty) {
       throw NoScriptException._();
     }
