@@ -400,5 +400,57 @@ digraph packages {
         },
       );
     });
+    group('mermaid', () {
+      test(
+        'reports all dependencies in workspace',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            workspacePackages: ['a', 'b', 'c', 'd'],
+          );
+
+          await createProject(workspaceDir, Pubspec('a'));
+          await createProject(workspaceDir, Pubspec('b'));
+          await createProject(workspaceDir, Pubspec('c'));
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'd',
+              dependencies: {'a': HostedDependency()},
+              devDependencies: {'b': HostedDependency()},
+              dependencyOverrides: {'c': HostedDependency()},
+            ),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(logger: logger, config: config);
+          await melos.list(
+            kind: ListOutputKind.mermaid,
+          );
+
+          expect(logger.output, '''
+graph TD
+  a["a"]
+  style a stroke:#ff5307
+  b["b"]
+  style b stroke:#e03cc2
+  c["c"]
+  style c stroke:#fa533c
+  d["d"]
+  style d stroke:#80dce6
+  d --> a
+  d -.-> b
+  d -..-> c
+  subgraph packages0 ["packages"]
+    a
+    b
+    c
+    d
+  end
+''');
+        },
+      );
+    });
   });
 }
