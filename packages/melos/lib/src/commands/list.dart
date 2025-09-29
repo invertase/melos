@@ -1,7 +1,7 @@
 part of 'runner.dart';
 
 // TODO find better names
-enum ListOutputKind { json, parsable, graph, gviz, column, cycles }
+enum ListOutputKind { json, parsable, graph, gviz, mermaid, column, cycles }
 
 mixin _ListMixin on _Melos {
   Future<void> list({
@@ -38,6 +38,8 @@ mixin _ListMixin on _Melos {
         );
       case ListOutputKind.gviz:
         return _listGviz(workspace);
+      case ListOutputKind.mermaid:
+        return _listMermaid(workspace);
       case ListOutputKind.cycles:
         return _listCyclesInDependencies(workspace);
     }
@@ -257,6 +259,111 @@ mixin _ListMixin on _Melos {
     });
 
     buffer.add('}');
+
+    logger.stdout(buffer.join('\n'));
+  }
+
+  void _listMermaid(MelosWorkspace workspace) {
+    String toHex(int color) {
+      final colorString = color.toRadixString(16);
+
+      return [if (colorString.length == 1) '0', colorString].join();
+    }
+
+    String getColor(String name) {
+      final random = Random(name.hashCode);
+
+      final r = random.nextInt(256);
+      final g = random.nextInt(256);
+      final b = random.nextInt(256);
+
+      return [
+        '#',
+        toHex(r),
+        toHex(g),
+        toHex(b),
+      ].join();
+    }
+
+    String sanitizeNodeName(String name) {
+      // Mermaid requires node names to be valid identifiers
+      // Replace special characters with underscores
+      return name.replaceAll(RegExp('[^a-zA-Z0-9_]'), '_');
+    }
+
+    final buffer = <String>[];
+
+    buffer.add('graph TD');
+
+    // Add node definitions with colors
+    for (final package in workspace.filteredPackages.values) {
+      final sanitizedName = sanitizeNodeName(package.name);
+      final color = getColor(package.name);
+      buffer.add(
+        '  $sanitizedName["${package.name}"]',
+      );
+      buffer.add(
+        '  style $sanitizedName stroke:$color',
+      );
+    }
+
+    // Add dependencies
+    for (final package in workspace.filteredPackages.values) {
+      final sanitizedPackageName = sanitizeNodeName(package.name);
+
+      // Regular dependencies (solid arrows)
+      for (final dep in package.dependenciesInWorkspace.values) {
+        final sanitizedDepName = sanitizeNodeName(dep.name);
+        buffer.add(
+          '  $sanitizedPackageName --> $sanitizedDepName',
+        );
+      }
+
+      // Dev dependencies (dashed arrows)
+      for (final dep in package.devDependenciesInWorkspace.values) {
+        final sanitizedDepName = sanitizeNodeName(dep.name);
+        buffer.add(
+          '  $sanitizedPackageName -.-> $sanitizedDepName',
+        );
+      }
+
+      // Dependency overrides (dotted arrows)
+      for (final dep in package.dependencyOverridesInWorkspace.values) {
+        final sanitizedDepName = sanitizeNodeName(dep.name);
+        buffer.add(
+          '  $sanitizedPackageName -..-> $sanitizedDepName',
+        );
+      }
+    }
+
+    // Add subgraphs for package groupings
+    final groupedPackages = workspace.filteredPackages.values
+        .fold<Map<String, List<Package>>>({}, (grouped, package) {
+          final namespace = p.dirname(package.pathRelativeToWorkspace);
+
+          grouped.putIfAbsent(namespace, () => []);
+          grouped[namespace]!.add(package);
+
+          return grouped;
+        });
+
+    var subgraphIndex = 0;
+    groupedPackages.forEach((namespace, packagesInGroup) {
+      if (packagesInGroup.length > 1) {
+        final sanitizedNamespace = sanitizeNodeName(namespace);
+        buffer.add(
+          '  subgraph $sanitizedNamespace$subgraphIndex ["$namespace"]',
+        );
+
+        for (final package in packagesInGroup) {
+          final sanitizedName = sanitizeNodeName(package.name);
+          buffer.add('    $sanitizedName');
+        }
+
+        buffer.add('  end');
+        subgraphIndex++;
+      }
+    });
 
     logger.stdout(buffer.join('\n'));
   }

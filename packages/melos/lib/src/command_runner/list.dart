@@ -40,6 +40,11 @@ class ListCommand extends MelosCommand {
       help: 'Show dependency graph in Graphviz DOT language.',
     );
     argParser.addFlag(
+      'mermaid',
+      negatable: false,
+      help: 'Show dependency graph in Mermaid Diagram.',
+    );
+    argParser.addFlag(
       'cycles',
       negatable: false,
       help: 'Find cycles in package dependencies in the workspace.',
@@ -68,6 +73,7 @@ class ListCommand extends MelosCommand {
     final relative = argResults!['relative'] as bool;
     final graph = argResults!['graph'] as bool;
     final gviz = argResults!['gviz'] as bool;
+    final mermaid = argResults!['mermaid'] as bool;
     final cycles = argResults!['cycles'] as bool;
 
     final melos = Melos(logger: logger, config: config);
@@ -85,6 +91,9 @@ class ListCommand extends MelosCommand {
     }
     if (gviz) {
       kind = ListOutputKind.gviz;
+    }
+    if (mermaid) {
+      kind = ListOutputKind.mermaid;
     }
     if (cycles) {
       kind = ListOutputKind.cycles;
