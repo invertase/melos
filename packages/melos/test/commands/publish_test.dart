@@ -120,6 +120,38 @@ void main() {
         });
       }
     });
+
+    test('should support number as pre release version', () async {
+      final logger = TestLogger();
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_workspace',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+        ),
+
+        workspacePackages: const ['a'],
+      );
+
+      await createProject(
+        workspaceDir,
+        Pubspec('a', version: Version(1, 2, 3, pre: '4')),
+      );
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+        workspaceDir,
+      );
+      final melos = Melos(
+        config: config,
+        logger: logger,
+      );
+
+      await expectLater(melos.publish(force: true), completes);
+      final output = logger.output.normalizeLines().split('\n');
+      expect(output, contains('Publishing a 1.2.3-4 to https://pub.dev:'));
+    });
   });
 }
 
