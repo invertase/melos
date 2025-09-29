@@ -150,8 +150,8 @@ mixin _PublishMixin on _ExecMixin {
       // prerelease version with a matching preid instead if any.
       if (package.version.isPreRelease) {
         final preid = package.version.preRelease.length == 4
-            ? package.version.preRelease[2] as String
-            : package.version.preRelease[0] as String;
+            ? package.version.preRelease[2].toString()
+            : package.version.preRelease[0].toString();
         final versionsWithPreid = versions
             .where((version) => version.contains(preid))
             .toList();
