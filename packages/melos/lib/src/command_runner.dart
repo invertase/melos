@@ -57,21 +57,25 @@ class MelosCommandRunner extends CommandRunner<void> {
           'the special value "auto".',
     );
 
-    addCommand(InitCommand(config));
-    addCommand(ExecCommand(config));
-    addCommand(BootstrapCommand(config));
-    addCommand(CleanCommand(config));
-    addCommand(RunCommand(config));
-    addCommand(ListCommand(config));
-    addCommand(PublishCommand(config));
-    addCommand(VersionCommand(config));
-    addCommand(FormatCommand(config));
-
-    // Keep this last to exclude all built-in commands listed above
-    final script = ScriptCommand.fromConfig(config, exclude: commands.keys);
+    // Register custom scripts first so they can override built-in commands
+    final script = ScriptCommand.fromConfig(config);
+    final scriptNames = script?.scripts ?? <String>{};
     if (script != null) {
       addCommand(script);
     }
+
+    bool canAddCommand(String name) => !scriptNames.contains(name);
+
+    // Add built-in commands only if they don't conflict with custom scripts
+    if (canAddCommand('init')) addCommand(InitCommand(config));
+    if (canAddCommand('exec')) addCommand(ExecCommand(config));
+    if (canAddCommand('bootstrap')) addCommand(BootstrapCommand(config));
+    if (canAddCommand('clean')) addCommand(CleanCommand(config));
+    if (canAddCommand('run')) addCommand(RunCommand(config));
+    if (canAddCommand('list')) addCommand(ListCommand(config));
+    if (canAddCommand('publish')) addCommand(PublishCommand(config));
+    if (canAddCommand('version')) addCommand(VersionCommand(config));
+    if (canAddCommand('format')) addCommand(FormatCommand(config));
   }
 
   @override
