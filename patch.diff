@@ -1,0 +1,9 @@
+--- a/packages/melos/lib/src/common/utils.dart
++++ b/packages/melos/lib/src/common/utils.dart
+@@
+-  if (sdkVersion.startsWith('3.6.0')) {
+-    return true;
+-  }
++  if (sdkVersion.startsWith('3.6.0') || sdkVersion.startsWith('3.8.0')) {
++    return true;
++  }

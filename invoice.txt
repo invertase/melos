@@ -1,0 +1,10 @@
+INVOICE
+-------
+
+Fix: Dart SDK mismatch (3.6.0 vs 3.8.0)
+
+Prepared by: Artur Wilk
+Date: 2025-10-01
+Reference: melos#910
+
+Amount: 0.00 EUR (community contribution)
