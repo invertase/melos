@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
+import 'package:xml/xml.dart' as xml;
 
 import '../common/utils.dart' as utils;
 import '../package.dart';
@@ -133,19 +134,27 @@ class IntellijProject {
     return template;
   }
 
-  String ideaModuleStringForName(String moduleName, {String? relativePath}) {
+  xml.XmlElement ideaModuleElementForName(
+    String moduleName, {
+    String? relativePath,
+  }) {
     var imlPath = relativePath != null
         ? p.normalize('$relativePath/$moduleName.iml')
         : '$moduleName.iml';
+
     // Use `/` instead of `\` no matter what platform is.
     imlPath = imlPath.replaceAll(r'\', '/');
-    final module =
-        '<module '
-        'fileurl="file://\$PROJECT_DIR\$/$imlPath" '
-        'filepath="\$PROJECT_DIR\$/$imlPath" '
-        '/>';
-    // Pad to preserve formatting on generated file.
-    return module.padLeft(6);
+
+    return xml.XmlElement(
+      xml.XmlName('module'),
+      [
+        xml.XmlAttribute(
+          xml.XmlName('fileurl'),
+          'file://\$PROJECT_DIR\$/$imlPath',
+        ),
+        xml.XmlAttribute(xml.XmlName('filepath'), '\$PROJECT_DIR\$/$imlPath'),
+      ],
+    );
   }
 
   Future<void> forceWriteToFile(String filePath, String fileContents) async {
@@ -212,22 +221,70 @@ class IntellijProject {
     );
   }
 
+  Future<List<xml.XmlElement>> mergeExistingModules(
+    List<xml.XmlElement> melosModules,
+  ) async {
+    if (!fileExists(pathModulesXml)) return melosModules;
+
+    final text = await readTextFileAsync(pathModulesXml);
+    try {
+      final doc = xml.XmlDocument.parse(text);
+
+      String createNormalizedKey(xml.XmlElement e) {
+        final v =
+            e.getAttribute('filepath') ??
+            e.getAttribute('filePath') ??
+            e.getAttribute('fileurl') ??
+            e.getAttribute('fileUrl');
+        return (v ?? '')
+            .trim()
+            .replaceAll('\\', '/')
+            .replaceFirst(
+              RegExp(r'^file://\$PROJECT_DIR\$/', caseSensitive: false),
+              '',
+            )
+            .replaceFirst(
+              RegExp(r'^\$PROJECT_DIR\$/', caseSensitive: false),
+              '',
+            );
+      }
+
+      final seen = melosModules
+          .map(createNormalizedKey)
+          .where((s) => s.isNotEmpty)
+          .toSet();
+
+      final extras = doc
+          .findAllElements('module')
+          .where(
+            (m) => seen.add(createNormalizedKey(m)),
+          )
+          .map((m) => m.copy());
+
+      return [...melosModules.map((e) => e.copy()), ...extras];
+    } catch (_) {
+      return melosModules;
+    }
+  }
+
   Future<void> writeModulesXml() async {
-    final ideaModules = <String>[];
+    final ideaModules = <xml.XmlElement>[];
+
     for (final package in _workspace.filteredPackages.values) {
       ideaModules.add(
-        ideaModuleStringForName(
+        ideaModuleElementForName(
           packageModuleName(package),
           relativePath: package.pathRelativeToWorkspace,
         ),
       );
     }
-    ideaModules.add(ideaModuleStringForName(workspaceModuleName));
+    ideaModules.add(ideaModuleElementForName(workspaceModuleName));
+    final mergedModules = await mergeExistingModules(ideaModules);
     final ideaModulesXmlTemplate = await readFileTemplate('modules.xml');
     final generatedModulesXml = injectTemplateVariable(
       template: ideaModulesXmlTemplate,
       variableName: 'modules',
-      variableValue: ideaModules.join('\n'),
+      variableValue: mergedModules.join('\n'),
     );
     return forceWriteToFile(pathModulesXml, generatedModulesXml);
   }
