@@ -64,18 +64,25 @@ class MelosCommandRunner extends CommandRunner<void> {
       addCommand(script);
     }
 
-    bool canAddCommand(String name) => !scriptNames.contains(name);
+    // Create built-in commands
+    final builtInCommands = [
+      InitCommand(config),
+      ExecCommand(config),
+      BootstrapCommand(config),
+      CleanCommand(config),
+      RunCommand(config),
+      ListCommand(config),
+      PublishCommand(config),
+      VersionCommand(config),
+      FormatCommand(config),
+    ];
 
     // Add built-in commands only if they don't conflict with custom scripts
-    if (canAddCommand('init')) addCommand(InitCommand(config));
-    if (canAddCommand('exec')) addCommand(ExecCommand(config));
-    if (canAddCommand('bootstrap')) addCommand(BootstrapCommand(config));
-    if (canAddCommand('clean')) addCommand(CleanCommand(config));
-    if (canAddCommand('run')) addCommand(RunCommand(config));
-    if (canAddCommand('list')) addCommand(ListCommand(config));
-    if (canAddCommand('publish')) addCommand(PublishCommand(config));
-    if (canAddCommand('version')) addCommand(VersionCommand(config));
-    if (canAddCommand('format')) addCommand(FormatCommand(config));
+    for (final command in builtInCommands) {
+      if (!scriptNames.contains(command.name)) {
+        addCommand(command);
+      }
+    }
   }
 
   @override
