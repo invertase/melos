@@ -235,6 +235,7 @@ The following projects are using Melos:
 - [Jaspr](https://github.com/schultek/jaspr)
 - [starknet.dart](https://github.com/focustree/starknet.dart)
 - [flyerhq/flutter_chat_ui](https://github.com/flyerhq/flutter_chat_ui)
+- [maplibre/flutter-maplibre-gl](https://github.com/maplibre/flutter-maplibre-gl)
 
 > Submit a PR if you'd like to add your project to the list. Update the
 > [README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md)
