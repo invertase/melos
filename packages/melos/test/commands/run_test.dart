@@ -904,4 +904,69 @@ SUCCESS
       );
     });
   });
+
+  group('flags', () {
+    test(
+      'verifies that the --list flag lists all scripts in the config',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: const Scripts({
+              'test_script_1': Script(
+                name: 'test_script',
+                steps: [
+                  'absolute_bogus_command',
+                  'echo "test_script_2"',
+                ],
+              ),
+              'test_script_2': Script(
+                name: 'test_script',
+                steps: [
+                  'absolute_bogus_command',
+                  'echo "test_script_2"',
+                ],
+              ),
+              'test_script_3': Script(
+                name: 'test_script',
+                steps: [
+                  'absolute_bogus_command',
+                  'echo "test_script_2"',
+                ],
+              ),
+            }),
+          ),
+          workspacePackages: ['a'],
+        );
+
+        await createProject(workspaceDir, Pubspec('a'));
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        await melos.run(listScripts: true);
+
+        expect(
+          logger.output.normalizeLines().split('\n'),
+          containsAllInOrder([
+            'melos run --list',
+            '',
+            'test_script_1',
+            'test_script_2',
+            'test_script_3',
+          ]),
+        );
+      },
+    );
+  });
 }
