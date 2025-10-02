@@ -36,7 +36,7 @@ void main() {
       expect(command!.hidden, isTrue);
     });
 
-    test('excludes conflicting script commands', () async {
+    test('custom scripts override built-in commands', () async {
       final workspaceDir = await createTemporaryWorkspace(
         configBuilder: (path) => MelosWorkspaceConfig(
           path: path,
@@ -45,7 +45,7 @@ void main() {
             createGlob('packages/**', currentDirectoryPath: path),
           ],
           scripts: const Scripts({
-            'run': Script(name: 'run', run: ''),
+            'format': Script(name: 'format', run: 'echo "custom format"'),
           }),
         ),
         workspacePackages: [],
@@ -54,9 +54,10 @@ void main() {
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
       final runner = MelosCommandRunner(config);
 
-      final command = runner.commands['run'];
+      final command = runner.commands['format'];
       expect(command, isNotNull);
-      expect(command!.hidden, isFalse);
+      // The command should be hidden (custom script behavior)
+      expect(command!.hidden, isTrue);
     });
   });
 }

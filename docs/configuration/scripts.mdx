@@ -186,3 +186,20 @@ Currently, the following Melos commands support hooks:
 - [`clean`](/commands/clean)
 - [`version`](/commands/version)
 - [`publish`](/commands/publish)
+
+## Overriding built-in commands
+
+Custom scripts can override Melos built-in commands. When a custom script has
+the same name as a built-in command, the custom script takes precedence. This
+allows you to customize the behavior of built-in commands to match your
+workspace needs.
+
+For example, you can override the built-in `format` command:
+
+```yaml
+scripts:
+  format: dart run custom_formatter
+```
+
+With this configuration, both `melos format` and `melos run format` will execute
+your custom format script instead of the built-in format command.
