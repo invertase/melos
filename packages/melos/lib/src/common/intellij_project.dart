@@ -238,7 +238,7 @@ class IntellijProject {
             e.getAttribute('fileUrl');
         return (v ?? '')
             .trim()
-            .replaceAll('\\', '/')
+            .replaceAll(r'\', '/')
             .replaceFirst(
               RegExp(r'^file://\$PROJECT_DIR\$/', caseSensitive: false),
               '',
