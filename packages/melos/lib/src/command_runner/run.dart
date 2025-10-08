@@ -11,6 +11,11 @@ class RunCommand extends MelosCommand {
           """configuration). Filters defined in the script's "packageFilters" """
           'options will however still be applied.',
     );
+    argParser.addFlag(
+      'list',
+      negatable: false,
+      help: 'Lists all scripts defined in the melos.yaml config file.',
+    );
   }
 
   @override
@@ -32,6 +37,7 @@ class RunCommand extends MelosCommand {
     final extraArgs = scriptName != null
         ? argResults!.rest.skip(1).toList()
         : <String>[];
+    final listScripts = argResults!['list'] as bool;
 
     try {
       return await melos.run(
@@ -39,6 +45,7 @@ class RunCommand extends MelosCommand {
         scriptName: scriptName,
         noSelect: noSelect,
         extraArgs: extraArgs,
+        listScripts: listScripts,
       );
     } on NoPackageFoundScriptException catch (err) {
       logger.warning(err.toString(), label: false);
