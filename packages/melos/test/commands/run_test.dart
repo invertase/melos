@@ -968,5 +968,67 @@ SUCCESS
         );
       },
     );
+
+    test(
+      'verifies that the --list flag in combination with '
+      '--json lists all scripts in the config in json format',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: const Scripts({
+              'test_script_1': Script(
+                name: 'test_script',
+                steps: [
+                  'absolute_bogus_command',
+                  'echo "test_script_2"',
+                ],
+              ),
+              'test_script_2': Script(
+                name: 'test_script',
+                steps: [
+                  'absolute_bogus_command',
+                  'echo "test_script_2"',
+                ],
+              ),
+              'test_script_3': Script(
+                name: 'test_script',
+                steps: [
+                  'absolute_bogus_command',
+                  'echo "test_script_2"',
+                ],
+              ),
+            }),
+          ),
+          workspacePackages: ['a'],
+        );
+
+        await createProject(workspaceDir, Pubspec('a'));
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        await melos.run(listScripts: true, listScriptsAsJson: true);
+
+        expect(
+          logger.output.normalizeLines().split('\n'),
+          containsAllInOrder([
+            'melos run --list --json',
+            '',
+            r'{"test_script_1":{"name":"test_script_1","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""]},"test_script_2":{"name":"test_script_2","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""]},"test_script_3":{"name":"test_script_3","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""]}}',
+          ]),
+        );
+      },
+    );
   });
 }

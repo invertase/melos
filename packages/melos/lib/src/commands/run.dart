@@ -7,14 +7,14 @@ mixin _RunMixin on _Melos {
     String? scriptName,
     bool noSelect = false,
     bool listScripts = false,
+    bool listScriptsAsJson = false,
     List<String> extraArgs = const [],
   }) async {
     if (listScripts && scriptName == null) {
-      logger.command('melos run --list');
-      logger.newLine();
-      config.scripts.forEach((_, script) => logger.log(script.name));
+      _handleListScripts(listAsJson: listScriptsAsJson);
       return;
     }
+
     if (config.scripts.keys.isEmpty) {
       throw NoScriptException._();
     }
@@ -88,6 +88,18 @@ mixin _RunMixin on _Melos {
     }
     if (logSuccess) {
       logger.log(successLabel);
+    }
+  }
+
+  void _handleListScripts({bool listAsJson = false}) {
+    if (listAsJson) {
+      logger.command('melos run --list --json');
+      logger.newLine();
+      logger.log(json.encode(config.scripts));
+    } else {
+      logger.command('melos run --list');
+      logger.newLine();
+      config.scripts.forEach((_, script) => logger.log(script.name));
     }
   }
 
