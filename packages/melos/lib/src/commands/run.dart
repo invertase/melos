@@ -30,7 +30,7 @@ mixin _RunMixin on _Melos {
     if (script == null) {
       throw ScriptNotFoundException._(
         scriptName,
-        config.scripts.keys.toList(),
+        publicScripts.keys.toList(),
       );
     }
 
@@ -366,7 +366,7 @@ class ScriptNotFoundException implements MelosException {
   String toString() {
     final builder = StringBuffer(
       'ScriptNotFoundException: A public script $scriptName could not be found '
-      "the 'pubspec.yaml' file.",
+      "in the 'pubspec.yaml' file.",
     );
 
     for (final scriptName in availableScriptNames) {
