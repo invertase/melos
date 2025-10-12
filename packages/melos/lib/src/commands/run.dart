@@ -10,8 +10,10 @@ mixin _RunMixin on _Melos {
     bool listScriptsAsJson = false,
     List<String> extraArgs = const [],
   }) async {
+    final publicScripts = Map<String, Script>.from(config.scripts);
+    publicScripts.removeWhere((_, script) => script.isPrivate);
     if (listScripts && scriptName == null) {
-      _handleListScripts(listAsJson: listScriptsAsJson);
+      _handleListScripts(publicScripts, listAsJson: listScriptsAsJson);
       return;
     }
 
@@ -19,8 +21,8 @@ mixin _RunMixin on _Melos {
       throw NoScriptException._();
     }
 
-    scriptName ??= await _pickScript(config);
-    final script = config.scripts[scriptName];
+    scriptName ??= await _pickScript(publicScripts);
+    final script = publicScripts[scriptName];
 
     if (script == null) {
       throw ScriptNotFoundException._(
@@ -91,19 +93,18 @@ mixin _RunMixin on _Melos {
     }
   }
 
-  void _handleListScripts({bool listAsJson = false}) {
-    final nonPrivateScripts = Map<String, Script>.from(config.scripts);
-    nonPrivateScripts.removeWhere(
-      (_, script) => script.isPrivate,
-    );
+  void _handleListScripts(
+    Map<String, Script> scripts, {
+    bool listAsJson = false,
+  }) {
     if (listAsJson) {
       logger.command('melos run --list --json');
       logger.newLine();
-      logger.log(json.encode(nonPrivateScripts));
+      logger.log(json.encode(scripts));
     } else {
       logger.command('melos run --list');
       logger.newLine();
-      nonPrivateScripts.forEach((_, script) => logger.log(script.name));
+      scripts.forEach((_, script) => logger.log(script.name));
     }
   }
 
@@ -137,13 +138,11 @@ mixin _RunMixin on _Melos {
     traverseSteps(script);
   }
 
-  Future<String> _pickScript(MelosWorkspaceConfig config) async {
+  Future<String> _pickScript(Map<String, Script> scripts) async {
     // using toList as Maps may be unordered
-    final scripts = config.scripts.values
-        .where((script) => !script.isPrivate)
-        .toList();
+    final scriptList = scripts.values.toList();
 
-    final scriptChoices = scripts.map((script) {
+    final scriptChoices = scriptList.map((script) {
       final styledName = AnsiStyles.cyan(script.name);
       final styledDescription =
           script.description.let((description) {
@@ -165,7 +164,7 @@ mixin _RunMixin on _Melos {
 
     final selectedScriptIndex = scriptChoices.indexOf(selectedScript);
 
-    return scripts[selectedScriptIndex].name;
+    return scriptList[selectedScriptIndex].name;
   }
 
   @override
@@ -363,7 +362,7 @@ class ScriptNotFoundException implements MelosException {
   @override
   String toString() {
     final builder = StringBuffer(
-      'ScriptNotFoundException: The script $scriptName could not be found in '
+      'ScriptNotFoundException: A public script $scriptName could not be found '
       "the 'pubspec.yaml' file.",
     );
 
