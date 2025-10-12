@@ -8,10 +8,13 @@ mixin _RunMixin on _Melos {
     bool noSelect = false,
     bool listScripts = false,
     bool listScriptsAsJson = false,
+    bool includePrivate = false,
     List<String> extraArgs = const [],
   }) async {
     final publicScripts = Map<String, Script>.from(config.scripts);
-    publicScripts.removeWhere((_, script) => script.isPrivate);
+    if (!includePrivate) {
+      publicScripts.removeWhere((_, script) => script.isPrivate);
+    }
     if (listScripts && scriptName == null) {
       _handleListScripts(publicScripts, listAsJson: listScriptsAsJson);
       return;
