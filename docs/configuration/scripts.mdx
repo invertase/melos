@@ -160,6 +160,18 @@ When running a script that uses `packageFilters`, you will be prompted to select
 the package to execute the script in. If you want to skip this prompt and run
 the script in all packages, use the `--no-select` option.
 
+## private
+
+This option allows you to mark scripts as **private**.
+Private scripts cannot be executed directly and are hidden from the command prompt.
+
+They can only be referenced as `steps` within other scripts.
+
+If you use the `--include-private` flag, this restriction is ignored.
+
+
+
+
 ---
 
 ## Hooks
