@@ -92,14 +92,18 @@ mixin _RunMixin on _Melos {
   }
 
   void _handleListScripts({bool listAsJson = false}) {
+    final nonPrivateScripts = Map<String, Script>.from(config.scripts);
+    nonPrivateScripts.removeWhere(
+      (_, script) => script.isPrivate,
+    );
     if (listAsJson) {
       logger.command('melos run --list --json');
       logger.newLine();
-      logger.log(json.encode(config.scripts));
+      logger.log(json.encode(nonPrivateScripts));
     } else {
       logger.command('melos run --list');
       logger.newLine();
-      config.scripts.forEach((_, script) => logger.log(script.name));
+      nonPrivateScripts.forEach((_, script) => logger.log(script.name));
     }
   }
 
