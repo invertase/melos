@@ -303,7 +303,7 @@ mixin _RunMixin on _Melos {
 
   String _buildScriptCommand(String step, Scripts scripts) {
     if (scripts.containsKey(step)) {
-      return 'melos run $step';
+      return 'melos run $step --include-private';
     }
 
     if (_isStepACommand(step)) {
