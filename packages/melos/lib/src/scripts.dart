@@ -379,7 +379,7 @@ class Script {
       if (packageFilters != null) 'packageFilters': packageFilters!.toJson(),
       if (steps != null) 'steps': steps,
       if (exec != null) 'exec': exec!.toJson(),
-      if (isPrivate != null) 'private': isPrivate,
+      'private': isPrivate,
     };
   }
 
