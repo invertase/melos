@@ -139,7 +139,9 @@ mixin _RunMixin on _Melos {
 
   Future<String> _pickScript(MelosWorkspaceConfig config) async {
     // using toList as Maps may be unordered
-    final scripts = config.scripts.values.toList();
+    final scripts = config.scripts.values
+        .where((script) => !script.isPrivate)
+        .toList();
 
     final scriptChoices = scripts.map((script) {
       final styledName = AnsiStyles.cyan(script.name);
