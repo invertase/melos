@@ -106,6 +106,7 @@ class Script {
     this.packageFilters,
     this.exec,
     this.steps = const [],
+    this.isPrivate = false,
   });
 
   factory Script.fromYaml(
@@ -120,6 +121,7 @@ class Script {
     final List<String> steps;
     PackageFilters? packageFilters;
     ExecOptions? exec;
+    bool? isPrivate;
 
     if (yaml is String) {
       run = yaml;
@@ -132,6 +134,7 @@ class Script {
         env: env,
         packageFilters: packageFilters,
         exec: exec,
+        isPrivate: isPrivate ?? false,
       );
     }
 
@@ -224,6 +227,12 @@ class Script {
             workspacePath: workspacePath,
           );
 
+    isPrivate = assertKeyIsA<bool?>(
+      key: 'private',
+      map: yaml,
+      path: scriptPath,
+    );
+
     return Script(
       name: name,
       run: run,
@@ -232,6 +241,7 @@ class Script {
       env: env,
       packageFilters: packageFilters,
       exec: exec,
+      isPrivate: isPrivate ?? false,
     );
   }
 
@@ -307,6 +317,9 @@ class Script {
   /// packages.
   final ExecOptions? exec;
 
+  /// This option defines if the script shows up in the list of scripts or not
+  final bool isPrivate;
+
   /// Returns the full command to run when executing this script.
   List<String> command([List<String>? extraArgs]) {
     String quoteScript(String script) => '"${script.replaceAll('"', r'\"')}"';
@@ -366,6 +379,7 @@ class Script {
       if (packageFilters != null) 'packageFilters': packageFilters!.toJson(),
       if (steps != null) 'steps': steps,
       if (exec != null) 'exec': exec!.toJson(),
+      if (isPrivate != null) 'private': isPrivate,
     };
   }
 
@@ -379,6 +393,7 @@ class Script {
       const DeepCollectionEquality().equals(other.env, env) &&
       other.packageFilters == packageFilters &&
       other.steps == steps &&
+      other.isPrivate == isPrivate &&
       other.exec == exec;
 
   @override
@@ -390,7 +405,8 @@ class Script {
       const DeepCollectionEquality().hash(env) ^
       packageFilters.hashCode ^
       steps.hashCode ^
-      exec.hashCode;
+      exec.hashCode ^
+      isPrivate.hashCode;
 
   @override
   String toString() {
@@ -403,6 +419,7 @@ Script(
   packageFilters: ${packageFilters.toString().indent('  ')},
   steps: $steps,
   exec: ${exec.toString().indent('  ')},
+  private: $isPrivate
 )''';
   }
 }
