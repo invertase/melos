@@ -16,6 +16,14 @@ class RunCommand extends MelosCommand {
       negatable: false,
       help: 'Lists all scripts defined in the melos.yaml config file.',
     );
+
+    argParser.addFlag(
+      'json',
+      negatable: false,
+      help:
+          'Lists all scripts defined in the melos.yaml config file with '
+          'description in json format.',
+    );
   }
 
   @override
@@ -38,6 +46,7 @@ class RunCommand extends MelosCommand {
         ? argResults!.rest.skip(1).toList()
         : <String>[];
     final listScripts = argResults!['list'] as bool;
+    final listScriptsAsJson = argResults!['json'] as bool;
 
     try {
       return await melos.run(
@@ -46,6 +55,7 @@ class RunCommand extends MelosCommand {
         noSelect: noSelect,
         extraArgs: extraArgs,
         listScripts: listScripts,
+        listScriptsAsJson: listScriptsAsJson,
       );
     } on NoPackageFoundScriptException catch (err) {
       logger.warning(err.toString(), label: false);
