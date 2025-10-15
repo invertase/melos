@@ -24,6 +24,14 @@ class RunCommand extends MelosCommand {
           'Lists all scripts defined in the melos.yaml config file with '
           'description in json format.',
     );
+
+    argParser.addFlag(
+      'include-private',
+      negatable: false,
+      help:
+          'Ignore the "private" option for scripts to show and be able to run '
+          'private scripts',
+    );
   }
 
   @override
@@ -47,6 +55,7 @@ class RunCommand extends MelosCommand {
         : <String>[];
     final listScripts = argResults!['list'] as bool;
     final listScriptsAsJson = argResults!['json'] as bool;
+    final includePrivate = argResults!['include-private'] as bool;
 
     try {
       return await melos.run(
@@ -56,6 +65,7 @@ class RunCommand extends MelosCommand {
         extraArgs: extraArgs,
         listScripts: listScripts,
         listScriptsAsJson: listScriptsAsJson,
+        includePrivate: includePrivate,
       );
     } on NoPackageFoundScriptException catch (err) {
       logger.warning(err.toString(), label: false);

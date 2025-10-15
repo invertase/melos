@@ -484,7 +484,7 @@ it should list the contents including the package named "this_is_package_a".
         ignoringDependencyMessages(
           '''
 melos run hello_script
-➡️  Step: melos run test_script
+➡️  Step: melos run test_script --include-private
 melos run test_script
   └> echo "test_script"
      └> RUNNING
@@ -583,7 +583,7 @@ SUCCESS
         ignoringDependencyMessages(
           '''
 melos run hello_script
-➡️  Step: melos run test_script
+➡️  Step: melos run test_script --include-private
 melos run test_script
 ➡️  Step: echo test_script_1
 ${currentPlatform.isWindows ? '"test_script_1"' : 'test_script_1'}
@@ -713,7 +713,7 @@ SUCCESS
         ignoringDependencyMessages(
           '''
 melos run hello_script
-➡️  Step: melos run list
+➡️  Step: melos run list --include-private
 melos run list
   └> echo "list script"
      └> RUNNING
@@ -1025,7 +1025,7 @@ SUCCESS
           containsAllInOrder([
             'melos run --list --json',
             '',
-            r'{"test_script_1":{"name":"test_script_1","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""]},"test_script_2":{"name":"test_script_2","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""]},"test_script_3":{"name":"test_script_3","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""]}}',
+            r'{"test_script_1":{"name":"test_script_1","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""],"private":false},"test_script_2":{"name":"test_script_2","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""],"private":false},"test_script_3":{"name":"test_script_3","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""],"private":false}}',
           ]),
         );
       },
