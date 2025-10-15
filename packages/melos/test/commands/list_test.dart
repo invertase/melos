@@ -156,6 +156,38 @@ long_name 0.0.0 packages/long_name PRIVATE
           );
         },
       );
+
+      test(
+        'supports relative flag for relative paths',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            workspacePackages: const ['a', 'b', 'c'],
+          );
+
+          await createProject(workspaceDir, Pubspec('a'));
+          await createProject(workspaceDir, Pubspec('b'));
+          await createProject(workspaceDir, Pubspec('c'));
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(logger: logger, config: config);
+          await melos.list(
+            relativePaths: true,
+          );
+
+          expect(
+            logger.output,
+            ignoringAnsii(
+              '''
+packages/a
+packages/b
+packages/c
+''',
+            ),
+          );
+        },
+      );
     });
 
     group('parsable', () {
