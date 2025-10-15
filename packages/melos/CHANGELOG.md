@@ -1,3 +1,16 @@
+## 7.2.0
+
+ - **FIX**: Prevent subsequent packages from executing after failure when failFast is enabled ([#957](https://github.com/invertase/melos/issues/957)). ([4af312d6](https://github.com/invertase/melos/commit/4af312d6f0eb7e6b53ed9f148f08183a9aee7ea3))
+ - **FIX**: Melos accept relative flag for list column ([#956](https://github.com/invertase/melos/issues/956)). ([c46ef15c](https://github.com/invertase/melos/commit/c46ef15c1447509dfdb3d903c4e37d707313dd20))
+ - **FIX**: Support numbers as pre release  ([#943](https://github.com/invertase/melos/issues/943)). ([2591ab7f](https://github.com/invertase/melos/commit/2591ab7f2e227aba3de6c795d8c53480f45da9fa))
+ - **FEAT**: add private property for scripts ([#954](https://github.com/invertase/melos/issues/954)). ([120d5e01](https://github.com/invertase/melos/commit/120d5e01cb9adc69ed939f75ca81b6c1eec2c54c))
+ - **FEAT**: add --json flag to list scripts in json format ([#953](https://github.com/invertase/melos/issues/953)). ([183e0ef1](https://github.com/invertase/melos/commit/183e0ef130bc315e5c00c53099592d28f7737c72))
+ - **FEAT**: Add --list flag to run command ([#947](https://github.com/invertase/melos/issues/947)). ([eb4f325f](https://github.com/invertase/melos/commit/eb4f325f53498ac5876dfe80731673e6b353972b))
+ - **FEAT**: add functionality to keep custom intellij modules ([#949](https://github.com/invertase/melos/issues/949)). ([e8f6fc49](https://github.com/invertase/melos/commit/e8f6fc49037ae826c344c8022d69794fc12d8092))
+ - **FEAT**(scripts): allow overriding default scripts with custom ones ([#945](https://github.com/invertase/melos/issues/945)). ([1c3045f0](https://github.com/invertase/melos/commit/1c3045f0d556a617cc7138b8fb3379472d778b4b))
+ - **FEAT**: mermaid version of melos list --gviz ([#942](https://github.com/invertase/melos/issues/942)). ([ddd19aeb](https://github.com/invertase/melos/commit/ddd19aeb4ac1401620d721b798814d6e95757fd7))
+ - **DOCS**: Add maplibre package to README and index ([#946](https://github.com/invertase/melos/issues/946)). ([28374589](https://github.com/invertase/melos/commit/283745898aceaf1d1ebc5a63e60012872ad3c84e))
+
 ## 7.1.1
 
  - **FIX**: Allow underscore as packagename ([#936](https://github.com/invertase/melos/issues/936)). ([8cae3163](https://github.com/invertase/melos/commit/8cae3163c886d2baa77750827590989401ea6705))
