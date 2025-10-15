@@ -29,6 +29,7 @@ mixin _ListMixin on _Melos {
         return _listColumn(
           workspace,
           long: long,
+          relativePaths: relativePaths,
         );
       case ListOutputKind.json:
         return _listJson(
@@ -59,6 +60,7 @@ mixin _ListMixin on _Melos {
   void _listColumn(
     MelosWorkspace workspace, {
     required bool long,
+    required bool relativePaths,
   }) {
     if (workspace.filteredPackages.values.isEmpty) {
       logger.warning(
@@ -91,7 +93,10 @@ mixin _ListMixin on _Melos {
     }
 
     for (final package in workspace.filteredPackages.values) {
-      logger.stdout(package.name);
+      final output = relativePaths
+          ? printablePath(package.pathRelativeToWorkspace)
+          : package.name;
+      logger.stdout(output);
     }
   }
 
