@@ -365,7 +365,7 @@ class ScriptNotFoundException implements MelosException {
   @override
   String toString() {
     final builder = StringBuffer(
-      'ScriptNotFoundException: A public script $scriptName could not be found '
+      'ScriptNotFoundException: A script named $scriptName could not be found '
       "in the 'pubspec.yaml' file.",
     );
 
