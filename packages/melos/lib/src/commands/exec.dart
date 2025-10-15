@@ -129,7 +129,11 @@ mixin _ExecMixin on _Melos {
 
     operation = CancelableOperation.fromFuture(
       pool.forEach<Package, void>(sortedPackages, (package) async {
-        assert(!(failFast && failures.isNotEmpty));
+        if (failFast && failures.isNotEmpty) {
+          packageResults[package.name]?.complete();
+          failures[package.name] = null;
+          return;
+        }
 
         if (orderDependents && !hasImpactfulCycles) {
           final dependenciesResults = await Future.wait(
