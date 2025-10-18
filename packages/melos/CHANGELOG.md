@@ -1,5 +1,6 @@
 ## 7.2.0
 
+ - **FEAT**: Add `--no-pub` global flag to skip calling pub get before running commands (affects bootstrap).
  - **FIX**: Prevent subsequent packages from executing after failure when failFast is enabled ([#957](https://github.com/invertase/melos/issues/957)). ([4af312d6](https://github.com/invertase/melos/commit/4af312d6f0eb7e6b53ed9f148f08183a9aee7ea3))
  - **FIX**: Melos accept relative flag for list column ([#956](https://github.com/invertase/melos/issues/956)). ([c46ef15c](https://github.com/invertase/melos/commit/c46ef15c1447509dfdb3d903c4e37d707313dd20))
  - **FIX**: Support numbers as pre release  ([#943](https://github.com/invertase/melos/issues/943)). ([2591ab7f](https://github.com/invertase/melos/commit/2591ab7f2e227aba3de6c795d8c53480f45da9fa))
