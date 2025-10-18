@@ -56,6 +56,11 @@ class MelosCommandRunner extends CommandRunner<void> {
           'environment variable. To use the system-wide SDK, provide '
           'the special value "auto".',
     );
+    argParser.addFlag(
+      globalOptionNoPub,
+      negatable: false,
+      help: 'Skip calling pub get before running commands (affects bootstrap).',
+    );
 
     // Register custom scripts first so they can override built-in commands
     final script = ScriptCommand.fromConfig(config);

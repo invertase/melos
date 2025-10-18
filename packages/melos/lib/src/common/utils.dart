@@ -21,6 +21,7 @@ import 'platform.dart';
 
 const globalOptionVerbose = 'verbose';
 const globalOptionSdkPath = 'sdk-path';
+const globalOptionNoPub = 'no-pub';
 
 const autoSdkPathOptionValue = 'auto';
 

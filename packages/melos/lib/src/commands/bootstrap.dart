@@ -66,16 +66,20 @@ mixin _BootstrapMixin on _CleanMixin {
             }).drain<void>();
           }
 
-          logger.log(
-            'Running "$pubCommandForLogging" in workspace...',
-          );
+          if (global?.noPub == true) {
+            logger.log('Skipping pub get due to --no-pub flag.');
+          } else {
+            logger.log(
+              'Running "$pubCommandForLogging" in workspace...',
+            );
 
-          await _runPubGetForWorkspace(
-            workspace,
-            noExample: noExample,
-            runOffline: runOffline,
-            enforceLockfile: shouldEnforceLockfile,
-          );
+            await _runPubGetForWorkspace(
+              workspace,
+              noExample: noExample,
+              runOffline: runOffline,
+              enforceLockfile: shouldEnforceLockfile,
+            );
+          }
 
           logger
             ..child(successLabel, prefix: '> ')

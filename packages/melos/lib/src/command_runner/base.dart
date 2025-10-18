@@ -36,6 +36,7 @@ abstract class MelosCommand extends Command<void> {
     return GlobalOptions(
       verbose: globalResults![globalOptionVerbose]! as bool,
       sdkPath: globalResults![globalOptionSdkPath] as String?,
+      noPub: globalResults![globalOptionNoPub]! as bool,
     );
   }
 
