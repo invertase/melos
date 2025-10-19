@@ -404,7 +404,7 @@ class IntellijProject {
     });
   }
 
-  Future<void> generate() async {
+  Future<void> generate({bool generateRunScripts = true}) async {
     // <WORKSPACE_ROOT>/.idea/.name
     await writeNameFile();
 
@@ -418,9 +418,10 @@ class IntellijProject {
     await writeModulesXml();
 
     // <WORKSPACE_ROOT>/.idea/runConfigurations/<SCRIPT_NAME>.xml
+    if (generateRunScripts) {
+      await writeFlutterRunScripts();
+    }
     await writeMelosScripts();
-
-    await writeFlutterRunScripts();
     await writeFlutterTestScripts();
   }
 }
