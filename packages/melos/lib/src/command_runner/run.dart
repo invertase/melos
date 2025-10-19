@@ -62,7 +62,7 @@ class RunCommand extends MelosCommand {
     final listScripts = argResults!['list'] as bool;
     final listScriptsAsJson = argResults!['json'] as bool;
     final includePrivate = argResults!['include-private'] as bool;
-    final group = argResults!['group'] as String;
+    final group = argResults!['group'] as String?;
 
     try {
       return await melos.run(
