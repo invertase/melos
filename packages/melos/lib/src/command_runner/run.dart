@@ -32,6 +32,12 @@ class RunCommand extends MelosCommand {
           'Ignore the "private" option for scripts to show and be able to run '
           'private scripts',
     );
+
+    argParser.addOption(
+      'group',
+      abbr: 'g',
+      help: 'Filters the scripts by the group they are belonging to.',
+    );
   }
 
   @override
@@ -56,6 +62,7 @@ class RunCommand extends MelosCommand {
     final listScripts = argResults!['list'] as bool;
     final listScriptsAsJson = argResults!['json'] as bool;
     final includePrivate = argResults!['include-private'] as bool;
+    final group = argResults!['group'] as String;
 
     try {
       return await melos.run(
@@ -66,6 +73,7 @@ class RunCommand extends MelosCommand {
         listScripts: listScripts,
         listScriptsAsJson: listScriptsAsJson,
         includePrivate: includePrivate,
+        group: group,
       );
     } on NoPackageFoundScriptException catch (err) {
       logger.warning(err.toString(), label: false);
