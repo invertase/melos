@@ -1025,7 +1025,7 @@ SUCCESS
           containsAllInOrder([
             'melos run --list --json',
             '',
-            r'{"test_script_1":{"name":"test_script_1","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""],"private":false},"test_script_2":{"name":"test_script_2","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""],"private":false},"test_script_3":{"name":"test_script_3","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""],"private":false}}',
+            r'{"test_script_1":{"name":"test_script_1","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""],"private":false,"groups":[]},"test_script_2":{"name":"test_script_2","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""],"private":false,"groups":[]},"test_script_3":{"name":"test_script_3","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""],"private":false,"groups":[]}}',
           ]),
         );
       },
