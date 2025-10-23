@@ -1025,8 +1025,213 @@ SUCCESS
           containsAllInOrder([
             'melos run --list --json',
             '',
-            r'{"test_script_1":{"name":"test_script_1","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""],"private":false},"test_script_2":{"name":"test_script_2","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""],"private":false},"test_script_3":{"name":"test_script_3","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""],"private":false}}',
+            r'{"test_script_1":{"name":"test_script_1","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""],"private":false,"groups":[]},"test_script_2":{"name":"test_script_2","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""],"private":false,"groups":[]},"test_script_3":{"name":"test_script_3","run":null,"steps":["absolute_bogus_command","echo \"test_script_2\""],"private":false,"groups":[]}}',
           ]),
+        );
+      },
+    );
+
+    test(
+      'verifies that the --groups option hides all scripts '
+      'not belonging to the specified group',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: const Scripts({
+              'test_script_1': Script(
+                name: 'test_script',
+                groups: ['group_1', 'group_2'],
+                steps: [
+                  'absolute_bogus_command',
+                  'echo "test_script_2"',
+                ],
+              ),
+              'test_script_2': Script(
+                name: 'test_script',
+                groups: ['group_2'],
+                steps: [
+                  'absolute_bogus_command',
+                  'echo "test_script_2"',
+                ],
+              ),
+              'test_script_3': Script(
+                name: 'test_script',
+                steps: [
+                  'absolute_bogus_command',
+                  'echo "test_script_3"',
+                ],
+              ),
+              'test_script_4': Script(
+                name: 'test_script',
+                groups: ['group_3'],
+                steps: [
+                  'absolute_bogus_command',
+                  'echo "test_script_4"',
+                ],
+              ),
+            }),
+          ),
+          workspacePackages: ['a'],
+        );
+
+        await createProject(workspaceDir, Pubspec('a'));
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        await melos.run(group: 'group_2', listScripts: true);
+
+        expect(
+          logger.output.normalizeLines().split('\n'),
+          containsAllInOrder([
+            'melos run --group group_2 --list',
+            '',
+            'test_script_1',
+            'test_script_2',
+          ]),
+        );
+      },
+    );
+
+    test(
+      'verifies that the --groups option hides all scripts '
+      'and hidden scripts cannot be executed',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: const Scripts({
+              'test_script_1': Script(
+                name: 'test_script',
+                groups: ['group_1', 'group_2'],
+                steps: [
+                  'absolute_bogus_command',
+                  'echo "test_script_2"',
+                ],
+              ),
+              'test_script_2': Script(
+                name: 'test_script',
+                groups: ['group_2'],
+                steps: [
+                  'absolute_bogus_command',
+                  'echo "test_script_2"',
+                ],
+              ),
+              'test_script_3': Script(
+                name: 'test_script',
+                steps: [
+                  'absolute_bogus_command',
+                  'echo "test_script_3"',
+                ],
+              ),
+              'test_script_4': Script(
+                name: 'test_script',
+                groups: ['group_3'],
+                steps: [
+                  'absolute_bogus_command',
+                  'echo "test_script_4"',
+                ],
+              ),
+            }),
+          ),
+          workspacePackages: ['a'],
+        );
+
+        await createProject(workspaceDir, Pubspec('a'));
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        expect(
+          () => melos.run(group: 'group_2', scriptName: 'test_script_3'),
+          throwsA(isA<ScriptNotFoundException>()),
+        );
+      },
+    );
+
+    test(
+      'verifies that the --groups option shows an error '
+      'if the specified group is empty',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: const Scripts({
+              'test_script_1': Script(
+                name: 'test_script',
+                groups: ['group_1', 'group_2'],
+                steps: [
+                  'absolute_bogus_command',
+                  'echo "test_script_2"',
+                ],
+              ),
+              'test_script_2': Script(
+                name: 'test_script',
+                groups: ['group_2'],
+                steps: [
+                  'absolute_bogus_command',
+                  'echo "test_script_2"',
+                ],
+              ),
+              'test_script_3': Script(
+                name: 'test_script',
+                steps: [
+                  'absolute_bogus_command',
+                  'echo "test_script_3"',
+                ],
+              ),
+              'test_script_4': Script(
+                name: 'test_script',
+                groups: ['group_3'],
+                steps: [
+                  'absolute_bogus_command',
+                  'echo "test_script_4"',
+                ],
+              ),
+            }),
+          ),
+          workspacePackages: ['a'],
+        );
+
+        await createProject(workspaceDir, Pubspec('a'));
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        expect(
+          () => melos.run(group: 'group_42'),
+          throwsA(isA<EmptyGroupException>()),
         );
       },
     );
