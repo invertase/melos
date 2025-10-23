@@ -1,3 +1,8 @@
+## 7.3.0
+
+ - **FEAT**: add groups config for scripts and `--group`option ([#963](https://github.com/invertase/melos/issues/963)). ([47982d9b](https://github.com/invertase/melos/commit/47982d9bb226198f54c697500852c0262aee4230))
+ - **FEAT**: add option to opt-out of Intellij `runConfiguration` generation ([#962](https://github.com/invertase/melos/issues/962)). ([6bc8c246](https://github.com/invertase/melos/commit/6bc8c2466ed2f51b9ede214a544b62888b84ee33))
+
 ## 7.2.0
 
  - **FIX**: Prevent subsequent packages from executing after failure when failFast is enabled ([#957](https://github.com/invertase/melos/issues/957)). ([4af312d6](https://github.com/invertase/melos/commit/4af312d6f0eb7e6b53ed9f148f08183a9aee7ea3))

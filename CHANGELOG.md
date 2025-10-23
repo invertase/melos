@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2025-10-23
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v7.3.0`](#melos---v730)
+
+---
+
+#### `melos` - `v7.3.0`
+
+ - **FEAT**: add groups config for scripts and `--group`option ([#963](https://github.com/invertase/melos/issues/963)). ([47982d9b](https://github.com/invertase/melos/commit/47982d9bb226198f54c697500852c0262aee4230))
+ - **FEAT**: add option to opt-out of Intellij `runConfiguration` generation ([#962](https://github.com/invertase/melos/issues/962)). ([6bc8c246](https://github.com/invertase/melos/commit/6bc8c2466ed2f51b9ede214a544b62888b84ee33))
+
+
 ## 2025-10-15
 
 ### Changes
