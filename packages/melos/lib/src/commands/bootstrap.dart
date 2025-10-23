@@ -102,7 +102,10 @@ mixin _BootstrapMixin on _CleanMixin {
           logger.log('Generating IntelliJ IDE files...');
 
           await cleanIntelliJ(workspace);
-          await workspace.ide.intelliJ.generate();
+          await workspace.ide.intelliJ.generate(
+            generateRunScripts:
+                workspace.config.ide.intelliJ.generateAppRunConfigs,
+          );
           logger
             ..child(successLabel, prefix: '> ')
             ..newLine();

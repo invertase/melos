@@ -66,6 +66,7 @@ class IntelliJConfig {
     this.enabled = _defaultEnabled,
     this.moduleNamePrefix = _defaultModuleNamePrefix,
     this.executeInTerminal = _defaultExecuteInTerminal,
+    this.generateAppRunConfigs = _defaultGenerateAppRunConfigs,
   });
 
   factory IntelliJConfig.fromYaml(Object? yaml) {
@@ -87,10 +88,18 @@ class IntelliJConfig {
               path: 'ide/intellij',
             )
           : _defaultExecuteInTerminal;
+      final generateAppRunConfigs = yaml.containsKey('generateAppRunConfigs')
+          ? assertKeyIsA<bool>(
+              key: 'generateAppRunConfigs',
+              map: yaml,
+              path: 'ide/intellij',
+            )
+          : _defaultGenerateAppRunConfigs;
       return IntelliJConfig(
         enabled: enabled,
         moduleNamePrefix: moduleNamePrefix,
         executeInTerminal: executeInTerminal,
+        generateAppRunConfigs: generateAppRunConfigs,
       );
     } else {
       final enabled = assertIsA<bool>(
@@ -106,6 +115,7 @@ class IntelliJConfig {
   static const _defaultModuleNamePrefix = 'melos_';
   static const _defaultEnabled = true;
   static const _defaultExecuteInTerminal = true;
+  static const _defaultGenerateAppRunConfigs = true;
 
   final bool enabled;
 
@@ -113,11 +123,14 @@ class IntelliJConfig {
 
   final bool executeInTerminal;
 
+  final bool generateAppRunConfigs;
+
   Object? toJson() {
     return {
       'enabled': enabled,
       'moduleNamePrefix': moduleNamePrefix,
       'executeInTerminal': executeInTerminal,
+      'generateAppRunConfigs': generateAppRunConfigs,
     };
   }
 
@@ -127,14 +140,16 @@ class IntelliJConfig {
       runtimeType == other.runtimeType &&
       other.enabled == enabled &&
       other.moduleNamePrefix == moduleNamePrefix &&
-      other.executeInTerminal == executeInTerminal;
+      other.executeInTerminal == executeInTerminal &&
+      other.generateAppRunConfigs == generateAppRunConfigs;
 
   @override
   int get hashCode =>
       runtimeType.hashCode ^
       enabled.hashCode ^
       moduleNamePrefix.hashCode ^
-      executeInTerminal.hashCode;
+      executeInTerminal.hashCode ^
+      generateAppRunConfigs.hashCode;
 
   @override
   String toString() {
@@ -143,6 +158,7 @@ IntelliJConfig(
   enabled: $enabled,
   moduleNamePrefix: $moduleNamePrefix,
   executeInTerminal: $executeInTerminal,
+  generateAppRunConfigs: $generateAppRunConfigs
 )
 ''';
   }
