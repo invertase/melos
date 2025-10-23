@@ -27,7 +27,11 @@ mixin _RunMixin on _Melos {
     }
 
     if (listScripts && scriptName == null) {
-      _handleListScripts(publicScripts, listAsJson: listScriptsAsJson);
+      _handleListScripts(
+        publicScripts,
+        listAsJson: listScriptsAsJson,
+        group: group,
+      );
       return;
     }
 
@@ -110,13 +114,18 @@ mixin _RunMixin on _Melos {
   void _handleListScripts(
     Map<String, Script> scripts, {
     bool listAsJson = false,
+    String? group,
   }) {
     if (listAsJson) {
-      logger.command('melos run --list --json');
+      logger.command(
+        'melos run ${group != null ? '--group $group ' : ''}--list --json',
+      );
       logger.newLine();
       logger.log(json.encode(scripts));
     } else {
-      logger.command('melos run --list');
+      logger.command(
+        'melos run ${group != null ? '--group $group ' : ''}--list',
+      );
       logger.newLine();
       scripts.forEach((_, script) => logger.log(script.name));
     }
