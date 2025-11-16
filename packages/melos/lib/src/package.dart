@@ -525,6 +525,7 @@ class PackageMap {
       ignore: [],
       categories: categories,
       logger: logger,
+      discoverNestedWorkspaces: false,
     ).then((packageMap) => packageMap.values.first);
   }
 
@@ -534,6 +535,7 @@ class PackageMap {
     required List<Glob> ignore,
     required Map<String, List<Glob>> categories,
     required MelosLogger logger,
+    bool discoverNestedWorkspaces = false,
   }) async {
     final pubspecFiles = await _resolvePubspecFiles(
       workspacePath: workspacePath,
@@ -543,6 +545,7 @@ class PackageMap {
         for (final pattern in _commonIgnorePatterns)
           createGlob(pattern, currentDirectoryPath: workspacePath),
       ],
+      discoverNestedWorkspaces: discoverNestedWorkspaces,
     );
 
     final packageMap = <String, Package>{};
@@ -621,6 +624,7 @@ The packages that caused the problem are:
     required String workspacePath,
     required List<Glob> packages,
     required List<Glob> ignore,
+    required bool discoverNestedWorkspaces,
   }) async {
     final pubspecEntities = await Stream.fromIterable(packages)
         .map(_createPubspecGlob)
@@ -637,10 +641,14 @@ The packages that caused the problem are:
         .map((file) => p.canonicalize(file.absolute.path))
         .toSet();
 
+    if (!discoverNestedWorkspaces) {
+      return paths.map(File.new).toList();
+    }
+
     // Recursively discover packages in nested workspaces
     final allPaths = <String>{...paths};
     final nestedWorkspacePaths = <String>{};
-    
+
     // First pass: identify nested workspaces
     for (final path in paths) {
       final pubspecFile = File(path);
@@ -648,7 +656,7 @@ The packages that caused the problem are:
         nestedWorkspacePaths.add(p.dirname(path));
       }
     }
-    
+
     // Second pass: discover packages in nested workspaces
     for (final nestedWorkspacePath in nestedWorkspacePaths) {
       final nestedPubspecs = await _discoverNestedWorkspacePackages(

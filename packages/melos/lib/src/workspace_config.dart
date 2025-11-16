@@ -241,6 +241,7 @@ class MelosWorkspaceConfig {
     this.ide = IDEConfigs.empty,
     this.commands = CommandConfigs.empty,
     this.useRootAsPackage = false,
+    this.discoverNestedWorkspaces = false,
   }) {
     _validate();
   }
@@ -375,6 +376,13 @@ class MelosWorkspaceConfig {
         ) ??
         false;
 
+    final discoverNestedWorkspaces =
+        assertKeyIsA<bool?>(
+          key: 'discoverNestedWorkspaces',
+          map: melosYaml,
+        ) ??
+        false;
+
     return MelosWorkspaceConfig(
       path: path,
       name: name,
@@ -404,6 +412,7 @@ class MelosWorkspaceConfig {
               repositoryIsConfigured: repository != null,
             ),
       useRootAsPackage: useRootAsPackage,
+      discoverNestedWorkspaces: discoverNestedWorkspaces,
     );
   }
 
@@ -414,6 +423,7 @@ class MelosWorkspaceConfig {
         path: Directory.current.path,
         commands: CommandConfigs.empty,
         useRootAsPackage: false,
+        discoverNestedWorkspaces: false,
       );
 
   @visibleForTesting
@@ -421,12 +431,14 @@ class MelosWorkspaceConfig {
     String? name,
     String? path,
     bool? useRootAsPackage,
+    bool? discoverNestedWorkspaces,
   }) : this(
          name: name ?? 'Melos',
          packages: [],
          path: path ?? Directory.current.path,
          commands: CommandConfigs.empty,
          useRootAsPackage: useRootAsPackage ?? false,
+         discoverNestedWorkspaces: discoverNestedWorkspaces ?? false,
        );
 
   /// Loads the [MelosWorkspaceConfig] for the workspace at [workspaceRoot].
@@ -579,6 +591,10 @@ class MelosWorkspaceConfig {
   /// Defaults to false.
   final bool useRootAsPackage;
 
+  /// Whether to recursively discover packages in nested workspaces.
+  /// Defaults to false.
+  final bool discoverNestedWorkspaces;
+
   /// Validates this workspace configuration for consistency.
   void _validate() {
     final workspaceDir = Directory(path);
@@ -615,6 +631,7 @@ class MelosWorkspaceConfig {
       other.repository == repository &&
       other.sdkPath == sdkPath &&
       other.useRootAsPackage == useRootAsPackage &&
+      other.discoverNestedWorkspaces == discoverNestedWorkspaces &&
       const DeepCollectionEquality(
         GlobEquality(),
       ).equals(other.packages, packages) &&
@@ -633,6 +650,7 @@ class MelosWorkspaceConfig {
       repository.hashCode ^
       sdkPath.hashCode ^
       useRootAsPackage.hashCode ^
+      discoverNestedWorkspaces.hashCode ^
       const DeepCollectionEquality(GlobEquality()).hash(packages) &
           const DeepCollectionEquality(GlobEquality()).hash(ignore) ^
       scripts.hashCode ^
@@ -645,6 +663,8 @@ class MelosWorkspaceConfig {
         if (repository != null) 'repository': repository!,
         if (sdkPath != null) 'sdkPath': sdkPath!,
         if (useRootAsPackage) 'useRootAsPackage': useRootAsPackage,
+        if (discoverNestedWorkspaces)
+          'discoverNestedWorkspaces': discoverNestedWorkspaces,
         'categories': categories.map((category, packages) {
           return MapEntry(
             category,

@@ -568,7 +568,7 @@ environment:
     );
   });
 
-  group('PackageMap.resolvePackages - nested workspaces', () {
+  group('PackageMap.resolvePackages - nested workspaces (enabled)', () {
     test(
       'discovers packages in nested workspaces',
       () async {
@@ -603,6 +603,7 @@ environment:
           ignore: [],
           categories: {},
           logger: TestLogger().toMelosLogger(),
+          discoverNestedWorkspaces: true,
         );
 
         expect(packages.length, 3);
@@ -648,6 +649,7 @@ environment:
           ignore: [],
           categories: {},
           logger: TestLogger().toMelosLogger(),
+          discoverNestedWorkspaces: true,
         );
 
         expect(packages.length, 3);
@@ -693,6 +695,7 @@ environment:
           ignore: [],
           categories: {},
           logger: TestLogger().toMelosLogger(),
+          discoverNestedWorkspaces: true,
         );
 
         expect(packages.length, 3);
@@ -738,6 +741,7 @@ environment:
           ],
           categories: {},
           logger: TestLogger().toMelosLogger(),
+          discoverNestedWorkspaces: true,
         );
 
         expect(packages.length, 2);
@@ -798,6 +802,7 @@ environment:
           ignore: [],
           categories: {},
           logger: TestLogger().toMelosLogger(),
+          discoverNestedWorkspaces: true,
         );
 
         expect(packages.length, 6);
@@ -807,6 +812,53 @@ environment:
         expect(packages['forui_example'], isNotNull);
         expect(packages['forui_assets'], isNotNull);
         expect(packages['forui_hooks'], isNotNull);
+      },
+    );
+  });
+
+  group('PackageMap.resolvePackages - nested workspaces (disabled)', () {
+    test(
+      'does not discover nested workspace packages when disabled',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['parent'],
+        );
+
+        // Create parent package with workspace configuration
+        await createProject(
+          workspaceDir,
+          Pubspec('parent', workspace: ['child1', 'child2']),
+          path: 'packages/parent',
+        );
+
+        // Create child packages in nested workspace
+        await createProject(
+          workspaceDir,
+          Pubspec('child1'),
+          path: 'packages/parent/child1',
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('child2'),
+          path: 'packages/parent/child2',
+        );
+
+        final packages = await PackageMap.resolvePackages(
+          workspacePath: workspaceDir.path,
+          packages: [
+            createGlob('packages/parent', currentDirectoryPath: workspaceDir.path),
+          ],
+          ignore: [],
+          categories: {},
+          logger: TestLogger().toMelosLogger(),
+          discoverNestedWorkspaces: false,
+        );
+
+        // Only the parent package should be discovered
+        expect(packages.length, 1);
+        expect(packages['parent'], isNotNull);
+        expect(packages['child1'], isNull);
+        expect(packages['child2'], isNull);
       },
     );
   });

@@ -62,6 +62,11 @@
       "description": "Whether to include the repository root as a package in the workspace. Defaults to false.",
       "default": false
     },
+    "discoverNestedWorkspaces": {
+      "type": "boolean",
+      "description": "Whether to recursively discover packages in nested workspaces. Defaults to false.",
+      "default": false
+    },
     "categories": {
       "type": "object",
       "description": "Categorize packages in the workspace.",
