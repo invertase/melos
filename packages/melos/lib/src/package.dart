@@ -525,7 +525,6 @@ class PackageMap {
       ignore: [],
       categories: categories,
       logger: logger,
-      discoverNestedWorkspaces: false,
     ).then((packageMap) => packageMap.values.first);
   }
 

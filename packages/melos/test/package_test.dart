@@ -666,7 +666,8 @@ environment:
           workspacePackages: ['forui_root'],
         );
 
-        // Create parent package with workspace and example (name it differently)
+        // Create parent package with workspace and example
+        // (name it differently)
         await createProject(
           workspaceDir,
           Pubspec('forui_root', workspace: ['forui', 'example']),
@@ -761,7 +762,10 @@ environment:
         // Root workspace package (workspace root with a name)
         await createProject(
           workspaceDir,
-          Pubspec('forui_root', workspace: ['forui', 'forui_assets', 'forui_hooks']),
+          Pubspec(
+            'forui_root',
+            workspace: ['forui', 'forui_assets', 'forui_hooks'],
+          ),
           path: 'packages/base/forui',
         );
 
@@ -851,7 +855,6 @@ environment:
           ignore: [],
           categories: {},
           logger: TestLogger().toMelosLogger(),
-          discoverNestedWorkspaces: false,
         );
 
         // Only the parent package should be discovered

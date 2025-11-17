@@ -62,7 +62,6 @@ class MelosWorkspace {
       ignore: const [],
       categories: const {},
       logger: logger,
-      discoverNestedWorkspaces: false,
     );
     final rootPackage = await PackageMap.resolveRootPackage(
       workspacePath: workspaceConfig.path,
