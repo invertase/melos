@@ -38,7 +38,7 @@ class PublishCommand extends MelosCommand {
   Future<void> run() async {
     final dryRun = argResults![publishOptionDryRun] as bool;
     final gitTagVersion = argResults![publishOptionGitTagVersion] as bool;
-    final yes = argResults![publishOptionYes] as bool || false;
+    final yes = argResults![publishOptionYes] as bool;
 
     final melos = Melos(logger: logger, config: config);
     final packageFilters = parsePackageFilters(config.path);
