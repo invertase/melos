@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:glob/glob.dart';
 import 'package:melos/melos.dart';
+import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/http.dart';
 import 'package:melos/src/common/pub_credential.dart';
 import 'package:melos/src/package.dart';
@@ -563,6 +564,307 @@ environment:
 
         // Cleanup
         await tempDir.delete(recursive: true);
+      },
+    );
+  });
+
+  group('PackageMap.resolvePackages - nested workspaces (enabled)', () {
+    test(
+      'discovers packages in nested workspaces',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['parent'],
+        );
+
+        // Create parent package with workspace configuration
+        await createProject(
+          workspaceDir,
+          Pubspec('parent', workspace: ['child1', 'child2']),
+          path: 'packages/parent',
+        );
+
+        // Create child packages in nested workspace
+        await createProject(
+          workspaceDir,
+          Pubspec('child1'),
+          path: 'packages/parent/child1',
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('child2'),
+          path: 'packages/parent/child2',
+        );
+
+        final packages = await PackageMap.resolvePackages(
+          workspacePath: workspaceDir.path,
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: workspaceDir.path),
+          ],
+          ignore: [],
+          categories: {},
+          logger: TestLogger().toMelosLogger(),
+          discoverNestedWorkspaces: true,
+        );
+
+        expect(packages.length, 3);
+        expect(packages['parent'], isNotNull);
+        expect(packages['child1'], isNotNull);
+        expect(packages['child2'], isNotNull);
+      },
+    );
+
+    test(
+      'discovers packages in deeply nested workspaces',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['level1'],
+        );
+
+        // Create level 1 package with workspace
+        await createProject(
+          workspaceDir,
+          Pubspec('level1', workspace: ['level2']),
+          path: 'packages/level1',
+        );
+
+        // Create level 2 package with workspace
+        await createProject(
+          workspaceDir,
+          Pubspec('level2', workspace: ['level3']),
+          path: 'packages/level1/level2',
+        );
+
+        // Create level 3 package
+        await createProject(
+          workspaceDir,
+          Pubspec('level3'),
+          path: 'packages/level1/level2/level3',
+        );
+
+        final packages = await PackageMap.resolvePackages(
+          workspacePath: workspaceDir.path,
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: workspaceDir.path),
+          ],
+          ignore: [],
+          categories: {},
+          logger: TestLogger().toMelosLogger(),
+          discoverNestedWorkspaces: true,
+        );
+
+        expect(packages.length, 3);
+        expect(packages['level1'], isNotNull);
+        expect(packages['level2'], isNotNull);
+        expect(packages['level3'], isNotNull);
+      },
+    );
+
+    test(
+      'discovers packages in nested workspace with example',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['forui_root'],
+        );
+
+        // Create parent package with workspace and example
+        // (name it differently)
+        await createProject(
+          workspaceDir,
+          Pubspec('forui_root', workspace: ['forui', 'example']),
+          path: 'packages/base/forui',
+        );
+
+        // Create main package in nested workspace
+        await createProject(
+          workspaceDir,
+          Pubspec('forui'),
+          path: 'packages/base/forui/forui',
+        );
+
+        // Create example package in nested workspace
+        await createProject(
+          workspaceDir,
+          Pubspec('forui_example'),
+          path: 'packages/base/forui/forui/example',
+        );
+
+        final packages = await PackageMap.resolvePackages(
+          workspacePath: workspaceDir.path,
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: workspaceDir.path),
+          ],
+          ignore: [],
+          categories: {},
+          logger: TestLogger().toMelosLogger(),
+          discoverNestedWorkspaces: true,
+        );
+
+        expect(packages.length, 3);
+        expect(packages['forui_root'], isNotNull);
+        expect(packages['forui'], isNotNull);
+        expect(packages['forui_example'], isNotNull);
+      },
+    );
+
+    test(
+      'respects ignore patterns for nested workspace packages',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['parent'],
+        );
+
+        // Create parent package with workspace
+        await createProject(
+          workspaceDir,
+          Pubspec('parent', workspace: ['child1', 'child2']),
+          path: 'packages/parent',
+        );
+
+        // Create child packages
+        await createProject(
+          workspaceDir,
+          Pubspec('child1'),
+          path: 'packages/parent/child1',
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('child2'),
+          path: 'packages/parent/child2',
+        );
+
+        final packages = await PackageMap.resolvePackages(
+          workspacePath: workspaceDir.path,
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: workspaceDir.path),
+          ],
+          ignore: [
+            createGlob('**/child2', currentDirectoryPath: workspaceDir.path),
+          ],
+          categories: {},
+          logger: TestLogger().toMelosLogger(),
+          discoverNestedWorkspaces: true,
+        );
+
+        expect(packages.length, 2);
+        expect(packages['parent'], isNotNull);
+        expect(packages['child1'], isNotNull);
+        expect(packages['child2'], isNull);
+      },
+    );
+
+    test(
+      'discovers all packages in complex nested workspace structure',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['forui_root'],
+        );
+
+        // Root workspace package (workspace root with a name)
+        await createProject(
+          workspaceDir,
+          Pubspec(
+            'forui_root',
+            workspace: ['forui', 'forui_assets', 'forui_hooks'],
+          ),
+          path: 'packages/base/forui',
+        );
+
+        // Nested workspace with example (this is also a workspace root)
+        await createProject(
+          workspaceDir,
+          Pubspec('forui_workspace', workspace: ['example']),
+          path: 'packages/base/forui/forui',
+        );
+
+        // Actual packages
+        await createProject(
+          workspaceDir,
+          Pubspec('forui'),
+          path: 'packages/base/forui/forui/forui',
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('forui_example'),
+          path: 'packages/base/forui/forui/example',
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('forui_assets'),
+          path: 'packages/base/forui/forui_assets',
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('forui_hooks'),
+          path: 'packages/base/forui/forui_hooks',
+        );
+
+        final packages = await PackageMap.resolvePackages(
+          workspacePath: workspaceDir.path,
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: workspaceDir.path),
+          ],
+          ignore: [],
+          categories: {},
+          logger: TestLogger().toMelosLogger(),
+          discoverNestedWorkspaces: true,
+        );
+
+        expect(packages.length, 6);
+        expect(packages['forui_root'], isNotNull);
+        expect(packages['forui_workspace'], isNotNull);
+        expect(packages['forui'], isNotNull);
+        expect(packages['forui_example'], isNotNull);
+        expect(packages['forui_assets'], isNotNull);
+        expect(packages['forui_hooks'], isNotNull);
+      },
+    );
+  });
+
+  group('PackageMap.resolvePackages - nested workspaces (disabled)', () {
+    test(
+      'does not discover nested workspace packages when disabled',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['parent'],
+        );
+
+        // Create parent package with workspace configuration
+        await createProject(
+          workspaceDir,
+          Pubspec('parent', workspace: ['child1', 'child2']),
+          path: 'packages/parent',
+        );
+
+        // Create child packages in nested workspace
+        await createProject(
+          workspaceDir,
+          Pubspec('child1'),
+          path: 'packages/parent/child1',
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('child2'),
+          path: 'packages/parent/child2',
+        );
+
+        final packages = await PackageMap.resolvePackages(
+          workspacePath: workspaceDir.path,
+          packages: [
+            createGlob(
+              'packages/parent',
+              currentDirectoryPath: workspaceDir.path,
+            ),
+          ],
+          ignore: [],
+          categories: {},
+          logger: TestLogger().toMelosLogger(),
+        );
+
+        // Only the parent package should be discovered
+        expect(packages.length, 1);
+        expect(packages['parent'], isNotNull);
+        expect(packages['child1'], isNull);
+        expect(packages['child2'], isNull);
       },
     );
   });

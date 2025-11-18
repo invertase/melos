@@ -54,6 +54,7 @@ class MelosWorkspace {
       ignore: workspaceConfig.ignore,
       categories: workspaceConfig.categories,
       logger: logger,
+      discoverNestedWorkspaces: workspaceConfig.discoverNestedWorkspaces,
     );
     final dependencyOverridePackages = await PackageMap.resolvePackages(
       workspacePath: workspaceConfig.path,

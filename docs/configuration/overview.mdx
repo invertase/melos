@@ -98,6 +98,49 @@ This allows you to leverage Melos features like `melos version`,
 configuration for monorepos, this option provides flexibility for existing
 project structures and enables single package usage.
 
+## discoverNestedWorkspaces
+
+Whether to recursively discover packages in nested workspaces.
+
+When enabled, Melos will, in addition to the packages matched by your
+`workspace` globs, recursively discover packages inside any workspace roots
+(`pubspec.yaml` files that define a `workspace:` field) that are found under
+those globs. This makes the behaviour of `melos list` consistent with
+`dart pub workspace list` for nested workspace structures.
+
+Defaults to `false` to preserve the existing, non-recursive behaviour.
+
+```yaml
+melos:
+  discoverNestedWorkspaces: true
+  # Example workspace layout:
+  # packages/
+  #   base/
+  #     ui/                        # workspace root with workspace: ['core', 'components']
+  #       pubspec.yaml             # defines workspace: ['core', 'components']
+  #       core/
+  #         pubspec.yaml
+  #       components/
+  #         pubspec.yaml
+  #       example/                 # nested workspace with example
+  #         pubspec.yaml           # defines workspace: ['example']
+  #         example/
+  #           pubspec.yaml
+
+workspace:
+  - packages/**        # discovers ui, core, components, example, etc.
+```
+
+**Use cases:**
+- Monorepos that already use `dart pub workspace` with nested workspaces and
+  want `melos list`/`melos run` to see the same set of packages.
+- Projects where an intermediate package acts as a workspace root and contains
+  additional packages or examples underneath it.
+
+If you prefer the previous behaviour where only the packages directly matched
+by `workspace` globs are discovered, leave `discoverNestedWorkspaces` at its
+default value `false`.
+
 ## ignore
 
 A list of paths to local packages that are excluded from the Melos workspace.

@@ -534,6 +534,7 @@ class PackageMap {
     required List<Glob> ignore,
     required Map<String, List<Glob>> categories,
     required MelosLogger logger,
+    bool discoverNestedWorkspaces = false,
   }) async {
     final pubspecFiles = await _resolvePubspecFiles(
       workspacePath: workspacePath,
@@ -543,6 +544,7 @@ class PackageMap {
         for (final pattern in _commonIgnorePatterns)
           createGlob(pattern, currentDirectoryPath: workspacePath),
       ],
+      discoverNestedWorkspaces: discoverNestedWorkspaces,
     );
 
     final packageMap = <String, Package>{};
@@ -621,6 +623,7 @@ The packages that caused the problem are:
     required String workspacePath,
     required List<Glob> packages,
     required List<Glob> ignore,
+    required bool discoverNestedWorkspaces,
   }) async {
     final pubspecEntities = await Stream.fromIterable(packages)
         .map(_createPubspecGlob)
@@ -637,7 +640,120 @@ The packages that caused the problem are:
         .map((file) => p.canonicalize(file.absolute.path))
         .toSet();
 
-    return paths.map(File.new).toList();
+    if (!discoverNestedWorkspaces) {
+      return paths.map(File.new).toList();
+    }
+
+    // Recursively discover packages in nested workspaces
+    final allPaths = <String>{...paths};
+    final nestedWorkspacePaths = <String>{};
+
+    // First pass: identify nested workspaces
+    for (final path in paths) {
+      final pubspecFile = File(path);
+      if (await _isWorkspacePubspec(pubspecFile)) {
+        nestedWorkspacePaths.add(p.dirname(path));
+      }
+    }
+
+    // Second pass: discover packages in nested workspaces
+    for (final nestedWorkspacePath in nestedWorkspacePaths) {
+      final nestedPubspecs = await _discoverNestedWorkspacePackages(
+        nestedWorkspacePath: nestedWorkspacePath,
+        rootWorkspacePath: workspacePath,
+        ignore: ignore,
+      );
+      allPaths.addAll(
+        nestedPubspecs.map((file) => p.canonicalize(file.absolute.path)),
+      );
+    }
+
+    return allPaths.map(File.new).toList();
+  }
+
+  /// Checks if a pubspec.yaml file defines a workspace.
+  static Future<bool> _isWorkspacePubspec(File pubspecFile) async {
+    try {
+      if (!pubspecFile.existsSync()) {
+        return false;
+      }
+      final content = await pubspecFile.readAsString();
+      final pubspec = Pubspec.parse(content);
+      return pubspec.workspace != null && pubspec.workspace!.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Discovers all packages in a nested workspace.
+  static Future<List<File>> _discoverNestedWorkspacePackages({
+    required String nestedWorkspacePath,
+    required String rootWorkspacePath,
+    required List<Glob> ignore,
+  }) async {
+    final nestedPubspecFile = File(p.join(nestedWorkspacePath, 'pubspec.yaml'));
+    if (!await _isWorkspacePubspec(nestedPubspecFile)) {
+      return [];
+    }
+
+    final pubspec = Pubspec.parse(await nestedPubspecFile.readAsString());
+    final workspacePaths = pubspec.workspace ?? [];
+
+    final nestedPackages = <File>[];
+    final pubspecIgnoreGlobs = ignore.map(_createPubspecGlob).toList();
+    bool isIgnored(File file) =>
+        pubspecIgnoreGlobs.any((glob) => glob.matches(file.path));
+
+    // Convert relative workspace paths to absolute paths
+    for (final workspacePath in workspacePaths) {
+      final absoluteWorkspacePath = p.isAbsolute(workspacePath)
+          ? workspacePath
+          : p.join(nestedWorkspacePath, workspacePath);
+
+      // Look for pubspec.yaml files in the workspace path and subdirectories
+      final workspaceDir = Directory(absoluteWorkspacePath);
+      if (workspaceDir.existsSync()) {
+        // Check if the workspace path itself has a pubspec.yaml
+        final pubspecAtPath = File(
+          p.join(absoluteWorkspacePath, 'pubspec.yaml'),
+        );
+        if (pubspecAtPath.existsSync() && !isIgnored(pubspecAtPath)) {
+          nestedPackages.add(pubspecAtPath);
+        }
+
+        // Recursively search for pubspec.yaml files in subdirectories
+        await for (final entity in workspaceDir.list(recursive: true)) {
+          if (entity is File &&
+              p.basename(entity.path) == 'pubspec.yaml' &&
+              !isIgnored(entity)) {
+            final canonicalPath = p.canonicalize(entity.absolute.path);
+            // Skip the nested workspace root pubspec.yaml itself
+            final nestedPubspecCanonical = p.canonicalize(
+              nestedPubspecFile.absolute.path,
+            );
+            if (canonicalPath != nestedPubspecCanonical) {
+              nestedPackages.add(entity);
+            }
+          }
+        }
+      }
+    }
+
+    // Recursively discover packages in any nested workspaces we found
+    final allNestedPackages = <File>[...nestedPackages];
+    for (final packageFile in nestedPackages) {
+      if (await _isWorkspacePubspec(packageFile)) {
+        final nestedPath = p.dirname(packageFile.path);
+        final deeperNested = await _discoverNestedWorkspacePackages(
+          nestedWorkspacePath: nestedPath,
+          rootWorkspacePath: rootWorkspacePath,
+          ignore: ignore,
+        );
+        allNestedPackages.addAll(deeperNested);
+      }
+    }
+
+    return allNestedPackages;
   }
 
   static Glob _createPubspecGlob(Glob event) {
