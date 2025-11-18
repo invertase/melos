@@ -850,7 +850,10 @@ environment:
         final packages = await PackageMap.resolvePackages(
           workspacePath: workspaceDir.path,
           packages: [
-            createGlob('packages/parent', currentDirectoryPath: workspaceDir.path),
+            createGlob(
+              'packages/parent',
+              currentDirectoryPath: workspaceDir.path,
+            ),
           ],
           ignore: [],
           categories: {},

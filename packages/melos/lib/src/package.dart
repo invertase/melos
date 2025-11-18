@@ -670,7 +670,7 @@ The packages that caused the problem are:
 
     return allPaths.map(File.new).toList();
   }
-  
+
   /// Checks if a pubspec.yaml file defines a workspace.
   static Future<bool> _isWorkspacePubspec(File pubspecFile) async {
     try {
@@ -684,7 +684,7 @@ The packages that caused the problem are:
       return false;
     }
   }
-  
+
   /// Discovers all packages in a nested workspace.
   static Future<List<File>> _discoverNestedWorkspacePackages({
     required String nestedWorkspacePath,
@@ -695,21 +695,21 @@ The packages that caused the problem are:
     if (!await _isWorkspacePubspec(nestedPubspecFile)) {
       return [];
     }
-    
+
     final pubspec = Pubspec.parse(await nestedPubspecFile.readAsString());
     final workspacePaths = pubspec.workspace ?? [];
-    
+
     final nestedPackages = <File>[];
     final pubspecIgnoreGlobs = ignore.map(_createPubspecGlob).toList();
     bool isIgnored(File file) =>
         pubspecIgnoreGlobs.any((glob) => glob.matches(file.path));
-    
+
     // Convert relative workspace paths to absolute paths
     for (final workspacePath in workspacePaths) {
       final absoluteWorkspacePath = p.isAbsolute(workspacePath)
           ? workspacePath
           : p.join(nestedWorkspacePath, workspacePath);
-      
+
       // Look for pubspec.yaml files in the workspace path and subdirectories
       final workspaceDir = Directory(absoluteWorkspacePath);
       if (workspaceDir.existsSync()) {
@@ -720,10 +720,10 @@ The packages that caused the problem are:
         if (pubspecAtPath.existsSync() && !isIgnored(pubspecAtPath)) {
           nestedPackages.add(pubspecAtPath);
         }
-        
+
         // Recursively search for pubspec.yaml files in subdirectories
         await for (final entity in workspaceDir.list(recursive: true)) {
-          if (entity is File && 
+          if (entity is File &&
               p.basename(entity.path) == 'pubspec.yaml' &&
               !isIgnored(entity)) {
             final canonicalPath = p.canonicalize(entity.absolute.path);
@@ -738,7 +738,7 @@ The packages that caused the problem are:
         }
       }
     }
-    
+
     // Recursively discover packages in any nested workspaces we found
     final allNestedPackages = <File>[...nestedPackages];
     for (final packageFile in nestedPackages) {
@@ -752,7 +752,7 @@ The packages that caused the problem are:
         allNestedPackages.addAll(deeperNested);
       }
     }
-    
+
     return allNestedPackages;
   }
 
