@@ -236,6 +236,7 @@ The following projects are using Melos:
 - [starknet.dart](https://github.com/focustree/starknet.dart)
 - [flyerhq/flutter_chat_ui](https://github.com/flyerhq/flutter_chat_ui)
 - [maplibre/flutter-maplibre-gl](https://github.com/maplibre/flutter-maplibre-gl)
+- [Khuwn-Soulutions/supabase_codegen](https://github.com/Khuwn-Soulutions/supabase_codegen)
 
 > Submit a PR if you'd like to add your project to the list. Update the
 > [README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md)
