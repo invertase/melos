@@ -899,6 +899,46 @@ void main() {
           expect(config.pub.retryBackoff, const RetryBackoff());
         });
 
+        test('treats timeoutSeconds 0 as no timeout', () async {
+          final workspace = await createTemporaryWorkspace(
+            workspacePackages: [],
+          );
+          final config = MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {
+                'melos': {
+                  'pub': {
+                    'timeoutSeconds': 0,
+                  },
+                },
+              },
+              defaults: configMapDefaults,
+            ),
+            path: workspace.path,
+          );
+
+          expect(config.pub.requestTimeout, isNull);
+        });
+
+        test('treats missing timeoutSeconds  no timeout', () async {
+          final workspace = await createTemporaryWorkspace(
+            workspacePackages: [],
+          );
+          final config = MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {
+                'melos': {
+                  'pub': <String, String>{},
+                },
+              },
+              defaults: configMapDefaults,
+            ),
+            path: workspace.path,
+          );
+
+          expect(config.pub.requestTimeout, isNull);
+        });
+
         test('throws if pub is not a map', () {
           expect(
             () => MelosWorkspaceConfig.fromYaml(

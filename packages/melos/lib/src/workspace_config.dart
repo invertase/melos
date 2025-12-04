@@ -240,7 +240,7 @@ class MelosWorkspaceConfig {
     this.scripts = Scripts.empty,
     this.ide = IDEConfigs.empty,
     this.commands = CommandConfigs.empty,
-    this.pub = const PubConfig(),
+    this.pub = const PubClientConfig(),
     this.useRootAsPackage = false,
     this.discoverNestedWorkspaces = false,
   }) {
@@ -385,8 +385,8 @@ class MelosWorkspaceConfig {
         false;
 
     final pubConfig = melosYaml.containsKey('pub')
-        ? PubConfig.fromYaml(melosYaml['pub'])
-        : const PubConfig();
+        ? PubClientConfig.fromYaml(melosYaml['pub'])
+        : const PubClientConfig();
 
     return MelosWorkspaceConfig(
       path: path,
@@ -428,7 +428,7 @@ class MelosWorkspaceConfig {
         packages: [],
         path: Directory.current.path,
         commands: CommandConfigs.empty,
-        pub: const PubConfig(),
+        pub: const PubClientConfig(),
         useRootAsPackage: false,
         discoverNestedWorkspaces: false,
       );
@@ -444,7 +444,7 @@ class MelosWorkspaceConfig {
          packages: [],
          path: path ?? Directory.current.path,
          commands: CommandConfigs.empty,
-         pub: const PubConfig(),
+         pub: const PubClientConfig(),
          useRootAsPackage: useRootAsPackage ?? false,
          discoverNestedWorkspaces: discoverNestedWorkspaces ?? false,
        );
@@ -592,7 +592,7 @@ class MelosWorkspaceConfig {
   final CommandConfigs commands;
 
   /// Configuration for interacting with pub or alternate registries.
-  final PubConfig pub;
+  final PubClientConfig pub;
 
   /// Path to the Dart/Flutter SDK that should be used, unless overridden though
   /// the command line option or the environment variable.

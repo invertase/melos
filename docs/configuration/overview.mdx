@@ -145,12 +145,13 @@ default value `false`.
 
 Configure how Melos talks to pub (or an alternate registry) when fetching
 package metadata. Defaults usually don’t need changing.
-
+ By default no timeout is applied (useful for
+large downloads); set a value if you need to cap request duration.
 
 ```yaml
 melos:
   pub:
-    timeoutSeconds: 60         # optional per-request timeout
+    timeoutSeconds: 60         # optional per-request timeout; 0/omit = no timeout
     retry:
       delayFactorMillis: 200  # base delay; doubled each retry
       randomizationFactor: 0.25
@@ -160,9 +161,8 @@ melos:
 
 ### timeoutSeconds
 
-The total number of seconds to wait for the request to complete. 
-
-Defaults to 60.
+Total seconds to wait for a registry request. Use 0 or omit to disable the
+timeout (default).
 
 ### delayFactorMillis
 

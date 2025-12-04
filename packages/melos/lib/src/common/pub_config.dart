@@ -8,22 +8,25 @@ import 'validation.dart';
 /// Values map to the `melos.pub` section in the root `pubspec.yaml`, allowing
 /// CLI users to tune timeouts and retry behaviour without code changes.
 @immutable
-class PubConfig {
-  const PubConfig({
+class PubClientConfig {
+  const PubClientConfig({
     this.requestTimeout,
     this.retryBackoff = const RetryBackoff(),
   });
 
-  factory PubConfig.fromYaml(Object? yaml) {
+  factory PubClientConfig.fromYaml(Object? yaml) {
     if (yaml == null) {
-      return const PubConfig();
+      return const PubClientConfig();
     }
 
     if (yaml is! Map<Object?, Object?>) {
       throw MelosConfigException('pub must be a map if provided.');
     }
 
-    final timeoutSeconds = assertKeyIsA<num?>(key: 'timeoutSeconds', map: yaml);
+    final timeoutSeconds = assertKeyIsA<int?>(
+      key: 'timeoutSeconds',
+      map: yaml,
+    );
     final retryMap = assertKeyIsA<Map<Object?, Object?>?>(
       key: 'retry',
       map: yaml,
@@ -33,12 +36,18 @@ class PubConfig {
         ? const RetryBackoff()
         : _retryFromYaml(retryMap);
 
-    return PubConfig(
-      requestTimeout: timeoutSeconds == null
-          ? const Duration(seconds: 60)
-          : Duration(milliseconds: (timeoutSeconds * 1000).round()),
+    return PubClientConfig(
+      requestTimeout: _timeoutFromSeconds(timeoutSeconds),
       retryBackoff: retry,
     );
+  }
+
+  static Duration? _timeoutFromSeconds(int? timeoutSeconds) {
+    if (timeoutSeconds == null || timeoutSeconds <= 0) {
+      return null;
+    }
+
+    return Duration(seconds: timeoutSeconds);
   }
 
   static RetryBackoff _retryFromYaml(Map<Object?, Object?> retryMap) {
@@ -65,7 +74,7 @@ class PubConfig {
 
     return RetryBackoff(
       delayFactor: delayFactorMillis == null
-          ? const Duration(milliseconds: 400)
+          ? const Duration(milliseconds: 200)
           : Duration(milliseconds: delayFactorMillis.round()),
       randomizationFactor: randomizationFactor?.toDouble() ?? 0.25,
       maxDelay: maxDelaySeconds == null
@@ -75,7 +84,8 @@ class PubConfig {
     );
   }
 
-  /// Timeout applied to registry HTTP requests, if set.
+  /// Timeout applied to registry HTTP requests. `null` (default) means no
+  /// timeout is applied.
   final Duration? requestTimeout;
 
   /// Retry/backoff settings applied to registry HTTP requests.
@@ -83,8 +93,7 @@ class PubConfig {
 
   Map<String, Object?> toJson() {
     return {
-      if (requestTimeout != null)
-        'timeoutSeconds': requestTimeout!.inMilliseconds / 1000,
+      if (requestTimeout != null) 'timeoutSeconds': requestTimeout!.inSeconds,
       'retry': {
         'delayFactorMillis': retryBackoff.delayFactor.inMilliseconds,
         'randomizationFactor': retryBackoff.randomizationFactor,
@@ -96,7 +105,7 @@ class PubConfig {
 
   @override
   bool operator ==(Object other) {
-    return other is PubConfig &&
+    return other is PubClientConfig &&
         other.requestTimeout == requestTimeout &&
         other.retryBackoff == retryBackoff;
   }

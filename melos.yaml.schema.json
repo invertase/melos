@@ -74,7 +74,7 @@
       "properties": {
         "timeoutSeconds": {
           "type": "number",
-          "description": "Optional timeout in seconds applied to registry HTTP requests. Defaults to 60 seconds."
+          "description": "Optional timeout in seconds applied to registry HTTP requests. Use 0 or omit to disable timeouts (default)."
         },
         "retry": {
           "type": "object",
@@ -83,7 +83,7 @@
           "properties": {
             "delayFactorMillis": {
               "type": "number",
-              "description": "Base delay in milliseconds before exponential backoff is applied. Defaults to 400ms"
+              "description": "Base delay in milliseconds before exponential backoff is applied. Defaults to 200ms."
             },
             "randomizationFactor": {
               "type": "number",

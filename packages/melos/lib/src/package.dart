@@ -785,7 +785,7 @@ The packages that caused the problem are:
   /// This is the default packages behaviour when a workspace is loaded.
   Future<PackageMap> applyFilters(
     PackageFilters? filters, {
-    PubConfig pubConfig = const PubConfig(),
+    PubClientConfig pubConfig = const PubClientConfig(),
   }) async {
     if (filters == null) {
       return this;
@@ -893,7 +893,7 @@ extension IterablePackageExt on Iterable<Package> {
   Future<Iterable<Package>> filterPublishedPackages({
     required bool? published,
     MelosLogger? logger,
-    PubConfig pubConfig = const PubConfig(),
+    PubClientConfig pubConfig = const PubClientConfig(),
   }) async {
     if (published == null) {
       return this;
