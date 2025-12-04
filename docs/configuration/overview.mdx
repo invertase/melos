@@ -151,7 +151,7 @@ large downloads); set a value if you need to cap request duration.
 ```yaml
 melos:
   pub:
-    timeoutSeconds: 60         # optional per-request timeout; 0/omit = no timeout
+    timeoutSeconds: 60        # optional per-request timeout; 0/omit = no timeout
     retry:
       delayFactorMillis: 200  # base delay; doubled each retry
       randomizationFactor: 0.25
