@@ -14,10 +14,13 @@ import 'common/environment_variable_key.dart';
 import 'common/exception.dart';
 import 'common/git.dart';
 import 'common/glob.dart';
+import 'common/http.dart';
 import 'common/io.dart';
 import 'common/platform.dart';
+import 'common/pub_config.dart';
 import 'common/pub_hosted.dart' as pub;
 import 'common/pub_hosted_package.dart';
+import 'common/retry_backoff.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
 import 'logging.dart';
@@ -780,7 +783,10 @@ The packages that caused the problem are:
   /// Detect packages in the workspace with the provided filters.
   ///
   /// This is the default packages behaviour when a workspace is loaded.
-  Future<PackageMap> applyFilters(PackageFilters? filters) async {
+  Future<PackageMap> applyFilters(
+    PackageFilters? filters, {
+    PubConfig pubConfig = const PubConfig(),
+  }) async {
     if (filters == null) {
       return this;
     }
@@ -795,7 +801,11 @@ The packages that caused the problem are:
         .applyDependsOn(filters.dependsOn)
         .applyNoDependsOn(filters.noDependsOn)
         .filterNullSafe(nullSafe: filters.nullSafe)
-        .filterPublishedPackages(published: filters.published);
+        .filterPublishedPackages(
+          published: filters.published,
+          logger: _logger,
+          pubConfig: pubConfig,
+        );
 
     final diff = filters.diff;
     if (diff != null) {
@@ -882,6 +892,8 @@ extension IterablePackageExt on Iterable<Package> {
   /// include unpublished packages. If null, does nothing.
   Future<Iterable<Package>> filterPublishedPackages({
     required bool? published,
+    MelosLogger? logger,
+    PubConfig pubConfig = const PubConfig(),
   }) async {
     if (published == null) {
       return this;
@@ -891,7 +903,11 @@ extension IterablePackageExt on Iterable<Package> {
     final packagesFilteredWithPublishStatus = <Package>[];
 
     await pool.forEach<Package, void>(this, (package) async {
-      final pubPackage = await package.getPublishedPackage();
+      final pubPackage = await package.getPublishedPackage(
+        logger: logger,
+        backoff: pubConfig.retryBackoff,
+        timeout: pubConfig.requestTimeout,
+      );
 
       final isOnPubRegistry = pubPackage?.isVersionPublished(package.version);
 
@@ -1151,15 +1167,45 @@ class Package {
     return publishTo.toString() == 'none';
   }
 
-  /// Queries the pub.dev registry for published versions of this package.
-  /// Primarily used for publish filters and versioning.
-  Future<PubHostedPackage?> getPublishedPackage() async {
+  /// Queries the pub registry for published versions of this package.
+  ///
+  /// By default this uses the standard retry/backoff configuration; callers
+  /// can override [backoff], [timeout] or [onRetry] (primarily in tests) and
+  /// optionally emit retry warnings through [logger].
+  Future<PubHostedPackage?> getPublishedPackage({
+    MelosLogger? logger,
+    RetryNoticeCallback? onRetry,
+    RetryBackoff backoff = const RetryBackoff(),
+    Duration? timeout,
+  }) async {
     if (isPrivate) {
       return null;
     }
 
+    final retryNoticeHandler =
+        onRetry ??
+        (logger == null
+            ? null
+            : (notice) {
+                final delayDescription = notice.delay.inSeconds >= 1
+                    ? '${notice.delay.inSeconds}s'
+                    : '${notice.delay.inMilliseconds}ms';
+                logger.warning(
+                  'Retrying ${notice.method} ${notice.url} '
+                  '(${notice.attempt}/${notice.maxAttempts}) '
+                  'in $delayDescription because ${notice.reason}.',
+                  label: false,
+                );
+              });
+
     final pubClient = pub.PubHostedClient.fromUri(pubHosted: publishTo);
-    return pubClient.fetchPackage(name);
+    return pubClient.fetchPackage(
+      name,
+      logger: logger,
+      onRetry: retryNoticeHandler,
+      backoff: backoff,
+      timeout: timeout,
+    );
   }
 
   /// Whether this package is an example package.

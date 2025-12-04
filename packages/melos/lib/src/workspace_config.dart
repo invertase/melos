@@ -240,6 +240,7 @@ class MelosWorkspaceConfig {
     this.scripts = Scripts.empty,
     this.ide = IDEConfigs.empty,
     this.commands = CommandConfigs.empty,
+    this.pub = const PubConfig(),
     this.useRootAsPackage = false,
     this.discoverNestedWorkspaces = false,
   }) {
@@ -383,10 +384,15 @@ class MelosWorkspaceConfig {
         ) ??
         false;
 
+    final pubConfig = melosYaml.containsKey('pub')
+        ? PubConfig.fromYaml(melosYaml['pub'])
+        : const PubConfig();
+
     return MelosWorkspaceConfig(
       path: path,
       name: name,
       repository: repository,
+      pub: pubConfig,
       sdkPath: sdkPath,
       categories: categories.map(
         (key, value) => MapEntry(
@@ -422,6 +428,7 @@ class MelosWorkspaceConfig {
         packages: [],
         path: Directory.current.path,
         commands: CommandConfigs.empty,
+        pub: const PubConfig(),
         useRootAsPackage: false,
         discoverNestedWorkspaces: false,
       );
@@ -437,6 +444,7 @@ class MelosWorkspaceConfig {
          packages: [],
          path: path ?? Directory.current.path,
          commands: CommandConfigs.empty,
+         pub: const PubConfig(),
          useRootAsPackage: useRootAsPackage ?? false,
          discoverNestedWorkspaces: discoverNestedWorkspaces ?? false,
        );
@@ -583,6 +591,9 @@ class MelosWorkspaceConfig {
   /// This allows customizing the default behaviour of melos commands.
   final CommandConfigs commands;
 
+  /// Configuration for interacting with pub or alternate registries.
+  final PubConfig pub;
+
   /// Path to the Dart/Flutter SDK that should be used, unless overridden though
   /// the command line option or the environment variable.
   final String? sdkPath;
@@ -640,7 +651,8 @@ class MelosWorkspaceConfig {
       ).equals(other.ignore, ignore) &&
       other.scripts == scripts &&
       other.ide == ide &&
-      other.commands == commands;
+      other.commands == commands &&
+      other.pub == pub;
 
   @override
   int get hashCode =>
@@ -655,7 +667,8 @@ class MelosWorkspaceConfig {
           const DeepCollectionEquality(GlobEquality()).hash(ignore) ^
       scripts.hashCode ^
       ide.hashCode ^
-      commands.hashCode;
+      commands.hashCode ^
+      pub.hashCode;
 
   Map<String, Object> toJson() {
     return {
@@ -676,6 +689,7 @@ class MelosWorkspaceConfig {
         if (scripts.isNotEmpty) 'scripts': scripts.toJson(),
         'ide': ide.toJson(),
         'command': commands.toJson(),
+        'pub': pub.toJson(),
       },
     };
   }
@@ -699,6 +713,7 @@ MelosWorkspaceConfig(
   scripts: ${scripts.toString().indent('  ')},
   ide: ${ide.toString().indent('  ')},
   commands: ${commands.toString().indent('  ')},
+  pub: $pub,
 )''';
   }
 }

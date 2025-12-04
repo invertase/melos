@@ -3,6 +3,7 @@ import 'package:melos/src/command_configs/command_configs.dart';
 import 'package:melos/src/common/git_repository.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/platform.dart';
+import 'package:melos/src/common/retry_backoff.dart';
 import 'package:melos/src/workspace_config.dart';
 import 'package:test/test.dart';
 
@@ -821,6 +822,97 @@ void main() {
           ),
           throwsMelosConfigException(),
         );
+      });
+
+      group('pub config', () {
+        test('defaults to retry/backoff defaults with no timeout', () async {
+          final workspace = await createTemporaryWorkspace(
+            workspacePackages: [],
+          );
+          final config = MelosWorkspaceConfig.fromYaml(
+            createYamlMap({}, defaults: configMapDefaults),
+            path: workspace.path,
+          );
+
+          expect(config.pub.requestTimeout, isNull);
+          expect(
+            config.pub.retryBackoff,
+            const RetryBackoff(),
+          );
+        });
+
+        test('decodes timeout and retry options', () async {
+          final workspace = await createTemporaryWorkspace(
+            workspacePackages: [],
+          );
+          final config = MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {
+                'melos': {
+                  'pub': {
+                    'timeoutSeconds': 5,
+                    'retry': {
+                      'delayFactorMillis': 100,
+                      'randomizationFactor': 0.1,
+                      'maxDelaySeconds': 10,
+                      'maxAttempts': 4,
+                    },
+                  },
+                },
+              },
+              defaults: configMapDefaults,
+            ),
+            path: workspace.path,
+          );
+
+          expect(config.pub.requestTimeout, const Duration(seconds: 5));
+          expect(
+            config.pub.retryBackoff,
+            const RetryBackoff(
+              delayFactor: Duration(milliseconds: 100),
+              randomizationFactor: 0.1,
+              maxDelay: Duration(seconds: 10),
+              maxAttempts: 4,
+            ),
+          );
+        });
+
+        test('uses retry defaults when only timeout is provided', () async {
+          final workspace = await createTemporaryWorkspace(
+            workspacePackages: [],
+          );
+          final config = MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {
+                'melos': {
+                  'pub': {
+                    'timeoutSeconds': 2,
+                  },
+                },
+              },
+              defaults: configMapDefaults,
+            ),
+            path: workspace.path,
+          );
+
+          expect(config.pub.requestTimeout, const Duration(seconds: 2));
+          expect(config.pub.retryBackoff, const RetryBackoff());
+        });
+
+        test('throws if pub is not a map', () {
+          expect(
+            () => MelosWorkspaceConfig.fromYaml(
+              createYamlMap(
+                {
+                  'melos': {'pub': 'invalid'},
+                },
+                defaults: configMapDefaults,
+              ),
+              path: testWorkspacePath,
+            ),
+            throwsMelosConfigException(),
+          );
+        });
       });
     });
   });

@@ -67,6 +67,40 @@
       "description": "Whether to recursively discover packages in nested workspaces. Defaults to false.",
       "default": false
     },
+    "pub": {
+      "type": "object",
+      "description": "Configuration for HTTP requests to pub or alternate registries.",
+      "additionalProperties": false,
+      "properties": {
+        "timeoutSeconds": {
+          "type": "number",
+          "description": "Optional timeout in seconds applied to registry HTTP requests. Defaults to 60 seconds."
+        },
+        "retry": {
+          "type": "object",
+          "description": "Retry/backoff settings applied to registry HTTP requests.",
+          "additionalProperties": false,
+          "properties": {
+            "delayFactorMillis": {
+              "type": "number",
+              "description": "Base delay in milliseconds before exponential backoff is applied. Defaults to 400ms"
+            },
+            "randomizationFactor": {
+              "type": "number",
+              "description": "Jitter factor between 0 and 1 applied to each retry delay. Defaults to 0.25 (25%)."
+            },
+            "maxDelaySeconds": {
+              "type": "number",
+              "description": "Maximum delay in seconds between retry attempts. Defaults to 30 seconds."
+            },
+            "maxAttempts": {
+              "type": "integer",
+              "description": "Maximum number of attempts (including the first request) before giving up. Defaults to 8."
+            }
+          }
+        }
+      }
+    },
     "categories": {
       "type": "object",
       "description": "Categorize packages in the workspace.",
