@@ -2,7 +2,7 @@ import 'package:melos/melos.dart';
 import 'package:melos/src/command_configs/command_configs.dart';
 import 'package:melos/src/command_configs/publish.dart';
 import 'package:melos/src/common/glob.dart';
-import 'package:melos/src/common/utils.dart';
+import 'package:melos/src/common/topology.dart';
 import 'package:melos/src/lifecycle_hooks/publish.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';

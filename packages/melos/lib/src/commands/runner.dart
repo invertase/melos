@@ -36,6 +36,7 @@ import '../common/pending_package_update.dart';
 import '../common/persistent_shell.dart';
 import '../common/platform.dart';
 import '../common/pubspec_overrides.dart';
+import '../common/topology.dart';
 import '../common/utils.dart' as utils;
 import '../common/utils.dart';
 import '../common/versioning.dart' as versioning;

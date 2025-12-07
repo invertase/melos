@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:glob/glob.dart';
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
@@ -147,11 +148,10 @@ ${'-' * terminalWidth}
 
 \$ melos exec
   └> dart delayed_exit.dart
-     └> FAILED (in 1 packages)
+     └> FAILED (in 3 packages)
         └> c (with exit code 1)
-     └> CANCELED (in 2 packages)
-        └> a (due to failFast)
-        └> b (due to failFast)
+        └> b (dependency failed)
+        └> a (dependency failed)
 ''',
           ),
         );
@@ -378,7 +378,7 @@ ${'-' * terminalWidth}
       });
 
       test(
-        'sorts execution order topologically with cyclic dependencies',
+        'cancels execution if cyclic dependencies are found',
         () async {
           final workspaceDir = await createTemporaryWorkspace(
             workspacePackages: ['a', 'b', 'c'],
@@ -428,19 +428,8 @@ ${'-' * terminalWidth}
             logger.output.normalizeLines(),
             ignoringAnsii(
               '''
-\$ melos exec
-  └> echo hello world
-     └> RUNNING (in 3 packages)
-
-${'-' * terminalWidth}
-[c]: hello world
-[a]: hello world
-[b]: hello world
-${'-' * terminalWidth}
-
-\$ melos exec
-  └> echo hello world
-     └> SUCCESS
+🚨 1 cycles in dependencies found:
+[ b -> a ]
 ''',
             ),
           );
@@ -460,6 +449,9 @@ ${'-' * terminalWidth}
               'a',
               dependencies: {
                 'b': HostedDependency(version: VersionConstraint.any),
+                'c': HostedDependency(version: VersionConstraint.any),
+                'd': HostedDependency(version: VersionConstraint.any),
+                'e': HostedDependency(version: VersionConstraint.any),
               },
             ),
           );
@@ -486,12 +478,7 @@ ${'-' * terminalWidth}
 
           await createProject(
             workspaceDir,
-            Pubspec(
-              'd',
-              dependencies: {
-                'a': HostedDependency(version: VersionConstraint.any),
-              },
-            ),
+            Pubspec('d'),
           );
 
           await createProject(
@@ -510,7 +497,7 @@ ${'-' * terminalWidth}
 
           await melos.exec(
             ['echo', 'hello', 'world'],
-            concurrency: 2,
+            concurrency: 5,
             orderDependents: true,
           );
 
@@ -524,10 +511,114 @@ ${'-' * terminalWidth}
 
 ${'-' * terminalWidth}
 [e]: hello world
+[d]: hello world
 [c]: hello world
 [b]: hello world
 [a]: hello world
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> echo hello world
+     └> SUCCESS
+''',
+            ),
+          );
+        },
+      );
+
+      test(
+        'sorts order topologically but executes based on package filter',
+        () async {
+          const testCategoryName = 'ade';
+          final workspaceDir = await createTemporaryWorkspace(
+            workspacePackages: ['a', 'b', 'c', 'd', 'e'],
+            configBuilder: (path) => MelosWorkspaceConfig(
+              path: path,
+              name: 'workspace',
+              packages: const [],
+              categories: {
+                testCategoryName: [
+                  Glob('packages/a'),
+                  Glob('packages/d'),
+                  Glob('packages/e'),
+                ],
+              },
+            ),
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'a',
+              dependencies: {
+                'b': HostedDependency(version: VersionConstraint.any),
+                'c': HostedDependency(version: VersionConstraint.any),
+                'd': HostedDependency(version: VersionConstraint.any),
+                'e': HostedDependency(version: VersionConstraint.any),
+              },
+            ),
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'b',
+              dependencies: {
+                'c': HostedDependency(version: VersionConstraint.any),
+              },
+            ),
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'c',
+              dependencies: {
+                'd': HostedDependency(version: VersionConstraint.any),
+              },
+            ),
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('d'),
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('e'),
+          );
+
+          final logger = TestLogger();
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(
+            logger: logger,
+            config: config,
+          );
+
+          await melos.exec(
+            ['echo', 'hello', 'world'],
+            concurrency: 5,
+            orderDependents: true,
+            packageFilters: PackageFilters(
+              categories: [Glob(testCategoryName)],
+            ),
+          );
+
+          expect(
+            logger.output.normalizeLines(),
+            ignoringAnsii(
+              '''
+\$ melos exec
+  └> echo hello world
+     └> RUNNING (in 3 packages)
+
+${'-' * terminalWidth}
+[e]: hello world
 [d]: hello world
+[a]: hello world
 ${'-' * terminalWidth}
 
 \$ melos exec
@@ -582,6 +673,7 @@ ${'-' * terminalWidth}
           ['exit', '1'],
           concurrency: 3,
           orderDependents: true,
+          failFast: true,
         );
 
         expect(
@@ -605,6 +697,76 @@ ${'-' * terminalWidth}
           ),
         );
       });
+
+      test(
+        'does not fail fast if dependencies fail but failFast is false',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            workspacePackages: ['a', 'b', 'c'],
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'a',
+              dependencies: {
+                'c': HostedDependency(version: VersionConstraint.any),
+              },
+            ),
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('b'),
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'c',
+              dependencies: {
+                'b': HostedDependency(version: VersionConstraint.any),
+              },
+            ),
+          );
+
+          final logger = TestLogger();
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(
+            logger: logger,
+            config: config,
+          );
+
+          await melos.exec(
+            ['exit', '1'],
+            concurrency: 3,
+            orderDependents: true,
+          );
+
+          expect(
+            logger.output.normalizeLines(),
+            ignoringAnsii(
+              '''
+\$ melos exec
+  └> exit 1
+     └> RUNNING (in 3 packages)
+
+${'-' * terminalWidth}
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> exit 1
+     └> FAILED (in 3 packages)
+        └> b (with exit code 1)
+        └> c (with exit code 1)
+        └> a (with exit code 1)
+''',
+            ),
+          );
+        },
+      );
 
       test('does not fail fast if dependencies is not run', () async {
         final workspaceDir = await createTemporaryWorkspace(
