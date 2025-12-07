@@ -715,6 +715,7 @@ mixin _VersionMixin on _RunMixin {
 
     final packages = await workspace.allPackages.applyFilters(
       config.packageFilters,
+      pubConfig: workspace.config.pub,
     );
     // ignore: parameter_assignments
     pendingPackageUpdates = pendingPackageUpdates

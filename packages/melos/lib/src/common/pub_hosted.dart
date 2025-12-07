@@ -5,10 +5,12 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
 
+import '../logging.dart';
 import 'http.dart';
 import 'platform.dart';
 import 'pub_credential.dart';
 import 'pub_hosted_package.dart';
+import 'retry_backoff.dart';
 
 /// The URL where we can find a package server.
 ///
@@ -51,9 +53,23 @@ class PubHostedClient extends http.BaseClient {
     return _inner.send(request);
   }
 
-  Future<PubHostedPackage?> fetchPackage(String name) async {
+  /// Fetch package metadata from the configured pub host with retry/backoff.
+  Future<PubHostedPackage?> fetchPackage(
+    String name, {
+    Duration? timeout,
+    RetryNoticeCallback? onRetry,
+    RetryBackoff backoff = const RetryBackoff(),
+    MelosLogger? logger,
+  }) async {
     final url = pubHosted.resolve('api/packages/$name');
-    final response = await get(url);
+    final response = await getWithRetry(
+      url,
+      client: this,
+      timeout: timeout,
+      onRetry: onRetry,
+      backoff: backoff,
+      logger: logger,
+    );
 
     if (response.statusCode == 404) {
       // The package was never published

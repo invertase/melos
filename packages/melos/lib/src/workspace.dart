@@ -74,7 +74,10 @@ class MelosWorkspace {
         ? packages.addPackage(rootPackage)
         : packages;
 
-    final filteredPackages = await allPackages.applyFilters(packageFilters);
+    final filteredPackages = await allPackages.applyFilters(
+      packageFilters,
+      pubConfig: workspaceConfig.pub,
+    );
 
     return MelosWorkspace(
       name: workspaceConfig.name,

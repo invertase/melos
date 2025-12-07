@@ -136,7 +136,11 @@ mixin _PublishMixin on _ExecMixin {
         return;
       }
 
-      final pubPackage = await package.getPublishedPackage();
+      final pubPackage = await package.getPublishedPackage(
+        logger: logger,
+        backoff: workspace.config.pub.retryBackoff,
+        timeout: workspace.config.pub.requestTimeout,
+      );
       final versions = pubPackage?.prioritizedVersions.reversed
           .map((v) => v.version.toString())
           .toList();

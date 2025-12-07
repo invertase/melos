@@ -141,6 +141,50 @@ If you prefer the previous behaviour where only the packages directly matched
 by `workspace` globs are discovered, leave `discoverNestedWorkspaces` at its
 default value `false`.
 
+## pub (timeouts and retries)
+
+Configure how Melos talks to pub (or an alternate registry) when fetching
+package metadata. Defaults usually don’t need changing.
+By default no timeout is applied (useful for large downloads); set a value if 
+you need to cap request duration.
+
+```yaml
+melos:
+  pub:
+    timeoutSeconds: 60        # optional per-request timeout; 0/omit = no timeout
+    retry:
+      delayFactorMillis: 200  # base delay; doubled each retry
+      randomizationFactor: 0.25
+      maxDelaySeconds: 30
+      maxAttempts: 8          # includes the first attempt
+```
+
+### timeoutSeconds
+
+Total seconds to wait for a registry request. Use 0 or omit to disable the
+timeout (default).
+
+### delayFactorMillis
+
+The delay before the first retry, which is then doubled on each subsequent 
+retry until the maxDelaySeconds is exceeded. 
+
+Defaults to 200ms.
+
+
+### maxDelaySeconds
+
+The maximum time to wait between retry attempts. 
+
+Defautls to 30 seconds.
+
+
+### maxAttempts
+
+The maximum number of retry attemps including the first request.
+
+Defaults to 8.
+
 ## ignore
 
 A list of paths to local packages that are excluded from the Melos workspace.
