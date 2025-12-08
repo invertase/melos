@@ -15,12 +15,24 @@ mixin _ExecMixin on _Melos {
       global: global,
       packageFilters: packageFilters,
     );
-    final packages = workspace.filteredPackages.values;
+    final allPackages = workspace.allPackages.values.toList(growable: false);
+    final executablePackages = workspace.filteredPackages.values.toList(
+      growable: false,
+    );
+
+    if (orderDependents) {
+      final cycles = findCyclicDependenciesInWorkspace(allPackages);
+      if (cycles.isNotEmpty) {
+        printCyclesInDependencies(cycles, logger);
+        exitCode = 1;
+        return;
+      }
+    }
 
     await _execForAllPackages(
       workspace,
-      packages,
       execArgs,
+      executablePackages: executablePackages,
       failFast: failFast,
       concurrency: concurrency,
       orderDependents: orderDependents,
@@ -87,107 +99,96 @@ mixin _ExecMixin on _Melos {
 
   Future<void> _execForAllPackages(
     MelosWorkspace workspace,
-    Iterable<Package> packages,
     List<String> execArgs, {
+    required Iterable<Package> executablePackages,
     required int concurrency,
     required bool failFast,
     required bool orderDependents,
     Map<String, String> additionalEnvironment = const {},
   }) async {
-    final sortedPackages = packages.toList(growable: false);
-    var hasImpactfulCycles = false;
+    final allPackagesList = workspace.allPackages.values.toList(
+      growable: false,
+    );
+    final executablePackagesList = executablePackages.toList(growable: false);
+    final List<List<Package>> sortedPackageLayers;
 
     if (orderDependents) {
-      // TODO: This is not really the right way to do this. Cyclic dependencies
-      // are handled in a way that is specific for publishing.
-      sortPackagesForPublishing(sortedPackages);
-      hasImpactfulCycles = findCyclicDependenciesInWorkspace(
-        sortedPackages,
-      ).isNotEmpty;
+      final allPackagesLayers = sortPackagesForExecution(allPackagesList);
+      sortedPackageLayers = whereOnlyExecutablePackages(
+        allPackagesLayers,
+        executablePackagesList,
+      );
+    } else {
+      sortedPackageLayers = [executablePackagesList];
     }
 
-    final calculatedConcurrency = hasImpactfulCycles ? 1 : concurrency;
     final failures = <String, int?>{};
-    final pool = Pool(calculatedConcurrency);
+    final pool = Pool(concurrency);
+
     final execArgsString = execArgs.join(' ');
-    final prefixLogs = concurrency != 1 && packages.length != 1;
+    final prefixLogs = concurrency != 1 && executablePackages.length != 1;
 
     logger.command('melos exec', withDollarSign: true);
     logger
         .child(targetStyle(execArgsString))
-        .child('$runningLabel (in ${packages.length} packages)')
+        .child('$runningLabel (in ${executablePackages.length} packages)')
         .newLine();
     if (prefixLogs) {
       logger.horizontalLine();
     }
 
     final packageResults = Map.fromEntries(
-      packages.map((package) => MapEntry(package.name, Completer<int?>())),
+      executablePackages.map(
+        (package) => MapEntry(package.name, Completer<int?>()),
+      ),
     );
 
-    late final CancelableOperation<void> operation;
+    for (final packageLayer in sortedPackageLayers) {
+      late final CancelableOperation<void> operation;
 
-    operation = CancelableOperation.fromFuture(
-      pool.forEach<Package, void>(sortedPackages, (package) async {
-        if (failFast && failures.isNotEmpty) {
-          packageResults[package.name]?.complete();
-          failures[package.name] = null;
-          return;
-        }
-
-        if (orderDependents && !hasImpactfulCycles) {
-          final dependenciesResults = await Future.wait(
-            package.allDependenciesInWorkspace.values
-                .map((package) => packageResults[package.name]?.future)
-                .nonNulls,
-          );
-
-          final dependencyFailed = dependenciesResults.any(
-            (exitCode) => exitCode == null || exitCode > 0,
-          );
-          if (dependencyFailed) {
+      operation = CancelableOperation.fromFuture(
+        pool.forEach<Package, void>(packageLayer, (package) async {
+          if (failFast && failures.isNotEmpty) {
             packageResults[package.name]?.complete();
             failures[package.name] = null;
-
             return;
           }
-        }
 
-        if (!prefixLogs) {
-          logger
-            ..horizontalLine()
-            ..log(AnsiStyles.bgBlack.bold.italic('${package.name}:'));
-        }
+          if (!prefixLogs) {
+            logger
+              ..horizontalLine()
+              ..log(AnsiStyles.bgBlack.bold.italic('${package.name}:'));
+          }
 
-        final packageExitCode = await _execForPackage(
-          workspace,
-          package,
-          execArgs,
-          prefixLogs: prefixLogs,
-          extraEnvironment: additionalEnvironment,
-        );
-
-        packageResults[package.name]?.complete(packageExitCode);
-
-        if (packageExitCode > 0) {
-          failures[package.name] = packageExitCode;
-        } else if (!prefixLogs) {
-          logger.log(
-            AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
-                AnsiStyles.bgBlack(successLabel),
+          final packageExitCode = await _execForPackage(
+            workspace,
+            package,
+            execArgs,
+            prefixLogs: prefixLogs,
+            extraEnvironment: additionalEnvironment,
           );
-        }
 
-        if (packageExitCode > 0 && failFast) {
-          await operation.cancel();
-        }
-      }).drain<void>(),
-    );
+          packageResults[package.name]?.complete(packageExitCode);
 
-    await operation.valueOrCancellation();
+          if (packageExitCode > 0) {
+            failures[package.name] = packageExitCode;
+          } else if (!prefixLogs) {
+            logger.log(
+              AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
+                  AnsiStyles.bgBlack(successLabel),
+            );
+          }
 
-    if (failFast) {
-      runningPids.forEach(Process.killPid);
+          if (packageExitCode > 0 && failFast) {
+            await operation.cancel();
+          }
+        }).drain<void>(),
+      );
+
+      await operation.valueOrCancellation();
+      if (failFast) {
+        runningPids.forEach(Process.killPid);
+      }
     }
 
     logger
@@ -210,7 +211,7 @@ mixin _ExecMixin on _Melos {
       }
 
       final canceled = <String>[];
-      for (final package in packages) {
+      for (final package in executablePackages) {
         if (failures.containsKey(package.name)) {
           continue;
         }

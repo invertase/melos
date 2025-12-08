@@ -192,8 +192,8 @@ mixin _PublishMixin on _ExecMixin {
 
     await _execForAllPackages(
       workspace,
-      unpublishedPackages,
       execArgs,
+      executablePackages: unpublishedPackages,
       concurrency: 1,
       failFast: true,
       orderDependents: false,

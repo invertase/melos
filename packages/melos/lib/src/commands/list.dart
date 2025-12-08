@@ -377,16 +377,10 @@ mixin _ListMixin on _Melos {
     final cycles = findCyclicDependenciesInWorkspace(
       workspace.filteredPackages.values.toList(),
     );
-
     if (cycles.isEmpty) {
       logger.stdout('🎉 No cycles in dependencies found.');
     } else {
-      logger.stdout('🚨 ${cycles.length} cycles in dependencies found:');
-      for (final cycle in cycles) {
-        logger.stdout(
-          '[ ${cycle.map((package) => package.name).join(' -> ')} ]',
-        );
-      }
+      printCyclesInDependencies(cycles, logger);
       exitCode = 1;
     }
   }

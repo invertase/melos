@@ -17,6 +17,9 @@ void main() {
       expect(branchName, isNotEmpty);
     });
 
+    // If you forked repo and test fails:
+    // 1. git remote add "upstream" https://github.com/invertase/melos.git — add original repo as upstream
+    // 2. git fetch --tags upstream — fetch tags from original repo
     test('gitTagExists', () async {
       const aTagThatExists = 'melos-v0.4.11';
       const aTagThatDoesNotExist = 'not-melos-v0.4.11';
