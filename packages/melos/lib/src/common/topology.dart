@@ -36,22 +36,55 @@ void sortPackagesForPublishing(List<Package> packages) {
 
 /// Sorts [packages] in layered topological order so on each layer packages
 /// are not dependent from each other.
+/// Based on Kahn's algorithm.
 /// Check against cyclic dependencies should be done separately.
 List<List<Package>> sortPackagesForExecution(List<Package> packages) {
-  final packageNames = packages.map((package) => package.name).toList();
   final packageMap = {for (final package in packages) package.name: package};
-  final graph = <String, Iterable<String>>{
+  final nodes = packages.map((package) => package.name).toList();
+  final edges = <String, Iterable<String>>{
     for (final package in packages)
       package.name: [
-        ...package.dependencies.where(packageNames.contains),
-        ...package.devDependencies.where(packageNames.contains),
+        ...package.dependencies.where(nodes.contains),
+        ...package.devDependencies.where(nodes.contains),
       ],
   };
-  return stronglyConnectedComponents(graph.keys, (package) => graph[package]!)
-      .map(
-        (sortedPackageNames) =>
-            sortedPackageNames.map((e) => packageMap[e]!).toList(),
-      )
+  final inDegree = {for (final node in nodes) node: 0};
+
+  // Calculate indegree for each node
+  for (final node in edges.values.flattened) {
+    inDegree[node] = inDegree[node]! + 1;
+  }
+
+  // Initial layer are nodes which have inDegree 0, that are never dependencies
+  final queue = inDegree.entries
+      .where((entry) => entry.value == 0)
+      .map((entry) => entry.key)
+      .toList();
+
+  final layers = <List<String>>[];
+  while (queue.isNotEmpty) {
+    // Put everything from queue to new layer
+    final currentLayer = queue.toList(growable: false);
+    queue.clear();
+    layers.add(currentLayer);
+
+    // Iterate through child nodes of each node in current layer
+    // And decrease it's inDegree value
+    // If it is 0 — add to queue for next layer
+    final childNodes = currentLayer.map((node) => edges[node] ?? []).flattened;
+    for (final childNode in childNodes) {
+      inDegree[childNode] = inDegree[childNode]! - 1;
+      if (inDegree[childNode] == 0) {
+        queue.add(childNode);
+      }
+    }
+  }
+
+  // Map to packages
+  return layers
+      .map((layer) => layer.map((node) => packageMap[node]!).toList())
+      .toList()
+      .reversed
       .toList();
 }
 
