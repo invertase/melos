@@ -148,10 +148,11 @@ ${'-' * terminalWidth}
 
 \$ melos exec
   └> dart delayed_exit.dart
-     └> FAILED (in 3 packages)
+     └> FAILED (in 1 packages)
         └> c (with exit code 1)
-        └> b (dependency failed)
-        └> a (dependency failed)
+     └> CANCELED (in 2 packages)
+        └> a (due to failFast)
+        └> b (due to failFast)
 ''',
           ),
         );
@@ -510,10 +511,10 @@ ${'-' * terminalWidth}
      └> RUNNING (in 5 packages)
 
 ${'-' * terminalWidth}
-[e]: hello world
 [d]: hello world
 [c]: hello world
 [b]: hello world
+[e]: hello world
 [a]: hello world
 ${'-' * terminalWidth}
 
@@ -616,8 +617,8 @@ ${'-' * terminalWidth}
      └> RUNNING (in 3 packages)
 
 ${'-' * terminalWidth}
-[e]: hello world
 [d]: hello world
+[e]: hello world
 [a]: hello world
 ${'-' * terminalWidth}
 
