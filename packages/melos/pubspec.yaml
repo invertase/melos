@@ -17,7 +17,7 @@ topics:
   - lerna
 
 environment:
-  sdk: ^3.9.0
+  sdk: ^3.8.0
 
 executables:
   melos:
