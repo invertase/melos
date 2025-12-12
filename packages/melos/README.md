@@ -72,7 +72,7 @@ like this:
 name: my_workspace
 publish_to: none
 environment:
-  sdk: ^3.9.0
+  sdk: ^3.8.0
 workspace:
   - packages/helper
   - packages/client_package
@@ -90,7 +90,7 @@ And this is what the `pubspec.yaml` file of a package would look like:
 ```yaml
 name: my_package
 environment:
-  sdk: ^3.9.0
+  sdk: ^3.8.0
 resolution: workspace
 ```
 

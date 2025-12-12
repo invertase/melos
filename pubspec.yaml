@@ -5,7 +5,7 @@ workspace:
   - packages/melos
 
 environment:
-  sdk: ^3.9.0
+  sdk: ^3.8.0
 
 # This allows us to use melos on itself during development.
 executables:
@@ -27,7 +27,7 @@ melos:
   command:
     bootstrap:
       environment:
-        sdk: ^3.9.0
+        sdk: ^3.8.0
       dependencies:
         ansi_styles: ^0.3.2+1
         args: ^2.7.0
@@ -86,8 +86,7 @@ melos:
 
     activate:
       description: Activate the local version of melos for development.
-      run:
-        dart pub global activate --source="path" . --executable="melos"
+      run: dart pub global activate --source="path" . --executable="melos"
         --overwrite
 
     activate:pub:
