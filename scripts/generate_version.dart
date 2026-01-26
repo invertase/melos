@@ -10,8 +10,12 @@ Future<void> main() async {
     [Directory.current.path, 'packages', 'melos', 'lib', 'version.g.dart'],
   );
   print('Updating generated file $outputPath');
-  final melosPubspecPath =
-      p.joinAll([Directory.current.path, 'packages', 'melos', 'pubspec.yaml']);
+  final melosPubspecPath = p.joinAll([
+    Directory.current.path,
+    'packages',
+    'melos',
+    'pubspec.yaml',
+  ]);
   final yamlMap =
       loadYaml(File(melosPubspecPath).readAsStringSync()) as YamlMap;
   final currentVersion = yamlMap['version'] as String;

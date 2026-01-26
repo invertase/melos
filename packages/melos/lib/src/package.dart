@@ -96,6 +96,13 @@ RegExp dependencyTagReplaceRegex(String dependencyName) {
   );
 }
 
+RegExp gitTagPatternDependencyVersionReplaceRegex(String dependencyName) {
+  return RegExp(
+    '''(^[ \\t]*?$dependencyName[ \\t]*?:[\\s\\S]*?[ \\t]*?version:[ \\t]*?)(\\^?)$_versionConstraintRegExp''',
+    multiLine: true,
+  );
+}
+
 @immutable
 class PackageFilters {
   PackageFilters({
@@ -554,7 +561,8 @@ class PackageMap {
 
     for (final pubspecFile in pubspecFiles) {
       final pubspecDirPath = pubspecFile.parent.path;
-      final pubspec = Pubspec.parse(pubspecFile.readAsStringSync());
+      final pubspecFileAsString = pubspecFile.readAsStringSync();
+      final pubspec = Pubspec.parse(pubspecFileAsString);
       final name = pubspec.name;
 
       if (packageMap.containsKey(name)) {
@@ -596,6 +604,7 @@ The packages that caused the problem are:
         dependencyOverrides: pubspec.dependencyOverrides.keys.toList(),
         pubspec: pubspec,
         categories: filteredCategories,
+        rawPubspecFileContent: pubspecFileAsString,
       );
     }
 
@@ -1048,6 +1057,7 @@ class Package {
     required this.publishTo,
     required this.pubspec,
     required this.categories,
+    this.rawPubspecFileContent,
   }) : _packageMap = packageMap,
        assert(p.isAbsolute(path));
 
@@ -1063,6 +1073,18 @@ class Package {
   final String path;
   final Pubspec pubspec;
   final List<String> categories;
+
+  //TODO: Remove this when the pubspec_parse package supports tag_pattern.
+  /// Optional raw content of the pubspec.yaml file.
+  ///
+  /// This is a workaround to cover git dependencies
+  /// using the new tag_pattern feature introduced in Dart 3.9.0.
+  /// This is, as of 01/2026, not supported by the pubspec_parse package
+  /// on which this library depends.
+  ///
+  /// Can be removed if [Dart SDK issue #2155](https://github.com/dart-lang/tools/issues/2155)
+  /// has been closed.
+  final String? rawPubspecFileContent;
 
   /// Package path as a normalized string relative to the root of the workspace.
   /// e.g. "packages/firebase_database".

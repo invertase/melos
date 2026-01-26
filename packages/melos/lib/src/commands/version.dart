@@ -511,7 +511,16 @@ mixin _VersionMixin on _RunMixin {
   ) async {
     final normalDependency = package.pubspec.dependencies[dependencyName];
     final devDependency = package.pubspec.devDependencies[dependencyName];
-    final dependency = normalDependency ?? devDependency;
+
+    // in addition to the pubsec_parse parsed dependencies,
+    // we also need to check if it's a git tag pattern dependency
+    final gitTagDependency = package.rawPubspecFileContent != null
+        ? GitTagPatternDependency.fromRawCommit(
+            pubspec: package.rawPubspecFileContent!,
+            name: dependencyName,
+          )
+        : null;
+    final dependency = gitTagDependency ?? normalDependency ?? devDependency;
 
     if (dependency != null &&
         dependency is! GitDependency &&
@@ -531,12 +540,25 @@ mixin _VersionMixin on _RunMixin {
     final isExternalHostedDependency =
         dependency is HostedDependency && dependency.hosted != null;
     final isGitDependency = dependency is GitDependency;
+    final isGitTagDependency = dependency is GitTagPatternDependency;
 
     var updatedContents = pubspecContent;
     if (isExternalHostedDependency) {
       updatedContents = pubspecContent.replaceAllMapped(
         hostedDependencyVersionReplaceRegex(dependencyName),
         (match) => '${match.group(1)}$dependencyVersion',
+      );
+    } else if (isGitTagDependency) {
+      updatedContents = pubspecContent.replaceAllMapped(
+        gitTagPatternDependencyVersionReplaceRegex(dependencyName),
+        (match) {
+          final hasCaret = match.group(2) == '^';
+          final prefix = match.group(1)!;
+          final replacement =
+              '$prefix${hasCaret ? '^' : ''}'
+              '${dependencyVersion.toString().replaceFirst('^', '')}';
+          return replacement;
+        },
       );
     } else if (isGitDependency &&
         workspace.config.commands.version.updateGitTagRefs) {
