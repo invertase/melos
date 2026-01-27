@@ -1,3 +1,13 @@
 {
-  "dart.runPubGetOnPubspecChanges": "always"
+  "dart.runPubGetOnPubspecChanges": "always",
+  "[dart]": {
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "never",
+      "source.organizeImports": "never",
+      "source.sortMembers": "never"
+    },
+    "editor.defaultFormatter": "Dart-Code.dart-code",
+    "editor.formatOnSave": false,
+    "editor.formatOnType": false,
+  },
 }

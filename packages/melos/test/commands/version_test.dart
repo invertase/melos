@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:melos/melos.dart';
 import 'package:melos/src/command_configs/command_configs.dart';
+import 'package:melos/src/common/git_tag_pattern_dependency.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
@@ -19,6 +20,250 @@ void main() {
   });
 
   group('version', () {
+    test('Correctly updates min version in git tag pattern dependency '
+        'on major version change', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: _workspaceConfigBuilder,
+        workspacePackages: ['foo', 'bar'],
+        useLocalTmpDirectory: true,
+      );
+
+      const barPubspecYaml = '''
+name: bar
+resolution: workspace
+version: 1.0.0
+environment: 
+  sdk: ^3.10.0
+dependencies:
+  foo:
+    git:
+      url: github.com/foo/foo.git
+      path: packages/foo
+      tag_pattern: foo-v{{version}}
+    version: ^1.0.0
+''';
+
+      await createProject(
+        workspaceDir,
+        Pubspec(
+          'foo',
+          version: Version(1, 0, 0),
+        ),
+      );
+
+      await createProject(
+        workspaceDir,
+        Pubspec.parse(barPubspecYaml),
+        rawPubspecContent: barPubspecYaml,
+      );
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(config: config, logger: logger);
+      await melos.bootstrap(offline: true);
+      await melos.version(
+        versionPrivatePackages: true,
+        gitCommit: false,
+        force: true,
+        manualVersions: {
+          'foo': ManualVersionChange(Version(2, 0, 0)),
+        },
+      );
+
+      final barPubspecFile = File(
+        p.join(workspaceDir.path, 'packages/bar/pubspec.yaml'),
+      );
+
+      final gitTagDependency = GitTagPatternDependency.fromRawCommit(
+        pubspec: barPubspecFile.readAsStringSync(),
+        name: 'foo',
+      );
+
+      expect(gitTagDependency, isNotNull);
+      expect(gitTagDependency!.version, Version(2, 0, 0));
+    });
+    test('Does min version in git tag pattern dependency'
+        ' on minor version change', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: _workspaceConfigBuilder,
+        workspacePackages: ['foo', 'bar'],
+        useLocalTmpDirectory: true,
+      );
+
+      const barPubspecYaml = '''
+name: bar
+resolution: workspace
+version: 1.0.0
+environment: 
+  sdk: ^3.10.0
+dependencies:
+  foo:
+    git:
+      url: github.com/foo/foo.git
+      path: packages/foo
+      tag_pattern: foo-v{{version}}
+    version: ^1.0.0
+''';
+
+      await createProject(
+        workspaceDir,
+        Pubspec(
+          'foo',
+          version: Version(1, 0, 0),
+        ),
+      );
+
+      await createProject(
+        workspaceDir,
+        Pubspec.parse(barPubspecYaml),
+        rawPubspecContent: barPubspecYaml,
+      );
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(config: config, logger: logger);
+      await melos.bootstrap(offline: true);
+      await melos.version(
+        versionPrivatePackages: true,
+        gitCommit: false,
+        force: true,
+        manualVersions: {
+          'foo': ManualVersionChange(Version(1, 1, 0)),
+        },
+      );
+
+      final barPubspecFile = File(
+        p.join(workspaceDir.path, 'packages/bar/pubspec.yaml'),
+      );
+
+      final gitTagDependency = GitTagPatternDependency.fromRawCommit(
+        pubspec: barPubspecFile.readAsStringSync(),
+        name: 'foo',
+      );
+
+      expect(gitTagDependency, isNotNull);
+      expect(gitTagDependency!.version, Version(1, 1, 0));
+    });
+    test('Does min version in git tag pattern dependency'
+        ' on patch version change', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: _workspaceConfigBuilder,
+        workspacePackages: ['foo', 'bar'],
+        useLocalTmpDirectory: true,
+      );
+
+      const barPubspecYaml = '''
+name: bar
+resolution: workspace
+version: 1.0.0
+environment: 
+  sdk: ^3.10.0
+dependencies:
+  foo:
+    git:
+      url: github.com/foo/foo.git
+      path: packages/foo
+      tag_pattern: foo-v{{version}}
+    version: ^1.0.0
+''';
+
+      await createProject(
+        workspaceDir,
+        Pubspec(
+          'foo',
+          version: Version(1, 0, 0),
+        ),
+      );
+
+      await createProject(
+        workspaceDir,
+        Pubspec.parse(barPubspecYaml),
+        rawPubspecContent: barPubspecYaml,
+      );
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(config: config, logger: logger);
+      await melos.bootstrap(offline: true);
+      await melos.version(
+        versionPrivatePackages: true,
+        gitCommit: false,
+        force: true,
+        manualVersions: {
+          'foo': ManualVersionChange(Version(1, 0, 1)),
+        },
+      );
+
+      final barPubspecFile = File(
+        p.join(workspaceDir.path, 'packages/bar/pubspec.yaml'),
+      );
+
+      final gitTagDependency = GitTagPatternDependency.fromRawCommit(
+        pubspec: barPubspecFile.readAsStringSync(),
+        name: 'foo',
+      );
+
+      expect(gitTagDependency, isNotNull);
+      expect(gitTagDependency!.version, Version(1, 0, 1));
+    });
+    test('Does fix version in git tag pattern dependency'
+        ' on version change', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: _workspaceConfigBuilder,
+        workspacePackages: ['foo', 'bar'],
+        useLocalTmpDirectory: true,
+      );
+
+      const barPubspecYaml = '''
+name: bar
+resolution: workspace
+version: 1.0.0
+environment: 
+  sdk: ^3.10.0
+dependencies:
+  foo:
+    git:
+      url: github.com/foo/foo.git
+      path: packages/foo
+      tag_pattern: foo-v{{version}}
+    version: 1.0.0
+''';
+
+      await createProject(
+        workspaceDir,
+        Pubspec(
+          'foo',
+          version: Version(1, 0, 0),
+        ),
+      );
+
+      await createProject(
+        workspaceDir,
+        Pubspec.parse(barPubspecYaml),
+        rawPubspecContent: barPubspecYaml,
+      );
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(config: config, logger: logger);
+      await melos.bootstrap(offline: true);
+      await melos.version(
+        versionPrivatePackages: true,
+        gitCommit: false,
+        force: true,
+        manualVersions: {
+          'foo': ManualVersionChange(Version(1, 1, 0)),
+        },
+      );
+
+      final barPubspecFile = File(
+        p.join(workspaceDir.path, 'packages/bar/pubspec.yaml'),
+      );
+
+      final gitTagDependency = GitTagPatternDependency.fromRawCommit(
+        pubspec: barPubspecFile.readAsStringSync(),
+        name: 'foo',
+      );
+
+      expect(gitTagDependency, isNotNull);
+      expect(gitTagDependency!.version, Version(1, 1, 0));
+    });
     test('Correctly updates package version', () async {
       final workspaceDir = await createTemporaryWorkspace(
         configBuilder: _workspaceConfigBuilder,
@@ -155,6 +400,7 @@ MelosWorkspaceConfig _workspaceConfigBuilder(String path) {
     commands: const CommandConfigs(
       version: VersionCommandConfigs(
         fetchTags: false,
+        updateGitTagRefs: true,
       ),
     ),
   );

@@ -162,12 +162,19 @@ Future<Directory> createTemporaryWorkspace({
   return Directory(workspacePath);
 }
 
+/// Creates a new project in the given [workspace] directory.
+///
+/// If you pass a [rawPubspecContent], it will be used as the content of the
+/// `pubspec.yaml` file instead of generating one from the [partialPubspec].
+/// This helps testing edge cases that are not supported by
+/// the pubspec_parse package.
 Future<Directory> createProject(
   Directory workspace,
   Pubspec partialPubspec, {
   String? path,
   bool createLockfile = false,
   bool inWorkspace = true,
+  String? rawPubspecContent,
 }) async {
   final pubspec = partialPubspec.copyWith(
     environment: partialPubspec.environment.isEmpty
@@ -194,7 +201,12 @@ Future<Directory> createProject(
 
   ensureDir(projectDirectory.path);
 
-  await pubspec.save(projectDirectory);
+  if (rawPubspecContent != null) {
+    final pubspecFile = File(p.join(projectDirectory.path, 'pubspec.yaml'));
+    await pubspecFile.writeAsString(rawPubspecContent);
+  } else {
+    await pubspec.save(projectDirectory);
+  }
 
   if (createLockfile) {
     final lockfile = p.join(projectDirectory.path, 'pubspec.lock');
@@ -468,7 +480,7 @@ class VirtualWorkspaceBuilder {
 }
 
 final defaultTestEnvironment = {
-  'sdk': VersionConstraint.parse('^3.6.0'),
+  'sdk': VersionConstraint.parse('^3.10.0'),
 };
 
 class _VirtualPackage {

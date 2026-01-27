@@ -29,6 +29,7 @@ import '../common/extensions/environment.dart';
 import '../common/git.dart';
 import '../common/git_commit.dart';
 import '../common/git_repository.dart';
+import '../common/git_tag_pattern_dependency.dart';
 import '../common/glob.dart';
 import '../common/intellij_project.dart';
 import '../common/io.dart';
