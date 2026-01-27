@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-01-27
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v7.4.0`](#melos---v740)
+
+---
+
+#### `melos` - `v7.4.0`
+
+ - **FEAT**: Support tag_pattern based versioning in git dependencies ([#982](https://github.com/invertase/melos/issues/982)). ([649026ef](https://github.com/invertase/melos/commit/649026efb1d76ec607734097d13c8d9222780fac))
+ - **FEAT**: Changed execution ordering from relying on strongly related components to layered topologic sort ([#977](https://github.com/invertase/melos/issues/977)). ([9a9dfd9d](https://github.com/invertase/melos/commit/9a9dfd9d5076f1fe5853f2c935d2d8a21161ff80))
+ - **FEAT**: Changed from topological sort to layered topologic sort for orderDependents ([#976](https://github.com/invertase/melos/issues/976)). ([6c2e3441](https://github.com/invertase/melos/commit/6c2e3441165be51ec90d592ae294941bf9cd68a1))
+ - **FEAT**: Retry (with backoff) when executing commands against repo ([#971](https://github.com/invertase/melos/issues/971)). ([c159a681](https://github.com/invertase/melos/commit/c159a6810d8cbe6d421dbd01bb9e792c7849a9a2))
+ - **FEAT**: recursively discover packages in nested workspaces ([#968](https://github.com/invertase/melos/issues/968)). ([d15b553d](https://github.com/invertase/melos/commit/d15b553d5edf2cad2c96153ac35841ba4eb300ef))
+ - **DOCS**: add supabase codegen package ([#969](https://github.com/invertase/melos/issues/969)). ([79876a61](https://github.com/invertase/melos/commit/79876a6167fa8442215102bb05ba3e3d76918031))
+
+
 ## 2025-10-23
 
 ### Changes
