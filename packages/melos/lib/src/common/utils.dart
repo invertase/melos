@@ -13,6 +13,7 @@ import 'package:yaml/yaml.dart';
 
 import '../logging.dart';
 import '../workspace.dart';
+import 'cancel_token.dart';
 import 'environment_variable_key.dart';
 import 'exception.dart';
 import 'platform.dart';
@@ -457,6 +458,7 @@ Future<int> startCommand(
   bool onlyOutputOnError = false,
   bool includeParentEnvironment = true,
   String? group,
+  CancelToken? cancelToken,
 }) async {
   final processedCommand = command
       // Remove empty arguments.
@@ -509,6 +511,7 @@ Future<int> startCommand(
 
   stdoutStream.listen(
     (event) {
+      if (cancelToken?.isCancelled ?? false) return;
       processStdout.addAll(event);
       if (!onlyOutputOnError) {
         logger.logWithoutNewLine(
@@ -521,6 +524,7 @@ Future<int> startCommand(
   );
   stderrStream.listen(
     (event) {
+      if (cancelToken?.isCancelled ?? false) return;
       processStderr.addAll(event);
       if (!onlyOutputOnError) {
         logger.error(utf8.decode(event, allowMalformed: true), group: group);

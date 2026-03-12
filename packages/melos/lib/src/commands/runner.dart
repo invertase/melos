@@ -22,6 +22,7 @@ import '../../version.g.dart';
 import '../command_configs/command_configs.dart';
 import '../command_runner/version.dart';
 import '../common/aggregate_changelog.dart';
+import '../common/cancel_token.dart';
 import '../common/environment_variable_key.dart';
 import '../common/exception.dart';
 import '../common/extensions/dependency.dart';
