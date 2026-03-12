@@ -13,9 +13,9 @@ import 'package:yaml/yaml.dart';
 
 import '../logging.dart';
 import '../workspace.dart';
-import 'cancel_token.dart';
 import 'environment_variable_key.dart';
 import 'exception.dart';
+import 'process_output_cancel_token.dart';
 import 'platform.dart';
 
 const globalOptionVerbose = 'verbose';
@@ -458,7 +458,7 @@ Future<int> startCommand(
   bool onlyOutputOnError = false,
   bool includeParentEnvironment = true,
   String? group,
-  CancelToken? cancelToken,
+  ProcessOutputCancelToken? cancelToken,
 }) async {
   final processedCommand = command
       // Remove empty arguments.
