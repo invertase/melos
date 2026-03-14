@@ -570,14 +570,15 @@ String Function(String) _scriptArgumentFormatter(
     }
 
     // Inject MELOS_* variables if any.
+    var result = argument;
     environment.forEach((key, value) {
       if (key.startsWith('MELOS_')) {
-        argument = argument.replaceAll('\$$key', value);
-        argument = argument.replaceAll(key, value);
+        result = result.replaceAll('\$$key', value);
+        result = result.replaceAll(key, value);
       }
     });
 
-    return argument;
+    return result;
   };
 }
 
