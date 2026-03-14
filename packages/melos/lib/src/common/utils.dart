@@ -15,8 +15,8 @@ import '../logging.dart';
 import '../workspace.dart';
 import 'environment_variable_key.dart';
 import 'exception.dart';
-import 'process_output_cancel_token.dart';
 import 'platform.dart';
+import 'process_output_cancel_token.dart';
 
 const globalOptionVerbose = 'verbose';
 const globalOptionSdkPath = 'sdk-path';
