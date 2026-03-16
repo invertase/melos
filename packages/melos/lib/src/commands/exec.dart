@@ -47,6 +47,7 @@ mixin _ExecMixin on _Melos {
     List<String> execArgs, {
     bool prefixLogs = true,
     Map<String, String> extraEnvironment = const {},
+    ProcessOutputCancelToken? cancelToken,
   }) async {
     final packagePrefix = '[${AnsiStyles.blue.bold(package.name)}]: ';
 
@@ -94,6 +95,7 @@ mixin _ExecMixin on _Melos {
       logPrefix: prefixLogs ? packagePrefix : null,
       // The parent env is injected manually above
       includeParentEnvironment: false,
+      cancelToken: cancelToken,
     );
   }
 
@@ -145,6 +147,7 @@ mixin _ExecMixin on _Melos {
 
     for (final packageLayer in sortedPackageLayers) {
       late final CancelableOperation<void> operation;
+      final processOutputCancelToken = ProcessOutputCancelToken();
 
       operation = CancelableOperation.fromFuture(
         pool.forEach<Package, void>(packageLayer, (package) async {
@@ -166,6 +169,7 @@ mixin _ExecMixin on _Melos {
             execArgs,
             prefixLogs: prefixLogs,
             extraEnvironment: additionalEnvironment,
+            cancelToken: processOutputCancelToken,
           );
 
           packageResults[package.name]?.complete(packageExitCode);
@@ -180,6 +184,7 @@ mixin _ExecMixin on _Melos {
           }
 
           if (packageExitCode > 0 && failFast) {
+            processOutputCancelToken.cancel();
             await operation.cancel();
           }
         }).drain<void>(),
