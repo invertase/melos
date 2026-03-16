@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-03-16
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v7.4.1`](#melos---v741)
+
+---
+
+#### `melos` - `v7.4.1`
+
+ - **FIX**: Bump cli_launcher to 0.3.3. ([c44c62f8](https://github.com/invertase/melos/commit/c44c62f8546129d67a773df795276d215d1a2ad0))
+ - **FIX**: Cancel running processes when `failFast` is triggered ([#987](https://github.com/invertase/melos/issues/987)). ([8344e7f1](https://github.com/invertase/melos/commit/8344e7f1152d9f098aee08061eff5d6896af9128))
+ - **FIX**: Support melos installed via `dart install` ([#989](https://github.com/invertase/melos/issues/989)). ([f4f6423f](https://github.com/invertase/melos/commit/f4f6423fd8a9554279501e6a99edb429e2ca9c56))
+
 ## 2026-01-27
 
 ### Changes
