@@ -16,6 +16,7 @@ import '../workspace.dart';
 import 'environment_variable_key.dart';
 import 'exception.dart';
 import 'platform.dart';
+import 'process_output_cancel_token.dart';
 
 const globalOptionVerbose = 'verbose';
 const globalOptionSdkPath = 'sdk-path';
@@ -457,6 +458,7 @@ Future<int> startCommand(
   bool onlyOutputOnError = false,
   bool includeParentEnvironment = true,
   String? group,
+  ProcessOutputCancelToken? cancelToken,
 }) async {
   final processedCommand = command
       // Remove empty arguments.
@@ -509,6 +511,7 @@ Future<int> startCommand(
 
   stdoutStream.listen(
     (event) {
+      if (cancelToken?.isCancelled ?? false) return;
       processStdout.addAll(event);
       if (!onlyOutputOnError) {
         logger.logWithoutNewLine(
@@ -521,6 +524,7 @@ Future<int> startCommand(
   );
   stderrStream.listen(
     (event) {
+      if (cancelToken?.isCancelled ?? false) return;
       processStderr.addAll(event);
       if (!onlyOutputOnError) {
         logger.error(utf8.decode(event, allowMalformed: true), group: group);
@@ -566,14 +570,15 @@ String Function(String) _scriptArgumentFormatter(
     }
 
     // Inject MELOS_* variables if any.
+    var result = argument;
     environment.forEach((key, value) {
       if (key.startsWith('MELOS_')) {
-        argument = argument.replaceAll('\$$key', value);
-        argument = argument.replaceAll(key, value);
+        result = result.replaceAll('\$$key', value);
+        result = result.replaceAll(key, value);
       }
     });
 
-    return argument;
+    return result;
   };
 }
 
