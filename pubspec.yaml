@@ -31,7 +31,7 @@ melos:
       dependencies:
         ansi_styles: ^0.3.2+1
         args: ^2.7.0
-        cli_launcher: ^0.3.2+1
+        cli_launcher: ^0.3.3
         cli_util: ^0.4.2
         collection: any
         file: ^7.0.1
