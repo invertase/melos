@@ -87,8 +87,7 @@ melos:
     activate:
       description: Activate the local version of melos for development.
       run:
-        dart pub global activate --source="path" . --executable="melos"
-        --overwrite
+        dart pub global activate --source="path" packages/melos --executable="melos" --overwrite
 
     activate:pub:
       description: Activate the published version of melos.
