@@ -1236,4 +1236,233 @@ SUCCESS
       },
     );
   });
+
+  group('CLI package filters', () {
+    test(
+      'CLI --scope overrides script-defined packageFilters scope',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: Scripts({
+              'test_script': Script(
+                name: 'test_script',
+                run: 'melos exec -- "echo hello"',
+                packageFilters: PackageFilters(
+                  scope: [
+                    createGlob('a', currentDirectoryPath: path),
+                  ],
+                ),
+              ),
+            }),
+          ),
+          workspacePackages: ['a', 'b'],
+        );
+
+        await createProject(workspaceDir, Pubspec('a'));
+        await createProject(workspaceDir, Pubspec('b'));
+        await runPubGet(workspaceDir.path);
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        // CLI --scope=b should override script's scope of 'a'
+        await melos.run(
+          scriptName: 'test_script',
+          noSelect: true,
+          packageFilters: PackageFilters(
+            scope: [
+              createGlob('b', currentDirectoryPath: workspaceDir.path),
+            ],
+          ),
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          ignoringDependencyMessages(
+            '''
+melos run test_script
+  └> melos exec -- "echo hello"
+     └> RUNNING
+
+\$ melos exec
+  └> echo hello
+     └> RUNNING (in 1 packages)
+
+${'-' * terminalWidth}
+b:
+hello
+b: SUCCESS
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> echo hello
+     └> SUCCESS
+''',
+          ),
+        );
+      },
+    );
+
+    test(
+      'CLI --scope applies to script without packageFilters',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: const Scripts({
+              'test_script': Script(
+                name: 'test_script',
+                run: 'melos exec -- "echo hello"',
+              ),
+            }),
+          ),
+          workspacePackages: ['a', 'b'],
+        );
+
+        await createProject(workspaceDir, Pubspec('a'));
+        await createProject(workspaceDir, Pubspec('b'));
+        await runPubGet(workspaceDir.path);
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        // CLI --scope=a should filter to only package 'a'
+        await melos.run(
+          scriptName: 'test_script',
+          noSelect: true,
+          packageFilters: PackageFilters(
+            scope: [
+              createGlob('a', currentDirectoryPath: workspaceDir.path),
+            ],
+          ),
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          ignoringDependencyMessages(
+            '''
+melos run test_script
+  └> melos exec -- "echo hello"
+     └> RUNNING
+
+\$ melos exec
+  └> echo hello
+     └> RUNNING (in 1 packages)
+
+${'-' * terminalWidth}
+a:
+hello
+a: SUCCESS
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> echo hello
+     └> SUCCESS
+''',
+          ),
+        );
+      },
+    );
+
+    test(
+      'CLI --scope preserves script-defined non-scope filters',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: Scripts({
+              'test_script': Script(
+                name: 'test_script',
+                run: 'melos exec -- "echo hello"',
+                packageFilters: PackageFilters(
+                  fileExists: const ['log.txt'],
+                ),
+              ),
+            }),
+          ),
+          workspacePackages: ['a', 'b', 'c'],
+        );
+
+        // 'a' has log.txt, 'b' has log.txt, 'c' does not
+        final aDir = await createProject(workspaceDir, Pubspec('a'));
+        writeTextFile(p.join(aDir.path, 'log.txt'), '');
+        final bDir = await createProject(workspaceDir, Pubspec('b'));
+        writeTextFile(p.join(bDir.path, 'log.txt'), '');
+        await createProject(workspaceDir, Pubspec('c'));
+        await runPubGet(workspaceDir.path);
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        // CLI --scope=a,b should combine with script's fileExists filter.
+        // Only 'a' matches both scope and fileExists (b also matches both).
+        // But we scope to just 'a'.
+        await melos.run(
+          scriptName: 'test_script',
+          noSelect: true,
+          packageFilters: PackageFilters(
+            scope: [
+              createGlob('a', currentDirectoryPath: workspaceDir.path),
+            ],
+          ),
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          ignoringDependencyMessages(
+            '''
+melos run test_script
+  └> melos exec -- "echo hello"
+     └> RUNNING
+
+\$ melos exec
+  └> echo hello
+     └> RUNNING (in 1 packages)
+
+${'-' * terminalWidth}
+a:
+hello
+a: SUCCESS
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> echo hello
+     └> SUCCESS
+''',
+          ),
+        );
+      },
+    );
+  });
 }

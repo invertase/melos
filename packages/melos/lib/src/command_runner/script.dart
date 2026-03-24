@@ -55,8 +55,9 @@ class ScriptCommand extends MelosCommand {
     final scriptName = argResults!.name;
     final noSelect = argResults!['no-select'] as bool;
 
-    final packageFilters =
-        hasPackageFilterArgs ? parsePackageFilters(config.path) : null;
+    final packageFilters = hasPackageFilterArgs
+        ? parsePackageFilters(config.path, includeConfigIgnore: false)
+        : null;
 
     try {
       return await melos.run(

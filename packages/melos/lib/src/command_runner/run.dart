@@ -65,8 +65,9 @@ class RunCommand extends MelosCommand {
     final includePrivate = argResults!['include-private'] as bool;
     final group = argResults!['group'] as String?;
 
-    final packageFilters =
-        hasPackageFilterArgs ? parsePackageFilters(config.path) : null;
+    final packageFilters = hasPackageFilterArgs
+        ? parsePackageFilters(config.path, includeConfigIgnore: false)
+        : null;
 
     try {
       return await melos.run(

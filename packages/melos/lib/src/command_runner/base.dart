@@ -165,7 +165,7 @@ abstract class MelosCommand extends Command<void> {
     final results = argResults;
     if (results == null) return false;
 
-    const filterOptions = [
+    const allFilterOptions = [
       filterOptionScope,
       filterOptionCategory,
       filterOptionIgnore,
@@ -174,13 +174,6 @@ abstract class MelosCommand extends Command<void> {
       filterOptionDiff,
       filterOptionDependsOn,
       filterOptionNoDependsOn,
-    ];
-
-    for (final option in filterOptions) {
-      if (results.wasParsed(option)) return true;
-    }
-
-    const filterFlags = [
       filterOptionPrivate,
       filterOptionPublished,
       filterOptionNullsafety,
@@ -189,16 +182,13 @@ abstract class MelosCommand extends Command<void> {
       filterOptionIncludeDependencies,
     ];
 
-    for (final flag in filterFlags) {
-      if (results.wasParsed(flag)) return true;
-    }
-
-    return false;
+    return allFilterOptions.any(results.wasParsed);
   }
 
   PackageFilters parsePackageFilters(
     String workingDirPath, {
     bool diffEnabled = true,
+    bool includeConfigIgnore = true,
   }) {
     assert(
       argResults?.command?.name != 'version',
@@ -218,7 +208,7 @@ abstract class MelosCommand extends Command<void> {
           ignore
               .map((e) => createGlob(e, currentDirectoryPath: workingDirPath))
               .toList()
-            ..addAll(config.ignore),
+            ..addAll(includeConfigIgnore ? config.ignore : []),
       categories: categories
           .map((e) => createGlob(e, currentDirectoryPath: workingDirPath))
           .toList(),
