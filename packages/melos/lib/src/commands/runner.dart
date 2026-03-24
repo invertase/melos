@@ -171,6 +171,7 @@ abstract class _Melos {
   Future<void> run({
     String? scriptName,
     bool noSelect = false,
+    PackageFilters? packageFilters,
   });
 
   Future<int> _runScript(

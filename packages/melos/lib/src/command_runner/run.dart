@@ -3,6 +3,7 @@ import 'base.dart';
 
 class RunCommand extends MelosCommand {
   RunCommand(super.config) {
+    setupPackageFilterParser();
     argParser.addFlag(
       'no-select',
       negatable: false,
@@ -64,6 +65,9 @@ class RunCommand extends MelosCommand {
     final includePrivate = argResults!['include-private'] as bool;
     final group = argResults!['group'] as String?;
 
+    final packageFilters =
+        hasPackageFilterArgs ? parsePackageFilters(config.path) : null;
+
     try {
       return await melos.run(
         global: global,
@@ -74,6 +78,7 @@ class RunCommand extends MelosCommand {
         listScriptsAsJson: listScriptsAsJson,
         includePrivate: includePrivate,
         group: group,
+        packageFilters: packageFilters,
       );
     } on NoPackageFoundScriptException catch (err) {
       logger.warning(err.toString(), label: false);

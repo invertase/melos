@@ -11,6 +11,7 @@ mixin _RunMixin on _Melos {
     bool includePrivate = false,
     List<String> extraArgs = const [],
     String? group,
+    PackageFilters? packageFilters,
   }) async {
     final publicScripts = Map<String, Script>.from(config.scripts);
     if (!includePrivate) {
@@ -64,6 +65,7 @@ mixin _RunMixin on _Melos {
         noSelect: noSelect,
         scripts: config.scripts,
         steps: script.steps!,
+        packageFilters: packageFilters,
       );
 
       await _handleExitCode(exitCode, script.name);
@@ -89,6 +91,7 @@ mixin _RunMixin on _Melos {
       global: global,
       noSelect: noSelect,
       extraArgs: extraArgs,
+      packageFilters: packageFilters,
     );
 
     await _handleExitCode(exitCode, script.name, logSuccess: false);
@@ -161,6 +164,42 @@ mixin _RunMixin on _Melos {
     traverseSteps(script);
   }
 
+  /// Merges CLI package filters with script-defined package filters.
+  ///
+  /// When CLI filters are provided (e.g. --scope), the result is a new
+  /// [PackageFilters] that combines script-defined filters with CLI overrides.
+  /// CLI filters take precedence where provided.
+  PackageFilters? _mergePackageFilters(
+    PackageFilters? scriptFilters,
+    PackageFilters? cliFilters,
+  ) {
+    if (cliFilters == null) {
+      return scriptFilters;
+    }
+    if (scriptFilters == null) {
+      return cliFilters;
+    }
+    // CLI filters override script filters where provided.
+    return scriptFilters.copyWith(
+      scope: cliFilters.scope.isNotEmpty ? cliFilters.scope : null,
+      ignore: cliFilters.ignore.isNotEmpty ? cliFilters.ignore : null,
+      categories:
+          cliFilters.categories.isNotEmpty ? cliFilters.categories : null,
+      diff: cliFilters.diff,
+      dirExists: cliFilters.dirExists.isNotEmpty ? cliFilters.dirExists : null,
+      fileExists:
+          cliFilters.fileExists.isNotEmpty ? cliFilters.fileExists : null,
+      dependsOn: cliFilters.dependsOn.isNotEmpty ? cliFilters.dependsOn : null,
+      noDependsOn:
+          cliFilters.noDependsOn.isNotEmpty ? cliFilters.noDependsOn : null,
+      includePrivatePackages: cliFilters.includePrivatePackages,
+      published: cliFilters.published,
+      nullSafe: cliFilters.nullSafe,
+      includeDependents: cliFilters.includeDependents ? true : null,
+      includeDependencies: cliFilters.includeDependencies ? true : null,
+    );
+  }
+
   Future<String> _pickScript(Map<String, Script> scripts) async {
     // using toList as Maps may be unordered
     final scriptList = scripts.values.toList();
@@ -196,12 +235,15 @@ mixin _RunMixin on _Melos {
     GlobalOptions? global,
     bool noSelect = false,
     List<String> extraArgs = const [],
+    PackageFilters? packageFilters,
   }) async {
+    final mergedFilters =
+        _mergePackageFilters(script.packageFilters, packageFilters);
     final workspace =
         await createWorkspace(
             global: global,
-            packageFilters: script.packageFilters?.copyWithUpdatedIgnore([
-              ...script.packageFilters!.ignore,
+            packageFilters: mergedFilters?.copyWithUpdatedIgnore([
+              ...mergedFilters.ignore,
               ...config.ignore,
             ]),
           )
@@ -216,14 +258,14 @@ mixin _RunMixin on _Melos {
       ...script.env,
     };
 
-    if (script.packageFilters != null) {
+    if (mergedFilters != null) {
       final packages = workspace.filteredPackages.values.toList();
 
       var choices = packages.map((e) => AnsiStyles.cyan(e.name)).toList();
 
       if (choices.isEmpty) {
         throw NoPackageFoundScriptException._(
-          script.packageFilters,
+          mergedFilters,
           script.name,
         );
       }
@@ -285,10 +327,14 @@ mixin _RunMixin on _Melos {
     required List<String> steps,
     GlobalOptions? global,
     bool noSelect = false,
+    PackageFilters? packageFilters,
   }) async {
+    final mergedFilters =
+        _mergePackageFilters(script.packageFilters, packageFilters);
     final workspace =
         await createWorkspace(
             global: global,
+            packageFilters: mergedFilters,
           )
           ..validate();
 
