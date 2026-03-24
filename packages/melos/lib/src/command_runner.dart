@@ -143,7 +143,7 @@ FutureOr<void> melosEntryPoint(
   try {
     final config = await _resolveConfig(
       arguments,
-      context.localInstallation?.packageRoot,
+      context.localInstallation?.lockFileRoot,
     );
     await MelosCommandRunner(config).run(arguments);
   } on MelosException catch (err) {
