@@ -12,6 +12,16 @@ root `pubspec.yaml` config file.
 melos run <name>
 ```
 
+<Info>Supports all [Melos filtering](/filters) flags.</Info>
+
+Package filter options can be passed to override or further restrict the filters
+defined in the script configuration. For example, to run a script only on
+packages matching a specific scope:
+
+```bash
+melos run test --scope="my_package*"
+```
+
 ## --no-select
 
 Skips the prompt to select a package (if defined in the script configuration).
