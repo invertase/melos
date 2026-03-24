@@ -233,8 +233,10 @@ mixin _RunMixin on _Melos {
     List<String> extraArgs = const [],
     PackageFilters? packageFilters,
   }) async {
-    final mergedFilters =
-        _mergePackageFilters(script.packageFilters, packageFilters);
+    final mergedFilters = _mergePackageFilters(
+      script.packageFilters,
+      packageFilters,
+    );
     final workspace =
         await createWorkspace(
             global: global,
@@ -325,8 +327,10 @@ mixin _RunMixin on _Melos {
     bool noSelect = false,
     PackageFilters? packageFilters,
   }) async {
-    final mergedFilters =
-        _mergePackageFilters(script.packageFilters, packageFilters);
+    final mergedFilters = _mergePackageFilters(
+      script.packageFilters,
+      packageFilters,
+    );
     final workspace =
         await createWorkspace(
             global: global,
