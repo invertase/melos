@@ -1,3 +1,9 @@
+## 7.5.0
+
+ - **FIX**: Resolve workspace root correctly for cli_launcher ([#993](https://github.com/invertase/melos/issues/993)). ([020d90c4](https://github.com/invertase/melos/commit/020d90c4c0ec35ad07e405d763fb7fec8229d746))
+ - **FIX**: Bump cli_launher to 0.3.3. ([c44c62f8](https://github.com/invertase/melos/commit/c44c62f8546129d67a773df795276d215d1a2ad0))
+ - **FEAT**: Support package filter options for melos run ([#994](https://github.com/invertase/melos/issues/994)). ([b56c95ac](https://github.com/invertase/melos/commit/b56c95ac5b0c83185254986a6e27c1e29396a520))
+
 ## 7.4.1
 
  - **FIX**: Bump cli_launcher to 0.3.3. ([c44c62f8](https://github.com/invertase/melos/commit/c44c62f8546129d67a773df795276d215d1a2ad0))
