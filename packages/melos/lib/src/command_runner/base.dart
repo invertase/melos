@@ -159,13 +159,39 @@ abstract class MelosCommand extends Command<void> {
     );
   }
 
+  /// Whether any package filter arguments were explicitly provided by the
+  /// user on the command line.
+  bool get hasPackageFilterArgs {
+    final results = argResults;
+    if (results == null) return false;
+
+    const allFilterOptions = [
+      filterOptionScope,
+      filterOptionCategory,
+      filterOptionIgnore,
+      filterOptionDirExists,
+      filterOptionFileExists,
+      filterOptionDiff,
+      filterOptionDependsOn,
+      filterOptionNoDependsOn,
+      filterOptionPrivate,
+      filterOptionPublished,
+      filterOptionNullsafety,
+      filterOptionFlutter,
+      filterOptionIncludeDependents,
+      filterOptionIncludeDependencies,
+    ];
+
+    return allFilterOptions.any(results.wasParsed);
+  }
+
   PackageFilters parsePackageFilters(
     String workingDirPath, {
     bool diffEnabled = true,
+    bool includeConfigIgnore = true,
   }) {
     assert(
-      argResults?.command?.name != 'version' &&
-          argResults?.command?.name != 'run',
+      argResults?.command?.name != 'version',
       'unimplemented',
     );
 
@@ -182,7 +208,7 @@ abstract class MelosCommand extends Command<void> {
           ignore
               .map((e) => createGlob(e, currentDirectoryPath: workingDirPath))
               .toList()
-            ..addAll(config.ignore),
+            ..addAll(includeConfigIgnore ? config.ignore : []),
       categories: categories
           .map((e) => createGlob(e, currentDirectoryPath: workingDirPath))
           .toList(),

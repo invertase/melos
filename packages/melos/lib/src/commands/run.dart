@@ -11,6 +11,7 @@ mixin _RunMixin on _Melos {
     bool includePrivate = false,
     List<String> extraArgs = const [],
     String? group,
+    PackageFilters? packageFilters,
   }) async {
     final publicScripts = Map<String, Script>.from(config.scripts);
     if (!includePrivate) {
@@ -64,6 +65,7 @@ mixin _RunMixin on _Melos {
         noSelect: noSelect,
         scripts: config.scripts,
         steps: script.steps!,
+        packageFilters: packageFilters,
       );
 
       await _handleExitCode(exitCode, script.name);
@@ -89,6 +91,7 @@ mixin _RunMixin on _Melos {
       global: global,
       noSelect: noSelect,
       extraArgs: extraArgs,
+      packageFilters: packageFilters,
     );
 
     await _handleExitCode(exitCode, script.name, logSuccess: false);
@@ -161,6 +164,38 @@ mixin _RunMixin on _Melos {
     traverseSteps(script);
   }
 
+  /// Merges CLI package filters with script-defined package filters.
+  ///
+  /// When CLI filters are provided (e.g. --scope), the result is a new
+  /// [PackageFilters] that combines script-defined filters with CLI overrides.
+  /// CLI filters take precedence where provided.
+  PackageFilters? _mergePackageFilters(
+    PackageFilters? scriptFilters,
+    PackageFilters? cliFilters,
+  ) {
+    if (cliFilters == null) return scriptFilters;
+    if (scriptFilters == null) return cliFilters;
+
+    List<T>? ifNotEmpty<T>(List<T> list) => list.isNotEmpty ? list : null;
+
+    // CLI filters override script filters where provided.
+    return scriptFilters.copyWith(
+      scope: ifNotEmpty(cliFilters.scope),
+      ignore: ifNotEmpty(cliFilters.ignore),
+      categories: ifNotEmpty(cliFilters.categories),
+      diff: cliFilters.diff,
+      dirExists: ifNotEmpty(cliFilters.dirExists),
+      fileExists: ifNotEmpty(cliFilters.fileExists),
+      dependsOn: ifNotEmpty(cliFilters.dependsOn),
+      noDependsOn: ifNotEmpty(cliFilters.noDependsOn),
+      includePrivatePackages: cliFilters.includePrivatePackages,
+      published: cliFilters.published,
+      nullSafe: cliFilters.nullSafe,
+      includeDependents: cliFilters.includeDependents ? true : null,
+      includeDependencies: cliFilters.includeDependencies ? true : null,
+    );
+  }
+
   Future<String> _pickScript(Map<String, Script> scripts) async {
     // using toList as Maps may be unordered
     final scriptList = scripts.values.toList();
@@ -196,12 +231,17 @@ mixin _RunMixin on _Melos {
     GlobalOptions? global,
     bool noSelect = false,
     List<String> extraArgs = const [],
+    PackageFilters? packageFilters,
   }) async {
+    final mergedFilters = _mergePackageFilters(
+      script.packageFilters,
+      packageFilters,
+    );
     final workspace =
         await createWorkspace(
             global: global,
-            packageFilters: script.packageFilters?.copyWithUpdatedIgnore([
-              ...script.packageFilters!.ignore,
+            packageFilters: mergedFilters?.copyWithUpdatedIgnore([
+              ...mergedFilters.ignore,
               ...config.ignore,
             ]),
           )
@@ -216,14 +256,14 @@ mixin _RunMixin on _Melos {
       ...script.env,
     };
 
-    if (script.packageFilters != null) {
+    if (mergedFilters != null) {
       final packages = workspace.filteredPackages.values.toList();
 
       var choices = packages.map((e) => AnsiStyles.cyan(e.name)).toList();
 
       if (choices.isEmpty) {
         throw NoPackageFoundScriptException._(
-          script.packageFilters,
+          mergedFilters,
           script.name,
         );
       }
@@ -240,8 +280,8 @@ mixin _RunMixin on _Melos {
       if (choices.length == 1) {
         // Only 1 package - no need to prompt the user for a selection.
         selectedPackage = packages[0].name;
-      } else if (noSelect) {
-        // Skipping selection if flag present.
+      } else if (noSelect || packageFilters != null) {
+        // Skipping selection if flag present or CLI filters were provided.
         selectedPackage = choices[0];
       } else {
         // Prompt user to select a package.
@@ -285,10 +325,16 @@ mixin _RunMixin on _Melos {
     required List<String> steps,
     GlobalOptions? global,
     bool noSelect = false,
+    PackageFilters? packageFilters,
   }) async {
+    final mergedFilters = _mergePackageFilters(
+      script.packageFilters,
+      packageFilters,
+    );
     final workspace =
         await createWorkspace(
             global: global,
+            packageFilters: mergedFilters,
           )
           ..validate();
 

@@ -7,6 +7,7 @@ class ScriptCommand extends MelosCommand {
     super.config, {
     required this.scripts,
   }) : assert(scripts.isNotEmpty) {
+    setupPackageFilterParser();
     argParser.addFlag(
       'no-select',
       negatable: false,
@@ -54,12 +55,17 @@ class ScriptCommand extends MelosCommand {
     final scriptName = argResults!.name;
     final noSelect = argResults!['no-select'] as bool;
 
+    final packageFilters = hasPackageFilterArgs
+        ? parsePackageFilters(config.path, includeConfigIgnore: false)
+        : null;
+
     try {
       return await melos.run(
         global: global,
         scriptName: scriptName,
         noSelect: noSelect,
         extraArgs: argResults!.rest,
+        packageFilters: packageFilters,
       );
     } on NoPackageFoundScriptException catch (err) {
       logger.warning(err.toString(), label: false);
