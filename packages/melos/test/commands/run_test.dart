@@ -1464,5 +1464,81 @@ ${'-' * terminalWidth}
         );
       },
     );
+
+    test(
+      'CLI --scope overrides script-defined scope',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: Scripts({
+              'test_script': Script(
+                name: 'test_script',
+                run: 'melos exec -- "echo hello"',
+                packageFilters: PackageFilters(
+                  scope: [
+                    createGlob('b', currentDirectoryPath: path),
+                  ],
+                ),
+              ),
+            }),
+          ),
+          workspacePackages: ['a', 'b'],
+        );
+
+        await createProject(workspaceDir, Pubspec('a'));
+        await createProject(workspaceDir, Pubspec('b'));
+        await runPubGet(workspaceDir.path);
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        // CLI --scope=a should override script's scope=b
+        await melos.run(
+          scriptName: 'test_script',
+          noSelect: true,
+          packageFilters: PackageFilters(
+            scope: [
+              createGlob('a', currentDirectoryPath: workspaceDir.path),
+            ],
+          ),
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          ignoringDependencyMessages(
+            '''
+melos run test_script
+  └> melos exec -- "echo hello"
+     └> RUNNING
+
+\$ melos exec
+  └> echo hello
+     └> RUNNING (in 1 packages)
+
+${'-' * terminalWidth}
+a:
+hello
+a: SUCCESS
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> echo hello
+     └> SUCCESS
+''',
+          ),
+        );
+      },
+    );
   });
 }

@@ -173,25 +173,21 @@ mixin _RunMixin on _Melos {
     PackageFilters? scriptFilters,
     PackageFilters? cliFilters,
   ) {
-    if (cliFilters == null) {
-      return scriptFilters;
-    }
-    if (scriptFilters == null) {
-      return cliFilters;
-    }
+    if (cliFilters == null) return scriptFilters;
+    if (scriptFilters == null) return cliFilters;
+
+    List<T>? ifNotEmpty<T>(List<T> list) => list.isNotEmpty ? list : null;
+
     // CLI filters override script filters where provided.
     return scriptFilters.copyWith(
-      scope: cliFilters.scope.isNotEmpty ? cliFilters.scope : null,
-      ignore: cliFilters.ignore.isNotEmpty ? cliFilters.ignore : null,
-      categories:
-          cliFilters.categories.isNotEmpty ? cliFilters.categories : null,
+      scope: ifNotEmpty(cliFilters.scope),
+      ignore: ifNotEmpty(cliFilters.ignore),
+      categories: ifNotEmpty(cliFilters.categories),
       diff: cliFilters.diff,
-      dirExists: cliFilters.dirExists.isNotEmpty ? cliFilters.dirExists : null,
-      fileExists:
-          cliFilters.fileExists.isNotEmpty ? cliFilters.fileExists : null,
-      dependsOn: cliFilters.dependsOn.isNotEmpty ? cliFilters.dependsOn : null,
-      noDependsOn:
-          cliFilters.noDependsOn.isNotEmpty ? cliFilters.noDependsOn : null,
+      dirExists: ifNotEmpty(cliFilters.dirExists),
+      fileExists: ifNotEmpty(cliFilters.fileExists),
+      dependsOn: ifNotEmpty(cliFilters.dependsOn),
+      noDependsOn: ifNotEmpty(cliFilters.noDependsOn),
       includePrivatePackages: cliFilters.includePrivatePackages,
       published: cliFilters.published,
       nullSafe: cliFilters.nullSafe,
