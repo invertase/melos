@@ -5,11 +5,21 @@ description: Learn more about the `run` command in Melos.
 
 # Run Command
 
+<Info>Supports all [Melos filtering](/filters) flags.</Info>
+
 Run a [script](/configuration/scripts) by name defined in the workspace
 root `pubspec.yaml` config file.
 
 ```bash
 melos run <name>
+```
+
+Package filter options can be passed to override or further restrict the filters
+defined in the script configuration. For example, to run a script only on
+packages matching a specific scope:
+
+```bash
+melos run test --scope="my_package*"
 ```
 
 ## --no-select
