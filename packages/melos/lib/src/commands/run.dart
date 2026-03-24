@@ -282,8 +282,8 @@ mixin _RunMixin on _Melos {
       if (choices.length == 1) {
         // Only 1 package - no need to prompt the user for a selection.
         selectedPackage = packages[0].name;
-      } else if (noSelect) {
-        // Skipping selection if flag present.
+      } else if (noSelect || packageFilters != null) {
+        // Skipping selection if flag present or CLI filters were provided.
         selectedPackage = choices[0];
       } else {
         // Prompt user to select a package.
