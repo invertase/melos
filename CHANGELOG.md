@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-04-05
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v7.5.1`](#melos---v751)
+
+---
+
+#### `melos` - `v7.5.1`
+
+ - **FIX**: Make `melos version --ignore` correctly filter packages ([#1001](https://github.com/invertase/melos/issues/1001)). ([e03d1cba](https://github.com/invertase/melos/commit/e03d1cbaac42f9e4d30d1b46fd44454c225d17df))
+
+
 ## 2026-03-24
 
 ### Changes

@@ -1,3 +1,7 @@
+## 7.5.1
+
+ - **FIX**: Make `melos version --ignore` correctly filter packages ([#1001](https://github.com/invertase/melos/issues/1001)). ([e03d1cba](https://github.com/invertase/melos/commit/e03d1cbaac42f9e4d30d1b46fd44454c225d17df))
+
 ## 7.5.0
 
  - **FIX**: Resolve workspace root correctly for cli_launcher ([#993](https://github.com/invertase/melos/issues/993)). ([020d90c4](https://github.com/invertase/melos/commit/020d90c4c0ec35ad07e405d763fb7fec8229d746))
