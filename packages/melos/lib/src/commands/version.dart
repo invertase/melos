@@ -139,10 +139,20 @@ mixin _VersionMixin on _RunMixin {
         );
         return;
       }
+      if (!workspace.filteredPackages.keys.contains(packageName)) {
+        logger.warning(
+          'package "$packageName" was specified in --manual-version but is '
+          'excluded by package filters (e.g. --ignore). Skipping.',
+        );
+      }
     }
 
     final packagesToManuallyVersion = manualVersions.keys
-        .map((packageName) => workspace.allPackages[packageName]!)
+        .where(
+          (packageName) =>
+              workspace.filteredPackages.keys.contains(packageName),
+        )
+        .map((packageName) => workspace.filteredPackages[packageName]!)
         .toSet();
     final packagesToAutoVersion = {
       for (final package in workspace.filteredPackages.values)
@@ -178,7 +188,8 @@ mixin _VersionMixin on _RunMixin {
 
         final packageUnscoped = workspace.allPackages[package.name]!;
         dependentPackagesToVersion.addAll(
-          packageUnscoped.dependentsInWorkspace.values,
+          packageUnscoped.dependentsInWorkspace.values
+              .where((p) => workspace.filteredPackages[p.name] != null),
         );
       }
     }
@@ -186,18 +197,22 @@ mixin _VersionMixin on _RunMixin {
     for (final package in packagesToVersion) {
       final packageUnscoped = workspace.allPackages[package.name]!;
       dependentPackagesToVersion.addAll(
-        packageUnscoped.dependentsInWorkspace.values,
+        packageUnscoped.dependentsInWorkspace.values
+            .where((p) => workspace.filteredPackages[p.name] != null),
       );
 
       // Add dependentsInWorkspace dependents in the workspace until no more are
-      // added.
+      // added. Ignored packages are excluded and not traversed through, so
+      // packages that would only need a version bump via an ignored
+      // intermediate are also excluded.
       var packagesAdded = 1;
       while (packagesAdded != 0) {
         final packagesCountBefore = dependentPackagesToVersion.length;
         final packages = <Package>{...dependentPackagesToVersion};
         for (final dependentPackage in packages) {
           dependentPackagesToVersion.addAll(
-            dependentPackage.dependentsInWorkspace.values,
+            dependentPackage.dependentsInWorkspace.values
+                .where((p) => workspace.filteredPackages[p.name] != null),
           );
         }
         packagesAdded = dependentPackagesToVersion.length - packagesCountBefore;

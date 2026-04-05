@@ -190,11 +190,6 @@ abstract class MelosCommand extends Command<void> {
     bool diffEnabled = true,
     bool includeConfigIgnore = true,
   }) {
-    assert(
-      argResults?.command?.name != 'version',
-      'unimplemented',
-    );
-
     final diff = diffEnabled ? argResults![filterOptionDiff] as String? : null;
     final scope = argResults![filterOptionScope] as List<String>? ?? [];
     final categories = argResults![filterOptionCategory] as List<String>? ?? [];
