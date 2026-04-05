@@ -188,8 +188,9 @@ mixin _VersionMixin on _RunMixin {
 
         final packageUnscoped = workspace.allPackages[package.name]!;
         dependentPackagesToVersion.addAll(
-          packageUnscoped.dependentsInWorkspace.values
-              .where((p) => workspace.filteredPackages[p.name] != null),
+          packageUnscoped.dependentsInWorkspace.values.where(
+            (p) => workspace.filteredPackages[p.name] != null,
+          ),
         );
       }
     }
@@ -197,8 +198,9 @@ mixin _VersionMixin on _RunMixin {
     for (final package in packagesToVersion) {
       final packageUnscoped = workspace.allPackages[package.name]!;
       dependentPackagesToVersion.addAll(
-        packageUnscoped.dependentsInWorkspace.values
-            .where((p) => workspace.filteredPackages[p.name] != null),
+        packageUnscoped.dependentsInWorkspace.values.where(
+          (p) => workspace.filteredPackages[p.name] != null,
+        ),
       );
 
       // Add dependentsInWorkspace dependents in the workspace until no more are
@@ -211,8 +213,9 @@ mixin _VersionMixin on _RunMixin {
         final packages = <Package>{...dependentPackagesToVersion};
         for (final dependentPackage in packages) {
           dependentPackagesToVersion.addAll(
-            dependentPackage.dependentsInWorkspace.values
-                .where((p) => workspace.filteredPackages[p.name] != null),
+            dependentPackage.dependentsInWorkspace.values.where(
+              (p) => workspace.filteredPackages[p.name] != null,
+            ),
           );
         }
         packagesAdded = dependentPackagesToVersion.length - packagesCountBefore;
