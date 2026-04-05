@@ -147,7 +147,7 @@ mixin _VersionMixin on _RunMixin {
         );
         return;
       }
-      if (!workspace.filteredPackages.keys.contains(packageName)) {
+      if (workspace.filteredPackages[packageName] == null) {
         logger.warning(
           'package "$packageName" was specified in --manual-version but is '
           'excluded by package filters (e.g. --ignore). Skipping.',
@@ -156,11 +156,8 @@ mixin _VersionMixin on _RunMixin {
     }
 
     final packagesToManuallyVersion = manualVersions.keys
-        .where(
-          (packageName) =>
-              workspace.filteredPackages.keys.contains(packageName),
-        )
-        .map((packageName) => workspace.filteredPackages[packageName]!)
+        .map((name) => workspace.filteredPackages[name])
+        .whereType<Package>()
         .toSet();
     final packagesToAutoVersion = {
       for (final package in workspace.filteredPackages.values)
@@ -243,24 +240,26 @@ mixin _VersionMixin on _RunMixin {
           (p) => workspace.filteredPackages[p.name] != null,
         ),
       );
+    }
 
-      // Add dependentsInWorkspace dependents in the workspace until no more are
-      // added. Ignored packages are excluded and not traversed through, so
-      // packages that would only need a version bump via an ignored
-      // intermediate are also excluded.
-      var packagesAdded = 1;
-      while (packagesAdded != 0) {
-        final packagesCountBefore = dependentPackagesToVersion.length;
-        final packages = <Package>{...dependentPackagesToVersion};
-        for (final dependentPackage in packages) {
-          dependentPackagesToVersion.addAll(
-            dependentPackage.dependentsInWorkspace.values.where(
-              (p) => workspace.filteredPackages[p.name] != null,
-            ),
-          );
-        }
-        packagesAdded = dependentPackagesToVersion.length - packagesCountBefore;
+    // Transitively collect dependents in the workspace until no more are
+    // added. Ignored packages are excluded and not traversed through, so
+    // packages that would only need a version bump via an ignored
+    // intermediate are also excluded.
+    // This runs once after both the graduate and commit loops so that
+    // dependents of graduated packages are also traversed.
+    var packagesAdded = 1;
+    while (packagesAdded != 0) {
+      final packagesCountBefore = dependentPackagesToVersion.length;
+      final packages = <Package>{...dependentPackagesToVersion};
+      for (final dependentPackage in packages) {
+        dependentPackagesToVersion.addAll(
+          dependentPackage.dependentsInWorkspace.values.where(
+            (p) => workspace.filteredPackages[p.name] != null,
+          ),
+        );
       }
+      packagesAdded = dependentPackagesToVersion.length - packagesCountBefore;
     }
 
     pendingPackageUpdates.addAll(
