@@ -622,7 +622,7 @@ The following 1 packages will be updated:
           );
           // app directly depends on core, so it should get a dependent bump
           // even though mid is ignored.
-          expect(pubspecApp.version, Version(0, 0, 2));
+          expect(pubspecApp.version, Version.parse('0.0.1+1'));
         },
       );
 

@@ -131,13 +131,23 @@ mixin _VersionMixin on _RunMixin {
       packageCommits,
     );
 
-    // Determine which ignored packages have versionable commits so we can
-    // prevent versioning packages that depend on them.
+    // Determine which ignored packages have versionable commits or were
+    // specified in --manual-version, so we can prevent versioning packages
+    // that depend on them.
     final ignoredPackagesWithChanges = await _getIgnoredPackagesWithChanges(
       workspace,
       versionPrivatePackages: versionPrivatePackages,
       diff: packageFilters?.diff,
     );
+    // Also count ignored packages that were explicitly requested for manual
+    // versioning — this signals the user believes the package has changes
+    // worth releasing, so dependents should not be versioned without it.
+    for (final packageName in manualVersions.keys) {
+      if (workspace.filteredPackages[packageName] == null &&
+          workspace.allPackages[packageName] != null) {
+        ignoredPackagesWithChanges.add(packageName);
+      }
+    }
 
     for (final packageName in manualVersions.keys) {
       if (!workspace.allPackages.keys.contains(packageName)) {
