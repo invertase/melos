@@ -131,6 +131,14 @@ mixin _VersionMixin on _RunMixin {
       packageCommits,
     );
 
+    // Determine which ignored packages have versionable commits so we can
+    // prevent versioning packages that depend on them.
+    final ignoredPackagesWithChanges = await _getIgnoredPackagesWithChanges(
+      workspace,
+      versionPrivatePackages: versionPrivatePackages,
+      diff: packageFilters?.diff,
+    );
+
     for (final packageName in manualVersions.keys) {
       if (!workspace.allPackages.keys.contains(packageName)) {
         exitCode = 1;
@@ -160,6 +168,39 @@ mixin _VersionMixin on _RunMixin {
           if (packagesWithVersionableCommits.contains(package.name))
             if (!asStableRelease || !package.version.isPreRelease) package,
     };
+
+    // Remove packages that depend (directly or transitively) on an ignored
+    // package with pending changes, since versioning them without also
+    // versioning the ignored dependency could produce a broken release.
+    if (ignoredPackagesWithChanges.isNotEmpty) {
+      bool dependsOnIgnoredWithChanges(Package package) {
+        final unscoped = workspace.allPackages[package.name]!;
+        return unscoped.allTransitiveDependenciesInWorkspace.keys.any(
+          ignoredPackagesWithChanges.contains,
+        );
+      }
+
+      for (final package in [...packagesToManuallyVersion]) {
+        if (dependsOnIgnoredWithChanges(package)) {
+          packagesToManuallyVersion.remove(package);
+          logger.warning(
+            'Package "${package.name}" depends on an ignored package '
+            'that has pending changes. Skipping to avoid a broken '
+            'release.',
+          );
+        }
+      }
+      for (final package in [...packagesToAutoVersion]) {
+        if (dependsOnIgnoredWithChanges(package)) {
+          packagesToAutoVersion.remove(package);
+          logger.warning(
+            'Package "${package.name}" depends on an ignored package '
+            'that has pending changes. Skipping to avoid a broken '
+            'release.',
+          );
+        }
+      }
+    }
     final packagesToVersion = {
       ...packagesToManuallyVersion,
       ...packagesToAutoVersion,
@@ -790,6 +831,37 @@ mixin _VersionMixin on _RunMixin {
     }
 
     return packagesWithVersionableCommits;
+  }
+
+  /// Returns the names of packages that are ignored (in `allPackages` but not
+  /// in `filteredPackages`) and that have versionable commits.
+  Future<Set<String>> _getIgnoredPackagesWithChanges(
+    MelosWorkspace workspace, {
+    required bool versionPrivatePackages,
+    required String? diff,
+  }) async {
+    final ignoredPackages = workspace.allPackages.values.where(
+      (p) => workspace.filteredPackages[p.name] == null,
+    );
+    final result = <String>{};
+    await Pool(10).forEach<Package, void>(ignoredPackages, (package) async {
+      if (!versionPrivatePackages && package.isPrivate) {
+        return;
+      }
+      final commits = await gitCommitsForPackage(
+        package,
+        diff: diff,
+        logger: logger,
+      );
+      final hasVersionableCommit = commits
+          .map(RichGitCommit.tryParse)
+          .whereType<RichGitCommit>()
+          .any((c) => c.parsedMessage.isVersionableCommit);
+      if (hasVersionableCommit) {
+        result.add(package.name);
+      }
+    }).drain<void>();
+    return result;
   }
 
   Future<Map<String, List<RichGitCommit>>> _getPackageCommits(

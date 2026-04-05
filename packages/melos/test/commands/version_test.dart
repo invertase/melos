@@ -625,6 +625,74 @@ The following 1 packages will be updated:
           expect(pubspecApp.version, Version(0, 0, 2));
         },
       );
+
+      test(
+        'skips package with own changes if it depends on ignored package '
+        'with changes',
+        () async {
+          // Setup: a depends on b, both have manual versions specified.
+          // b is ignored. a should NOT be versioned because its dependency
+          // on b (which has pending changes) would produce a broken release.
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _workspaceConfigBuilder,
+            workspacePackages: ['a', 'b'],
+            useLocalTmpDirectory: true,
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'a',
+              version: Version(0, 0, 1),
+              dependencies: {
+                'b': HostedDependency(version: VersionConstraint.any),
+              },
+            ),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec('b', version: Version(0, 0, 1)),
+          );
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+
+          await melos.bootstrap(offline: true);
+          await melos.version(
+            packageFilters: PackageFilters(ignore: [Glob('b')]),
+            updateDependentsConstraints: false,
+            updateDependentsVersions: false,
+            versionPrivatePackages: true,
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            manualVersions: {
+              'a': ManualVersionChange(Version(0, 1, 0)),
+              'b': ManualVersionChange(Version(0, 1, 0)),
+            },
+          );
+
+          final pubspecA = Pubspec.parse(
+            File(
+              p.join(workspaceDir.path, 'packages/a/pubspec.yaml'),
+            ).readAsStringSync(),
+          );
+          final pubspecB = Pubspec.parse(
+            File(
+              p.join(workspaceDir.path, 'packages/b/pubspec.yaml'),
+            ).readAsStringSync(),
+          );
+          // b is ignored, should not be versioned.
+          expect(pubspecB.version, Version(0, 0, 1));
+          // a depends on ignored b which has pending changes, so a should
+          // also be skipped to avoid a broken release.
+          expect(pubspecA.version, Version(0, 0, 1));
+          expect(
+            logger.output,
+            contains('depends on an ignored package'),
+          );
+        },
+      );
     });
   });
 }
