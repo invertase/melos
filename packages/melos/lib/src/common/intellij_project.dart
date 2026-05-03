@@ -342,33 +342,93 @@ class IntellijProject {
   }
 
   Future<void> writeFlutterRunScripts() async {
-    final flutterTestTemplate = await readFileTemplate(
+    final flutterRunTemplate = await readFileTemplate(
       'flutter_run.xml',
       templateCategory: 'runConfigurations',
     );
+    final flutterRunWithArgsTemplate = await readFileTemplate(
+      'flutter_run_with_args.xml',
+      templateCategory: 'runConfigurations',
+    );
+
+    final runArguments = _workspace.config.ide.intelliJ.runArguments;
+
+    // Warn about packages in runArguments that don't exist in the workspace.
+    for (final packageName in runArguments.keys) {
+      final exists = _workspace.filteredPackages.values.any(
+        (p) => p.name == packageName,
+      );
+      if (!exists) {
+        _workspace.logger.warning(
+          'runArguments references package "$packageName" '
+          'which was not found in this workspace.',
+        );
+      }
+    }
 
     await Future.forEach(_workspace.filteredPackages.values, (package) async {
       if (!package.isFlutterApp) {
         return;
       }
 
-      final generatedRunConfiguration = injectTemplateVariables(
-        flutterTestTemplate,
-        {
-          'flutterRunName': "Flutter Run -&gt; '${package.name}'",
-          'flutterRunMainDartPathRelative': p
-              .join(package.pathRelativeToWorkspace, 'lib', 'main.dart')
-              .replaceAll(r'\', '/'),
-        },
-      );
-      final outputFile = p.join(
-        pathDotIdea,
-        'runConfigurations',
-        'melos_flutter_run_${package.name}.xml',
-      );
+      final packageRunArgs = runArguments[package.name] ?? [];
+      final mainDartPath = p
+          .join(package.pathRelativeToWorkspace, 'lib', 'main.dart')
+          .replaceAll(r'\', '/');
 
-      await forceWriteToFile(outputFile, generatedRunConfiguration);
+      if (packageRunArgs.isEmpty) {
+        // Original behaviour — one default config, no extra args.
+        final generatedRunConfiguration = injectTemplateVariables(
+          flutterRunTemplate,
+          {
+            'flutterRunName': "Flutter Run -&gt; '${package.name}'",
+            'flutterRunMainDartPathRelative': mainDartPath,
+          },
+        );
+        final outputFile = p.join(
+          pathDotIdea,
+          'runConfigurations',
+          'melos_flutter_run_${package.name}.xml',
+        );
+        await forceWriteToFile(outputFile, generatedRunConfiguration);
+      } else {
+        // One config per runArguments entry.
+        for (final runArg in packageRunArgs) {
+          final isDefault =
+              runArg.isDefault || runArg.name == null || runArg.name!.isEmpty;
+          final configDisplayName = isDefault
+              ? "Flutter Run -&gt; '${package.name}'"
+              : "Flutter Run -&gt; '${package.name}' (${runArg.name})";
+          final fileSuffix = isDefault
+              ? package.name
+              : '${package.name}_${runArg.name}';
+
+          final generatedRunConfiguration = injectTemplateVariables(
+            flutterRunWithArgsTemplate,
+            {
+              'flutterRunName': configDisplayName,
+              'flutterRunMainDartPathRelative': mainDartPath,
+              'flutterRunAdditionalArgs': _escapeXmlAttr(runArg.args),
+            },
+          );
+          final outputFile = p.join(
+            pathDotIdea,
+            'runConfigurations',
+            'melos_flutter_run_$fileSuffix.xml',
+          );
+          await forceWriteToFile(outputFile, generatedRunConfiguration);
+        }
+      }
     });
+  }
+
+  /// Escapes characters that are unsafe inside XML attribute values.
+  String _escapeXmlAttr(String value) {
+    return value
+        .replaceAll('&', '&amp;')
+        .replaceAll('"', '&quot;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
   }
 
   Future<void> writeFlutterTestScripts() async {

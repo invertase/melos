@@ -67,6 +67,7 @@ class IntelliJConfig {
     this.moduleNamePrefix = _defaultModuleNamePrefix,
     this.executeInTerminal = _defaultExecuteInTerminal,
     this.generateAppRunConfigs = _defaultGenerateAppRunConfigs,
+    this.runArguments = const {},
   });
 
   factory IntelliJConfig.fromYaml(Object? yaml) {
@@ -95,11 +96,26 @@ class IntelliJConfig {
               path: 'ide/intellij',
             )
           : _defaultGenerateAppRunConfigs;
+      final rawRunArgsYaml = yaml['runArguments'];
+      final rawRunArgs = (rawRunArgsYaml is Map)
+          ? rawRunArgsYaml.cast<Object?, Object?>()
+          : <Object?, Object?>{};
+      final runArguments = <String, List<IdeRunConfiguration>>{};
+      for (final entry in rawRunArgs.entries) {
+        final pkgName = entry.key! as String;
+        final list = (entry.value! as List)
+            .cast<Map<Object?, Object?>>()
+            .map(IdeRunConfiguration.fromYaml)
+            .toList();
+        runArguments[pkgName] = list;
+      }
+
       return IntelliJConfig(
         enabled: enabled,
         moduleNamePrefix: moduleNamePrefix,
         executeInTerminal: executeInTerminal,
         generateAppRunConfigs: generateAppRunConfigs,
+        runArguments: runArguments,
       );
     } else {
       final enabled = assertIsA<bool>(
@@ -125,12 +141,20 @@ class IntelliJConfig {
 
   final bool generateAppRunConfigs;
 
+  final Map<String, List<IdeRunConfiguration>> runArguments;
+
   Object? toJson() {
     return {
       'enabled': enabled,
       'moduleNamePrefix': moduleNamePrefix,
       'executeInTerminal': executeInTerminal,
       'generateAppRunConfigs': generateAppRunConfigs,
+      'runArguments': runArguments.map(
+        (key, value) => MapEntry(
+          key,
+          value.map((e) => e.toJson()).toList(),
+        ),
+      ),
     };
   }
 
@@ -141,7 +165,11 @@ class IntelliJConfig {
       other.enabled == enabled &&
       other.moduleNamePrefix == moduleNamePrefix &&
       other.executeInTerminal == executeInTerminal &&
-      other.generateAppRunConfigs == generateAppRunConfigs;
+      other.generateAppRunConfigs == generateAppRunConfigs &&
+      const DeepCollectionEquality().equals(
+        other.runArguments,
+        runArguments,
+      );
 
   @override
   int get hashCode =>
@@ -149,7 +177,8 @@ class IntelliJConfig {
       enabled.hashCode ^
       moduleNamePrefix.hashCode ^
       executeInTerminal.hashCode ^
-      generateAppRunConfigs.hashCode;
+      generateAppRunConfigs.hashCode ^
+      const DeepCollectionEquality().hash(runArguments);
 
   @override
   String toString() {
@@ -726,4 +755,51 @@ class UnresolvedWorkspace implements MelosException {
 
   @override
   String toString() => message;
+}
+
+/// A single named run configuration with additional arguments.
+@immutable
+class IdeRunConfiguration {
+  const IdeRunConfiguration({
+    required this.args,
+    this.name,
+    this.isDefault = false,
+  });
+
+  factory IdeRunConfiguration.fromYaml(Map<Object?, Object?> yaml) {
+    return IdeRunConfiguration(
+      name: yaml['name'] as String?,
+      args: yaml['args'] as String? ?? '',
+      isDefault: yaml['default'] as bool? ?? false,
+    );
+  }
+
+  /// Optional display name, e.g. "local" or "prod".
+  final String? name;
+
+  /// If true, args are merged into the default config instead of
+  /// creating a new named configuration.
+  final bool isDefault;
+
+  /// Additional args string, e.g.
+  /// "--flavor local --dart-define-from-file=local.json"
+  final String args;
+
+  Map<String, Object?> toJson() => {
+    'name': name,
+    'default': isDefault,
+    'args': args,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is IdeRunConfiguration &&
+      runtimeType == other.runtimeType &&
+      other.name == name &&
+      other.isDefault == isDefault &&
+      other.args == args;
+
+  @override
+  int get hashCode =>
+      runtimeType.hashCode ^ name.hashCode ^ isDefault.hashCode ^ args.hashCode;
 }
