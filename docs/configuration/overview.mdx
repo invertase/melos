@@ -270,6 +270,34 @@ melos:
       generateAppRunConfigs: false
 ```
 
+### runArguments
+
+Allows specifying additional run arguments per Flutter app package. This
+generates one IntelliJ run configuration per entry instead of the default single
+configuration.
+
+The `name` field sets the display name suffix and output filename. If `name` is
+omitted and `default: true` is set, the entry replaces the default configuration.
+
+```yaml
+melos:
+  ide:
+    intellij:
+      runArguments:
+        my_app:
+          - name: local
+            args: "--flavor local --dart-define-from-file=local.json"
+          - name: prod
+            args: "--flavor prod --dart-define-from-file=prod.json"
+          - default: true
+            args: "--flavor dev"
+```
+
+This generates:
+- `melos_flutter_run_my_app_local.xml`
+- `melos_flutter_run_my_app_prod.xml`
+- `melos_flutter_run_my_app.xml` (the default)
+
 ## scripts
 
 Define custom scripts that can be executed in the workspace via the

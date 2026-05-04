@@ -774,21 +774,14 @@ class IdeRunConfiguration {
     );
   }
 
-  /// Optional display name, e.g. "local" or "prod".
   final String? name;
-
-  /// If true, args are merged into the default config instead of
-  /// creating a new named configuration.
-  final bool isDefault;
-
-  /// Additional args string, e.g.
-  /// "--flavor local --dart-define-from-file=local.json"
   final String args;
+  final bool isDefault;
 
   Map<String, Object?> toJson() => {
     'name': name,
-    'default': isDefault,
     'args': args,
+    'default': isDefault,
   };
 
   @override
@@ -796,10 +789,10 @@ class IdeRunConfiguration {
       other is IdeRunConfiguration &&
       runtimeType == other.runtimeType &&
       other.name == name &&
-      other.isDefault == isDefault &&
-      other.args == args;
+      other.args == args &&
+      other.isDefault == isDefault;
 
   @override
   int get hashCode =>
-      runtimeType.hashCode ^ name.hashCode ^ isDefault.hashCode ^ args.hashCode;
+      runtimeType.hashCode ^ name.hashCode ^ args.hashCode ^ isDefault.hashCode;
 }
