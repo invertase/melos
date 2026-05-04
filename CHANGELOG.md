@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-05-04
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v7.6.0`](#melos---v760)
+
+---
+
+#### `melos` - `v7.6.0`
+
+ - **FEAT**(intellij): add runArguments support for IntelliJ run configurations ([#1005](https://github.com/invertase/melos/issues/1005)). ([5012a00b](https://github.com/invertase/melos/commit/5012a00bd0b6ce59d03674b65e0fe10f3fa806ff))
+
+
 ## 2026-04-05
 
 ### Changes

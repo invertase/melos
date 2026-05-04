@@ -1,3 +1,7 @@
+## 7.6.0
+
+ - **FEAT**(intellij): add runArguments support for IntelliJ run configurations ([#1005](https://github.com/invertase/melos/issues/1005)). ([5012a00b](https://github.com/invertase/melos/commit/5012a00bd0b6ce59d03674b65e0fe10f3fa806ff))
+
 ## 7.5.1
 
  - **FIX**: Make `melos version --ignore` correctly filter packages ([#1001](https://github.com/invertase/melos/issues/1001)). ([e03d1cba](https://github.com/invertase/melos/commit/e03d1cbaac42f9e4d30d1b46fd44454c225d17df))
