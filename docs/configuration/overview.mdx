@@ -351,6 +351,23 @@ The default is `false`.
 To temporarily override this `melos bootstrap --no-enforce-lockfile / --enforce-lockfile` can be
 used.
 
+### pubGetArgs
+
+A list of additional arguments to pass to `pub get` during bootstrapping.
+
+This is useful when you want to pass custom flags to `pub get` for all runs of
+`melos bootstrap` without having to specify them every time.
+
+The default is an empty list.
+
+```yaml
+melos:
+  command:
+    bootstrap:
+      pubGetArgs:
+        - --no-precompile
+```
+
 ## command/version
 
 Configuration for the `version` command.

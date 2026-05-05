@@ -26,12 +26,14 @@ mixin _BootstrapMixin on _CleanMixin {
             workspace.config.commands.bootstrap.enforceLockfile;
         final shouldEnforceLockfile =
             (enforceLockfile ?? enforceLockfileConfigValue) && hasLockFile;
+        final pubGetArgs = bootstrapCommandConfig.pubGetArgs;
 
         final pubCommandForLogging = _buildPubGetCommand(
           workspace: workspace,
           noExample: noExample,
           runOffline: runOffline,
           enforceLockfile: shouldEnforceLockfile,
+          pubGetArgs: pubGetArgs,
         ).join(' ');
 
         logger
@@ -75,6 +77,7 @@ mixin _BootstrapMixin on _CleanMixin {
             noExample: noExample,
             runOffline: runOffline,
             enforceLockfile: shouldEnforceLockfile,
+            pubGetArgs: pubGetArgs,
           );
 
           logger
@@ -122,6 +125,7 @@ mixin _BootstrapMixin on _CleanMixin {
     required bool noExample,
     required bool runOffline,
     required bool enforceLockfile,
+    List<String> pubGetArgs = const [],
   }) async {
     await runPubGetForPackage(
       workspace,
@@ -129,6 +133,7 @@ mixin _BootstrapMixin on _CleanMixin {
       noExample: noExample,
       runOffline: runOffline,
       enforceLockfile: enforceLockfile,
+      pubGetArgs: pubGetArgs,
     );
   }
 
@@ -139,12 +144,14 @@ mixin _BootstrapMixin on _CleanMixin {
     required bool noExample,
     required bool runOffline,
     required bool enforceLockfile,
+    List<String> pubGetArgs = const [],
   }) async {
     final command = _buildPubGetCommand(
       workspace: workspace,
       noExample: noExample,
       runOffline: runOffline,
       enforceLockfile: enforceLockfile,
+      pubGetArgs: pubGetArgs,
     );
     final process = await startCommandRaw(
       command,
@@ -184,6 +191,7 @@ mixin _BootstrapMixin on _CleanMixin {
     required bool noExample,
     required bool runOffline,
     required bool enforceLockfile,
+    List<String> pubGetArgs = const [],
   }) {
     return [
       ...pubCommandExecArgs(
@@ -194,6 +202,7 @@ mixin _BootstrapMixin on _CleanMixin {
       if (noExample) '--no-example',
       if (runOffline) '--offline',
       if (enforceLockfile) '--enforce-lockfile',
+      ...pubGetArgs,
     ];
   }
 

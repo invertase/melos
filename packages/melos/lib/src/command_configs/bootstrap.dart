@@ -17,6 +17,7 @@ class BootstrapCommandConfigs {
     this.runPubGetInParallel = true,
     this.runPubGetOffline = false,
     this.enforceLockfile = false,
+    this.pubGetArgs = const [],
     this.environment,
     this.dependencies,
     this.devDependencies,
@@ -70,6 +71,17 @@ class BootstrapCommandConfigs {
       ),
     );
 
+    final pubGetArgs = assertListIsA<String>(
+      key: 'pubGetArgs',
+      map: yaml,
+      isRequired: false,
+      assertItemIsA: (index, value) => assertIsA<String>(
+        value: value,
+        index: index,
+        path: 'command/bootstrap/pubGetArgs',
+      ),
+    );
+
     final hooksMap = assertKeyIsA<Map<Object?, Object?>?>(
       key: 'hooks',
       map: yaml,
@@ -87,6 +99,7 @@ class BootstrapCommandConfigs {
       runPubGetInParallel: runPubGetInParallel,
       runPubGetOffline: runPubGetOffline,
       enforceLockfile: enforceLockfile,
+      pubGetArgs: pubGetArgs,
       environment: environment.isEmpty ? null : environment,
       dependencies: dependencies.isEmpty ? null : dependencies,
       devDependencies: devDependencies.isEmpty ? null : devDependencies,
@@ -120,6 +133,9 @@ class BootstrapCommandConfigs {
   /// The default is `false`.
   final bool enforceLockfile;
 
+  /// Additional arguments to pass to `pub get` during bootstrapping.
+  final List<String> pubGetArgs;
+
   /// Environment configuration to be synced between all packages.
   final Environment? environment;
 
@@ -141,6 +157,7 @@ class BootstrapCommandConfigs {
       'runPubGetInParallel': runPubGetInParallel,
       'runPubGetOffline': runPubGetOffline,
       'enforceLockfile': enforceLockfile,
+      if (pubGetArgs.isNotEmpty) 'pubGetArgs': pubGetArgs,
       if (environment != null) 'environment': environment!.toJson(),
       if (dependencies != null) 'dependencies': dependencies!.toJson(),
       if (devDependencies != null)
@@ -160,6 +177,7 @@ class BootstrapCommandConfigs {
       other.runPubGetInParallel == runPubGetInParallel &&
       other.runPubGetOffline == runPubGetOffline &&
       other.enforceLockfile == enforceLockfile &&
+      const ListEquality<String>().equals(other.pubGetArgs, pubGetArgs) &&
       // Extracting equality from environment here as it does not implement ==
       other.environment.sdkConstraint == environment.sdkConstraint &&
       const DeepCollectionEquality().equals(other.environment, environment) &&
@@ -179,6 +197,7 @@ class BootstrapCommandConfigs {
       runPubGetInParallel.hashCode ^
       runPubGetOffline.hashCode ^
       enforceLockfile.hashCode ^
+      const ListEquality<String>().hash(pubGetArgs) ^
       // Extracting hashCode from environment here as it does not implement
       // hashCode
       environment.sdkConstraint.hashCode ^
@@ -197,6 +216,7 @@ BootstrapCommandConfigs(
   runPubGetInParallel: $runPubGetInParallel,
   runPubGetOffline: $runPubGetOffline,
   enforceLockfile: $enforceLockfile,
+  pubGetArgs: $pubGetArgs,
   environment: $environment,
   dependencies: $dependencies,
   devDependencies: $devDependencies,
