@@ -1,3 +1,8 @@
+## 7.7.0
+
+ - **FIX**(bootstrap): apply `dependencyOverridePaths` to workspace pubspec_overrides.yaml ([#1008](https://github.com/invertase/melos/issues/1008)). ([f075b271](https://github.com/invertase/melos/commit/f075b271b36b7ea15d679367f965128a8c04e677))
+ - **FEAT**: add `pubGetArgs` to `BootstrapCommandConfigs` ([#1007](https://github.com/invertase/melos/issues/1007)). ([1d9dddf5](https://github.com/invertase/melos/commit/1d9dddf54e521779fde9b64fa4a0fa61d8b13a5f))
+
 ## 7.6.0
 
  - **FEAT**(intellij): add runArguments support for IntelliJ run configurations ([#1005](https://github.com/invertase/melos/issues/1005)). ([5012a00b](https://github.com/invertase/melos/commit/5012a00bd0b6ce59d03674b65e0fe10f3fa806ff))

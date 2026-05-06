@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-05-06
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v7.7.0`](#melos---v770)
+
+---
+
+#### `melos` - `v7.7.0`
+
+ - **FIX**(bootstrap): apply `dependencyOverridePaths` to workspace pubspec_overrides.yaml ([#1008](https://github.com/invertase/melos/issues/1008)). ([f075b271](https://github.com/invertase/melos/commit/f075b271b36b7ea15d679367f965128a8c04e677))
+ - **FEAT**: add `pubGetArgs` to `BootstrapCommandConfigs` ([#1007](https://github.com/invertase/melos/issues/1007)). ([1d9dddf5](https://github.com/invertase/melos/commit/1d9dddf54e521779fde9b64fa4a0fa61d8b13a5f))
+
+
 ## 2026-05-04
 
 ### Changes
