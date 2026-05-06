@@ -43,6 +43,7 @@ mixin _BootstrapMixin on _CleanMixin {
 
         final filteredPackages = workspace.filteredPackages.values;
         final rollbackPubspecContent = <String, String>{};
+        _PubspecOverridesRollback? overridesRollback;
 
         try {
           if (bootstrapCommandConfig.environment != null ||
@@ -67,6 +68,10 @@ mixin _BootstrapMixin on _CleanMixin {
               );
             }).drain<void>();
           }
+
+          overridesRollback = await _writeWorkspaceDependencyOverrides(
+            workspace,
+          );
 
           logger.log(
             'Running "$pubCommandForLogging" in workspace...',
@@ -95,6 +100,10 @@ mixin _BootstrapMixin on _CleanMixin {
             ) async {
               await writeTextFileAsync(entry.key, entry.value);
             }).drain<void>();
+          }
+
+          if (overridesRollback != null) {
+            await overridesRollback.restore();
           }
 
           _logBootstrapException(exception, workspace);
@@ -204,6 +213,62 @@ mixin _BootstrapMixin on _CleanMixin {
       if (enforceLockfile) '--enforce-lockfile',
       ...pubGetArgs,
     ];
+  }
+
+  /// Writes path-based dependency overrides for the packages matched by
+  /// [BootstrapCommandConfigs.dependencyOverridePaths] to the workspace root
+  /// `pubspec_overrides.yaml`.
+  ///
+  /// The managed entries are tagged with a `melos_managed_dependency_overrides`
+  /// marker comment so user-defined overrides in the same file are preserved.
+  ///
+  /// Returns a rollback handle that restores the file to its previous state, or
+  /// `null` if no changes were made.
+  Future<_PubspecOverridesRollback?> _writeWorkspaceDependencyOverrides(
+    MelosWorkspace workspace,
+  ) async {
+    final overridesPath = utils.pubspecOverridesPathForDirectory(
+      workspace.path,
+    );
+    final originalContent = fileExists(overridesPath)
+        ? await readTextFileAsync(overridesPath)
+        : null;
+
+    final melosDependencyOverrides = <String, Dependency>{
+      for (final package in workspace.dependencyOverridePackages.values)
+        package.name: PathDependency(
+          relativePath(package.path, workspace.path),
+        ),
+    };
+
+    final updatedContent = _mergeMelosPubspecOverrides(
+      melosDependencyOverrides,
+      originalContent,
+    );
+
+    if (updatedContent == null) {
+      return null;
+    }
+
+    if (updatedContent.isEmpty) {
+      deleteEntry(overridesPath);
+    } else {
+      await writeTextFileAsync(overridesPath, updatedContent);
+    }
+
+    final relativeOverridesPath = relativePath(overridesPath, workspace.path);
+    final message = melosDependencyOverrides.isEmpty
+        ? 'Removed obsolete melos-managed dependency_overrides'
+        : 'Linked ${melosDependencyOverrides.length} '
+              'melos-managed dependency_overrides';
+    logger
+        .child(targetStyle(relativeOverridesPath), prefix: '$checkLabel ')
+        .child(message);
+
+    return _PubspecOverridesRollback(
+      path: overridesPath,
+      originalContent: originalContent,
+    );
   }
 
   Future<void> _setSharedDependenciesForPackage(
@@ -403,6 +468,28 @@ mixin _BootstrapMixin on _CleanMixin {
     }
     if (processStdErrString != null) {
       logger.stderr(processStdErrString);
+    }
+  }
+}
+
+/// Rollback handle for changes made to a `pubspec_overrides.yaml` file during
+/// bootstrap.
+class _PubspecOverridesRollback {
+  _PubspecOverridesRollback({
+    required this.path,
+    required this.originalContent,
+  });
+
+  final String path;
+  final String? originalContent;
+
+  Future<void> restore() async {
+    if (originalContent == null) {
+      if (fileExists(path)) {
+        deleteEntry(path);
+      }
+    } else {
+      await writeTextFileAsync(path, originalContent!);
     }
   }
 }

@@ -311,17 +311,35 @@ Configuration for the `bootstrap` command.
 
 ### dependencyOverridePaths
 
-A list of paths to local packages relative to the workspace directory that
-should be added to each workspace package's dependency overrides. Each entry can
-be a specific path or a [glob] pattern.
+A list of paths to local packages that should be linked into the workspace as
+`dependency_overrides`. Paths are resolved relative to the workspace directory
+and each entry can be a specific path or a [glob] pattern.
+
+During `melos bootstrap`, every matched package is written as a path-based
+`dependency_overrides` entry into the workspace root `pubspec_overrides.yaml`.
+The managed entries are tagged with a `melos_managed_dependency_overrides`
+marker comment so any user-defined entries in the same file are preserved
+across bootstraps:
+
+```yaml
+# melos_managed_dependency_overrides: my_pkg
+dependency_overrides:
+  my_pkg:
+    path: ../external_project/packages/my_pkg
+```
+
+Entries no longer matched by `dependencyOverridePaths` are removed on the next
+bootstrap. Entries without the marker comment are left untouched.
 
 **Tip:** External local packages can be referenced using paths relative to the
 workspace root.
 
 ```yaml
 melos:
-  dependencyOverridePaths:
-    - '../external_project/packages/**'
+  command:
+    bootstrap:
+      dependencyOverridePaths:
+        - '../external_project/packages/**'
 ```
 
 ### runPubGetInParallel

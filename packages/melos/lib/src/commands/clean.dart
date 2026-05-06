@@ -18,6 +18,10 @@ mixin _CleanMixin on _Melos {
 
         await Future.wait(workspace.filteredPackages.values.map(_cleanPackage));
 
+        await _cleanMelosManagedOverrides(
+          utils.pubspecOverridesPathForDirectory(workspace.path),
+        );
+
         await cleanIntelliJ(workspace);
 
         logger
@@ -44,20 +48,31 @@ mixin _CleanMixin on _Melos {
       }
     }
 
-    // Remove any old Melos generated dependency overrides from
-    // `pubspec_overrides.yaml`. This can be removed after a few versions when
-    // everyone has migrated to Melos ^7.0.0.
-    final pubspecOverridesFile = p.join(package.path, 'pubspec_overrides.yaml');
-    if (fileExists(pubspecOverridesFile)) {
-      final contents = await readTextFileAsync(pubspecOverridesFile);
-      final updatedContents = _mergeMelosPubspecOverrides({}, contents);
-      if (updatedContents != null) {
-        if (updatedContents.isEmpty) {
-          deleteEntry(pubspecOverridesFile);
-        } else {
-          await writeTextFileAsync(pubspecOverridesFile, updatedContents);
-        }
-      }
+    // Strip any Melos-managed dependency overrides from per-package
+    // `pubspec_overrides.yaml` files. These were written by older versions of
+    // Melos (pre pub-workspaces); current versions write to the workspace
+    // root file instead, but cleaning these keeps legacy workspaces tidy.
+    await _cleanMelosManagedOverrides(
+      p.join(package.path, 'pubspec_overrides.yaml'),
+    );
+  }
+
+  /// Removes melos-managed `dependency_overrides` from the
+  /// `pubspec_overrides.yaml` at [path], preserving any user-defined entries.
+  /// Deletes the file if no overrides remain.
+  Future<void> _cleanMelosManagedOverrides(String path) async {
+    if (!fileExists(path)) {
+      return;
+    }
+    final contents = await readTextFileAsync(path);
+    final updatedContents = _mergeMelosPubspecOverrides({}, contents);
+    if (updatedContents == null) {
+      return;
+    }
+    if (updatedContents.isEmpty) {
+      deleteEntry(path);
+    } else {
+      await writeTextFileAsync(path, updatedContents);
     }
   }
 

@@ -145,8 +145,14 @@ class BootstrapCommandConfigs {
   /// Dev dependencies to be synced between all packages.
   final Map<String, Dependency>? devDependencies;
 
-  /// A list of [Glob]s for paths that contain packages to be used as dependency
-  /// overrides for all packages managed in the Melos workspace.
+  /// A list of [Glob]s for paths that contain packages to be used as
+  /// dependency overrides for the Melos workspace.
+  ///
+  /// During `melos bootstrap`, each matched package is added as a path-based
+  /// `dependency_overrides` entry in the workspace root
+  /// `pubspec_overrides.yaml` file, and tagged with a
+  /// `melos_managed_dependency_overrides` marker comment so user-defined
+  /// overrides in the same file are preserved.
   final List<Glob> dependencyOverridePaths;
 
   /// Lifecycle hooks for this command.
