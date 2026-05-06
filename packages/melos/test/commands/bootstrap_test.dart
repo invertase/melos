@@ -561,6 +561,85 @@ dependency_overrides:
     );
 
     test(
+      'expands glob patterns in dependencyOverridePaths to multiple packages',
+      () async {
+        final overridesRoot = createTestTempDir();
+        final overrideOne = await createProject(
+          overridesRoot,
+          Pubspec('override_one'),
+          path: 'one',
+          inWorkspace: false,
+        );
+        final overrideTwo = await createProject(
+          overridesRoot,
+          Pubspec('override_two'),
+          path: 'two',
+          inWorkspace: false,
+        );
+
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a'],
+          configBuilder: (path) => MelosWorkspaceConfig(
+            name: 'workspace',
+            packages: [createGlob('packages/**', currentDirectoryPath: path)],
+            commands: CommandConfigs(
+              bootstrap: BootstrapCommandConfigs(
+                dependencyOverridePaths: [
+                  createGlob(
+                    p.join(overridesRoot.path, '*'),
+                    currentDirectoryPath: path,
+                  ),
+                ],
+              ),
+            ),
+            path: path,
+          ),
+        );
+
+        await createProject(
+          workspaceDir,
+          Pubspec(
+            'a',
+            dependencies: {
+              'override_one': HostedDependency(version: VersionConstraint.any),
+              'override_two': HostedDependency(version: VersionConstraint.any),
+            },
+          ),
+        );
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        await runMelosBootstrap(Melos(logger: logger, config: config), logger);
+
+        final overridesPath = pubspecOverridesPathForDirectory(
+          workspaceDir.path,
+        );
+        final overridesContent = readTextFile(overridesPath);
+        expect(
+          overridesContent,
+          contains(
+            '# melos_managed_dependency_overrides: '
+            'override_one,override_two',
+          ),
+        );
+
+        final overrides =
+            (loadYaml(overridesContent) as YamlMap)['dependency_overrides']
+                as YamlMap;
+        expect(
+          (overrides['override_one'] as YamlMap)['path'],
+          relativePath(overrideOne.path, workspaceDir.path),
+        );
+        expect(
+          (overrides['override_two'] as YamlMap)['path'],
+          relativePath(overrideTwo.path, workspaceDir.path),
+        );
+      },
+    );
+
+    test(
       'removes obsolete melos-managed dependency_overrides on bootstrap',
       () async {
         final workspaceDir = await createTemporaryWorkspace(
