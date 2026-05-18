@@ -96,6 +96,48 @@ ExecOptions(
 )''';
 }
 
+/// Controls how the standard streams of a script's child process are wired
+/// to melos's own process.
+enum ProcessStdio {
+  /// Child stdout and stderr are piped through melos so it can prefix output
+  /// with the script's indent. Child stdin is not connected. This is the
+  /// default and is what every script gets without an explicit `stdio` key.
+  pipe('pipe'),
+
+  /// Child stdin, stdout, and stderr are inherited from melos's own terminal,
+  /// giving the script a real TTY. Required for any program that needs an
+  /// attached terminal — `tmux attach`, `vim`, `less`, `flutter run` /
+  /// `dart_frog dev` hot-reload keys. Melos drops its indented output prefix
+  /// for the duration of the script in exchange for the TTY.
+  inherit('inherit')
+  ;
+
+  const ProcessStdio(this.yamlValue);
+
+  /// The string used to select this mode in melos config (e.g.
+  /// `stdio: inherit`).
+  final String yamlValue;
+
+  /// Parses the value of a script's `stdio:` config key.
+  ///
+  /// Throws [MelosConfigException] if [value] is not a recognised mode.
+  static ProcessStdio fromYaml(
+    String value, {
+    required String scriptName,
+  }) {
+    for (final mode in ProcessStdio.values) {
+      if (mode.yamlValue == value) {
+        return mode;
+      }
+    }
+    final allowed = ProcessStdio.values.map((m) => m.yamlValue).join(', ');
+    throw MelosConfigException(
+      'Invalid value "$value" for "stdio" on script $scriptName. '
+      'Expected one of: $allowed.',
+    );
+  }
+}
+
 @immutable
 class Script {
   const Script({
@@ -108,6 +150,7 @@ class Script {
     this.steps = const [],
     this.isPrivate = false,
     this.groups = const [],
+    this.stdio = ProcessStdio.pipe,
   });
 
   factory Script.fromYaml(
@@ -252,6 +295,17 @@ class Script {
           )
         : [];
 
+    final stdioYaml = yaml['stdio'];
+    final ProcessStdio stdio;
+    if (stdioYaml == null) {
+      stdio = ProcessStdio.pipe;
+    } else {
+      stdio = ProcessStdio.fromYaml(
+        assertIsA<String>(value: stdioYaml, key: 'stdio', path: scriptPath),
+        scriptName: name,
+      );
+    }
+
     return Script(
       name: name,
       run: run,
@@ -262,6 +316,7 @@ class Script {
       exec: exec,
       isPrivate: isPrivate ?? false,
       groups: groups,
+      stdio: stdio,
     );
   }
 
@@ -343,6 +398,11 @@ class Script {
   // The groups the script is belonging to
   final List<String>? groups;
 
+  /// How the script's child process should connect its standard streams to
+  /// melos. Defaults to [ProcessStdio.pipe]; set to [ProcessStdio.inherit] for
+  /// interactive commands that need a real terminal.
+  final ProcessStdio stdio;
+
   /// Returns the full command to run when executing this script.
   List<String> command([List<String>? extraArgs]) {
     String quoteScript(String script) => '"${script.replaceAll('"', r'\"')}"';
@@ -391,6 +451,22 @@ class Script {
         '    run: $run',
       );
     }
+    if (stdio == ProcessStdio.inherit && exec != null) {
+      throw MelosConfigException(
+        'The script "$name" has both "stdio: inherit" and "exec", which are '
+        'not compatible. "stdio: inherit" attaches a single child process to '
+        'the parent terminal; "exec" runs the script across multiple '
+        'packages.',
+      );
+    }
+    if (stdio == ProcessStdio.inherit && (steps != null && steps!.isNotEmpty)) {
+      throw MelosConfigException(
+        'The script "$name" has both "stdio: inherit" and "steps", which are '
+        'not compatible. "stdio: inherit" applies to a single process. Put '
+        'the inherit flag on the individual scripts referenced from "steps" '
+        'instead.',
+      );
+    }
   }
 
   Map<Object?, Object?> toJson() {
@@ -404,6 +480,7 @@ class Script {
       if (exec != null) 'exec': exec!.toJson(),
       'private': isPrivate,
       if (groups != null) 'groups': groups,
+      if (stdio != ProcessStdio.pipe) 'stdio': stdio.yamlValue,
     };
   }
 
@@ -419,7 +496,8 @@ class Script {
       other.steps == steps &&
       other.isPrivate == isPrivate &&
       other.groups == groups &&
-      other.exec == exec;
+      other.exec == exec &&
+      other.stdio == stdio;
 
   @override
   int get hashCode =>
@@ -432,7 +510,8 @@ class Script {
       steps.hashCode ^
       exec.hashCode ^
       isPrivate.hashCode ^
-      groups.hashCode;
+      groups.hashCode ^
+      stdio.hashCode;
 
   @override
   String toString() {
@@ -446,7 +525,8 @@ Script(
   steps: $steps,
   exec: ${exec.toString().indent('  ')},
   private: $isPrivate,
-  groups: $groups
+  groups: $groups,
+  stdio: ${stdio.yamlValue}
 )''';
   }
 }

@@ -316,6 +316,7 @@ mixin _RunMixin on _Melos {
       logger: logger,
       environment: environment,
       workingDirectory: config.path,
+      inheritStdio: script.stdio == ProcessStdio.inherit,
     );
   }
 
