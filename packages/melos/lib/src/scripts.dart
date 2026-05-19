@@ -102,35 +102,28 @@ enum ProcessStdio {
   /// Child stdout and stderr are piped through melos so it can prefix output
   /// with the script's indent. Child stdin is not connected. This is the
   /// default and is what every script gets without an explicit `stdio` key.
-  pipe('pipe'),
+  pipe,
 
   /// Child stdin, stdout, and stderr are inherited from melos's own terminal,
   /// giving the script a real TTY. Required for any program that needs an
   /// attached terminal — `tmux attach`, `vim`, `less`, `flutter run` /
   /// `dart_frog dev` hot-reload keys. Melos drops its indented output prefix
   /// for the duration of the script in exchange for the TTY.
-  inherit('inherit')
-  ;
-
-  const ProcessStdio(this.yamlValue);
-
-  /// The string used to select this mode in melos config (e.g.
-  /// `stdio: inherit`).
-  final String yamlValue;
+  inherit;
 
   /// Parses the value of a script's `stdio:` config key.
   ///
   /// Throws [MelosConfigException] if [value] is not a recognised mode.
-  static ProcessStdio fromYaml(
+  static ProcessStdio fromString(
     String value, {
     required String scriptName,
   }) {
     for (final mode in ProcessStdio.values) {
-      if (mode.yamlValue == value) {
+      if (mode.name == value) {
         return mode;
       }
     }
-    final allowed = ProcessStdio.values.map((m) => m.yamlValue).join(', ');
+    final allowed = ProcessStdio.values.map((m) => m.name).join(', ');
     throw MelosConfigException(
       'Invalid value "$value" for "stdio" on script $scriptName. '
       'Expected one of: $allowed.',
@@ -295,16 +288,14 @@ class Script {
           )
         : [];
 
-    final stdioYaml = yaml['stdio'];
-    final ProcessStdio stdio;
-    if (stdioYaml == null) {
-      stdio = ProcessStdio.pipe;
-    } else {
-      stdio = ProcessStdio.fromYaml(
-        assertIsA<String>(value: stdioYaml, key: 'stdio', path: scriptPath),
-        scriptName: name,
-      );
-    }
+    final stdioValue = assertKeyIsA<String?>(
+      key: 'stdio',
+      map: yaml,
+      path: scriptPath,
+    );
+    final stdio = stdioValue != null
+        ? ProcessStdio.fromString(stdioValue, scriptName: name)
+        : ProcessStdio.pipe;
 
     return Script(
       name: name,
@@ -480,7 +471,7 @@ class Script {
       if (exec != null) 'exec': exec!.toJson(),
       'private': isPrivate,
       if (groups != null) 'groups': groups,
-      if (stdio != ProcessStdio.pipe) 'stdio': stdio.yamlValue,
+      if (stdio != ProcessStdio.pipe) 'stdio': stdio.name,
     };
   }
 
@@ -526,7 +517,7 @@ Script(
   exec: ${exec.toString().indent('  ')},
   private: $isPrivate,
   groups: $groups,
-  stdio: ${stdio.yamlValue}
+  stdio: ${stdio.name}
 )''';
   }
 }
