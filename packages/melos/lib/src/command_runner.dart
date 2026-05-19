@@ -91,7 +91,6 @@ class MelosCommandRunner extends CommandRunner<void> {
   }
 }
 
-@override
 FutureOr<void> melosEntryPoint(
   List<String> arguments,
   LaunchContext context,
