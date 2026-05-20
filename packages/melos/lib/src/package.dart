@@ -773,8 +773,7 @@ The packages that caused the problem are:
     // that absolute Windows paths like "C:\pkg" are handled correctly.
     // p.posix treats '\' as a filename character, not a separator, so without
     // this conversion it would produce an invalid mixed-separator path.
-    final pattern =
-        '${event.pattern.replaceAll(r'\', '/')}/pubspec.yaml';
+    final pattern = '${event.pattern.replaceAll(r'\', '/')}/pubspec.yaml';
     return createGlob(
       p.posix.normalize(pattern),
       caseSensitive: event.caseSensitive,

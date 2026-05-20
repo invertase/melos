@@ -79,7 +79,7 @@ class PersistentShell {
       var output = utf8.decode(event, allowMalformed: true);
       if (_isWindows) {
         output = _cleanWindowsOutput(output);
-        if (output.isEmpty) return;
+        if (output.trim().isEmpty) return;
       }
       logger.logAndCompleteBasedOnMarkers(
         output,
@@ -99,8 +99,7 @@ class PersistentShell {
   //   command's output because the prompt is written to stdout without a
   //   trailing newline.
   static String _cleanWindowsOutput(String output) {
-    final normalized =
-        output.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    final normalized = output.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
     return normalized
         .split('\n')
         .where(
