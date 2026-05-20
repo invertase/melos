@@ -25,10 +25,15 @@ class PersistentShell {
 
   Future<void> startShell() async {
     final executable = _isWindows ? 'cmd.exe' : '/bin/sh';
+    // /Q: quiet (suppress banner and command echoing)
+    // /V:ON: enable delayed expansion so !ERRORLEVEL! reflects the actual
+    // exit code of the previous command rather than being expanded at parse
+    // time (a CMD gotcha when multiple commands are chained with &).
+    final args = _isWindows ? ['/Q', '/V:ON'] : const <String>[];
 
     _process = await Process.start(
       executable,
-      [],
+      args,
       workingDirectory: workingDirectory,
       environment: {
         ...environment,
@@ -86,15 +91,20 @@ class PersistentShell {
     final formattedScriptStep = targetStyle(
       command.addStepPrefixEmoji().withoutTrailing('\n'),
     );
-    final echoCommand = 'echo "$formattedScriptStep"';
     final echoSuccess = 'echo $_successEndMarker';
     final echoFailure = 'echo $_failureEndMarker';
 
     if (_isWindows) {
-      return '$echoCommand & $command & '
-          'if %errorlevel%==0 ($echoSuccess) else ($echoFailure)';
+      // CMD includes outer quotes in echo output, so omit them here.
+      // No space before the first & prevents a trailing space on the echo line.
+      // !ERRORLEVEL! (delayed expansion) reads the exit code after $command
+      // runs, not when the whole line is parsed by CMD.
+      final echoCommand = 'echo $formattedScriptStep';
+      return '$echoCommand&$command & '
+          'if !ERRORLEVEL!==0 ($echoSuccess) else ($echoFailure)';
     }
 
+    final echoCommand = 'echo "$formattedScriptStep"';
     return '$echoCommand && $command && $echoSuccess || $echoFailure';
   }
 }

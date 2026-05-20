@@ -44,11 +44,8 @@ mixin _InitMixin on _Melos {
         'melos': '^$melosVersion',
       },
       'workspace': packages.values
-          .map(
-            (p) => p.path
-                .replaceFirst(dir.absolute.path, '.')
-                .replaceFirst('./', ''),
-          )
+          .map((pkg) => p.relative(pkg.path, from: dir.absolute.path))
+          .map((rel) => rel.replaceAll(r'\', '/'))
           .toList(),
       'melos': '',
     };

@@ -33,7 +33,12 @@ Matcher ignoringDependencyMessages(String expected) {
                 ) &&
                 !line.startsWith(
                   'Try `dart pub outdated` for more information.',
-                ),
+                ) &&
+                // Removes Windows CMD banner lines
+                !line.startsWith('Microsoft Windows [Version') &&
+                !line.startsWith('(c) Microsoft Corporation') &&
+                // Removes Windows CMD prompt echoes like "C:\path>"
+                !RegExp(r'^[A-Za-z]:\\.*>').hasMatch(line),
           )
           .join('\n');
       return ignoringAnsii(expected).matches(normalizedActual, {});

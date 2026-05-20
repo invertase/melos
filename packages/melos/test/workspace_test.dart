@@ -79,6 +79,7 @@ The packages that caused the problem are:
       await Process.run(
         'melos',
         ['bootstrap'],
+        runInShell: io.Platform.isWindows,
         workingDirectory: projectDir.path,
       );
       final result = await Process.run(
