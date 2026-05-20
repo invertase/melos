@@ -76,7 +76,11 @@ class PersistentShell {
     bool isErrorStream = false,
   }) {
     stream.listen((event) {
-      final output = utf8.decode(event, allowMalformed: true);
+      var output = utf8.decode(event, allowMalformed: true);
+      if (_isWindows) {
+        output = _cleanWindowsOutput(output);
+        if (output.isEmpty) return;
+      }
       logger.logAndCompleteBasedOnMarkers(
         output,
         _successEndMarker,
@@ -85,6 +89,27 @@ class PersistentShell {
         asError: isErrorStream,
       );
     });
+  }
+
+  // Strip CMD artifacts from output chunks on Windows:
+  // - Normalize CRLF (\r\n) and lone CR (\r) to LF so that CRLF sequences
+  //   split across stream chunks do not leave stray \r in logged output.
+  // - Remove the Windows version banner lines that cmd.exe prints at startup.
+  // - Strip the CMD prompt prefix (e.g. "C:\path>") that appears before each
+  //   command's output because the prompt is written to stdout without a
+  //   trailing newline.
+  static String _cleanWindowsOutput(String output) {
+    final normalized =
+        output.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    return normalized
+        .split('\n')
+        .where(
+          (line) =>
+              !line.startsWith('Microsoft Windows [Version') &&
+              !line.startsWith('(c) Microsoft Corporation'),
+        )
+        .map((line) => line.replaceFirst(RegExp(r'^[A-Za-z]:\\[^>]*>'), ''))
+        .join('\n');
   }
 
   String _buildFullCommand(String command) {
@@ -100,7 +125,8 @@ class PersistentShell {
       // !ERRORLEVEL! (delayed expansion) reads the exit code after $command
       // runs, not when the whole line is parsed by CMD.
       final echoCommand = 'echo $formattedScriptStep';
-      return '$echoCommand&$command & '
+      // No space before & prevents trailing space in the command's echo output.
+      return '$echoCommand&$command& '
           'if !ERRORLEVEL!==0 ($echoSuccess) else ($echoFailure)';
     }
 

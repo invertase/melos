@@ -17,6 +17,9 @@ Matcher ignoringDependencyMessages(String expected) {
       final normalizedActual = actual
           .toString()
           .split('\n')
+          // Strip Windows CMD prompt prefix (e.g. "C:\path>") from the
+          // beginning of lines so that the rest of the line is preserved.
+          .map((line) => line.replaceFirst(RegExp(r'^[A-Za-z]:\\[^>]*>'), ''))
           .where(
             (line) =>
                 !line.startsWith('Resolving dependencies...') &&
@@ -36,9 +39,7 @@ Matcher ignoringDependencyMessages(String expected) {
                 ) &&
                 // Removes Windows CMD banner lines
                 !line.startsWith('Microsoft Windows [Version') &&
-                !line.startsWith('(c) Microsoft Corporation') &&
-                // Removes Windows CMD prompt echoes like "C:\path>"
-                !RegExp(r'^[A-Za-z]:\\.*>').hasMatch(line),
+                !line.startsWith('(c) Microsoft Corporation'),
           )
           .join('\n');
       return ignoringAnsii(expected).matches(normalizedActual, {});
