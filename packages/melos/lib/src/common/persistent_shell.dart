@@ -79,7 +79,7 @@ class PersistentShell {
       var output = utf8.decode(event, allowMalformed: true);
       if (_isWindows) {
         output = _cleanWindowsOutput(output);
-        if (output.trim().isEmpty) return;
+        if (output.isEmpty) return;
       }
       logger.logAndCompleteBasedOnMarkers(
         output,
@@ -98,17 +98,31 @@ class PersistentShell {
   // - Strip the CMD prompt prefix (e.g. "C:\path>") that appears before each
   //   command's output because the prompt is written to stdout without a
   //   trailing newline.
+  //
+  // Returns an empty string only when the chunk consisted entirely of CMD
+  // artifacts (banner + prompt), so that intentional blank lines from the
+  // logger are preserved (they also arrive as "\n" but have no CMD content).
   static String _cleanWindowsOutput(String output) {
     final normalized = output.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
-    return normalized
-        .split('\n')
-        .where(
-          (line) =>
-              !line.startsWith('Microsoft Windows [Version') &&
-              !line.startsWith('(c) Microsoft Corporation'),
-        )
-        .map((line) => line.replaceFirst(RegExp(r'^[A-Za-z]:\\[^>]*>'), ''))
-        .join('\n');
+    final lines = normalized.split('\n');
+
+    var hadCmdArtifact = false;
+    final cleaned = <String>[];
+    for (final line in lines) {
+      if (line.startsWith('Microsoft Windows [Version') ||
+          line.startsWith('(c) Microsoft Corporation')) {
+        hadCmdArtifact = true;
+        continue;
+      }
+      final stripped = line.replaceFirst(RegExp(r'^[A-Za-z]:\\[^>]*>'), '');
+      if (stripped.length < line.length) hadCmdArtifact = true;
+      cleaned.add(stripped);
+    }
+
+    final result = cleaned.join('\n');
+    // Only discard if the chunk was purely CMD artifacts and left no real
+    // content, to avoid stripping intentional logger blank lines.
+    return (hadCmdArtifact && result.trim().isEmpty) ? '' : result;
   }
 
   String _buildFullCommand(String command) {
