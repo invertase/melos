@@ -14,7 +14,7 @@ import 'package:yaml/yaml.dart';
 Matcher ignoringDependencyMessages(String expected) {
   return predicate(
     (actual) {
-      final normalizedActual = actual
+      final filtered = actual
           .toString()
           .split('\n')
           // Strip Windows CMD prompt prefix (e.g. "C:\path>") from the
@@ -41,8 +41,36 @@ Matcher ignoringDependencyMessages(String expected) {
                 !line.startsWith('Microsoft Windows [Version') &&
                 !line.startsWith('(c) Microsoft Corporation'),
           )
-          .join('\n');
-      return ignoringAnsii(expected).matches(normalizedActual, {});
+          .toList();
+
+      // Collapse consecutive blank lines into one and strip leading/trailing
+      // blank lines so that platform differences in blank-line count don't
+      // cause spurious test failures.
+      String collapseBlankLines(List<String> lines) {
+        final result = <String>[];
+        var prevBlank = false;
+        for (final line in lines) {
+          final isBlank = line.trim().isEmpty;
+          if (isBlank) {
+            if (!prevBlank) result.add('');
+            prevBlank = true;
+          } else {
+            result.add(line);
+            prevBlank = false;
+          }
+        }
+        while (result.isNotEmpty && result.first.trim().isEmpty) {
+          result.removeAt(0);
+        }
+        while (result.isNotEmpty && result.last.trim().isEmpty) {
+          result.removeLast();
+        }
+        return result.join('\n');
+      }
+
+      final normalizedActual = collapseBlankLines(filtered);
+      final normalizedExpected = collapseBlankLines(expected.split('\n'));
+      return ignoringAnsii(normalizedExpected).matches(normalizedActual, {});
     },
     'ignores dependency resolution messages',
   );

@@ -22,6 +22,7 @@ class PersistentShell {
   Completer<int>? _commandCompleter;
   final String _successEndMarker = '__SUCCESS_COMMAND_END__';
   final String _failureEndMarker = '__FAILURE_COMMAND_END__';
+  bool _firstOutputSeen = false;
 
   Future<void> startShell() async {
     final executable = _isWindows ? 'cmd.exe' : '/bin/sh';
@@ -80,6 +81,13 @@ class PersistentShell {
       if (_isWindows) {
         output = _cleanWindowsOutput(output);
         if (output.isEmpty) return;
+        // Discard blank-only chunks until the first real output is seen.
+        // CMD startup emits a blank line chunk (\r\n) separately from the
+        // banner text; without this guard that blank line leaks into output.
+        if (!_firstOutputSeen) {
+          if (output.trim().isEmpty) return;
+          _firstOutputSeen = true;
+        }
       }
       logger.logAndCompleteBasedOnMarkers(
         output,
