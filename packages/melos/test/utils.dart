@@ -74,12 +74,16 @@ class TestLogger extends StandardLogger {
 }
 
 Directory createTestTempDir({bool isLocal = false}) {
+  // Resolve symlinks (and 8.3 short names on Windows) to get the canonical
+  // long-form path. On Windows CI, TEMP uses 8.3 short names like RUNNER~1
+  // instead of runneradmin, which breaks glob traversal since directory
+  // listings return long-form names that won't match the short-form pattern.
   final dir =
       (isLocal
               ? Directory(p.join(Directory.current.path, '.dart_tool'))
               : Directory.systemTemp)
           .createTempSync('melos_test_')
-          .path;
+          .resolveSymbolicLinksSync();
   addTearDown(() => deleteEntry(dir));
   return Directory(dir);
 }

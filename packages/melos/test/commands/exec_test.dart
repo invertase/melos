@@ -168,14 +168,14 @@ ${'-' * terminalWidth}
           Pubspec('a'),
         );
 
-        createDelayedExitFile(a, delay: 1000);
+        createDelayedExitFile(a, delay: 4000);
 
         final b = await createProject(
           workspaceDir,
           Pubspec('b'),
         );
 
-        createDelayedExitFile(b, delay: 500);
+        createDelayedExitFile(b, delay: 2000);
 
         final c = await createProject(
           workspaceDir,

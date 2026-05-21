@@ -769,8 +769,13 @@ The packages that caused the problem are:
   }
 
   static Glob _createPubspecGlob(Glob event) {
+    // Convert backslashes to forward slashes before using p.posix.normalize so
+    // that absolute Windows paths like "C:\pkg" are handled correctly.
+    // p.posix treats '\' as a filename character, not a separator, so without
+    // this conversion it would produce an invalid mixed-separator path.
+    final pattern = '${event.pattern.replaceAll(r'\', '/')}/pubspec.yaml';
     return createGlob(
-      p.posix.normalize('${event.pattern}/pubspec.yaml'),
+      p.posix.normalize(pattern),
       caseSensitive: event.caseSensitive,
       context: event.context,
       recursive: event.recursive,
