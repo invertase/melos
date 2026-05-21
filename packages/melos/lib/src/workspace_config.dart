@@ -655,9 +655,15 @@ class MelosWorkspaceConfig {
 
   /// Validates the physical workspace on the file system.
   void _validatePhysicalWorkspace() {
-    if (!dirExists(path)) {
+    try {
+      if (!dirExists(path)) {
+        throw MelosConfigException(
+          'The path $path does not point to a directory',
+        );
+      }
+    } on FileSystemException catch (e) {
       throw MelosConfigException(
-        'The path $path does not point to a directory',
+        'The path $path does not point to a directory: ${e.message}',
       );
     }
   }
