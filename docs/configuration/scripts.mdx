@@ -57,6 +57,32 @@ A short description, shown when using `melos run` with no argument.
 
 The command to execute.
 
+## stdio
+
+Controls how the script's process is connected to Melos's own input and output
+streams. Accepts one of:
+
+- `pipe` (default) — Melos captures the script's `stdout` and `stderr` so it can
+  prefix the output with the script name. The script's `stdin` is not connected.
+- `inherit` — the script inherits Melos's `stdin`, `stdout`, and `stderr`
+  directly, giving it a real terminal (TTY). Use this for interactive commands
+  that need a controlling terminal, such as `tmux attach`, `vim`, `less`, or the
+  hot-reload key handlers in `flutter run` / `dart_frog dev`. In this mode Melos
+  does not prefix the script's output.
+
+```yaml
+scripts:
+  attach:
+    run: tmux attach -t my_session
+    stdio: inherit
+```
+
+`stdio: inherit` runs a single foreground process attached to your terminal, so
+it cannot be combined with [`exec`](/configuration/scripts#exec) (which runs the
+script across multiple packages) or [`steps`](/configuration/scripts#steps)
+(which run inside a shared shell). Set `stdio: inherit` on the individual
+scripts referenced from `steps` instead.
+
 ## steps
 
 Steps enables the combination of multiple scripts within a single script
