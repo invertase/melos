@@ -256,10 +256,13 @@ ${'-' * terminalWidth}
           failFast: true,
         );
 
+        // Packages run concurrently so any one may fail first on a given
+        // platform. Assert structure without pinning which package fails.
         expect(
           logger.output.normalizeLines(),
           ignoringAnsii(
-            '''
+            allOf([
+              contains('''
 \$ melos exec
   └> exit 2
      └> RUNNING (in 3 packages)
@@ -269,12 +272,11 @@ ${'-' * terminalWidth}
 
 \$ melos exec
   └> exit 2
-     └> FAILED (in 1 packages)
-        └> a (with exit code 2)
-     └> CANCELED (in 2 packages)
-        └> b (due to failFast)
-        └> c (due to failFast)
-''',
+     └> FAILED (in 1 packages)'''),
+              contains('(with exit code 2)'),
+              contains('CANCELED (in 2 packages)'),
+              contains('(due to failFast)'),
+            ]),
           ),
         );
       });
