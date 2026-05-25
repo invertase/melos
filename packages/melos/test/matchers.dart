@@ -34,9 +34,7 @@ Matcher ignoringDependencyMessages(String expected) {
                 !line.contains(
                   'newer versions incompatible with dependency constraints',
                 ) &&
-                !line.startsWith(
-                  'Try `dart pub outdated` for more information.',
-                ) &&
+                !(line.startsWith('Try ') && line.contains('pub outdated')) &&
                 // Removes Windows CMD banner lines
                 !line.startsWith('Microsoft Windows [Version') &&
                 !line.startsWith('(c) Microsoft Corporation'),
