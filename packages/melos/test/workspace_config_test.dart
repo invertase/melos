@@ -531,6 +531,79 @@ void main() {
         );
       });
     });
+
+    group('stdio', () {
+      test('defaults to ProcessStdio.pipe when the key is omitted', () {
+        final scripts = Scripts.fromYaml(
+          createYamlMap({
+            'a': {
+              'run': 'b',
+            },
+          }),
+          workspacePath: testWorkspacePath,
+        );
+        expect(scripts['a']!.stdio, ProcessStdio.pipe);
+      });
+
+      test('parses "stdio: inherit"', () {
+        final scripts = Scripts.fromYaml(
+          createYamlMap({
+            'a': {
+              'run': 'b',
+              'stdio': 'inherit',
+            },
+          }),
+          workspacePath: testWorkspacePath,
+        );
+        expect(scripts['a']!.stdio, ProcessStdio.inherit);
+      });
+
+      test('throws when "stdio" is set to an unknown value', () {
+        expect(
+          () => Scripts.fromYaml(
+            createYamlMap({
+              'a': {
+                'run': 'b',
+                'stdio': 'bogus',
+              },
+            }),
+            workspacePath: testWorkspacePath,
+          ),
+          throwsA(isA<MelosConfigException>()),
+        );
+      });
+
+      test('throws when "stdio: inherit" is combined with "exec"', () {
+        expect(
+          () => Scripts.fromYaml(
+            createYamlMap({
+              'a': {
+                'run': 'b',
+                'stdio': 'inherit',
+                'exec': <String, Object?>{},
+              },
+            }),
+            workspacePath: testWorkspacePath,
+          ).validate(),
+          throwsA(isA<MelosConfigException>()),
+        );
+      });
+
+      test('throws when "stdio: inherit" is combined with "steps"', () {
+        expect(
+          () => Scripts.fromYaml(
+            createYamlMap({
+              'a': {
+                'stdio': 'inherit',
+                'steps': ['echo hi'],
+              },
+            }),
+            workspacePath: testWorkspacePath,
+          ).validate(),
+          throwsA(isA<MelosConfigException>()),
+        );
+      });
+    });
   });
 
   group('MelosWorkspaceConfig', () {
