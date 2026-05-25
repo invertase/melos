@@ -1,3 +1,10 @@
+## 7.8.0
+
+ - **FIX**(windows): strip leading blank lines from first CMD output chunk ([#1012](https://github.com/invertase/melos/issues/1012)). ([95781101](https://github.com/invertase/melos/commit/95781101a6e4eac91e77a02a0e20dc41b0ad994f))
+ - **FIX**: resolve remaining Windows CI test failures ([#1013](https://github.com/invertase/melos/issues/1013)). ([47e3cb51](https://github.com/invertase/melos/commit/47e3cb51913f1786dee606ead14b61f70e216a7e))
+ - **FIX**: make tests pass on Windows ([#1011](https://github.com/invertase/melos/issues/1011)). ([1c8dbf37](https://github.com/invertase/melos/commit/1c8dbf37fad37c0ecbb631df93068aebbba83044))
+ - **FEAT**(scripts): add stdio: inherit for interactive scripts ([#1010](https://github.com/invertase/melos/issues/1010)). ([5a41c649](https://github.com/invertase/melos/commit/5a41c64982b6e279becbe845d61b091a5ea38395))
+
 ## 7.7.0
 
  - **FIX**(bootstrap): apply `dependencyOverridePaths` to workspace pubspec_overrides.yaml ([#1008](https://github.com/invertase/melos/issues/1008)). ([f075b271](https://github.com/invertase/melos/commit/f075b271b36b7ea15d679367f965128a8c04e677))
