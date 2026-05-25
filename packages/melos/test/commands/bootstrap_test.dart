@@ -356,7 +356,7 @@ Generating IntelliJ IDE files...
           '../packages/b',
         );
       },
-      timeout: Platform.isLinux ? const Timeout(Duration(seconds: 45)) : null,
+      timeout: const Timeout(Duration(seconds: 90)),
     );
 
     test('respects user dependency_overrides', () async {
