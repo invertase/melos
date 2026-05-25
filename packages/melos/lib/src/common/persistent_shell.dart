@@ -89,6 +89,11 @@ class PersistentShell {
           output = output.replaceFirst(RegExp(r'^\n+'), '');
           if (output.isEmpty) return;
           _firstOutputSeen = true;
+          // Strip leading newlines from the first real chunk. CMD startup
+          // can emit a leading \n bundled with the first real output, which
+          // would appear as a spurious blank line before the first step.
+          output = output.replaceFirst(RegExp(r'^\n+'), '');
+          if (output.isEmpty) return;
         }
       }
       logger.logAndCompleteBasedOnMarkers(
