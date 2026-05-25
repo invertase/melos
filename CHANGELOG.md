@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-05-25
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v7.8.0`](#melos---v780)
+
+---
+
+#### `melos` - `v7.8.0`
+
+ - **FIX**(windows): strip leading blank lines from first CMD output chunk ([#1012](https://github.com/invertase/melos/issues/1012)). ([95781101](https://github.com/invertase/melos/commit/95781101a6e4eac91e77a02a0e20dc41b0ad994f))
+ - **FIX**: resolve remaining Windows CI test failures ([#1013](https://github.com/invertase/melos/issues/1013)). ([47e3cb51](https://github.com/invertase/melos/commit/47e3cb51913f1786dee606ead14b61f70e216a7e))
+ - **FIX**: make tests pass on Windows ([#1011](https://github.com/invertase/melos/issues/1011)). ([1c8dbf37](https://github.com/invertase/melos/commit/1c8dbf37fad37c0ecbb631df93068aebbba83044))
+ - **FEAT**(scripts): add stdio: inherit for interactive scripts ([#1010](https://github.com/invertase/melos/issues/1010)). ([5a41c649](https://github.com/invertase/melos/commit/5a41c64982b6e279becbe845d61b091a5ea38395))
+
+
 ## 2026-05-06
 
 ### Changes
