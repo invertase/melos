@@ -81,11 +81,13 @@ class PersistentShell {
       if (_isWindows) {
         output = _cleanWindowsOutput(output);
         if (output.isEmpty) return;
-        // Discard blank-only chunks until the first real output is seen.
-        // CMD startup emits a blank line chunk (\r\n) separately from the
-        // banner text; without this guard that blank line leaks into output.
+        // Strip leading blank lines until the first real output is seen.
+        // CMD startup emits a blank line (\r\n) that may arrive alone or
+        // prepended to the first real output chunk. Checking trim().isEmpty
+        // only handles the standalone case; replaceFirst handles both.
         if (!_firstOutputSeen) {
-          if (output.trim().isEmpty) return;
+          output = output.replaceFirst(RegExp(r'^\n+'), '');
+          if (output.isEmpty) return;
           _firstOutputSeen = true;
           // Strip leading newlines from the first real chunk. CMD startup
           // can emit a leading \n bundled with the first real output, which
