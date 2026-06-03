@@ -1,3 +1,7 @@
+## 7.8.1
+
+ - **FIX**(deps): allow xml 7 via widened constraint ([#1016](https://github.com/invertase/melos/issues/1016)). ([5e1066f0](https://github.com/invertase/melos/commit/5e1066f0cc1dd8cbf680ebc0d017c7ce1711b883))
+
 ## 7.8.0
 
  - **FIX**(windows): strip leading blank lines from first CMD output chunk ([#1012](https://github.com/invertase/melos/issues/1012)). ([95781101](https://github.com/invertase/melos/commit/95781101a6e4eac91e77a02a0e20dc41b0ad994f))

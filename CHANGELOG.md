@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-06-03
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v7.8.1`](#melos---v781)
+
+---
+
+#### `melos` - `v7.8.1`
+
+ - **FIX**(deps): allow xml 7 via widened constraint ([#1016](https://github.com/invertase/melos/issues/1016)). ([5e1066f0](https://github.com/invertase/melos/commit/5e1066f0cc1dd8cbf680ebc0d017c7ce1711b883))
+
+
 ## 2026-05-25
 
 ### Changes
