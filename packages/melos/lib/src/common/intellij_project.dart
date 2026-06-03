@@ -145,16 +145,22 @@ class IntellijProject {
     // Use `/` instead of `\` no matter what platform is.
     imlPath = imlPath.replaceAll(r'\', '/');
 
-    return xml.XmlElement(
-      xml.XmlName('module'),
-      [
-        xml.XmlAttribute(
-          xml.XmlName('fileurl'),
-          'file://\$PROJECT_DIR\$/$imlPath',
-        ),
-        xml.XmlAttribute(xml.XmlName('filepath'), '\$PROJECT_DIR\$/$imlPath'),
-      ],
+    // Build the element with the high-level `XmlBuilder` API rather than
+    // constructing `XmlName`/`XmlElement` directly. The various `XmlName`
+    // constructors that are non-deprecated differ between xml 6 and 7 (e.g.
+    // `XmlName.fromString` is deprecated in xml 7 in favour of the v7-only
+    // `XmlName.qualified`), whereas the string-based builder API is stable and
+    // non-deprecated across the whole supported range. It also escapes
+    // attribute values automatically.
+    final builder = xml.XmlBuilder();
+    builder.element(
+      'module',
+      attributes: {
+        'fileurl': 'file://\$PROJECT_DIR\$/$imlPath',
+        'filepath': '\$PROJECT_DIR\$/$imlPath',
+      },
     );
+    return builder.buildFragment().children.whereType<xml.XmlElement>().first;
   }
 
   Future<void> forceWriteToFile(String filePath, String fileContents) async {
