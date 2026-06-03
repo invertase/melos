@@ -145,14 +145,21 @@ class IntellijProject {
     // Use `/` instead of `\` no matter what platform is.
     imlPath = imlPath.replaceAll(r'\', '/');
 
+    // `XmlName.fromString` is used instead of the default `XmlName`
+    // constructor because the latter is deprecated in xml 7. `fromString` is
+    // available and non-deprecated in both xml 6 and 7, so it works across the
+    // supported version range.
     return xml.XmlElement(
-      xml.XmlName('module'),
+      xml.XmlName.fromString('module'),
       [
         xml.XmlAttribute(
-          xml.XmlName('fileurl'),
+          xml.XmlName.fromString('fileurl'),
           'file://\$PROJECT_DIR\$/$imlPath',
         ),
-        xml.XmlAttribute(xml.XmlName('filepath'), '\$PROJECT_DIR\$/$imlPath'),
+        xml.XmlAttribute(
+          xml.XmlName.fromString('filepath'),
+          '\$PROJECT_DIR\$/$imlPath',
+        ),
       ],
     );
   }
