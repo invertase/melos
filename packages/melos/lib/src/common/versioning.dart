@@ -57,42 +57,57 @@ Version nextStableVersion(
   Version currentVersion,
   SemverReleaseType releaseType,
 ) {
-  // For simplicity's sake, we avoid using + after the version reaches 1.0.0.
+  final Version bumpedVersion;
   if (currentVersion.major > 0) {
+    // Standard semantic versioning once the version reaches 1.0.0.
     switch (releaseType) {
       case SemverReleaseType.major:
-        return currentVersion.nextBreaking;
+        bumpedVersion = currentVersion.nextBreaking;
       case SemverReleaseType.minor:
-        return currentVersion.nextMinor;
+        bumpedVersion = currentVersion.nextMinor;
       case SemverReleaseType.patch:
-        return currentVersion.nextPatch;
+        bumpedVersion = currentVersion.nextPatch;
+    }
+  } else {
+    // Although semantic versioning doesn't promise any compatibility between
+    // versions prior to 1.0.0, the Dart community convention is to treat those
+    // versions semantically as well. The interpretation of each number is just
+    // shifted down one slot:
+    //   - going from 0.1.2 to 0.2.0 indicates a breaking change
+    //   - going to 0.1.3 indicates a new feature or a change that doesn't
+    //     affect the public API
+    switch (releaseType) {
+      case SemverReleaseType.major:
+        bumpedVersion = currentVersion.nextMinor;
+      case SemverReleaseType.minor:
+      case SemverReleaseType.patch:
+        bumpedVersion = currentVersion.nextPatch;
     }
   }
 
-  // Although semantic versioning doesn't promise any compatibility between
-  // versions prior to 1.0.0, the Dart community convention is to treat those
-  // versions semantically as well. The interpretation of each number is just
-  // shifted down one slot:
-  //   - going from 0.1.2 to 0.2.0 indicates a breaking change
-  //   - going to 0.1.3 indicates a new feature
-  //   - going to 0.1.2+1 indicates a change that doesn't affect the public API
-  switch (releaseType) {
-    case SemverReleaseType.major:
-      return currentVersion.nextMinor;
-    case SemverReleaseType.minor:
-      return currentVersion.nextPatch;
-    case SemverReleaseType.patch:
-      // Bump the build number, or set it if it does not exist.
-      final currentBuild = currentVersion.build.length == 1
-          ? currentVersion.build[0] as int
-          : 0;
-      return Version(
-        currentVersion.major,
-        currentVersion.minor,
-        currentVersion.patch,
-        build: (currentBuild + 1).toString(),
-      );
+  // Retain and increment an integer build number (e.g. `+11` -> `+12`) when the
+  // current version has one. Non-integer or multi-component build metadata
+  // (prerelease-style tags, git hashes, dot-separated builds) is not retained.
+  final currentBuildNumber = _integerBuildNumber(currentVersion);
+  if (currentBuildNumber != null) {
+    return Version(
+      bumpedVersion.major,
+      bumpedVersion.minor,
+      bumpedVersion.patch,
+      build: (currentBuildNumber + 1).toString(),
+    );
   }
+
+  return bumpedVersion;
+}
+
+/// Returns the build number of [version] if its build metadata is a single
+/// integer component (e.g. `+11`), otherwise `null`.
+int? _integerBuildNumber(Version version) {
+  if (version.build.length == 1 && version.build.first is int) {
+    return version.build.first as int;
+  }
+  return null;
 }
 
 Version nextPrereleaseVersion(

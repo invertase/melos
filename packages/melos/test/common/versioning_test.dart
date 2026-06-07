@@ -219,6 +219,17 @@ const _versioningTestCases = [
   VersioningTestCase('1.1.1', '2.0.0', SemverReleaseType.major),
   VersioningTestCase('1.1.1', '1.2.0', SemverReleaseType.minor),
   VersioningTestCase('1.1.1', '1.1.2', SemverReleaseType.patch),
+
+  // An integer build number (e.g. `+11`) is retained and incremented when
+  // bumping a version, regardless of the release type.
+  VersioningTestCase('3.0.0+11', '4.0.0+12', SemverReleaseType.major),
+  VersioningTestCase('3.0.0+11', '3.1.0+12', SemverReleaseType.minor),
+  VersioningTestCase('3.0.0+11', '3.0.1+12', SemverReleaseType.patch),
+  // No build number is added when the current version doesn't have one.
+  VersioningTestCase('3.0.0', '3.0.1', SemverReleaseType.patch),
+  // Non-integer or multi-component build metadata is not retained.
+  VersioningTestCase('3.0.0+foo', '4.0.0', SemverReleaseType.major),
+  VersioningTestCase('3.0.0+1.2', '4.0.0', SemverReleaseType.major),
   VersioningTestCase(
     '1.0.0',
     '2.0.0-dev.0',
@@ -251,24 +262,27 @@ const _versioningTestCases = [
   // shifted down one slot
   VersioningTestCase('0.1.0', '0.2.0', SemverReleaseType.major),
   VersioningTestCase('0.1.0', '0.1.1', SemverReleaseType.minor),
+  // A patch release below 1.0.0 bumps the patch component rather than creating
+  // a build number.
   VersioningTestCase(
     '0.1.0',
-    '0.1.0+1',
+    '0.1.1',
     SemverReleaseType.patch,
   ),
+  // An existing integer build number is retained and incremented across bumps.
   VersioningTestCase(
     '0.1.1+1',
-    '0.2.0',
+    '0.2.0+2',
     SemverReleaseType.major,
   ),
   VersioningTestCase(
     '0.1.1+1',
-    '0.1.2',
+    '0.1.2+2',
     SemverReleaseType.minor,
   ),
   VersioningTestCase(
     '0.1.1+1',
-    '0.1.1+2',
+    '0.1.2+2',
     SemverReleaseType.patch,
   ),
   VersioningTestCase(
@@ -285,7 +299,7 @@ const _versioningTestCases = [
   ),
   VersioningTestCase(
     '0.1.0',
-    '0.1.0-dev.0+1',
+    '0.1.1-dev.0',
     SemverReleaseType.patch,
     shouldMakePrereleaseVersion: true,
   ),
@@ -364,7 +378,7 @@ const _versioningTestCases = [
   ),
   NullSafetyTestCase(
     '0.1.0+1',
-    '0.2.0-1.0.nullsafety.0',
+    '0.2.0-1.0.nullsafety.0+2',
     SemverReleaseType.patch,
   ),
 
