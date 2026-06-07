@@ -69,13 +69,10 @@ Version nextStableVersion(
         bumpedVersion = currentVersion.nextPatch;
     }
   } else {
-    // Although semantic versioning doesn't promise any compatibility between
-    // versions prior to 1.0.0, the Dart community convention is to treat those
-    // versions semantically as well. The interpretation of each number is just
-    // shifted down one slot:
-    //   - going from 0.1.2 to 0.2.0 indicates a breaking change
-    //   - going to 0.1.3 indicates a new feature or a change that doesn't
-    //     affect the public API
+    // Below 1.0.0 the interpretation of each number is shifted down one slot:
+    //   - a breaking change bumps the minor: 0.1.2 -> 0.2.0
+    //   - a new feature or a change that doesn't affect the public API bumps
+    //     the patch: 0.1.2 -> 0.1.3
     switch (releaseType) {
       case SemverReleaseType.major:
         bumpedVersion = currentVersion.nextMinor;
