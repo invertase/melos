@@ -48,14 +48,24 @@ ${description?.withoutTrailing('\n') ?? ''}
     final dependencyOnlyPackages = pendingPackageUpdates.where(
       (update) => update.reason == PackageUpdateReason.dependency,
     );
-    final graduatedPackages = pendingPackageUpdates.where(
-      (update) => update.reason == PackageUpdateReason.graduate,
-    );
+    // Only packages graduated without any new commits since the last
+    // pre-release are listed in the dedicated graduation section. Graduated
+    // packages with new commits are treated like regular changes so their
+    // commits appear in the changelog.
+    final graduatedPackages = pendingPackageUpdates
+        .where(
+          (update) =>
+              update.reason == PackageUpdateReason.graduate &&
+              !update.hasVersionableCommits,
+        )
+        .toSet();
     final packagesWithBreakingChanges = pendingPackageUpdates.where(
-      (update) => update.hasBreakingChanges,
+      (update) =>
+          !graduatedPackages.contains(update) && update.hasBreakingChanges,
     );
     final packagesWithOtherChanges = pendingPackageUpdates.where(
-      (update) => !update.hasBreakingChanges,
+      (update) =>
+          !graduatedPackages.contains(update) && !update.hasBreakingChanges,
     );
 
     body.writeln(_changelogFileHeader);

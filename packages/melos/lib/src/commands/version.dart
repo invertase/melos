@@ -225,7 +225,7 @@ mixin _VersionMixin on _RunMixin {
           MelosPendingPackageUpdate(
             workspace,
             package,
-            const [],
+            packageCommits[package.name] ?? const [],
             PackageUpdateReason.graduate,
             graduate: asStableRelease,
             prerelease: asPrerelease,
