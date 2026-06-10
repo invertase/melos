@@ -584,6 +584,7 @@ melos:
     version:
       changelogFormat:
         includeDate: true
+        groupByType: true
 ```
 
 #### includeDate
@@ -591,3 +592,29 @@ melos:
 Whether to include the date in the generated CHANGELOG.md. Defaults to `false`.
 
 With enabled, changelog entry header will include the date in the `yyyy-MM-dd` format.
+
+#### groupByType
+
+Whether to group changelog entries by their conventional commit type. Defaults
+to `false`.
+
+When enabled, entries are grouped under a single header per type (e.g. all
+features under a `Features` header and all fixes under a `Bug Fixes` header)
+instead of being listed in a single flat list:
+
+```md
+## 1.2.0
+
+### Features
+
+ - added user authentication.
+ - implemented dark mode support.
+
+### Bug Fixes
+
+ - corrected issue with API call.
+ - resolved UI glitch on iOS.
+```
+
+This setting can be overridden per run with the `--[no-]group-commits` flag on
+`melos version`.

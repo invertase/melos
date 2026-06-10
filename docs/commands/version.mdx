@@ -96,6 +96,22 @@ The default for this option can be configured in
 [command/version/releaseUrl](/configuration/overview#releaseurl) in your
 root `pubspec.yaml` file.
 
+## --[no-]group-commits
+
+Group changelog entries by their conventional commit type, e.g. all features
+under a `Features` header and all fixes under a `Bug Fixes` header, instead of
+listing them in a single flat list. Defaults to `false`.
+
+```bash
+melos version --group-commits
+```
+
+Use `--no-group-commits` to disable.
+
+The default for this option can be configured in
+[command/version/changelogFormat/groupByType](/configuration/overview#groupbytype)
+in your root `pubspec.yaml` file.
+
 ## --[no-]dependent-constraints
 
 Update dependency version constraints of packages in this workspace that depend
