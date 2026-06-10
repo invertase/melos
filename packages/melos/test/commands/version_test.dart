@@ -371,7 +371,7 @@ The following 1 packages will be updated:
               AnsiStyles.strip('''
 > Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
 
- - `b` - `v0.0.1+1`
+ - `b` - `v0.0.2`
 '''),
             ),
           ),
@@ -622,7 +622,7 @@ The following 1 packages will be updated:
           );
           // app directly depends on core, so it should get a dependent bump
           // even though mid is ignored.
-          expect(pubspecApp.version, Version.parse('0.0.1+1'));
+          expect(pubspecApp.version, Version.parse('0.0.2'));
         },
       );
 

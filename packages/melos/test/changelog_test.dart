@@ -53,7 +53,7 @@ void main() {
           package,
           testCommit(message: 'Merge foo into bar'),
         ),
-        '## 0.0.0+1\n\n',
+        '## 0.0.1\n\n',
       );
     });
 

@@ -77,6 +77,32 @@ the conventional commit type. This is useful since some collaborative version
 control systems use these non-configurable prefixes when they merge pull
 requests.
 
+#### Versions below 1.0.0
+
+Semantic versioning doesn't promise any compatibility between versions prior to
+`1.0.0`, but the Dart community convention is to treat those versions
+semantically as well, with the interpretation of each number shifted down one
+slot:
+
+- a **major** (breaking) bump increments the minor: `0.1.2` → `0.2.0`.
+- a **minor** (feature) bump increments the patch: `0.1.2` → `0.1.3`.
+- a **patch** bump also increments the patch: `0.1.2` → `0.1.3`.
+
+#### Build numbers
+
+A version may carry a build number, the `+N` suffix (e.g. `3.0.0+11`). When a
+package's current version has an integer build number, Melos retains it and
+increments it by one on every version bump, regardless of the bump type:
+
+- `3.0.0+11` with a major bump → `4.0.0+12`
+- `3.0.0+11` with a patch bump → `3.0.1+12`
+
+If the current version has no build number, none is added (e.g. `3.0.0` →
+`3.0.1`). Build metadata that is not a single integer (such as a prerelease-style
+tag, a git hash, or a dot-separated build) is not retained:
+
+- `3.0.0+abc` with a major bump → `4.0.0`
+
 #### Not using Conventional Commits?
 
 If an existing Git project is already established and does not use Conventional
