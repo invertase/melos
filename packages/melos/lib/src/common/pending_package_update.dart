@@ -153,9 +153,15 @@ class MelosPendingPackageUpdate {
         .reduce(math.max)];
   }
 
+  /// Whether this update has any commits that produce changelog entries.
+  bool get hasVersionableCommits {
+    return commits.any((commit) => commit.parsedMessage.isVersionableCommit);
+  }
+
   /// Whether this update contains breaking changes.
   bool get hasBreakingChanges {
-    if (reason == PackageUpdateReason.manual) {
+    if (reason == PackageUpdateReason.manual ||
+        reason == PackageUpdateReason.graduate) {
       return commits.any((commit) => commit.parsedMessage.isBreakingChange);
     }
 

@@ -116,8 +116,10 @@ extension ChangelogStringBufferExtension on StringBuffer {
       writeln();
     }
 
-    if (update.reason == PackageUpdateReason.graduate) {
-      // Package graduation entry.
+    if (update.reason == PackageUpdateReason.graduate &&
+        !update.hasVersionableCommits) {
+      // Package graduation entry without any new commits since the last
+      // pre-release.
       writeln(
         ' - Graduate package to a stable release. See pre-releases prior to '
         'this version for changelog entries.',
@@ -126,7 +128,9 @@ extension ChangelogStringBufferExtension on StringBuffer {
     }
 
     if (update.reason == PackageUpdateReason.commit ||
-        update.reason == PackageUpdateReason.manual) {
+        update.reason == PackageUpdateReason.manual ||
+        (update.reason == PackageUpdateReason.graduate &&
+            update.hasVersionableCommits)) {
       // Breaking change note.
       if (update.hasBreakingChanges) {
         writeln('> Note: This release has breaking changes.');

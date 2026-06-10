@@ -162,6 +162,55 @@ void main() {
     );
   });
 
+  group('graduate', () {
+    // Regression test for: https://github.com/invertase/melos/issues/782
+    test('includes commits made since the pre-release in the changelog', () {
+      final workspace = buildWorkspaceWithRepository();
+      final package = workspace.allPackages['test_pkg']!;
+
+      final markdown = renderGraduatePackageUpdate(workspace, package, [
+        testCommit(message: 'feat: a new feature'),
+        testCommit(message: 'fix: a bug fix'),
+      ]);
+
+      expect(markdown, contains('**FEAT**: a new feature.'));
+      expect(markdown, contains('**FIX**: a bug fix.'));
+      expect(
+        markdown,
+        isNot(contains('Graduate package to a stable release')),
+      );
+    });
+
+    test('falls back to the pre-release note when there are no commits', () {
+      final workspace = buildWorkspaceWithRepository();
+      final package = workspace.allPackages['test_pkg']!;
+
+      final markdown = renderGraduatePackageUpdate(workspace, package, []);
+
+      expect(
+        markdown,
+        contains(
+          'Graduate package to a stable release. See pre-releases prior to '
+          'this version for changelog entries.',
+        ),
+      );
+    });
+
+    test('ignores non-versionable commits and shows the pre-release note', () {
+      final workspace = buildWorkspaceWithRepository();
+      final package = workspace.allPackages['test_pkg']!;
+
+      final markdown = renderGraduatePackageUpdate(workspace, package, [
+        testCommit(message: 'chore: not versionable'),
+      ]);
+
+      expect(
+        markdown,
+        contains('Graduate package to a stable release'),
+      );
+    });
+  });
+
   group('group commits by type', () {
     test('writes a flat list by default', () {
       final workspace = buildWorkspaceWithRepository();
@@ -318,6 +367,23 @@ String renderCommitsPackageUpdate(
     commits,
     PackageUpdateReason.commit,
     groupCommits: groupCommits,
+    logger: workspace.logger,
+  );
+  final changelog = MelosChangelog(update, workspace.logger);
+  return changelog.markdown;
+}
+
+String renderGraduatePackageUpdate(
+  MelosWorkspace workspace,
+  Package package,
+  List<RichGitCommit> commits,
+) {
+  final update = MelosPendingPackageUpdate(
+    workspace,
+    package,
+    commits,
+    PackageUpdateReason.graduate,
+    graduate: true,
     logger: workspace.logger,
   );
   final changelog = MelosChangelog(update, workspace.logger);
