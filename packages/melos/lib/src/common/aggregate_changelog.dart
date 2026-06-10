@@ -138,7 +138,7 @@ ${description?.withoutTrailing('\n') ?? ''}
         body.writeln('#### ${_packageVersionTitle(update)}');
         body.writeln();
 
-        body.writePackageUpdateChanges(update);
+        body.writePackageUpdateChanges(update, groupHeadingPrefix: '#####');
       }
     }
 

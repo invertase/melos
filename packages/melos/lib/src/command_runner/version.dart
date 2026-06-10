@@ -89,6 +89,14 @@ class VersionCommand extends MelosCommand {
           'Generate and print a link to the prefilled release creation page '
           'for each package after versioning',
     );
+    argParser.addFlag(
+      'group-commits',
+      help:
+          'Group changelog entries by their conventional commit type, e.g. '
+          'all features under a "Features" header and all fixes under a "Bug '
+          'Fixes" header. Overrides the "changelogFormat/groupByType" setting '
+          'in melos.yaml.',
+    );
     argParser.addOption(
       'message',
       abbr: 'm',
@@ -167,6 +175,7 @@ class VersionCommand extends MelosCommand {
     final tag = argResults!['git-tag-version'] as bool;
     final commit = argResults!['git-commit-version'] as bool;
     final releaseUrl = argResults!.optional('release-url') as bool?;
+    final groupCommits = argResults!.optional('group-commits') as bool?;
     final changelog = argResults!['changelog'] as bool;
     final commitMessage = (argResults!['message'] as String?)?.replaceAll(
       r'\n',
@@ -199,6 +208,7 @@ class VersionCommand extends MelosCommand {
         gitTag: tag,
         gitCommit: commit,
         releaseUrl: releaseUrl,
+        groupCommits: groupCommits,
         updateChangelog: changelog,
         updateDependentsConstraints: updateDependentsConstraints,
         updateDependentsVersions: false,
@@ -242,6 +252,7 @@ class VersionCommand extends MelosCommand {
         gitTag: tag,
         gitCommit: commit,
         releaseUrl: releaseUrl,
+        groupCommits: groupCommits,
         updateChangelog: changelog,
         updateDependentsConstraints: updateDependentsConstraints,
         updateDependentsVersions: updateDependentsVersions,
