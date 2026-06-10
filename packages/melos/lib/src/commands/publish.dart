@@ -8,6 +8,7 @@ mixin _PublishMixin on _ExecMixin {
     bool gitTagVersion = true,
     // yes
     bool force = false,
+    String? pubServer,
   }) async {
     final workspace = await createWorkspace(
       global: global,
@@ -22,6 +23,7 @@ mixin _PublishMixin on _ExecMixin {
         dryRun: dryRun,
         gitTagVersion: gitTagVersion,
         force: force,
+        pubServer: pubServer ?? workspace.config.commands.publish.pubServer,
       );
     });
   }
@@ -34,6 +36,7 @@ mixin _PublishMixin on _ExecMixin {
     bool gitTagVersion = true,
     // yes
     bool force = false,
+    String? pubServer,
   }) async {
     logger.command('melos publish${dryRun ? " --$publishOptionDryRun" : ''}');
     logger.child(targetStyle(workspace.path)).newLine();
@@ -120,6 +123,7 @@ mixin _PublishMixin on _ExecMixin {
       unpublishedPackages,
       dryRun: dryRun,
       gitTagVersion: gitTagVersion,
+      pubServer: pubServer,
     );
   }
 
@@ -175,6 +179,7 @@ mixin _PublishMixin on _ExecMixin {
     List<Package> unpublishedPackages, {
     required bool dryRun,
     required bool gitTagVersion,
+    String? pubServer,
   }) async {
     final updateRegistryProgress = logger.progress(
       'Publishing ${unpublishedPackages.length} packages to registry:',
@@ -188,6 +193,10 @@ mixin _PublishMixin on _ExecMixin {
       execArgs.add('--dry-run');
     } else {
       execArgs.add('--force');
+    }
+
+    if (pubServer != null) {
+      execArgs.addAll(['--server', pubServer]);
     }
 
     await _execForAllPackages(
