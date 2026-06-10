@@ -593,7 +593,8 @@ a:
   steps:
     - echo hello
     - echo world
-''') as Map<Object?, Object?>,
+''')
+              as Map<Object?, Object?>,
           workspacePath: testWorkspacePath,
         );
         expect(scripts['a']!.steps, ['echo hello', 'echo world']);
@@ -606,7 +607,8 @@ a:
   steps:
     - "echo Checking python version:"
     - "echo Building: app"
-''') as Map<Object?, Object?>,
+''')
+              as Map<Object?, Object?>,
           workspacePath: testWorkspacePath,
         );
         expect(
@@ -622,7 +624,8 @@ a:
 a:
   steps:
     - echo Building: app
-''') as Map<Object?, Object?>,
+''')
+                as Map<Object?, Object?>,
             workspacePath: testWorkspacePath,
           ),
           throwsA(
