@@ -22,6 +22,7 @@ class PublishCommandConfigs {
     List<AggregateChangelogConfig>? aggregateChangelogs,
     this.fetchTags = true,
     this.hooks = PublishLifecycleHooks.empty,
+    this.pubServer,
   }) : _aggregateChangelogs = aggregateChangelogs;
 
   factory PublishCommandConfigs.fromYaml(
@@ -124,6 +125,12 @@ class PublishCommandConfigs {
       path: 'command/publish',
     );
 
+    final pubServer = assertKeyIsA<String?>(
+      key: 'pubServer',
+      map: yaml,
+      path: 'command/publish',
+    );
+
     final hooksMap = assertKeyIsA<Map<Object?, Object?>?>(
       key: 'hooks',
       map: yaml,
@@ -170,6 +177,7 @@ class PublishCommandConfigs {
       aggregateChangelogs: aggregateChangelogs,
       fetchTags: fetchTags ?? true,
       hooks: hooks,
+      pubServer: pubServer,
     );
   }
 
@@ -218,6 +226,12 @@ class PublishCommandConfigs {
   /// Lifecycle hooks for this command.
   final PublishLifecycleHooks hooks;
 
+  /// The pub server URL to publish packages to.
+  ///
+  /// When set, `--server <url>` is passed to `dart pub publish`. If not set,
+  /// the per-package `publish_to` field in `pubspec.yaml` is used.
+  final String? pubServer;
+
   Map<String, Object?> toJson() {
     return {
       if (branch != null) 'branch': branch,
@@ -231,6 +245,7 @@ class PublishCommandConfigs {
           .toList(),
       'fetchTags': fetchTags,
       'hooks': hooks.toJson(),
+      if (pubServer != null) 'pubServer': pubServer,
     };
   }
 
@@ -250,7 +265,8 @@ class PublishCommandConfigs {
         aggregateChangelogs,
       ) &&
       other.fetchTags == fetchTags &&
-      other.hooks == hooks;
+      other.hooks == hooks &&
+      other.pubServer == pubServer;
 
   @override
   int get hashCode =>
@@ -264,7 +280,8 @@ class PublishCommandConfigs {
       releaseUrl.hashCode ^
       const DeepCollectionEquality().hash(aggregateChangelogs) ^
       fetchTags.hashCode ^
-      hooks.hashCode;
+      hooks.hashCode ^
+      pubServer.hashCode;
 
   @override
   String toString() {
@@ -280,6 +297,7 @@ PublishCommandConfigs(
   aggregateChangelogs: $aggregateChangelogs,
   fetchTags: $fetchTags,
   hooks: $hooks,
+  pubServer: $pubServer,
 )''';
   }
 }

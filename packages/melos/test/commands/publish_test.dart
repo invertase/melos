@@ -121,6 +121,93 @@ void main() {
       }
     });
 
+    group('pubServer', () {
+      test(
+        'passes --server flag to dart pub publish when configured',
+        () async {
+          final logger = TestLogger();
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: (path) => MelosWorkspaceConfig(
+              path: path,
+              name: 'test_workspace',
+              packages: [
+                createGlob('packages/**', currentDirectoryPath: path),
+              ],
+              commands: const CommandConfigs(
+                publish: PublishCommandConfigs(
+                  pubServer: 'https://pub.flutter-io.cn',
+                ),
+              ),
+            ),
+            workspacePackages: const ['a'],
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 2, 3)),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(logger: logger, config: config);
+
+          await expectLater(melos.publish(force: true), completes);
+
+          expect(
+            logger.output.normalizeLines(),
+            contains('--server https://pub.flutter-io.cn'),
+          );
+        },
+      );
+
+      test(
+        'CLI --server flag takes precedence over config pubServer',
+        () async {
+          final logger = TestLogger();
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: (path) => MelosWorkspaceConfig(
+              path: path,
+              name: 'test_workspace',
+              packages: [
+                createGlob('packages/**', currentDirectoryPath: path),
+              ],
+              commands: const CommandConfigs(
+                publish: PublishCommandConfigs(
+                  pubServer: 'https://pub.flutter-io.cn',
+                ),
+              ),
+            ),
+            workspacePackages: const ['a'],
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 2, 3)),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(logger: logger, config: config);
+
+          await expectLater(
+            melos.publish(force: true, pubServer: 'https://pub.dev'),
+            completes,
+          );
+
+          expect(
+            logger.output.normalizeLines(),
+            contains('--server https://pub.dev'),
+          );
+          expect(
+            logger.output.normalizeLines(),
+            isNot(contains('--server https://pub.flutter-io.cn')),
+          );
+        },
+      );
+    });
+
     test('should support number as pre release version', () async {
       final logger = TestLogger();
       final workspaceDir = await createTemporaryWorkspace(

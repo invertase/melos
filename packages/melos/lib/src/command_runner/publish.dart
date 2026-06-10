@@ -24,6 +24,12 @@ class PublishCommand extends MelosCommand {
       negatable: false,
       help: 'Skip the Y/n confirmation prompt when using --no-dry-run.',
     );
+    argParser.addOption(
+      publishOptionServer,
+      help:
+          'The URL of the package server to publish to. '
+          'Overrides the pubServer option in melos.yaml.',
+    );
   }
 
   @override
@@ -39,6 +45,7 @@ class PublishCommand extends MelosCommand {
     final dryRun = argResults![publishOptionDryRun] as bool;
     final gitTagVersion = argResults![publishOptionGitTagVersion] as bool;
     final yes = argResults![publishOptionYes] as bool;
+    final pubServer = argResults![publishOptionServer] as String?;
 
     final melos = Melos(logger: logger, config: config);
     final packageFilters = parsePackageFilters(config.path);
@@ -49,6 +56,7 @@ class PublishCommand extends MelosCommand {
       dryRun: dryRun,
       force: yes,
       gitTagVersion: gitTagVersion,
+      pubServer: pubServer,
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:melos/melos.dart';
 import 'package:melos/src/command_configs/command_configs.dart';
+import 'package:melos/src/command_configs/publish.dart';
 import 'package:melos/src/common/git_repository.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/platform.dart';
@@ -322,6 +323,57 @@ void main() {
         expect(
           () => CommandConfigs.fromYaml(
             const {'version': 42},
+            workspacePath: '.',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('can decode publish pubServer', () {
+        expect(
+          CommandConfigs.fromYaml(
+            const {
+              'publish': {
+                'pubServer': 'https://pub.flutter-io.cn',
+              },
+            },
+            workspacePath: '.',
+          ),
+          const CommandConfigs(
+            publish: PublishCommandConfigs(
+              pubServer: 'https://pub.flutter-io.cn',
+            ),
+          ),
+        );
+      });
+    });
+  });
+
+  group('PublishCommandConfigs', () {
+    group('fromYaml', () {
+      test('accepts empty object', () {
+        expect(
+          PublishCommandConfigs.fromYaml(const {}, workspacePath: '.'),
+          PublishCommandConfigs.empty,
+        );
+      });
+
+      test('can decode pubServer', () {
+        expect(
+          PublishCommandConfigs.fromYaml(
+            const {'pubServer': 'https://pub.flutter-io.cn'},
+            workspacePath: '.',
+          ),
+          const PublishCommandConfigs(
+            pubServer: 'https://pub.flutter-io.cn',
+          ),
+        );
+      });
+
+      test('throws if pubServer is not a string', () {
+        expect(
+          () => PublishCommandConfigs.fromYaml(
+            const {'pubServer': 42},
             workspacePath: '.',
           ),
           throwsMelosConfigException(),

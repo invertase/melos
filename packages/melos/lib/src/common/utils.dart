@@ -45,6 +45,7 @@ const publishOptionGitTagVersion = 'git-tag-version';
 const publishOptionNoGitTagVersion = 'no-git-tag-version';
 const publishOptionYes = 'yes';
 const publishOptionForce = 'force';
+const publishOptionServer = 'server';
 
 extension Let<T> on T? {
   R? let<R>(R Function(T value) cb) {

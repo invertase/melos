@@ -29,6 +29,29 @@ melos publish --no-dry-run
 
 Use `--no-dry-run` to disable.
 
+## --server
+
+The URL of the package server to publish to. When set, `--server <url>` is
+forwarded to `dart pub publish`, overriding the per-package `publish_to` field
+in `pubspec.yaml`.
+
+```bash
+melos publish --no-dry-run --server https://pub.flutter-io.cn
+```
+
+This can also be set workspace-wide in `melos.yaml` via the `pubServer` option
+under `command/publish`, so you don't have to pass it on every invocation:
+
+```yaml
+# melos.yaml
+command:
+  publish:
+    pubServer: https://pub.flutter-io.cn
+```
+
+The CLI flag takes precedence over the `pubServer` config value when both are
+provided.
+
 ## --git-tag-version (-t)
 
 Add any missing git tags for release. Tags are only created if --no-dry-run is
