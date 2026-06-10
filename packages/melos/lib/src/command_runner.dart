@@ -108,9 +108,7 @@ FutureOr<void> melosEntryPoint(
       return;
     }
 
-    // Check for updates, but only suggest versions that are compatible with
-    // the Dart SDK in use, to avoid suggesting an update that requires a newer
-    // SDK than is installed (https://github.com/invertase/melos/issues/910).
+    // Check for updates.
     const packageName = 'melos';
     final client = PubHostedClient.fromUri(pubHosted: null);
     PubHostedPackage? package;
