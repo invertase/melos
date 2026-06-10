@@ -5,6 +5,7 @@ import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:cli_launcher/cli_launcher.dart';
 import 'package:cli_util/cli_logging.dart';
+import 'package:pub_semver/pub_semver.dart';
 import 'package:pub_updater/pub_updater.dart';
 
 import '../version.g.dart';
@@ -19,6 +20,8 @@ import 'command_runner/run.dart';
 import 'command_runner/script.dart';
 import 'command_runner/version.dart';
 import 'common/exception.dart';
+import 'common/pub_hosted.dart';
+import 'common/pub_hosted_package.dart';
 import 'common/utils.dart' as utils;
 import 'common/utils.dart';
 import 'logging.dart';
@@ -105,15 +108,25 @@ FutureOr<void> melosEntryPoint(
       return;
     }
 
-    // Check for updates.
-    final pubUpdater = PubUpdater();
+    // Check for updates, but only suggest versions that are compatible with
+    // the Dart SDK in use, to avoid suggesting an update that requires a newer
+    // SDK than is installed (https://github.com/invertase/melos/issues/910).
     const packageName = 'melos';
-    final isUpToDate = await pubUpdater.isUpToDate(
-      packageName: packageName,
-      currentVersion: melosVersion,
+    final client = PubHostedClient.fromUri(pubHosted: null);
+    PubHostedPackage? package;
+    try {
+      package = await client.fetchPackage(packageName, logger: logger);
+    } finally {
+      client.close();
+    }
+
+    final update = package?.newestCompatibleUpdate(
+      currentVersion: Version.parse(melosVersion),
+      dartSdkVersion: Version.parse(Platform.version.split(' ').first),
     );
-    if (!isUpToDate) {
-      final latestVersion = await pubUpdater.getLatestVersion(packageName);
+
+    if (update != null) {
+      final latestVersion = update.version;
       final isGlobal = context.localInstallation == null;
 
       if (isGlobal) {
@@ -125,7 +138,10 @@ FutureOr<void> melosEntryPoint(
           defaultsToWithoutPrompt: false,
         );
         if (shouldUpdate) {
-          await pubUpdater.update(packageName: packageName);
+          await PubUpdater().update(
+            packageName: packageName,
+            versionConstraint: latestVersion.toString(),
+          );
           logger.log(
             '$packageName has been updated to version $latestVersion.',
           );
