@@ -504,10 +504,13 @@ ${'-' * terminalWidth}
             orderDependents: true,
           );
 
+          // b and e are in the same topological layer and run concurrently,
+          // so their relative output order is non-deterministic.
           expect(
             logger.output.normalizeLines(),
-            ignoringAnsii(
-              '''
+            anyOf(
+              ignoringAnsii(
+                '''
 \$ melos exec
   └> echo hello world
      └> RUNNING (in 5 packages)
@@ -524,6 +527,26 @@ ${'-' * terminalWidth}
   └> echo hello world
      └> SUCCESS
 ''',
+              ),
+              ignoringAnsii(
+                '''
+\$ melos exec
+  └> echo hello world
+     └> RUNNING (in 5 packages)
+
+${'-' * terminalWidth}
+[d]: hello world
+[c]: hello world
+[e]: hello world
+[b]: hello world
+[a]: hello world
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> echo hello world
+     └> SUCCESS
+''',
+              ),
             ),
           );
         },
