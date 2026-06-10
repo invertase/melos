@@ -10,6 +10,33 @@ import 'package.dart';
 // https://regex101.com/r/44dzaz/1
 final _leadingMelosExecRegExp = RegExp(r'^\s*melos\s+exec');
 
+/// Validates a single script step parsed from YAML and returns it as a command
+/// string.
+///
+/// A step containing an unquoted colon, such as `echo Building: app`, is parsed
+/// by the YAML parser as a map (`{echo Building: app}`) rather than a string.
+/// In that case a helpful error is thrown telling the user to quote the step,
+/// instead of the cryptic type error that was reported before.
+String _parseStep(Object? value, {required int index, required String path}) {
+  if (value is Map<Object?, Object?>) {
+    final reconstructed = value.entries
+        .map(
+          (entry) => entry.value == null
+              ? '${entry.key}:'
+              : '${entry.key}: ${entry.value}',
+        )
+        .join(' ');
+    throw MelosConfigException(
+      'The step at index $index in $path contains a ":" and was parsed as '
+      'YAML map syntax instead of a command. Wrap the step in quotes, for '
+      'example:\n'
+      '  - "$reconstructed"',
+    );
+  }
+
+  return assertIsA<String>(value: value, index: index, path: path);
+}
+
 class Scripts extends MapView<String, Script> {
   const Scripts(super.map);
 
@@ -210,11 +237,7 @@ class Script {
             map: yaml,
             isRequired: false,
             assertItemIsA: (index, value) {
-              return assertIsA<String>(
-                value: value,
-                index: index,
-                path: scriptPath,
-              );
+              return _parseStep(value, index: index, path: scriptPath);
             },
           )
         : [];
