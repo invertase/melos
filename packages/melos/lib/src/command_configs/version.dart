@@ -23,6 +23,7 @@ class VersionCommandConfigs {
     this.fetchTags = true,
     this.hooks = VersionLifecycleHooks.empty,
     this.includeDateInChangelogEntry = false,
+    this.groupChangelogEntriesByType = false,
   }) : _aggregateChangelogs = aggregateChangelogs;
 
   factory VersionCommandConfigs.fromYaml(
@@ -172,6 +173,12 @@ class VersionCommandConfigs {
       path: 'command/version/changelogFormat',
     );
 
+    final groupByType = assertKeyIsA<bool?>(
+      key: 'groupByType',
+      map: changelogFormat,
+      path: 'command/version/changelogFormat',
+    );
+
     return VersionCommandConfigs(
       branch: branch,
       message: message,
@@ -186,6 +193,7 @@ class VersionCommandConfigs {
       fetchTags: fetchTags ?? true,
       hooks: hooks,
       includeDateInChangelogEntry: includeDate ?? false,
+      groupChangelogEntriesByType: groupByType ?? false,
     );
   }
 
@@ -237,6 +245,11 @@ class VersionCommandConfigs {
   /// Whether to include the date in the changelog entry in format `yyyy-MM-dd`.
   final bool includeDateInChangelogEntry;
 
+  /// Whether to group changelog entries by their conventional commit type
+  /// (e.g. all features under a "Features" header, all fixes under a
+  /// "Bug Fixes" header) instead of listing them in a single flat list.
+  final bool groupChangelogEntriesByType;
+
   Map<String, Object?> toJson() {
     return {
       if (branch != null) 'branch': branch,
@@ -252,6 +265,7 @@ class VersionCommandConfigs {
       'hooks': hooks.toJson(),
       'changelogFormat': {
         'includeDate': includeDateInChangelogEntry,
+        'groupByType': groupChangelogEntriesByType,
       },
     };
   }
@@ -273,7 +287,8 @@ class VersionCommandConfigs {
       ) &&
       other.fetchTags == fetchTags &&
       other.hooks == hooks &&
-      other.includeDateInChangelogEntry == includeDateInChangelogEntry;
+      other.includeDateInChangelogEntry == includeDateInChangelogEntry &&
+      other.groupChangelogEntriesByType == groupChangelogEntriesByType;
 
   @override
   int get hashCode =>
@@ -288,7 +303,8 @@ class VersionCommandConfigs {
       const DeepCollectionEquality().hash(aggregateChangelogs) ^
       fetchTags.hashCode ^
       hooks.hashCode ^
-      includeDateInChangelogEntry.hashCode;
+      includeDateInChangelogEntry.hashCode ^
+      groupChangelogEntriesByType.hashCode;
 
   @override
   String toString() {
@@ -305,6 +321,7 @@ VersionCommandConfigs(
   fetchTags: $fetchTags,
   hooks: $hooks,
   includeDateInChangelogEntry: $includeDateInChangelogEntry,
+  groupChangelogEntriesByType: $groupChangelogEntriesByType,
 )''';
   }
 }

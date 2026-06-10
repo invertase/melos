@@ -141,11 +141,15 @@ extension ChangelogStringBufferExtension on StringBuffer {
     }
   }
 
-  void writePackageUpdateChanges(MelosPendingPackageUpdate update) {
+  void writePackageUpdateChanges(
+    MelosPendingPackageUpdate update, {
+    String groupHeadingPrefix = '###',
+  }) {
     final config = update.workspace.config;
     final repository = config.repository;
-    final linkToCommits = config.commands.version.linkToCommits;
-    final includeCommitId = config.commands.version.includeCommitId;
+    final groupCommits =
+        update.groupCommits ??
+        config.commands.version.groupChangelogEntriesByType;
 
     String processCommitHeader(String header) =>
         repository != null ? header.withIssueLinks(repository) : header;
@@ -158,66 +162,155 @@ extension ChangelogStringBufferExtension on StringBuffer {
 
     // Entries for commits included in new version.
     final commits = _filteredAndSortedCommits(update);
-    if (commits.isNotEmpty) {
+    if (commits.isEmpty) {
+      return;
+    }
+
+    if (groupCommits) {
+      final commitsByType = <String, List<RichGitCommit>>{};
       for (final commit in commits) {
-        final parsedMessage = commit.parsedMessage;
+        (commitsByType[commit.parsedMessage.type!] ??= []).add(commit);
+      }
 
-        write(' - ');
-
-        if (parsedMessage.isBreakingChange) {
-          writeBold('BREAKING');
-          write(' ');
-        }
-
-        writeBold(parsedMessage.type!.toUpperCase());
-        if (config.commands.version.includeScopes) {
-          if (parsedMessage.scopes.isNotEmpty) {
-            write('(');
-            write(parsedMessage.scopes.join(','));
-            write(')');
-          }
-        }
-        write(': ');
-        writePunctuated(processCommitHeader(parsedMessage.description!));
-
-        if (linkToCommits || includeCommitId) {
-          final shortCommitId = commit.id.substring(0, 8);
-          final commitUrl = repository!.commitUrl(commit.id);
-          write(' (');
-          if (linkToCommits) {
-            writeLink(shortCommitId, uri: commitUrl.toString());
-          } else {
-            write(shortCommitId);
-          }
-          write(')');
-        }
-
+      for (final type in _sortedCommitTypes(commitsByType.keys)) {
+        writeln('$groupHeadingPrefix ${_commitTypeHeader(type)}');
         writeln();
-
-        final version = update.workspace.config.commands.version;
-
-        if (!version.includeCommitBody) {
-          continue;
+        for (final commit in commitsByType[type]!) {
+          writeCommitEntry(
+            update,
+            commit,
+            processCommitHeader: processCommitHeader,
+            includeType: false,
+          );
         }
-        if (parsedMessage.body == null) {
-          continue;
-        }
-
-        final shouldWriteBody =
-            !version.commitBodyOnlyBreaking || parsedMessage.isBreakingChange;
-
-        if (shouldWriteBody) {
-          writeln();
-          for (final line in parsedMessage.body!.split('\n')) {
-            write(' ' * 4);
-            writeln(line);
-          }
-          writeln();
-        }
+        writeln();
+      }
+    } else {
+      for (final commit in commits) {
+        writeCommitEntry(
+          update,
+          commit,
+          processCommitHeader: processCommitHeader,
+          includeType: true,
+        );
       }
       writeln();
     }
   }
+
+  void writeCommitEntry(
+    MelosPendingPackageUpdate update,
+    RichGitCommit commit, {
+    required String Function(String) processCommitHeader,
+    required bool includeType,
+  }) {
+    final config = update.workspace.config;
+    final repository = config.repository;
+    final version = config.commands.version;
+    final parsedMessage = commit.parsedMessage;
+
+    write(' - ');
+
+    if (parsedMessage.isBreakingChange) {
+      writeBold('BREAKING');
+      write(' ');
+    }
+
+    if (includeType) {
+      writeBold(parsedMessage.type!.toUpperCase());
+      if (version.includeScopes && parsedMessage.scopes.isNotEmpty) {
+        write('(');
+        write(parsedMessage.scopes.join(','));
+        write(')');
+      }
+      write(': ');
+    } else if (version.includeScopes && parsedMessage.scopes.isNotEmpty) {
+      // When grouping by type the type is the heading, so only the scope is
+      // written as a prefix.
+      writeBold(parsedMessage.scopes.join(','));
+      write(': ');
+    }
+
+    writePunctuated(processCommitHeader(parsedMessage.description!));
+
+    if (version.linkToCommits || version.includeCommitId) {
+      final shortCommitId = commit.id.substring(0, 8);
+      final commitUrl = repository!.commitUrl(commit.id);
+      write(' (');
+      if (version.linkToCommits) {
+        writeLink(shortCommitId, uri: commitUrl.toString());
+      } else {
+        write(shortCommitId);
+      }
+      write(')');
+    }
+
+    writeln();
+
+    if (!version.includeCommitBody) {
+      return;
+    }
+    if (parsedMessage.body == null) {
+      return;
+    }
+
+    final shouldWriteBody =
+        !version.commitBodyOnlyBreaking || parsedMessage.isBreakingChange;
+
+    if (shouldWriteBody) {
+      writeln();
+      for (final line in parsedMessage.body!.split('\n')) {
+        write(' ' * 4);
+        writeln(line);
+      }
+      writeln();
+    }
+  }
+}
+
+/// Conventional commit types mapped to their changelog group headers, in the
+/// order they should appear when grouping changelog entries by type.
+const _commitTypeHeaders = {
+  'feat': 'Features',
+  'fix': 'Bug Fixes',
+  'perf': 'Performance Improvements',
+  'refactor': 'Code Refactoring',
+  'revert': 'Reverts',
+  'docs': 'Documentation',
+  'style': 'Styles',
+  'test': 'Tests',
+  'build': 'Build System',
+  'ci': 'Continuous Integration',
+  'chore': 'Chores',
+};
+
+String _commitTypeHeader(String type) {
+  final known = _commitTypeHeaders[type.toLowerCase()];
+  if (known != null) {
+    return known;
+  }
+  if (type.isEmpty) {
+    return type;
+  }
+  return '${type[0].toUpperCase()}${type.substring(1)}';
+}
+
+List<String> _sortedCommitTypes(Iterable<String> types) {
+  final order = _commitTypeHeaders.keys.toList();
+  return types.toList()..sort((a, b) {
+    final indexA = order.indexOf(a.toLowerCase());
+    final indexB = order.indexOf(b.toLowerCase());
+    if (indexA != -1 && indexB != -1) {
+      return indexA.compareTo(indexB);
+    }
+    if (indexA != -1) {
+      return -1;
+    }
+    if (indexB != -1) {
+      return 1;
+    }
+    return a.compareTo(b);
+  });
 }
 
 List<RichGitCommit> _filteredAndSortedCommits(

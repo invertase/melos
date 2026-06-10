@@ -74,6 +74,8 @@ void main() {
       expect(value.includeCommitId, false);
       expect(value.linkToCommits, false);
       expect(value.updateGitTagRefs, false);
+      expect(value.includeDateInChangelogEntry, false);
+      expect(value.groupChangelogEntriesByType, false);
       expect(value.aggregateChangelogs, [
         AggregateChangelogConfig.workspace(),
       ]);
@@ -162,6 +164,36 @@ void main() {
                 description: 'Changelog for all foo packages.',
               ),
             ],
+          ),
+        );
+      });
+
+      test('throws if changelogFormat/groupByType is not a bool', () {
+        expect(
+          () => VersionCommandConfigs.fromYaml(
+            const {
+              'changelogFormat': {'groupByType': 42},
+            },
+            workspacePath: '.',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('can decode changelogFormat values', () {
+        expect(
+          VersionCommandConfigs.fromYaml(
+            const {
+              'changelogFormat': {
+                'includeDate': true,
+                'groupByType': true,
+              },
+            },
+            workspacePath: '.',
+          ),
+          const VersionCommandConfigs(
+            includeDateInChangelogEntry: true,
+            groupChangelogEntriesByType: true,
           ),
         );
       });
