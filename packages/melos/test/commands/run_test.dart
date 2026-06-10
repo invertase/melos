@@ -386,14 +386,10 @@ ${'-' * terminalWidth}
       await createProject(workspaceDir, Pubspec('a'));
       await runPubGet(workspaceDir.path);
 
-      final logger = TestLogger();
-      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
-      final melos = Melos(
-        logger: logger,
-        config: config,
+      await expectLater(
+        MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir),
+        throwsA(isA<MelosConfigException>()),
       );
-
-      expect(() => melos.run(scriptName: 'test_script'), throwsException);
     });
   });
 
@@ -533,16 +529,9 @@ SUCCESS
       await createProject(workspaceDir, Pubspec('a'));
       await runPubGet(workspaceDir.path);
 
-      final logger = TestLogger();
-      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
-      final melos = Melos(
-        logger: logger,
-        config: config,
-      );
-
-      expect(
-        () => melos.run(scriptName: 'hello_script'),
-        throwsException,
+      await expectLater(
+        MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir),
+        throwsA(isA<MelosConfigException>()),
       );
     });
 

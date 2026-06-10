@@ -110,11 +110,12 @@ configured in the individual scripts that are being called as part of the step.
 
 Execute a script in multiple packages through `melos exec`.
 
-This options must either contain the command to execute in multiple packages or
-the options for the `melos exec` command.
+`run` and `exec` are mutually exclusive: a script either runs once in the
+workspace root with [`run`](/configuration/scripts#run), or across multiple
+packages with `exec`.
 
-When using the default options for `melos exec`, it's easiest to specify the
-command in the `exec` option:
+When using the default options for `melos exec`, specify the command directly as
+the value of `exec`:
 
 ```yaml
 scripts:
@@ -122,19 +123,30 @@ scripts:
     exec: echo 'Hello $(dirname $PWD)'
 ```
 
-If you need to provide options for the `exec` command, specify them in the
-`exec` option and specify the command in the `run` option:
+If you need to provide options for the `exec` command, turn `exec` into an object
+and specify the command with the `command` key alongside the options:
 
 ```yaml
 scripts:
   hello:
-    run: echo 'Hello $(dirname $PWD)'
     exec:
+      command: echo 'Hello $(dirname $PWD)'
       concurrency: 1
 ```
 
+<Warning>
+  Prior to Melos 8.0.0, the command was specified in `run` and the options in
+  `exec`. This is no longer supported. Move the command into `exec` under the
+  `command` key. See the
+  [migration guide](/guides/migrations#7xx-to-800) for details.
+</Warning>
+
 See the [`packageFilters`](/configuration/scripts#packagefilters) option for
 filtering the packages to execute the command in.
+
+### command
+
+The command to execute in each package. Required when `exec` is an object.
 
 ### concurrency
 
