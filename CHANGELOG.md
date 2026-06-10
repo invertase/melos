@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-06-10
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v7.8.2`](#melos---v782)
+
+---
+
+#### `melos` - `v7.8.2`
+
+ - **FIX**: Bump cli_util to 0.5.1 ([#1020](https://github.com/invertase/melos/issues/1020)). ([24b1b5a1](https://github.com/invertase/melos/commit/24b1b5a1776a58f2e0bf8b9d40acf34a1d6ff282))
+
+
 ## 2026-06-03
 
 ### Changes

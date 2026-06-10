@@ -1,3 +1,7 @@
+## 7.8.2
+
+ - **FIX**: Bump cli_util to 0.5.1 ([#1020](https://github.com/invertase/melos/issues/1020)). ([24b1b5a1](https://github.com/invertase/melos/commit/24b1b5a1776a58f2e0bf8b9d40acf34a1d6ff282))
+
 ## 7.8.1
 
  - **FIX**(deps): allow xml 7 via widened constraint ([#1016](https://github.com/invertase/melos/issues/1016)). ([5e1066f0](https://github.com/invertase/melos/commit/5e1066f0cc1dd8cbf680ebc0d017c7ce1711b883))
