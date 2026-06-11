@@ -47,6 +47,16 @@ const publishOptionYes = 'yes';
 const publishOptionForce = 'force';
 const publishOptionServer = 'server';
 
+/// The default command used to invoke Melos itself when a script needs to run
+/// a nested Melos command, such as `melos exec` or `melos run`.
+///
+/// This relies on Melos being available on the `PATH` (i.e. a global
+/// installation). When Melos is run from a local installation (e.g. as a
+/// `dev_dependency`) it is invoked through the Dart SDK instead so that
+/// scripts work without a global installation. See
+/// https://github.com/invertase/melos/issues/511.
+const defaultMelosCommand = ['melos'];
+
 extension Let<T> on T? {
   R? let<R>(R Function(T value) cb) {
     if (this == null) {

@@ -418,7 +418,15 @@ class Script {
   final ProcessStdio stdio;
 
   /// Returns the full command to run when executing this script.
-  List<String> command([List<String>? extraArgs]) {
+  ///
+  /// [melosCommand] is the command used to invoke Melos itself for nested
+  /// `melos exec` calls. It defaults to [defaultMelosCommand], but is replaced
+  /// with a Dart SDK invocation when Melos runs from a local installation so
+  /// that scripts work without a global installation.
+  List<String> command({
+    List<String>? extraArgs,
+    List<String> melosCommand = defaultMelosCommand,
+  }) {
     String quoteScript(String script) => '"${script.replaceAll('"', r'\"')}"';
 
     final scriptCommand = run!.split(' ').toList();
@@ -430,7 +438,7 @@ class Script {
     if (exec == null) {
       return scriptCommand;
     } else {
-      final execCommand = ['melos', 'exec'];
+      final execCommand = [...melosCommand, 'exec'];
 
       if (exec.concurrency != null) {
         execCommand.addAll(['--concurrency', '${exec.concurrency}']);

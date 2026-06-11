@@ -157,6 +157,7 @@ FutureOr<void> melosEntryPoint(
     final config = await _resolveConfig(
       arguments,
       context.localInstallation?.lockFileRoot,
+      melosCommand: _resolveMelosCommand(context),
     );
     await MelosCommandRunner(config).run(arguments);
   } on MelosException catch (err) {
@@ -171,17 +172,36 @@ FutureOr<void> melosEntryPoint(
   }
 }
 
+/// Resolves the command used to invoke Melos itself for nested `melos`
+/// invocations from scripts (e.g. `melos exec`).
+///
+/// When Melos is run from a local installation (e.g. as a `dev_dependency`) it
+/// is not available on the `PATH`, so scripts that run nested Melos commands
+/// would fail with "melos: command not found". In that case Melos is invoked
+/// through the Dart SDK instead, mirroring how `cli_launcher` relaunches the
+/// local installation. See https://github.com/invertase/melos/issues/511.
+List<String> _resolveMelosCommand(LaunchContext context) {
+  if (context.localInstallation == null) {
+    return defaultMelosCommand;
+  }
+  return ['dart', 'run', 'melos:melos'];
+}
+
 Future<MelosWorkspaceConfig> _resolveConfig(
   List<String> arguments,
-  Directory? workspaceRoot,
-) async {
+  Directory? workspaceRoot, {
+  List<String> melosCommand = defaultMelosCommand,
+}) async {
   if (_shouldUseEmptyConfig(arguments)) {
     return MelosWorkspaceConfig.empty();
   }
   if (workspaceRoot == null) {
     return MelosWorkspaceConfig.handleWorkspaceNotFound(Directory.current);
   }
-  return MelosWorkspaceConfig.fromWorkspaceRoot(workspaceRoot);
+  return MelosWorkspaceConfig.fromWorkspaceRoot(
+    workspaceRoot,
+    melosCommand: melosCommand,
+  );
 }
 
 bool _shouldUseEmptyConfig(List<String> arguments) {
