@@ -391,6 +391,45 @@ ${'-' * terminalWidth}
         throwsA(isA<MelosConfigException>()),
       );
     });
+
+    group('command', () {
+      test('uses "melos" by default for "exec" scripts', () {
+        const script = Script(
+          name: 'test_script',
+          run: 'echo "hello"',
+          exec: ExecOptions(),
+        );
+
+        expect(script.command(), ['melos', 'exec', '--', r'"echo \"hello\""']);
+      });
+
+      test(
+        'uses the provided melosCommand for "exec" scripts when Melos is '
+        'installed locally',
+        () {
+          // Simulates a local installation, where Melos is not on the PATH and
+          // must be invoked through the Dart SDK.
+          // https://github.com/invertase/melos/issues/511
+          const script = Script(
+            name: 'test_script',
+            run: 'echo "hello"',
+            exec: ExecOptions(),
+          );
+
+          expect(
+            script.command(melosCommand: const ['dart', 'run', 'melos:melos']),
+            [
+              'dart',
+              'run',
+              'melos:melos',
+              'exec',
+              '--',
+              r'"echo \"hello\""',
+            ],
+          );
+        },
+      );
+    });
   });
 
   group('multiple scripts', () {

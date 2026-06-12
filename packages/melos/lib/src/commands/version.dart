@@ -14,6 +14,7 @@ mixin _VersionMixin on _RunMixin {
     bool gitTag = true,
     bool gitCommit = true,
     bool? releaseUrl,
+    bool? groupCommits,
     String? message,
     bool force = false,
     // all
@@ -62,6 +63,7 @@ mixin _VersionMixin on _RunMixin {
         gitTag: gitTag,
         gitCommit: gitCommit,
         releaseUrl: releaseUrl,
+        groupCommits: groupCommits,
         message: message,
         force: force,
         showPrivatePackages: showPrivatePackages,
@@ -85,6 +87,7 @@ mixin _VersionMixin on _RunMixin {
     bool gitTag = true,
     bool gitCommit = true,
     bool? releaseUrl,
+    bool? groupCommits,
     String? message,
     bool force = false,
     // all
@@ -225,7 +228,7 @@ mixin _VersionMixin on _RunMixin {
           MelosPendingPackageUpdate(
             workspace,
             package,
-            const [],
+            packageCommits[package.name] ?? const [],
             PackageUpdateReason.graduate,
             graduate: asStableRelease,
             prerelease: asPrerelease,
@@ -319,6 +322,7 @@ mixin _VersionMixin on _RunMixin {
             commits,
             version,
             userChangelogMessage: userChangelogMessage,
+            groupCommits: groupCommits,
             logger: logger,
           );
         },
@@ -335,6 +339,7 @@ mixin _VersionMixin on _RunMixin {
           graduate: asStableRelease,
           prerelease: asPrerelease,
           preid: preid,
+          groupCommits: groupCommits,
           logger: logger,
         ),
       ),

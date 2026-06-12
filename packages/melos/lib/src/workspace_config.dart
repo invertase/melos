@@ -272,6 +272,7 @@ class MelosWorkspaceConfig {
     this.pub = const PubClientConfig(),
     this.useRootAsPackage = false,
     this.discoverNestedWorkspaces = false,
+    this.melosCommand = defaultMelosCommand,
   }) {
     _validate();
   }
@@ -279,6 +280,7 @@ class MelosWorkspaceConfig {
   factory MelosWorkspaceConfig.fromYaml(
     Map<Object?, Object?> pubspecYaml, {
     required String path,
+    List<String> melosCommand = defaultMelosCommand,
   }) {
     final name = assertKeyIsA<String>(key: 'name', map: pubspecYaml);
     if (!isValidPubPackageName(name)) {
@@ -448,6 +450,7 @@ class MelosWorkspaceConfig {
             ),
       useRootAsPackage: useRootAsPackage,
       discoverNestedWorkspaces: discoverNestedWorkspaces,
+      melosCommand: melosCommand,
     );
   }
 
@@ -480,8 +483,9 @@ class MelosWorkspaceConfig {
 
   /// Loads the [MelosWorkspaceConfig] for the workspace at [workspaceRoot].
   static Future<MelosWorkspaceConfig> fromWorkspaceRoot(
-    Directory workspaceRoot,
-  ) async {
+    Directory workspaceRoot, {
+    List<String> melosCommand = defaultMelosCommand,
+  }) async {
     final rootPubspecFile = File(pubspecPathForDirectory(workspaceRoot.path));
 
     if (!rootPubspecFile.existsSync()) {
@@ -522,6 +526,7 @@ class MelosWorkspaceConfig {
     return MelosWorkspaceConfig.fromYaml(
       rootPubspecContent,
       path: workspaceRoot.path,
+      melosCommand: melosCommand,
     );
   }
 
@@ -634,6 +639,10 @@ class MelosWorkspaceConfig {
   /// Whether to recursively discover packages in nested workspaces.
   /// Defaults to false.
   final bool discoverNestedWorkspaces;
+
+  /// The command used to invoke Melos itself when a script runs a nested Melos
+  /// command (e.g. `melos exec`).
+  final List<String> melosCommand;
 
   /// Validates this workspace configuration for consistency.
   void _validate() {

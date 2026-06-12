@@ -5,6 +5,7 @@ import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:cli_launcher/cli_launcher.dart';
 import 'package:cli_util/cli_logging.dart';
+import 'package:pub_semver/pub_semver.dart';
 import 'package:pub_updater/pub_updater.dart';
 
 import '../version.g.dart';
@@ -19,6 +20,8 @@ import 'command_runner/run.dart';
 import 'command_runner/script.dart';
 import 'command_runner/version.dart';
 import 'common/exception.dart';
+import 'common/pub_hosted.dart';
+import 'common/pub_hosted_package.dart';
 import 'common/utils.dart' as utils;
 import 'common/utils.dart';
 import 'logging.dart';
@@ -106,14 +109,22 @@ FutureOr<void> melosEntryPoint(
     }
 
     // Check for updates.
-    final pubUpdater = PubUpdater();
     const packageName = 'melos';
-    final isUpToDate = await pubUpdater.isUpToDate(
-      packageName: packageName,
-      currentVersion: melosVersion,
+    final client = PubHostedClient.fromUri(pubHosted: null);
+    PubHostedPackage? package;
+    try {
+      package = await client.fetchPackage(packageName, logger: logger);
+    } finally {
+      client.close();
+    }
+
+    final update = package?.newestCompatibleUpdate(
+      currentVersion: Version.parse(melosVersion),
+      dartSdkVersion: Version.parse(Platform.version.split(' ').first),
     );
-    if (!isUpToDate) {
-      final latestVersion = await pubUpdater.getLatestVersion(packageName);
+
+    if (update != null) {
+      final latestVersion = update.version;
       final isGlobal = context.localInstallation == null;
 
       if (isGlobal) {
@@ -125,7 +136,10 @@ FutureOr<void> melosEntryPoint(
           defaultsToWithoutPrompt: false,
         );
         if (shouldUpdate) {
-          await pubUpdater.update(packageName: packageName);
+          await PubUpdater().update(
+            packageName: packageName,
+            versionConstraint: latestVersion.toString(),
+          );
           logger.log(
             '$packageName has been updated to version $latestVersion.',
           );
@@ -143,6 +157,7 @@ FutureOr<void> melosEntryPoint(
     final config = await _resolveConfig(
       arguments,
       context.localInstallation?.lockFileRoot,
+      melosCommand: _resolveMelosCommand(context),
     );
     await MelosCommandRunner(config).run(arguments);
   } on MelosException catch (err) {
@@ -157,17 +172,36 @@ FutureOr<void> melosEntryPoint(
   }
 }
 
+/// Resolves the command used to invoke Melos itself for nested `melos`
+/// invocations from scripts (e.g. `melos exec`).
+///
+/// When Melos is run from a local installation (e.g. as a `dev_dependency`) it
+/// is not available on the `PATH`, so scripts that run nested Melos commands
+/// would fail with "melos: command not found". In that case Melos is invoked
+/// through the Dart SDK instead, mirroring how `cli_launcher` relaunches the
+/// local installation. See https://github.com/invertase/melos/issues/511.
+List<String> _resolveMelosCommand(LaunchContext context) {
+  if (context.localInstallation == null) {
+    return defaultMelosCommand;
+  }
+  return ['dart', 'run', 'melos:melos'];
+}
+
 Future<MelosWorkspaceConfig> _resolveConfig(
   List<String> arguments,
-  Directory? workspaceRoot,
-) async {
+  Directory? workspaceRoot, {
+  List<String> melosCommand = defaultMelosCommand,
+}) async {
   if (_shouldUseEmptyConfig(arguments)) {
     return MelosWorkspaceConfig.empty();
   }
   if (workspaceRoot == null) {
     return MelosWorkspaceConfig.handleWorkspaceNotFound(Directory.current);
   }
-  return MelosWorkspaceConfig.fromWorkspaceRoot(workspaceRoot);
+  return MelosWorkspaceConfig.fromWorkspaceRoot(
+    workspaceRoot,
+    melosCommand: melosCommand,
+  );
 }
 
 bool _shouldUseEmptyConfig(List<String> arguments) {

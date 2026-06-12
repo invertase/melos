@@ -38,6 +38,7 @@ class MelosPendingPackageUpdate {
     this.prerelease = false,
     this.graduate = false,
     this.preid,
+    this.groupCommits,
   }) : manualVersion = null,
        userChangelogMessage = null;
 
@@ -48,6 +49,7 @@ class MelosPendingPackageUpdate {
     this.manualVersion, {
     required this.logger,
     this.userChangelogMessage,
+    this.groupCommits,
   }) : reason = PackageUpdateReason.manual,
        prerelease = false,
        graduate = false,
@@ -86,6 +88,14 @@ class MelosPendingPackageUpdate {
   ///
   /// This is only used for manually versioned packages.
   final String? userChangelogMessage;
+
+  /// Overrides whether changelog entries are grouped by their conventional
+  /// commit type.
+  ///
+  /// When `null`, the value configured in `command/version/changelogFormat/`
+  /// `groupByType` is used. This is set when the `--[no-]group-commits` flag is
+  /// passed to `melos version`.
+  final bool? groupCommits;
 
   final MelosLogger logger;
 
@@ -143,9 +153,15 @@ class MelosPendingPackageUpdate {
         .reduce(math.max)];
   }
 
+  /// Whether this update has any commits that produce changelog entries.
+  bool get hasVersionableCommits {
+    return commits.any((commit) => commit.parsedMessage.isVersionableCommit);
+  }
+
   /// Whether this update contains breaking changes.
   bool get hasBreakingChanges {
-    if (reason == PackageUpdateReason.manual) {
+    if (reason == PackageUpdateReason.manual ||
+        reason == PackageUpdateReason.graduate) {
       return commits.any((commit) => commit.parsedMessage.isBreakingChange);
     }
 

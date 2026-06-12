@@ -78,6 +78,33 @@ String _execWithoutCommandMessage({required String name}) {
       'For more information, see $_scriptsExecDocsUrl.';
 }
 
+/// Validates a single script step parsed from YAML and returns it as a command
+/// string.
+///
+/// A step containing an unquoted colon, such as `echo Building: app`, is parsed
+/// by the YAML parser as a map (`{echo Building: app}`) rather than a string.
+/// In that case a helpful error is thrown telling the user to quote the step,
+/// instead of the cryptic type error that was reported before.
+String _parseStep(Object? value, {required int index, required String path}) {
+  if (value is Map<Object?, Object?>) {
+    final reconstructed = value.entries
+        .map(
+          (entry) => entry.value == null
+              ? '${entry.key}:'
+              : '${entry.key}: ${entry.value}',
+        )
+        .join(' ');
+    throw MelosConfigException(
+      'The step at index $index in $path contains a ":" and was parsed as '
+      'YAML map syntax instead of a command. Wrap the step in quotes, for '
+      'example:\n'
+      '  - "$reconstructed"',
+    );
+  }
+
+  return assertIsA<String>(value: value, index: index, path: path);
+}
+
 class Scripts extends MapView<String, Script> {
   const Scripts(super.map);
 
@@ -300,11 +327,7 @@ class Script {
             map: yaml,
             isRequired: false,
             assertItemIsA: (index, value) {
-              return assertIsA<String>(
-                value: value,
-                index: index,
-                path: scriptPath,
-              );
+              return _parseStep(value, index: index, path: scriptPath);
             },
           )
         : [];
@@ -474,7 +497,15 @@ class Script {
   final ProcessStdio stdio;
 
   /// Returns the full command to run when executing this script.
-  List<String> command([List<String>? extraArgs]) {
+  ///
+  /// [melosCommand] is the command used to invoke Melos itself for nested
+  /// `melos exec` calls. It defaults to [defaultMelosCommand], but is replaced
+  /// with a Dart SDK invocation when Melos runs from a local installation so
+  /// that scripts work without a global installation.
+  List<String> command({
+    List<String>? extraArgs,
+    List<String> melosCommand = defaultMelosCommand,
+  }) {
     String quoteScript(String script) => '"${script.replaceAll('"', r'\"')}"';
 
     final scriptCommand = run!.split(' ').toList();
@@ -486,7 +517,7 @@ class Script {
     if (exec == null) {
       return scriptCommand;
     } else {
-      final execCommand = ['melos', 'exec'];
+      final execCommand = [...melosCommand, 'exec'];
 
       if (exec.concurrency != null) {
         execCommand.addAll(['--concurrency', '${exec.concurrency}']);

@@ -7,6 +7,7 @@ import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/common/retry_backoff.dart';
 import 'package:melos/src/workspace_config.dart';
 import 'package:test/test.dart';
+import 'package:yaml/yaml.dart';
 
 import 'matchers.dart';
 import 'utils.dart';
@@ -74,6 +75,8 @@ void main() {
       expect(value.includeCommitId, false);
       expect(value.linkToCommits, false);
       expect(value.updateGitTagRefs, false);
+      expect(value.includeDateInChangelogEntry, false);
+      expect(value.groupChangelogEntriesByType, false);
       expect(value.aggregateChangelogs, [
         AggregateChangelogConfig.workspace(),
       ]);
@@ -162,6 +165,36 @@ void main() {
                 description: 'Changelog for all foo packages.',
               ),
             ],
+          ),
+        );
+      });
+
+      test('throws if changelogFormat/groupByType is not a bool', () {
+        expect(
+          () => VersionCommandConfigs.fromYaml(
+            const {
+              'changelogFormat': {'groupByType': 42},
+            },
+            workspacePath: '.',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('can decode changelogFormat values', () {
+        expect(
+          VersionCommandConfigs.fromYaml(
+            const {
+              'changelogFormat': {
+                'includeDate': true,
+                'groupByType': true,
+              },
+            },
+            workspacePath: '.',
+          ),
+          const VersionCommandConfigs(
+            includeDateInChangelogEntry: true,
+            groupChangelogEntriesByType: true,
           ),
         );
       });
@@ -630,6 +663,60 @@ void main() {
             workspacePath: testWorkspacePath,
           ).validate(),
           throwsA(isA<MelosConfigException>()),
+        );
+      });
+    });
+
+    group('steps', () {
+      test('parses a list of string steps', () {
+        final scripts = Scripts.fromYaml(
+          loadYaml('''
+a:
+  steps:
+    - echo hello
+    - echo world
+''')
+              as Map<Object?, Object?>,
+          workspacePath: testWorkspacePath,
+        );
+        expect(scripts['a']!.steps, ['echo hello', 'echo world']);
+      });
+
+      test('parses quoted steps containing a colon', () {
+        final scripts = Scripts.fromYaml(
+          loadYaml('''
+a:
+  steps:
+    - "echo Checking python version:"
+    - "echo Building: app"
+''')
+              as Map<Object?, Object?>,
+          workspacePath: testWorkspacePath,
+        );
+        expect(
+          scripts['a']!.steps,
+          ['echo Checking python version:', 'echo Building: app'],
+        );
+      });
+
+      test('throws a helpful error for unquoted steps containing a colon', () {
+        expect(
+          () => Scripts.fromYaml(
+            loadYaml('''
+a:
+  steps:
+    - echo Building: app
+''')
+                as Map<Object?, Object?>,
+            workspacePath: testWorkspacePath,
+          ),
+          throwsA(
+            isA<MelosConfigException>().having(
+              (e) => e.message,
+              'message',
+              allOf(contains('Wrap the step in quotes'), contains('":"')),
+            ),
+          ),
         );
       });
     });
