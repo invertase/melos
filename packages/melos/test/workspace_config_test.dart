@@ -532,7 +532,7 @@ void main() {
 
   group('Scripts', () {
     group('exec', () {
-      test('supports specifying command through "exec"', () {
+      test('supports specifying command as a string through "exec"', () {
         final scripts = Scripts.fromYaml(
           createYamlMap({
             'a': {
@@ -545,12 +545,13 @@ void main() {
         expect(scripts['a']!.exec, const ExecOptions());
       });
 
-      test('supports specifying command through "run"', () {
+      test('supports specifying command through "exec.command"', () {
         final scripts = Scripts.fromYaml(
           createYamlMap({
             'a': {
-              'run': 'b',
-              'exec': <String, Object?>{},
+              'exec': {
+                'command': 'b',
+              },
             },
           }),
           workspacePath: testWorkspacePath,
@@ -559,12 +560,12 @@ void main() {
         expect(scripts['a']!.exec, const ExecOptions());
       });
 
-      test('supports specifying exec options', () {
+      test('supports specifying exec options alongside "exec.command"', () {
         final scripts = Scripts.fromYaml(
           createYamlMap({
             'a': {
-              'run': 'b',
               'exec': {
+                'command': 'b',
                 'concurrency': 1,
                 'failFast': true,
                 'orderDependents': true,
@@ -584,7 +585,7 @@ void main() {
         );
       });
 
-      test('throws when specifying command in "run" and "exec"', () {
+      test('throws when specifying a string command in "run" and "exec"', () {
         expect(
           () => Scripts.fromYaml(
             createYamlMap({
@@ -599,13 +600,62 @@ void main() {
         );
       });
 
-      test('throws when using "melos exec" in "run" and specifying "exec"', () {
+      test('throws with migration hint for the old "run" + "exec" format', () {
         expect(
           () => Scripts.fromYaml(
             createYamlMap({
               'a': {
-                'run': 'melos exec a',
+                'run': 'b',
                 'exec': {
+                  'concurrency': 1,
+                },
+              },
+            }),
+            workspacePath: testWorkspacePath,
+          ),
+          throwsA(
+            isA<MelosConfigException>().having(
+              (e) => e.message,
+              'message',
+              allOf(
+                contains('mutually exclusive'),
+                contains('command: b'),
+                contains('concurrency: 1'),
+              ),
+            ),
+          ),
+        );
+      });
+
+      test('throws when "exec" is an object without a command', () {
+        expect(
+          () => Scripts.fromYaml(
+            createYamlMap({
+              'a': {
+                'exec': {
+                  'concurrency': 1,
+                },
+              },
+            }),
+            workspacePath: testWorkspacePath,
+          ),
+          throwsA(
+            isA<MelosConfigException>().having(
+              (e) => e.message,
+              'message',
+              contains('without a command'),
+            ),
+          ),
+        );
+      });
+
+      test('throws when using "melos exec" in "exec.command"', () {
+        expect(
+          () => Scripts.fromYaml(
+            createYamlMap({
+              'a': {
+                'exec': {
+                  'command': 'melos exec a',
                   'concurrency': 1,
                 },
               },
@@ -717,9 +767,10 @@ a:
           () => Scripts.fromYaml(
             createYamlMap({
               'a': {
-                'run': 'b',
                 'stdio': 'inherit',
-                'exec': <String, Object?>{},
+                'exec': {
+                  'command': 'b',
+                },
               },
             }),
             workspacePath: testWorkspacePath,

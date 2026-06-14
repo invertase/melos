@@ -10,6 +10,74 @@ import 'package.dart';
 // https://regex101.com/r/44dzaz/1
 final _leadingMelosExecRegExp = RegExp(r'^\s*melos\s+exec');
 
+const _scriptsExecDocsUrl =
+    'https://melos.invertase.dev/configuration/scripts#exec';
+
+/// Error message shown when a script specifies both `run` and `exec`, which is
+/// no longer supported as of Melos 8.0.0.
+String _execAndRunMigrationMessage({
+  required String name,
+  required Object run,
+  required Object exec,
+}) {
+  final buffer = StringBuffer()
+    ..writeln(
+      'The script "$name" specifies both "run" and "exec", which is no longer '
+      'supported as of Melos 8.0.0. A script either runs once in the workspace '
+      'root with "run", or across multiple packages with "exec". They are now '
+      'mutually exclusive.',
+    );
+
+  if (exec is Map) {
+    // The old format used "run" for the command and "exec" for its options.
+    // Show the user how to migrate to the new "exec.command" format.
+    final runCommand = run is String ? run : '<command>';
+    buffer
+      ..writeln()
+      ..writeln(
+        'It looks like you were using "run" for the command and "exec" for '
+        'its options. Move the command into "exec" under the new "command" '
+        'key:',
+      )
+      ..writeln()
+      ..writeln('    $name:')
+      ..writeln('      exec:')
+      ..writeln('        command: $runCommand');
+    for (final entry in exec.entries) {
+      buffer.writeln('        ${entry.key}: ${entry.value}');
+    }
+  } else {
+    buffer
+      ..writeln()
+      ..writeln(
+        'Both "run" and "exec" specify a command. Keep only one: use "run" to '
+        'run the command once in the workspace root, or "exec" to run it '
+        'across multiple packages.',
+      );
+  }
+
+  buffer
+    ..writeln()
+    ..write('For more information, see $_scriptsExecDocsUrl.');
+
+  return buffer.toString();
+}
+
+/// Error message shown when a script's `exec` is a configuration object that
+/// does not specify the command to run via the `command` key.
+String _execWithoutCommandMessage({required String name}) {
+  return 'The script "$name" uses "exec" without a command. As of Melos '
+      '8.0.0 the command must be specified with the "command" key inside '
+      '"exec":\n'
+      '\n'
+      '    $name:\n'
+      '      exec:\n'
+      '        command: <command>\n'
+      '        # ...other exec options such as concurrency\n'
+      '\n'
+      'For more information, see $_scriptsExecDocsUrl.';
+}
+
 /// Validates a single script step parsed from YAML and returns it as a command
 /// string.
 ///
@@ -209,25 +277,47 @@ class Script {
     }
 
     final execYaml = yaml['exec'];
+    final runYaml = yaml['run'];
+
+    // A script either runs once in the workspace root via "run", or across
+    // multiple packages via "exec". The two are mutually exclusive.
+    if (execYaml != null && runYaml != null) {
+      throw MelosConfigException(
+        _execAndRunMigrationMessage(name: name, run: runYaml, exec: execYaml),
+      );
+    }
+
     if (execYaml is String) {
-      if (yaml['run'] is String) {
-        throw MelosConfigException(
-          'The script $name specifies a command in both "run" and "exec". '
-          'Remove one of them.',
-        );
-      }
+      // Shorthand: the command to execute in each package, with the default
+      // `melos exec` options.
       run = execYaml;
       exec = const ExecOptions();
-    } else {
-      final execMap = assertKeyIsA<Map<Object?, Object?>?>(
+    } else if (execYaml != null) {
+      final execMap = assertKeyIsA<Map<Object?, Object?>>(
         key: 'exec',
         map: yaml,
         path: scriptPath,
       );
 
-      exec = execMap != null
-          ? execOptionsFromYaml(execMap, scriptName: name)
-          : null;
+      final command = assertKeyIsA<String?>(
+        key: 'command',
+        map: execMap,
+        path: '$scriptPath/exec',
+      );
+      if (command == null || command.isEmpty) {
+        throw MelosConfigException(
+          _execWithoutCommandMessage(name: name),
+        );
+      }
+
+      run = command;
+      exec = execOptionsFromYaml(execMap, scriptName: name);
+    } else if (runYaml is String && runYaml.isNotEmpty) {
+      run = assertKeyIsA<String>(
+        key: 'run',
+        map: yaml,
+        path: scriptPath,
+      );
     }
 
     final stepsList = yaml['steps'];
@@ -241,17 +331,6 @@ class Script {
             },
           )
         : [];
-
-    final runYaml = yaml['run'];
-    if (runYaml is String && runYaml.isNotEmpty) {
-      run = execYaml is String
-          ? execYaml
-          : assertKeyIsA<String>(
-              key: 'run',
-              map: yaml,
-              path: scriptPath,
-            );
-    }
 
     description = assertKeyIsA<String?>(
       key: 'description',
@@ -465,12 +544,11 @@ class Script {
         run != null &&
         run!.startsWith(_leadingMelosExecRegExp)) {
       throw MelosConfigException(
-        'Do not use "melos exec" in "run" when also providing options in '
-        '"exec". In this case the script in "run" is already being executed by '
-        '"melos exec".\n'
-        'For more information, see https://melos.invertase.dev/configuration/scripts#scriptsexec.\n'
+        'Do not use "melos exec" in the "command" of an "exec" script. The '
+        'command is already being executed by "melos exec".\n'
+        'For more information, see $_scriptsExecDocsUrl.\n'
         '\n'
-        '    run: $run',
+        '    command: $run',
       );
     }
     if (stdio == ProcessStdio.inherit && exec != null) {
@@ -492,14 +570,19 @@ class Script {
   }
 
   Map<Object?, Object?> toJson() {
+    final exec = this.exec;
     return {
       'name': name,
-      'run': run,
+      if (exec == null) 'run': run,
       if (description != null) 'description': description,
       if (env.isNotEmpty) 'env': env,
       if (packageFilters != null) 'packageFilters': packageFilters!.toJson(),
       if (steps != null) 'steps': steps,
-      if (exec != null) 'exec': exec!.toJson(),
+      if (exec != null)
+        'exec': {
+          if (run != null) 'command': run,
+          ...exec.toJson(),
+        },
       'private': isPrivate,
       if (groups != null) 'groups': groups,
       if (stdio != ProcessStdio.pipe) 'stdio': stdio.name,

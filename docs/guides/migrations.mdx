@@ -5,6 +5,48 @@ description: How to migrate between major versions of Melos.
 
 # Migrations
 
+## 7.x.x to 8.0.0
+
+### Configuring `exec` scripts
+
+The way an `exec` script is configured with options has changed. Previously, the
+command was specified in `run` and the `melos exec` options in `exec`:
+
+```yaml
+# Before (no longer supported)
+scripts:
+  test:
+    run: dart test --concurrency=1
+    exec:
+      concurrency: 1
+```
+
+`run` and `exec` are now mutually exclusive: a script either runs once in the
+workspace root with `run`, or across multiple packages with `exec`. When you
+need to pass options to `exec`, move the command into `exec` under the new
+`command` key:
+
+```yaml
+# After
+scripts:
+  test:
+    exec:
+      command: dart test --concurrency=1
+      concurrency: 1
+```
+
+The shorthand form, where `exec` is a string containing the command, is
+unchanged:
+
+```yaml
+scripts:
+  hello:
+    exec: echo 'Hello $(dirname $PWD)'
+```
+
+Melos will fail with a descriptive error, including the converted configuration,
+if it encounters the old format.
+
 ## 6.x.x to 7.x.x
 
 Since the [pub workspaces](https://dart.dev/tools/pub/workspaces) feature has
