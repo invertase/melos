@@ -3,6 +3,35 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-06-23
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - [`melos` - `v8.0.0`](#melos---v800)
+
+Packages with other changes:
+
+ - There are no other changes in this release.
+
+---
+
+#### `melos` - `v8.0.0`
+
+ - **FIX**(scripts): run nested melos commands without a global installation ([#1031](https://github.com/invertase/melos/issues/1031)). ([efcd5ced](https://github.com/invertase/melos/commit/efcd5cede0155c96e0a13e09c6f8d0939da1abba))
+ - **FIX**: include commits in changelog when graduating a pre-release ([#1028](https://github.com/invertase/melos/issues/1028)). ([850d5ca3](https://github.com/invertase/melos/commit/850d5ca3a832ee65ef8716fab1b2d150fd477e20))
+ - **FIX**: give a helpful error for unquoted script steps with a colon ([#1029](https://github.com/invertase/melos/issues/1029)). ([648e26d8](https://github.com/invertase/melos/commit/648e26d8f0227368c146a2e20d5fd9dc85d5b9a5))
+ - **FIX**: require cli_launcher ^0.3.3+1 for workspace null-check fix ([#1027](https://github.com/invertase/melos/issues/1027)). ([e36402fc](https://github.com/invertase/melos/commit/e36402fc815ed89e801b5a0d3cd2474704842523))
+ - **FIX**: only suggest updates compatible with the current Dart SDK ([#1026](https://github.com/invertase/melos/issues/1026)). ([434ce85e](https://github.com/invertase/melos/commit/434ce85ec4b2a52c4fe39625f414acbe24052021))
+ - **FEAT**: add option to group changelog commits by type ([#1030](https://github.com/invertase/melos/issues/1030)). ([6eaa2c1d](https://github.com/invertase/melos/commit/6eaa2c1dc59e2df97cdf729ab445e16ae66a4f21))
+ - **FEAT**: add pubServer config option to melos publish ([#1024](https://github.com/invertase/melos/issues/1024)). ([7c5fce2f](https://github.com/invertase/melos/commit/7c5fce2fd92797dc60c3df0ab95de9a8f48599e3))
+ - **BREAKING** **FIX**: retain and increment build numbers when versioning ([#1018](https://github.com/invertase/melos/issues/1018)). ([1ad65d73](https://github.com/invertase/melos/commit/1ad65d731dcfafd2027761667851d9159ab0a514))
+ - **BREAKING** **FEAT**: configure exec command via "exec.command" ([#1025](https://github.com/invertase/melos/issues/1025)). ([03b2ed99](https://github.com/invertase/melos/commit/03b2ed99853afb79a169421b77b7579373d96f73))
+
+
 ## 2026-06-10
 
 ### Changes
