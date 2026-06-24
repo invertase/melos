@@ -117,7 +117,7 @@ extension ChangelogStringBufferExtension on StringBuffer {
     }
 
     if (update.reason == PackageUpdateReason.graduate &&
-        !update.hasVersionableCommits) {
+        !update.hasChangelogCommits) {
       // Package graduation entry without any new commits since the last
       // pre-release.
       writeln(
@@ -130,7 +130,7 @@ extension ChangelogStringBufferExtension on StringBuffer {
     if (update.reason == PackageUpdateReason.commit ||
         update.reason == PackageUpdateReason.manual ||
         (update.reason == PackageUpdateReason.graduate &&
-            update.hasVersionableCommits)) {
+            update.hasChangelogCommits)) {
       // Breaking change note.
       if (update.hasBreakingChanges) {
         writeln('> Note: This release has breaking changes.');
@@ -317,7 +317,7 @@ List<RichGitCommit> _filteredAndSortedCommits(
   MelosPendingPackageUpdate update,
 ) {
   final commits = update.commits
-      .where((commit) => commit.parsedMessage.isVersionableCommit)
+      .where((commit) => commit.parsedMessage.includeInChangelog)
       .toList();
 
   // Sort so that Breaking Changes appear at the top.

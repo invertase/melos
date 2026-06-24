@@ -56,7 +56,7 @@ ${description?.withoutTrailing('\n') ?? ''}
         .where(
           (update) =>
               update.reason == PackageUpdateReason.graduate &&
-              !update.hasVersionableCommits,
+              !update.hasChangelogCommits,
         )
         .toSet();
     final packagesWithBreakingChanges = pendingPackageUpdates.where(
