@@ -154,8 +154,8 @@ class MelosPendingPackageUpdate {
   }
 
   /// Whether this update has any commits that produce changelog entries.
-  bool get hasVersionableCommits {
-    return commits.any((commit) => commit.parsedMessage.isVersionableCommit);
+  bool get hasChangelogCommits {
+    return commits.any((commit) => commit.parsedMessage.includeInChangelog);
   }
 
   /// Whether this update contains breaking changes.

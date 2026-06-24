@@ -12,8 +12,14 @@ void main() {
         ConventionalCommit.tryParse('chore!: foo bar')!.isVersionableCommit,
         isTrue,
       );
+      // `docs` commits do not trigger a version bump on their own.
       expect(
         ConventionalCommit.tryParse('docs: foo bar')!.isVersionableCommit,
+        isFalse,
+      );
+      // A breaking `docs` commit is still versionable.
+      expect(
+        ConventionalCommit.tryParse('docs!: foo bar')!.isVersionableCommit,
         isTrue,
       );
       expect(
@@ -58,6 +64,39 @@ void main() {
       );
       expect(
         ConventionalCommit.tryParse('Merged foo into bar')!.isVersionableCommit,
+        isFalse,
+      );
+    });
+
+    test('includeInChangelog', () {
+      // Version-bumping commits are always included in the changelog.
+      expect(
+        ConventionalCommit.tryParse('feat: foo bar')!.includeInChangelog,
+        isTrue,
+      );
+      expect(
+        ConventionalCommit.tryParse('fix: foo bar')!.includeInChangelog,
+        isTrue,
+      );
+      // `docs` commits are included in the changelog even though they do not
+      // trigger a version bump.
+      expect(
+        ConventionalCommit.tryParse('docs: foo bar')!.includeInChangelog,
+        isTrue,
+      );
+      expect(
+        ConventionalCommit.tryParse(
+          'docs(scope): foo bar',
+        )!.includeInChangelog,
+        isTrue,
+      );
+      // Other non-versionable types are still excluded from the changelog.
+      expect(
+        ConventionalCommit.tryParse('ci: foo bar')!.includeInChangelog,
+        isFalse,
+      );
+      expect(
+        ConventionalCommit.tryParse('chore: foo bar')!.includeInChangelog,
         isFalse,
       );
     });

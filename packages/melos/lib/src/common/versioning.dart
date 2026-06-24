@@ -19,7 +19,6 @@ extension ConventionalCommitVersioningExtension on ConventionalCommit {
   bool get isVersionableCommit {
     return isBreakingChange ||
         [
-          'docs',
           'feat',
           'fix',
           'bug',
@@ -27,6 +26,17 @@ extension ConventionalCommitVersioningExtension on ConventionalCommit {
           'refactor',
           'revert',
         ].contains(type);
+  }
+
+  /// Whether this commit should be listed in the changelog of its residing
+  /// package.
+  ///
+  /// This is a superset of [isVersionableCommit]: in addition to the
+  /// version-bumping commits, it includes `docs` commits so documentation
+  /// changes are recorded in the changelog without triggering a release on
+  /// their own.
+  bool get includeInChangelog {
+    return isVersionableCommit || type == 'docs';
   }
 
   /// Returns the [SemverReleaseType] for this commit, e.g.
