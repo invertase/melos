@@ -132,6 +132,10 @@
                 "moduleNamePrefix": {
                   "type": "string",
                   "description": "Used when generating IntelliJ project modules files, this value specifies a string to prepend to a package's IntelliJ module name.\n\nThe default is 'melos_'."
+                },
+                "scriptNamePrefix": {
+                  "type": "string",
+                  "description": "The text prepended to generated IntelliJ run configuration names for Melos scripts.\n\nThe default is 'Melos Run -> '. Set this to an empty string to omit the prefix."
                 }
               }
             }
