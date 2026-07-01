@@ -270,6 +270,20 @@ melos:
       generateAppRunConfigs: false
 ```
 
+### scriptNamePrefix
+
+The text prepended to generated IntelliJ run configuration names for Melos
+scripts.
+
+The default is `Melos Run -> `. Set this to an empty string to omit the prefix.
+
+```yaml
+melos:
+  ide:
+    intellij:
+      scriptNamePrefix: ""
+```
+
 ### runArguments
 
 Allows specifying additional run arguments per Flutter app package. This

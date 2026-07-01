@@ -67,6 +67,7 @@ class IntelliJConfig {
     this.moduleNamePrefix = _defaultModuleNamePrefix,
     this.executeInTerminal = _defaultExecuteInTerminal,
     this.generateAppRunConfigs = _defaultGenerateAppRunConfigs,
+    this.scriptNamePrefix = _defaultScriptNamePrefix,
     this.runArguments = const {},
   });
 
@@ -96,6 +97,13 @@ class IntelliJConfig {
               path: 'ide/intellij',
             )
           : _defaultGenerateAppRunConfigs;
+      final scriptNamePrefix = yaml.containsKey('scriptNamePrefix')
+          ? assertKeyIsA<String>(
+              key: 'scriptNamePrefix',
+              map: yaml,
+              path: 'ide/intellij',
+            )
+          : _defaultScriptNamePrefix;
       final rawRunArgsYaml = yaml['runArguments'];
       final rawRunArgs = (rawRunArgsYaml is Map)
           ? rawRunArgsYaml.cast<Object?, Object?>()
@@ -115,6 +123,7 @@ class IntelliJConfig {
         moduleNamePrefix: moduleNamePrefix,
         executeInTerminal: executeInTerminal,
         generateAppRunConfigs: generateAppRunConfigs,
+        scriptNamePrefix: scriptNamePrefix,
         runArguments: runArguments,
       );
     } else {
@@ -129,6 +138,7 @@ class IntelliJConfig {
 
   static const empty = IntelliJConfig();
   static const _defaultModuleNamePrefix = 'melos_';
+  static const _defaultScriptNamePrefix = 'Melos Run -> ';
   static const _defaultEnabled = true;
   static const _defaultExecuteInTerminal = true;
   static const _defaultGenerateAppRunConfigs = true;
@@ -141,6 +151,8 @@ class IntelliJConfig {
 
   final bool generateAppRunConfigs;
 
+  final String scriptNamePrefix;
+
   final Map<String, List<IdeRunConfiguration>> runArguments;
 
   Object? toJson() {
@@ -149,6 +161,7 @@ class IntelliJConfig {
       'moduleNamePrefix': moduleNamePrefix,
       'executeInTerminal': executeInTerminal,
       'generateAppRunConfigs': generateAppRunConfigs,
+      'scriptNamePrefix': scriptNamePrefix,
       'runArguments': runArguments.map(
         (key, value) => MapEntry(
           key,
@@ -166,6 +179,7 @@ class IntelliJConfig {
       other.moduleNamePrefix == moduleNamePrefix &&
       other.executeInTerminal == executeInTerminal &&
       other.generateAppRunConfigs == generateAppRunConfigs &&
+      other.scriptNamePrefix == scriptNamePrefix &&
       const DeepCollectionEquality().equals(
         other.runArguments,
         runArguments,
@@ -178,6 +192,7 @@ class IntelliJConfig {
       moduleNamePrefix.hashCode ^
       executeInTerminal.hashCode ^
       generateAppRunConfigs.hashCode ^
+      scriptNamePrefix.hashCode ^
       const DeepCollectionEquality().hash(runArguments);
 
   @override
@@ -187,7 +202,8 @@ IntelliJConfig(
   enabled: $enabled,
   moduleNamePrefix: $moduleNamePrefix,
   executeInTerminal: $executeInTerminal,
-  generateAppRunConfigs: $generateAppRunConfigs
+  generateAppRunConfigs: $generateAppRunConfigs,
+  scriptNamePrefix: $scriptNamePrefix
 )
 ''';
   }

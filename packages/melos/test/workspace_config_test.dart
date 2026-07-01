@@ -479,6 +479,13 @@ void main() {
       );
     });
 
+    test('has "Melos Run -> " scriptNamePrefix by default', () {
+      expect(
+        IntelliJConfig.empty.scriptNamePrefix,
+        'Melos Run -> ',
+      );
+    });
+
     group('fromYaml', () {
       test('yields default config from empty map', () {
         expect(
@@ -502,6 +509,20 @@ void main() {
         expect(
           IntelliJConfig.fromYaml(const {'moduleNamePrefix': 'prefix1'}),
           const IntelliJConfig(moduleNamePrefix: 'prefix1'),
+        );
+      });
+
+      test('supports "scriptNamePrefix" override', () {
+        expect(
+          IntelliJConfig.fromYaml(const {'scriptNamePrefix': 'prefix1'}),
+          const IntelliJConfig(scriptNamePrefix: 'prefix1'),
+        );
+      });
+
+      test('supports empty "scriptNamePrefix"', () {
+        expect(
+          IntelliJConfig.fromYaml(const {'scriptNamePrefix': ''}),
+          const IntelliJConfig(scriptNamePrefix: ''),
         );
       });
 

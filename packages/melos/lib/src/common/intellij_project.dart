@@ -315,8 +315,9 @@ class IntellijProject {
       'Melos -&gt; Clean Workspace': 'clean',
     };
 
+    final scriptNamePrefix = _workspace.config.ide.intelliJ.scriptNamePrefix;
     for (final key in _workspace.config.scripts.keys) {
-      runConfigurations["Melos Run -&gt; '$key'"] = 'run $key';
+      runConfigurations["$scriptNamePrefix'$key'"] = 'run $key';
     }
 
     await Future.forEach(runConfigurations.keys, (scriptName) async {
@@ -329,7 +330,7 @@ class IntellijProject {
       final generatedRunConfiguration = injectTemplateVariables(
         melosScriptTemplate,
         {
-          'scriptName': scriptName,
+          'scriptName': _escapeXmlAttr(scriptName),
           'scriptArgs': scriptArgs,
           'scriptPath': getMelosBinForIde(),
           'executeInTerminal': _workspace.config.ide.intelliJ.executeInTerminal

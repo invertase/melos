@@ -321,4 +321,93 @@ void main() {
       },
     );
   });
+
+  group('Melos script run configurations', () {
+    test('uses the default script name prefix', () async {
+      final tempDir = createTestTempDir();
+      final workspaceBuilder =
+          VirtualWorkspaceBuilder(
+            path: tempDir.path,
+            '''
+        packages:
+          - .
+        scripts:
+          format: dart format .
+        ''',
+          )..addPackage(
+            '''
+          name: root
+          ''',
+            path: '.',
+          );
+      final workspace = workspaceBuilder.build();
+      final project = IntellijProject.fromWorkspace(workspace);
+      await project.writeMelosScripts();
+
+      final content = readTextFile(
+        p.join(project.runConfigurationsDir.path, 'melos_run_format.xml'),
+      );
+      expect(content, contains("name=\"Melos Run -&gt; 'format'\""));
+    });
+
+    test('supports a custom script name prefix', () async {
+      final tempDir = createTestTempDir();
+      final workspaceBuilder =
+          VirtualWorkspaceBuilder(
+            path: tempDir.path,
+            '''
+        packages:
+          - .
+        ide:
+          intellij:
+            scriptNamePrefix: "Workspace -> "
+        scripts:
+          format: dart format .
+        ''',
+          )..addPackage(
+            '''
+          name: root
+          ''',
+            path: '.',
+          );
+      final workspace = workspaceBuilder.build();
+      final project = IntellijProject.fromWorkspace(workspace);
+      await project.writeMelosScripts();
+
+      final content = readTextFile(
+        p.join(project.runConfigurationsDir.path, 'melos_run_format.xml'),
+      );
+      expect(content, contains("name=\"Workspace -&gt; 'format'\""));
+    });
+
+    test('supports an empty script name prefix', () async {
+      final tempDir = createTestTempDir();
+      final workspaceBuilder =
+          VirtualWorkspaceBuilder(
+            path: tempDir.path,
+            '''
+        packages:
+          - .
+        ide:
+          intellij:
+            scriptNamePrefix: ""
+        scripts:
+          format: dart format .
+        ''',
+          )..addPackage(
+            '''
+          name: root
+          ''',
+            path: '.',
+          );
+      final workspace = workspaceBuilder.build();
+      final project = IntellijProject.fromWorkspace(workspace);
+      await project.writeMelosScripts();
+
+      final content = readTextFile(
+        p.join(project.runConfigurationsDir.path, 'melos_run_format.xml'),
+      );
+      expect(content, contains("name=\"'format'\""));
+    });
+  });
 }
