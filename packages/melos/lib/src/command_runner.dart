@@ -9,6 +9,7 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:pub_updater/pub_updater.dart';
 
 import '../version.g.dart';
+import 'command_runner/analyze.dart';
 import 'command_runner/bootstrap.dart';
 import 'command_runner/clean.dart';
 import 'command_runner/exec.dart';
@@ -69,6 +70,7 @@ class MelosCommandRunner extends CommandRunner<void> {
 
     // Create built-in commands
     final builtInCommands = [
+      AnalyzeCommand(config),
       InitCommand(config),
       ExecCommand(config),
       BootstrapCommand(config),
