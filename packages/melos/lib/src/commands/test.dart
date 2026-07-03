@@ -1,41 +1,37 @@
 part of 'runner.dart';
 
-mixin _AnalyzeMixin on _Melos {
-  Future<void> analyze({
+mixin _TestMixin on _Melos {
+  Future<void> test({
     GlobalOptions? global,
     PackageFilters? packageFilters,
-    bool fatalInfos = false,
-    bool? fatalWarnings,
     int concurrency = 1,
   }) async {
     final workspace = await createWorkspace(
       global: global,
       packageFilters: packageFilters,
     );
-    final packages = workspace.filteredPackages.values;
-
-    await _analyzeForAllPackages(
-      workspace,
-      packages,
-      fatalInfos: fatalInfos,
-      fatalWarnings: fatalWarnings,
-      concurrency: concurrency,
+    final packages = workspace.filteredPackages.values.where(
+      (pkg) => Directory(p.join(pkg.path, 'test')).existsSync(),
     );
+
+    await _testForAllPackages(workspace, packages, concurrency: concurrency);
   }
 
-  Future<void> _analyzeForAllPackages(
+  Future<void> _testForAllPackages(
     MelosWorkspace workspace,
     Iterable<Package> packages, {
-    required bool fatalInfos,
-    bool? fatalWarnings,
     required int concurrency,
   }) async {
+    if (packages.isEmpty) {
+      logger.command('melos test', withDollarSign: true);
+      logger.child('No packages with a test/ directory found.');
+      return;
+    }
+
     final failures = <String, int?>{};
     final pool = Pool(concurrency);
-    final analyzeArgsString = _getAnalyzeArgs(
+    final testArgsString = _getTestArgs(
       workspace: workspace,
-      fatalInfos: fatalInfos,
-      fatalWarnings: fatalWarnings,
       concurrency: concurrency,
     ).join(' ');
     final useGroupBuffer = concurrency != 1 && packages.length != 1;
@@ -44,18 +40,18 @@ mixin _AnalyzeMixin on _Melos {
         .where((e) => e.isFlutterPackage)
         .length;
 
-    logger.command('melos analyze', withDollarSign: true);
+    logger.command('melos test', withDollarSign: true);
 
     if (dartPackageCount > 0) {
       logger
-          .child(targetStyle(analyzeArgsString))
+          .child(targetStyle(testArgsString))
           .child('$runningLabel (in $dartPackageCount packages)')
           .newLine();
     }
 
     if (flutterPackageCount > 0) {
       logger
-          .child(targetStyle(analyzeArgsString.replaceFirst('dart', 'flutter')))
+          .child(targetStyle(testArgsString.replaceFirst('dart', 'flutter')))
           .child('$runningLabel (in $flutterPackageCount packages)')
           .newLine();
     }
@@ -66,14 +62,13 @@ mixin _AnalyzeMixin on _Melos {
         ..horizontalLine(group: group)
         ..log(AnsiStyles.bgBlack.bold.italic('${package.name}:'), group: group);
 
-      final packageExitCode = await _analyzeForPackage(
+      final packageExitCode = await _testForPackage(
         workspace,
         package,
-        _getAnalyzeArgs(
+        _getTestArgs(
           package: package,
           workspace: workspace,
-          fatalInfos: fatalInfos,
-          fatalWarnings: fatalWarnings,
+          concurrency: concurrency,
         ),
         group: group,
       );
@@ -94,9 +89,9 @@ mixin _AnalyzeMixin on _Melos {
     logger
       ..horizontalLine()
       ..newLine()
-      ..command('melos analyze', withDollarSign: true);
+      ..command('melos test', withDollarSign: true);
 
-    final resultLogger = logger.child(targetStyle(analyzeArgsString));
+    final resultLogger = logger.child(targetStyle(testArgsString));
 
     if (failures.isNotEmpty) {
       final failuresLogger = resultLogger.child(
@@ -115,58 +110,34 @@ mixin _AnalyzeMixin on _Melos {
     }
   }
 
-  List<String> _getAnalyzeArgs({
+  List<String> _getTestArgs({
     required MelosWorkspace workspace,
-    required bool fatalInfos,
     Package? package,
-    bool? fatalWarnings,
-    // Note: The `concurrency` argument is intentionally set to a default value
-    // of 1 to prevent its direct use by the `startCommand` function. It is
-    // designed to be utilized only for logging purposes to indicate the level
-    // of concurrency being applied.
     int concurrency = 1,
   }) {
-    final options = _getAnalyzeOptionsArgs(
-      fatalInfos,
-      fatalWarnings,
-      concurrency,
-    );
+    final options = _getOptionsArgs(concurrency);
     return <String>[
       if (package?.isFlutterPackage ?? false)
         workspace.sdkTool('flutter')
       else
         workspace.sdkTool('dart'),
-      'analyze',
+      'test',
       options,
     ];
   }
 
-  String _getAnalyzeOptionsArgs(
-    bool fatalInfos,
-    bool? fatalWarnings,
-    int concurrency,
-  ) {
+  String _getOptionsArgs(int concurrency) {
     final options = <String>[];
-
-    if (fatalInfos) {
-      options.add('--fatal-infos');
-    }
-
-    if (fatalWarnings != null) {
-      options.add(fatalWarnings ? '--fatal-warnings' : '--no-fatal-warnings');
-    }
-
     if (concurrency > 1) {
-      options.add('--concurrency $concurrency');
+      options.add('--concurrency=$concurrency');
     }
-
     return options.join(' ');
   }
 
-  Future<int> _analyzeForPackage(
+  Future<int> _testForPackage(
     MelosWorkspace workspace,
     Package package,
-    List<String> analyzeArgs, {
+    List<String> testArgs, {
     String? group,
   }) async {
     final environment = {
@@ -178,7 +149,7 @@ mixin _AnalyzeMixin on _Melos {
     };
 
     return startCommand(
-      analyzeArgs,
+      testArgs,
       logger: logger,
       environment: environment,
       workingDirectory: package.path,

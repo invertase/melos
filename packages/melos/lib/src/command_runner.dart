@@ -19,6 +19,7 @@ import 'command_runner/list.dart';
 import 'command_runner/publish.dart';
 import 'command_runner/run.dart';
 import 'command_runner/script.dart';
+import 'command_runner/test.dart';
 import 'command_runner/version.dart';
 import 'common/exception.dart';
 import 'common/pub_hosted.dart';
@@ -80,6 +81,7 @@ class MelosCommandRunner extends CommandRunner<void> {
       PublishCommand(config),
       VersionCommand(config),
       FormatCommand(config),
+      TestCommand(config),
     ];
 
     // Add built-in commands only if they don't conflict with custom scripts
