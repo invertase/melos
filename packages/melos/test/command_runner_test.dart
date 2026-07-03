@@ -23,7 +23,9 @@ void main() {
         workspacePackages: [],
       );
 
-      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+        workspaceDir,
+      );
       final runner = MelosCommandRunner(config);
 
       expect(
@@ -51,7 +53,9 @@ void main() {
         workspacePackages: [],
       );
 
-      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+        workspaceDir,
+      );
       final runner = MelosCommandRunner(config);
 
       final command = runner.commands['format'];
@@ -59,6 +63,7 @@ void main() {
       // The command should be hidden (custom script behavior)
       expect(command!.hidden, isTrue);
     });
+
     test('custom analyze script overrides built-in analyze command', () async {
       final workspaceDir = await createTemporaryWorkspace(
         configBuilder: (path) => MelosWorkspaceConfig(
@@ -68,20 +73,44 @@ void main() {
             createGlob('packages/**', currentDirectoryPath: path),
           ],
           scripts: const Scripts({
-            'analyze': Script(name: 'analyze', run: 'echo "custom analyze"'),
+            'analyze': Script(
+              name: 'analyze',
+              run: 'echo "custom analyze ran"',
+            ),
           }),
         ),
         workspacePackages: [],
       );
 
-      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
-      final runner = MelosCommandRunner(config);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+        workspaceDir,
+      );
 
+      // Structural check: the registered command for 'analyze' should be
+      // the hidden ScriptCommand, not the built-in AnalyzeCommand.
+      final runner = MelosCommandRunner(config);
       final command = runner.commands['analyze'];
       expect(command, isNotNull);
-      // The command should be hidden (custom script behavior), confirming
-      // the built-in AnalyzeCommand was NOT registered in its place.
       expect(command!.hidden, isTrue);
+
+      // Behavioral check: actually running the 'analyze' script should
+      // execute the user's custom command, not the built-in
+      // AnalyzeCommand's logic.
+      final logger = TestLogger();
+      final melos = Melos(logger: logger, config: config);
+
+      await melos.run(scriptName: 'analyze', noSelect: true);
+
+      expect(
+        logger.output.normalizeLines(),
+        contains('custom analyze ran'),
+      );
+      // The built-in AnalyzeCommand's own output format should never
+      // appear.
+      expect(
+        logger.output.normalizeLines(),
+        isNot(contains(r'$ melos analyze')),
+      );
     });
   });
 }
