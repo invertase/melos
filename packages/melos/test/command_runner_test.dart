@@ -23,7 +23,9 @@ void main() {
         workspacePackages: [],
       );
 
-      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+        workspaceDir,
+      );
       final runner = MelosCommandRunner(config);
 
       expect(
@@ -51,13 +53,59 @@ void main() {
         workspacePackages: [],
       );
 
-      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+        workspaceDir,
+      );
       final runner = MelosCommandRunner(config);
 
       final command = runner.commands['format'];
       expect(command, isNotNull);
       // The command should be hidden (custom script behavior)
       expect(command!.hidden, isTrue);
+    });
+
+    test('custom test script overrides built-in test command', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: const Scripts({
+            'test': Script(name: 'test', run: 'echo "custom test ran"'),
+          }),
+        ),
+        workspacePackages: [],
+      );
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+        workspaceDir,
+      );
+
+      // Structural check: the registered command for 'test' should be the
+      // hidden ScriptCommand, not the built-in TestCommand.
+      final runner = MelosCommandRunner(config);
+      final command = runner.commands['test'];
+      expect(command, isNotNull);
+      expect(command!.hidden, isTrue);
+
+      // Behavioral check: actually running the 'test' script should execute
+      // the user's custom command, not the built-in TestCommand's logic.
+      final logger = TestLogger();
+      final melos = Melos(logger: logger, config: config);
+
+      await melos.run(scriptName: 'test', noSelect: true);
+
+      expect(
+        logger.output.normalizeLines(),
+        contains('custom test ran'),
+      );
+      // The built-in TestCommand's own output format should never appear.
+      expect(
+        logger.output.normalizeLines(),
+        isNot(contains('No packages with a test/ directory found.')),
+      );
     });
   });
 }

@@ -59,6 +59,7 @@ part 'init.dart';
 part 'list.dart';
 part 'publish.dart';
 part 'run.dart';
+part 'test.dart';
 part 'version.dart';
 
 enum CommandWithLifecycle {
@@ -78,7 +79,8 @@ class Melos extends _Melos
         _VersionMixin,
         _PublishMixin,
         _FormatMixin,
-        _InitMixin {
+        _InitMixin,
+        _TestMixin {
   Melos({
     required this.config,
     Logger? logger,
