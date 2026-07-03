@@ -51,6 +51,7 @@ import '../scripts.dart';
 import '../workspace.dart';
 import '../workspace_config.dart';
 
+part 'analyze.dart';
 part 'bootstrap.dart';
 part 'clean.dart';
 part 'exec.dart';
@@ -71,6 +72,7 @@ enum CommandWithLifecycle {
 
 class Melos extends _Melos
     with
+        _AnalyzeMixin,
         _CleanMixin,
         _BootstrapMixin,
         _ListMixin,
