@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-07-03
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v8.1.0`](#melos---v810)
+
+---
+
+#### `melos` - `v8.1.0`
+
+ - **FIX**(analyze): restore melos analyze command ([#1037](https://github.com/invertase/melos/issues/1037)). ([541fbd99](https://github.com/invertase/melos/commit/541fbd99d281070509685e0b694d3f269700a837))
+ - **FIX**: Exclude docs-only commits from version bumping ([#1035](https://github.com/invertase/melos/issues/1035)). ([3cd4ab69](https://github.com/invertase/melos/commit/3cd4ab69d9f28d071bf357956b0b45920e1277a5))
+ - **FEAT**(melos): add melos test command ([#1038](https://github.com/invertase/melos/issues/1038)). ([7e28dde4](https://github.com/invertase/melos/commit/7e28dde4fc61bc36e761a5087d3d2efc4374feaa))
+ - **FEAT**(intellij): configure generated script run prefixes ([#1036](https://github.com/invertase/melos/issues/1036)). ([f54c82fd](https://github.com/invertase/melos/commit/f54c82fdebad3edf48fa021feff954969ae4e599))
+
+
 ## 2026-06-23
 
 ### Changes
