@@ -59,5 +59,29 @@ void main() {
       // The command should be hidden (custom script behavior)
       expect(command!.hidden, isTrue);
     });
+    test('custom test script overrides built-in test command', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: const Scripts({
+            'test': Script(name: 'test', run: 'echo "custom test"'),
+          }),
+        ),
+        workspacePackages: [],
+      );
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final runner = MelosCommandRunner(config);
+
+      final command = runner.commands['test'];
+      expect(command, isNotNull);
+      // The command should be hidden (custom script behavior), confirming
+      // the built-in TestCommand was NOT registered in its place.
+      expect(command!.hidden, isTrue);
+    });
   });
 }
