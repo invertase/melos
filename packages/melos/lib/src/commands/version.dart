@@ -615,10 +615,6 @@ mixin _VersionMixin on _RunMixin {
     final isGitDependency = dependency is GitDependency;
     final isGitTagDependency = dependency is GitTagPatternDependency;
 
-    // The section (`dependencies` or `dev_dependencies`) that
-    // `package.pubspec` actually resolved [dependency] from. Git tag pattern
-    // dependencies track their own section separately, since they can also
-    // live under `dependency_overrides` (see [GitTagPatternDependency]).
     final section = normalDependency != null
         ? 'dependencies'
         : 'dev_dependencies';
@@ -629,9 +625,6 @@ mixin _VersionMixin on _RunMixin {
         pubspecContent: pubspecContent,
         path: [dependency.section, dependencyName, 'version'],
         dependencyVersion: dependencyVersion,
-        // Git tag pattern dependencies preserve whether the *existing*
-        // constraint used caret syntax, rather than always following
-        // [dependencyVersion]'s own style.
         preserveCaretStyle: true,
       );
     } else if (isExternalHostedDependency) {
@@ -643,11 +636,6 @@ mixin _VersionMixin on _RunMixin {
       );
     } else if (isGitDependency &&
         workspace.config.commands.version.updateGitTagRefs) {
-      // The version here is fused into a single git tag string (e.g.
-      // `foo-v1.2.3`) rather than being its own scalar node, so this isn't a
-      // good fit for a `YamlEditor`-based rewrite; it's also not affected by
-      // the quoted-range-constraint bug the other branches fix, since tag
-      // names never contain quotes or spaces.
       final rewritten = pubspecContent.replaceAllMapped(
         dependencyTagReplaceRegex(dependencyName),
         (match) =>
