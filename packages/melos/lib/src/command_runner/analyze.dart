@@ -8,10 +8,11 @@ class AnalyzeCommand extends MelosCommand {
     argParser.addOption('concurrency', defaultsTo: '1', abbr: 'c');
     argParser.addFlag(
       'fatal-infos',
-      negatable: false,
+      defaultsTo: true,
       help:
-          'Enables treating info-lever issues as fatal errors, '
-          'stopping the process if any are encountered.',
+          'Enables or disables treating info-level issues as fatal errors. '
+          'Enabled by default for both dart and flutter analyze. '
+          'Use --no-fatal-infos to disable.',
     );
 
     argParser.addFlag(

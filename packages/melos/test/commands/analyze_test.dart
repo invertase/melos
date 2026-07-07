@@ -131,7 +131,7 @@ ${'-' * terminalWidth}
         logger.output,
         ignoringAnsii('''
 \$ melos analyze
-  └> dart analyze --fatal-warnings
+  └> dart analyze --fatal-infos --fatal-warnings
      └> RUNNING (in 3 packages)
 
 ${'-' * terminalWidth}
@@ -161,7 +161,7 @@ c: SUCCESS
 ${'-' * terminalWidth}
 
 \$ melos analyze
-  └> dart analyze --fatal-warnings
+  └> dart analyze --fatal-infos --fatal-warnings
      └> FAILED (in 1 packages)
         └> a (with exit code 2)
 '''),
@@ -180,7 +180,7 @@ ${'-' * terminalWidth}
       ''',
       );
 
-      await melos.analyze(fatalWarnings: false);
+      await melos.analyze(fatalInfos: false, fatalWarnings: false);
 
       expect(
         logger.output,
@@ -287,7 +287,7 @@ ${'-' * terminalWidth}
       await melos.analyze(concurrency: 2);
 
       final regex = RegExp(
-        r'\$ melos analyze\s+└> dart analyze --concurrency 2',
+        r'\$ melos analyze\s+└> dart analyze --fatal-infos --concurrency 2',
       );
 
       expect(regex.hasMatch(logger.output.removeAnsiCodes()), isTrue);
@@ -328,13 +328,13 @@ ${'-' * terminalWidth}
 
       expect(
         logger.output.removeAnsiCodes().contains(
-          'flutter analyze --concurrency 2',
+          'flutter analyze --fatal-infos --concurrency 2',
         ),
         isTrue,
       );
 
       final dartRegex = RegExp(
-        r'\$ melos analyze\s+└> dart analyze --concurrency 2',
+        r'\$ melos analyze\s+└> dart analyze --fatal-infos --concurrency 2',
       );
 
       expect(dartRegex.hasMatch(logger.output.removeAnsiCodes()), isTrue);
@@ -364,11 +364,65 @@ ${'-' * terminalWidth}
       await melos.analyze(concurrency: 2);
 
       final flutterRegex = RegExp(
-        r'\$ melos analyze\s+└> flutter analyze --concurrency 2',
+        r'\$ melos analyze\s+└> flutter analyze --fatal-infos --concurrency 2',
       );
 
       expect(flutterRegex.hasMatch(logger.output.removeAnsiCodes()), isTrue);
     });
+
+    test('should treat fatal-infos as enabled by default', () async {
+      await melos.analyze();
+
+      final dartRegex = RegExp(
+        r'\$ melos analyze\s+└> dart analyze --fatal-infos',
+      );
+
+      expect(dartRegex.hasMatch(logger.output.removeAnsiCodes()), isTrue);
+    });
+
+    test(
+      'should pass --no-fatal-infos only to flutter when disabled',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b'],
+        );
+
+        await createProject(
+          workspaceDir,
+          Pubspec(
+            'a',
+            dependencies: {
+              'flutter': SdkDependency('flutter'),
+            },
+          ),
+        );
+
+        await createProject(
+          workspaceDir,
+          Pubspec('b'),
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+        await melos.analyze(fatalInfos: false, concurrency: 2);
+
+        final output = logger.output.removeAnsiCodes();
+
+        expect(output.contains('flutter analyze --no-fatal-infos'), isTrue);
+
+        final dartRegex = RegExp(
+          r'\$ melos analyze\s+└> dart analyze --concurrency 2',
+        );
+        expect(dartRegex.hasMatch(output), isTrue);
+        expect(output.contains('dart analyze --no-fatal-infos'), isFalse);
+      },
+    );
 
     test('should run analysis using dart', () async {
       final workspaceDir = await createTemporaryWorkspace(
@@ -389,13 +443,13 @@ ${'-' * terminalWidth}
 
       expect(
         logger.output.removeAnsiCodes().contains(
-          'flutter analyze --concurrency 2',
+          'flutter analyze --fatal-infos --concurrency 2',
         ),
         isFalse,
       );
 
       final dartRegex = RegExp(
-        r'\$ melos analyze\s+└> dart analyze --concurrency 2',
+        r'\$ melos analyze\s+└> dart analyze --fatal-infos --concurrency 2',
       );
       expect(dartRegex.hasMatch(logger.output.removeAnsiCodes()), isTrue);
     });
@@ -407,7 +461,7 @@ ${'-' * terminalWidth}
         logger.output,
         ignoringAnsii('''
 \$ melos analyze
-  └> dart analyze --concurrency 2
+  └> dart analyze --fatal-infos --concurrency 2
      └> RUNNING (in 3 packages)
 
 ${'-' * terminalWidth}
@@ -428,7 +482,7 @@ c: SUCCESS
 ${'-' * terminalWidth}
 
 \$ melos analyze
-  └> dart analyze --concurrency 2
+  └> dart analyze --fatal-infos --concurrency 2
      └> SUCCESS
 '''),
       );
