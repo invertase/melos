@@ -1064,6 +1064,33 @@ dependencies:
           );
         },
       );
+
+      test(
+        'quoted, space-separated range constraint under dev_dependencies',
+        () async {
+          const dependentPubspecYaml = '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dev_dependencies:
+  a: ">=0.4.0 <1.0.0"
+''';
+          await expectDependentPubspecRewrite(
+            dependentPubspecYaml: dependentPubspecYaml,
+            expectedDependentPubspecYaml: '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dev_dependencies:
+  a: ^0.6.0
+''',
+          );
+        },
+      );
     });
   });
 }
