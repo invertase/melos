@@ -72,33 +72,14 @@ enum PackageType {
 
 const _versionRegExp = r'''\d+\.\d+\.\d+[\w\-.+_]*''';
 
-const _versionConstraintRegExp =
-    r"""(?<version>any|["'^<>=]*\d+\.\d+\.\d+['"<>=\w\-.+_]*)""";
-
-RegExp dependencyVersionReplaceRegex(String dependencyName) {
-  return RegExp(
-    '''(?<dependency>^\\s+$dependencyName\\s?:\\s?)(?!\$)$_versionConstraintRegExp''',
-    multiLine: true,
-  );
-}
-
-RegExp hostedDependencyVersionReplaceRegex(String dependencyName) {
-  return RegExp(
-    '''(^[ \t]*?(?<dependency>$dependencyName)[ \\t]*?:[ \\t]*?[\\s\\S]*?[ \\t]*?version:[ \\t]*?)$_versionConstraintRegExp''',
-    multiLine: true,
-  );
-}
-
+// Used only for the git `ref:` tag rewrite (see [dependencyTagReplaceRegex]),
+// where the version is fused into a single tag string (e.g. `foo-v1.2.3`)
+// rather than being its own scalar node, so it isn't a candidate for a
+// `YamlEditor`-based rewrite the way the other dependency shapes are (see
+// `_setDependencyVersionForPackage` in `commands/version.dart`).
 RegExp dependencyTagReplaceRegex(String dependencyName) {
   return RegExp(
     '''(?<tag_ref>^\\s+ref\\s?:\\s?)(?<opening_quote>["']?)(?<tag>$dependencyName-v$_versionRegExp)(?<closing_quote>['"]?)''',
-    multiLine: true,
-  );
-}
-
-RegExp gitTagPatternDependencyVersionReplaceRegex(String dependencyName) {
-  return RegExp(
-    '''(^[ \\t]*?$dependencyName[ \\t]*?:[\\s\\S]*?[ \\t]*?version:[ \\t]*?)(\\^?)$_versionConstraintRegExp''',
     multiLine: true,
   );
 }

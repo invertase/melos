@@ -27,6 +27,14 @@ const pubPackageJson = '''
 ''';
 
 void main() {
+  // The `dependencies`/`dev_dependencies`/hosted `version:` rewrite paths
+  // used by `melos version` are now implemented with `YamlEditor` (see
+  // `_rewriteDependencyVersionAtPath` in `commands/version.dart`) instead of
+  // hand-rolled regexes, so they're covered end-to-end via `melos version`
+  // in `test/commands/version_test.dart` rather than as standalone regex
+  // unit tests here. Only the git `ref:` tag rewrite still uses a regex,
+  // since its version is fused into a single tag string rather than being
+  // its own scalar node.
   group('replace version RegExp', () {
     const testedVersions = [
       '0.1.2+3',
@@ -39,19 +47,6 @@ void main() {
       '0.10.0',
       '0.0.10',
     ];
-    final testedVersionRanges = testedVersions
-        .map((version) => '^$version')
-        .toList();
-
-    group('dependencyVersion', () {
-      testedVersions.forEach(testDependencyVersionReplaceRegex);
-      testedVersionRanges.forEach(testDependencyVersionReplaceRegex);
-    });
-
-    group('hostedDependencyVersion', () {
-      testedVersions.forEach(testHostedDependencyVersionReplaceRegex);
-      testedVersionRanges.forEach(testHostedDependencyVersionReplaceRegex);
-    });
 
     group('dependencyTag', () {
       testedVersions.forEach(testDependencyTagReplaceRegex);
@@ -867,56 +862,6 @@ environment:
         expect(packages['child2'], isNull);
       },
     );
-  });
-}
-
-void testDependencyVersionReplaceRegex(String version) {
-  test(version, () {
-    const dependencyName = 'foo';
-    const newVersion = '9.9.9';
-
-    final regExp = dependencyVersionReplaceRegex(dependencyName);
-
-    final input =
-        '''
-dependencies:
-  $dependencyName: $version
-''';
-    final output = input.replaceAllMapped(
-      regExp,
-      (match) => '${match.group(1)}$newVersion',
-    );
-
-    expect(output, '''
-dependencies:
-  $dependencyName: $newVersion
-''');
-  });
-}
-
-void testHostedDependencyVersionReplaceRegex(String version) {
-  test(version, () {
-    const dependencyName = 'foo';
-    const newVersion = '9.9.9';
-
-    final regExp = hostedDependencyVersionReplaceRegex(dependencyName);
-
-    final input =
-        '''
-dependencies:
-  $dependencyName:
-    version: $version
-''';
-    final output = input.replaceAllMapped(
-      regExp,
-      (match) => '${match.group(1)}$newVersion',
-    );
-
-    expect(output, '''
-dependencies:
-  $dependencyName:
-    version: $newVersion
-''');
   });
 }
 

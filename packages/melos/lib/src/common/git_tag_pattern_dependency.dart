@@ -15,12 +15,17 @@ class GitTagPatternDependency extends GitDependency {
     required this.name,
     required this.tagPattern,
     required this.version,
+    required this.section,
     required Uri url,
     String? path,
   }) : super(url, path: path);
   final String name;
   final String tagPattern;
   final Version version;
+
+  /// The top-level pubspec key (`dependencies`, `dev_dependencies`, or
+  /// `dependency_overrides`) this dependency was found under.
+  final String section;
 
   /// Searches for a git dependency with a tag_pattern in the pubspec string.
   ///
@@ -87,6 +92,7 @@ class GitTagPatternDependency extends GitDependency {
         path: path,
         tagPattern: tagPattern,
         version: version.min!,
+        section: section,
       );
     }
 

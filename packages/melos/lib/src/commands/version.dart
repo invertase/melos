@@ -615,41 +615,56 @@ mixin _VersionMixin on _RunMixin {
     final isGitDependency = dependency is GitDependency;
     final isGitTagDependency = dependency is GitTagPatternDependency;
 
-    var updatedContents = pubspecContent;
-    if (isExternalHostedDependency) {
-      updatedContents = pubspecContent.replaceAllMapped(
-        hostedDependencyVersionReplaceRegex(dependencyName),
-        (match) => '${match.group(1)}$dependencyVersion',
+    // The section (`dependencies` or `dev_dependencies`) that
+    // `package.pubspec` actually resolved [dependency] from. Git tag pattern
+    // dependencies track their own section separately, since they can also
+    // live under `dependency_overrides` (see [GitTagPatternDependency]).
+    final section = normalDependency != null
+        ? 'dependencies'
+        : 'dev_dependencies';
+
+    String? updatedContents;
+    if (isGitTagDependency) {
+      updatedContents = _rewriteDependencyVersionAtPath(
+        pubspecContent: pubspecContent,
+        path: [dependency.section, dependencyName, 'version'],
+        dependencyVersion: dependencyVersion,
+        // Git tag pattern dependencies preserve whether the *existing*
+        // constraint used caret syntax, rather than always following
+        // [dependencyVersion]'s own style.
+        preserveCaretStyle: true,
       );
-    } else if (isGitTagDependency) {
-      updatedContents = pubspecContent.replaceAllMapped(
-        gitTagPatternDependencyVersionReplaceRegex(dependencyName),
-        (match) {
-          final hasCaret = match.group(2) == '^';
-          final prefix = match.group(1)!;
-          final replacement =
-              '$prefix${hasCaret ? '^' : ''}'
-              '${dependencyVersion.toString().replaceFirst('^', '')}';
-          return replacement;
-        },
+    } else if (isExternalHostedDependency) {
+      updatedContents = _rewriteDependencyVersionAtPath(
+        pubspecContent: pubspecContent,
+        path: [section, dependencyName, 'version'],
+        dependencyVersion: dependencyVersion,
+        preserveCaretStyle: false,
       );
     } else if (isGitDependency &&
         workspace.config.commands.version.updateGitTagRefs) {
-      updatedContents = pubspecContent.replaceAllMapped(
+      // The version here is fused into a single git tag string (e.g.
+      // `foo-v1.2.3`) rather than being its own scalar node, so this isn't a
+      // good fit for a `YamlEditor`-based rewrite; it's also not affected by
+      // the quoted-range-constraint bug the other branches fix, since tag
+      // names never contain quotes or spaces.
+      final rewritten = pubspecContent.replaceAllMapped(
         dependencyTagReplaceRegex(dependencyName),
         (match) =>
             '${match.group(1)}$dependencyName-'
             'v${dependencyVersion.min ?? dependencyVersion.max!}',
       );
+      updatedContents = rewritten == pubspecContent ? null : rewritten;
     } else {
-      updatedContents = pubspecContent.replaceAllMapped(
-        dependencyVersionReplaceRegex(dependencyName),
-        (match) => '${match.group(1)}$dependencyVersion',
+      updatedContents = _rewriteDependencyVersionAtPath(
+        pubspecContent: pubspecContent,
+        path: [section, dependencyName],
+        dependencyVersion: dependencyVersion,
+        preserveCaretStyle: false,
       );
     }
 
-    // Sanity check that contents actually changed.
-    if (pubspecContent == updatedContents) {
+    if (updatedContents == null) {
       logger.warning(
         'Failed to update dependency $dependencyName version to '
         '$dependencyVersion for package ${package.name}, '
@@ -660,6 +675,40 @@ mixin _VersionMixin on _RunMixin {
     }
 
     await writeTextFileAsync(pubspecPath, updatedContents);
+  }
+
+  /// Returns [pubspecContent] rewritten so that the version constraint
+  /// scalar at [path] is set to [dependencyVersion], preserving everything
+  /// else in the file (formatting, comments, quoting style of unrelated
+  /// values) via [YamlEditor].
+  ///
+  /// Returns `null` if [path] doesn't already point to an existing string
+  /// scalar (e.g. an optional `version:` key that was never present) —
+  /// mirroring the previous regex-based rewrite's behavior of leaving such
+  /// pubspecs untouched rather than inserting a new key.
+  String? _rewriteDependencyVersionAtPath({
+    required String pubspecContent,
+    required List<Object> path,
+    required VersionRange dependencyVersion,
+    required bool preserveCaretStyle,
+  }) {
+    final editor = YamlEditor(pubspecContent);
+    final currentNode = editor.parseAt(
+      path,
+      orElse: () => wrapAsYamlNode(null),
+    );
+    if (currentNode.value is! String) {
+      return null;
+    }
+
+    var newValue = dependencyVersion.toString();
+    if (preserveCaretStyle) {
+      final hasCaret = (currentNode.value! as String).startsWith('^');
+      newValue = '${hasCaret ? '^' : ''}${newValue.replaceFirst('^', '')}';
+    }
+
+    editor.update(path, newValue);
+    return editor.toString();
   }
 
   void _logNewVersionTable(
