@@ -4,7 +4,7 @@ mixin _AnalyzeMixin on _Melos {
   Future<void> analyze({
     GlobalOptions? global,
     PackageFilters? packageFilters,
-    bool fatalInfos = false,
+    bool fatalInfos = true,
     bool? fatalWarnings,
     int concurrency = 1,
   }) async {
@@ -32,7 +32,7 @@ mixin _AnalyzeMixin on _Melos {
   }) async {
     final failures = <String, int?>{};
     final pool = Pool(concurrency);
-    final analyzeArgsString = _getAnalyzeArgs(
+    final dartAnalyzeArgsString = _getAnalyzeArgs(
       workspace: workspace,
       fatalInfos: fatalInfos,
       fatalWarnings: fatalWarnings,
@@ -48,14 +48,21 @@ mixin _AnalyzeMixin on _Melos {
 
     if (dartPackageCount > 0) {
       logger
-          .child(targetStyle(analyzeArgsString))
+          .child(targetStyle(dartAnalyzeArgsString))
           .child('$runningLabel (in $dartPackageCount packages)')
           .newLine();
     }
 
     if (flutterPackageCount > 0) {
+      final flutterAnalyzeArgsString = _getAnalyzeArgs(
+        workspace: workspace,
+        fatalInfos: fatalInfos,
+        fatalWarnings: fatalWarnings,
+        concurrency: concurrency,
+        isFlutter: true,
+      ).join(' ');
       logger
-          .child(targetStyle(analyzeArgsString.replaceFirst('dart', 'flutter')))
+          .child(targetStyle(flutterAnalyzeArgsString))
           .child('$runningLabel (in $flutterPackageCount packages)')
           .newLine();
     }
@@ -96,7 +103,7 @@ mixin _AnalyzeMixin on _Melos {
       ..newLine()
       ..command('melos analyze', withDollarSign: true);
 
-    final resultLogger = logger.child(targetStyle(analyzeArgsString));
+    final resultLogger = logger.child(targetStyle(dartAnalyzeArgsString));
 
     if (failures.isNotEmpty) {
       final failuresLogger = resultLogger.child(
@@ -120,19 +127,18 @@ mixin _AnalyzeMixin on _Melos {
     required bool fatalInfos,
     Package? package,
     bool? fatalWarnings,
-    // Note: The `concurrency` argument is intentionally set to a default value
-    // of 1 to prevent its direct use by the `startCommand` function. It is
-    // designed to be utilized only for logging purposes to indicate the level
-    // of concurrency being applied.
+    bool isFlutter = false,
     int concurrency = 1,
   }) {
+    final useFlutter = package?.isFlutterPackage ?? isFlutter;
     final options = _getAnalyzeOptionsArgs(
-      fatalInfos,
-      fatalWarnings,
-      concurrency,
+      fatalInfos: fatalInfos,
+      fatalWarnings: fatalWarnings,
+      concurrency: concurrency,
+      isFlutter: useFlutter,
     );
     return <String>[
-      if (package?.isFlutterPackage ?? false)
+      if (useFlutter)
         workspace.sdkTool('flutter')
       else
         workspace.sdkTool('dart'),
@@ -141,15 +147,18 @@ mixin _AnalyzeMixin on _Melos {
     ];
   }
 
-  String _getAnalyzeOptionsArgs(
-    bool fatalInfos,
-    bool? fatalWarnings,
-    int concurrency,
-  ) {
+  String _getAnalyzeOptionsArgs({
+    required bool fatalInfos,
+    required bool? fatalWarnings,
+    required int concurrency,
+    required bool isFlutter,
+  }) {
     final options = <String>[];
 
     if (fatalInfos) {
       options.add('--fatal-infos');
+    } else if (isFlutter) {
+      options.add('--no-fatal-infos');
     }
 
     if (fatalWarnings != null) {

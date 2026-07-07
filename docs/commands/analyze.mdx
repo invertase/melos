@@ -20,10 +20,19 @@ melos analyze
 
 ## --fatal-infos
 Enforces a strict analysis by treating info-level issues as critical errors.
-By default this option is disabled.
+By default this option is enabled for both `dart analyze` and `flutter analyze`,
+even though `dart analyze` does not treat info-level issues as fatal on its own.
 
 ```bash
 melos analyze --fatal-infos
+```
+
+## --no-fatal-infos
+Disables treating info-level issues as fatal errors, allowing the analysis
+process to complete successfully even if info-level issues are present.
+
+```bash
+melos analyze --no-fatal-infos
 ```
 
 ## --fatal-warnings
