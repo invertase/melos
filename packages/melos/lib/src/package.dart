@@ -72,11 +72,6 @@ enum PackageType {
 
 const _versionRegExp = r'''\d+\.\d+\.\d+[\w\-.+_]*''';
 
-// Used only for the git `ref:` tag rewrite (see [dependencyTagReplaceRegex]),
-// where the version is fused into a single tag string (e.g. `foo-v1.2.3`)
-// rather than being its own scalar node, so it isn't a candidate for a
-// `YamlEditor`-based rewrite the way the other dependency shapes are (see
-// `_setDependencyVersionForPackage` in `commands/version.dart`).
 RegExp dependencyTagReplaceRegex(String dependencyName) {
   return RegExp(
     '''(?<tag_ref>^\\s+ref\\s?:\\s?)(?<opening_quote>["']?)(?<tag>$dependencyName-v$_versionRegExp)(?<closing_quote>['"]?)''',

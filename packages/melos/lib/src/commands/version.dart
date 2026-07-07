@@ -671,9 +671,9 @@ mixin _VersionMixin on _RunMixin {
   /// values) via [YamlEditor].
   ///
   /// Returns `null` if [path] doesn't already point to an existing string
-  /// scalar (e.g. an optional `version:` key that was never present) —
-  /// mirroring the previous regex-based rewrite's behavior of leaving such
-  /// pubspecs untouched rather than inserting a new key.
+  /// scalar, for example an optional `version:` key that was never present.
+  /// This mirrors the previous rewrite behavior of leaving such pubspecs
+  /// untouched rather than inserting a new key.
   String? _rewriteDependencyVersionAtPath({
     required String pubspecContent,
     required List<Object> path,
