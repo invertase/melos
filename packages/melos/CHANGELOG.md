@@ -1,3 +1,9 @@
+## 8.2.0
+
+ - **FIX**(version): handle quoted range constraints in dependent rewrites ([#1041](https://github.com/invertase/melos/issues/1041)). ([feef7e61](https://github.com/invertase/melos/commit/feef7e61235574ab00bd85d342686a3daab3c89f))
+ - **FEAT**(analyze): default to --fatal-infos for dart and flutter ([#1043](https://github.com/invertase/melos/issues/1043)). ([adee9d5e](https://github.com/invertase/melos/commit/adee9d5e382035921f6dd23b4634eaffb32402cb))
+ - **DOCS**(version): fix comment style in dependency rewrite ([#1044](https://github.com/invertase/melos/issues/1044)). ([334ffd62](https://github.com/invertase/melos/commit/334ffd627cd1dcee210c65eb276ea5da656ebfa4))
+
 ## 8.1.0
 
  - **FIX**(analyze): restore melos analyze command ([#1037](https://github.com/invertase/melos/issues/1037)). ([541fbd99](https://github.com/invertase/melos/commit/541fbd99d281070509685e0b694d3f269700a837))
