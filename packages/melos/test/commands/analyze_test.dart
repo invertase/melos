@@ -74,7 +74,7 @@ linter:
       ''',
       );
 
-      await melos.analyze(fatalInfos: true);
+      await melos.analyze();
 
       expect(
         logger.output,
@@ -237,7 +237,7 @@ ${'-' * terminalWidth}
       ''',
         );
 
-        await melos.analyze(fatalInfos: true, fatalWarnings: true);
+        await melos.analyze(fatalWarnings: true);
 
         expect(
           logger.output,
@@ -502,7 +502,7 @@ ${'-' * terminalWidth}
       ''',
         );
 
-        await melos.analyze(concurrency: 2, fatalInfos: true);
+        await melos.analyze(concurrency: 2);
 
         expect(
           logger.output,
