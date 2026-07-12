@@ -1,3 +1,8 @@
+## 8.2.1
+
+ - **FIX**(scripts): expand `env` variables regardless of the platform shell ([#1050](https://github.com/invertase/melos/issues/1050)). ([8188958d](https://github.com/invertase/melos/commit/8188958d46cf5b245badb865103908b39f2be43e))
+ - **FIX**(deps): require cli_launcher ^0.3.3+2 for Flutter workspace relaunch fix ([#1047](https://github.com/invertase/melos/issues/1047)). ([396e32dc](https://github.com/invertase/melos/commit/396e32dca009d913153d4a92af64d690c88b4509))
+
 ## 8.2.0
 
  - **FIX**(version): handle quoted range constraints in dependent rewrites ([#1041](https://github.com/invertase/melos/issues/1041)). ([feef7e61](https://github.com/invertase/melos/commit/feef7e61235574ab00bd85d342686a3daab3c89f))

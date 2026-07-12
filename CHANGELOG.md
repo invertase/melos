@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-07-12
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v8.2.1`](#melos---v821)
+
+---
+
+#### `melos` - `v8.2.1`
+
+ - **FIX**(scripts): expand `env` variables regardless of the platform shell ([#1050](https://github.com/invertase/melos/issues/1050)). ([8188958d](https://github.com/invertase/melos/commit/8188958d46cf5b245badb865103908b39f2be43e))
+ - **FIX**(deps): require cli_launcher ^0.3.3+2 for Flutter workspace relaunch fix ([#1047](https://github.com/invertase/melos/issues/1047)). ([396e32dc](https://github.com/invertase/melos/commit/396e32dca009d913153d4a92af64d690c88b4509))
+
+
 ## 2026-07-07
 
 ### Changes
