@@ -591,17 +591,45 @@ String Function(String) _scriptArgumentFormatter(
           : argument.replaceAll('^', r'\');
     }
 
-    // Inject MELOS_* variables if any.
-    var result = argument;
-    environment.forEach((key, value) {
-      if (key.startsWith('MELOS_')) {
-        result = result.replaceAll('\$$key', value);
-        result = result.replaceAll(key, value);
-      }
-    });
-
-    return result;
+    return rewriteEnvironmentVariableReferences(
+      argument,
+      environment: environment,
+    );
   };
+}
+
+/// Rewrites references to variables that Melos knows about (the script's `env:`
+/// block and the injected `MELOS_*` variables) into the reference syntax the
+/// platform shell understands, so that the shell itself performs the expansion.
+///
+/// Melos injects these values into the child process environment and leaves the
+/// actual expansion to the shell, which keeps quoting, escaping and word
+/// splitting behaving the way the shell normally would. POSIX shells (`sh`)
+/// already understand `$FOO` and `${FOO}`, so on those platforms [input] is
+/// returned unchanged. `cmd.exe` on Windows only understands `%FOO%`, so the
+/// POSIX reference syntaxes are translated to it for the variables Melos knows
+/// about. `%FOO%` is left untouched everywhere; it only resolves on Windows.
+///
+/// Only whole-identifier references are rewritten, so `$FOOBAR` is never
+/// rewritten using the name `FOO`.
+String rewriteEnvironmentVariableReferences(
+  String input, {
+  required Map<String, String> environment,
+}) {
+  // POSIX shells expand `$FOO` and `${FOO}` natively; nothing to rewrite.
+  if (!currentPlatform.isWindows) {
+    return input;
+  }
+
+  var result = input;
+  for (final key in environment.keys) {
+    // `${FOO}`, then `$FOO` (but not `$FOOBAR` when only `FOO` is known).
+    result = result
+        .replaceAll('\${$key}', '%$key%')
+        .replaceAllMapped(RegExp('\\\$$key(?![A-Za-z0-9_])'), (_) => '%$key%');
+  }
+
+  return result;
 }
 
 bool isPubSubcommand({required MelosWorkspace workspace}) {

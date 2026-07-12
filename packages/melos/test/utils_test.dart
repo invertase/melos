@@ -4,10 +4,12 @@ import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:melos/src/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:platform/platform.dart' show FakePlatform;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 
 import 'matchers.dart';
+import 'mock_env.dart';
 import 'utils.dart';
 
 void main() {
@@ -101,6 +103,108 @@ void main() {
       expect(
         logger.output.normalizeLines(),
         ignoringAnsii('$testDir\n'),
+      );
+    });
+  });
+
+  group('rewriteEnvironmentVariableReferences', () {
+    const environment = {'FOO': 'bar', 'FOOBAR': 'baz'};
+
+    group('on POSIX', () {
+      test(
+        'leaves references untouched so the shell expands them natively',
+        withMockPlatform(
+          () async {
+            expect(
+              rewriteEnvironmentVariableReferences(
+                r'echo $FOO ${FOO} %FOO%',
+                environment: environment,
+              ),
+              r'echo $FOO ${FOO} %FOO%',
+            );
+          },
+          platform: FakePlatform(operatingSystem: 'linux'),
+        ),
+      );
+    });
+
+    group('on Windows', () {
+      test(
+        'translates POSIX reference syntaxes to cmd.exe syntax',
+        withMockPlatform(
+          () async {
+            expect(
+              rewriteEnvironmentVariableReferences(
+                r'echo $FOO',
+                environment: environment,
+              ),
+              'echo %FOO%',
+            );
+            expect(
+              rewriteEnvironmentVariableReferences(
+                r'echo ${FOO}',
+                environment: environment,
+              ),
+              'echo %FOO%',
+            );
+          },
+          platform: FakePlatform(operatingSystem: 'windows'),
+        ),
+      );
+
+      test(
+        'leaves native cmd.exe references untouched',
+        withMockPlatform(
+          () async {
+            expect(
+              rewriteEnvironmentVariableReferences(
+                'echo %FOO%',
+                environment: environment,
+              ),
+              'echo %FOO%',
+            );
+          },
+          platform: FakePlatform(operatingSystem: 'windows'),
+        ),
+      );
+
+      test(
+        'only rewrites whole-identifier references',
+        withMockPlatform(
+          () async {
+            expect(
+              rewriteEnvironmentVariableReferences(
+                r'echo $FOOBAR',
+                environment: environment,
+              ),
+              'echo %FOOBAR%',
+            );
+            expect(
+              rewriteEnvironmentVariableReferences(
+                r'echo $FOO_BAR',
+                environment: environment,
+              ),
+              r'echo $FOO_BAR',
+            );
+          },
+          platform: FakePlatform(operatingSystem: 'windows'),
+        ),
+      );
+
+      test(
+        'leaves unknown variables untouched',
+        withMockPlatform(
+          () async {
+            expect(
+              rewriteEnvironmentVariableReferences(
+                r'echo $BAR',
+                environment: const {},
+              ),
+              r'echo $BAR',
+            );
+          },
+          platform: FakePlatform(operatingSystem: 'windows'),
+        ),
       );
     });
   });

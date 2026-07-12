@@ -29,13 +29,27 @@ scripts:
   hello:
     name: hey
     description: Greet the world
-    run: echo '$GREETING World'
+    run: echo "$GREETING World"
     env:
       GREETING: 'Hey'
 ```
 
 Scripts are executed in a shell. On Windows the shell is `cmd.exe` and on all
 other platforms it is `sh`.
+
+Variables defined in a script's `env` block (as well as the injected `MELOS_*`
+variables) are expanded by the shell itself. To make scripts portable, Melos
+rewrites references into the syntax the platform shell understands: `sh` already
+expands `$GREETING` and `${GREETING}`, and on Windows those are translated to
+`%GREETING%` for `cmd.exe`. Use `$GREETING` or `${GREETING}` for cross-platform
+scripts; the `%GREETING%` form only resolves on Windows.
+
+Because the shell performs the expansion, normal shell quoting rules apply. On
+`sh`, single quotes prevent expansion (`echo '$GREETING'` prints `$GREETING`
+literally) while double quotes allow it, and values are treated as data rather
+than being re-parsed, so an `env` value containing characters such as `&` or
+`|` does not alter the command. `cmd.exe` does not provide the same quoting
+guarantees.
 
 If multiple commands are being executed in a script and no further commands
 should be executed after a command has failed, connect the commands with `&&`:
