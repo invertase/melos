@@ -50,7 +50,11 @@ class PersistentShell {
     assert(_commandCompleter == null, 'A command is already in progress.');
     _commandCompleter = Completer<int>();
 
-    final fullCommand = _buildFullCommand(command);
+    final resolvedCommand = resolveEnvironmentVariableReferences(
+      command,
+      environment: environment,
+    );
+    final fullCommand = _buildFullCommand(resolvedCommand);
     _process.stdin.writeln(fullCommand);
 
     return _awaitCommandCompletion();

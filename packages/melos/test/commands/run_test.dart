@@ -205,6 +205,94 @@ foo bar baz
       );
     });
 
+    test('expands `env` variables regardless of the platform shell', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: const Scripts({
+            'hello': Script(
+              name: 'hello',
+              run: r'echo $FOO',
+              env: {'FOO': 'bar'},
+            ),
+          }),
+        ),
+        workspacePackages: [],
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      await melos.run(scriptName: 'hello', noSelect: true);
+
+      expect(
+        logger.output.normalizeLines(),
+        ignoringDependencyMessages(
+          r'''
+melos run hello
+  └> echo $FOO
+     └> RUNNING
+
+bar
+''',
+        ),
+      );
+    });
+
+    test('keeps shell quoting semantics for `env` values (POSIX)', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: const Scripts({
+            // Single quotes suppress expansion (escape hatch) and a value
+            // containing shell metacharacters is treated as literal data
+            // rather than being re-parsed by the shell.
+            'literal': Script(
+              name: 'literal',
+              run: r"echo '$FOO' && echo $FOO",
+              env: {'FOO': 'a && echo pwned'},
+            ),
+          }),
+        ),
+        workspacePackages: [],
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      await melos.run(scriptName: 'literal', noSelect: true);
+
+      expect(
+        logger.output.normalizeLines(),
+        ignoringDependencyMessages(
+          r'''
+melos run literal
+  └> echo '$FOO' && echo $FOO
+     └> RUNNING
+
+$FOO
+a && echo pwned
+''',
+        ),
+      );
+    }, testOn: '!windows');
+
     test('supports passing additional arguments to scripts (exec)', () async {
       final workspaceDir = await createTemporaryWorkspace(
         configBuilder: (path) => MelosWorkspaceConfig(
@@ -482,6 +570,43 @@ it should list the contents including the package named "this_is_package_a".
       },
       timeout: const Timeout(Duration(minutes: 1)),
     );
+
+    test('expands `env` variables in steps regardless of the platform '
+        'shell', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: const Scripts({
+            'env_script': Script(
+              name: 'env_script',
+              env: {'FOO': 'bar'},
+              steps: [r'echo $FOO'],
+            ),
+          }),
+        ),
+        workspacePackages: [],
+      );
+
+      await runPubGet(workspaceDir.path);
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+
+      await melos.run(scriptName: 'env_script', noSelect: true);
+
+      expect(
+        logger.output.normalizeLines(),
+        contains('bar'),
+      );
+    });
 
     test('verifies that a melos script can successfully call another '
         'script as a step and execute commands', () async {

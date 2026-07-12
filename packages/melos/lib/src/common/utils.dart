@@ -591,17 +591,49 @@ String Function(String) _scriptArgumentFormatter(
           : argument.replaceAll('^', r'\');
     }
 
-    // Inject MELOS_* variables if any.
-    var result = argument;
-    environment.forEach((key, value) {
-      if (key.startsWith('MELOS_')) {
-        result = result.replaceAll('\$$key', value);
-        result = result.replaceAll(key, value);
-      }
-    });
-
-    return result;
+    return resolveEnvironmentVariableReferences(
+      argument,
+      environment: environment,
+    );
   };
+}
+
+/// Resolves references to variables that Melos knows about (the script's `env:`
+/// block and the injected `MELOS_*` variables) so that scripts work regardless
+/// of the platform shell.
+///
+/// Melos injects these values into the child process environment. POSIX shells
+/// (`sh`) expand `$FOO` and `${FOO}` themselves, which keeps quoting and
+/// escaping behaving the way the shell normally would (single quotes suppress
+/// expansion, values are treated as data rather than being re-parsed), so on
+/// those platforms [input] is returned unchanged and the shell does the work.
+///
+/// On Windows the command is handed to `cmd.exe` through an intermediate
+/// environment variable, which cmd only expands once, so an inner `%FOO%`
+/// reference is never expanded. The value is therefore substituted directly for
+/// the `$FOO`, `${FOO}` and `%FOO%` reference syntaxes. Only whole-identifier
+/// references are substituted, so `$FOOBAR` is never substituted using `FOO`.
+String resolveEnvironmentVariableReferences(
+  String input, {
+  required Map<String, String> environment,
+}) {
+  // POSIX shells expand `$FOO` and `${FOO}` themselves, preserving the usual
+  // quoting and escaping semantics.
+  if (!currentPlatform.isWindows) {
+    return input;
+  }
+
+  var result = input;
+  environment.forEach((key, value) {
+    // `${FOO}` and `%FOO%`, then `$FOO` (but not `$FOOBAR` when only `FOO` is
+    // known).
+    result = result
+        .replaceAll('\${$key}', value)
+        .replaceAll('%$key%', value)
+        .replaceAllMapped(RegExp('\\\$$key(?![A-Za-z0-9_])'), (_) => value);
+  });
+
+  return result;
 }
 
 bool isPubSubcommand({required MelosWorkspace workspace}) {

@@ -4,10 +4,12 @@ import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:melos/src/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:platform/platform.dart' show FakePlatform;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 
 import 'matchers.dart';
+import 'mock_env.dart';
 import 'utils.dart';
 
 void main() {
@@ -101,6 +103,99 @@ void main() {
       expect(
         logger.output.normalizeLines(),
         ignoringAnsii('$testDir\n'),
+      );
+    });
+  });
+
+  group('resolveEnvironmentVariableReferences', () {
+    const environment = {'FOO': 'bar', 'FOOBAR': 'baz'};
+
+    group('on POSIX', () {
+      test(
+        'leaves references untouched so the shell expands them natively',
+        withMockPlatform(
+          () async {
+            expect(
+              resolveEnvironmentVariableReferences(
+                r'echo $FOO ${FOO} %FOO%',
+                environment: environment,
+              ),
+              r'echo $FOO ${FOO} %FOO%',
+            );
+          },
+          platform: FakePlatform(operatingSystem: 'linux'),
+        ),
+      );
+    });
+
+    group('on Windows', () {
+      test(
+        'substitutes each reference syntax with its value',
+        withMockPlatform(
+          () async {
+            expect(
+              resolveEnvironmentVariableReferences(
+                r'echo $FOO',
+                environment: environment,
+              ),
+              'echo bar',
+            );
+            expect(
+              resolveEnvironmentVariableReferences(
+                r'echo ${FOO}',
+                environment: environment,
+              ),
+              'echo bar',
+            );
+            expect(
+              resolveEnvironmentVariableReferences(
+                'echo %FOO%',
+                environment: environment,
+              ),
+              'echo bar',
+            );
+          },
+          platform: FakePlatform(operatingSystem: 'windows'),
+        ),
+      );
+
+      test(
+        'only substitutes whole-identifier references',
+        withMockPlatform(
+          () async {
+            expect(
+              resolveEnvironmentVariableReferences(
+                r'echo $FOOBAR',
+                environment: environment,
+              ),
+              'echo baz',
+            );
+            expect(
+              resolveEnvironmentVariableReferences(
+                r'echo $FOO_BAR',
+                environment: environment,
+              ),
+              r'echo $FOO_BAR',
+            );
+          },
+          platform: FakePlatform(operatingSystem: 'windows'),
+        ),
+      );
+
+      test(
+        'leaves unknown variables untouched',
+        withMockPlatform(
+          () async {
+            expect(
+              resolveEnvironmentVariableReferences(
+                r'echo $BAR',
+                environment: const {},
+              ),
+              r'echo $BAR',
+            );
+          },
+          platform: FakePlatform(operatingSystem: 'windows'),
+        ),
       );
     });
   });
