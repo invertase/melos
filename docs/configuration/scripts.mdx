@@ -38,18 +38,20 @@ Scripts are executed in a shell. On Windows the shell is `cmd.exe` and on all
 other platforms it is `sh`.
 
 Variables defined in a script's `env` block (as well as the injected `MELOS_*`
-variables) are expanded by the shell itself. To make scripts portable, Melos
-rewrites references into the syntax the platform shell understands: `sh` already
-expands `$GREETING` and `${GREETING}`, and on Windows those are translated to
-`%GREETING%` for `cmd.exe`. Use `$GREETING` or `${GREETING}` for cross-platform
-scripts; the `%GREETING%` form only resolves on Windows.
+variables) can be referenced with `$GREETING`, `${GREETING}` or `%GREETING%`.
+Use `$GREETING` or `${GREETING}` for cross-platform scripts.
 
-Because the shell performs the expansion, normal shell quoting rules apply. On
-`sh`, single quotes prevent expansion (`echo '$GREETING'` prints `$GREETING`
-literally) while double quotes allow it, and values are treated as data rather
-than being re-parsed, so an `env` value containing characters such as `&` or
-`|` does not alter the command. `cmd.exe` does not provide the same quoting
-guarantees.
+On `sh` (macOS, Linux) the shell expands `$GREETING` and `${GREETING}` itself,
+so normal shell quoting rules apply: single quotes prevent expansion
+(`echo '$GREETING'` prints `$GREETING` literally) while double quotes allow it,
+and values are treated as data rather than being re-parsed, so an `env` value
+containing characters such as `&` or `|` does not alter the command.
+
+On Windows the command is handed to `cmd.exe` through an intermediate
+environment variable, which cmd only expands once, so Melos substitutes the
+value directly for the reference. This means the expansion happens regardless of
+quoting, and `cmd.exe`'s usual caveats around special characters in values
+apply.
 
 If multiple commands are being executed in a script and no further commands
 should be executed after a command has failed, connect the commands with `&&`:

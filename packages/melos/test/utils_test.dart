@@ -107,7 +107,7 @@ void main() {
     });
   });
 
-  group('rewriteEnvironmentVariableReferences', () {
+  group('resolveEnvironmentVariableReferences', () {
     const environment = {'FOO': 'bar', 'FOOBAR': 'baz'};
 
     group('on POSIX', () {
@@ -116,7 +116,7 @@ void main() {
         withMockPlatform(
           () async {
             expect(
-              rewriteEnvironmentVariableReferences(
+              resolveEnvironmentVariableReferences(
                 r'echo $FOO ${FOO} %FOO%',
                 environment: environment,
               ),
@@ -130,38 +130,29 @@ void main() {
 
     group('on Windows', () {
       test(
-        'translates POSIX reference syntaxes to cmd.exe syntax',
+        'substitutes each reference syntax with its value',
         withMockPlatform(
           () async {
             expect(
-              rewriteEnvironmentVariableReferences(
+              resolveEnvironmentVariableReferences(
                 r'echo $FOO',
                 environment: environment,
               ),
-              'echo %FOO%',
+              'echo bar',
             );
             expect(
-              rewriteEnvironmentVariableReferences(
+              resolveEnvironmentVariableReferences(
                 r'echo ${FOO}',
                 environment: environment,
               ),
-              'echo %FOO%',
+              'echo bar',
             );
-          },
-          platform: FakePlatform(operatingSystem: 'windows'),
-        ),
-      );
-
-      test(
-        'leaves native cmd.exe references untouched',
-        withMockPlatform(
-          () async {
             expect(
-              rewriteEnvironmentVariableReferences(
+              resolveEnvironmentVariableReferences(
                 'echo %FOO%',
                 environment: environment,
               ),
-              'echo %FOO%',
+              'echo bar',
             );
           },
           platform: FakePlatform(operatingSystem: 'windows'),
@@ -169,18 +160,18 @@ void main() {
       );
 
       test(
-        'only rewrites whole-identifier references',
+        'only substitutes whole-identifier references',
         withMockPlatform(
           () async {
             expect(
-              rewriteEnvironmentVariableReferences(
+              resolveEnvironmentVariableReferences(
                 r'echo $FOOBAR',
                 environment: environment,
               ),
-              'echo %FOOBAR%',
+              'echo baz',
             );
             expect(
-              rewriteEnvironmentVariableReferences(
+              resolveEnvironmentVariableReferences(
                 r'echo $FOO_BAR',
                 environment: environment,
               ),
@@ -196,7 +187,7 @@ void main() {
         withMockPlatform(
           () async {
             expect(
-              rewriteEnvironmentVariableReferences(
+              resolveEnvironmentVariableReferences(
                 r'echo $BAR',
                 environment: const {},
               ),

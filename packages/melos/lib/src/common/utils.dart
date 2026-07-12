@@ -591,43 +591,47 @@ String Function(String) _scriptArgumentFormatter(
           : argument.replaceAll('^', r'\');
     }
 
-    return rewriteEnvironmentVariableReferences(
+    return resolveEnvironmentVariableReferences(
       argument,
       environment: environment,
     );
   };
 }
 
-/// Rewrites references to variables that Melos knows about (the script's `env:`
-/// block and the injected `MELOS_*` variables) into the reference syntax the
-/// platform shell understands, so that the shell itself performs the expansion.
+/// Resolves references to variables that Melos knows about (the script's `env:`
+/// block and the injected `MELOS_*` variables) so that scripts work regardless
+/// of the platform shell.
 ///
-/// Melos injects these values into the child process environment and leaves the
-/// actual expansion to the shell, which keeps quoting, escaping and word
-/// splitting behaving the way the shell normally would. POSIX shells (`sh`)
-/// already understand `$FOO` and `${FOO}`, so on those platforms [input] is
-/// returned unchanged. `cmd.exe` on Windows only understands `%FOO%`, so the
-/// POSIX reference syntaxes are translated to it for the variables Melos knows
-/// about. `%FOO%` is left untouched everywhere; it only resolves on Windows.
+/// Melos injects these values into the child process environment. POSIX shells
+/// (`sh`) expand `$FOO` and `${FOO}` themselves, which keeps quoting and
+/// escaping behaving the way the shell normally would (single quotes suppress
+/// expansion, values are treated as data rather than being re-parsed), so on
+/// those platforms [input] is returned unchanged and the shell does the work.
 ///
-/// Only whole-identifier references are rewritten, so `$FOOBAR` is never
-/// rewritten using the name `FOO`.
-String rewriteEnvironmentVariableReferences(
+/// On Windows the command is handed to `cmd.exe` through an intermediate
+/// environment variable, which cmd only expands once, so an inner `%FOO%`
+/// reference is never expanded. The value is therefore substituted directly for
+/// the `$FOO`, `${FOO}` and `%FOO%` reference syntaxes. Only whole-identifier
+/// references are substituted, so `$FOOBAR` is never substituted using `FOO`.
+String resolveEnvironmentVariableReferences(
   String input, {
   required Map<String, String> environment,
 }) {
-  // POSIX shells expand `$FOO` and `${FOO}` natively; nothing to rewrite.
+  // POSIX shells expand `$FOO` and `${FOO}` themselves, preserving the usual
+  // quoting and escaping semantics.
   if (!currentPlatform.isWindows) {
     return input;
   }
 
   var result = input;
-  for (final key in environment.keys) {
-    // `${FOO}`, then `$FOO` (but not `$FOOBAR` when only `FOO` is known).
+  environment.forEach((key, value) {
+    // `${FOO}` and `%FOO%`, then `$FOO` (but not `$FOOBAR` when only `FOO` is
+    // known).
     result = result
-        .replaceAll('\${$key}', '%$key%')
-        .replaceAllMapped(RegExp('\\\$$key(?![A-Za-z0-9_])'), (_) => '%$key%');
-  }
+        .replaceAll('\${$key}', value)
+        .replaceAll('%$key%', value)
+        .replaceAllMapped(RegExp('\\\$$key(?![A-Za-z0-9_])'), (_) => value);
+  });
 
   return result;
 }
