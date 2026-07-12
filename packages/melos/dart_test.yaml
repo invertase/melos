@@ -1,0 +1,10 @@
+# Many of Melos' tests are integration tests that shell out to real tools
+# (pub, dart/flutter analyze, git) and create temporary workspaces. On cold
+# Windows CI runners this is noticeably slower than the default 30s per-test
+# timeout allows, which caused flaky timeouts (and the temporary-directory
+# cleanup failures they trigger when a subprocess is still holding the
+# workspace). Give tests more headroom on Windows while keeping the tight
+# default elsewhere so genuine hangs are still caught quickly.
+on_os:
+  windows:
+    timeout: 4x
