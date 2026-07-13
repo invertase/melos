@@ -155,7 +155,10 @@ void main() {
               'echo bar',
             );
           },
-          platform: FakePlatform(operatingSystem: 'windows'),
+          platform: FakePlatform(
+            operatingSystem: 'windows',
+            environment: const {},
+          ),
         ),
       );
 
@@ -178,7 +181,10 @@ void main() {
               r'echo $FOO_BAR',
             );
           },
-          platform: FakePlatform(operatingSystem: 'windows'),
+          platform: FakePlatform(
+            operatingSystem: 'windows',
+            environment: const {},
+          ),
         ),
       );
 
@@ -194,7 +200,48 @@ void main() {
               r'echo $BAR',
             );
           },
-          platform: FakePlatform(operatingSystem: 'windows'),
+          platform: FakePlatform(
+            operatingSystem: 'windows',
+            environment: const {},
+          ),
+        ),
+      );
+
+      test(
+        'substitutes variables inherited from the parent process environment',
+        withMockPlatform(
+          () async {
+            expect(
+              resolveEnvironmentVariableReferences(
+                r'echo $INHERITED',
+                environment: const {},
+              ),
+              'echo qux',
+            );
+          },
+          platform: FakePlatform(
+            operatingSystem: 'windows',
+            environment: const {'INHERITED': 'qux'},
+          ),
+        ),
+      );
+
+      test(
+        'prefers the script environment over an inherited value',
+        withMockPlatform(
+          () async {
+            expect(
+              resolveEnvironmentVariableReferences(
+                r'echo $FOO',
+                environment: environment,
+              ),
+              'echo bar',
+            );
+          },
+          platform: FakePlatform(
+            operatingSystem: 'windows',
+            environment: const {'FOO': 'inherited'},
+          ),
         ),
       );
     });
