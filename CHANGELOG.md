@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-07-13
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v8.2.2`](#melos---v822)
+
+---
+
+#### `melos` - `v8.2.2`
+
+ - **FIX**(scripts): expand env variables inherited from a parent melos process on Windows ([#1054](https://github.com/invertase/melos/issues/1054)). ([705819d0](https://github.com/invertase/melos/commit/705819d0b66029544e81fac0dd9020ffba97b208))
+
+
 ## 2026-07-12
 
 ### Changes
