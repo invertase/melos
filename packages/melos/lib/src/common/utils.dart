@@ -613,6 +613,12 @@ String Function(String) _scriptArgumentFormatter(
 /// reference is never expanded. The value is therefore substituted directly for
 /// the `$FOO`, `${FOO}` and `%FOO%` reference syntaxes. Only whole-identifier
 /// references are substituted, so `$FOOBAR` is never substituted using `FOO`.
+///
+/// Variables inherited from the parent process environment are resolved too, so
+/// that a value defined by an outer script's `env:` block (and thus present in
+/// the environment of a nested `melos run`) is expanded even when the nested
+/// script does not redeclare it. The script's own [environment] takes
+/// precedence over inherited values of the same name.
 String resolveEnvironmentVariableReferences(
   String input, {
   required Map<String, String> environment,
@@ -624,7 +630,11 @@ String resolveEnvironmentVariableReferences(
   }
 
   var result = input;
-  environment.forEach((key, value) {
+  final resolvedEnvironment = {
+    ...currentPlatform.environment,
+    ...environment,
+  };
+  resolvedEnvironment.forEach((key, value) {
     // `${FOO}` and `%FOO%`, then `$FOO` (but not `$FOOBAR` when only `FOO` is
     // known).
     result = result
