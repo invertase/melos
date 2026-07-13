@@ -1,3 +1,7 @@
+## 8.2.2
+
+ - **FIX**(scripts): expand env variables inherited from a parent melos process on Windows ([#1054](https://github.com/invertase/melos/issues/1054)). ([705819d0](https://github.com/invertase/melos/commit/705819d0b66029544e81fac0dd9020ffba97b208))
+
 ## 8.2.1
 
  - **FIX**(scripts): expand `env` variables regardless of the platform shell ([#1050](https://github.com/invertase/melos/issues/1050)). ([8188958d](https://github.com/invertase/melos/commit/8188958d46cf5b245badb865103908b39f2be43e))
