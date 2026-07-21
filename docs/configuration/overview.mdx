@@ -577,7 +577,9 @@ melos:
 
 When manually versioning with `melos version <package> <version>` while
 lockstep is enabled, the specified version is applied to all packages in the
-workspace, and specifying conflicting versions for multiple packages is an
+workspace. Relative version changes (`major`, `minor`, `patch` or `build`) are
+applied to the highest current version in the workspace, regardless of which
+package was named. Specifying conflicting versions for multiple packages is an
 error.
 
 See the [version command documentation](/commands/version#lockstep-versioning)

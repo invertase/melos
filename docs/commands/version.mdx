@@ -44,11 +44,15 @@ With lockstep enabled, `melos version`:
   bumped to keep the workspace in lockstep, while packages with changes get
   their regular changelog entries.
 - Applies a manually specified version (`melos version <package> <version>`)
-  to all packages in the workspace.
+  to all packages in the workspace. Relative version changes (`major`,
+  `minor`, `patch` or `build`) are applied to the highest current version in
+  the workspace, regardless of which package was named.
+- Leaves packages that are already at the new lockstep version untouched.
 
 Private packages are still skipped unless `--all` is passed, and packages
 excluded with filters (e.g. `--ignore`) are not bumped, so use filters with
-care if you want the workspace to stay in sync.
+care if you want the workspace to stay in sync. Since all packages are
+versioned together, `--no-dependent-versions` has no effect in lockstep mode.
 
 If there are no versionable changes in any package, `melos version` does
 nothing, just like in independent mode.
