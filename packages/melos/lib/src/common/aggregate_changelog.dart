@@ -48,6 +48,9 @@ ${description?.withoutTrailing('\n') ?? ''}
     final dependencyOnlyPackages = pendingPackageUpdates.where(
       (update) => update.reason == PackageUpdateReason.dependency,
     );
+    final lockstepOnlyPackages = pendingPackageUpdates.where(
+      (update) => update.reason == PackageUpdateReason.lockstep,
+    );
     // Only packages graduated without any new commits since the last
     // pre-release are listed in the dedicated graduation section. Graduated
     // packages with new commits are treated like regular changes so their
@@ -61,11 +64,15 @@ ${description?.withoutTrailing('\n') ?? ''}
         .toSet();
     final packagesWithBreakingChanges = pendingPackageUpdates.where(
       (update) =>
-          !graduatedPackages.contains(update) && update.hasBreakingChanges,
+          !graduatedPackages.contains(update) &&
+          update.reason != PackageUpdateReason.lockstep &&
+          update.hasBreakingChanges,
     );
     final packagesWithOtherChanges = pendingPackageUpdates.where(
       (update) =>
-          !graduatedPackages.contains(update) && !update.hasBreakingChanges,
+          !graduatedPackages.contains(update) &&
+          update.reason != PackageUpdateReason.lockstep &&
+          !update.hasBreakingChanges,
     );
 
     body.writeln(_changelogFileHeader);
@@ -127,6 +134,20 @@ ${description?.withoutTrailing('\n') ?? ''}
       );
       body.writeln();
       for (final update in dependencyOnlyPackages) {
+        body.writeln(' - ${_packageVersionTitle(update)}');
+      }
+    }
+    if (lockstepOnlyPackages.isNotEmpty) {
+      body.writeln();
+      body.writeln('Packages versioned in lockstep only:');
+      body.writeln();
+      body.writeln(
+        '> Packages listed below have no changes of their own. Their versions '
+        'have been bumped to keep all packages in this workspace in '
+        'lockstep.',
+      );
+      body.writeln();
+      for (final update in lockstepOnlyPackages) {
         body.writeln(' - ${_packageVersionTitle(update)}');
       }
     }

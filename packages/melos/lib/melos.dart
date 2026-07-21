@@ -4,6 +4,7 @@ export 'src/commands/runner.dart'
     show
         BootstrapException,
         ListOutputKind,
+        LockstepVersionException,
         Melos,
         NoPackageFoundScriptException,
         NoScriptException,

@@ -1092,7 +1092,385 @@ dev_dependencies:
         },
       );
     });
+
+    group('lockstep', () {
+      Future<void> runGit(Directory workspaceDir, List<String> args) async {
+        final result = await Process.run(
+          'git',
+          [
+            '-c',
+            'user.name=Melos Test',
+            '-c',
+            'user.email=test@melos.invertase.dev',
+            ...args,
+          ],
+          workingDirectory: workspaceDir.path,
+        );
+        if (result.exitCode != 0) {
+          throw Exception(
+            'git ${args.join(' ')} failed:\n${result.stdout}\n${result.stderr}',
+          );
+        }
+      }
+
+      Future<void> commitPackageChange(
+        Directory workspaceDir,
+        String packageName,
+        String message,
+      ) async {
+        File(
+          p.join(workspaceDir.path, 'packages', packageName, 'change.txt'),
+        ).writeAsStringSync(message);
+        await runGit(workspaceDir, ['add', '.']);
+        await runGit(workspaceDir, ['commit', '-m', message]);
+      }
+
+      Version pubspecVersion(Directory workspaceDir, String packageName) {
+        return Pubspec.parse(
+          File(
+            p.join(workspaceDir.path, 'packages', packageName, 'pubspec.yaml'),
+          ).readAsStringSync(),
+        ).version!;
+      }
+
+      String packageChangelog(Directory workspaceDir, String packageName) {
+        return File(
+          p.join(workspaceDir.path, 'packages', packageName, 'CHANGELOG.md'),
+        ).readAsStringSync();
+      }
+
+      test(
+        'bumps all packages to the same version based on the most '
+        'significant change',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _lockstepWorkspaceConfigBuilder,
+            workspacePackages: ['a', 'b', 'c'],
+            useLocalTmpDirectory: true,
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec('b', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'c',
+              version: Version(1, 0, 0),
+              dependencies: {
+                'a': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+          await runGit(workspaceDir, ['init']);
+          await runGit(workspaceDir, ['add', '.']);
+          await runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+          await commitPackageChange(workspaceDir, 'a', 'fix: a bug fix');
+          await commitPackageChange(workspaceDir, 'b', 'feat: a new feature');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          // The feature in "b" causes a minor bump for the whole workspace.
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 1, 0));
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 1, 0));
+          expect(pubspecVersion(workspaceDir, 'c'), Version(1, 1, 0));
+
+          // The dependency constraint of "c" on "a" is updated to the
+          // lockstep version.
+          final pubspecC = Pubspec.parse(
+            File(
+              p.join(workspaceDir.path, 'packages/c/pubspec.yaml'),
+            ).readAsStringSync(),
+          );
+          final constraint =
+              (pubspecC.dependencies['a']! as HostedDependency).version;
+          expect(constraint, VersionConstraint.parse('^1.1.0'));
+
+          // Packages with changes get their regular changelog entries.
+          expect(packageChangelog(workspaceDir, 'a'), contains('a bug fix'));
+          expect(
+            packageChangelog(workspaceDir, 'b'),
+            contains('a new feature'),
+          );
+          // Packages without changes get a lockstep changelog entry.
+          expect(
+            packageChangelog(workspaceDir, 'c'),
+            contains(
+              'Bump version to keep all packages in the workspace in '
+              'lockstep.',
+            ),
+          );
+
+          // The workspace changelog lists the lockstep-only package in its
+          // own section.
+          final workspaceChangelog = File(
+            p.join(workspaceDir.path, 'CHANGELOG.md'),
+          ).readAsStringSync();
+          expect(
+            workspaceChangelog,
+            contains('Packages versioned in lockstep only:'),
+          );
+          expect(workspaceChangelog, contains('`c` - `v1.1.0`'));
+        },
+      );
+
+      test('a breaking change bumps all packages with a major '
+          'version', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _lockstepWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(1, 0, 0)),
+        );
+        await runGit(workspaceDir, ['init']);
+        await runGit(workspaceDir, ['add', '.']);
+        await runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+        await commitPackageChange(workspaceDir, 'a', 'feat!: breaking change');
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+        await melos.version(gitCommit: false, gitTag: false, force: true);
+
+        expect(pubspecVersion(workspaceDir, 'a'), Version(2, 0, 0));
+        expect(pubspecVersion(workspaceDir, 'b'), Version(2, 0, 0));
+      });
+
+      test('diverged versions converge on the highest current '
+          'version', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _lockstepWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(2, 3, 0)),
+        );
+        await runGit(workspaceDir, ['init']);
+        await runGit(workspaceDir, ['add', '.']);
+        await runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+        await commitPackageChange(workspaceDir, 'a', 'fix: a bug fix');
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+        await melos.version(gitCommit: false, gitTag: false, force: true);
+
+        expect(pubspecVersion(workspaceDir, 'a'), Version(2, 3, 1));
+        expect(pubspecVersion(workspaceDir, 'b'), Version(2, 3, 1));
+      });
+
+      test('a manual version is applied to all packages', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _lockstepWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(1, 0, 0)),
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+        await melos.version(
+          gitCommit: false,
+          gitTag: false,
+          force: true,
+          // Skip changelogs to avoid the changelog message prompt for
+          // manually versioned packages without commits.
+          updateChangelog: false,
+          manualVersions: {
+            'a': ManualVersionChange(Version(2, 0, 0)),
+          },
+        );
+
+        expect(pubspecVersion(workspaceDir, 'a'), Version(2, 0, 0));
+        expect(pubspecVersion(workspaceDir, 'b'), Version(2, 0, 0));
+      });
+
+      test('conflicting manual versions throw', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _lockstepWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(1, 0, 0)),
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+
+        await expectLater(
+          melos.version(
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            updateChangelog: false,
+            manualVersions: {
+              'a': ManualVersionChange(Version(2, 0, 0)),
+              'b': ManualVersionChange(Version(3, 0, 0)),
+            },
+          ),
+          throwsA(isA<LockstepVersionException>()),
+        );
+      });
+
+      test('a manual version below a current version throws', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _lockstepWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(3, 0, 0)),
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+
+        await expectLater(
+          melos.version(
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            updateChangelog: false,
+            manualVersions: {
+              'a': ManualVersionChange(Version(2, 0, 0)),
+            },
+          ),
+          throwsA(isA<LockstepVersionException>()),
+        );
+      });
+
+      test('private packages are not versioned by default', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _lockstepWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(1, 0, 0), publishTo: 'none'),
+        );
+        await runGit(workspaceDir, ['init']);
+        await runGit(workspaceDir, ['add', '.']);
+        await runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+        await commitPackageChange(workspaceDir, 'a', 'fix: a bug fix');
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+        await melos.version(gitCommit: false, gitTag: false, force: true);
+
+        expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+        expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 0));
+      });
+
+      test('does nothing when there are no versionable changes', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _lockstepWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(1, 0, 0)),
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+        await melos.version(gitCommit: false, gitTag: false, force: true);
+
+        expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 0));
+        expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 0));
+        expect(
+          logger.output,
+          contains('No packages were found that required versioning.'),
+        );
+      });
+    });
   });
+}
+
+MelosWorkspaceConfig _lockstepWorkspaceConfigBuilder(String path) {
+  return MelosWorkspaceConfig(
+    path: path,
+    name: 'test_workspace',
+    packages: [
+      createGlob('packages/**', currentDirectoryPath: path),
+    ],
+    commands: const CommandConfigs(
+      version: VersionCommandConfigs(
+        fetchTags: false,
+        lockstep: true,
+      ),
+    ),
+  );
 }
 
 MelosWorkspaceConfig _workspaceConfigBuilder(String path) {

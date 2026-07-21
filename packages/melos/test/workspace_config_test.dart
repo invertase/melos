@@ -75,6 +75,7 @@ void main() {
       expect(value.includeCommitId, false);
       expect(value.linkToCommits, false);
       expect(value.updateGitTagRefs, false);
+      expect(value.lockstep, false);
       expect(value.includeDateInChangelogEntry, false);
       expect(value.groupChangelogEntriesByType, false);
       expect(value.aggregateChangelogs, [
@@ -130,6 +131,16 @@ void main() {
         );
       });
 
+      test('throws if lockstep is not a bool', () {
+        expect(
+          () => VersionCommandConfigs.fromYaml(
+            const {'lockstep': 42},
+            workspacePath: '.',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
       test('can decode values', () {
         expect(
           VersionCommandConfigs.fromYaml(
@@ -140,6 +151,7 @@ void main() {
               'includeCommitId': true,
               'linkToCommits': true,
               'updateGitTagRefs': true,
+              'lockstep': true,
               'workspaceChangelog': true,
               'changelogs': [
                 {
@@ -157,6 +169,7 @@ void main() {
             includeCommitId: true,
             linkToCommits: true,
             updateGitTagRefs: true,
+            lockstep: true,
             aggregateChangelogs: [
               AggregateChangelogConfig.workspace(),
               AggregateChangelogConfig(

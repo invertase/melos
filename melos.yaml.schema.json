@@ -248,6 +248,10 @@
               "type": "boolean",
               "description": "Whether to generate and print a link to the prefilled release creation page for each package after versioning.\n\nDisabled by default."
             },
+            "lockstep": {
+              "type": "boolean",
+              "description": "Whether to version all packages in the workspace together. When enabled, every versioning run bumps all packages to the same new version, which is determined by the most significant change across the whole workspace.\n\nDisabled by default."
+            },
             "fetchTags": {
               "type": "boolean",
               "description": "Whether to fetch tags from the origin remote before versioning.\n\nDefaults to true."

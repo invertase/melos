@@ -18,6 +18,41 @@ melos version
   documentation.
 </Info>
 
+## Lockstep versioning
+
+By default, each package is versioned independently, based on the commits that
+touched that package. If you prefer all packages in the workspace to always
+share the same version, similar to the "fixed" release mode of tools like Nx
+and Lerna, enable lockstep versioning in the
+[`command/version/lockstep`](/configuration/overview#lockstep) configuration:
+
+```yaml
+melos:
+  command:
+    version:
+      lockstep: true
+```
+
+With lockstep enabled, `melos version`:
+
+- Determines a single new version for the whole workspace: the highest current
+  package version, incremented by the most significant change across all
+  packages (major if any package has a breaking change, minor if any package
+  has a new feature, otherwise patch).
+- Bumps every package in the workspace to that version, including packages
+  without changes of their own. Their changelog notes that the version was
+  bumped to keep the workspace in lockstep, while packages with changes get
+  their regular changelog entries.
+- Applies a manually specified version (`melos version <package> <version>`)
+  to all packages in the workspace.
+
+Private packages are still skipped unless `--all` is passed, and packages
+excluded with filters (e.g. `--ignore`) are not bumped, so use filters with
+care if you want the workspace to stay in sync.
+
+If there are no versionable changes in any package, `melos version` does
+nothing, just like in independent mode.
+
 ## Hooks
 
 The `version` command supports the following hooks in addition to the

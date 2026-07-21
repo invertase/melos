@@ -19,6 +19,7 @@ class VersionCommandConfigs {
     this.commitBodyOnlyBreaking = true,
     this.updateGitTagRefs = false,
     this.releaseUrl = false,
+    this.lockstep = false,
     List<AggregateChangelogConfig>? aggregateChangelogs,
     this.fetchTags = true,
     this.hooks = VersionLifecycleHooks.empty,
@@ -63,6 +64,11 @@ class VersionCommandConfigs {
     );
     final releaseUrl = assertKeyIsA<bool?>(
       key: 'releaseUrl',
+      map: yaml,
+      path: 'command/version',
+    );
+    final lockstep = assertKeyIsA<bool?>(
+      key: 'lockstep',
       map: yaml,
       path: 'command/version',
     );
@@ -189,6 +195,7 @@ class VersionCommandConfigs {
       linkToCommits: linkToCommits ?? repositoryIsConfigured,
       updateGitTagRefs: updateGitTagRefs ?? false,
       releaseUrl: releaseUrl ?? false,
+      lockstep: lockstep ?? false,
       aggregateChangelogs: aggregateChangelogs,
       fetchTags: fetchTags ?? true,
       hooks: hooks,
@@ -229,6 +236,13 @@ class VersionCommandConfigs {
   /// page for each package after versioning.
   final bool releaseUrl;
 
+  /// Whether all packages in the workspace are versioned together.
+  ///
+  /// When enabled, every versioning run bumps all packages to the same new
+  /// version, which is determined by the most significant change across the
+  /// whole workspace.
+  final bool lockstep;
+
   /// A list of changelogs configurations that will be used to generate
   /// changelogs which describe the changes in multiple packages.
   List<AggregateChangelogConfig> get aggregateChangelogs =>
@@ -258,6 +272,7 @@ class VersionCommandConfigs {
       'includeCommitId': includeCommitId,
       'linkToCommits': linkToCommits,
       'updateGitTagRefs': updateGitTagRefs,
+      'lockstep': lockstep,
       'aggregateChangelogs': aggregateChangelogs
           .map((config) => config.toJson())
           .toList(),
@@ -281,6 +296,7 @@ class VersionCommandConfigs {
       other.linkToCommits == linkToCommits &&
       other.updateGitTagRefs == updateGitTagRefs &&
       other.releaseUrl == releaseUrl &&
+      other.lockstep == lockstep &&
       const DeepCollectionEquality().equals(
         other.aggregateChangelogs,
         aggregateChangelogs,
@@ -300,6 +316,7 @@ class VersionCommandConfigs {
       linkToCommits.hashCode ^
       updateGitTagRefs.hashCode ^
       releaseUrl.hashCode ^
+      lockstep.hashCode ^
       const DeepCollectionEquality().hash(aggregateChangelogs) ^
       fetchTags.hashCode ^
       hooks.hashCode ^
@@ -317,6 +334,7 @@ VersionCommandConfigs(
   linkToCommits: $linkToCommits,
   updateGitTagRefs: $updateGitTagRefs,
   releaseUrl: $releaseUrl,
+  lockstep: $lockstep,
   aggregateChangelogs: $aggregateChangelogs,
   fetchTags: $fetchTags,
   hooks: $hooks,
