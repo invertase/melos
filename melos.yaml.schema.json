@@ -248,9 +248,10 @@
               "type": "boolean",
               "description": "Whether to generate and print a link to the prefilled release creation page for each package after versioning.\n\nDisabled by default."
             },
-            "lockstep": {
-              "type": "boolean",
-              "description": "Whether to version all packages in the workspace together. When enabled, every versioning run bumps all packages to the same new version, which is determined by the most significant change across the whole workspace.\n\nDisabled by default."
+            "mode": {
+              "type": "string",
+              "enum": ["independent", "fixed"],
+              "description": "The mode in which packages in the workspace are versioned. In \"fixed\" mode (also known as lockstep versioning), every versioning run bumps all packages to the same new version, which is determined by the most significant change across the whole workspace.\n\nDefaults to \"independent\"."
             },
             "fetchTags": {
               "type": "boolean",

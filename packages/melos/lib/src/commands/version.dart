@@ -380,13 +380,14 @@ mixin _VersionMixin on _RunMixin {
       pendingPackageUpdates.removeWhere((update) => update.package.isPrivate);
     }
 
-    // In lockstep mode all packages are bumped to the same new version, which
-    // is derived from the most significant pending change in the workspace.
-    if (workspace.config.commands.version.lockstep &&
+    // In fixed versioning mode all packages are bumped in lockstep to the
+    // same new version, which is derived from the most significant pending
+    // change in the workspace.
+    if (workspace.config.commands.version.mode == VersioningMode.fixed &&
         pendingPackageUpdates.isNotEmpty) {
       if (!updateDependentsVersions) {
         logger.warning(
-          'All packages are versioned together in lockstep mode, so '
+          'All packages are versioned together in fixed versioning mode, so '
           'disabling dependent versioning has no effect.',
         );
       }
@@ -604,9 +605,9 @@ mixin _VersionMixin on _RunMixin {
           manualVersions[update.package.name]!(baseVersion),
       };
       if (manualTargets.length > 1) {
-        throw LockstepVersionException(
-          'All packages share a single version in lockstep mode, but multiple '
-          'different versions were specified manually: '
+        throw FixedVersioningException(
+          'All packages share a single version in fixed versioning mode, but '
+          'multiple different versions were specified manually: '
           '${manualTargets.join(', ')}.',
         );
       }
@@ -627,7 +628,7 @@ mixin _VersionMixin on _RunMixin {
 
     for (final package in packages) {
       if (package.version > lockstepVersion) {
-        throw LockstepVersionException(
+        throw FixedVersioningException(
           'The lockstep version $lockstepVersion is lower than the current '
           'version ${package.version} of package "${package.name}".',
         );
@@ -1271,14 +1272,14 @@ mixin _VersionMixin on _RunMixin {
   }
 }
 
-class LockstepVersionException extends MelosException {
-  LockstepVersionException(this.message);
+class FixedVersioningException extends MelosException {
+  FixedVersioningException(this.message);
 
   final String message;
 
   @override
   String toString() {
-    return 'LockstepVersionException: $message';
+    return 'FixedVersioningException: $message';
   }
 }
 

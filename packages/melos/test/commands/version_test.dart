@@ -1093,7 +1093,7 @@ dev_dependencies:
       );
     });
 
-    group('lockstep', () {
+    group('fixed mode', () {
       Future<void> runGit(Directory workspaceDir, List<String> args) async {
         final result = await Process.run(
           'git',
@@ -1146,7 +1146,7 @@ dev_dependencies:
         'significant change',
         () async {
           final workspaceDir = await createTemporaryWorkspace(
-            configBuilder: _lockstepWorkspaceConfigBuilder,
+            configBuilder: _fixedModeWorkspaceConfigBuilder,
             workspacePackages: ['a', 'b', 'c'],
             useLocalTmpDirectory: true,
           );
@@ -1230,7 +1230,7 @@ dev_dependencies:
       test('a breaking change bumps all packages with a major '
           'version', () async {
         final workspaceDir = await createTemporaryWorkspace(
-          configBuilder: _lockstepWorkspaceConfigBuilder,
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
           workspacePackages: ['a', 'b'],
           useLocalTmpDirectory: true,
         );
@@ -1261,7 +1261,7 @@ dev_dependencies:
       test('diverged versions converge on the highest current '
           'version', () async {
         final workspaceDir = await createTemporaryWorkspace(
-          configBuilder: _lockstepWorkspaceConfigBuilder,
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
           workspacePackages: ['a', 'b'],
           useLocalTmpDirectory: true,
         );
@@ -1291,7 +1291,7 @@ dev_dependencies:
 
       test('a manual version is applied to all packages', () async {
         final workspaceDir = await createTemporaryWorkspace(
-          configBuilder: _lockstepWorkspaceConfigBuilder,
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
           workspacePackages: ['a', 'b'],
           useLocalTmpDirectory: true,
         );
@@ -1327,7 +1327,7 @@ dev_dependencies:
 
       test('conflicting manual versions throw', () async {
         final workspaceDir = await createTemporaryWorkspace(
-          configBuilder: _lockstepWorkspaceConfigBuilder,
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
           workspacePackages: ['a', 'b'],
           useLocalTmpDirectory: true,
         );
@@ -1357,13 +1357,13 @@ dev_dependencies:
               'b': ManualVersionChange(Version(3, 0, 0)),
             },
           ),
-          throwsA(isA<LockstepVersionException>()),
+          throwsA(isA<FixedVersioningException>()),
         );
       });
 
       test('a manual version below a current version throws', () async {
         final workspaceDir = await createTemporaryWorkspace(
-          configBuilder: _lockstepWorkspaceConfigBuilder,
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
           workspacePackages: ['a', 'b'],
           useLocalTmpDirectory: true,
         );
@@ -1392,13 +1392,13 @@ dev_dependencies:
               'a': ManualVersionChange(Version(2, 0, 0)),
             },
           ),
-          throwsA(isA<LockstepVersionException>()),
+          throwsA(isA<FixedVersioningException>()),
         );
       });
 
       test('private packages are not versioned by default', () async {
         final workspaceDir = await createTemporaryWorkspace(
-          configBuilder: _lockstepWorkspaceConfigBuilder,
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
           workspacePackages: ['a', 'b'],
           useLocalTmpDirectory: true,
         );
@@ -1429,7 +1429,7 @@ dev_dependencies:
       test('a relative manual version is applied to the highest current '
           'version', () async {
         final workspaceDir = await createTemporaryWorkspace(
-          configBuilder: _lockstepWorkspaceConfigBuilder,
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
           workspacePackages: ['a', 'b'],
           useLocalTmpDirectory: true,
         );
@@ -1468,7 +1468,7 @@ dev_dependencies:
       test('packages already at the lockstep version are left '
           'untouched', () async {
         final workspaceDir = await createTemporaryWorkspace(
-          configBuilder: _lockstepWorkspaceConfigBuilder,
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
           workspacePackages: ['a', 'b'],
           useLocalTmpDirectory: true,
         );
@@ -1515,7 +1515,7 @@ dev_dependencies:
       test('does not version packages that depend on an ignored package '
           'with changes', () async {
         final workspaceDir = await createTemporaryWorkspace(
-          configBuilder: _lockstepWorkspaceConfigBuilder,
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
           workspacePackages: ['a', 'b', 'core'],
           useLocalTmpDirectory: true,
         );
@@ -1573,7 +1573,7 @@ dev_dependencies:
 
       test('does nothing when there are no versionable changes', () async {
         final workspaceDir = await createTemporaryWorkspace(
-          configBuilder: _lockstepWorkspaceConfigBuilder,
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
           workspacePackages: ['a', 'b'],
           useLocalTmpDirectory: true,
         );
@@ -1604,7 +1604,7 @@ dev_dependencies:
   });
 }
 
-MelosWorkspaceConfig _lockstepWorkspaceConfigBuilder(String path) {
+MelosWorkspaceConfig _fixedModeWorkspaceConfigBuilder(String path) {
   return MelosWorkspaceConfig(
     path: path,
     name: 'test_workspace',
@@ -1614,7 +1614,7 @@ MelosWorkspaceConfig _lockstepWorkspaceConfigBuilder(String path) {
     commands: const CommandConfigs(
       version: VersionCommandConfigs(
         fetchTags: false,
-        lockstep: true,
+        mode: VersioningMode.fixed,
       ),
     ),
   );

@@ -75,7 +75,7 @@ void main() {
       expect(value.includeCommitId, false);
       expect(value.linkToCommits, false);
       expect(value.updateGitTagRefs, false);
-      expect(value.lockstep, false);
+      expect(value.mode, VersioningMode.independent);
       expect(value.includeDateInChangelogEntry, false);
       expect(value.groupChangelogEntriesByType, false);
       expect(value.aggregateChangelogs, [
@@ -131,10 +131,20 @@ void main() {
         );
       });
 
-      test('throws if lockstep is not a bool', () {
+      test('throws if mode is not a string', () {
         expect(
           () => VersionCommandConfigs.fromYaml(
-            const {'lockstep': 42},
+            const {'mode': 42},
+            workspacePath: '.',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('throws if mode is not a valid mode', () {
+        expect(
+          () => VersionCommandConfigs.fromYaml(
+            const {'mode': 'lockstep'},
             workspacePath: '.',
           ),
           throwsMelosConfigException(),
@@ -151,7 +161,7 @@ void main() {
               'includeCommitId': true,
               'linkToCommits': true,
               'updateGitTagRefs': true,
-              'lockstep': true,
+              'mode': 'fixed',
               'workspaceChangelog': true,
               'changelogs': [
                 {
@@ -169,7 +179,7 @@ void main() {
             includeCommitId: true,
             linkToCommits: true,
             updateGitTagRefs: true,
-            lockstep: true,
+            mode: VersioningMode.fixed,
             aggregateChangelogs: [
               AggregateChangelogConfig.workspace(),
               AggregateChangelogConfig(

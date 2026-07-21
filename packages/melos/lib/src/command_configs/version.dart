@@ -6,6 +6,18 @@ import '../common/validation.dart';
 import '../lifecycle_hooks/version.dart';
 import '../workspace_config.dart';
 
+/// The mode in which packages in the workspace are versioned.
+enum VersioningMode {
+  /// Each package is versioned independently, based on its own changes.
+  independent,
+
+  /// All packages in the workspace are versioned together (also known as
+  /// lockstep versioning): every versioning run bumps all packages to the
+  /// same new version, which is determined by the most significant change
+  /// across the whole workspace.
+  fixed,
+}
+
 /// Configurations for `melos version`.
 @immutable
 class VersionCommandConfigs {
@@ -19,7 +31,7 @@ class VersionCommandConfigs {
     this.commitBodyOnlyBreaking = true,
     this.updateGitTagRefs = false,
     this.releaseUrl = false,
-    this.lockstep = false,
+    this.mode = VersioningMode.independent,
     List<AggregateChangelogConfig>? aggregateChangelogs,
     this.fetchTags = true,
     this.hooks = VersionLifecycleHooks.empty,
@@ -67,11 +79,20 @@ class VersionCommandConfigs {
       map: yaml,
       path: 'command/version',
     );
-    final lockstep = assertKeyIsA<bool?>(
-      key: 'lockstep',
+    final modeName = assertKeyIsA<String?>(
+      key: 'mode',
       map: yaml,
       path: 'command/version',
     );
+    final mode = switch (modeName) {
+      null => VersioningMode.independent,
+      'independent' => VersioningMode.independent,
+      'fixed' => VersioningMode.fixed,
+      _ => throw MelosConfigException(
+        'The value at "command/version/mode" must be either "independent" '
+        'or "fixed" but got "$modeName".',
+      ),
+    };
 
     final workspaceChangelog = assertKeyIsA<bool?>(
       key: 'workspaceChangelog',
@@ -195,7 +216,7 @@ class VersionCommandConfigs {
       linkToCommits: linkToCommits ?? repositoryIsConfigured,
       updateGitTagRefs: updateGitTagRefs ?? false,
       releaseUrl: releaseUrl ?? false,
-      lockstep: lockstep ?? false,
+      mode: mode,
       aggregateChangelogs: aggregateChangelogs,
       fetchTags: fetchTags ?? true,
       hooks: hooks,
@@ -236,12 +257,13 @@ class VersionCommandConfigs {
   /// page for each package after versioning.
   final bool releaseUrl;
 
-  /// Whether all packages in the workspace are versioned together.
+  /// The mode in which packages in the workspace are versioned.
   ///
-  /// When enabled, every versioning run bumps all packages to the same new
-  /// version, which is determined by the most significant change across the
-  /// whole workspace.
-  final bool lockstep;
+  /// In [VersioningMode.fixed] mode, every versioning run bumps all packages
+  /// to the same new version, which is determined by the most significant
+  /// change across the whole workspace. Defaults to
+  /// [VersioningMode.independent].
+  final VersioningMode mode;
 
   /// A list of changelogs configurations that will be used to generate
   /// changelogs which describe the changes in multiple packages.
@@ -272,7 +294,7 @@ class VersionCommandConfigs {
       'includeCommitId': includeCommitId,
       'linkToCommits': linkToCommits,
       'updateGitTagRefs': updateGitTagRefs,
-      'lockstep': lockstep,
+      'mode': mode.name,
       'aggregateChangelogs': aggregateChangelogs
           .map((config) => config.toJson())
           .toList(),
@@ -296,7 +318,7 @@ class VersionCommandConfigs {
       other.linkToCommits == linkToCommits &&
       other.updateGitTagRefs == updateGitTagRefs &&
       other.releaseUrl == releaseUrl &&
-      other.lockstep == lockstep &&
+      other.mode == mode &&
       const DeepCollectionEquality().equals(
         other.aggregateChangelogs,
         aggregateChangelogs,
@@ -316,7 +338,7 @@ class VersionCommandConfigs {
       linkToCommits.hashCode ^
       updateGitTagRefs.hashCode ^
       releaseUrl.hashCode ^
-      lockstep.hashCode ^
+      mode.hashCode ^
       const DeepCollectionEquality().hash(aggregateChangelogs) ^
       fetchTags.hashCode ^
       hooks.hashCode ^
@@ -334,7 +356,7 @@ VersionCommandConfigs(
   linkToCommits: $linkToCommits,
   updateGitTagRefs: $updateGitTagRefs,
   releaseUrl: $releaseUrl,
-  lockstep: $lockstep,
+  mode: ${mode.name},
   aggregateChangelogs: $aggregateChangelogs,
   fetchTags: $fetchTags,
   hooks: $hooks,
