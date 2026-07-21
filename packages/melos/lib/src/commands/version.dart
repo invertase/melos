@@ -380,6 +380,34 @@ mixin _VersionMixin on _RunMixin {
       pendingPackageUpdates.removeWhere((update) => update.package.isPrivate);
     }
 
+    // In fixed versioning mode all packages are bumped in lockstep to the
+    // same new version, which is derived from the most significant pending
+    // change in the workspace.
+    if (workspace.config.commands.version.mode == VersioningMode.fixed &&
+        pendingPackageUpdates.isNotEmpty) {
+      if (!updateDependentsVersions) {
+        logger.warning(
+          'All packages are versioned together in fixed versioning mode, so '
+          'disabling dependent versioning has no effect.',
+        );
+      }
+      final lockstepUpdates = _lockstepPendingPackageUpdates(
+        workspace: workspace,
+        pendingPackageUpdates: pendingPackageUpdates,
+        packageCommits: packageCommits,
+        ignoredPackagesWithChanges: ignoredPackagesWithChanges,
+        manualVersions: manualVersions,
+        versionPrivatePackages: versionPrivatePackages,
+        asPrerelease: asPrerelease,
+        asStableRelease: asStableRelease,
+        preid: preid,
+        groupCommits: groupCommits,
+      );
+      pendingPackageUpdates
+        ..clear()
+        ..addAll(lockstepUpdates);
+    }
+
     if (pendingPackageUpdates.isEmpty) {
       logger.warning(
         'No packages were found that required versioning.',
@@ -505,6 +533,204 @@ mixin _VersionMixin on _RunMixin {
           '${AnsiStyles.bgBlack.gray(pendingPackageReleases)}',
         );
       }
+    }
+  }
+
+  /// Replaces the independently computed [pendingPackageUpdates] with one
+  /// update per (non-private) package in the workspace, all sharing a single
+  /// new lockstep version.
+  ///
+  /// The lockstep version is either the version requested with
+  /// `--manual-version` (relative version changes are applied to the highest
+  /// current version in the workspace) or the highest current version in the
+  /// workspace bumped by the most significant release type across all pending
+  /// updates.
+  List<MelosPendingPackageUpdate> _lockstepPendingPackageUpdates({
+    required MelosWorkspace workspace,
+    required List<MelosPendingPackageUpdate> pendingPackageUpdates,
+    required Map<String, List<RichGitCommit>> packageCommits,
+    required Set<String> ignoredPackagesWithChanges,
+    required Map<String, versioning.ManualVersionChange> manualVersions,
+    required bool versionPrivatePackages,
+    required bool asPrerelease,
+    required bool asStableRelease,
+    required String? preid,
+    required bool? groupCommits,
+  }) {
+    final packages = workspace.filteredPackages.values.where((package) {
+      if (!versionPrivatePackages && package.isPrivate) {
+        return false;
+      }
+      // Packages that depend (directly or transitively) on an ignored package
+      // with pending changes are not versioned, since versioning them without
+      // also versioning the ignored dependency could produce a broken
+      // release. This mirrors the skip logic for independent versioning.
+      if (ignoredPackagesWithChanges.isNotEmpty) {
+        final unscoped = workspace.allPackages[package.name]!;
+        if (unscoped.allTransitiveDependenciesInWorkspace.keys.any(
+          ignoredPackagesWithChanges.contains,
+        )) {
+          logger.warning(
+            'Package "${package.name}" is not versioned in lockstep because '
+            'it depends on an ignored package that has pending changes.',
+          );
+          return false;
+        }
+      }
+      return true;
+    }).toList();
+    if (packages.isEmpty) {
+      return [];
+    }
+
+    // The highest current version in the workspace is used as the base for
+    // the next lockstep version, so that a workspace with (temporarily)
+    // diverged versions converges instead of producing downgrades.
+    final baseVersion = packages
+        .map((package) => package.version)
+        .reduce((a, b) => a >= b ? a : b);
+
+    final manualUpdates = pendingPackageUpdates
+        .where((update) => update.reason == PackageUpdateReason.manual)
+        .toList();
+
+    final Version lockstepVersion;
+    if (manualUpdates.isNotEmpty) {
+      // Manual version changes are applied to the workspace base version
+      // rather than to the individually named packages, so that e.g.
+      // `melos version <package> patch` bumps the whole workspace one patch
+      // version, regardless of which package was named.
+      final manualTargets = {
+        for (final update in manualUpdates)
+          manualVersions[update.package.name]!(baseVersion),
+      };
+      if (manualTargets.length > 1) {
+        throw FixedVersioningException(
+          'All packages share a single version in fixed versioning mode, but '
+          'multiple different versions were specified manually: '
+          '${manualTargets.join(', ')}.',
+        );
+      }
+      lockstepVersion = manualTargets.single;
+    } else {
+      final releaseType = pendingPackageUpdates
+          .map((update) => update.semverReleaseType)
+          .whereType<SemverReleaseType>()
+          .reduce((a, b) => a.index >= b.index ? a : b);
+      lockstepVersion = versioning.nextVersion(
+        baseVersion,
+        releaseType,
+        graduate: asStableRelease,
+        prerelease: asPrerelease,
+        preid: preid,
+      );
+    }
+
+    for (final package in packages) {
+      if (package.version > lockstepVersion) {
+        throw FixedVersioningException(
+          'The lockstep version $lockstepVersion is lower than the current '
+          'version ${package.version} of package "${package.name}".',
+        );
+      }
+    }
+
+    final existingUpdates = {
+      for (final update in pendingPackageUpdates) update.package.name: update,
+    };
+
+    final updates = <MelosPendingPackageUpdate>[];
+    for (final package in packages) {
+      // Packages already at the lockstep version are left untouched, to avoid
+      // rewriting pubspecs and changelogs without an actual version change.
+      if (package.version == lockstepVersion) {
+        final existingUpdate = existingUpdates[package.name];
+        if (existingUpdate != null &&
+            existingUpdate.reason != PackageUpdateReason.dependency) {
+          logger.warning(
+            'Package "${package.name}" has pending changes but is already at '
+            'the lockstep version $lockstepVersion, so it is not versioned.',
+          );
+        } else {
+          logger.log(
+            'Package "${package.name}" is already at the lockstep version '
+            '$lockstepVersion, skipping.',
+          );
+        }
+        continue;
+      }
+
+      updates.add(
+        _lockstepUpdateForPackage(
+          workspace: workspace,
+          package: package,
+          existingUpdate: existingUpdates[package.name],
+          commits: packageCommits[package.name] ?? const [],
+          lockstepVersion: lockstepVersion,
+          asPrerelease: asPrerelease,
+          asStableRelease: asStableRelease,
+          preid: preid,
+          groupCommits: groupCommits,
+        ),
+      );
+    }
+    return updates;
+  }
+
+  MelosPendingPackageUpdate _lockstepUpdateForPackage({
+    required MelosWorkspace workspace,
+    required Package package,
+    required MelosPendingPackageUpdate? existingUpdate,
+    required List<RichGitCommit> commits,
+    required Version lockstepVersion,
+    required bool asPrerelease,
+    required bool asStableRelease,
+    required String? preid,
+    required bool? groupCommits,
+  }) {
+    switch (existingUpdate?.reason) {
+      case PackageUpdateReason.manual:
+        return MelosPendingPackageUpdate.manual(
+          workspace,
+          package,
+          existingUpdate!.commits,
+          lockstepVersion,
+          userChangelogMessage: existingUpdate.userChangelogMessage,
+          groupCommits: existingUpdate.groupCommits,
+          logger: logger,
+        );
+      case PackageUpdateReason.commit:
+      case PackageUpdateReason.graduate:
+        return MelosPendingPackageUpdate(
+          workspace,
+          package,
+          existingUpdate!.commits,
+          existingUpdate.reason,
+          graduate: existingUpdate.graduate,
+          prerelease: existingUpdate.prerelease,
+          preid: existingUpdate.preid,
+          groupCommits: existingUpdate.groupCommits,
+          lockstepVersion: lockstepVersion,
+          logger: logger,
+        );
+      case PackageUpdateReason.dependency:
+      case PackageUpdateReason.lockstep:
+      case null:
+        // Packages without changes of their own are bumped purely to stay in
+        // lockstep with the rest of the workspace. This includes packages that
+        // would only have received a dependency bump in independent mode.
+        return MelosPendingPackageUpdate(
+          workspace,
+          package,
+          commits,
+          PackageUpdateReason.lockstep,
+          graduate: asStableRelease,
+          prerelease: asPrerelease,
+          preid: preid,
+          groupCommits: groupCommits,
+          lockstepVersion: lockstepVersion,
+          logger: logger,
+        );
     }
   }
 
@@ -756,6 +982,8 @@ mixin _VersionMixin on _RunMixin {
                           return 'dependency was updated';
                         case PackageUpdateReason.graduate:
                           return 'graduate to stable';
+                        case PackageUpdateReason.lockstep:
+                          return 'lockstep with workspace';
                       }
                     })(),
                   ),
@@ -1041,6 +1269,17 @@ mixin _VersionMixin on _RunMixin {
         },
       );
     });
+  }
+}
+
+class FixedVersioningException extends MelosException {
+  FixedVersioningException(this.message);
+
+  final String message;
+
+  @override
+  String toString() {
+    return 'FixedVersioningException: $message';
   }
 }
 

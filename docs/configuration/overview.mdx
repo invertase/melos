@@ -555,6 +555,37 @@ each package after versioning. Defaults to `false`.
 
 [glob]: https://docs.python.org/3/library/glob.html
 
+### mode
+
+The mode in which packages in the workspace are versioned. Either
+`independent` (the default) or `fixed`, matching the release modes of tools
+like Nx and Lerna in the JavaScript ecosystem.
+
+In `fixed` mode (also known as lockstep versioning), every `melos version` run
+bumps all packages to the same new version. The new version is based on the
+highest current version in the workspace, incremented by the most significant
+change found in any package (a breaking change anywhere causes a major bump
+for all packages, a feature a minor bump, and so on). Packages without changes
+of their own are bumped too, with a changelog entry noting that the bump keeps
+the workspace in lockstep.
+
+```yaml
+melos:
+  command:
+    version:
+      mode: fixed
+```
+
+When manually versioning with `melos version <package> <version>` in `fixed`
+mode, the specified version is applied to all packages in the workspace.
+Relative version changes (`major`, `minor`, `patch` or `build`) are applied to
+the highest current version in the workspace, regardless of which package was
+named. Specifying conflicting versions for multiple packages is an error.
+
+See the
+[version command documentation](/commands/version#fixed-versioning-mode) for
+more information.
+
 ### fetchTags
 
 Whether to fetch tags from the `origin` remote before versioning. Defaults to

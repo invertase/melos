@@ -1,8 +1,13 @@
 export 'src/command_configs/command_configs.dart'
-    show BootstrapCommandConfigs, CleanCommandConfigs, VersionCommandConfigs;
+    show
+        BootstrapCommandConfigs,
+        CleanCommandConfigs,
+        VersionCommandConfigs,
+        VersioningMode;
 export 'src/commands/runner.dart'
     show
         BootstrapException,
+        FixedVersioningException,
         ListOutputKind,
         Melos,
         NoPackageFoundScriptException,
