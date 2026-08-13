@@ -300,19 +300,26 @@ mixin _VersionMixin on _RunMixin {
                 'Found commits for manually versioned package "$name".',
               );
 
-              promptForMessage = promptBool(
-                message:
-                    'Do you want to provide an additional changelog entry '
-                    'message?',
-                defaultsToWithoutPrompt: false,
-              );
+              // `--yes`/`force` skips all confirmation prompts, so never
+              // prompt here; fall back to the same default that is used when
+              // no prompt is possible.
+              promptForMessage =
+                  !force &&
+                  promptBool(
+                    message:
+                        'Do you want to provide an additional changelog entry '
+                        'message?',
+                    defaultsToWithoutPrompt: false,
+                  );
             }
 
             if (promptForMessage) {
-              userChangelogMessage = promptInput(
-                'Provide a changelog entry message',
-                defaultsTo: defaultUserChangelogMessage,
-              );
+              userChangelogMessage = force
+                  ? defaultUserChangelogMessage
+                  : promptInput(
+                      'Provide a changelog entry message',
+                      defaultsTo: defaultUserChangelogMessage,
+                    );
             }
           }
 
