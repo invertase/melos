@@ -6,6 +6,7 @@ import 'package:xml/xml.dart' as xml;
 import '../common/utils.dart' as utils;
 import '../package.dart';
 import '../workspace.dart';
+import 'environment_variable_key.dart';
 import 'io.dart';
 import 'platform.dart';
 
@@ -296,6 +297,12 @@ class IntellijProject {
   }
 
   String getMelosBinForIde() {
+    final pubCache =
+        currentPlatform.environment[EnvironmentVariableKey.pubCache];
+    if (pubCache != null && pubCache.isNotEmpty) {
+      final executable = currentPlatform.isWindows ? 'melos.bat' : 'melos';
+      return p.normalize(p.join(pubCache, 'bin', executable));
+    }
     if (currentPlatform.isWindows) {
       if (currentPlatform.script.path.contains('Roaming')) {
         return r'$USER_HOME$/AppData/Roaming/Pub/Cache/bin/melos.bat';

@@ -1,11 +1,14 @@
 import 'dart:io';
 
+import 'package:melos/src/common/environment_variable_key.dart';
 import 'package:melos/src/common/intellij_project.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:path/path.dart' as p;
+import 'package:platform/platform.dart' show FakePlatform;
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
+import '../mock_env.dart';
 import '../utils.dart';
 
 void main() {
@@ -409,5 +412,61 @@ void main() {
       );
       expect(content, contains("name=\"'format'\""));
     });
+  });
+
+  // https://github.com/invertase/melos/issues/749
+  group('getMelosBinForIde', () {
+    test(
+      'uses PUB_CACHE when it is set',
+      withMockPlatform(
+        () {
+          final tempDir = createTestTempDir();
+          final workspace = VirtualWorkspaceBuilder(
+            path: tempDir.path,
+            '''
+        packages:
+          - .
+        ''',
+          ).build();
+          final project = IntellijProject.fromWorkspace(workspace);
+          expect(
+            project.getMelosBinForIde(),
+            p.join('/custom/.pub-cache', 'bin', 'melos'),
+          );
+        },
+        platform: FakePlatform(
+          operatingSystem: 'linux',
+          environment: const {
+            EnvironmentVariableKey.pubCache: '/custom/.pub-cache',
+            'HOME': '/root',
+          },
+        ),
+      ),
+    );
+
+    test(
+      'falls back to the default IntelliJ pub-cache path',
+      withMockPlatform(
+        () {
+          final tempDir = createTestTempDir();
+          final workspace = VirtualWorkspaceBuilder(
+            path: tempDir.path,
+            '''
+        packages:
+          - .
+        ''',
+          ).build();
+          final project = IntellijProject.fromWorkspace(workspace);
+          expect(
+            project.getMelosBinForIde(),
+            r'$USER_HOME$/.pub-cache/bin/melos',
+          );
+        },
+        platform: FakePlatform(
+          operatingSystem: 'linux',
+          environment: const {'HOME': '/root'},
+        ),
+      ),
+    );
   });
 }

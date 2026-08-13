@@ -28,6 +28,10 @@ class EnvironmentVariableKey {
 
   static const String path = 'PATH';
 
+  /// Location of the pub package cache. When unset, pub defaults to
+  /// `$HOME/.pub-cache` on POSIX and `%LOCALAPPDATA%\Pub\Cache` on Windows.
+  static const String pubCache = 'PUB_CACHE';
+
   static List<String> allMelosKeys() => [
     melosRootPath,
     melosPackageName,

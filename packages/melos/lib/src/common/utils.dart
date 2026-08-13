@@ -308,11 +308,73 @@ String addToPathEnvVar({
   }
 }
 
+/// Directory used by pub as the package cache.
+///
+/// Honors [EnvironmentVariableKey.pubCache]. When that is unset, falls back to
+/// the platform default (`$HOME/.pub-cache` on POSIX,
+/// `%LOCALAPPDATA%\Pub\Cache` on Windows).
+String getPubCacheDirectory() {
+  final fromEnv = currentPlatform.environment[EnvironmentVariableKey.pubCache];
+  if (fromEnv != null && fromEnv.isNotEmpty) {
+    return p.normalize(fromEnv);
+  }
+  return defaultPubCacheDirectory();
+}
+
+/// Default pub cache location when [EnvironmentVariableKey.pubCache] is unset.
+String defaultPubCacheDirectory() {
+  if (currentPlatform.isWindows) {
+    final localAppData = currentPlatform.environment['LOCALAPPDATA'];
+    if (localAppData != null && localAppData.isNotEmpty) {
+      return p.join(localAppData, 'Pub', 'Cache');
+    }
+    final appData = currentPlatform.environment['APPDATA'];
+    if (appData != null && appData.isNotEmpty) {
+      return p.join(appData, 'Pub', 'Cache');
+    }
+  }
+  final home =
+      currentPlatform.environment['HOME'] ??
+      currentPlatform.environment['USERPROFILE'] ??
+      '';
+  return p.join(home, '.pub-cache');
+}
+
+/// Rewrites [resolvedRoot] from the default pub-cache into `PUB_CACHE` when
+/// the isolate-resolved path is missing (or has no templates) and `PUB_CACHE`
+/// points somewhere else.
+///
+/// This covers globally-activated Melos when `Isolate.resolvePackageUri`
+/// still reports `$HOME/.pub-cache` (see invertase/melos#749).
+String applyPubCacheOverride(String resolvedRoot) {
+  final pubCache = currentPlatform.environment[EnvironmentVariableKey.pubCache];
+  if (pubCache == null || pubCache.isEmpty) {
+    return resolvedRoot;
+  }
+
+  final templatesDir = p.join(resolvedRoot, 'templates');
+  if (Directory(templatesDir).existsSync()) {
+    return resolvedRoot;
+  }
+
+  final defaultCache = p.normalize(defaultPubCacheDirectory());
+  final resolved = p.normalize(resolvedRoot);
+  if (resolved != defaultCache && !p.isWithin(defaultCache, resolved)) {
+    return resolvedRoot;
+  }
+
+  final relative = resolved == defaultCache
+      ? ''
+      : p.relative(resolved, from: defaultCache);
+  return p.normalize(p.join(pubCache, relative));
+}
+
 Future<String> getMelosRoot() async {
   final melosPackageFileUri = await Isolate.resolvePackageUri(melosPackageUri);
 
   // Get from lib/melos.dart to the package root
-  return p.normalize('${melosPackageFileUri!.toFilePath()}/../..');
+  final resolved = p.normalize('${melosPackageFileUri!.toFilePath()}/../..');
+  return applyPubCacheOverride(resolved);
 }
 
 String melosStatePathForDirectory(String directory) =>

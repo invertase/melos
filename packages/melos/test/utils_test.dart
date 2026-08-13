@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:melos/src/common/environment_variable_key.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:melos/src/logging.dart';
@@ -245,6 +246,125 @@ void main() {
         ),
       );
     });
+  });
+
+  group('getPubCacheDirectory', () {
+    test(
+      'uses PUB_CACHE when set',
+      withMockPlatform(
+        () {
+          expect(getPubCacheDirectory(), p.normalize('/custom/.pub-cache'));
+        },
+        platform: FakePlatform(
+          operatingSystem: 'linux',
+          environment: const {
+            EnvironmentVariableKey.pubCache: '/custom/.pub-cache',
+            'HOME': '/root',
+          },
+        ),
+      ),
+    );
+
+    test(
+      'defaults to HOME/.pub-cache on POSIX',
+      withMockPlatform(
+        () {
+          expect(getPubCacheDirectory(), p.join('/root', '.pub-cache'));
+        },
+        platform: FakePlatform(
+          operatingSystem: 'linux',
+          environment: const {'HOME': '/root'},
+        ),
+      ),
+    );
+
+    test(
+      'defaults to LOCALAPPDATA/Pub/Cache on Windows',
+      withMockPlatform(
+        () {
+          expect(
+            getPubCacheDirectory(),
+            p.join(r'C:\Users\me\AppData\Local', 'Pub', 'Cache'),
+          );
+        },
+        platform: FakePlatform(
+          operatingSystem: 'windows',
+          environment: const {
+            'LOCALAPPDATA': r'C:\Users\me\AppData\Local',
+          },
+        ),
+      ),
+    );
+  });
+
+  group('applyPubCacheOverride', () {
+    test(
+      'rewrites a missing default pub-cache path to PUB_CACHE',
+      withMockPlatform(
+        () {
+          final resolved = p.join(
+            '/root',
+            '.pub-cache',
+            'hosted',
+            'pub.dev',
+            'melos-6.1.0',
+          );
+          expect(
+            applyPubCacheOverride(resolved),
+            p.join(
+              '/custom/.pub-cache',
+              'hosted',
+              'pub.dev',
+              'melos-6.1.0',
+            ),
+          );
+        },
+        platform: FakePlatform(
+          operatingSystem: 'linux',
+          environment: const {
+            EnvironmentVariableKey.pubCache: '/custom/.pub-cache',
+            'HOME': '/root',
+          },
+        ),
+      ),
+    );
+
+    test(
+      'keeps the isolate-resolved path when PUB_CACHE is unset',
+      withMockPlatform(
+        () {
+          final resolved = p.join(
+            '/root',
+            '.pub-cache',
+            'hosted',
+            'pub.dev',
+            'melos-6.1.0',
+          );
+          expect(applyPubCacheOverride(resolved), resolved);
+        },
+        platform: FakePlatform(
+          operatingSystem: 'linux',
+          environment: const {'HOME': '/root'},
+        ),
+      ),
+    );
+
+    test(
+      'keeps a path that is not under the default pub-cache',
+      withMockPlatform(
+        () {
+          const resolved = '/src/melos/packages/melos';
+          expect(applyPubCacheOverride(resolved), resolved);
+        },
+        platform: FakePlatform(
+          operatingSystem: 'linux',
+          environment: const {
+            EnvironmentVariableKey.pubCache: '/custom/.pub-cache',
+            'HOME': '/root',
+          },
+        ),
+      ),
+    );
   });
 
   group('mergeYaml', () {
