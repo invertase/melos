@@ -322,22 +322,32 @@ String getPubCacheDirectory() {
 }
 
 /// Default pub cache location when [EnvironmentVariableKey.pubCache] is unset.
-String defaultPubCacheDirectory() {
+///
+/// On Windows both Local and Roaming caches are valid.
+String defaultPubCacheDirectory() => defaultPubCacheDirectories().first;
+
+/// Windows can have a cache under Local *and* Roaming. Isolate.resolvePackageUri
+/// may report either, so remapping has to try both.
+List<String> defaultPubCacheDirectories() {
   if (currentPlatform.isWindows) {
+    final dirs = <String>[];
     final localAppData = currentPlatform.environment['LOCALAPPDATA'];
     if (localAppData != null && localAppData.isNotEmpty) {
-      return p.join(localAppData, 'Pub', 'Cache');
+      dirs.add(p.join(localAppData, 'Pub', 'Cache'));
     }
     final appData = currentPlatform.environment['APPDATA'];
     if (appData != null && appData.isNotEmpty) {
-      return p.join(appData, 'Pub', 'Cache');
+      dirs.add(p.join(appData, 'Pub', 'Cache'));
+    }
+    if (dirs.isNotEmpty) {
+      return dirs;
     }
   }
   final home =
       currentPlatform.environment['HOME'] ??
       currentPlatform.environment['USERPROFILE'] ??
       '';
-  return p.join(home, '.pub-cache');
+  return [p.join(home, '.pub-cache')];
 }
 
 /// Rewrites [resolvedRoot] from the default pub-cache into `PUB_CACHE` when
@@ -357,16 +367,16 @@ String applyPubCacheOverride(String resolvedRoot) {
     return resolvedRoot;
   }
 
-  final defaultCache = p.normalize(defaultPubCacheDirectory());
   final resolved = p.normalize(resolvedRoot);
-  if (resolved != defaultCache && !p.isWithin(defaultCache, resolved)) {
-    return resolvedRoot;
+  for (final defaultCache in defaultPubCacheDirectories().map(p.normalize)) {
+    if (resolved == defaultCache || p.isWithin(defaultCache, resolved)) {
+      final relative = resolved == defaultCache
+          ? ''
+          : p.relative(resolved, from: defaultCache);
+      return p.normalize(p.join(pubCache, relative));
+    }
   }
-
-  final relative = resolved == defaultCache
-      ? ''
-      : p.relative(resolved, from: defaultCache);
-  return p.normalize(p.join(pubCache, relative));
+  return resolvedRoot;
 }
 
 Future<String> getMelosRoot() async {

@@ -412,6 +412,55 @@ void main() {
       );
       expect(content, contains("name=\"'format'\""));
     });
+
+    test(
+      'writes the PUB_CACHE melos path into SCRIPT_PATH',
+      withMockPlatform(
+        () async {
+          final tempDir = createTestTempDir();
+          final workspaceBuilder =
+              VirtualWorkspaceBuilder(
+                path: tempDir.path,
+                '''
+        packages:
+          - .
+        scripts:
+          format: dart format .
+        ''',
+              )..addPackage(
+                '''
+          name: root
+          ''',
+                path: '.',
+              );
+          final workspace = workspaceBuilder.build();
+          final project = IntellijProject.fromWorkspace(workspace);
+          await project.writeMelosScripts();
+
+          final content = readTextFile(
+            p.join(project.runConfigurationsDir.path, 'melos_run_format.xml'),
+          );
+          expect(
+            content,
+            contains(
+              'name="SCRIPT_PATH" value="${p.join('/custom/.pub-cache', 'bin', 'melos')}"',
+            ),
+          );
+          expect(
+            content,
+            contains('name="SCRIPT_OPTIONS" value="run format"'),
+          );
+          expect(content, isNot(contains('value="melos run format"')));
+        },
+        platform: FakePlatform(
+          operatingSystem: 'linux',
+          environment: const {
+            EnvironmentVariableKey.pubCache: '/custom/.pub-cache',
+            'HOME': '/root',
+          },
+        ),
+      ),
+    );
   });
 
   // https://github.com/invertase/melos/issues/749

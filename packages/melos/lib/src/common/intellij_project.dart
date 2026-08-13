@@ -338,8 +338,8 @@ class IntellijProject {
         melosScriptTemplate,
         {
           'scriptName': _escapeXmlAttr(scriptName),
-          'scriptArgs': scriptArgs,
-          'scriptPath': getMelosBinForIde(),
+          'scriptArgs': _escapeXmlAttr(scriptArgs),
+          'scriptPath': _escapeXmlAttr(getMelosBinForIde()),
           'executeInTerminal': _workspace.config.ide.intelliJ.executeInTerminal
               .toString(),
         },

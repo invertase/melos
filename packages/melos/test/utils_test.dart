@@ -365,6 +365,39 @@ void main() {
         ),
       ),
     );
+
+    test(
+      'rewrites a Windows Roaming cache path even when Local is set',
+      withMockPlatform(
+        () {
+          final resolved = p.join(
+            r'C:\Users\me\AppData\Roaming',
+            'Pub',
+            'Cache',
+            'hosted',
+            'pub.dev',
+            'melos-6.1.0',
+          );
+          expect(
+            applyPubCacheOverride(resolved),
+            p.join(
+              r'C:\custom\.pub-cache',
+              'hosted',
+              'pub.dev',
+              'melos-6.1.0',
+            ),
+          );
+        },
+        platform: FakePlatform(
+          operatingSystem: 'windows',
+          environment: const {
+            EnvironmentVariableKey.pubCache: r'C:\custom\.pub-cache',
+            'LOCALAPPDATA': r'C:\Users\me\AppData\Local',
+            'APPDATA': r'C:\Users\me\AppData\Roaming',
+          },
+        ),
+      ),
+    );
   });
 
   group('mergeYaml', () {
