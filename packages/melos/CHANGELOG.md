@@ -1,3 +1,9 @@
+## 8.3.0
+
+ - **FIX**(intellij): honor PUB_CACHE when generating IDE files ([#1059](https://github.com/invertase/melos/issues/1059)). ([4c2fa471](https://github.com/invertase/melos/commit/4c2fa471d465a844d4ff920a1134cb6acf70096e))
+ - **FIX**(version): honour `--yes` for manual versioning prompts ([#1058](https://github.com/invertase/melos/issues/1058)). ([ad39d0ff](https://github.com/invertase/melos/commit/ad39d0ffd35329863555261611a95f71a122187d))
+ - **FEAT**(version): add optional fixed versioning mode ([#1056](https://github.com/invertase/melos/issues/1056)). ([9af2ac1d](https://github.com/invertase/melos/commit/9af2ac1d4c180f2aeb824b957ff105e94fb54d74))
+
 ## 8.2.2
 
  - **FIX**(scripts): expand env variables inherited from a parent melos process on Windows ([#1054](https://github.com/invertase/melos/issues/1054)). ([705819d0](https://github.com/invertase/melos/commit/705819d0b66029544e81fac0dd9020ffba97b208))
