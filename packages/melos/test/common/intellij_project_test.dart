@@ -440,11 +440,12 @@ void main() {
           final content = readTextFile(
             p.join(project.runConfigurationsDir.path, 'melos_run_format.xml'),
           );
+          final expectedPath = p.normalize(
+            p.join('/custom/.pub-cache', 'bin', 'melos'),
+          );
           expect(
             content,
-            contains(
-              'name="SCRIPT_PATH" value="${p.join('/custom/.pub-cache', 'bin', 'melos')}"',
-            ),
+            contains('name="SCRIPT_PATH" value="$expectedPath"'),
           );
           expect(
             content,
@@ -480,7 +481,7 @@ void main() {
           final project = IntellijProject.fromWorkspace(workspace);
           expect(
             project.getMelosBinForIde(),
-            p.join('/custom/.pub-cache', 'bin', 'melos'),
+            p.normalize(p.join('/custom/.pub-cache', 'bin', 'melos')),
           );
         },
         platform: FakePlatform(

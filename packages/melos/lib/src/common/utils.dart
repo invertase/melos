@@ -326,8 +326,9 @@ String getPubCacheDirectory() {
 /// On Windows both Local and Roaming caches are valid.
 String defaultPubCacheDirectory() => defaultPubCacheDirectories().first;
 
-/// Windows can have a cache under Local *and* Roaming. Isolate.resolvePackageUri
-/// may report either, so remapping has to try both.
+/// Windows can have a cache under Local *and* Roaming.
+/// Isolate.resolvePackageUri may report either, so remapping
+/// has to try both.
 List<String> defaultPubCacheDirectories() {
   if (currentPlatform.isWindows) {
     final dirs = <String>[];
@@ -363,7 +364,7 @@ String applyPubCacheOverride(String resolvedRoot) {
   }
 
   final templatesDir = p.join(resolvedRoot, 'templates');
-  if (Directory(templatesDir).existsSync()) {
+  if (_directoryExists(templatesDir)) {
     return resolvedRoot;
   }
 
@@ -377,6 +378,14 @@ String applyPubCacheOverride(String resolvedRoot) {
     }
   }
   return resolvedRoot;
+}
+
+bool _directoryExists(String path) {
+  try {
+    return Directory(path).existsSync();
+  } on FileSystemException {
+    return false;
+  }
 }
 
 Future<String> getMelosRoot() async {

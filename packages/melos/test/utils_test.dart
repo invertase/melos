@@ -311,11 +311,13 @@ void main() {
           );
           expect(
             applyPubCacheOverride(resolved),
-            p.join(
-              '/custom/.pub-cache',
-              'hosted',
-              'pub.dev',
-              'melos-6.1.0',
+            p.normalize(
+              p.join(
+                '/custom/.pub-cache',
+                'hosted',
+                'pub.dev',
+                'melos-6.1.0',
+              ),
             ),
           );
         },
