@@ -201,7 +201,14 @@ T _promptWithTerminal<T>(
   bool requirePrompt = false,
 }) {
   if (stdin.hasTerminal) {
-    return runPrompt();
+    try {
+      return runPrompt();
+    } on StdinException {
+      // `stdin.hasTerminal` can be true while stdin does not actually support
+      // the terminal operations the prompt requires (e.g. reading the echo
+      // mode fails with errno 19 in some sandboxed/piped environments).
+      // Degrade to the non-interactive behaviour below instead of crashing.
+    }
   }
 
   if (!requirePrompt) {

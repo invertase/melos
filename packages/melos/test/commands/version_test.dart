@@ -1092,7 +1092,73 @@ dev_dependencies:
         },
       );
     });
+
+    // Regression test for: https://github.com/invertase/melos/issues/1057
+    test(
+      '--yes does not prompt when manually versioning with a changelog',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _workspaceConfigBuilder,
+          workspacePackages: ['a'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(0, 0, 1)),
+        );
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+
+        await melos.bootstrap();
+
+        // Any attempt to prompt in this zone blows up, so the test fails if
+        // `--yes` (`force`) is not honoured, regardless of whether a terminal
+        // is attached.
+        await IOOverrides.runZoned(
+          () => melos.version(
+            updateDependentsConstraints: false,
+            updateDependentsVersions: false,
+            versionPrivatePackages: true,
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            manualVersions: {
+              'a': ManualVersionChange(Version(0, 1, 0)),
+            },
+          ),
+          stdin: _ThrowingStdin.new,
+        );
+
+        final pubspec = Pubspec.parse(
+          File(
+            p.join(workspaceDir.path, 'packages/a/pubspec.yaml'),
+          ).readAsStringSync(),
+        );
+        expect(pubspec.version, Version(0, 1, 0));
+
+        final changelog = File(
+          p.join(workspaceDir.path, 'packages/a/CHANGELOG.md'),
+        ).readAsStringSync();
+        expect(changelog, contains('0.1.0'));
+        expect(changelog, contains('Bump "a" to `0.1.0`.'));
+      },
+    );
   });
+}
+
+/// A [Stdin] that claims to have a terminal but fails on every terminal
+/// operation, like the environments described in
+/// https://github.com/invertase/melos/issues/1057.
+class _ThrowingStdin implements Stdin {
+  @override
+  bool get hasTerminal => true;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw StateError(
+    'Unexpected prompt: stdin was used while running with `--yes`.',
+  );
 }
 
 MelosWorkspaceConfig _workspaceConfigBuilder(String path) {
