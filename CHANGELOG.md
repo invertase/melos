@@ -3,6 +3,29 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-08-14
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v8.3.0`](#melos---v830)
+
+---
+
+#### `melos` - `v8.3.0`
+
+ - **FIX**(intellij): honor PUB_CACHE when generating IDE files ([#1059](https://github.com/invertase/melos/issues/1059)). ([4c2fa471](https://github.com/invertase/melos/commit/4c2fa471d465a844d4ff920a1134cb6acf70096e))
+ - **FIX**(version): honour `--yes` for manual versioning prompts ([#1058](https://github.com/invertase/melos/issues/1058)). ([ad39d0ff](https://github.com/invertase/melos/commit/ad39d0ffd35329863555261611a95f71a122187d))
+ - **FEAT**(version): add optional fixed versioning mode ([#1056](https://github.com/invertase/melos/issues/1056)). ([9af2ac1d](https://github.com/invertase/melos/commit/9af2ac1d4c180f2aeb824b957ff105e94fb54d74))
+
+
 ## 2026-07-13
 
 ### Changes
