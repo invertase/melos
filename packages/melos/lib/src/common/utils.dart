@@ -15,6 +15,7 @@ import '../logging.dart';
 import '../workspace.dart';
 import 'environment_variable_key.dart';
 import 'exception.dart';
+import 'io.dart' show dirExists;
 import 'platform.dart';
 import 'process_output_cancel_token.dart';
 
@@ -315,7 +316,101 @@ String addToPathEnvVar({
   }
 }
 
-Future<String> getMelosRoot() async {
+/// Default pub cache locations when [EnvironmentVariableKey.pubCache] is
+/// unset.
+///
+/// Windows can have a cache under Local *and* Roaming, and
+/// `Isolate.resolvePackageUri` may report either, so remapping has to try
+/// both. Returns an empty list when no default location can be determined.
+List<String> _defaultPubCacheDirectories() {
+  if (currentPlatform.isWindows) {
+    final dirs = <String>[];
+    final localAppData = currentPlatform.environment['LOCALAPPDATA'];
+    if (localAppData != null && localAppData.isNotEmpty) {
+      dirs.add(p.join(localAppData, 'Pub', 'Cache'));
+    }
+    final appData = currentPlatform.environment['APPDATA'];
+    if (appData != null && appData.isNotEmpty) {
+      dirs.add(p.join(appData, 'Pub', 'Cache'));
+    }
+    if (dirs.isNotEmpty) {
+      return dirs;
+    }
+  }
+  final home =
+      currentPlatform.environment['HOME'] ??
+      currentPlatform.environment['USERPROFILE'] ??
+      '';
+  if (home.isEmpty) {
+    return const [];
+  }
+  return [p.join(home, '.pub-cache')];
+}
+
+/// Rewrites [resolvedRoot] from a default pub-cache location into the cache
+/// pointed to by [EnvironmentVariableKey.pubCache].
+///
+/// The rewrite only happens when [probeSubdirectory] is missing under
+/// [resolvedRoot], [resolvedRoot] is inside a default pub-cache location, and
+/// the rewritten root does contain [probeSubdirectory]; in every other case
+/// [resolvedRoot] is returned unchanged.
+///
+/// This covers globally-activated Melos when `Isolate.resolvePackageUri`
+/// still reports `$HOME/.pub-cache` while the packages actually live in a
+/// custom `PUB_CACHE` (see invertase/melos#749).
+String applyPubCacheOverride(
+  String resolvedRoot, {
+  required String probeSubdirectory,
+}) {
+  final pubCacheEnv =
+      currentPlatform.environment[EnvironmentVariableKey.pubCache];
+  if (pubCacheEnv == null || pubCacheEnv.isEmpty) {
+    return resolvedRoot;
+  }
+  // Pub resolves a relative PUB_CACHE against the working directory.
+  final pubCache = p.normalize(p.absolute(pubCacheEnv));
+
+  final resolved = p.normalize(resolvedRoot);
+  if (p.equals(pubCache, resolved) || p.isWithin(pubCache, resolved)) {
+    return resolvedRoot;
+  }
+  if (_probeDirExists(p.join(resolved, probeSubdirectory))) {
+    return resolvedRoot;
+  }
+
+  for (final defaultCache in _defaultPubCacheDirectories().map(p.normalize)) {
+    if (!p.equals(defaultCache, resolved) &&
+        !p.isWithin(defaultCache, resolved)) {
+      continue;
+    }
+    final rewritten = p.equals(defaultCache, resolved)
+        ? pubCache
+        : p.normalize(
+            p.join(pubCache, p.relative(resolved, from: defaultCache)),
+          );
+    if (_probeDirExists(p.join(rewritten, probeSubdirectory))) {
+      return rewritten;
+    }
+  }
+  return resolvedRoot;
+}
+
+/// [dirExists] variant that treats unreadable paths as missing, since the
+/// probed locations may not be stat-able by the current user (for example
+/// `/root/.pub-cache` when running as a regular user).
+bool _probeDirExists(String path) {
+  try {
+    return dirExists(path);
+  } on FileSystemException {
+    return false;
+  }
+}
+
+Future<String>? _melosRoot;
+
+Future<String> getMelosRoot() => _melosRoot ??= _resolveMelosRoot();
+
+Future<String> _resolveMelosRoot() async {
   final melosPackageFileUri = await Isolate.resolvePackageUri(melosPackageUri);
 
   // Get from lib/melos.dart to the package root

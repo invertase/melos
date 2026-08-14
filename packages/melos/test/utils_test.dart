@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:melos/src/common/environment_variable_key.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:melos/src/logging.dart';
@@ -245,6 +246,177 @@ void main() {
         ),
       );
     });
+  });
+
+  group('applyPubCacheOverride', () {
+    String packagePath(String cache) =>
+        p.join(cache, 'hosted', 'pub.dev', 'melos-6.1.0');
+
+    test('rewrites a stale default pub-cache path into PUB_CACHE', () async {
+      final pubCacheDir = createTestTempDir();
+      final rewrittenRoot = packagePath(pubCacheDir.path);
+      Directory(p.join(rewrittenRoot, 'templates')).createSync(recursive: true);
+
+      await withMockPlatform(
+        () {
+          expect(
+            applyPubCacheOverride(
+              packagePath(p.join('/root', '.pub-cache')),
+              probeSubdirectory: 'templates',
+            ),
+            p.normalize(rewrittenRoot),
+          );
+        },
+        platform: FakePlatform(
+          operatingSystem: 'linux',
+          environment: {
+            EnvironmentVariableKey.pubCache: pubCacheDir.path,
+            'HOME': '/root',
+          },
+        ),
+      )();
+    });
+
+    test('keeps a resolved path that still contains the probe', () async {
+      final defaultCacheDir = createTestTempDir();
+      final resolvedRoot = packagePath(defaultCacheDir.path);
+      Directory(p.join(resolvedRoot, 'templates')).createSync(recursive: true);
+      final pubCacheDir = createTestTempDir();
+
+      await withMockPlatform(
+        () {
+          expect(
+            applyPubCacheOverride(resolvedRoot, probeSubdirectory: 'templates'),
+            resolvedRoot,
+          );
+        },
+        platform: FakePlatform(
+          operatingSystem: 'linux',
+          environment: {
+            EnvironmentVariableKey.pubCache: pubCacheDir.path,
+            'HOME': '/root',
+          },
+        ),
+      )();
+    });
+
+    test(
+      'keeps the isolate-resolved path when PUB_CACHE is unset',
+      withMockPlatform(
+        () {
+          final resolved = packagePath(p.join('/root', '.pub-cache'));
+          expect(
+            applyPubCacheOverride(resolved, probeSubdirectory: 'templates'),
+            resolved,
+          );
+        },
+        platform: FakePlatform(
+          operatingSystem: 'linux',
+          environment: const {'HOME': '/root'},
+        ),
+      ),
+    );
+
+    test('keeps a path that is not under the default pub-cache', () async {
+      final pubCacheDir = createTestTempDir();
+      Directory(
+        p.join(packagePath(pubCacheDir.path), 'templates'),
+      ).createSync(recursive: true);
+
+      await withMockPlatform(
+        () {
+          const resolved = '/src/melos/packages/melos';
+          expect(
+            applyPubCacheOverride(resolved, probeSubdirectory: 'templates'),
+            resolved,
+          );
+        },
+        platform: FakePlatform(
+          operatingSystem: 'linux',
+          environment: {
+            EnvironmentVariableKey.pubCache: pubCacheDir.path,
+            'HOME': '/root',
+          },
+        ),
+      )();
+    });
+
+    test('keeps the resolved path when PUB_CACHE lacks the probe', () async {
+      final pubCacheDir = createTestTempDir();
+
+      await withMockPlatform(
+        () {
+          final resolved = packagePath(p.join('/root', '.pub-cache'));
+          expect(
+            applyPubCacheOverride(resolved, probeSubdirectory: 'templates'),
+            resolved,
+          );
+        },
+        platform: FakePlatform(
+          operatingSystem: 'linux',
+          environment: {
+            EnvironmentVariableKey.pubCache: pubCacheDir.path,
+            'HOME': '/root',
+          },
+        ),
+      )();
+    });
+
+    test(
+      'keeps a resolved path that is already inside a nested PUB_CACHE',
+      () async {
+        final homeDir = createTestTempDir();
+        final pubCache = p.join(homeDir.path, '.pub-cache', 'ci');
+        final resolved = packagePath(pubCache);
+
+        await withMockPlatform(
+          () {
+            expect(
+              applyPubCacheOverride(resolved, probeSubdirectory: 'templates'),
+              resolved,
+            );
+          },
+          platform: FakePlatform(
+            operatingSystem: 'linux',
+            environment: {
+              EnvironmentVariableKey.pubCache: pubCache,
+              'HOME': homeDir.path,
+            },
+          ),
+        )();
+      },
+    );
+
+    test(
+      'rewrites a Windows Roaming cache path even when Local is set',
+      () async {
+        final localDir = createTestTempDir();
+        final roamingDir = createTestTempDir();
+        final pubCacheDir = createTestTempDir();
+        final rewrittenRoot = packagePath(pubCacheDir.path);
+        Directory(
+          p.join(rewrittenRoot, 'templates'),
+        ).createSync(recursive: true);
+        final resolved = packagePath(p.join(roamingDir.path, 'Pub', 'Cache'));
+
+        await withMockPlatform(
+          () {
+            expect(
+              applyPubCacheOverride(resolved, probeSubdirectory: 'templates'),
+              p.normalize(rewrittenRoot),
+            );
+          },
+          platform: FakePlatform(
+            operatingSystem: 'windows',
+            environment: {
+              EnvironmentVariableKey.pubCache: pubCacheDir.path,
+              'LOCALAPPDATA': localDir.path,
+              'APPDATA': roamingDir.path,
+            },
+          ),
+        )();
+      },
+    );
   });
 
   group('mergeYaml', () {

@@ -1,11 +1,14 @@
 import 'dart:io';
 
+import 'package:melos/src/common/environment_variable_key.dart';
 import 'package:melos/src/common/intellij_project.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:path/path.dart' as p;
+import 'package:platform/platform.dart' show FakePlatform;
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
+import '../mock_env.dart';
 import '../utils.dart';
 
 void main() {
@@ -409,5 +412,79 @@ void main() {
       );
       expect(content, contains("name=\"'format'\""));
     });
+
+    test(
+      'keeps resolving melos from PATH via SCRIPT_TEXT when PUB_CACHE is set',
+      withMockPlatform(
+        () async {
+          final tempDir = createTestTempDir();
+          final workspaceBuilder =
+              VirtualWorkspaceBuilder(
+                path: tempDir.path,
+                '''
+        packages:
+          - .
+        scripts:
+          format: dart format .
+        ''',
+              )..addPackage(
+                '''
+          name: root
+          ''',
+                path: '.',
+              );
+          final workspace = workspaceBuilder.build();
+          final project = IntellijProject.fromWorkspace(workspace);
+          await project.writeMelosScripts();
+
+          final content = readTextFile(
+            p.join(project.runConfigurationsDir.path, 'melos_run_format.xml'),
+          );
+          // A fixed path into PUB_CACHE would break for anyone not installing
+          // melos there (see invertase/melos#789), so the run configuration
+          // must keep resolving melos from PATH.
+          expect(
+            content,
+            contains('name="SCRIPT_TEXT" value="melos run format"'),
+          );
+          expect(content, contains('name="EXECUTE_SCRIPT_FILE" value="false"'));
+          expect(content, isNot(contains('/custom/.pub-cache')));
+        },
+        platform: FakePlatform(
+          operatingSystem: 'linux',
+          environment: const {
+            EnvironmentVariableKey.pubCache: '/custom/.pub-cache',
+            'HOME': '/root',
+          },
+        ),
+      ),
+    );
+  });
+
+  group('getMelosBinForIde', () {
+    test(
+      'falls back to the default IntelliJ pub-cache path',
+      withMockPlatform(
+        () {
+          final tempDir = createTestTempDir();
+          final workspace = VirtualWorkspaceBuilder(
+            path: tempDir.path,
+            '''
+        packages:
+          - .
+        ''',
+          ).build();
+          final project = IntellijProject.fromWorkspace(workspace);
+          expect(
+            project.getMelosBinForIde(),
+            r'$USER_HOME$/.pub-cache/bin/melos',
+          );
+        },
+        platform: FakePlatform(
+          operatingSystem: 'linux',
+          environment: const {'HOME': '/root'},
+        ),
+      ),
+    );
   });
 }
