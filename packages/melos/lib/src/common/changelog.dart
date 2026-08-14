@@ -116,6 +116,14 @@ extension ChangelogStringBufferExtension on StringBuffer {
       writeln();
     }
 
+    if (update.reason == PackageUpdateReason.lockstep) {
+      // Lockstep version bump entry for a package without changes of its own.
+      writeln(
+        ' - Bump version to keep all packages in the workspace in lockstep.',
+      );
+      writeln();
+    }
+
     if (update.reason == PackageUpdateReason.graduate &&
         !update.hasChangelogCommits) {
       // Package graduation entry without any new commits since the last

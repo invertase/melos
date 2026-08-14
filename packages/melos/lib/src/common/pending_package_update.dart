@@ -25,6 +25,10 @@ enum PackageUpdateReason {
 
   /// Package is being graduated to a stable version from a prerelease.
   graduate,
+
+  /// Changed to keep the package version in lockstep with the other packages
+  /// in the workspace, even though the package has no changes of its own.
+  lockstep,
 }
 
 @immutable
@@ -39,6 +43,7 @@ class MelosPendingPackageUpdate {
     this.graduate = false,
     this.preid,
     this.groupCommits,
+    this.lockstepVersion,
   }) : manualVersion = null,
        userChangelogMessage = null;
 
@@ -53,7 +58,8 @@ class MelosPendingPackageUpdate {
   }) : reason = PackageUpdateReason.manual,
        prerelease = false,
        graduate = false,
-       preid = null;
+       preid = null,
+       lockstepVersion = null;
 
   /// Commits that triggered this pending update. Can be empty if
   /// [PackageUpdateReason] is [PackageUpdateReason.dependency].
@@ -84,6 +90,13 @@ class MelosPendingPackageUpdate {
   /// user.
   final Version? manualVersion;
 
+  /// The shared next version of all packages in the workspace, when lockstep
+  /// versioning is enabled.
+  ///
+  /// When set, this version is used instead of computing the next version
+  /// from this package's own commits.
+  final Version? lockstepVersion;
+
   /// Changelog message that the user provided directly.
   ///
   /// This is only used for manually versioned packages.
@@ -112,6 +125,7 @@ class MelosPendingPackageUpdate {
   /// Next pub version that will occur as part of this package update.
   Version get nextVersion {
     return manualVersion ??
+        lockstepVersion ??
         versioning.nextVersion(
           currentVersion,
           semverReleaseType!,
@@ -124,9 +138,11 @@ class MelosPendingPackageUpdate {
   /// Taking into account all the commits in this update, what is the highest
   /// [SemverReleaseType].
   ///
-  /// Is `null` for manually versioned packages.
+  /// Is `null` for manually versioned packages and packages that are only
+  /// versioned to keep the workspace in lockstep.
   SemverReleaseType? get semverReleaseType {
-    if (reason == PackageUpdateReason.manual) {
+    if (reason == PackageUpdateReason.manual ||
+        reason == PackageUpdateReason.lockstep) {
       return null;
     }
 

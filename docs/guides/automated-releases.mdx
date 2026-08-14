@@ -34,6 +34,10 @@ For customizing the versioning process, see the
 [configuration options](/configuration/overview#commandversion) for the
 `version` command.
 
+By default, each package is versioned independently. If you want all packages
+in the workspace to always share the same version, enable the
+[fixed versioning mode](/commands/version#fixed-versioning-mode).
+
 ### Automatic Versioning
 
 To determine which packages to version and how, Melos performs the following
