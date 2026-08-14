@@ -6,7 +6,6 @@ import 'package:xml/xml.dart' as xml;
 import '../common/utils.dart' as utils;
 import '../package.dart';
 import '../workspace.dart';
-import 'environment_variable_key.dart';
 import 'io.dart';
 import 'platform.dart';
 
@@ -27,13 +26,21 @@ class IntellijProject {
 
   final Map<String, String> _cacheTemplates = <String, String>{};
 
+  Future<String>? _pathTemplates;
+
   /// Fully qualified path to the intellij templates shipped as part of Melos.
-  Future<String> get pathTemplates async {
-    return p.join(
+  Future<String> get pathTemplates =>
+      _pathTemplates ??= _resolvePathTemplates();
+
+  Future<String> _resolvePathTemplates() async {
+    // For a globally-activated Melos with a custom PUB_CACHE, the
+    // isolate-resolved root can point into the default pub-cache even though
+    // the templates live in PUB_CACHE (see invertase/melos#749).
+    final melosRoot = utils.applyPubCacheOverride(
       await utils.getMelosRoot(),
-      _kTemplatesDirName,
-      _kIntellijDirName,
+      probeSubdirectory: _kTemplatesDirName,
     );
+    return p.join(melosRoot, _kTemplatesDirName, _kIntellijDirName);
   }
 
   Directory get runConfigurationsDir =>
@@ -297,12 +304,6 @@ class IntellijProject {
   }
 
   String getMelosBinForIde() {
-    final pubCache =
-        currentPlatform.environment[EnvironmentVariableKey.pubCache];
-    if (pubCache != null && pubCache.isNotEmpty) {
-      final executable = currentPlatform.isWindows ? 'melos.bat' : 'melos';
-      return p.normalize(p.join(pubCache, 'bin', executable));
-    }
     if (currentPlatform.isWindows) {
       if (currentPlatform.script.path.contains('Roaming')) {
         return r'$USER_HOME$/AppData/Roaming/Pub/Cache/bin/melos.bat';
@@ -327,6 +328,8 @@ class IntellijProject {
       runConfigurations["$scriptNamePrefix'$key'"] = 'run $key';
     }
 
+    final scriptPath = _escapeXmlAttr(getMelosBinForIde());
+
     await Future.forEach(runConfigurations.keys, (scriptName) async {
       final scriptArgs = runConfigurations[scriptName]!;
       final pathSafeScriptArgs = scriptArgs.replaceAll(
@@ -339,7 +342,7 @@ class IntellijProject {
         {
           'scriptName': _escapeXmlAttr(scriptName),
           'scriptArgs': _escapeXmlAttr(scriptArgs),
-          'scriptPath': _escapeXmlAttr(getMelosBinForIde()),
+          'scriptPath': scriptPath,
           'executeInTerminal': _workspace.config.ide.intelliJ.executeInTerminal
               .toString(),
         },

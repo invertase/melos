@@ -414,7 +414,7 @@ void main() {
     });
 
     test(
-      'writes the PUB_CACHE melos path into SCRIPT_PATH',
+      'keeps resolving melos from PATH via SCRIPT_TEXT when PUB_CACHE is set',
       withMockPlatform(
         () async {
           final tempDir = createTestTempDir();
@@ -440,18 +440,15 @@ void main() {
           final content = readTextFile(
             p.join(project.runConfigurationsDir.path, 'melos_run_format.xml'),
           );
-          final expectedPath = p.normalize(
-            p.join('/custom/.pub-cache', 'bin', 'melos'),
-          );
+          // A fixed path into PUB_CACHE would break for anyone not installing
+          // melos there (see invertase/melos#789), so the run configuration
+          // must keep resolving melos from PATH.
           expect(
             content,
-            contains('name="SCRIPT_PATH" value="$expectedPath"'),
+            contains('name="SCRIPT_TEXT" value="melos run format"'),
           );
-          expect(
-            content,
-            contains('name="SCRIPT_OPTIONS" value="run format"'),
-          );
-          expect(content, isNot(contains('value="melos run format"')));
+          expect(content, contains('name="EXECUTE_SCRIPT_FILE" value="false"'));
+          expect(content, isNot(contains('/custom/.pub-cache')));
         },
         platform: FakePlatform(
           operatingSystem: 'linux',
@@ -464,36 +461,7 @@ void main() {
     );
   });
 
-  // https://github.com/invertase/melos/issues/749
   group('getMelosBinForIde', () {
-    test(
-      'uses PUB_CACHE when it is set',
-      withMockPlatform(
-        () {
-          final tempDir = createTestTempDir();
-          final workspace = VirtualWorkspaceBuilder(
-            path: tempDir.path,
-            '''
-        packages:
-          - .
-        ''',
-          ).build();
-          final project = IntellijProject.fromWorkspace(workspace);
-          expect(
-            project.getMelosBinForIde(),
-            p.normalize(p.join('/custom/.pub-cache', 'bin', 'melos')),
-          );
-        },
-        platform: FakePlatform(
-          operatingSystem: 'linux',
-          environment: const {
-            EnvironmentVariableKey.pubCache: '/custom/.pub-cache',
-            'HOME': '/root',
-          },
-        ),
-      ),
-    );
-
     test(
       'falls back to the default IntelliJ pub-cache path',
       withMockPlatform(
