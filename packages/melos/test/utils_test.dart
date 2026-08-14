@@ -449,4 +449,64 @@ void main() {
       });
     });
   });
+
+  group('prompts', () {
+    // Regression test for https://github.com/invertase/melos/issues/1057.
+    //
+    // Some environments report `stdin.hasTerminal == true` while any actual
+    // terminal operation (such as reading the echo mode) fails with a
+    // `StdinException`. Prompting must degrade to the non-interactive
+    // defaults in that case instead of crashing.
+    test('fall back to defaults when the terminal throws StdinException', () {
+      IOOverrides.runZoned(
+        () {
+          expect(
+            promptBool(defaultsToWithoutPrompt: true),
+            isTrue,
+          );
+          expect(
+            promptInput('message', defaultsTo: 'default'),
+            'default',
+          );
+          expect(
+            () => promptBool(requirePrompt: true),
+            throwsA(isA<PromptException>()),
+          );
+        },
+        stdin: _BrokenStdin.new,
+      );
+    });
+  });
+}
+
+class _BrokenStdin implements Stdin {
+  @override
+  bool get hasTerminal => true;
+
+  @override
+  bool get echoMode => throw const StdinException(
+    'Error getting terminal echo mode, OS Error: Operation not supported by '
+    'device, errno = 19',
+  );
+
+  @override
+  set echoMode(bool value) => throw const StdinException(
+    'Error setting terminal echo mode, OS Error: Operation not supported by '
+    'device, errno = 19',
+  );
+
+  @override
+  bool get lineMode => throw const StdinException(
+    'Error getting terminal line mode, OS Error: Operation not supported by '
+    'device, errno = 19',
+  );
+
+  @override
+  set lineMode(bool value) => throw const StdinException(
+    'Error setting terminal line mode, OS Error: Operation not supported by '
+    'device, errno = 19',
+  );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
