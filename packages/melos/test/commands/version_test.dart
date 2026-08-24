@@ -1959,6 +1959,152 @@ dev_dependencies:
           expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 0));
         },
       );
+
+      test(
+        'CLI runner overrides smartDependents config with '
+        '--no-smart-dependents',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _smartDependentsWorkspaceConfigBuilder,
+            workspacePackages: ['a', 'b'],
+            useLocalTmpDirectory: true,
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'b',
+              version: Version(1, 0, 0),
+              dependencies: {
+                'a': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final runner = MelosCommandRunner(config);
+
+          await runner.run([
+            'version',
+            '--yes',
+            '--no-git-tag-version',
+            '--no-git-commit-version',
+            '--no-smart-dependents',
+            '--all',
+            '-V',
+            'a:1.0.1',
+          ]);
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          // Explicit --no-smart-dependents forces legacy cascade bump.
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 1));
+        },
+      );
+
+      test(
+        'CLI runner enables smartDependents with --smart-dependents flag',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _workspaceConfigBuilder,
+            workspacePackages: ['a', 'b'],
+            useLocalTmpDirectory: true,
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'b',
+              version: Version(1, 0, 0),
+              dependencies: {
+                'a': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final runner = MelosCommandRunner(config);
+
+          await runner.run([
+            'version',
+            '--yes',
+            '--no-git-tag-version',
+            '--no-git-commit-version',
+            '--smart-dependents',
+            '--all',
+            '-V',
+            'a:1.0.1',
+          ]);
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          // Explicit --smart-dependents skips bump on compatible patch.
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 0));
+        },
+      );
+
+      test(
+        'skips dev_dependencies whose declared constraint allows updated '
+        'version',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _workspaceConfigBuilder,
+            workspacePackages: ['a', 'b'],
+            useLocalTmpDirectory: true,
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'b',
+              version: Version(1, 0, 0),
+              devDependencies: {
+                'a': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+
+          await melos.bootstrap(offline: true);
+          await melos.version(
+            versionPrivatePackages: true,
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            smartDependents: true,
+            manualVersions: {
+              'a': ManualVersionChange(Version(1, 0, 1)),
+            },
+          );
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 0));
+        },
+      );
     });
   });
 }
