@@ -320,99 +320,21 @@ mixin _VersionMixin on _RunMixin {
     // versioned.
     if (updateDependentsVersions) {
       if (isSmartDependents) {
-        final packagesToCheck = List<MelosPendingPackageUpdate>.from(
-          pendingPackageUpdates,
+        _collectSmartDependentUpdates(
+          workspace: workspace,
+          pendingPackageUpdates: pendingPackageUpdates,
+          asPrerelease: asPrerelease,
+          preid: preid,
+          dependentPreid: dependentPreid,
         );
-        final processedPackages = <String>{};
-
-        while (packagesToCheck.isNotEmpty) {
-          final currentUpdate = packagesToCheck.removeAt(0);
-          if (!processedPackages.add(currentUpdate.package.name)) {
-            continue;
-          }
-
-          final packageUnscoped =
-              workspace.allPackages[currentUpdate.package.name]!;
-          for (final dependent
-              in packageUnscoped.dependentsInWorkspace.values) {
-            if (workspace.filteredPackages[dependent.name] == null) {
-              continue;
-            }
-
-            final alreadyPending = pendingPackageUpdates.any(
-              (u) => u.package.name == dependent.name,
-            );
-            if (alreadyPending) {
-              continue;
-            }
-
-            final allows = _dependencyConstraintAllowsNextVersion(
-              dependent: dependent,
-              dependencyName: currentUpdate.package.name,
-              nextVersion: currentUpdate.nextVersion,
-            );
-
-            if (!allows) {
-              final dependentUpdate = MelosPendingPackageUpdate(
-                workspace,
-                dependent,
-                const [],
-                PackageUpdateReason.dependency,
-                prerelease: asPrerelease,
-                preid: dependentPreid ?? preid,
-                logger: logger,
-              );
-              pendingPackageUpdates.add(dependentUpdate);
-              packagesToCheck.add(dependentUpdate);
-            }
-          }
-        }
       } else {
-        // Legacy behavior: collect all dependents unconditionally.
-        final dependentPackagesToVersion = <Package>{};
-        for (final update in pendingPackageUpdates) {
-          final packageUnscoped = workspace.allPackages[update.package.name]!;
-          dependentPackagesToVersion.addAll(
-            packageUnscoped.dependentsInWorkspace.values.where(
-              (p) => workspace.filteredPackages[p.name] != null,
-            ),
-          );
-        }
-
-        var packagesAdded = 1;
-        while (packagesAdded != 0) {
-          final packagesCountBefore = dependentPackagesToVersion.length;
-          final packages = <Package>{...dependentPackagesToVersion};
-          for (final dependentPackage in packages) {
-            dependentPackagesToVersion.addAll(
-              dependentPackage.dependentsInWorkspace.values.where(
-                (p) => workspace.filteredPackages[p.name] != null,
-              ),
-            );
-          }
-          packagesAdded =
-              dependentPackagesToVersion.length - packagesCountBefore;
-        }
-
-        for (final package in dependentPackagesToVersion) {
-          final packageHasPendingUpdate = pendingPackageUpdates.any(
-            (packageToVersion) => packageToVersion.package.name == package.name,
-          );
-
-          if (!packageHasPendingUpdate) {
-            pendingPackageUpdates.add(
-              MelosPendingPackageUpdate(
-                workspace,
-                package,
-                const [],
-                PackageUpdateReason.dependency,
-                prerelease: asPrerelease,
-                preid: dependentPreid ?? preid,
-                logger: logger,
-              ),
-            );
-          }
-        }
+        _collectLegacyDependentUpdates(
+          workspace: workspace,
+          pendingPackageUpdates: pendingPackageUpdates,
+          asPrerelease: asPrerelease,
+          preid: preid,
+          dependentPreid: dependentPreid,
+        );
       }
     }
 
@@ -773,6 +695,113 @@ mixin _VersionMixin on _RunMixin {
           lockstepVersion: lockstepVersion,
           logger: logger,
         );
+    }
+  }
+
+  void _collectSmartDependentUpdates({
+    required MelosWorkspace workspace,
+    required List<MelosPendingPackageUpdate> pendingPackageUpdates,
+    required bool asPrerelease,
+    required String? preid,
+    required String? dependentPreid,
+  }) {
+    final packagesToCheck = List<MelosPendingPackageUpdate>.from(
+      pendingPackageUpdates,
+    );
+    final processedPackages = <String>{};
+
+    while (packagesToCheck.isNotEmpty) {
+      final currentUpdate = packagesToCheck.removeAt(0);
+      if (!processedPackages.add(currentUpdate.package.name)) {
+        continue;
+      }
+
+      final packageUnscoped =
+          workspace.allPackages[currentUpdate.package.name]!;
+      for (final dependent in packageUnscoped.dependentsInWorkspace.values) {
+        if (workspace.filteredPackages[dependent.name] == null) {
+          continue;
+        }
+
+        final alreadyPending = pendingPackageUpdates.any(
+          (u) => u.package.name == dependent.name,
+        );
+        if (alreadyPending) {
+          continue;
+        }
+
+        final allows = _dependencyConstraintAllowsNextVersion(
+          dependent: dependent,
+          dependencyName: currentUpdate.package.name,
+          nextVersion: currentUpdate.nextVersion,
+        );
+
+        if (!allows) {
+          final dependentUpdate = MelosPendingPackageUpdate(
+            workspace,
+            dependent,
+            const [],
+            PackageUpdateReason.dependency,
+            prerelease: asPrerelease,
+            preid: dependentPreid ?? preid,
+            logger: logger,
+          );
+          pendingPackageUpdates.add(dependentUpdate);
+          packagesToCheck.add(dependentUpdate);
+        }
+      }
+    }
+  }
+
+  void _collectLegacyDependentUpdates({
+    required MelosWorkspace workspace,
+    required List<MelosPendingPackageUpdate> pendingPackageUpdates,
+    required bool asPrerelease,
+    required String? preid,
+    required String? dependentPreid,
+  }) {
+    final dependentPackagesToVersion = <Package>{};
+    for (final update in pendingPackageUpdates) {
+      final packageUnscoped = workspace.allPackages[update.package.name]!;
+      dependentPackagesToVersion.addAll(
+        packageUnscoped.dependentsInWorkspace.values.where(
+          (p) => workspace.filteredPackages[p.name] != null,
+        ),
+      );
+    }
+
+    var packagesAdded = 1;
+    while (packagesAdded != 0) {
+      final packagesCountBefore = dependentPackagesToVersion.length;
+      final packages = <Package>{...dependentPackagesToVersion};
+      for (final dependentPackage in packages) {
+        dependentPackagesToVersion.addAll(
+          dependentPackage.dependentsInWorkspace.values.where(
+            (p) => workspace.filteredPackages[p.name] != null,
+          ),
+        );
+      }
+      packagesAdded = dependentPackagesToVersion.length - packagesCountBefore;
+    }
+
+    for (final package in dependentPackagesToVersion) {
+      final packageHasPendingUpdate = pendingPackageUpdates.any(
+        (packageToVersion) => packageToVersion.package.name == package.name,
+      );
+
+      if (!packageHasPendingUpdate) {
+        pendingPackageUpdates.add(
+          MelosPendingPackageUpdate(
+            workspace,
+            package,
+            const [],
+            PackageUpdateReason.dependency,
+            prerelease: asPrerelease,
+            preid: dependentPreid ?? preid,
+            logger: logger,
+          ),
+        );
+      }
     }
   }
 
