@@ -850,21 +850,13 @@ mixin _VersionMixin on _RunMixin {
       );
     }
 
-    if (smartDependents) {
-      final gitTagDependency = package.rawPubspecFileContent != null
-          ? GitTagPatternDependency.fromRawCommit(
-              pubspec: package.rawPubspecFileContent!,
-              name: dependencyName,
-            )
-          : null;
-      if (gitTagDependency != null) {
-        if (gitTagDependency.version == version) {
-          return Future.value();
-        }
-      } else if (currentVersionConstraint != null &&
-          currentVersionConstraint.allows(version)) {
-        return Future.value();
-      }
+    if (smartDependents &&
+        _dependencyConstraintAllowsNextVersion(
+          dependent: package,
+          dependencyName: dependencyName,
+          nextVersion: version,
+        )) {
+      return Future.value();
     }
 
     // By default dependency constraint using caret syntax to ensure the range

@@ -4,6 +4,7 @@ import 'package:ansi_styles/ansi_styles.dart';
 import 'package:glob/glob.dart';
 import 'package:melos/melos.dart';
 import 'package:melos/src/command_configs/command_configs.dart';
+import 'package:melos/src/command_runner.dart';
 import 'package:melos/src/common/git_tag_pattern_dependency.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:path/path.dart' as p;
@@ -1908,6 +1909,53 @@ dev_dependencies:
           expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
           // `smartDependents` was enabled in config, so `b` is skipped on
           // compatible patch.
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 0));
+        },
+      );
+
+      test(
+        'CLI runner respects smartDependents from melos.yaml without explicit '
+        'flag',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _smartDependentsWorkspaceConfigBuilder,
+            workspacePackages: ['a', 'b'],
+            useLocalTmpDirectory: true,
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'b',
+              version: Version(1, 0, 0),
+              dependencies: {
+                'a': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final runner = MelosCommandRunner(config);
+
+          await runner.run([
+            'version',
+            '--yes',
+            '--no-git-tag-version',
+            '--no-git-commit-version',
+            '--all',
+            '-V',
+            'a:1.0.1',
+          ]);
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
           expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 0));
         },
       );
