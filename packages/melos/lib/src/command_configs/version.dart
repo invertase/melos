@@ -37,6 +37,7 @@ class VersionCommandConfigs {
     this.hooks = VersionLifecycleHooks.empty,
     this.includeDateInChangelogEntry = false,
     this.groupChangelogEntriesByType = false,
+    this.smartDependents = false,
   }) : _aggregateChangelogs = aggregateChangelogs;
 
   factory VersionCommandConfigs.fromYaml(
@@ -76,6 +77,11 @@ class VersionCommandConfigs {
     );
     final releaseUrl = assertKeyIsA<bool?>(
       key: 'releaseUrl',
+      map: yaml,
+      path: 'command/version',
+    );
+    final smartDependents = assertKeyIsA<bool?>(
+      key: 'smartDependents',
       map: yaml,
       path: 'command/version',
     );
@@ -222,6 +228,7 @@ class VersionCommandConfigs {
       hooks: hooks,
       includeDateInChangelogEntry: includeDate ?? false,
       groupChangelogEntriesByType: groupByType ?? false,
+      smartDependents: smartDependents ?? false,
     );
   }
 
@@ -256,6 +263,10 @@ class VersionCommandConfigs {
   /// Whether to generate and print a link to the prefilled release creation
   /// page for each package after versioning.
   final bool releaseUrl;
+
+  /// Whether to only bump dependent versions and update constraints when
+  /// declared SemVer constraints do not allow the updated version.
+  final bool smartDependents;
 
   /// The mode in which packages in the workspace are versioned.
   ///
@@ -294,6 +305,7 @@ class VersionCommandConfigs {
       'includeCommitId': includeCommitId,
       'linkToCommits': linkToCommits,
       'updateGitTagRefs': updateGitTagRefs,
+      'smartDependents': smartDependents,
       'mode': mode.name,
       'aggregateChangelogs': aggregateChangelogs
           .map((config) => config.toJson())
@@ -318,6 +330,7 @@ class VersionCommandConfigs {
       other.linkToCommits == linkToCommits &&
       other.updateGitTagRefs == updateGitTagRefs &&
       other.releaseUrl == releaseUrl &&
+      other.smartDependents == smartDependents &&
       other.mode == mode &&
       const DeepCollectionEquality().equals(
         other.aggregateChangelogs,
@@ -338,6 +351,7 @@ class VersionCommandConfigs {
       linkToCommits.hashCode ^
       updateGitTagRefs.hashCode ^
       releaseUrl.hashCode ^
+      smartDependents.hashCode ^
       mode.hashCode ^
       const DeepCollectionEquality().hash(aggregateChangelogs) ^
       fetchTags.hashCode ^
@@ -356,6 +370,7 @@ VersionCommandConfigs(
   linkToCommits: $linkToCommits,
   updateGitTagRefs: $updateGitTagRefs,
   releaseUrl: $releaseUrl,
+  smartDependents: $smartDependents,
   mode: ${mode.name},
   aggregateChangelogs: $aggregateChangelogs,
   fetchTags: $fetchTags,

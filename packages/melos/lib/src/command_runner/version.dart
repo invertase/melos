@@ -66,6 +66,12 @@ class VersionCommand extends MelosCommand {
           'with "--dependent-constraints" enabled.',
     );
     argParser.addFlag(
+      'smart-dependents',
+      help:
+          'Only bump dependent versions and rewrite constraints when declared '
+          'SemVer constraints do not allow the updated version.',
+    );
+    argParser.addFlag(
       'git-tag-version',
       abbr: 't',
       defaultsTo: true,
@@ -256,6 +262,9 @@ class VersionCommand extends MelosCommand {
         updateChangelog: changelog,
         updateDependentsConstraints: updateDependentsConstraints,
         updateDependentsVersions: updateDependentsVersions,
+        smartDependents:
+            (argResults?['smart-dependents'] as bool?) ??
+            config.commands.version.smartDependents,
         preid: preid,
         dependentPreid: dependentPreid,
         asPrerelease: asPrerelease,

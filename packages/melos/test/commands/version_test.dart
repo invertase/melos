@@ -1654,7 +1654,281 @@ dev_dependencies:
         );
       });
     });
+
+    group('smart-dependents', () {
+      Version pubspecVersion(Directory workspaceDir, String packageName) {
+        return Pubspec.parse(
+          File(
+            p.join(workspaceDir.path, 'packages', packageName, 'pubspec.yaml'),
+          ).readAsStringSync(),
+        ).version!;
+      }
+
+      test(
+        'skips dependents whose declared constraint allows the updated version',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _workspaceConfigBuilder,
+            workspacePackages: ['a', 'b'],
+            useLocalTmpDirectory: true,
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'b',
+              version: Version(1, 0, 0),
+              dependencies: {
+                'a': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+
+          await melos.bootstrap(offline: true);
+          await melos.version(
+            versionPrivatePackages: true,
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            smartDependents: true,
+            manualVersions: {
+              'a': ManualVersionChange(Version(1, 0, 1)),
+            },
+          );
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          // `b` already allowed 1.0.1 via `^1.0.0`, so it is NOT bumped.
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 0));
+
+          final bPubspec = Pubspec.parse(
+            File(
+              p.join(workspaceDir.path, 'packages/b/pubspec.yaml'),
+            ).readAsStringSync(),
+          );
+          final aDep = bPubspec.dependencies['a']! as HostedDependency;
+          expect(
+            aDep.version,
+            VersionConstraint.parse('^1.0.0'),
+          );
+        },
+      );
+
+      test(
+        'versions dependents whose declared constraint does not allow the '
+        'updated version',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _workspaceConfigBuilder,
+            workspacePackages: ['a', 'b'],
+            useLocalTmpDirectory: true,
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'b',
+              version: Version(1, 0, 0),
+              dependencies: {
+                'a': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+
+          await melos.bootstrap(offline: true);
+          await melos.version(
+            versionPrivatePackages: true,
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            smartDependents: true,
+            manualVersions: {
+              'a': ManualVersionChange(Version(2, 0, 0)),
+            },
+          );
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(2, 0, 0));
+          // `b` did NOT allow 2.0.0 via `^1.0.0`, so it gets a patch bump and
+          // constraint rewrite.
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 1));
+
+          final bPubspec = Pubspec.parse(
+            File(
+              p.join(workspaceDir.path, 'packages/b/pubspec.yaml'),
+            ).readAsStringSync(),
+          );
+          final aDep = bPubspec.dependencies['a']! as HostedDependency;
+          expect(
+            aDep.version,
+            VersionConstraint.parse('^2.0.0'),
+          );
+        },
+      );
+
+      test(
+        'stops transitive cascade at intermediate package whose constraint '
+        'allows updated version',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _workspaceConfigBuilder,
+            workspacePackages: ['a', 'b', 'c'],
+            useLocalTmpDirectory: true,
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'b',
+              version: Version(1, 0, 0),
+              dependencies: {
+                'a': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'c',
+              version: Version(1, 0, 0),
+              dependencies: {
+                'b': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+
+          await melos.bootstrap(offline: true);
+          await melos.version(
+            versionPrivatePackages: true,
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            smartDependents: true,
+            manualVersions: {
+              'a': ManualVersionChange(Version(2, 0, 0)),
+            },
+          );
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(2, 0, 0));
+          // `b` did NOT allow 2.0.0, so it gets bumped to 1.0.1 and constraint
+          // updated.
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 1));
+          // `c` allows 1.0.1 via `^1.0.0`, so cascade stops at `b` and `c` is
+          // NOT bumped.
+          expect(pubspecVersion(workspaceDir, 'c'), Version(1, 0, 0));
+
+          final cPubspec = Pubspec.parse(
+            File(
+              p.join(workspaceDir.path, 'packages/c/pubspec.yaml'),
+            ).readAsStringSync(),
+          );
+          final bDep = cPubspec.dependencies['b']! as HostedDependency;
+          expect(
+            bDep.version,
+            VersionConstraint.parse('^1.0.0'),
+          );
+        },
+      );
+
+      test(
+        'honors smartDependents configured in melos.yaml',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _smartDependentsWorkspaceConfigBuilder,
+            workspacePackages: ['a', 'b'],
+            useLocalTmpDirectory: true,
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'b',
+              version: Version(1, 0, 0),
+              dependencies: {
+                'a': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+
+          await melos.bootstrap(offline: true);
+          await melos.version(
+            versionPrivatePackages: true,
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            manualVersions: {
+              'a': ManualVersionChange(Version(1, 0, 1)),
+            },
+          );
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          // `smartDependents` was enabled in config, so `b` is skipped on
+          // compatible patch.
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 0));
+        },
+      );
+    });
   });
+}
+
+MelosWorkspaceConfig _smartDependentsWorkspaceConfigBuilder(String path) {
+  return MelosWorkspaceConfig(
+    path: path,
+    name: 'test_workspace',
+    packages: [
+      createGlob('packages/**', currentDirectoryPath: path),
+    ],
+    commands: const CommandConfigs(
+      version: VersionCommandConfigs(
+        fetchTags: false,
+        smartDependents: true,
+      ),
+    ),
+  );
 }
 
 MelosWorkspaceConfig _fixedModeWorkspaceConfigBuilder(String path) {
