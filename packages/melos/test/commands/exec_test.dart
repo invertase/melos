@@ -865,5 +865,346 @@ ${'-' * terminalWidth}
         );
       });
     });
+
+    group('group logs', () {
+      /// Writes a script that prints two lines with a delay in between, so
+      /// that the output of concurrently running packages would interleave if
+      /// it was not buffered.
+      void createLoggingFile(
+        Directory dir, {
+        required String package,
+        int delay = 0,
+        int exitCode = 0,
+      }) {
+        File('${dir.path}/log_lines.dart').writeAsStringSync('''
+        import 'dart:io';
+        Future<void> main() async {
+          stdout.writeln('$package line 1');
+          await Future.delayed(Duration(milliseconds: $delay));
+          stdout.writeln('$package line 2');
+          exit($exitCode);
+        }
+        ''');
+      }
+
+      test(
+        'prints the output of each package grouped once all have finished',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            workspacePackages: ['a', 'b', 'c'],
+          );
+
+          final a = await createProject(workspaceDir, Pubspec('a'));
+          createLoggingFile(a, package: 'a', delay: 600);
+
+          final b = await createProject(workspaceDir, Pubspec('b'));
+          createLoggingFile(b, package: 'b', delay: 300);
+
+          final c = await createProject(workspaceDir, Pubspec('c'));
+          createLoggingFile(c, package: 'c');
+
+          final logger = TestLogger();
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(logger: logger, config: config);
+
+          await melos.exec(
+            ['dart', 'log_lines.dart'],
+            concurrency: 3,
+            groupLogs: true,
+          );
+
+          expect(
+            logger.output.normalizeLines(),
+            ignoringAnsii(
+              '''
+\$ melos exec
+  └> dart log_lines.dart
+     └> RUNNING (in 3 packages)
+
+${'-' * terminalWidth}
+a:
+a line 1
+a line 2
+a: SUCCESS
+${'-' * terminalWidth}
+b:
+b line 1
+b line 2
+b: SUCCESS
+${'-' * terminalWidth}
+c:
+c line 1
+c line 2
+c: SUCCESS
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> dart log_lines.dart
+     └> SUCCESS
+''',
+            ),
+          );
+        },
+      );
+
+      test('prints the output of failed packages last', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b', 'c'],
+        );
+
+        final a = await createProject(workspaceDir, Pubspec('a'));
+        createLoggingFile(a, package: 'a', delay: 600);
+
+        final b = await createProject(workspaceDir, Pubspec('b'));
+        createLoggingFile(b, package: 'b', exitCode: 1);
+
+        final c = await createProject(workspaceDir, Pubspec('c'));
+        createLoggingFile(c, package: 'c', delay: 300);
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(logger: logger, config: config);
+
+        await melos.exec(
+          ['dart', 'log_lines.dart'],
+          concurrency: 3,
+          groupLogs: true,
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          ignoringAnsii(
+            '''
+\$ melos exec
+  └> dart log_lines.dart
+     └> RUNNING (in 3 packages)
+
+${'-' * terminalWidth}
+a:
+a line 1
+a line 2
+a: SUCCESS
+${'-' * terminalWidth}
+c:
+c line 1
+c line 2
+c: SUCCESS
+${'-' * terminalWidth}
+b:
+b line 1
+b line 2
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> dart log_lines.dart
+     └> FAILED (in 1 packages)
+        └> b (with exit code 1)
+''',
+          ),
+        );
+      });
+
+      test('is a no-op when running with a concurrency of 1', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b'],
+        );
+
+        await createProject(workspaceDir, Pubspec('a'));
+        await createProject(workspaceDir, Pubspec('b'));
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(logger: logger, config: config);
+
+        await melos.exec(
+          ['echo', 'hello', 'world'],
+          concurrency: 1,
+          groupLogs: true,
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          ignoringAnsii(
+            '''
+\$ melos exec
+  └> echo hello world
+     └> RUNNING (in 2 packages)
+
+${'-' * terminalWidth}
+a:
+hello world
+a: SUCCESS
+${'-' * terminalWidth}
+b:
+hello world
+b: SUCCESS
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> echo hello world
+     └> SUCCESS
+''',
+          ),
+        );
+      });
+
+      // `--fail-fast` completes the packages it skips without running them,
+      // so those packages never write anything to the group buffer. Flushing
+      // the buffer must cope with that, even though the skipped packages are
+      // reported as failures and therefore asked to be flushed last.
+      //
+      // The dependency chain (with `orderDependents`) is only there to make
+      // the skipping deterministic: `b` runs and fails in the first layer, so
+      // `c` and `a` are skipped in the layers after it.
+      test('handles packages that were skipped by failFast', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b', 'c'],
+        );
+
+        final a = await createProject(
+          workspaceDir,
+          Pubspec(
+            'a',
+            dependencies: {
+              'c': HostedDependency(version: VersionConstraint.any),
+            },
+          ),
+        );
+        createLoggingFile(a, package: 'a');
+
+        final b = await createProject(workspaceDir, Pubspec('b'));
+        createLoggingFile(b, package: 'b', exitCode: 1);
+
+        final c = await createProject(
+          workspaceDir,
+          Pubspec(
+            'c',
+            dependencies: {
+              'b': HostedDependency(version: VersionConstraint.any),
+            },
+          ),
+        );
+        createLoggingFile(c, package: 'c');
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(logger: logger, config: config);
+
+        await melos.exec(
+          ['dart', 'log_lines.dart'],
+          concurrency: 3,
+          orderDependents: true,
+          failFast: true,
+          groupLogs: true,
+        );
+
+        // Only `b` ran, so only its output is flushed. `c` and `a` have no
+        // buffered output at all, but are still listed as failures.
+        expect(
+          logger.output.normalizeLines(),
+          ignoringAnsii(
+            '''
+\$ melos exec
+  └> dart log_lines.dart
+     └> RUNNING (in 3 packages)
+
+${'-' * terminalWidth}
+b:
+b line 1
+b line 2
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> dart log_lines.dart
+     └> FAILED (in 3 packages)
+        └> b (with exit code 1)
+        └> c (dependency failed)
+        └> a (dependency failed)
+''',
+          ),
+        );
+      });
+
+      test('groups the output of packages run in dependency order', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b', 'c'],
+        );
+
+        // `a` depends on `b` and `c`, so `b` and `c` run concurrently in the
+        // first layer and `a` runs on its own in the second one.
+        final a = await createProject(
+          workspaceDir,
+          Pubspec(
+            'a',
+            dependencies: {
+              'b': HostedDependency(version: VersionConstraint.any),
+              'c': HostedDependency(version: VersionConstraint.any),
+            },
+          ),
+        );
+        createLoggingFile(a, package: 'a');
+
+        final b = await createProject(workspaceDir, Pubspec('b'));
+        createLoggingFile(b, package: 'b', delay: 300);
+
+        final c = await createProject(workspaceDir, Pubspec('c'));
+        createLoggingFile(c, package: 'c');
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(logger: logger, config: config);
+
+        await melos.exec(
+          ['dart', 'log_lines.dart'],
+          concurrency: 3,
+          orderDependents: true,
+          groupLogs: true,
+        );
+
+        // The buffer is flushed once, after the last layer has finished, in
+        // the order in which the packages started.
+        expect(
+          logger.output.normalizeLines(),
+          ignoringAnsii(
+            '''
+\$ melos exec
+  └> dart log_lines.dart
+     └> RUNNING (in 3 packages)
+
+${'-' * terminalWidth}
+b:
+b line 1
+b line 2
+b: SUCCESS
+${'-' * terminalWidth}
+c:
+c line 1
+c line 2
+c: SUCCESS
+${'-' * terminalWidth}
+a:
+a line 1
+a line 2
+a: SUCCESS
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> dart log_lines.dart
+     └> SUCCESS
+''',
+          ),
+        );
+      });
+    });
   });
 }

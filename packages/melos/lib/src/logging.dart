@@ -271,9 +271,25 @@ class MelosLogger with _DelegateLogger {
     _groupBuffer[group] = [...previous, _GroupBufferWriteMessage(message)];
   }
 
-  Future<void> flushGroupBufferIfNeed() {
-    for (final entry in _groupBuffer.entries) {
-      for (final value in entry.value) {
+  /// Prints everything that has been buffered for a group, one group at a
+  /// time, so that the output of concurrently running commands is not
+  /// interleaved.
+  ///
+  /// Groups are flushed in the order they were first written to, except for
+  /// the groups listed in [lastGroups], which are flushed last (keeping their
+  /// relative order). This is used to print the output of failed packages at
+  /// the end, where it is easy to spot.
+  Future<void> flushGroupBufferIfNeed({
+    Iterable<String> lastGroups = const [],
+  }) {
+    final deferredGroups = lastGroups.toSet();
+    final groupNames = [
+      ..._groupBuffer.keys.where((group) => !deferredGroups.contains(group)),
+      ..._groupBuffer.keys.where(deferredGroups.contains),
+    ];
+
+    for (final groupName in groupNames) {
+      for (final value in _groupBuffer[groupName]!) {
         switch (value) {
           case _GroupBufferStdoutMessage(:final message):
             stdout(message);

@@ -19,6 +19,16 @@ class ExecCommand extends MelosCommand {
           'packages if the script fails in a individual package.',
     );
     argParser.addFlag(
+      'group-logs',
+      help:
+          'Whether the output of each package should be buffered and printed '
+          'grouped per package once every package has finished, instead of '
+          'being streamed and interleaved while the packages run. The output '
+          'of packages in which the command failed is printed last. Only has '
+          'an effect when running in more than one package with a concurrency '
+          'greater than 1.',
+    );
+    argParser.addFlag(
       'order-dependents',
       abbr: 'o',
       help:
@@ -58,12 +68,14 @@ class ExecCommand extends MelosCommand {
     final concurrency = int.parse(argResults!['concurrency'] as String);
     final failFast = argResults!['fail-fast'] as bool;
     final orderDependents = argResults!['order-dependents'] as bool;
+    final groupLogs = argResults!['group-logs'] as bool;
 
     return melos.exec(
       execArgs,
       concurrency: concurrency,
       failFast: failFast,
       orderDependents: orderDependents,
+      groupLogs: groupLogs,
       global: global,
       packageFilters: packageFilters,
     );

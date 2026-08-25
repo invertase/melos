@@ -46,3 +46,30 @@ the script fails in an individual package. Defaults to `false`.
 # Fail fast
 melos exec --fail-fast -- "dart analyze ."
 ```
+
+## --group-logs
+
+When executing a command in multiple packages concurrently, the output of the
+packages is streamed as it is produced, which means the logs of the different
+packages are interleaved and hard to follow.
+
+With `--group-logs`, the output of each package is buffered instead and printed
+once every package has finished, grouped per package and in the order the
+output was produced. Packages in which the command failed are printed last, so
+failures are at the end of the log where they are easy to spot. Defaults to
+`false`.
+
+The flag only has an effect when the command runs in more than one package with
+a concurrency greater than 1. When the command runs in a single package or with
+`--concurrency 1`, the output cannot interleave in the first place, so
+`--group-logs` is a no-op and the output is streamed as usual.
+
+```bash
+# Print the output grouped per package, once all packages have finished
+melos exec --group-logs -- "dart analyze ."
+```
+
+<Info>
+  Since the output is only printed once all packages have finished, nothing is
+  printed while the command is running.
+</Info>

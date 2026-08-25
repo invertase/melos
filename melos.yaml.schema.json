@@ -368,6 +368,14 @@
                         "failFast": {
                           "type": "boolean",
                           "description": "Whether exec should fail fast and not execute the script in further packages if the script fails in a individual package."
+                        },
+                        "orderDependents": {
+                          "type": "boolean",
+                          "description": "Whether exec should order the execution of the script based on the dependency graph of the packages."
+                        },
+                        "groupLogs": {
+                          "type": "boolean",
+                          "description": "Whether the output of each package should be buffered and printed grouped per package once every package has finished, with failed packages printed last."
                         }
                       }
                     }

@@ -8,6 +8,7 @@ mixin _ExecMixin on _Melos {
     int? concurrency,
     bool failFast = false,
     bool orderDependents = false,
+    bool groupLogs = false,
     Map<String, String> extraEnvironment = const {},
   }) async {
     concurrency ??= Platform.numberOfProcessors;
@@ -36,6 +37,7 @@ mixin _ExecMixin on _Melos {
       failFast: failFast,
       concurrency: concurrency,
       orderDependents: orderDependents,
+      groupLogs: groupLogs,
       additionalEnvironment: extraEnvironment,
     );
   }
@@ -48,6 +50,7 @@ mixin _ExecMixin on _Melos {
     bool prefixLogs = true,
     Map<String, String> extraEnvironment = const {},
     ProcessOutputCancelToken? cancelToken,
+    String? group,
   }) async {
     final packagePrefix = '[${AnsiStyles.blue.bold(package.name)}]: ';
 
@@ -96,6 +99,7 @@ mixin _ExecMixin on _Melos {
       // The parent env is injected manually above
       includeParentEnvironment: false,
       cancelToken: cancelToken,
+      group: group,
     );
   }
 
@@ -106,6 +110,7 @@ mixin _ExecMixin on _Melos {
     required int concurrency,
     required bool failFast,
     required bool orderDependents,
+    bool groupLogs = false,
     Map<String, String> additionalEnvironment = const {},
   }) async {
     final allPackagesList = workspace.allPackages.values.toList(
@@ -128,7 +133,9 @@ mixin _ExecMixin on _Melos {
     final pool = Pool(concurrency);
 
     final execArgsString = execArgs.join(' ');
-    final prefixLogs = concurrency != 1 && executablePackages.length != 1;
+    final isConcurrent = concurrency != 1 && executablePackagesList.length != 1;
+    final useGroupBuffer = groupLogs && isConcurrent;
+    final prefixLogs = isConcurrent && !useGroupBuffer;
 
     logger.command('melos exec', withDollarSign: true);
     logger
@@ -157,10 +164,15 @@ mixin _ExecMixin on _Melos {
             return;
           }
 
+          final group = useGroupBuffer ? package.name : null;
+
           if (!prefixLogs) {
             logger
-              ..horizontalLine()
-              ..log(AnsiStyles.bgBlack.bold.italic('${package.name}:'));
+              ..horizontalLine(group: group)
+              ..log(
+                AnsiStyles.bgBlack.bold.italic('${package.name}:'),
+                group: group,
+              );
           }
 
           final packageExitCode = await _execForPackage(
@@ -170,6 +182,7 @@ mixin _ExecMixin on _Melos {
             prefixLogs: prefixLogs,
             extraEnvironment: additionalEnvironment,
             cancelToken: processOutputCancelToken,
+            group: group,
           );
 
           packageResults[package.name]?.complete(packageExitCode);
@@ -180,6 +193,7 @@ mixin _ExecMixin on _Melos {
             logger.log(
               AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
                   AnsiStyles.bgBlack(successLabel),
+              group: group,
             );
           }
 
@@ -194,6 +208,13 @@ mixin _ExecMixin on _Melos {
       if (failFast) {
         runningPids.forEach(Process.killPid);
       }
+    }
+
+    if (useGroupBuffer) {
+      // Print the buffered output of every package, grouped per package and in
+      // the order the packages started, with the failed packages last so that
+      // they are easy to spot at the end of the log.
+      await logger.flushGroupBufferIfNeed(lastGroups: failures.keys.toList());
     }
 
     logger
