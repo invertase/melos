@@ -15,6 +15,27 @@ Packages with breaking changes:
 
 Packages with other changes:
 
+ - [`melos` - `v8.5.0`](#melos---v850)
+
+---
+
+#### `melos` - `v8.5.0`
+
+ - **FEAT**(exec): add `--group-logs` to print per-package output once all packages finish ([#1066](https://github.com/invertase/melos/issues/1066)). ([32bca520](https://github.com/invertase/melos/commit/32bca5204c7def58f44340adddb9dc8227e33a2e))
+
+
+## 2026-08-25
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
  - [`melos` - `v8.4.0`](#melos---v840)
 
 ---
