@@ -30,6 +30,13 @@ class PublishCommand extends MelosCommand {
           'The URL of the package server to publish to. '
           'Overrides the pubServer option in melos.yaml.',
     );
+    argParser.addFlag(
+      publishOptionSkipValidation,
+      negatable: false,
+      help:
+          'Publish without validation and resolution (this will ignore '
+          'errors). Forwarded to `dart pub publish --skip-validation`.',
+    );
   }
 
   @override
@@ -46,6 +53,7 @@ class PublishCommand extends MelosCommand {
     final gitTagVersion = argResults![publishOptionGitTagVersion] as bool;
     final yes = argResults![publishOptionYes] as bool;
     final pubServer = argResults![publishOptionServer] as String?;
+    final skipValidation = argResults![publishOptionSkipValidation] as bool;
 
     final melos = Melos(logger: logger, config: config);
     final packageFilters = parsePackageFilters(config.path);
@@ -57,6 +65,7 @@ class PublishCommand extends MelosCommand {
       force: yes,
       gitTagVersion: gitTagVersion,
       pubServer: pubServer,
+      skipValidation: skipValidation,
     );
   }
 }

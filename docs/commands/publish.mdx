@@ -52,6 +52,20 @@ command:
 The CLI flag takes precedence over the `pubServer` config value when both are
 provided.
 
+## --skip-validation
+
+Publish without validation and resolution. When set, `--skip-validation` is
+forwarded to `dart pub publish`, so packages are published even if they have
+validation errors or warnings. This is useful for private package servers that
+don't require the same level of validation as pub.dev.
+
+```bash
+melos publish --no-dry-run --skip-validation
+```
+
+Note that melos already forwards `--force` to `dart pub publish` when running
+with `--no-dry-run`, since the confirmation prompt is handled by melos itself.
+
 ## --git-tag-version (-t)
 
 Add any missing git tags for release. Tags are only created if --no-dry-run is

@@ -210,6 +210,79 @@ void main() {
       );
     });
 
+    group('skipValidation', () {
+      test(
+        'passes --skip-validation flag to dart pub publish when enabled',
+        () async {
+          final logger = TestLogger();
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: (path) => MelosWorkspaceConfig(
+              path: path,
+              name: 'test_workspace',
+              packages: [
+                createGlob('packages/**', currentDirectoryPath: path),
+              ],
+            ),
+            workspacePackages: const ['a'],
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 2, 3)),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(logger: logger, config: config);
+
+          await expectLater(
+            melos.publish(force: true, skipValidation: true),
+            completes,
+          );
+
+          expect(
+            logger.output.normalizeLines(),
+            contains('--skip-validation'),
+          );
+        },
+      );
+
+      test(
+        'does not pass --skip-validation flag to dart pub publish by default',
+        () async {
+          final logger = TestLogger();
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: (path) => MelosWorkspaceConfig(
+              path: path,
+              name: 'test_workspace',
+              packages: [
+                createGlob('packages/**', currentDirectoryPath: path),
+              ],
+            ),
+            workspacePackages: const ['a'],
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 2, 3)),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(logger: logger, config: config);
+
+          await expectLater(melos.publish(force: true), completes);
+
+          expect(
+            logger.output.normalizeLines(),
+            isNot(contains('--skip-validation')),
+          );
+        },
+      );
+    });
+
     test(
       'does not print success when dart pub publish --dry-run fails',
       () async {

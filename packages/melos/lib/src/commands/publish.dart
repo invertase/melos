@@ -9,6 +9,7 @@ mixin _PublishMixin on _ExecMixin {
     // yes
     bool force = false,
     String? pubServer,
+    bool skipValidation = false,
   }) async {
     final workspace = await createWorkspace(
       global: global,
@@ -24,6 +25,7 @@ mixin _PublishMixin on _ExecMixin {
         gitTagVersion: gitTagVersion,
         force: force,
         pubServer: pubServer ?? workspace.config.commands.publish.pubServer,
+        skipValidation: skipValidation,
       );
     });
   }
@@ -37,6 +39,7 @@ mixin _PublishMixin on _ExecMixin {
     // yes
     bool force = false,
     String? pubServer,
+    bool skipValidation = false,
   }) async {
     logger.command('melos publish${dryRun ? " --$publishOptionDryRun" : ''}');
     logger.child(targetStyle(workspace.path)).newLine();
@@ -124,6 +127,7 @@ mixin _PublishMixin on _ExecMixin {
       dryRun: dryRun,
       gitTagVersion: gitTagVersion,
       pubServer: pubServer,
+      skipValidation: skipValidation,
     );
   }
 
@@ -180,6 +184,7 @@ mixin _PublishMixin on _ExecMixin {
     required bool dryRun,
     required bool gitTagVersion,
     String? pubServer,
+    bool skipValidation = false,
   }) async {
     final updateRegistryProgress = logger.progress(
       'Publishing ${unpublishedPackages.length} packages to registry:',
@@ -197,6 +202,10 @@ mixin _PublishMixin on _ExecMixin {
 
     if (pubServer != null) {
       execArgs.addAll(['--server', pubServer]);
+    }
+
+    if (skipValidation) {
+      execArgs.add('--skip-validation');
     }
 
     await _execForAllPackages(

@@ -47,6 +47,7 @@ const publishOptionNoGitTagVersion = 'no-git-tag-version';
 const publishOptionYes = 'yes';
 const publishOptionForce = 'force';
 const publishOptionServer = 'server';
+const publishOptionSkipValidation = 'skip-validation';
 
 /// The default command used to invoke Melos itself when a script needs to run
 /// a nested Melos command, such as `melos exec` or `melos run`.
