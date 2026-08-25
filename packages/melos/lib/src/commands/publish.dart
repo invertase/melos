@@ -211,7 +211,7 @@ mixin _PublishMixin on _ExecMixin {
       },
     );
 
-    if (exitCode != 1) {
+    if (exitCode == 0) {
       if (!dryRun && gitTagVersion) {
         logger
           ..newLine()

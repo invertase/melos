@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:melos/melos.dart';
 import 'package:melos/src/command_configs/command_configs.dart';
 import 'package:melos/src/command_configs/publish.dart';
@@ -207,6 +209,49 @@ void main() {
         },
       );
     });
+
+    test(
+      'does not print success when dart pub publish --dry-run fails',
+      () async {
+        final previousExitCode = exitCode;
+        addTearDown(() => exitCode = previousExitCode);
+
+        final logger = TestLogger();
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_workspace',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+          ),
+          workspacePackages: const ['collection'],
+        );
+
+        // collection is already on pub.dev at a much higher version, so
+        // dart pub publish --dry-run exits 65. Melos used to still print
+        // "validated successfully" because it only treated exitCode == 1
+        // as failure.
+        await createProject(
+          workspaceDir,
+          Pubspec('collection', version: Version(0, 1, 0)),
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(logger: logger, config: config);
+
+        await melos.publish(force: true);
+
+        final output = logger.output.normalizeLines();
+        expect(
+          output,
+          isNot(contains('All packages were validated successfully.')),
+        );
+        expect(exitCode, isNot(0));
+      },
+    );
 
     test('should support number as pre release version', () async {
       final logger = TestLogger();
