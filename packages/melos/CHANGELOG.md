@@ -1,3 +1,9 @@
+## 8.4.0
+
+ - **FIX**(publish): only report success when dart pub exits 0 ([#1061](https://github.com/invertase/melos/issues/1061)). ([995f32bb](https://github.com/invertase/melos/commit/995f32bb3c4318f05beebe2c94e0abfef77da76d))
+ - **FEAT**(publish): add --skip-validation flag ([#1064](https://github.com/invertase/melos/issues/1064)). ([c8c1c105](https://github.com/invertase/melos/commit/c8c1c1057e577bff987cf469589822cbf4f686be))
+ - **FEAT**(version): avoid cascading releases when dependent constraints allow updated version ([#1063](https://github.com/invertase/melos/issues/1063)). ([bf3c27b7](https://github.com/invertase/melos/commit/bf3c27b7b4b3247df9d684a8621c8121bf496995))
+
 ## 8.3.0
 
  - **FIX**(intellij): honor PUB_CACHE when generating IDE files ([#1059](https://github.com/invertase/melos/issues/1059)). ([4c2fa471](https://github.com/invertase/melos/commit/4c2fa471d465a844d4ff920a1134cb6acf70096e))
