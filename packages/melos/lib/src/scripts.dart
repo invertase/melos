@@ -154,16 +154,23 @@ class ExecOptions {
     this.concurrency,
     this.failFast,
     this.orderDependents,
+    this.groupLogs,
   });
 
   final int? concurrency;
   final bool? failFast;
   final bool? orderDependents;
 
+  /// Whether the output of the packages should be buffered and printed grouped
+  /// per package once every package has finished, instead of being streamed
+  /// and interleaved while the packages run.
+  final bool? groupLogs;
+
   Map<String, Object?> toJson() => {
     if (concurrency != null) 'concurrency': concurrency,
     if (failFast != null) 'failFast': failFast,
     if (orderDependents != null) 'orderDependents': orderDependents,
+    if (groupLogs != null) 'groupLogs': groupLogs,
   };
 
   @override
@@ -172,14 +179,16 @@ class ExecOptions {
       runtimeType == other.runtimeType &&
       concurrency == other.concurrency &&
       failFast == other.failFast &&
-      orderDependents == other.orderDependents;
+      orderDependents == other.orderDependents &&
+      groupLogs == other.groupLogs;
 
   @override
   int get hashCode =>
       runtimeType.hashCode ^
       concurrency.hashCode ^
       failFast.hashCode ^
-      orderDependents.hashCode;
+      orderDependents.hashCode ^
+      groupLogs.hashCode;
 
   @override
   String toString() =>
@@ -188,6 +197,7 @@ ExecOptions(
   concurrency: $concurrency,
   failFast: $failFast,
   orderDependents: $orderDependents,
+  groupLogs: $groupLogs,
 )''';
 }
 
@@ -451,10 +461,17 @@ class Script {
       path: execPath,
     );
 
+    final groupLogs = assertKeyIsA<bool?>(
+      key: 'groupLogs',
+      map: yaml,
+      path: execPath,
+    );
+
     return ExecOptions(
       concurrency: concurrency,
       failFast: failFast,
       orderDependents: orderDependents,
+      groupLogs: groupLogs,
     );
   }
 
@@ -529,6 +546,10 @@ class Script {
 
       if (exec.orderDependents ?? false) {
         execCommand.add('--order-dependents');
+      }
+
+      if (exec.groupLogs ?? false) {
+        execCommand.add('--group-logs');
       }
 
       execCommand.addAll(['--', quoteScript(scriptCommand.join(' '))]);

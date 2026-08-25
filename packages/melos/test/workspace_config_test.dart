@@ -613,6 +613,7 @@ void main() {
                 'concurrency': 1,
                 'failFast': true,
                 'orderDependents': true,
+                'groupLogs': true,
               },
             },
           }),
@@ -625,6 +626,7 @@ void main() {
             concurrency: 1,
             failFast: true,
             orderDependents: true,
+            groupLogs: true,
           ),
         );
       });

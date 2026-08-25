@@ -183,6 +183,19 @@ leaf packages first and then in packages that depend on them and so on. This is
 useful for example, for a script that generates code in multiple packages, which
 depend on each other. Defaults to `false`.
 
+### groupLogs
+
+Whether the output of the packages should be buffered and printed grouped per
+package once every package has finished, instead of being streamed and
+interleaved while the packages run. The output of packages in which the script
+failed is printed last. Defaults to `false`.
+
+As with the command line flag, this only has an effect when the script runs in
+more than one package with a [`concurrency`](#concurrency) greater than 1 — with
+`concurrency: 1` it is a no-op.
+
+See [`melos exec --group-logs`](/commands/exec#--group-logs) for more details.
+
 ## env
 
 A map of environment variables that will be passed to the executed command.
