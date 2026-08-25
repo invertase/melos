@@ -1,3 +1,7 @@
+## 8.5.0
+
+ - **FEAT**(exec): add `--group-logs` to print per-package output once all packages finish ([#1066](https://github.com/invertase/melos/issues/1066)). ([32bca520](https://github.com/invertase/melos/commit/32bca5204c7def58f44340adddb9dc8227e33a2e))
+
 ## 8.4.0
 
  - **FIX**(publish): only report success when dart pub exits 0 ([#1061](https://github.com/invertase/melos/issues/1061)). ([995f32bb](https://github.com/invertase/melos/commit/995f32bb3c4318f05beebe2c94e0abfef77da76d))
