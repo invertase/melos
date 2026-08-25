@@ -176,6 +176,18 @@ melos version --no-dependent-versions
 
 Use `--no-dependent-versions` to disable.
 
+## --[no-]smart-dependents
+
+Only bump dependent package versions and rewrite dependency constraints when declared SemVer constraints do not allow the updated version. When enabled, packages whose declared constraints already satisfy the new dependency version are skipped. (defaults to off)
+
+```bash
+melos version --smart-dependents
+```
+
+The default for this option can be configured in
+[command/version/smartDependents](/configuration/overview#smartdependents)
+in your root `pubspec.yaml` file.
+
 ## --all (-a)
 
 Version private packages that are skipped by default.

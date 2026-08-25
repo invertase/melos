@@ -548,6 +548,20 @@ melos:
       updateGitTagRefs: true
 ```
 
+### smartDependents
+
+Whether to only bump dependent package versions and update constraints when
+declared SemVer constraints do not allow the updated version. When enabled,
+packages whose declared constraints already satisfy the new dependency version
+are skipped. Defaults to `false`.
+
+```yaml
+melos:
+  command:
+    version:
+      smartDependents: true
+```
+
 ### releaseUrl
 
 Whether to generate and print a link to the prefilled release creation page for
