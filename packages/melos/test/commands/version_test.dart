@@ -2279,6 +2279,73 @@ dev_dependencies:
       );
 
       test(
+        'ignores tags that do not contain a version for the root package',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _useRootAsPackageWorkspaceConfigBuilder,
+            workspacePackages: ['a'],
+            useLocalTmpDirectory: true,
+          );
+          setRootVersion(workspaceDir, Version(1, 0, 0));
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await _runGit(workspaceDir, ['init']);
+          await commitRootChange(workspaceDir, 'feat: a new feature');
+          await _runGit(workspaceDir, ['tag', 'v8_dart-v0.9.0']);
+          await commitRootChange(workspaceDir, 'fix: a bug fix');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          // The tag does not belong to the root package, so the whole history
+          // is considered and the feature causes a minor bump.
+          expect(rootVersion(workspaceDir), Version(1, 1, 0));
+        },
+      );
+
+      test('warns when the root package tag already exists', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _useRootAsPackageWorkspaceConfigBuilder,
+          workspacePackages: ['a'],
+          useLocalTmpDirectory: true,
+        );
+        setRootVersion(workspaceDir, Version(1, 0, 0));
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await _runGit(workspaceDir, ['init']);
+        await _runGit(workspaceDir, ['config', 'user.name', 'Melos Test']);
+        await _runGit(
+          workspaceDir,
+          ['config', 'user.email', 'test@melos.invertase.dev'],
+        );
+        await _runGit(workspaceDir, ['config', 'commit.gpgsign', 'false']);
+        await commitRootChange(workspaceDir, 'chore: initial');
+        await _runGit(workspaceDir, ['tag', 'v1.0.0']);
+        await commitRootChange(workspaceDir, 'feat: a new feature');
+        await _runGit(workspaceDir, ['tag', 'v1.1.0']);
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+        await melos.version(force: true);
+
+        expect(
+          logger.output,
+          contains('The git tag "v1.1.0" was not created'),
+        );
+      });
+
+      test(
         'still recognizes root package tags prefixed with the package name',
         () async {
           final workspaceDir = await createTemporaryWorkspace(
@@ -2321,6 +2388,7 @@ MelosWorkspaceConfig _useRootAsPackageWorkspaceConfigBuilder(String path) {
     commands: const CommandConfigs(
       version: VersionCommandConfigs(
         fetchTags: false,
+        updateGitTagRefs: true,
       ),
     ),
   );
