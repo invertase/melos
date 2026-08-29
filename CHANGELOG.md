@@ -3,6 +3,29 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-08-29
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v8.6.0`](#melos---v860)
+
+---
+
+#### `melos` - `v8.6.0`
+
+ - **FIX**: rename dependency toJson extensions to toYaml to avoid being shadowed by pubspec_parse 1.6.0 ([#1071](https://github.com/invertase/melos/issues/1071)). ([16b37cee](https://github.com/invertase/melos/commit/16b37cee96d8162a40d43f8aab6438c1d6679d2c))
+ - **FEAT**(version): add workspaceTag option to tag lockstep releases with a single vX.Y.Z tag ([#1073](https://github.com/invertase/melos/issues/1073)). ([98527b43](https://github.com/invertase/melos/commit/98527b43a010934b453238d409d5397dcc941ba9))
+ - **FEAT**(version): use plain vX.Y.Z tags for the root package when useRootAsPackage is enabled ([#1072](https://github.com/invertase/melos/issues/1072)). ([fbccd382](https://github.com/invertase/melos/commit/fbccd3826b5da16ceec9eeb5a2e540f6655ac80d))
+
+
 ## 2026-08-25
 
 ### Changes
