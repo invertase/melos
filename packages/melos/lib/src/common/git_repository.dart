@@ -30,10 +30,9 @@ mixin SupportsManualRelease on HostedGitRepository {
     final packageVersion = pendingPackageUpdate.nextVersion.toString();
 
     final tag = gitTagForPackage(package, packageVersion);
-    final title = gitReleaseTitleForPackageVersion(
-      package.name,
-      packageVersion,
-    );
+    final title = package.isWorkspaceRoot
+        ? tag
+        : gitReleaseTitleForPackageVersion(package.name, packageVersion);
     final body = pendingPackageUpdate.changelog.markdown;
     final isPreRelease = pendingPackageUpdate.nextVersion.isPreRelease;
 

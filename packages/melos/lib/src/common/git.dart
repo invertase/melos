@@ -311,7 +311,7 @@ Future<String?> gitLatestTagForPackage(
   }
 
   if (package.isWorkspaceRoot) {
-    return _gitTagWithHighestVersion(tags, package) ?? tags.first;
+    return _gitTagWithHighestVersion(tags, package);
   }
 
   return tags.first;

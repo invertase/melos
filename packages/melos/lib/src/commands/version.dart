@@ -981,13 +981,23 @@ mixin _VersionMixin on _RunMixin {
       );
     } else if (isGitDependency &&
         workspace.config.commands.version.updateGitTagRefs) {
-      final rewritten = pubspecContent.replaceAllMapped(
-        dependencyTagReplaceRegex(dependencyName),
-        (match) =>
-            '${match.group(1)}$dependencyName-'
-            'v${dependencyVersion.min ?? dependencyVersion.max!}',
-      );
-      updatedContents = rewritten == pubspecContent ? null : rewritten;
+      final dependencyPackage = workspace.allPackages[dependencyName];
+      final newVersion = dependencyVersion.min ?? dependencyVersion.max!;
+      if (dependencyPackage != null && dependencyPackage.isWorkspaceRoot) {
+        // Plain version tags carry no package name, so the ref is updated at
+        // its exact location instead of by matching the tag name.
+        updatedContents = _rewriteGitRefAtPath(
+          pubspecContent: pubspecContent,
+          path: [section, dependencyName, 'git', 'ref'],
+          ref: gitTagForPackage(dependencyPackage, newVersion.toString()),
+        );
+      } else {
+        final rewritten = pubspecContent.replaceAllMapped(
+          dependencyTagReplaceRegex(dependencyName),
+          (match) => '${match.group(1)}$dependencyName-v$newVersion',
+        );
+        updatedContents = rewritten == pubspecContent ? null : rewritten;
+      }
     } else {
       updatedContents = _rewriteDependencyVersionAtPath(
         pubspecContent: pubspecContent,
@@ -1008,6 +1018,26 @@ mixin _VersionMixin on _RunMixin {
     }
 
     await writeTextFileAsync(pubspecPath, updatedContents);
+  }
+
+  /// Returns [pubspecContent] rewritten so that the git ref scalar at [path]
+  /// is set to [ref], or `null` if [path] doesn't point to a string scalar.
+  String? _rewriteGitRefAtPath({
+    required String pubspecContent,
+    required List<Object> path,
+    required String ref,
+  }) {
+    final editor = YamlEditor(pubspecContent);
+    final currentNode = editor.parseAt(
+      path,
+      orElse: () => wrapAsYamlNode(null),
+    );
+    if (currentNode.value is! String) {
+      return null;
+    }
+
+    editor.update(path, ref);
+    return editor.toString();
   }
 
   /// Returns [pubspecContent] rewritten so that the version constraint
@@ -1308,12 +1338,18 @@ mixin _VersionMixin on _RunMixin {
         pendingPackageUpdate.nextVersion.toString(),
       );
 
-      await gitTagCreate(
+      final created = await gitTagCreate(
         tag,
         pendingPackageUpdate.changelog.markdown,
         workingDirectory: pendingPackageUpdate.package.path,
         logger: logger,
       );
+      if (!created) {
+        logger.warning(
+          'The git tag "$tag" was not created, most likely because it '
+          'already exists.',
+        );
+      }
     });
   }
 
