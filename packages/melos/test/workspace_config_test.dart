@@ -151,6 +151,43 @@ void main() {
         );
       });
 
+      test('throws if workspaceTag is not a bool', () {
+        expect(
+          () => VersionCommandConfigs.fromYaml(
+            const {'mode': 'fixed', 'workspaceTag': 42},
+            workspacePath: '.',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('throws if workspaceTag is enabled outside of fixed mode', () {
+        expect(
+          () => VersionCommandConfigs.fromYaml(
+            const {'workspaceTag': true},
+            workspacePath: '.',
+          ),
+          throwsMelosConfigException(),
+        );
+        expect(
+          () => VersionCommandConfigs.fromYaml(
+            const {'mode': 'independent', 'workspaceTag': true},
+            workspacePath: '.',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('workspaceTag defaults to false', () {
+        expect(
+          VersionCommandConfigs.fromYaml(
+            const {'mode': 'fixed'},
+            workspacePath: '.',
+          ).workspaceTag,
+          isFalse,
+        );
+      });
+
       test('can decode values', () {
         expect(
           VersionCommandConfigs.fromYaml(
@@ -162,6 +199,7 @@ void main() {
               'linkToCommits': true,
               'updateGitTagRefs': true,
               'mode': 'fixed',
+              'workspaceTag': true,
               'workspaceChangelog': true,
               'changelogs': [
                 {
@@ -180,6 +218,7 @@ void main() {
             linkToCommits: true,
             updateGitTagRefs: true,
             mode: VersioningMode.fixed,
+            workspaceTag: true,
             aggregateChangelogs: [
               AggregateChangelogConfig.workspace(),
               AggregateChangelogConfig(

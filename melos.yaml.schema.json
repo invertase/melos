@@ -257,6 +257,10 @@
               "enum": ["independent", "fixed"],
               "description": "The mode in which packages in the workspace are versioned. In \"fixed\" mode (also known as lockstep versioning), every versioning run bumps all packages to the same new version, which is determined by the most significant change across the whole workspace.\n\nDefaults to \"independent\"."
             },
+            "workspaceTag": {
+              "type": "boolean",
+              "description": "Whether to tag releases with a single plain version tag for the whole workspace, e.g. \"v1.2.3\", instead of one tag per package, e.g. \"package_name-v1.2.3\". Only supported when \"mode\" is \"fixed\".\n\nDefaults to false."
+            },
             "fetchTags": {
               "type": "boolean",
               "description": "Whether to fetch tags from the origin remote before versioning.\n\nDefaults to true."
