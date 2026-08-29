@@ -165,9 +165,9 @@ class BootstrapCommandConfigs {
       'enforceLockfile': enforceLockfile,
       if (pubGetArgs.isNotEmpty) 'pubGetArgs': pubGetArgs,
       if (environment != null) 'environment': environment!.toJson(),
-      if (dependencies != null) 'dependencies': dependencies!.toJson(),
+      if (dependencies != null) 'dependencies': dependencies!.toYaml(),
       if (devDependencies != null)
-        'dev_dependencies': devDependencies!.toJson(),
+        'dev_dependencies': devDependencies!.toYaml(),
       if (dependencyOverridePaths.isNotEmpty)
         'dependencyOverridePaths': dependencyOverridePaths
             .map((path) => path.toString())
