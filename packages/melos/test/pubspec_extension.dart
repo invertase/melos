@@ -86,13 +86,13 @@ extension PubspecExtension on Pubspec {
       'workspace': workspace,
       'resolution': resolution,
       'dependencies': dependencies.map(
-        (key, value) => MapEntry(key, value.toJson()),
+        (key, value) => MapEntry(key, value.toYaml()),
       ),
       'dev_dependencies': devDependencies.map(
-        (key, value) => MapEntry(key, value.toJson()),
+        (key, value) => MapEntry(key, value.toYaml()),
       ),
       'dependency_overrides': dependencyOverrides.map(
-        (key, value) => MapEntry(key, value.toJson()),
+        (key, value) => MapEntry(key, value.toYaml()),
       ),
       'flutter': flutter,
     }..removeWhere((_, value) => value == null);
