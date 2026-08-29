@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:pub_semver/pub_semver.dart';
+
 import '../logging.dart';
 import '../package.dart';
 import 'git_commit.dart';
@@ -61,6 +63,53 @@ String gitTagForPackage(
   return package.isWorkspaceRoot
       ? gitTagForVersion(packageVersion, prefix: prefix)
       : gitTagForPackageVersion(package.name, packageVersion, prefix: prefix);
+}
+
+/// Parses the version from a [tag] of [package], which is either a plain
+/// version tag, e.g. `v1.2.3`, or a tag prefixed with the package name, e.g.
+/// `package_name-v1.2.3`.
+///
+/// Returns `null` if the tag does not contain a valid version.
+Version? gitVersionFromTag(
+  String tag,
+  Package package, {
+  String prefix = 'v',
+}) {
+  final packagePrefix = '${package.name}-$prefix';
+  final String versionString;
+  if (tag.startsWith(packagePrefix)) {
+    versionString = tag.substring(packagePrefix.length);
+  } else if (tag.startsWith(prefix)) {
+    versionString = tag.substring(prefix.length);
+  } else {
+    return null;
+  }
+
+  try {
+    return Version.parse(versionString);
+  } on FormatException {
+    return null;
+  }
+}
+
+/// Returns the tag with the highest version among [tags].
+///
+/// When multiple tags have the same version, the first one in [tags] wins, so
+/// pass tags sorted by creation date descending to prefer the newest tag.
+String? _gitTagWithHighestVersion(List<String> tags, Package package) {
+  String? highestTag;
+  Version? highestVersion;
+  for (final tag in tags) {
+    final version = gitVersionFromTag(tag, package);
+    if (version == null) {
+      continue;
+    }
+    if (highestVersion == null || version > highestVersion) {
+      highestTag = tag;
+      highestVersion = version;
+    }
+  }
+  return highestTag;
 }
 
 /// Generate a git release title for the specified package name and version.
@@ -206,6 +255,10 @@ Future<bool> gitTagCreate(
 ///
 ///       Note: If the current version is a prerelease then only prerelease tags
 ///       are requested.
+///
+///       Note: The workspace root package can have both plain version tags and
+///       tags prefixed with the package name, in which case the tag with the
+///       highest version is used.
 Future<String?> gitLatestTagForPackage(
   Package package, {
   required MelosLogger logger,
@@ -249,6 +302,10 @@ Future<String?> gitLatestTagForPackage(
   );
   if (tags.isEmpty) {
     return null;
+  }
+
+  if (package.isWorkspaceRoot) {
+    return _gitTagWithHighestVersion(tags, package) ?? tags.first;
   }
 
   return tags.first;
