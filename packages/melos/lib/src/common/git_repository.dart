@@ -28,9 +28,16 @@ mixin SupportsManualRelease on HostedGitRepository {
   Uri releaseUrlForUpdate(MelosPendingPackageUpdate pendingPackageUpdate) {
     final package = pendingPackageUpdate.package;
     final packageVersion = pendingPackageUpdate.nextVersion.toString();
+    final workspaceTag =
+        pendingPackageUpdate.workspace.config.commands.version.workspaceTag;
 
-    final tag = gitTagForPackage(package, packageVersion);
-    final title = package.isWorkspaceRoot
+    final tag = gitTagForPackage(
+      package,
+      packageVersion,
+      workspaceTag: workspaceTag,
+    );
+    final title =
+        gitPackageUsesPlainVersionTag(package, workspaceTag: workspaceTag)
         ? tag
         : gitReleaseTitleForPackageVersion(package.name, packageVersion);
     final body = pendingPackageUpdate.changelog.markdown;

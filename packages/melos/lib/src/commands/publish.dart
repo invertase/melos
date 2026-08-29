@@ -225,15 +225,37 @@ mixin _PublishMixin on _ExecMixin {
         logger
           ..newLine()
           ..log('Creating git tags for any versions not already created... ');
-        await Future.forEach(unpublishedPackages, (package) async {
-          final tag = gitTagForPackage(package, package.version.toString());
-          await gitTagCreate(
-            tag,
-            'Publish $tag.',
-            workingDirectory: package.path,
-            logger: logger,
-          );
-        });
+        if (workspace.config.commands.version.workspaceTag) {
+          final versions = unpublishedPackages
+              .map((package) => package.version)
+              .toSet();
+          if (versions.length == 1) {
+            final tag = gitTagForVersion(versions.single.toString());
+            await gitTagCreate(
+              tag,
+              'Publish $tag.',
+              workingDirectory: workspace.path,
+              logger: logger,
+            );
+          } else {
+            logger.warning(
+              'Skipping git tag creation since the published packages have '
+              'different versions (${versions.join(', ')}), while '
+              '"command/version/workspaceTag" expects all packages to share '
+              'the same version.',
+            );
+          }
+        } else {
+          await Future.forEach(unpublishedPackages, (package) async {
+            final tag = gitTagForPackage(package, package.version.toString());
+            await gitTagCreate(
+              tag,
+              'Publish $tag.',
+              workingDirectory: package.path,
+              logger: logger,
+            );
+          });
+        }
       }
 
       updateRegistryProgress.finish(

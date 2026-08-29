@@ -151,6 +151,72 @@ void main() {
         );
       });
 
+      test('throws if workspaceTag is not a bool', () {
+        expect(
+          () => VersionCommandConfigs.fromYaml(
+            const {'mode': 'fixed', 'workspaceTag': 42},
+            workspacePath: '.',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('throws if workspaceTag is enabled outside of fixed mode', () {
+        expect(
+          () => MelosWorkspaceConfig(
+            name: 'melos_test',
+            packages: const [],
+            commands: const CommandConfigs(
+              version: VersionCommandConfigs(workspaceTag: true),
+            ),
+            path: testWorkspacePath,
+          ),
+          throwsMelosConfigException(),
+        );
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            const {
+              'name': 'melos_test',
+              'melos': {
+                'command': {
+                  'version': {'mode': 'independent', 'workspaceTag': true},
+                },
+              },
+            },
+            path: testWorkspacePath,
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('accepts workspaceTag in fixed mode', () async {
+        final workspace = await createTemporaryWorkspace(workspacePackages: []);
+        expect(
+          MelosWorkspaceConfig(
+            name: 'melos_test',
+            packages: const [],
+            commands: const CommandConfigs(
+              version: VersionCommandConfigs(
+                mode: VersioningMode.fixed,
+                workspaceTag: true,
+              ),
+            ),
+            path: workspace.path,
+          ).commands.version.workspaceTag,
+          isTrue,
+        );
+      });
+
+      test('workspaceTag defaults to false', () {
+        expect(
+          VersionCommandConfigs.fromYaml(
+            const {'mode': 'fixed'},
+            workspacePath: '.',
+          ).workspaceTag,
+          isFalse,
+        );
+      });
+
       test('can decode values', () {
         expect(
           VersionCommandConfigs.fromYaml(
@@ -162,6 +228,7 @@ void main() {
               'linkToCommits': true,
               'updateGitTagRefs': true,
               'mode': 'fixed',
+              'workspaceTag': true,
               'workspaceChangelog': true,
               'changelogs': [
                 {
@@ -180,6 +247,7 @@ void main() {
             linkToCommits: true,
             updateGitTagRefs: true,
             mode: VersioningMode.fixed,
+            workspaceTag: true,
             aggregateChangelogs: [
               AggregateChangelogConfig.workspace(),
               AggregateChangelogConfig(

@@ -451,6 +451,7 @@ mixin _VersionMixin on _RunMixin {
 
     if (gitTag && gitCommit) {
       await _gitTagChanges(
+        workspace,
         pendingPackageUpdates,
         updateDependentsVersions: updateDependentsVersions,
       );
@@ -481,6 +482,21 @@ mixin _VersionMixin on _RunMixin {
         );
       } else if (repository is! SupportsManualRelease) {
         logger.warning('Repository does not support releases urls');
+      } else if (config.commands.version.workspaceTag) {
+        final workspaceVersion = pendingPackageUpdates.first.nextVersion;
+        final tag = gitTagForVersion(workspaceVersion.toString());
+        final releaseUrl = repository.releaseUrl(
+          tag: tag,
+          title: tag,
+          body: _workspaceReleaseNotes(pendingPackageUpdates),
+          isPreRelease: workspaceVersion.isPreRelease,
+        );
+
+        logger.success(
+          'Make sure you create a release for the new workspace version:'
+          '${ansiStylesDisabled ? '\n' : ' '}'
+          '${AnsiStyles.bgBlack.gray(link(releaseUrl, tag))}',
+        );
       } else {
         final pendingPackageReleases = pendingPackageUpdates
             .map((update) {
@@ -983,13 +999,22 @@ mixin _VersionMixin on _RunMixin {
         workspace.config.commands.version.updateGitTagRefs) {
       final dependencyPackage = workspace.allPackages[dependencyName];
       final newVersion = dependencyVersion.min ?? dependencyVersion.max!;
-      if (dependencyPackage != null && dependencyPackage.isWorkspaceRoot) {
+      final workspaceTag = workspace.config.commands.version.workspaceTag;
+      if (dependencyPackage != null &&
+          gitPackageUsesPlainVersionTag(
+            dependencyPackage,
+            workspaceTag: workspaceTag,
+          )) {
         // Plain version tags carry no package name, so the ref is updated at
         // its exact location instead of by matching the tag name.
         updatedContents = _rewriteGitRefAtPath(
           pubspecContent: pubspecContent,
           path: [section, dependencyName, 'git', 'ref'],
-          ref: gitTagForPackage(dependencyPackage, newVersion.toString()),
+          ref: gitTagForPackage(
+            dependencyPackage,
+            newVersion.toString(),
+            workspaceTag: workspaceTag,
+          ),
         );
       } else {
         final rewritten = pubspecContent.replaceAllMapped(
@@ -1281,6 +1306,7 @@ mixin _VersionMixin on _RunMixin {
       final commits = await gitCommitsForPackage(
         package,
         diff: diff,
+        workspaceTag: workspace.config.commands.version.workspaceTag,
         logger: logger,
       );
       final hasVersionableCommit = commits
@@ -1310,6 +1336,7 @@ mixin _VersionMixin on _RunMixin {
       final commits = await gitCommitsForPackage(
         package,
         diff: diff,
+        workspaceTag: workspace.config.commands.version.workspaceTag,
         logger: logger,
       );
 
@@ -1321,10 +1348,45 @@ mixin _VersionMixin on _RunMixin {
     return packageCommits;
   }
 
+  /// Release notes for a single workspace release, listing the changelog of
+  /// every versioned package under a heading with the package name.
+  String _workspaceReleaseNotes(
+    List<MelosPendingPackageUpdate> pendingPackageUpdates,
+  ) {
+    return pendingPackageUpdates
+        .map(
+          (update) =>
+              '# ${update.package.name}\n\n${update.changelog.markdown}',
+        )
+        .join('\n');
+  }
+
   Future<void> _gitTagChanges(
+    MelosWorkspace workspace,
     List<MelosPendingPackageUpdate> pendingPackageUpdates, {
     required bool updateDependentsVersions,
   }) async {
+    if (workspace.config.commands.version.workspaceTag) {
+      // All packages share the same version in fixed versioning mode, so a
+      // single plain version tag is created for the whole workspace.
+      final tag = gitTagForVersion(
+        pendingPackageUpdates.first.nextVersion.toString(),
+      );
+      final created = await gitTagCreate(
+        tag,
+        _workspaceReleaseNotes(pendingPackageUpdates),
+        workingDirectory: workspace.path,
+        logger: logger,
+      );
+      if (!created) {
+        logger.warning(
+          'The git tag "$tag" was not created, most likely because it '
+          'already exists.',
+        );
+      }
+      return;
+    }
+
     await Future.forEach(pendingPackageUpdates, (pendingPackageUpdate) async {
       if (pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
           !updateDependentsVersions) {

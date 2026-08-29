@@ -32,6 +32,7 @@ class VersionCommandConfigs {
     this.updateGitTagRefs = false,
     this.releaseUrl = false,
     this.mode = VersioningMode.independent,
+    this.workspaceTag = false,
     List<AggregateChangelogConfig>? aggregateChangelogs,
     this.fetchTags = true,
     this.hooks = VersionLifecycleHooks.empty,
@@ -99,6 +100,12 @@ class VersionCommandConfigs {
         'or "fixed" but got "$modeName".',
       ),
     };
+
+    final workspaceTag = assertKeyIsA<bool?>(
+      key: 'workspaceTag',
+      map: yaml,
+      path: 'command/version',
+    );
 
     final workspaceChangelog = assertKeyIsA<bool?>(
       key: 'workspaceChangelog',
@@ -223,6 +230,7 @@ class VersionCommandConfigs {
       updateGitTagRefs: updateGitTagRefs ?? false,
       releaseUrl: releaseUrl ?? false,
       mode: mode,
+      workspaceTag: workspaceTag ?? false,
       aggregateChangelogs: aggregateChangelogs,
       fetchTags: fetchTags ?? true,
       hooks: hooks,
@@ -276,6 +284,14 @@ class VersionCommandConfigs {
   /// [VersioningMode.independent].
   final VersioningMode mode;
 
+  /// Whether to tag releases with a single plain version tag for the whole
+  /// workspace, e.g. `v1.2.3`, instead of one tag per package, e.g.
+  /// `package_name-v1.2.3`.
+  ///
+  /// Only supported in [VersioningMode.fixed] mode, since all packages share
+  /// the same version there. Defaults to `false`.
+  final bool workspaceTag;
+
   /// A list of changelogs configurations that will be used to generate
   /// changelogs which describe the changes in multiple packages.
   List<AggregateChangelogConfig> get aggregateChangelogs =>
@@ -307,6 +323,7 @@ class VersionCommandConfigs {
       'updateGitTagRefs': updateGitTagRefs,
       'smartDependents': smartDependents,
       'mode': mode.name,
+      'workspaceTag': workspaceTag,
       'aggregateChangelogs': aggregateChangelogs
           .map((config) => config.toJson())
           .toList(),
@@ -332,6 +349,7 @@ class VersionCommandConfigs {
       other.releaseUrl == releaseUrl &&
       other.smartDependents == smartDependents &&
       other.mode == mode &&
+      other.workspaceTag == workspaceTag &&
       const DeepCollectionEquality().equals(
         other.aggregateChangelogs,
         aggregateChangelogs,
@@ -353,6 +371,7 @@ class VersionCommandConfigs {
       releaseUrl.hashCode ^
       smartDependents.hashCode ^
       mode.hashCode ^
+      workspaceTag.hashCode ^
       const DeepCollectionEquality().hash(aggregateChangelogs) ^
       fetchTags.hashCode ^
       hooks.hashCode ^
@@ -372,6 +391,7 @@ VersionCommandConfigs(
   releaseUrl: $releaseUrl,
   smartDependents: $smartDependents,
   mode: ${mode.name},
+  workspaceTag: $workspaceTag,
   aggregateChangelogs: $aggregateChangelogs,
   fetchTags: $fetchTags,
   hooks: $hooks,

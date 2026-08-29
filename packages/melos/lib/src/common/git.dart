@@ -50,17 +50,31 @@ String gitTagForVersion(
   return '$prefix$packageVersion';
 }
 
+/// Whether [package] is tagged with plain version tags, e.g. `v1.2.3`, instead
+/// of tags prefixed with the package name, e.g. `package_name-v1.2.3`.
+///
+/// This is the case for the workspace root package (included when
+/// `useRootAsPackage` is enabled) and for every package when the workspace is
+/// versioned in lockstep with a single [workspaceTag].
+bool gitPackageUsesPlainVersionTag(
+  Package package, {
+  required bool workspaceTag,
+}) {
+  return workspaceTag || package.isWorkspaceRoot;
+}
+
 /// Generate the git tag string for the specified package and version.
 ///
-/// The workspace root package (included when `useRootAsPackage` is enabled)
-/// uses plain version tags, e.g. `v1.2.3`, while all other packages use tags
-/// prefixed with their package name, e.g. `package_name-v1.2.3`.
+/// Packages for which [gitPackageUsesPlainVersionTag] is true use plain
+/// version tags, e.g. `v1.2.3`, while all other packages use tags prefixed
+/// with their package name, e.g. `package_name-v1.2.3`.
 String gitTagForPackage(
   Package package,
   String packageVersion, {
   String prefix = 'v',
+  bool workspaceTag = false,
 }) {
-  return package.isWorkspaceRoot
+  return gitPackageUsesPlainVersionTag(package, workspaceTag: workspaceTag)
       ? gitTagForVersion(packageVersion, prefix: prefix)
       : gitTagForPackageVersion(package.name, packageVersion, prefix: prefix);
 }
@@ -169,12 +183,13 @@ Future<List<String>> gitTagsForPackage(
   required MelosLogger logger,
   TagReleaseType tagReleaseType = TagReleaseType.all,
   String preid = 'dev',
+  bool workspaceTag = false,
 }) async {
-  // The workspace root package uses plain version tags, but tags prefixed with
-  // the package name are still matched to support tags created before plain
-  // version tags were introduced.
+  // Packages using plain version tags still match tags prefixed with the
+  // package name, to support tags created before plain version tags were
+  // introduced or enabled.
   final filterPatterns = [
-    if (package.isWorkspaceRoot)
+    if (gitPackageUsesPlainVersionTag(package, workspaceTag: workspaceTag))
       gitTagFilterPattern(null, tagReleaseType, preid: preid),
     gitTagFilterPattern(package.name, tagReleaseType, preid: preid),
   ];
@@ -232,9 +247,17 @@ Future<bool> gitTagCreate(
     return false;
   }
 
-  final arguments = commitId != null && commitId.isNotEmpty
-      ? ['tag', '-a', tag, commitId, '-m', message]
-      : ['tag', '-a', tag, '-m', message];
+  // Git strips lines starting with `#` from the message by default, which
+  // would remove the markdown headings of the changelog.
+  final arguments = [
+    'tag',
+    '-a',
+    tag,
+    if (commitId != null && commitId.isNotEmpty) commitId,
+    '--cleanup=whitespace',
+    '-m',
+    message,
+  ];
 
   await gitExecuteCommand(
     arguments: arguments,
@@ -261,14 +284,15 @@ Future<bool> gitTagCreate(
 ///       Note: If the current version is a prerelease then only prerelease tags
 ///       are requested.
 ///
-///       Note: The workspace root package can have both plain version tags and
-///       tags prefixed with the package name, in which case the tag with the
-///       highest version is used, preferring the plain version tag when both
-///       have the same version.
+///       Note: Packages using plain version tags can also have tags prefixed
+///       with the package name, in which case the tag with the highest version
+///       is used, preferring the plain version tag when both have the same
+///       version.
 Future<String?> gitLatestTagForPackage(
   Package package, {
   required MelosLogger logger,
   String preid = 'dev',
+  bool workspaceTag = false,
 }) async {
   // Package doesn't have a version, skip.
   if (package.version.toString() == '0.0.0') {
@@ -277,8 +301,8 @@ Future<String?> gitLatestTagForPackage(
 
   final currentVersion = package.version.toString();
   final currentVersionTags = [
-    gitTagForPackage(package, currentVersion),
-    if (package.isWorkspaceRoot)
+    gitTagForPackage(package, currentVersion, workspaceTag: workspaceTag),
+    if (gitPackageUsesPlainVersionTag(package, workspaceTag: workspaceTag))
       gitTagForPackageVersion(package.name, currentVersion),
   ];
   for (final currentVersionTag in currentVersionTags) {
@@ -304,13 +328,14 @@ Future<String?> gitLatestTagForPackage(
     package,
     tagReleaseType: tagReleaseType,
     preid: preid,
+    workspaceTag: workspaceTag,
     logger: logger,
   );
   if (tags.isEmpty) {
     return null;
   }
 
-  if (package.isWorkspaceRoot) {
+  if (gitPackageUsesPlainVersionTag(package, workspaceTag: workspaceTag)) {
     return _gitTagWithHighestVersion(tags, package);
   }
 
@@ -364,14 +389,19 @@ final _gitVersionRangeShortHandRegExp = RegExp(r'^.+\.{2,3}.+$');
 /// Optionally specify [diff] to start after a specified commit or tag.
 /// Defaults to the latest release tag.
 /// Diff also supports specifying a range of commits, e.g. `HEAD~5..HEAD`.
+///
+/// When [workspaceTag] is true, the latest release tag is a plain version tag
+/// shared by the whole workspace, see [gitPackageUsesPlainVersionTag].
 Future<List<GitCommit>> gitCommitsForPackage(
   Package package, {
   required MelosLogger logger,
   String? diff,
+  bool workspaceTag = false,
 }) async {
   final revisionRange = await _resolveRevisionRange(
     package,
     diff: diff,
+    workspaceTag: workspaceTag,
     logger: logger,
   );
 
@@ -516,6 +546,7 @@ Future<String> _resolveRevisionRange(
   Package package, {
   required String? diff,
   required MelosLogger logger,
+  bool workspaceTag = false,
 }) async {
   var revisionRange = diff?.trim();
   if (revisionRange != null) {
@@ -532,7 +563,11 @@ Future<String> _resolveRevisionRange(
   }
 
   if (revisionRange == null) {
-    final latestTag = await gitLatestTagForPackage(package, logger: logger);
+    final latestTag = await gitLatestTagForPackage(
+      package,
+      workspaceTag: workspaceTag,
+      logger: logger,
+    );
     // If no latest tag is found then we default to the entire git history.
     return latestTag != null ? '$latestTag...HEAD' : 'HEAD';
   }
