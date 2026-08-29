@@ -46,7 +46,8 @@ steps:
 1. Apply [filters](/filters) to the list of workspace packages.
 2. Load the commit history for each package. If the `--diff` option is
    specified, Melos will only load the specified commit. Otherwise it will load
-   all commits since the last version tag (e.g. `foo-v1.0.0`).
+   all commits since the last version tag (e.g. `foo-v1.0.0`, or `v1.0.0` for
+   the root package when `useRootAsPackage` is enabled).
 3. Parse commit messages as Conventional Commits. If a commit message does not
    follow the Conventional Commits specification, it will be ignored.
 4. Filter out commits with types that don't trigger a version bump. For example,

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:pub_semver/pub_semver.dart';
+
 import '../logging.dart';
 import '../package.dart';
 import 'git_commit.dart';
@@ -13,15 +15,21 @@ enum TagReleaseType {
 
 /// Generate a filter pattern for a package name, useful for listing tags for a
 /// package.
+///
+/// When [packageName] is `null` the pattern matches plain version tags without
+/// a package name, e.g. `v1.2.3`, as used by the workspace root package.
 String gitTagFilterPattern(
-  String packageName,
+  String? packageName,
   TagReleaseType tagReleaseType, {
   String preid = 'dev',
   String prefix = 'v',
 }) {
+  final tagPrefix = packageName == null
+      ? '$prefix[0-9]'
+      : '$packageName-$prefix';
   return tagReleaseType == TagReleaseType.prerelease
-      ? '$packageName-$prefix*-$preid.*'
-      : '$packageName-$prefix*';
+      ? '$tagPrefix*-$preid.*'
+      : '$tagPrefix*';
 }
 
 /// Generate a git tag string for the specified package name and version.
@@ -31,6 +39,82 @@ String gitTagForPackageVersion(
   String prefix = 'v',
 }) {
   return '$packageName-$prefix$packageVersion';
+}
+
+/// Generate a plain git tag string for the specified version, without a
+/// package name, e.g. `v1.2.3`.
+String gitTagForVersion(
+  String packageVersion, {
+  String prefix = 'v',
+}) {
+  return '$prefix$packageVersion';
+}
+
+/// Generate the git tag string for the specified package and version.
+///
+/// The workspace root package (included when `useRootAsPackage` is enabled)
+/// uses plain version tags, e.g. `v1.2.3`, while all other packages use tags
+/// prefixed with their package name, e.g. `package_name-v1.2.3`.
+String gitTagForPackage(
+  Package package,
+  String packageVersion, {
+  String prefix = 'v',
+}) {
+  return package.isWorkspaceRoot
+      ? gitTagForVersion(packageVersion, prefix: prefix)
+      : gitTagForPackageVersion(package.name, packageVersion, prefix: prefix);
+}
+
+/// Parses the version from a [tag] of [package], which is either a plain
+/// version tag, e.g. `v1.2.3`, or a tag prefixed with the package name, e.g.
+/// `package_name-v1.2.3`.
+///
+/// Returns `null` if the tag does not contain a valid version.
+Version? gitVersionFromTag(
+  String tag,
+  Package package, {
+  String prefix = 'v',
+}) {
+  final packagePrefix = '${package.name}-$prefix';
+  final String versionString;
+  if (tag.startsWith(packagePrefix)) {
+    versionString = tag.substring(packagePrefix.length);
+  } else if (tag.startsWith(prefix)) {
+    versionString = tag.substring(prefix.length);
+  } else {
+    return null;
+  }
+
+  try {
+    return Version.parse(versionString);
+  } on FormatException {
+    return null;
+  }
+}
+
+/// Returns the tag with the highest version among [tags].
+///
+/// When a plain version tag and a tag prefixed with the package name have the
+/// same version, the plain version tag wins.
+String? _gitTagWithHighestVersion(List<String> tags, Package package) {
+  String? highestTag;
+  Version? highestVersion;
+  var highestIsPlain = false;
+  for (final tag in tags) {
+    final version = gitVersionFromTag(tag, package);
+    if (version == null) {
+      continue;
+    }
+    final isPlain = !tag.startsWith('${package.name}-');
+    if (highestVersion == null ||
+        version > highestVersion ||
+        (version == highestVersion && isPlain && !highestIsPlain)) {
+      highestTag = tag;
+      highestVersion = version;
+      highestIsPlain = isPlain;
+    }
+  }
+  return highestTag;
 }
 
 /// Generate a git release title for the specified package name and version.
@@ -86,13 +170,16 @@ Future<List<String>> gitTagsForPackage(
   TagReleaseType tagReleaseType = TagReleaseType.all,
   String preid = 'dev',
 }) async {
-  final filterPattern = gitTagFilterPattern(
-    package.name,
-    tagReleaseType,
-    preid: preid,
-  );
+  // The workspace root package uses plain version tags, but tags prefixed with
+  // the package name are still matched to support tags created before plain
+  // version tags were introduced.
+  final filterPatterns = [
+    if (package.isWorkspaceRoot)
+      gitTagFilterPattern(null, tagReleaseType, preid: preid),
+    gitTagFilterPattern(package.name, tagReleaseType, preid: preid),
+  ];
   final processResult = await gitExecuteCommand(
-    arguments: ['tag', '-l', '--sort=-creatordate', filterPattern],
+    arguments: ['tag', '-l', '--sort=-creatordate', ...filterPatterns],
     workingDirectory: package.path,
     logger: logger,
   );
@@ -173,6 +260,11 @@ Future<bool> gitTagCreate(
 ///
 ///       Note: If the current version is a prerelease then only prerelease tags
 ///       are requested.
+///
+///       Note: The workspace root package can have both plain version tags and
+///       tags prefixed with the package name, in which case the tag with the
+///       highest version is used, preferring the plain version tag when both
+///       have the same version.
 Future<String?> gitLatestTagForPackage(
   Package package, {
   required MelosLogger logger,
@@ -183,20 +275,24 @@ Future<String?> gitLatestTagForPackage(
     return null;
   }
 
-  final currentVersionTag = gitTagForPackageVersion(
-    package.name,
-    package.version.toString(),
-  );
-  if (await gitTagExists(
-    currentVersionTag,
-    workingDirectory: package.path,
-    logger: logger,
-  )) {
-    logger.trace(
-      '[GIT] Found a git tag for the latest ${package.name} version '
-      '(${package.version}).',
-    );
-    return currentVersionTag;
+  final currentVersion = package.version.toString();
+  final currentVersionTags = [
+    gitTagForPackage(package, currentVersion),
+    if (package.isWorkspaceRoot)
+      gitTagForPackageVersion(package.name, currentVersion),
+  ];
+  for (final currentVersionTag in currentVersionTags) {
+    if (await gitTagExists(
+      currentVersionTag,
+      workingDirectory: package.path,
+      logger: logger,
+    )) {
+      logger.trace(
+        '[GIT] Found a git tag for the latest ${package.name} version '
+        '(${package.version}).',
+      );
+      return currentVersionTag;
+    }
   }
 
   // If the current version is a prerelease then only prerelease tags are
@@ -212,6 +308,10 @@ Future<String?> gitLatestTagForPackage(
   );
   if (tags.isEmpty) {
     return null;
+  }
+
+  if (package.isWorkspaceRoot) {
+    return _gitTagWithHighestVersion(tags, package);
   }
 
   return tags.first;
