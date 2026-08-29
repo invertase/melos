@@ -94,19 +94,24 @@ Version? gitVersionFromTag(
 
 /// Returns the tag with the highest version among [tags].
 ///
-/// When multiple tags have the same version, the first one in [tags] wins, so
-/// pass tags sorted by creation date descending to prefer the newest tag.
+/// When a plain version tag and a tag prefixed with the package name have the
+/// same version, the plain version tag wins.
 String? _gitTagWithHighestVersion(List<String> tags, Package package) {
   String? highestTag;
   Version? highestVersion;
+  var highestIsPlain = false;
   for (final tag in tags) {
     final version = gitVersionFromTag(tag, package);
     if (version == null) {
       continue;
     }
-    if (highestVersion == null || version > highestVersion) {
+    final isPlain = !tag.startsWith('${package.name}-');
+    if (highestVersion == null ||
+        version > highestVersion ||
+        (version == highestVersion && isPlain && !highestIsPlain)) {
       highestTag = tag;
       highestVersion = version;
+      highestIsPlain = isPlain;
     }
   }
   return highestTag;
@@ -258,7 +263,8 @@ Future<bool> gitTagCreate(
 ///
 ///       Note: The workspace root package can have both plain version tags and
 ///       tags prefixed with the package name, in which case the tag with the
-///       highest version is used.
+///       highest version is used, preferring the plain version tag when both
+///       have the same version.
 Future<String?> gitLatestTagForPackage(
   Package package, {
   required MelosLogger logger,
