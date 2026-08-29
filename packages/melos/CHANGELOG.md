@@ -1,3 +1,9 @@
+## 8.6.0
+
+ - **FIX**: rename dependency toJson extensions to toYaml to avoid being shadowed by pubspec_parse 1.6.0 ([#1071](https://github.com/invertase/melos/issues/1071)). ([16b37cee](https://github.com/invertase/melos/commit/16b37cee96d8162a40d43f8aab6438c1d6679d2c))
+ - **FEAT**(version): add workspaceTag option to tag lockstep releases with a single vX.Y.Z tag ([#1073](https://github.com/invertase/melos/issues/1073)). ([98527b43](https://github.com/invertase/melos/commit/98527b43a010934b453238d409d5397dcc941ba9))
+ - **FEAT**(version): use plain vX.Y.Z tags for the root package when useRootAsPackage is enabled ([#1072](https://github.com/invertase/melos/issues/1072)). ([fbccd382](https://github.com/invertase/melos/commit/fbccd3826b5da16ceec9eeb5a2e540f6655ac80d))
+
 ## 8.5.0
 
  - **FEAT**(exec): add `--group-logs` to print per-package output once all packages finish ([#1066](https://github.com/invertase/melos/issues/1066)). ([32bca520](https://github.com/invertase/melos/commit/32bca5204c7def58f44340adddb9dc8227e33a2e))
