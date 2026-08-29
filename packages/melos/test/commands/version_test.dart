@@ -11,6 +11,7 @@ import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
+import 'package:yaml_edit/yaml_edit.dart';
 
 import '../utils.dart';
 
@@ -1148,27 +1149,6 @@ dev_dependencies:
     );
 
     group('fixed mode', () {
-      Future<void> runGit(Directory workspaceDir, List<String> args) async {
-        final result = await Process.run(
-          'git',
-          [
-            '-c',
-            'user.name=Melos Test',
-            '-c',
-            'user.email=test@melos.invertase.dev',
-            '-c',
-            'commit.gpgsign=false',
-            ...args,
-          ],
-          workingDirectory: workspaceDir.path,
-        );
-        if (result.exitCode != 0) {
-          throw Exception(
-            'git ${args.join(' ')} failed:\n${result.stdout}\n${result.stderr}',
-          );
-        }
-      }
-
       Future<void> commitPackageChange(
         Directory workspaceDir,
         String packageName,
@@ -1177,8 +1157,8 @@ dev_dependencies:
         File(
           p.join(workspaceDir.path, 'packages', packageName, 'change.txt'),
         ).writeAsStringSync(message);
-        await runGit(workspaceDir, ['add', '.']);
-        await runGit(workspaceDir, ['commit', '-m', message]);
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', message]);
       }
 
       Version pubspecVersion(Directory workspaceDir, String packageName) {
@@ -1224,9 +1204,9 @@ dev_dependencies:
               },
             ),
           );
-          await runGit(workspaceDir, ['init']);
-          await runGit(workspaceDir, ['add', '.']);
-          await runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+          await _runGit(workspaceDir, ['init']);
+          await _runGit(workspaceDir, ['add', '.']);
+          await _runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
           await commitPackageChange(workspaceDir, 'a', 'fix: a bug fix');
           await commitPackageChange(workspaceDir, 'b', 'feat: a new feature');
 
@@ -1296,9 +1276,9 @@ dev_dependencies:
           workspaceDir,
           Pubspec('b', version: Version(1, 0, 0)),
         );
-        await runGit(workspaceDir, ['init']);
-        await runGit(workspaceDir, ['add', '.']);
-        await runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+        await _runGit(workspaceDir, ['init']);
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
         await commitPackageChange(workspaceDir, 'a', 'feat!: breaking change');
 
         final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
@@ -1327,9 +1307,9 @@ dev_dependencies:
           workspaceDir,
           Pubspec('b', version: Version(2, 3, 0)),
         );
-        await runGit(workspaceDir, ['init']);
-        await runGit(workspaceDir, ['add', '.']);
-        await runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+        await _runGit(workspaceDir, ['init']);
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
         await commitPackageChange(workspaceDir, 'a', 'fix: a bug fix');
 
         final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
@@ -1464,9 +1444,9 @@ dev_dependencies:
           workspaceDir,
           Pubspec('b', version: Version(1, 0, 0), publishTo: 'none'),
         );
-        await runGit(workspaceDir, ['init']);
-        await runGit(workspaceDir, ['add', '.']);
-        await runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+        await _runGit(workspaceDir, ['init']);
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
         await commitPackageChange(workspaceDir, 'a', 'fix: a bug fix');
 
         final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
@@ -1593,9 +1573,9 @@ dev_dependencies:
             },
           ),
         );
-        await runGit(workspaceDir, ['init']);
-        await runGit(workspaceDir, ['add', '.']);
-        await runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+        await _runGit(workspaceDir, ['init']);
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
         await commitPackageChange(workspaceDir, 'a', 'fix: a bug fix');
         await commitPackageChange(workspaceDir, 'core', 'feat!: breaking');
 
@@ -2106,7 +2086,178 @@ dev_dependencies:
         },
       );
     });
+
+    group('useRootAsPackage', () {
+      void setRootVersion(Directory workspaceDir, Version version) {
+        final pubspecFile = File(p.join(workspaceDir.path, 'pubspec.yaml'));
+        final editor = YamlEditor(pubspecFile.readAsStringSync())
+          ..update(['version'], version.toString());
+        pubspecFile.writeAsStringSync(editor.toString());
+      }
+
+      Future<void> commitRootChange(
+        Directory workspaceDir,
+        String message,
+      ) async {
+        File(
+          p.join(workspaceDir.path, 'change.txt'),
+        ).writeAsStringSync(message);
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', message]);
+      }
+
+      Version rootVersion(Directory workspaceDir) {
+        return Pubspec.parse(
+          File(p.join(workspaceDir.path, 'pubspec.yaml')).readAsStringSync(),
+        ).version!;
+      }
+
+      test('creates plain version tags for the root package', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _useRootAsPackageWorkspaceConfigBuilder,
+          workspacePackages: ['a'],
+          useLocalTmpDirectory: true,
+        );
+        setRootVersion(workspaceDir, Version(1, 0, 0));
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await _runGit(workspaceDir, ['init']);
+        await _runGit(workspaceDir, ['config', 'user.name', 'Melos Test']);
+        await _runGit(
+          workspaceDir,
+          ['config', 'user.email', 'test@melos.invertase.dev'],
+        );
+        await _runGit(workspaceDir, ['config', 'commit.gpgsign', 'false']);
+        await commitRootChange(workspaceDir, 'feat: a new feature');
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+        await melos.version(force: true);
+
+        expect(rootVersion(workspaceDir), Version(1, 1, 0));
+        final tags = await _gitTags(workspaceDir);
+        expect(tags, contains('v1.1.0'));
+        expect(tags, contains('a-v1.1.0'));
+        expect(tags, isNot(contains('workspace-v1.1.0')));
+      });
+
+      test(
+        'uses plain version tags to determine the commits since the last '
+        'release of the root package',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _useRootAsPackageWorkspaceConfigBuilder,
+            workspacePackages: ['a'],
+            useLocalTmpDirectory: true,
+          );
+          setRootVersion(workspaceDir, Version(1, 0, 0));
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await _runGit(workspaceDir, ['init']);
+          await commitRootChange(workspaceDir, 'feat: a new feature');
+          await _runGit(workspaceDir, ['tag', 'v1.0.0']);
+          await commitRootChange(workspaceDir, 'fix: a bug fix');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          // Only the fix after the plain version tag is considered, so the
+          // root package is bumped with a patch instead of a minor.
+          expect(rootVersion(workspaceDir), Version(1, 0, 1));
+        },
+      );
+
+      test(
+        'still recognizes root package tags prefixed with the package name',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _useRootAsPackageWorkspaceConfigBuilder,
+            workspacePackages: ['a'],
+            useLocalTmpDirectory: true,
+          );
+          setRootVersion(workspaceDir, Version(1, 0, 0));
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await _runGit(workspaceDir, ['init']);
+          await commitRootChange(workspaceDir, 'feat: a new feature');
+          await _runGit(workspaceDir, ['tag', 'workspace-v1.0.0']);
+          await commitRootChange(workspaceDir, 'fix: a bug fix');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          expect(rootVersion(workspaceDir), Version(1, 0, 1));
+        },
+      );
+    });
   });
+}
+
+MelosWorkspaceConfig _useRootAsPackageWorkspaceConfigBuilder(String path) {
+  return MelosWorkspaceConfig(
+    path: path,
+    name: 'test_workspace',
+    packages: [
+      createGlob('packages/**', currentDirectoryPath: path),
+    ],
+    useRootAsPackage: true,
+    commands: const CommandConfigs(
+      version: VersionCommandConfigs(
+        fetchTags: false,
+      ),
+    ),
+  );
+}
+
+Future<void> _runGit(Directory workspaceDir, List<String> args) async {
+  final result = await Process.run(
+    'git',
+    [
+      '-c',
+      'user.name=Melos Test',
+      '-c',
+      'user.email=test@melos.invertase.dev',
+      '-c',
+      'commit.gpgsign=false',
+      ...args,
+    ],
+    workingDirectory: workspaceDir.path,
+  );
+  if (result.exitCode != 0) {
+    throw Exception(
+      'git ${args.join(' ')} failed:\n${result.stdout}\n${result.stderr}',
+    );
+  }
+}
+
+Future<List<String>> _gitTags(Directory workspaceDir) async {
+  final result = await Process.run(
+    'git',
+    ['tag', '-l'],
+    workingDirectory: workspaceDir.path,
+  );
+  return (result.stdout as String)
+      .split('\n')
+      .map((tag) => tag.trim())
+      .where((tag) => tag.isNotEmpty)
+      .toList();
 }
 
 MelosWorkspaceConfig _smartDependentsWorkspaceConfigBuilder(String path) {

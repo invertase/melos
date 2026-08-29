@@ -26,11 +26,14 @@ mixin SupportsManualRelease on HostedGitRepository {
   /// Returns the URL to the prefilled release creation page for the release
   /// of a package.
   Uri releaseUrlForUpdate(MelosPendingPackageUpdate pendingPackageUpdate) {
-    final packageName = pendingPackageUpdate.package.name;
+    final package = pendingPackageUpdate.package;
     final packageVersion = pendingPackageUpdate.nextVersion.toString();
 
-    final tag = gitTagForPackageVersion(packageName, packageVersion);
-    final title = gitReleaseTitleForPackageVersion(packageName, packageVersion);
+    final tag = gitTagForPackage(package, packageVersion);
+    final title = gitReleaseTitleForPackageVersion(
+      package.name,
+      packageVersion,
+    );
     final body = pendingPackageUpdate.changelog.markdown;
     final isPreRelease = pendingPackageUpdate.nextVersion.isPreRelease;
 

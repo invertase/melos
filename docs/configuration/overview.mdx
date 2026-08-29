@@ -94,6 +94,12 @@ For non-monorepo projects, you can use an empty workspace with
 This allows you to leverage Melos features like `melos version`,
 `melos publish`, and `melos run` on a single package project.
 
+**Git tags:**
+The root package uses plain version tags, e.g. `v1.2.3`, instead of tags
+prefixed with the package name, e.g. `my_package-v1.2.3`, that all other
+packages use. Existing root package tags prefixed with the package name are
+still recognized when determining the commits since the last release.
+
 **Note:** While we recommend keeping the root directory focused on workspace
 configuration for monorepos, this option provides flexibility for existing
 project structures and enables single package usage.
