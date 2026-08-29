@@ -400,7 +400,7 @@ mixin _BootstrapMixin on _CleanMixin {
       pubspecEditor.update(
         [pubspecKey, entry.key],
         wrapAsYamlNode(
-          entry.value.toJson(),
+          entry.value.toYaml(),
           collectionStyle: CollectionStyle.BLOCK,
         ),
       );

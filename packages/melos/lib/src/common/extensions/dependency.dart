@@ -9,16 +9,21 @@ extension DependencyExtension on Dependency {
     return null;
   }
 
-  Object toJson() {
+  /// Converts this dependency to the value used for it in a `pubspec.yaml`
+  /// file, inlining the version or url where pub allows it.
+  ///
+  /// This intentionally differs from `Dependency.toJson` in `pubspec_parse`,
+  /// which always produces a map.
+  Object toYaml() {
     final self = this;
     if (self is PathDependency) {
-      return self.toJson();
+      return self.toYaml();
     } else if (self is HostedDependency) {
-      return self.toJson();
+      return self.toYaml();
     } else if (self is GitDependency) {
-      return self.toJson();
+      return self.toYaml();
     } else if (self is SdkDependency) {
-      return self.toJson();
+      return self.toYaml();
     } else {
       throw UnimplementedError();
     }
@@ -26,7 +31,7 @@ extension DependencyExtension on Dependency {
 }
 
 extension PathDependencyExtension on PathDependency {
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toYaml() {
     return {
       'path': path,
     };
@@ -34,7 +39,7 @@ extension PathDependencyExtension on PathDependency {
 }
 
 extension HostedDependencyExtension on HostedDependency {
-  Object toJson() {
+  Object toYaml() {
     return _inlineVersion
         ? version.toString()
         : {
@@ -53,7 +58,7 @@ extension HostedDependencyExtension on HostedDependency {
 }
 
 extension GitDependencyExtension on GitDependency {
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toYaml() {
     return {
       'git': _inlineUrl
           ? url.toString()
@@ -73,7 +78,7 @@ extension GitDependencyExtension on GitDependency {
 }
 
 extension SdkDependencyExtension on SdkDependency {
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toYaml() {
     return {
       'sdk': sdk,
       'version': version.toString(),
@@ -82,7 +87,7 @@ extension SdkDependencyExtension on SdkDependency {
 }
 
 extension DependencyMapExtension on Map<String, Dependency> {
-  Map<String, Object?> toJson() {
-    return map((key, value) => MapEntry(key, value.toJson()));
+  Map<String, Object?> toYaml() {
+    return map((key, value) => MapEntry(key, value.toYaml()));
   }
 }
