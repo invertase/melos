@@ -18,10 +18,7 @@ jobs:
       - name: Install Tools
         run: ./.github/workflows/scripts/install-tools.sh
       - name: Analyze
-        uses: invertase/github-action-dart-analyzer@v3
-        with:
-          fatal-infos: true
-          fatal-warnings: true
+        run: melos analyze --fatal-infos --fatal-warnings
 
   # This job ensures `melos` compiles and runs fine on the
   # minimum Dart SDK version that it supports.
