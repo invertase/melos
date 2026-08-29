@@ -1,7 +1,34 @@
+import 'package:melos/melos.dart';
 import 'package:melos/src/common/git_repository.dart';
+import 'package:melos/src/common/pending_package_update.dart';
+import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 
+import 'utils.dart';
+
 void main() {
+  group('releaseUrlForUpdate', () {
+    test('uses the plain version tag as title for the root package', () async {
+      final workspace = await createTemporaryMelosWorkspace(
+        workspacePackages: ['a'],
+      );
+      final update = MelosPendingPackageUpdate.manual(
+        workspace,
+        workspace.rootPackage,
+        const [],
+        Version(1, 2, 3),
+        logger: TestLogger().toMelosLogger(),
+      );
+      final url = GitHubRepository(
+        owner: 'invertase',
+        name: 'melos',
+      ).releaseUrlForUpdate(update);
+
+      expect(url.queryParameters['tag'], 'v1.2.3');
+      expect(url.queryParameters['title'], 'v1.2.3');
+    });
+  });
+
   group('GitHubRepository', () {
     group('fromUrl', () {
       test('parse GitHub repository URL correctly', () {
