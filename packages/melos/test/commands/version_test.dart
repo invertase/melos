@@ -2179,6 +2179,71 @@ dev_dependencies:
       );
 
       test(
+        'uses the root package tag with the highest version when tags of '
+        'both formats exist',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _useRootAsPackageWorkspaceConfigBuilder,
+            workspacePackages: ['a'],
+            useLocalTmpDirectory: true,
+          );
+          setRootVersion(workspaceDir, Version(1, 0, 0));
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await _runGit(workspaceDir, ['init']);
+          await commitRootChange(workspaceDir, 'feat: an old feature');
+          await _runGit(workspaceDir, ['tag', 'v0.8.0']);
+          await commitRootChange(workspaceDir, 'feat: a new feature');
+          await _runGit(workspaceDir, ['tag', 'workspace-v0.9.0']);
+          await commitRootChange(workspaceDir, 'fix: a bug fix');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          // The tag prefixed with the package name has the highest version,
+          // so only the fix after it is considered.
+          expect(rootVersion(workspaceDir), Version(1, 0, 1));
+        },
+      );
+
+      test(
+        'prefers the plain root package tag when it has the highest version',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _useRootAsPackageWorkspaceConfigBuilder,
+            workspacePackages: ['a'],
+            useLocalTmpDirectory: true,
+          );
+          setRootVersion(workspaceDir, Version(1, 0, 0));
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await _runGit(workspaceDir, ['init']);
+          await commitRootChange(workspaceDir, 'feat: an old feature');
+          await _runGit(workspaceDir, ['tag', 'workspace-v0.8.0']);
+          await commitRootChange(workspaceDir, 'feat: a new feature');
+          await _runGit(workspaceDir, ['tag', 'v0.9.0']);
+          await commitRootChange(workspaceDir, 'fix: a bug fix');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          expect(rootVersion(workspaceDir), Version(1, 0, 1));
+        },
+      );
+
+      test(
         'still recognizes root package tags prefixed with the package name',
         () async {
           final workspaceDir = await createTemporaryWorkspace(

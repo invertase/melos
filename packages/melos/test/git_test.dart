@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/git.dart';
+import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 
 import 'utils.dart';
@@ -41,6 +42,38 @@ void main() {
         ),
         isFalse,
       );
+    });
+
+    group('gitVersionFromTag', () {
+      late Package package;
+
+      setUp(() async {
+        final workspace = await createTemporaryMelosWorkspace(
+          workspacePackages: ['a'],
+        );
+        package = workspace.rootPackage;
+      });
+
+      test('parses plain version tags', () {
+        expect(gitVersionFromTag('v1.2.3', package), Version(1, 2, 3));
+        expect(
+          gitVersionFromTag('v1.2.3-dev.1', package),
+          Version.parse('1.2.3-dev.1'),
+        );
+      });
+
+      test('parses tags prefixed with the package name', () {
+        expect(
+          gitVersionFromTag('${package.name}-v1.2.3', package),
+          Version(1, 2, 3),
+        );
+      });
+
+      test('returns null for tags without a valid version', () {
+        expect(gitVersionFromTag('other-v1.2.3', package), isNull);
+        expect(gitVersionFromTag('v1.2', package), isNull);
+        expect(gitVersionFromTag('release', package), isNull);
+      });
     });
 
     test('gitExecuteCommand throws a ProcessException on error', () async {
