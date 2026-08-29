@@ -2148,6 +2148,59 @@ dev_dependencies:
         expect(pubspecVersion(workspaceDir, 'a'), Version(1, 1, 0));
         expect(pubspecVersion(workspaceDir, 'b'), Version(1, 1, 0));
         expect(await _gitTags(workspaceDir), ['v1.1.0']);
+
+        // The tag message keeps the markdown headings of the release notes.
+        final tagMessage = await _gitTagMessage(workspaceDir, 'v1.1.0');
+        expect(tagMessage, contains('# a'));
+        expect(tagMessage, contains('# b'));
+        expect(tagMessage, contains('## 1.1.0'));
+        expect(tagMessage, contains('a new feature'));
+      });
+
+      test('updates git refs of dependents to the plain version tag', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _workspaceTagWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec(
+            'b',
+            version: Version(1, 0, 0),
+            dependencies: {
+              'a': GitDependency(
+                Uri.parse('https://github.com/invertase/melos.git'),
+                ref: 'v1.0.0',
+              ),
+            },
+          ),
+        );
+        await _runGit(workspaceDir, ['init']);
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+        await _runGit(workspaceDir, ['tag', 'v1.0.0']);
+        File(
+          p.join(workspaceDir.path, 'packages', 'a', 'change.txt'),
+        ).writeAsStringSync('feat');
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', 'feat: a new feature']);
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.version(gitCommit: false, gitTag: false, force: true);
+
+        final pubspecB = File(
+          p.join(workspaceDir.path, 'packages/b/pubspec.yaml'),
+        ).readAsStringSync();
+        expect(pubspecB, contains('ref: v1.1.0'));
+        expect(pubspecB, isNot(contains('a-v1.1.0')));
       });
 
       test(
@@ -2521,6 +2574,7 @@ MelosWorkspaceConfig _workspaceTagWorkspaceConfigBuilder(String path) {
         fetchTags: false,
         mode: VersioningMode.fixed,
         workspaceTag: true,
+        updateGitTagRefs: true,
       ),
     ),
   );
@@ -2562,6 +2616,15 @@ Future<void> _runGit(Directory workspaceDir, List<String> args) async {
       'git ${args.join(' ')} failed:\n${result.stdout}\n${result.stderr}',
     );
   }
+}
+
+Future<String> _gitTagMessage(Directory workspaceDir, String tag) async {
+  final result = await Process.run(
+    'git',
+    ['tag', '-l', '--format=%(contents)', tag],
+    workingDirectory: workspaceDir.path,
+  );
+  return result.stdout as String;
 }
 
 Future<List<String>> _gitTags(Directory workspaceDir) async {

@@ -247,9 +247,17 @@ Future<bool> gitTagCreate(
     return false;
   }
 
-  final arguments = commitId != null && commitId.isNotEmpty
-      ? ['tag', '-a', tag, commitId, '-m', message]
-      : ['tag', '-a', tag, '-m', message];
+  // Git strips lines starting with `#` from the message by default, which
+  // would remove the markdown headings of the changelog.
+  final arguments = [
+    'tag',
+    '-a',
+    tag,
+    if (commitId != null && commitId.isNotEmpty) commitId,
+    '--cleanup=whitespace',
+    '-m',
+    message,
+  ];
 
   await gitExecuteCommand(
     arguments: arguments,

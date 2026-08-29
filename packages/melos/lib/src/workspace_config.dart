@@ -674,6 +674,14 @@ class MelosWorkspaceConfig {
       );
     }
 
+    if (commands.version.workspaceTag &&
+        commands.version.mode != VersioningMode.fixed) {
+      throw MelosConfigException(
+        'commands/version/workspaceTag can only be enabled if '
+        'commands/version/mode is "fixed"',
+      );
+    }
+
     scripts.validate();
     _validatePhysicalWorkspace();
   }

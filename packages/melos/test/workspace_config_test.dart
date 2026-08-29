@@ -163,18 +163,47 @@ void main() {
 
       test('throws if workspaceTag is enabled outside of fixed mode', () {
         expect(
-          () => VersionCommandConfigs.fromYaml(
-            const {'workspaceTag': true},
-            workspacePath: '.',
+          () => MelosWorkspaceConfig(
+            name: 'melos_test',
+            packages: const [],
+            commands: const CommandConfigs(
+              version: VersionCommandConfigs(workspaceTag: true),
+            ),
+            path: testWorkspacePath,
           ),
           throwsMelosConfigException(),
         );
         expect(
-          () => VersionCommandConfigs.fromYaml(
-            const {'mode': 'independent', 'workspaceTag': true},
-            workspacePath: '.',
+          () => MelosWorkspaceConfig.fromYaml(
+            const {
+              'name': 'melos_test',
+              'melos': {
+                'command': {
+                  'version': {'mode': 'independent', 'workspaceTag': true},
+                },
+              },
+            },
+            path: testWorkspacePath,
           ),
           throwsMelosConfigException(),
+        );
+      });
+
+      test('accepts workspaceTag in fixed mode', () async {
+        final workspace = await createTemporaryWorkspace(workspacePackages: []);
+        expect(
+          MelosWorkspaceConfig(
+            name: 'melos_test',
+            packages: const [],
+            commands: const CommandConfigs(
+              version: VersionCommandConfigs(
+                mode: VersioningMode.fixed,
+                workspaceTag: true,
+              ),
+            ),
+            path: workspace.path,
+          ).commands.version.workspaceTag,
+          isTrue,
         );
       });
 
