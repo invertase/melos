@@ -608,6 +608,29 @@ See the
 [version command documentation](/commands/version#fixed-versioning-mode) for
 more information.
 
+### workspaceTag
+
+Whether to tag releases with a single plain version tag for the whole
+workspace, e.g. `v1.2.3`, instead of one tag per package, e.g.
+`my_package-v1.2.3`. Defaults to `false`.
+
+This option is only supported in `fixed` [mode](#mode), since all packages
+share the same version there. When enabled, `melos version` creates one
+annotated tag per release containing the changelogs of all versioned packages,
+and determines the commits since the last release from the latest plain
+version tag. Existing tags prefixed with the package name are still recognized,
+so the option can be enabled in a workspace that was previously tagged per
+package. `melos publish` also creates the plain version tag when it tags
+published versions.
+
+```yaml
+melos:
+  command:
+    version:
+      mode: fixed
+      workspaceTag: true
+```
+
 ### fetchTags
 
 Whether to fetch tags from the `origin` remote before versioning. Defaults to

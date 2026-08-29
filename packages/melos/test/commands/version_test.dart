@@ -2087,6 +2087,138 @@ dev_dependencies:
       );
     });
 
+    group('workspaceTag', () {
+      Future<void> commitPackageChange(
+        Directory workspaceDir,
+        String packageName,
+        String message,
+      ) async {
+        File(
+          p.join(workspaceDir.path, 'packages', packageName, 'change.txt'),
+        ).writeAsStringSync(message);
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', message]);
+      }
+
+      Version pubspecVersion(Directory workspaceDir, String packageName) {
+        return Pubspec.parse(
+          File(
+            p.join(workspaceDir.path, 'packages', packageName, 'pubspec.yaml'),
+          ).readAsStringSync(),
+        ).version!;
+      }
+
+      Future<Directory> createWorkspace() async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _workspaceTagWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(1, 0, 0)),
+        );
+        await _runGit(workspaceDir, ['init']);
+        await _runGit(workspaceDir, ['config', 'user.name', 'Melos Test']);
+        await _runGit(
+          workspaceDir,
+          ['config', 'user.email', 'test@melos.invertase.dev'],
+        );
+        await _runGit(workspaceDir, ['config', 'commit.gpgsign', 'false']);
+        return workspaceDir;
+      }
+
+      test('creates a single plain version tag for the workspace', () async {
+        final workspaceDir = await createWorkspace();
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+        await commitPackageChange(workspaceDir, 'a', 'feat: a new feature');
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+        await melos.version(force: true);
+
+        expect(pubspecVersion(workspaceDir, 'a'), Version(1, 1, 0));
+        expect(pubspecVersion(workspaceDir, 'b'), Version(1, 1, 0));
+        expect(await _gitTags(workspaceDir), ['v1.1.0']);
+      });
+
+      test(
+        'uses the plain version tag to determine the commits since the last '
+        'release',
+        () async {
+          final workspaceDir = await createWorkspace();
+          await commitPackageChange(workspaceDir, 'a', 'feat: a new feature');
+          await _runGit(workspaceDir, ['tag', 'v1.0.0']);
+          await commitPackageChange(workspaceDir, 'b', 'fix: a bug fix');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          // Only the fix after the workspace tag is considered, so the
+          // workspace is bumped with a patch instead of a minor.
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 1));
+        },
+      );
+
+      test(
+        'uses the tag with the highest version when tags of both formats '
+        'exist',
+        () async {
+          final workspaceDir = await createWorkspace();
+          await commitPackageChange(workspaceDir, 'a', 'feat: an old feature');
+          await _runGit(workspaceDir, ['tag', 'v0.8.0']);
+          await commitPackageChange(workspaceDir, 'a', 'feat: a new feature');
+          await _runGit(workspaceDir, ['tag', 'a-v0.9.0']);
+          await _runGit(workspaceDir, ['tag', 'b-v0.9.0']);
+          await commitPackageChange(workspaceDir, 'b', 'fix: a bug fix');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 1));
+        },
+      );
+
+      test(
+        'still recognizes tags prefixed with the package name',
+        () async {
+          final workspaceDir = await createWorkspace();
+          await commitPackageChange(workspaceDir, 'a', 'feat: a new feature');
+          await _runGit(workspaceDir, ['tag', 'a-v1.0.0']);
+          await _runGit(workspaceDir, ['tag', 'b-v1.0.0']);
+          await commitPackageChange(workspaceDir, 'b', 'fix: a bug fix');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 1));
+        },
+      );
+    });
+
     group('useRootAsPackage', () {
       void setRootVersion(Directory workspaceDir, Version version) {
         final pubspecFile = File(p.join(workspaceDir.path, 'pubspec.yaml'));
@@ -2375,6 +2507,23 @@ dev_dependencies:
       );
     });
   });
+}
+
+MelosWorkspaceConfig _workspaceTagWorkspaceConfigBuilder(String path) {
+  return MelosWorkspaceConfig(
+    path: path,
+    name: 'test_workspace',
+    packages: [
+      createGlob('packages/**', currentDirectoryPath: path),
+    ],
+    commands: const CommandConfigs(
+      version: VersionCommandConfigs(
+        fetchTags: false,
+        mode: VersioningMode.fixed,
+        workspaceTag: true,
+      ),
+    ),
+  );
 }
 
 MelosWorkspaceConfig _useRootAsPackageWorkspaceConfigBuilder(String path) {

@@ -58,6 +58,19 @@ versioned together, `--no-dependent-versions` has no effect in `fixed` mode.
 If there are no versionable changes in any package, `melos version` does
 nothing, just like in `independent` mode.
 
+By default each package is still tagged individually, e.g. `foo-v1.2.3`. To
+tag each release with a single plain version tag for the whole workspace
+instead, e.g. `v1.2.3`, enable
+[`command/version/workspaceTag`](/configuration/overview#workspacetag):
+
+```yaml
+melos:
+  command:
+    version:
+      mode: fixed
+      workspaceTag: true
+```
+
 ## Hooks
 
 The `version` command supports the following hooks in addition to the
