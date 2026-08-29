@@ -165,7 +165,7 @@ String? _mergeMelosPubspecOverrides(
             pubspecOverridesEditor.update(
               ['dependency_overrides', packageName],
               wrapAsYamlNode(
-                newRef!.toJson(),
+                newRef!.toYaml(),
                 collectionStyle: CollectionStyle.BLOCK,
               ),
             );
@@ -197,7 +197,7 @@ String? _mergeMelosPubspecOverrides(
           {
             'dependency_overrides': {
               for (final dependencyOverride in melosDependencyOverrides.entries)
-                dependencyOverride.key: dependencyOverride.value.toJson(),
+                dependencyOverride.key: dependencyOverride.value.toYaml(),
             },
           },
           collectionStyle: CollectionStyle.BLOCK,
@@ -210,7 +210,7 @@ String? _mergeMelosPubspecOverrides(
           wrapAsYamlNode(
             {
               for (final dependencyOverride in melosDependencyOverrides.entries)
-                dependencyOverride.key: dependencyOverride.value.toJson(),
+                dependencyOverride.key: dependencyOverride.value.toYaml(),
             },
             collectionStyle: CollectionStyle.BLOCK,
           ),
@@ -220,7 +220,7 @@ String? _mergeMelosPubspecOverrides(
           pubspecOverridesEditor.update(
             ['dependency_overrides', dependencyOverride.key],
             wrapAsYamlNode(
-              dependencyOverride.value.toJson(),
+              dependencyOverride.value.toYaml(),
               collectionStyle: CollectionStyle.BLOCK,
             ),
           );
