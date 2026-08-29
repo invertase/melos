@@ -999,13 +999,22 @@ mixin _VersionMixin on _RunMixin {
         workspace.config.commands.version.updateGitTagRefs) {
       final dependencyPackage = workspace.allPackages[dependencyName];
       final newVersion = dependencyVersion.min ?? dependencyVersion.max!;
-      if (dependencyPackage != null && dependencyPackage.isWorkspaceRoot) {
+      final workspaceTag = workspace.config.commands.version.workspaceTag;
+      if (dependencyPackage != null &&
+          gitPackageUsesPlainVersionTag(
+            dependencyPackage,
+            workspaceTag: workspaceTag,
+          )) {
         // Plain version tags carry no package name, so the ref is updated at
         // its exact location instead of by matching the tag name.
         updatedContents = _rewriteGitRefAtPath(
           pubspecContent: pubspecContent,
           path: [section, dependencyName, 'git', 'ref'],
-          ref: gitTagForPackage(dependencyPackage, newVersion.toString()),
+          ref: gitTagForPackage(
+            dependencyPackage,
+            newVersion.toString(),
+            workspaceTag: workspaceTag,
+          ),
         );
       } else {
         final rewritten = pubspecContent.replaceAllMapped(
@@ -1363,12 +1372,18 @@ mixin _VersionMixin on _RunMixin {
       final tag = gitTagForVersion(
         pendingPackageUpdates.first.nextVersion.toString(),
       );
-      await gitTagCreate(
+      final created = await gitTagCreate(
         tag,
         _workspaceReleaseNotes(pendingPackageUpdates),
         workingDirectory: workspace.path,
         logger: logger,
       );
+      if (!created) {
+        logger.warning(
+          'The git tag "$tag" was not created, most likely because it '
+          'already exists.',
+        );
+      }
       return;
     }
 

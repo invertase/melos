@@ -106,12 +106,6 @@ class VersionCommandConfigs {
       map: yaml,
       path: 'command/version',
     );
-    if ((workspaceTag ?? false) && mode != VersioningMode.fixed) {
-      throw MelosConfigException(
-        'The option "command/version/workspaceTag" can only be enabled when '
-        '"command/version/mode" is "fixed".',
-      );
-    }
 
     final workspaceChangelog = assertKeyIsA<bool?>(
       key: 'workspaceChangelog',
