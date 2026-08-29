@@ -1071,6 +1071,10 @@ class Package {
   /// e.g. "packages/firebase_database".
   final String pathRelativeToWorkspace;
 
+  /// Whether this package is the root package of the workspace, which is only
+  /// part of the workspace packages when `useRootAsPackage` is enabled.
+  bool get isWorkspaceRoot => pathRelativeToWorkspace == '.';
+
   late final allDependenciesInWorkspace = {
     ...dependenciesInWorkspace,
     ...devDependenciesInWorkspace,

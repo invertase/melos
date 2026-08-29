@@ -1302,9 +1302,9 @@ mixin _VersionMixin on _RunMixin {
       }
 
       // TODO '--tag-version-prefix' support (if we decide to support it later)
-      // would pass prefix named arg to gitTagForPackageVersion:
-      final tag = gitTagForPackageVersion(
-        pendingPackageUpdate.package.name,
+      // would pass prefix named arg to gitTagForPackage:
+      final tag = gitTagForPackage(
+        pendingPackageUpdate.package,
         pendingPackageUpdate.nextVersion.toString(),
       );
 
