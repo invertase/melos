@@ -2244,6 +2244,41 @@ dev_dependencies:
       );
 
       test(
+        'prefers the plain root package tag when tags of both formats have '
+        'the same version',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _useRootAsPackageWorkspaceConfigBuilder,
+            workspacePackages: ['a'],
+            useLocalTmpDirectory: true,
+          );
+          setRootVersion(workspaceDir, Version(1, 0, 0));
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await _runGit(workspaceDir, ['init']);
+          await commitRootChange(workspaceDir, 'feat: an old feature');
+          await _runGit(workspaceDir, ['tag', 'v0.9.0']);
+          await commitRootChange(workspaceDir, 'feat: a new feature');
+          await _runGit(workspaceDir, ['tag', 'workspace-v0.9.0']);
+          await commitRootChange(workspaceDir, 'fix: a bug fix');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          // The plain version tag is preferred even though the tag prefixed
+          // with the package name is newer, so the feature after the plain
+          // tag is included.
+          expect(rootVersion(workspaceDir), Version(1, 1, 0));
+        },
+      );
+
+      test(
         'still recognizes root package tags prefixed with the package name',
         () async {
           final workspaceDir = await createTemporaryWorkspace(
