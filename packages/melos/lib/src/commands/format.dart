@@ -4,7 +4,7 @@ mixin _FormatMixin on _Melos {
   Future<void> format({
     GlobalOptions? global,
     PackageFilters? packageFilters,
-    int concurrency = 1,
+    int? concurrency,
     bool? setExitIfChanged,
     String? output,
     int? lineLength,
@@ -28,29 +28,31 @@ mixin _FormatMixin on _Melos {
   Future<void> _formatForAllPackages(
     MelosWorkspace workspace,
     Iterable<Package> packages, {
-    required int concurrency,
+    int? concurrency,
     bool? setExitIfChanged,
     String? output,
     int? lineLength,
   }) async {
     final formatConfig = workspace.config.commands.format;
 
+    final effectiveConcurrency = concurrency ?? formatConfig.concurrency ?? 1;
     final effectiveSetExitIfChanged =
         setExitIfChanged ?? formatConfig.setExitIfChanged;
     final effectiveLineLength = lineLength ?? formatConfig.lineLength;
+    final effectiveOutput = output ?? formatConfig.output;
 
     final failures = <String, int?>{};
-    final pool = Pool(concurrency);
+    final pool = Pool(effectiveConcurrency);
     final formatArgs = [
       'dart',
       'format',
       if (effectiveSetExitIfChanged ?? false) '--set-exit-if-changed',
-      if (output != null) '--output $output',
+      if (effectiveOutput != null) '--output $effectiveOutput',
       if (effectiveLineLength != null) '--line-length $effectiveLineLength',
       '.',
     ];
     final formatArgsString = formatArgs.join(' ');
-    final prefixLogs = concurrency != 1 && packages.length != 1;
+    final prefixLogs = effectiveConcurrency != 1 && packages.length != 1;
 
     logger.command('melos format', withDollarSign: true);
 

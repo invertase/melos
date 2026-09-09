@@ -424,21 +424,22 @@ class PackageFilters {
       other.diff == diff;
 
   @override
-  int get hashCode =>
-      runtimeType.hashCode ^
-      nullSafe.hashCode ^
-      published.hashCode ^
-      includeDependencies.hashCode ^
-      includeDependents.hashCode ^
-      includePrivatePackages.hashCode ^
-      const DeepCollectionEquality().hash(scope) ^
-      const DeepCollectionEquality().hash(ignore) ^
-      const DeepCollectionEquality().hash(dirExists) ^
-      const DeepCollectionEquality().hash(fileExists) ^
-      const DeepCollectionEquality().hash(dependsOn) ^
-      const DeepCollectionEquality().hash(noDependsOn) ^
-      const DeepCollectionEquality().hash(categories) ^
-      diff.hashCode;
+  int get hashCode => Object.hashAll([
+    runtimeType,
+    nullSafe,
+    published,
+    includeDependencies,
+    includeDependents,
+    includePrivatePackages,
+    const DeepCollectionEquality().hash(scope),
+    const DeepCollectionEquality().hash(ignore),
+    const DeepCollectionEquality().hash(dirExists),
+    const DeepCollectionEquality().hash(fileExists),
+    const DeepCollectionEquality().hash(dependsOn),
+    const DeepCollectionEquality().hash(noDependsOn),
+    const DeepCollectionEquality().hash(categories),
+    diff,
+  ]);
 
   @override
   String toString() {

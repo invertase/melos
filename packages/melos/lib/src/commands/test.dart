@@ -4,8 +4,8 @@ mixin _TestMixin on _Melos {
   Future<void> test({
     GlobalOptions? global,
     PackageFilters? packageFilters,
-    int concurrency = 1,
-    bool noPub = false,
+    int? concurrency,
+    bool? noPub,
   }) async {
     final workspace = await createWorkspace(
       global: global,
@@ -14,12 +14,13 @@ mixin _TestMixin on _Melos {
     final packages = workspace.filteredPackages.values.where(
       (pkg) => Directory(p.join(pkg.path, 'test')).existsSync(),
     );
+    final testConfig = workspace.config.commands.test;
 
     await _testForAllPackages(
       workspace,
       packages,
-      concurrency: concurrency,
-      noPub: noPub,
+      concurrency: concurrency ?? testConfig.concurrency ?? 1,
+      noPub: noPub ?? testConfig.noPub ?? false,
     );
   }
 

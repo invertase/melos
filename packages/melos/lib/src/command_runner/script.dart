@@ -1,4 +1,5 @@
 import '../commands/runner.dart';
+import '../common/utils.dart';
 import '../workspace_config.dart';
 import 'base.dart';
 
@@ -53,7 +54,7 @@ class ScriptCommand extends MelosCommand {
     final melos = Melos(logger: logger, config: config);
 
     final scriptName = argResults!.name;
-    final noSelect = argResults!['no-select'] as bool;
+    final noSelect = argResults!.optional('no-select') as bool?;
 
     final packageFilters = hasPackageFilterArgs
         ? parsePackageFilters(config.path, includeConfigIgnore: false)

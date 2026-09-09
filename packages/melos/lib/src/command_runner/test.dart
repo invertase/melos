@@ -1,4 +1,5 @@
 import '../commands/runner.dart';
+import '../common/utils.dart';
 import 'base.dart';
 
 class TestCommand extends MelosCommand {
@@ -25,15 +26,14 @@ class TestCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    final concurrency = int.parse(argResults!['concurrency'] as String);
-    final noPub = argResults!['no-pub'] as bool;
+    final noPub = argResults!.optional('no-pub') as bool?;
 
     final melos = Melos(logger: logger, config: config);
 
     return melos.test(
       global: global,
       packageFilters: parsePackageFilters(config.path),
-      concurrency: concurrency,
+      concurrency: concurrencyOption,
       noPub: noPub,
     );
   }

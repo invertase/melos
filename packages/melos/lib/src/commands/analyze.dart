@@ -4,24 +4,25 @@ mixin _AnalyzeMixin on _Melos {
   Future<void> analyze({
     GlobalOptions? global,
     PackageFilters? packageFilters,
-    bool fatalInfos = true,
+    bool? fatalInfos,
     bool? fatalWarnings,
-    int concurrency = 1,
-    bool noPub = false,
+    int? concurrency,
+    bool? noPub,
   }) async {
     final workspace = await createWorkspace(
       global: global,
       packageFilters: packageFilters,
     );
     final packages = workspace.filteredPackages.values;
+    final analyzeConfig = workspace.config.commands.analyze;
 
     await _analyzeForAllPackages(
       workspace,
       packages,
-      fatalInfos: fatalInfos,
-      fatalWarnings: fatalWarnings,
-      concurrency: concurrency,
-      noPub: noPub,
+      fatalInfos: fatalInfos ?? analyzeConfig.fatalInfos ?? true,
+      fatalWarnings: fatalWarnings ?? analyzeConfig.fatalWarnings,
+      concurrency: concurrency ?? analyzeConfig.concurrency ?? 1,
+      noPub: noPub ?? analyzeConfig.noPub ?? false,
     );
   }
 

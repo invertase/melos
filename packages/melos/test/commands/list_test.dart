@@ -1,7 +1,9 @@
 import 'dart:convert';
 
+import 'package:melos/src/command_configs/command_configs.dart';
 import 'package:melos/src/commands/runner.dart';
 import 'package:melos/src/common/glob.dart';
+import 'package:melos/src/common/list_output_kind.dart';
 import 'package:melos/src/package.dart';
 import 'package:melos/src/workspace_config.dart';
 import 'package:path/path.dart' as p;
@@ -483,6 +485,67 @@ graph TD
 ''');
         },
       );
+    });
+
+    group('config', () {
+      Future<MelosWorkspaceConfig> workspaceWith(
+        ListCommandConfigs listConfigs,
+      ) async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_workspace',
+            packages: [createGlob('packages/**', currentDirectoryPath: path)],
+            commands: CommandConfigs(list: listConfigs),
+          ),
+          workspacePackages: ['a'],
+        );
+        await createProject(workspaceDir, Pubspec('a'));
+
+        return MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      }
+
+      test('uses the configured format', () async {
+        final config = await workspaceWith(
+          const ListCommandConfigs(format: ListOutputKind.json),
+        );
+
+        await Melos(logger: logger, config: config).list();
+
+        expect(
+          (jsonDecode(logger.output) as List).single,
+          containsPair('name', 'a'),
+        );
+      });
+
+      test('uses the configured long and relativePaths', () async {
+        final config = await workspaceWith(
+          const ListCommandConfigs(long: true, relativePaths: true),
+        );
+
+        await Melos(logger: logger, config: config).list(
+          kind: ListOutputKind.parsable,
+        );
+
+        expect(logger.output, ignoringAnsii('packages/a:a:0.0.0:PRIVATE\n'));
+      });
+
+      test('command line options take precedence over the config', () async {
+        final config = await workspaceWith(
+          const ListCommandConfigs(
+            long: true,
+            relativePaths: true,
+            format: ListOutputKind.json,
+          ),
+        );
+
+        await Melos(logger: logger, config: config).list(
+          kind: ListOutputKind.parsable,
+          long: false,
+        );
+
+        expect(logger.output, ignoringAnsii('packages/a\n'));
+      });
     });
   });
 }

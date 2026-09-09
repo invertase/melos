@@ -183,12 +183,13 @@ class ExecOptions {
       groupLogs == other.groupLogs;
 
   @override
-  int get hashCode =>
-      runtimeType.hashCode ^
-      concurrency.hashCode ^
-      failFast.hashCode ^
-      orderDependents.hashCode ^
-      groupLogs.hashCode;
+  int get hashCode => Object.hashAll([
+    runtimeType,
+    concurrency,
+    failFast,
+    orderDependents,
+    groupLogs,
+  ]);
 
   @override
   String toString() =>
@@ -626,18 +627,19 @@ class Script {
       other.stdio == stdio;
 
   @override
-  int get hashCode =>
-      runtimeType.hashCode ^
-      name.hashCode ^
-      run.hashCode ^
-      description.hashCode ^
-      const DeepCollectionEquality().hash(env) ^
-      packageFilters.hashCode ^
-      steps.hashCode ^
-      exec.hashCode ^
-      isPrivate.hashCode ^
-      groups.hashCode ^
-      stdio.hashCode;
+  int get hashCode => Object.hashAll([
+    runtimeType,
+    name,
+    run,
+    description,
+    const DeepCollectionEquality().hash(env),
+    packageFilters,
+    steps,
+    exec,
+    isPrivate,
+    groups,
+    stdio,
+  ]);
 
   @override
   String toString() {

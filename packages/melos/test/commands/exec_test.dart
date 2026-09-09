@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:glob/glob.dart';
 import 'package:melos/melos.dart';
+import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
@@ -1203,6 +1204,80 @@ ${'-' * terminalWidth}
      └> SUCCESS
 ''',
           ),
+        );
+      });
+    });
+
+    group('config', () {
+      void createDelayedExitFile(Directory dir, {int delay = 0}) {
+        File('${dir.path}/delayed_exit.dart').writeAsStringSync('''
+        import 'dart:io';
+        Future<void> main() async {
+          await Future.delayed(Duration(milliseconds: $delay));
+          exit(1);
+        }
+        ''');
+      }
+
+      Future<TestLogger> runExecWith(
+        ExecCommandConfigs execConfigs, {
+        bool? failFast,
+      }) async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_workspace',
+            packages: [createGlob('packages/**', currentDirectoryPath: path)],
+            commands: CommandConfigs(exec: execConfigs),
+          ),
+          workspacePackages: ['a', 'b', 'c'],
+        );
+
+        createDelayedExitFile(
+          await createProject(workspaceDir, Pubspec('a')),
+          delay: 1000,
+        );
+        createDelayedExitFile(
+          await createProject(workspaceDir, Pubspec('b')),
+          delay: 500,
+        );
+        createDelayedExitFile(await createProject(workspaceDir, Pubspec('c')));
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+
+        await Melos(logger: logger, config: config).exec(
+          ['dart', 'delayed_exit.dart'],
+          concurrency: 3,
+          orderDependents: true,
+          failFast: failFast,
+        );
+
+        return logger;
+      }
+
+      test('uses the configured failFast', () async {
+        final logger = await runExecWith(
+          const ExecCommandConfigs(failFast: true),
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          contains('CANCELED (in 2 packages)'),
+        );
+      });
+
+      test('command line options take precedence over the config', () async {
+        final logger = await runExecWith(
+          const ExecCommandConfigs(failFast: true),
+          failFast: false,
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          isNot(contains('CANCELED')),
         );
       });
     });

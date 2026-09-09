@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:melos/melos.dart';
-import 'package:melos/src/command_configs/command_configs.dart';
-import 'package:melos/src/command_configs/format.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
@@ -431,6 +429,72 @@ $ melos format
      └> FAILED (in 1 packages)
         └> a (with exit code 1)''',
           ),
+        );
+      });
+
+      test('should run format with output configValue', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_workspace',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            commands: const CommandConfigs(
+              format: FormatCommandConfigs(output: 'none'),
+            ),
+          ),
+          workspacePackages: ['a'],
+        );
+
+        await createProject(workspaceDir, Pubspec('a'));
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+
+        await Melos(logger: logger, config: config).format();
+
+        expect(
+          logger.output.normalizeLines(),
+          contains('dart format --output none .'),
+        );
+      });
+
+      test('command line options take precedence over the config', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_workspace',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            commands: const CommandConfigs(
+              format: FormatCommandConfigs(
+                output: 'none',
+                lineLength: 150,
+              ),
+            ),
+          ),
+          workspacePackages: ['a'],
+        );
+
+        await createProject(workspaceDir, Pubspec('a'));
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+
+        await Melos(
+          logger: logger,
+          config: config,
+        ).format(output: 'show', lineLength: 100);
+
+        expect(
+          logger.output.normalizeLines(),
+          contains('dart format --output show --line-length 100 .'),
         );
       });
     });

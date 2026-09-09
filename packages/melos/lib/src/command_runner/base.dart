@@ -166,6 +166,13 @@ abstract class MelosCommand extends Command<void> {
     );
   }
 
+  /// The `--concurrency` option, or `null` when it was not passed on the
+  /// command line and the configured default should be used instead.
+  int? get concurrencyOption {
+    final value = argResults!.optional('concurrency') as String?;
+    return value == null ? null : int.parse(value);
+  }
+
   /// Whether any package filter arguments were explicitly provided by the
   /// user on the command line.
   bool get hasPackageFilterArgs {

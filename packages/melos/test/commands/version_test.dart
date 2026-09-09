@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:glob/glob.dart';
 import 'package:melos/melos.dart';
-import 'package:melos/src/command_configs/command_configs.dart';
 import 'package:melos/src/command_runner.dart';
 import 'package:melos/src/common/git_tag_pattern_dependency.dart';
 import 'package:melos/src/common/glob.dart';
@@ -2559,6 +2558,72 @@ dev_dependencies:
         },
       );
     });
+
+    group('config', () {
+      Version pubspecVersion(Directory workspaceDir, String packageName) {
+        return Pubspec.parse(
+          File(
+            p.join(workspaceDir.path, 'packages', packageName, 'pubspec.yaml'),
+          ).readAsStringSync(),
+        ).version!;
+      }
+
+      bool hasChangelog(Directory workspaceDir, String packageName) {
+        return File(
+          p.join(workspaceDir.path, 'packages', packageName, 'CHANGELOG.md'),
+        ).existsSync();
+      }
+
+      test(
+        'CLI runner respects the versioning defaults from melos.yaml',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _versionDefaultsWorkspaceConfigBuilder,
+            workspacePackages: ['a'],
+            useLocalTmpDirectory: true,
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+
+          // Neither --yes, --all, --no-changelog, --no-git-tag-version nor
+          // --no-git-commit-version is passed, they all come from the config.
+          await MelosCommandRunner(config).run(['version', '-V', 'a:1.0.1']);
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          expect(hasChangelog(workspaceDir, 'a'), isFalse);
+        },
+      );
+
+      test('command line options take precedence over the config', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _versionDefaultsWorkspaceConfigBuilder,
+          workspacePackages: ['a'],
+          useLocalTmpDirectory: true,
+        );
+
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+
+        await MelosCommandRunner(
+          config,
+        ).run(['version', '--changelog', '-V', 'a:1.0.1']);
+
+        expect(hasChangelog(workspaceDir, 'a'), isTrue);
+      });
+    });
   });
 }
 
@@ -2696,6 +2761,26 @@ MelosWorkspaceConfig _workspaceConfigBuilder(String path) {
       version: VersionCommandConfigs(
         fetchTags: false,
         updateGitTagRefs: true,
+      ),
+    ),
+  );
+}
+
+MelosWorkspaceConfig _versionDefaultsWorkspaceConfigBuilder(String path) {
+  return MelosWorkspaceConfig(
+    path: path,
+    name: 'test_workspace',
+    packages: [
+      createGlob('packages/**', currentDirectoryPath: path),
+    ],
+    commands: const CommandConfigs(
+      version: VersionCommandConfigs(
+        fetchTags: false,
+        force: true,
+        versionPrivatePackages: true,
+        updateChangelog: false,
+        gitTagVersion: false,
+        gitCommitVersion: false,
       ),
     ),
   );

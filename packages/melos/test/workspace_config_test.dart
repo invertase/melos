@@ -1,6 +1,4 @@
 import 'package:melos/melos.dart';
-import 'package:melos/src/command_configs/command_configs.dart';
-import 'package:melos/src/command_configs/publish.dart';
 import 'package:melos/src/common/git_repository.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/platform.dart';
@@ -48,6 +46,8 @@ void main() {
               'runPubGetInParallel': false,
               'runPubGetOffline': true,
               'enforceLockfile': true,
+              'noExample': true,
+              'noPub': true,
               'dependencyOverridePaths': ['a'],
             },
             workspacePath: '.',
@@ -56,6 +56,8 @@ void main() {
             runPubGetInParallel: false,
             runPubGetOffline: true,
             enforceLockfile: true,
+            noExample: true,
+            noPub: true,
             dependencyOverridePaths: [
               createGlob('a', currentDirectoryPath: '.'),
             ],
@@ -204,6 +206,46 @@ void main() {
             path: workspace.path,
           ).commands.version.workspaceTag,
           isTrue,
+        );
+      });
+
+      test('can decode the command line option defaults', () {
+        expect(
+          VersionCommandConfigs.fromYaml(
+            const {
+              'updateChangelog': false,
+              'updateDependentsConstraints': false,
+              'updateDependentsVersions': false,
+              'gitTagVersion': false,
+              'gitCommitVersion': false,
+              'force': true,
+              'versionPrivatePackages': true,
+              'preid': 'nullsafety',
+              'dependentPreid': 'dev',
+            },
+            workspacePath: '.',
+          ),
+          const VersionCommandConfigs(
+            updateChangelog: false,
+            updateDependentsConstraints: false,
+            updateDependentsVersions: false,
+            gitTagVersion: false,
+            gitCommitVersion: false,
+            force: true,
+            versionPrivatePackages: true,
+            preid: 'nullsafety',
+            dependentPreid: 'dev',
+          ),
+        );
+      });
+
+      test('throws if updateChangelog is not a bool', () {
+        expect(
+          () => VersionCommandConfigs.fromYaml(
+            const {'updateChangelog': 42},
+            workspacePath: '.',
+          ),
+          throwsMelosConfigException(),
         );
       });
 
@@ -453,6 +495,38 @@ void main() {
         );
       });
 
+      test('can decode the sections of the remaining commands', () {
+        expect(
+          CommandConfigs.fromYaml(
+            const {
+              'analyze': {'fatalInfos': false},
+              'exec': {'failFast': true},
+              'list': {'format': 'parsable'},
+              'run': {'noSelect': true},
+              'test': {'concurrency': 3},
+            },
+            workspacePath: '.',
+          ),
+          const CommandConfigs(
+            analyze: AnalyzeCommandConfigs(fatalInfos: false),
+            exec: ExecCommandConfigs(failFast: true),
+            list: ListCommandConfigs(format: ListOutputKind.parsable),
+            run: RunCommandConfigs(noSelect: true),
+            test: TestCommandConfigs(concurrency: 3),
+          ),
+        );
+      });
+
+      test('throws if `exec` is not a map', () {
+        expect(
+          () => CommandConfigs.fromYaml(
+            const {'exec': 42},
+            workspacePath: '.',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
       test('can decode publish pubServer', () {
         expect(
           CommandConfigs.fromYaml(
@@ -500,6 +574,234 @@ void main() {
             const {'pubServer': 42},
             workspacePath: '.',
           ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('can decode the command line option defaults', () {
+        expect(
+          PublishCommandConfigs.fromYaml(
+            const {
+              'dryRun': false,
+              'gitTagVersion': true,
+              'force': true,
+              'skipValidation': true,
+            },
+            workspacePath: '.',
+          ),
+          const PublishCommandConfigs(
+            dryRun: false,
+            gitTagVersion: true,
+            force: true,
+            skipValidation: true,
+          ),
+        );
+      });
+
+      test('throws if dryRun is not a bool', () {
+        expect(
+          () => PublishCommandConfigs.fromYaml(
+            const {'dryRun': 42},
+            workspacePath: '.',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+    });
+  });
+
+  group('FormatCommandConfigs', () {
+    group('fromYaml', () {
+      test('accepts empty object', () {
+        expect(
+          FormatCommandConfigs.fromYaml(const {}),
+          FormatCommandConfigs.empty,
+        );
+      });
+
+      test('can decode values', () {
+        expect(
+          FormatCommandConfigs.fromYaml(
+            const {
+              'concurrency': 2,
+              'setExitIfChanged': true,
+              'output': 'none',
+              'lineLength': 120,
+            },
+          ),
+          const FormatCommandConfigs(
+            concurrency: 2,
+            setExitIfChanged: true,
+            output: 'none',
+            lineLength: 120,
+          ),
+        );
+      });
+
+      test('throws if output is not a string', () {
+        expect(
+          () => FormatCommandConfigs.fromYaml(const {'output': 42}),
+          throwsMelosConfigException(),
+        );
+      });
+    });
+  });
+
+  group('AnalyzeCommandConfigs', () {
+    group('fromYaml', () {
+      test('accepts empty object', () {
+        expect(
+          AnalyzeCommandConfigs.fromYaml(const {}),
+          AnalyzeCommandConfigs.empty,
+        );
+      });
+
+      test('can decode values', () {
+        expect(
+          AnalyzeCommandConfigs.fromYaml(
+            const {
+              'concurrency': 4,
+              'fatalInfos': false,
+              'fatalWarnings': true,
+              'noPub': true,
+            },
+          ),
+          const AnalyzeCommandConfigs(
+            concurrency: 4,
+            fatalInfos: false,
+            fatalWarnings: true,
+            noPub: true,
+          ),
+        );
+      });
+
+      test('throws if concurrency is not an int', () {
+        expect(
+          () => AnalyzeCommandConfigs.fromYaml(const {'concurrency': 'many'}),
+          throwsMelosConfigException(),
+        );
+      });
+    });
+  });
+
+  group('ExecCommandConfigs', () {
+    group('fromYaml', () {
+      test('accepts empty object', () {
+        expect(
+          ExecCommandConfigs.fromYaml(const {}),
+          ExecCommandConfigs.empty,
+        );
+      });
+
+      test('can decode values', () {
+        expect(
+          ExecCommandConfigs.fromYaml(
+            const {
+              'concurrency': 2,
+              'failFast': true,
+              'orderDependents': true,
+              'groupLogs': true,
+            },
+          ),
+          const ExecCommandConfigs(
+            concurrency: 2,
+            failFast: true,
+            orderDependents: true,
+            groupLogs: true,
+          ),
+        );
+      });
+
+      test('throws if failFast is not a bool', () {
+        expect(
+          () => ExecCommandConfigs.fromYaml(const {'failFast': 42}),
+          throwsMelosConfigException(),
+        );
+      });
+    });
+  });
+
+  group('ListCommandConfigs', () {
+    group('fromYaml', () {
+      test('accepts empty object', () {
+        expect(
+          ListCommandConfigs.fromYaml(const {}),
+          ListCommandConfigs.empty,
+        );
+      });
+
+      test('can decode values', () {
+        expect(
+          ListCommandConfigs.fromYaml(
+            const {
+              'long': true,
+              'relativePaths': true,
+              'format': 'json',
+            },
+          ),
+          const ListCommandConfigs(
+            long: true,
+            relativePaths: true,
+            format: ListOutputKind.json,
+          ),
+        );
+      });
+
+      test('throws if format is not a known output format', () {
+        expect(
+          () => ListCommandConfigs.fromYaml(const {'format': 'cycles'}),
+          throwsMelosConfigException(),
+        );
+      });
+    });
+  });
+
+  group('RunCommandConfigs', () {
+    group('fromYaml', () {
+      test('accepts empty object', () {
+        expect(
+          RunCommandConfigs.fromYaml(const {}),
+          RunCommandConfigs.empty,
+        );
+      });
+
+      test('can decode values', () {
+        expect(
+          RunCommandConfigs.fromYaml(const {'noSelect': true}),
+          const RunCommandConfigs(noSelect: true),
+        );
+      });
+
+      test('throws if noSelect is not a bool', () {
+        expect(
+          () => RunCommandConfigs.fromYaml(const {'noSelect': 42}),
+          throwsMelosConfigException(),
+        );
+      });
+    });
+  });
+
+  group('TestCommandConfigs', () {
+    group('fromYaml', () {
+      test('accepts empty object', () {
+        expect(
+          TestCommandConfigs.fromYaml(const {}),
+          TestCommandConfigs.empty,
+        );
+      });
+
+      test('can decode values', () {
+        expect(
+          TestCommandConfigs.fromYaml(
+            const {'concurrency': 3, 'noPub': true},
+          ),
+          const TestCommandConfigs(concurrency: 3, noPub: true),
+        );
+      });
+
+      test('throws if concurrency is not an int', () {
+        expect(
+          () => TestCommandConfigs.fromYaml(const {'concurrency': true}),
           throwsMelosConfigException(),
         );
       });

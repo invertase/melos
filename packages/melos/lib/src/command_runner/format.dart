@@ -1,4 +1,5 @@
 import '../commands/runner.dart';
+import '../common/utils.dart';
 import 'base.dart';
 
 class FormatCommand extends MelosCommand {
@@ -35,10 +36,10 @@ class FormatCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    final setExitIfChanged = argResults?['set-exit-if-changed'] as bool?;
-    final output = argResults?['output'] as String?;
-    final concurrency = int.parse(argResults!['concurrency'] as String);
-    final lineLength = switch (argResults?['line-length']) {
+    final setExitIfChanged =
+        argResults!.optional('set-exit-if-changed') as bool?;
+    final output = argResults!.optional('output') as String?;
+    final lineLength = switch (argResults!.optional('line-length')) {
       final int length => length,
       final String length => int.tryParse(length),
       _ => null,
@@ -49,7 +50,7 @@ class FormatCommand extends MelosCommand {
     return melos.format(
       global: global,
       packageFilters: parsePackageFilters(config.path),
-      concurrency: concurrency,
+      concurrency: concurrencyOption,
       setExitIfChanged: setExitIfChanged,
       output: output,
       lineLength: lineLength,
