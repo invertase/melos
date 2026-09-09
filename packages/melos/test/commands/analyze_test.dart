@@ -427,6 +427,42 @@ ${'-' * terminalWidth}
       },
     );
 
+    test('should pass --no-pub only to flutter analyze', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a', 'b'],
+      );
+
+      await createProject(
+        workspaceDir,
+        Pubspec(
+          'a',
+          dependencies: {
+            'flutter': SdkDependency('flutter'),
+          },
+        ),
+      );
+
+      await createProject(workspaceDir, Pubspec('b'));
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+      await melos.analyze(noPub: true);
+
+      final output = logger.output.removeAnsiCodes();
+
+      expect(output, contains('flutter analyze --fatal-infos --no-pub'));
+
+      final dartRegex = RegExp(
+        r'\$ melos analyze\s+└> dart analyze --fatal-infos\s',
+      );
+      expect(dartRegex.hasMatch(output), isTrue);
+      expect(output, isNot(contains('dart analyze --fatal-infos --no-pub')));
+    });
+
     test('should run analysis using dart', () async {
       final workspaceDir = await createTemporaryWorkspace(
         workspacePackages: ['a'],

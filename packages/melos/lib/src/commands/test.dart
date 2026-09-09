@@ -5,6 +5,7 @@ mixin _TestMixin on _Melos {
     GlobalOptions? global,
     PackageFilters? packageFilters,
     int concurrency = 1,
+    bool noPub = false,
   }) async {
     final workspace = await createWorkspace(
       global: global,
@@ -14,13 +15,19 @@ mixin _TestMixin on _Melos {
       (pkg) => Directory(p.join(pkg.path, 'test')).existsSync(),
     );
 
-    await _testForAllPackages(workspace, packages, concurrency: concurrency);
+    await _testForAllPackages(
+      workspace,
+      packages,
+      concurrency: concurrency,
+      noPub: noPub,
+    );
   }
 
   Future<void> _testForAllPackages(
     MelosWorkspace workspace,
     Iterable<Package> packages, {
     required int concurrency,
+    required bool noPub,
   }) async {
     if (packages.isEmpty) {
       logger.command('melos test', withDollarSign: true);
@@ -33,6 +40,7 @@ mixin _TestMixin on _Melos {
     final testArgsString = _getTestArgs(
       workspace: workspace,
       concurrency: concurrency,
+      noPub: noPub,
     ).join(' ');
     final useGroupBuffer = concurrency != 1 && packages.length != 1;
     final dartPackageCount = packages.where((e) => !e.isFlutterPackage).length;
@@ -50,8 +58,14 @@ mixin _TestMixin on _Melos {
     }
 
     if (flutterPackageCount > 0) {
+      final flutterTestArgsString = _getTestArgs(
+        workspace: workspace,
+        concurrency: concurrency,
+        noPub: noPub,
+        isFlutter: true,
+      ).join(' ');
       logger
-          .child(targetStyle(testArgsString.replaceFirst('dart', 'flutter')))
+          .child(targetStyle(flutterTestArgsString))
           .child('$runningLabel (in $flutterPackageCount packages)')
           .newLine();
     }
@@ -69,6 +83,7 @@ mixin _TestMixin on _Melos {
           package: package,
           workspace: workspace,
           concurrency: concurrency,
+          noPub: noPub,
         ),
         group: group,
       );
@@ -114,10 +129,17 @@ mixin _TestMixin on _Melos {
     required MelosWorkspace workspace,
     Package? package,
     int concurrency = 1,
+    bool noPub = false,
+    bool isFlutter = false,
   }) {
-    final options = _getOptionsArgs(concurrency);
+    final useFlutter = package?.isFlutterPackage ?? isFlutter;
+    final options = _getOptionsArgs(
+      concurrency: concurrency,
+      noPub: noPub,
+      isFlutter: useFlutter,
+    );
     return <String>[
-      if (package?.isFlutterPackage ?? false)
+      if (useFlutter)
         workspace.sdkTool('flutter')
       else
         workspace.sdkTool('dart'),
@@ -126,10 +148,19 @@ mixin _TestMixin on _Melos {
     ];
   }
 
-  String _getOptionsArgs(int concurrency) {
+  String _getOptionsArgs({
+    required int concurrency,
+    required bool noPub,
+    required bool isFlutter,
+  }) {
     final options = <String>[];
     if (concurrency > 1) {
       options.add('--concurrency=$concurrency');
+    }
+    // `dart test` has no `--no-pub` flag, see
+    // https://github.com/dart-lang/sdk/issues/45307.
+    if (noPub && isFlutter) {
+      options.add('--no-pub');
     }
     return options.join(' ');
   }
