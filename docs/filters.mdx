@@ -60,7 +60,7 @@ melos exec --category="examples" -- flutter build ios
 Filter packages based on whether there were changes between a commit and the
 current HEAD or within a range of commits.
 
-A range of commits can be specified using the git short hand syntax
+A range of commits can be specified using the git shorthand syntax
 `<start-commit>..<end-commit>` and `<start-commit>...<end-commit>`.
 
 ```bash
@@ -72,6 +72,9 @@ melos exec --diff=<commit hash> -- flutter build ios
 # `main` branch and HEAD.
 melos exec --diff=origin/main...HEAD -- flutter build ios
 ```
+
+To list the packages that changed since their latest release tag, use the
+[`changed`](/commands/changed) command.
 
 ## --dir-exists
 

@@ -278,6 +278,9 @@ Global options:
 Available commands:
   bootstrap   Initialize the workspace, link local packages together and install remaining package
               dependencies. Supports all package filtering options.
+  changed     List local packages that have changed since a git commit or tag, by default since the
+              latest release tag of each package. Supports all package filtering options, except
+              --diff, which is given as the argument of this command.
   clean       Clean this workspace and all packages. This deletes the temporary pub & ide files such
               as ".packages" & ".flutter-plugins". Supports all package filtering options.
   exec        Execute an arbitrary command in each package. Supports all package filtering options.

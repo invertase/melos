@@ -1,0 +1,116 @@
+---
+title: Changed Command
+description: Learn more about the `changed` command in Melos.
+---
+
+# Changed Command
+
+<Info>
+  Supports all [Melos filtering](/filters) flags, except `--diff`, which is
+  given as the argument of this command.
+</Info>
+
+List the local packages that have changed since a given commit or tag.
+
+```bash
+melos changed
+```
+
+A package counts as changed when a file inside its directory changed, so
+changes outside of the workspace packages, such as to the root `pubspec.yaml`
+or to the CI configuration, are not attributed to any package. A package
+directory does contain its nested packages, which means a change to
+`packages/a/example` is also a change to `packages/a`, and with
+`useRootAsPackage` enabled any change in the repository is a change to the root
+package.
+
+Without an argument, each package is compared against its own latest release
+tag, so the output is the list of packages that have changes to release.
+Packages that have no release tag yet, which includes packages without a
+version in their `pubspec.yaml`, have never been released and are therefore
+always listed as changed.
+
+A commit or tag to compare against can be given as an argument:
+
+```bash
+melos changed v1.2.0
+melos changed 4ba1b8f
+```
+
+A range of commits can be given using the git shorthand syntax
+`<start-commit>..<end-commit>` and `<start-commit>...<end-commit>`:
+
+```bash
+melos changed HEAD~5..HEAD
+```
+
+To also list the packages that depend on the changed packages, for example to
+only build the apps that are affected by a change in a shared package, use
+`--include-dependents`:
+
+```bash
+melos changed --include-dependents
+```
+
+The output can be formatted with the same options as the
+[`list`](/commands/list) command.
+
+## --long (-l)
+
+Show extended/verbose information. Defaults to `false`.
+
+```bash
+melos changed --long
+melos changed -l
+```
+
+## --relative (-r)
+
+When printing output, use package paths relative to the root of the workspace.
+Defaults to `false` (or full paths).
+
+```bash
+melos changed --relative
+melos changed -r
+```
+
+## --parsable (-p)
+
+Show parsable output instead of columnified view. Defaults to `false`.
+
+```bash
+melos changed --parsable
+melos changed -p
+```
+
+## --json
+
+Show information as a JSON array. Defaults to `false`.
+
+```bash
+melos changed --json
+```
+
+## --graph
+
+Show dependency graph as a JSON-formatted adjacency list. Defaults to `false`.
+
+```bash
+melos changed --graph
+```
+
+## --gviz
+
+Show dependency graph in Graphviz DOT language. Defaults to `false`.
+
+```bash
+melos changed --gviz
+```
+
+## --mermaid
+
+Show dependency graph in Mermaid Diagram. Defaults to `false`.
+
+```bash
+melos changed --mermaid
+```

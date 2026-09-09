@@ -10,7 +10,13 @@ import 'git_commit.dart';
 enum TagReleaseType {
   all,
   prerelease,
-  stable,
+  stable;
+
+  /// The release type of the tags that belong to the current version of
+  /// [package], which is [prerelease] for a prerelease version and [all]
+  /// otherwise.
+  static TagReleaseType ofCurrentVersion(Package package) =>
+      package.version.isPreRelease ? prerelease : all;
 }
 
 /// Generate a filter pattern for a package name, useful for listing tags for a
@@ -282,7 +288,7 @@ Future<bool> gitTagCreate(
 ///       order.
 ///
 ///       Note: If the current version is a prerelease then only prerelease tags
-///       are requested.
+///       are requested, unless a [tagReleaseType] is given.
 ///
 ///       Note: Packages using plain version tags can also have tags prefixed
 ///       with the package name, in which case the tag with the highest version
@@ -293,6 +299,7 @@ Future<String?> gitLatestTagForPackage(
   required MelosLogger logger,
   String preid = 'dev',
   bool workspaceTag = false,
+  TagReleaseType? tagReleaseType,
 }) async {
   // Package doesn't have a version, skip.
   if (package.version.toString() == '0.0.0') {
@@ -319,14 +326,11 @@ Future<String?> gitLatestTagForPackage(
     }
   }
 
-  // If the current version is a prerelease then only prerelease tags are
-  // requested.
-  final tagReleaseType = package.version.isPreRelease
-      ? TagReleaseType.prerelease
-      : TagReleaseType.all;
+  final releaseType =
+      tagReleaseType ?? TagReleaseType.ofCurrentVersion(package);
   final tags = await gitTagsForPackage(
     package,
-    tagReleaseType: tagReleaseType,
+    tagReleaseType: releaseType,
     preid: preid,
     workspaceTag: workspaceTag,
     logger: logger,
@@ -384,6 +388,43 @@ Future<void> gitCommit(
 /// RegExp that matches `<commit1>..<commit2>` or `<commit1>...<commit2>`.
 final _gitVersionRangeShortHandRegExp = RegExp(r'^.+\.{2,3}.+$');
 
+/// RegExp that matches the `..` or `...` separating the commits of a range.
+final _gitVersionRangeSeparatorRegExp = RegExp(r'\.{2,3}');
+
+/// The diff value that resolves to the changes a package has seen since its
+/// latest release tag.
+const gitDiffSinceLatestTag = '';
+
+/// Whether every revision in [diff] exists in the git repository at
+/// [workingDirectory].
+///
+/// [diff] is either a single commit or tag, or a range of commits in the git
+/// shorthand syntax `<start-commit>..<end-commit>` and
+/// `<start-commit>...<end-commit>`, in which case both ends are checked.
+Future<bool> gitRevisionsExist(
+  String diff, {
+  required String workingDirectory,
+  required MelosLogger logger,
+}) async {
+  final revisions = diff
+      .split(_gitVersionRangeSeparatorRegExp)
+      .where((revision) => revision.isNotEmpty);
+
+  for (final revision in revisions) {
+    final processResult = await gitExecuteCommand(
+      arguments: ['rev-parse', '--verify', '--quiet', revision],
+      workingDirectory: workingDirectory,
+      logger: logger,
+      throwOnExitCodeError: false,
+    );
+    if (processResult.exitCode != 0) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 /// Returns a list of [GitCommit]s for a Melos package.
 ///
 /// Optionally specify [diff] to start after a specified commit or tag.
@@ -407,14 +448,15 @@ Future<List<GitCommit>> gitCommitsForPackage(
 
   logger.trace(
     '[GIT] Getting commits for package ${package.name} for revision range '
-    '"$revisionRange".',
+    '"${revisionRange ?? 'HEAD'}".',
   );
 
   final processResult = await gitExecuteCommand(
     arguments: [
       '--no-pager',
       'log',
-      revisionRange,
+      // Without a release tag to start from, the entire history is used.
+      revisionRange ?? 'HEAD',
       '--pretty=format:%H|||%aN <%aE>|||%ai|||%B||||',
       '--',
       '.',
@@ -439,19 +481,36 @@ Future<List<GitCommit>> gitCommitsForPackage(
   }).toList();
 }
 
+/// Whether [package] has changes within the revision range described by
+/// [diff].
+///
+/// When [diff] is `null` or [gitDiffSinceLatestTag], the changes since the
+/// latest tag of the package are used, regardless of the release type of that
+/// tag. A package without any tag, which includes packages without a version,
+/// has never been released and is therefore always considered changed.
 Future<bool> gitHasDiffInPackage(
   Package package, {
   required String? diff,
   required MelosLogger logger,
+  bool workspaceTag = false,
 }) async {
   final revisionRange = await _resolveRevisionRange(
     package,
     diff: diff,
+    workspaceTag: workspaceTag,
+    tagReleaseType: TagReleaseType.all,
     logger: logger,
   );
+  if (revisionRange == null) {
+    logger.trace(
+      '[GIT] No tag found for package ${package.name}, considering it changed.',
+    );
+    return true;
+  }
 
   logger.trace(
-    '[GIT] Getting $diff diff for package ${package.name}.',
+    '[GIT] Getting diff for package ${package.name} for revision range '
+    '"$revisionRange".',
   );
 
   final processResult = await gitExecuteCommand(
@@ -542,35 +601,33 @@ Future<bool> gitIsBehindUpstream({
   return isBehind;
 }
 
-Future<String> _resolveRevisionRange(
+/// Resolves the revision range described by [diff], defaulting to the range
+/// between the latest release tag of [package] and `HEAD`.
+///
+/// Returns `null` when the package has no release tag to compare against.
+Future<String?> _resolveRevisionRange(
   Package package, {
   required String? diff,
   required MelosLogger logger,
   bool workspaceTag = false,
+  TagReleaseType? tagReleaseType,
 }) async {
-  var revisionRange = diff?.trim();
-  if (revisionRange != null) {
-    if (revisionRange.isEmpty) {
-      revisionRange = null;
-    } else if (_gitVersionRangeShortHandRegExp.hasMatch(revisionRange)) {
+  final revisionRange = diff?.trim();
+  if (revisionRange != null && revisionRange.isNotEmpty) {
+    if (_gitVersionRangeShortHandRegExp.hasMatch(revisionRange)) {
       return revisionRange;
-    } else {
-      // If the revision range is not a valid revision range short hand then we
-      // assume it's a commit or tag and default to the range from that
-      // commit/tag to HEAD.
-      return '$revisionRange...HEAD';
     }
+    // If the revision range is not a valid revision range shorthand then we
+    // assume it's a commit or tag and default to the range from that
+    // commit/tag to HEAD.
+    return '$revisionRange...HEAD';
   }
 
-  if (revisionRange == null) {
-    final latestTag = await gitLatestTagForPackage(
-      package,
-      workspaceTag: workspaceTag,
-      logger: logger,
-    );
-    // If no latest tag is found then we default to the entire git history.
-    return latestTag != null ? '$latestTag...HEAD' : 'HEAD';
-  }
-
-  return 'HEAD';
+  final latestTag = await gitLatestTagForPackage(
+    package,
+    workspaceTag: workspaceTag,
+    tagReleaseType: tagReleaseType,
+    logger: logger,
+  );
+  return latestTag != null ? '$latestTag...HEAD' : null;
 }

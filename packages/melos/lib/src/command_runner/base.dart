@@ -39,7 +39,11 @@ abstract class MelosCommand extends Command<void> {
     );
   }
 
-  void setupPackageFilterParser() {
+  /// Adds the package filtering options to [argParser].
+  ///
+  /// Commands that determine the compared revision range themselves can set
+  /// [diff] to `false` to leave out the `--diff` option.
+  void setupPackageFilterParser({bool diff = true}) {
     argParser.addFlag(
       filterOptionPrivate,
       help:
@@ -99,15 +103,18 @@ abstract class MelosCommand extends Command<void> {
           'can be repeated.',
     );
 
-    argParser.addOption(
-      filterOptionDiff,
-      valueHelp: 'ref',
-      help:
-          'Filter packages based on whether there were changes between a '
-          'commit and the current HEAD or within a range of commits. A range '
-          'of commits can be specified using the git short hand syntax '
-          '`<start-commit>..<end-commit>` and `<start-commit>...<end-commit>`',
-    );
+    if (diff) {
+      argParser.addOption(
+        filterOptionDiff,
+        valueHelp: 'ref',
+        help:
+            'Filter packages based on whether there were changes between a '
+            'commit and the current HEAD or within a range of commits. A '
+            'range of commits can be specified using the git shorthand '
+            'syntax `<start-commit>..<end-commit>` and '
+            '`<start-commit>...<end-commit>`',
+      );
+    }
 
     argParser.addMultiOption(
       filterOptionDirExists,
@@ -182,7 +189,9 @@ abstract class MelosCommand extends Command<void> {
       filterOptionIncludeDependencies,
     ];
 
-    return allFilterOptions.any(results.wasParsed);
+    return allFilterOptions
+        .where(argParser.options.containsKey)
+        .any(results.wasParsed);
   }
 
   PackageFilters parsePackageFilters(
