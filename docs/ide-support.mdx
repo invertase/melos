@@ -19,10 +19,15 @@ workspace, and will create Run configurations for your packages:
 - **Flutter Run** for each Flutter app (a Flutter package with a
   `lib/main.dart`).
 - **Dart Run** for each Dart file in the `bin` directory of a pure Dart
-  package.
-- **Flutter Test** and **Dart Test** for each package that has a `test`
-  directory.
+  package (a package without Flutter in its dependencies or dev dependencies).
+- **Flutter Test** for each Flutter package or plugin, excluding apps, that has
+  a `test` directory.
+- **Dart Test** for each pure Dart package that has a `test` directory.
 - **Melos Run** for each script defined in your workspace configuration.
+
+The Flutter Run and Dart Run configurations can be disabled with the
+[`generateAppRunConfigs`](/configuration/overview#generateapprunconfigs)
+option.
 
 ![Generated Run configurations](/assets/intellij-run-configurations.png)
 

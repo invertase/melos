@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:platform/platform.dart' show FakePlatform;
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
+import 'package:xml/xml.dart';
 
 import '../mock_env.dart';
 import '../utils.dart';
@@ -327,51 +328,68 @@ void main() {
 
   // https://github.com/invertase/melos/issues/644
   group('Dart package run configurations', () {
-    test('generates a Dart run config per bin executable', () async {
-      final tempDir = createTestTempDir();
+    Future<IntellijProject> createDartProject(
+      Directory tempDir, {
+      required String packageName,
+      required List<String> executableNames,
+      Map<String, Dependency> devDependencies = const {},
+      bool withTests = false,
+    }) async {
       await createProject(
         tempDir,
-        Pubspec('my_cli'),
-        path: 'packages/my_cli',
+        Pubspec(packageName, devDependencies: devDependencies),
+        path: 'packages/$packageName',
       );
-      final binDir = p.join(tempDir.path, 'packages', 'my_cli', 'bin');
-      File(p.join(binDir, 'my_cli.dart')).createSync(recursive: true);
-      File(p.join(binDir, 'other.dart')).createSync(recursive: true);
-      File(p.join(binDir, 'notes.txt')).createSync(recursive: true);
+      final packagePath = p.join(tempDir.path, 'packages', packageName);
+      for (final executableName in executableNames) {
+        File(
+          p.join(packagePath, 'bin', executableName),
+        ).createSync(recursive: true);
+      }
+      if (withTests) {
+        File(
+          p.join(packagePath, 'test', '${packageName}_test.dart'),
+        ).createSync(recursive: true);
+      }
 
       final workspaceBuilder = VirtualWorkspaceBuilder(
         path: tempDir.path,
         '''
         packages:
-          - packages/my_cli
+          - packages/$packageName
         ''',
       );
       workspaceBuilder.addPackage(
-        File(
-          p.join(tempDir.path, 'packages', 'my_cli', 'pubspec.yaml'),
-        ).readAsStringSync(),
+        File(p.join(packagePath, 'pubspec.yaml')).readAsStringSync(),
       );
-      final workspace = workspaceBuilder.build();
-      final project = IntellijProject.fromWorkspace(workspace);
+      return IntellijProject.fromWorkspace(workspaceBuilder.build());
+    }
+
+    test('generates a Dart run configuration per executable in bin', () async {
+      final tempDir = createTestTempDir();
+      final project = await createDartProject(
+        tempDir,
+        packageName: 'my_cli',
+        executableNames: ['my_cli.dart', 'other.dart', 'notes.txt'],
+      );
       await project.generate();
 
-      final defaultXml = readTextFile(
+      final myCliXml = readTextFile(
         p.join(
           project.runConfigurationsDir.path,
-          'melos_dart_run_my_cli_my_cli.xml',
+          'melos_dart_run_my_cli-my_cli.xml',
+        ),
+      );
+      expect(myCliXml, contains('type="DartCommandLineRunConfigurationType"'));
+      expect(myCliXml, contains("name=\"Dart Run -&gt; 'my_cli' (my_cli)\""));
+      expect(
+        myCliXml,
+        contains(
+          r'name="filePath" value="$PROJECT_DIR$/packages/my_cli/bin/my_cli.dart"',
         ),
       );
       expect(
-        defaultXml,
-        contains('type="DartCommandLineRunConfigurationType"'),
-      );
-      expect(defaultXml, contains("name=\"Dart Run -&gt; 'my_cli'\""));
-      expect(
-        defaultXml,
-        contains(r'$PROJECT_DIR$/packages/my_cli/bin/my_cli.dart'),
-      );
-      expect(
-        defaultXml,
+        myCliXml,
         contains(
           r'name="workingDirectory" value="$PROJECT_DIR$/packages/my_cli"',
         ),
@@ -380,7 +398,7 @@ void main() {
       final otherXml = readTextFile(
         p.join(
           project.runConfigurationsDir.path,
-          'melos_dart_run_my_cli_other.xml',
+          'melos_dart_run_my_cli-other.xml',
         ),
       );
       expect(otherXml, contains("name=\"Dart Run -&gt; 'my_cli' (other)\""));
@@ -393,100 +411,248 @@ void main() {
         File(
           p.join(
             project.runConfigurationsDir.path,
-            'melos_dart_run_my_cli_notes.xml',
+            'melos_dart_run_my_cli-notes.xml',
           ),
         ).existsSync(),
         isFalse,
       );
     });
 
-    test('does not generate Dart run configs for Flutter packages', () async {
-      final tempDir = createTestTempDir();
-      await createProject(
-        tempDir,
-        Pubspec(
-          'my_app',
-          dependencies: {
-            'flutter': SdkDependency('flutter'),
-          },
-        ),
-        path: 'packages/my_app',
-      );
-      File(
-        p.join(tempDir.path, 'packages', 'my_app', 'bin', 'main.dart'),
-      ).createSync(recursive: true);
+    test(
+      'omits the executable name when a package has a single executable',
+      () async {
+        final tempDir = createTestTempDir();
+        final project = await createDartProject(
+          tempDir,
+          packageName: 'my_cli',
+          executableNames: ['main.dart'],
+        );
+        await project.writeDartRunScripts();
 
-      final workspaceBuilder = VirtualWorkspaceBuilder(
-        path: tempDir.path,
-        '''
-        packages:
-          - packages/my_app
-        ''',
+        final content = readTextFile(
+          p.join(
+            project.runConfigurationsDir.path,
+            'melos_dart_run_my_cli-main.xml',
+          ),
+        );
+        expect(content, contains("name=\"Dart Run -&gt; 'my_cli'\""));
+      },
+    );
+
+    test('escapes XML characters in executable names', () async {
+      final tempDir = createTestTempDir();
+      final project = await createDartProject(
+        tempDir,
+        packageName: 'my_cli',
+        executableNames: ['build&run.dart'],
       );
-      workspaceBuilder.addPackage(
-        File(
-          p.join(tempDir.path, 'packages', 'my_app', 'pubspec.yaml'),
-        ).readAsStringSync(),
-      );
-      final workspace = workspaceBuilder.build();
-      final project = IntellijProject.fromWorkspace(workspace);
       await project.writeDartRunScripts();
 
-      expect(
-        File(
-          p.join(
-            project.runConfigurationsDir.path,
-            'melos_dart_run_my_app_main.xml',
-          ),
-        ).existsSync(),
-        isFalse,
+      final content = readTextFile(
+        p.join(
+          project.runConfigurationsDir.path,
+          'melos_dart_run_my_cli-build&run.xml',
+        ),
       );
+      expect(content, contains('bin/build&amp;run.dart'));
+      expect(content, isNot(contains('build&run')));
+      expect(() => XmlDocument.parse(content), returnsNormally);
     });
 
-    test('generates a Dart test config for Dart packages with tests', () async {
+    test('uses the project directory directly for the root package', () async {
       final tempDir = createTestTempDir();
-      await createProject(
-        tempDir,
-        Pubspec('my_lib'),
-        path: 'packages/my_lib',
-      );
       File(
-        p.join(tempDir.path, 'packages', 'my_lib', 'test', 'my_lib_test.dart'),
+        p.join(tempDir.path, 'bin', 'root.dart'),
       ).createSync(recursive: true);
-
-      final workspaceBuilder = VirtualWorkspaceBuilder(
-        path: tempDir.path,
-        '''
+      File(
+        p.join(tempDir.path, 'test', 'root_test.dart'),
+      ).createSync(recursive: true);
+      final workspaceBuilder =
+          VirtualWorkspaceBuilder(
+            path: tempDir.path,
+            '''
         packages:
-          - packages/my_lib
+          - .
         ''',
-      );
-      workspaceBuilder.addPackage(
-        File(
-          p.join(tempDir.path, 'packages', 'my_lib', 'pubspec.yaml'),
-        ).readAsStringSync(),
-      );
-      final workspace = workspaceBuilder.build();
-      final project = IntellijProject.fromWorkspace(workspace);
+          )..addPackage(
+            '''
+          name: root
+          ''',
+            path: '.',
+          );
+      final project = IntellijProject.fromWorkspace(workspaceBuilder.build());
       await project.generate();
 
-      final testXml = readTextFile(
-        p.join(project.runConfigurationsDir.path, 'melos_dart_test_my_lib.xml'),
+      final runXml = readTextFile(
+        p.join(
+          project.runConfigurationsDir.path,
+          'melos_dart_run_root-root.xml',
+        ),
       );
-      expect(testXml, contains('type="DartTestRunConfigurationType"'));
-      expect(testXml, contains("name=\"Dart Test -&gt; 'my_lib'\""));
-      expect(testXml, contains(r'$PROJECT_DIR$/packages/my_lib/test'));
-      expect(testXml, contains('name="scope" value="FOLDER"'));
       expect(
-        File(
+        runXml,
+        contains(r'name="filePath" value="$PROJECT_DIR$/bin/root.dart"'),
+      );
+      expect(
+        runXml,
+        contains(r'name="workingDirectory" value="$PROJECT_DIR$"'),
+      );
+
+      final testXml = readTextFile(
+        p.join(project.runConfigurationsDir.path, 'melos_dart_test_root.xml'),
+      );
+      expect(testXml, contains(r'name="filePath" value="$PROJECT_DIR$/test"'));
+    });
+
+    test(
+      'does not generate Dart configurations for packages using Flutter',
+      () async {
+        final tempDir = createTestTempDir();
+        await createProject(
+          tempDir,
+          Pubspec(
+            'my_app',
+            dependencies: {
+              'flutter': SdkDependency('flutter'),
+            },
+          ),
+          path: 'packages/my_app',
+        );
+        await createProject(
+          tempDir,
+          Pubspec(
+            'my_widgets',
+            devDependencies: {
+              'flutter_test': SdkDependency('flutter'),
+            },
+          ),
+          path: 'packages/my_widgets',
+        );
+        for (final packageName in ['my_app', 'my_widgets']) {
+          final packagePath = p.join(tempDir.path, 'packages', packageName);
+          File(p.join(packagePath, 'bin', 'main.dart')).createSync(
+            recursive: true,
+          );
+          File(
+            p.join(packagePath, 'test', '${packageName}_test.dart'),
+          ).createSync(recursive: true);
+        }
+
+        final workspaceBuilder = VirtualWorkspaceBuilder(
+          path: tempDir.path,
+          '''
+          packages:
+            - packages/my_app
+            - packages/my_widgets
+          ''',
+        );
+        for (final packageName in ['my_app', 'my_widgets']) {
+          workspaceBuilder.addPackage(
+            File(
+              p.join(tempDir.path, 'packages', packageName, 'pubspec.yaml'),
+            ).readAsStringSync(),
+          );
+        }
+        final project = IntellijProject.fromWorkspace(workspaceBuilder.build());
+        await project.generate();
+
+        for (final fileName in [
+          'melos_dart_run_my_app-main.xml',
+          'melos_dart_run_my_widgets-main.xml',
+          'melos_dart_test_my_app.xml',
+          'melos_dart_test_my_widgets.xml',
+        ]) {
+          expect(
+            File(
+              p.join(project.runConfigurationsDir.path, fileName),
+            ).existsSync(),
+            isFalse,
+            reason: '$fileName should not be generated',
+          );
+        }
+      },
+    );
+
+    test(
+      'generates a Dart test configuration for Dart packages with tests',
+      () async {
+        final tempDir = createTestTempDir();
+        final project = await createDartProject(
+          tempDir,
+          packageName: 'my_lib',
+          executableNames: [],
+          withTests: true,
+        );
+        await project.generate();
+
+        final testXml = readTextFile(
           p.join(
             project.runConfigurationsDir.path,
-            'melos_flutter_test_my_lib.xml',
+            'melos_dart_test_my_lib.xml',
           ),
-        ).existsSync(),
-        isFalse,
-      );
-    });
+        );
+        expect(testXml, contains('type="DartTestRunConfigurationType"'));
+        expect(testXml, contains("name=\"Dart Test -&gt; 'my_lib'\""));
+        expect(
+          testXml,
+          contains(
+            r'name="filePath" value="$PROJECT_DIR$/packages/my_lib/test"',
+          ),
+        );
+        expect(testXml, contains('name="scope" value="FOLDER"'));
+        expect(
+          File(
+            p.join(
+              project.runConfigurationsDir.path,
+              'melos_flutter_test_my_lib.xml',
+            ),
+          ).existsSync(),
+          isFalse,
+        );
+      },
+    );
+
+    test(
+      'warns when runArguments references a package that is not a Flutter app',
+      () async {
+        final tempDir = createTestTempDir();
+        await createProject(
+          tempDir,
+          Pubspec('my_cli'),
+          path: 'packages/my_cli',
+        );
+        final logger = TestLogger();
+        final workspaceBuilder = VirtualWorkspaceBuilder(
+          path: tempDir.path,
+          logger: logger,
+          '''
+          packages:
+            - packages/my_cli
+          ide:
+            intellij:
+              runArguments:
+                my_cli:
+                  - name: verbose
+                    args: "--verbose"
+          ''',
+        );
+        workspaceBuilder.addPackage(
+          File(
+            p.join(tempDir.path, 'packages', 'my_cli', 'pubspec.yaml'),
+          ).readAsStringSync(),
+        );
+        final project = IntellijProject.fromWorkspace(workspaceBuilder.build());
+        await project.writeFlutterRunScripts();
+
+        expect(
+          logger.output,
+          contains(
+            'runArguments references package "my_cli" which is not a Flutter '
+            'app, so it has no effect.',
+          ),
+        );
+      },
+    );
   });
 
   group('Melos script run configurations', () {
