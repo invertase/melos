@@ -60,6 +60,12 @@ melos:
   sdkPath: .fvm/flutter_sdk
 ```
 
+When the configured SDK is not the first entry on the `PATH`, Melos relaunches
+itself with the SDK's `bin` directory prepended to the `PATH`. This ensures
+that the local installation of Melos in the workspace is also resolved and run
+with the configured SDK, even when no system-wide Dart or Flutter SDK is
+installed.
+
 ## useRootAsPackage
 
 Whether to include the repository root as a package in the workspace.
