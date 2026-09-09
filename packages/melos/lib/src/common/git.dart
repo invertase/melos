@@ -398,7 +398,7 @@ const gitDiffSinceLatestTag = '';
 /// [workingDirectory].
 ///
 /// [diff] is either a single commit or tag, or a range of commits in the git
-/// short hand syntax `<start-commit>..<end-commit>` and
+/// shorthand syntax `<start-commit>..<end-commit>` and
 /// `<start-commit>...<end-commit>`, in which case both ends are checked.
 Future<bool> gitRevisionsExist(
   String diff, {
