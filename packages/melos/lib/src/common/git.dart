@@ -10,7 +10,13 @@ import 'git_commit.dart';
 enum TagReleaseType {
   all,
   prerelease,
-  stable,
+  stable;
+
+  /// The release type of the tags that belong to the current version of
+  /// [package], which is [prerelease] for a prerelease version and [all]
+  /// otherwise.
+  static TagReleaseType ofCurrentVersion(Package package) =>
+      package.version.isPreRelease ? prerelease : all;
 }
 
 /// Generate a filter pattern for a package name, useful for listing tags for a
@@ -320,13 +326,8 @@ Future<String?> gitLatestTagForPackage(
     }
   }
 
-  // If the current version is a prerelease then only prerelease tags are
-  // requested.
   final releaseType =
-      tagReleaseType ??
-      (package.version.isPreRelease
-          ? TagReleaseType.prerelease
-          : TagReleaseType.all);
+      tagReleaseType ?? TagReleaseType.ofCurrentVersion(package);
   final tags = await gitTagsForPackage(
     package,
     tagReleaseType: releaseType,
@@ -497,8 +498,6 @@ Future<bool> gitHasDiffInPackage(
     package,
     diff: diff,
     workspaceTag: workspaceTag,
-    // Changes are compared against the last release of any type, as a
-    // prerelease is a release like any other here.
     tagReleaseType: TagReleaseType.all,
     logger: logger,
   );
