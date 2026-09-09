@@ -285,7 +285,7 @@ class PackageFilters {
   /// Filter packages based on whether there were changes between a commit and
   /// the current HEAD or within a range of commits.
   ///
-  /// A range of commits can be specified using the git short hand syntax
+  /// A range of commits can be specified using the git shorthand syntax
   /// `<start-commit>..<end-commit>` and `<start-commit>...<end-commit>`.
   ///
   /// Use [gitDiffSinceLatestTag] to filter packages that changed since their

@@ -617,7 +617,7 @@ Future<String?> _resolveRevisionRange(
     if (_gitVersionRangeShortHandRegExp.hasMatch(revisionRange)) {
       return revisionRange;
     }
-    // If the revision range is not a valid revision range short hand then we
+    // If the revision range is not a valid revision range shorthand then we
     // assume it's a commit or tag and default to the range from that
     // commit/tag to HEAD.
     return '$revisionRange...HEAD';
