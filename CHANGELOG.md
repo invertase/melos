@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-09-09
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v8.7.0`](#melos---v870)
+
+---
+
+#### `melos` - `v8.7.0`
+
+ - **FIX**(deps): Support cli_util 0.6 and pub_updater 0.6 ([#1075](https://github.com/invertase/melos/issues/1075)). ([31e79673](https://github.com/invertase/melos/commit/31e79673d4ef950ff547f73ce94260f17585e3a4))
+ - **FEAT**(changed): add a `changed` command that lists the packages changed since a commit or tag ([#1076](https://github.com/invertase/melos/issues/1076)). ([0dfdce7b](https://github.com/invertase/melos/commit/0dfdce7b7b7ff44defa35cc1438dd31cf88800d4))
+
+
 ## 2026-08-29
 
 ### Changes

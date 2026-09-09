@@ -99,6 +99,47 @@ void main() {
 
       exitCode = previousExitCode;
     });
+    test('passes --no-pub only to flutter test', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a', 'b'],
+      );
+
+      final aDir = await createProject(
+        workspaceDir,
+        Pubspec(
+          'a',
+          dependencies: {
+            'flutter': SdkDependency('flutter'),
+          },
+        ),
+      );
+      writeTextFile(
+        p.join(aDir.path, 'test', 'a_test.dart'),
+        '',
+        recursive: true,
+      );
+
+      final bDir = await createProject(workspaceDir, Pubspec('b'));
+      writeTextFile(
+        p.join(bDir.path, 'test', 'b_test.dart'),
+        '',
+        recursive: true,
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(logger: logger, config: config);
+
+      final previousExitCode = exitCode;
+      await melos.test(noPub: true);
+      exitCode = previousExitCode;
+
+      final output = logger.output.removeAnsiCodes();
+
+      expect(output, contains('flutter test --no-pub'));
+      expect(output, isNot(contains('dart test --no-pub')));
+    });
+
     test(
       'correctly detects a flutter package inside a pub workspace',
       () async {

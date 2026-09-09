@@ -26,6 +26,13 @@ class BootstrapCommand extends MelosCommand {
           'Run pub get with --offline to resolve dependencies from local '
           'cache.',
     );
+    argParser.addFlag(
+      'no-pub',
+      negatable: false,
+      help:
+          'Skip running pub get. Shared dependencies, dependency overrides '
+          'and IDE files are still applied.',
+    );
   }
 
   @override
@@ -48,6 +55,7 @@ class BootstrapCommand extends MelosCommand {
       enforceLockfile: argResults?['enforce-lockfile'] as bool?,
       noExample: argResults?['no-example'] as bool,
       offline: argResults?['offline'] as bool,
+      noPub: argResults?['no-pub'] as bool,
     );
   }
 }

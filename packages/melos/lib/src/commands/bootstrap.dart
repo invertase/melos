@@ -7,6 +7,7 @@ mixin _BootstrapMixin on _CleanMixin {
     bool noExample = false,
     bool? enforceLockfile,
     bool offline = false,
+    bool noPub = false,
   }) async {
     final workspace = await createWorkspace(
       global: global,
@@ -73,17 +74,23 @@ mixin _BootstrapMixin on _CleanMixin {
             workspace,
           );
 
-          logger.log(
-            'Running "$pubCommandForLogging" in workspace...',
-          );
+          if (noPub) {
+            logger.log(
+              'Skipping "$pubCommandForLogging" in workspace (--no-pub)...',
+            );
+          } else {
+            logger.log(
+              'Running "$pubCommandForLogging" in workspace...',
+            );
 
-          await _runPubGetForWorkspace(
-            workspace,
-            noExample: noExample,
-            runOffline: runOffline,
-            enforceLockfile: shouldEnforceLockfile,
-            pubGetArgs: pubGetArgs,
-          );
+            await _runPubGetForWorkspace(
+              workspace,
+              noExample: noExample,
+              runOffline: runOffline,
+              enforceLockfile: shouldEnforceLockfile,
+              pubGetArgs: pubGetArgs,
+            );
+          }
 
           logger
             ..child(successLabel, prefix: '> ')

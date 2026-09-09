@@ -90,6 +90,10 @@ melos bootstrap --diff="main"
   files if `enforce-lockfile` is configured in the root `pubspec.yaml` file.
 - The `--offline` flag is used to only resolve dependencies from the local
   cache by running `pub get` with the `--offline` flag.
+- The `--no-pub` flag skips running `pub get` entirely. Shared dependencies,
+  dependency overrides and IDE files are still applied, which is useful when
+  you want to update the workspace `pubspec.yaml` files without resolving
+  dependencies right away.
 
 
 In addition to the above flags, the `melos bootstrap` command supports a few
