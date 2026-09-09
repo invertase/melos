@@ -14,8 +14,15 @@ Melos integrates with IntelliJ via the generation of
 files (`.iml` files) during `melos bootstrap`.
 
 Melos will create an IntelliJ project module for each package in your Melos
-workspace, and will create flutter and dart Run configurations for your
-`main.dart`s and your package's test suite.
+workspace, and will create Run configurations for your packages:
+
+- **Flutter Run** for each Flutter app (a Flutter package with a
+  `lib/main.dart`).
+- **Dart Run** for each Dart file in the `bin` directory of a pure Dart
+  package.
+- **Flutter Test** and **Dart Test** for each package that has a `test`
+  directory.
+- **Melos Run** for each script defined in your workspace configuration.
 
 ![Generated Run configurations](/assets/intellij-run-configurations.png)
 

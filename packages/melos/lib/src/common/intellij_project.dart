@@ -481,6 +481,99 @@ class IntellijProject {
     });
   }
 
+  Future<void> writeDartRunScripts() async {
+    final dartRunTemplate = await readFileTemplate(
+      'dart_run.xml',
+      templateCategory: 'runConfigurations',
+    );
+
+    await Future.forEach(_workspace.filteredPackages.values, (package) async {
+      if (package.isFlutterPackage) {
+        return;
+      }
+
+      for (final executableName in _dartExecutableNames(package)) {
+        final isDefaultExecutable =
+            executableName == 'main' || executableName == package.name;
+        final dartRunName = isDefaultExecutable
+            ? "Dart Run -&gt; '${package.name}'"
+            : "Dart Run -&gt; '${package.name}' ($executableName)";
+        final filePath = p
+            .join(
+              package.pathRelativeToWorkspace,
+              'bin',
+              '$executableName.dart',
+            )
+            .replaceAll(r'\', '/');
+        final workingDirectory = package.pathRelativeToWorkspace.replaceAll(
+          r'\',
+          '/',
+        );
+
+        final generatedRunConfiguration = injectTemplateVariables(
+          dartRunTemplate,
+          {
+            'dartRunName': dartRunName,
+            'dartRunFilePathRelative': filePath,
+            'dartRunWorkingDirectoryRelative': workingDirectory,
+          },
+        );
+        final outputFile = p.join(
+          pathDotIdea,
+          'runConfigurations',
+          'melos_dart_run_${package.name}_$executableName.xml',
+        );
+        await forceWriteToFile(outputFile, generatedRunConfiguration);
+      }
+    });
+  }
+
+  /// Names of the Dart files directly inside the `bin` directory of
+  /// [package], sorted so that generation is deterministic.
+  List<String> _dartExecutableNames(Package package) {
+    final binDir = Directory(p.join(package.path, 'bin'));
+    if (!binDir.existsSync()) {
+      return const [];
+    }
+    return binDir
+        .listSync()
+        .whereType<File>()
+        .where((file) => p.extension(file.path) == '.dart')
+        .map((file) => p.basenameWithoutExtension(file.path))
+        .toList()
+      ..sort();
+  }
+
+  Future<void> writeDartTestScripts() async {
+    final dartTestTemplate = await readFileTemplate(
+      'dart_test.xml',
+      templateCategory: 'runConfigurations',
+    );
+
+    await Future.forEach(_workspace.filteredPackages.values, (package) async {
+      if (package.isFlutterPackage || !package.hasTests) {
+        return;
+      }
+
+      final generatedRunConfiguration = injectTemplateVariables(
+        dartTestTemplate,
+        {
+          'dartTestsName': "Dart Test -&gt; '${package.name}'",
+          'dartTestsRelativePath': p
+              .join(package.pathRelativeToWorkspace, 'test')
+              .replaceAll(r'\', '/'),
+        },
+      );
+      final outputFile = p.join(
+        pathDotIdea,
+        'runConfigurations',
+        'melos_dart_test_${package.name}.xml',
+      );
+
+      await forceWriteToFile(outputFile, generatedRunConfiguration);
+    });
+  }
+
   Future<void> generate({bool generateRunScripts = true}) async {
     // <WORKSPACE_ROOT>/.idea/.name
     await writeNameFile();
@@ -497,8 +590,10 @@ class IntellijProject {
     // <WORKSPACE_ROOT>/.idea/runConfigurations/<SCRIPT_NAME>.xml
     if (generateRunScripts) {
       await writeFlutterRunScripts();
+      await writeDartRunScripts();
     }
     await writeMelosScripts();
     await writeFlutterTestScripts();
+    await writeDartTestScripts();
   }
 }
