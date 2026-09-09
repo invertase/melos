@@ -1,3 +1,8 @@
+## 8.7.0
+
+ - **FIX**(deps): Support cli_util 0.6 and pub_updater 0.6 ([#1075](https://github.com/invertase/melos/issues/1075)). ([31e79673](https://github.com/invertase/melos/commit/31e79673d4ef950ff547f73ce94260f17585e3a4))
+ - **FEAT**(changed): add a `changed` command that lists the packages changed since a commit or tag ([#1076](https://github.com/invertase/melos/issues/1076)). ([0dfdce7b](https://github.com/invertase/melos/commit/0dfdce7b7b7ff44defa35cc1438dd31cf88800d4))
+
 ## 8.6.0
 
  - **FIX**: rename dependency toJson extensions to toYaml to avoid being shadowed by pubspec_parse 1.6.0 ([#1071](https://github.com/invertase/melos/issues/1071)). ([16b37cee](https://github.com/invertase/melos/commit/16b37cee96d8162a40d43f8aab6438c1d6679d2c))
