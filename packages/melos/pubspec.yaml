@@ -37,7 +37,10 @@ dependencies:
   meta: ^1.16.0
   mustache_template: ^2.0.0
   path: ^1.9.0
-  platform: ^3.1.6
+  # Version 3.2.0 deprecates the APIs that Melos uses, in favour of
+  # `NativePlatform`, and requires Dart 3.10. Raise this constraint and migrate
+  # to `NativePlatform` when the minimum Dart SDK is bumped past 3.10.
+  platform: ">=3.1.6 <3.2.0"
   pool: ^1.5.1
   prompts: ^2.0.0
   pub_semver: ^2.2.0
