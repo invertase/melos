@@ -27,8 +27,8 @@ class ChangedCommand extends MelosCommand with PackageListOutputOptions {
     final rest = argResults!.rest;
     if (rest.length > 1) {
       usageException(
-        'The changed command takes at most one revision (commit, tag, or range) '
-        'to compare against, but ${rest.length} were given.',
+        'The changed command takes at most one revision (commit, tag, or '
+        'range) to compare against, but ${rest.length} were given.',
       );
     }
     final diff = rest.isEmpty ? gitDiffSinceLatestTag : rest.first;
