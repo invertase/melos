@@ -77,6 +77,7 @@ class MelosWorkspace {
     final filteredPackages = await allPackages.applyFilters(
       packageFilters,
       pubConfig: workspaceConfig.pub,
+      workspaceTag: workspaceConfig.commands.version.workspaceTag,
     );
 
     return MelosWorkspace(

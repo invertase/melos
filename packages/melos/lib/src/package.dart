@@ -287,6 +287,9 @@ class PackageFilters {
   ///
   /// A range of commits can be specified using the git short hand syntax
   /// `<start-commit>..<end-commit>` and `<start-commit>...<end-commit>`.
+  ///
+  /// Use [gitDiffSinceLatestTag] to filter packages that changed since their
+  /// latest release tag.
   final String? diff;
 
   /// Include/Exclude packages with `publish_to: none`.
@@ -776,6 +779,7 @@ The packages that caused the problem are:
   Future<PackageMap> applyFilters(
     PackageFilters? filters, {
     PubClientConfig pubConfig = const PubClientConfig(),
+    bool workspaceTag = false,
   }) async {
     if (filters == null) {
       return this;
@@ -799,7 +803,11 @@ The packages that caused the problem are:
 
     final diff = filters.diff;
     if (diff != null) {
-      packageList = await packageList.applyDiff(diff, _logger);
+      packageList = await packageList.applyDiff(
+        diff,
+        _logger,
+        workspaceTag: workspaceTag,
+      );
     }
 
     packageList = packageList.applyIncludeDependentsOrDependencies(
@@ -911,10 +919,23 @@ extension IterablePackageExt on Iterable<Package> {
 
   Future<Iterable<Package>> applyDiff(
     String? diff,
-    MelosLogger logger,
-  ) async {
-    if (diff == null) {
+    MelosLogger logger, {
+    bool workspaceTag = false,
+  }) async {
+    if (diff == null || isEmpty) {
       return this;
+    }
+
+    final revisionRange = diff.trim();
+    if (revisionRange != gitDiffSinceLatestTag &&
+        !await gitRevisionsExist(
+          revisionRange,
+          workingDirectory: first.path,
+          logger: logger,
+        )) {
+      throw InvalidPackageFiltersException(
+        '"$diff" is not an existing commit, tag or range of commits.',
+      );
     }
 
     return Pool(10)
@@ -922,6 +943,7 @@ extension IterablePackageExt on Iterable<Package> {
           final hasDiff = await gitHasDiffInPackage(
             package,
             diff: diff,
+            workspaceTag: workspaceTag,
             logger: logger,
           );
           return MapEntry(package, hasDiff);

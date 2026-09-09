@@ -11,6 +11,7 @@ import 'package:pub_updater/pub_updater.dart';
 import '../version.g.dart';
 import 'command_runner/analyze.dart';
 import 'command_runner/bootstrap.dart';
+import 'command_runner/changed.dart';
 import 'command_runner/clean.dart';
 import 'command_runner/exec.dart';
 import 'command_runner/format.dart';
@@ -78,6 +79,7 @@ class MelosCommandRunner extends CommandRunner<void> {
       CleanCommand(config),
       RunCommand(config),
       ListCommand(config),
+      ChangedCommand(config),
       PublishCommand(config),
       VersionCommand(config),
       FormatCommand(config),
