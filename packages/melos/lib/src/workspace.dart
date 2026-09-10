@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 import 'command_configs/command_configs.dart';
@@ -217,7 +216,6 @@ class MelosWorkspace {
 /// from the config file.
 ///
 /// Relative paths are resolved relative to the workspace path.
-@visibleForTesting
 String? resolveSdkPath({
   required String? configSdkPath,
   required String? envSdkPath,
