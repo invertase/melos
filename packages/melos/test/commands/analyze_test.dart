@@ -4,6 +4,7 @@ library;
 import 'dart:io';
 
 import 'package:melos/melos.dart';
+import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
@@ -578,5 +579,70 @@ ${'-' * terminalWidth}
         );
       },
     );
+
+    group('config', () {
+      Future<TestLogger> runAnalyzeWith(
+        AnalyzeCommandConfigs analyzeConfigs, {
+        bool? fatalInfos,
+        int? concurrency,
+      }) async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_workspace',
+            packages: [createGlob('packages/**', currentDirectoryPath: path)],
+            commands: CommandConfigs(analyze: analyzeConfigs),
+          ),
+          workspacePackages: ['a'],
+        );
+        await createProject(workspaceDir, Pubspec('a'));
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        await Melos(logger: logger, config: config).analyze(
+          fatalInfos: fatalInfos,
+          concurrency: concurrency,
+        );
+
+        return logger;
+      }
+
+      test('uses the configured fatalInfos and concurrency', () async {
+        final logger = await runAnalyzeWith(
+          const AnalyzeCommandConfigs(fatalInfos: false, concurrency: 2),
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          contains('dart analyze --concurrency 2'),
+        );
+      });
+
+      test('uses the configured fatalWarnings', () async {
+        final logger = await runAnalyzeWith(
+          const AnalyzeCommandConfigs(fatalWarnings: true),
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          contains('dart analyze --fatal-infos --fatal-warnings'),
+        );
+      });
+
+      test('command line options take precedence over the config', () async {
+        final logger = await runAnalyzeWith(
+          const AnalyzeCommandConfigs(fatalInfos: false, concurrency: 2),
+          fatalInfos: true,
+          concurrency: 3,
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          contains('dart analyze --fatal-infos --concurrency 3'),
+        );
+      });
+    });
   });
 }

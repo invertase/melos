@@ -4,10 +4,10 @@ mixin _BootstrapMixin on _CleanMixin {
   Future<void> bootstrap({
     GlobalOptions? global,
     PackageFilters? packageFilters,
-    bool noExample = false,
+    bool? noExample,
     bool? enforceLockfile,
-    bool offline = false,
-    bool noPub = false,
+    bool? offline,
+    bool? noPub,
   }) async {
     final workspace = await createWorkspace(
       global: global,
@@ -19,7 +19,9 @@ mixin _BootstrapMixin on _CleanMixin {
       CommandWithLifecycle.bootstrap,
       () async {
         final bootstrapCommandConfig = workspace.config.commands.bootstrap;
-        final runOffline = bootstrapCommandConfig.runPubGetOffline || offline;
+        final runOffline = offline ?? bootstrapCommandConfig.runPubGetOffline;
+        final runNoExample = noExample ?? bootstrapCommandConfig.noExample;
+        final skipPub = noPub ?? bootstrapCommandConfig.noPub;
         late final hasLockFile = File(
           p.join(workspace.path, 'pubspec.lock'),
         ).existsSync();
@@ -31,7 +33,7 @@ mixin _BootstrapMixin on _CleanMixin {
 
         final pubCommandForLogging = _buildPubGetCommand(
           workspace: workspace,
-          noExample: noExample,
+          noExample: runNoExample,
           runOffline: runOffline,
           enforceLockfile: shouldEnforceLockfile,
           pubGetArgs: pubGetArgs,
@@ -74,7 +76,7 @@ mixin _BootstrapMixin on _CleanMixin {
             workspace,
           );
 
-          if (noPub) {
+          if (skipPub) {
             logger.log(
               'Skipping "$pubCommandForLogging" in workspace (--no-pub)...',
             );
@@ -85,7 +87,7 @@ mixin _BootstrapMixin on _CleanMixin {
 
             await _runPubGetForWorkspace(
               workspace,
-              noExample: noExample,
+              noExample: runNoExample,
               runOffline: runOffline,
               enforceLockfile: shouldEnforceLockfile,
               pubGetArgs: pubGetArgs,

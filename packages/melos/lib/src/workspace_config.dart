@@ -9,7 +9,6 @@ import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
 import '../melos.dart';
-import 'command_configs/command_configs.dart';
 import 'common/git_repository.dart';
 import 'common/glob.dart';
 import 'common/glob_equality.dart';
@@ -48,7 +47,7 @@ class IDEConfigs {
       other.intelliJ == intelliJ;
 
   @override
-  int get hashCode => runtimeType.hashCode ^ intelliJ.hashCode;
+  int get hashCode => Object.hashAll([runtimeType, intelliJ]);
 
   @override
   String toString() {
@@ -186,14 +185,15 @@ class IntelliJConfig {
       );
 
   @override
-  int get hashCode =>
-      runtimeType.hashCode ^
-      enabled.hashCode ^
-      moduleNamePrefix.hashCode ^
-      executeInTerminal.hashCode ^
-      generateAppRunConfigs.hashCode ^
-      scriptNamePrefix.hashCode ^
-      const DeepCollectionEquality().hash(runArguments);
+  int get hashCode => Object.hashAll([
+    runtimeType,
+    enabled,
+    moduleNamePrefix,
+    executeInTerminal,
+    generateAppRunConfigs,
+    scriptNamePrefix,
+    const DeepCollectionEquality().hash(runArguments),
+  ]);
 
   @override
   String toString() {
@@ -253,12 +253,13 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
       other.description == description;
 
   @override
-  int get hashCode =>
-      runtimeType.hashCode ^
-      isWorkspaceChangelog.hashCode ^
-      path.hashCode ^
-      packageFilters.hashCode ^
-      description.hashCode;
+  int get hashCode => Object.hashAll([
+    runtimeType,
+    isWorkspaceChangelog,
+    path,
+    packageFilters,
+    description,
+  ]);
 
   @override
   String toString() {
@@ -723,20 +724,21 @@ class MelosWorkspaceConfig {
       other.pub == pub;
 
   @override
-  int get hashCode =>
-      runtimeType.hashCode ^
-      path.hashCode ^
-      name.hashCode ^
-      repository.hashCode ^
-      sdkPath.hashCode ^
-      useRootAsPackage.hashCode ^
-      discoverNestedWorkspaces.hashCode ^
-      const DeepCollectionEquality(GlobEquality()).hash(packages) &
-          const DeepCollectionEquality(GlobEquality()).hash(ignore) ^
-      scripts.hashCode ^
-      ide.hashCode ^
-      commands.hashCode ^
-      pub.hashCode;
+  int get hashCode => Object.hashAll([
+    runtimeType,
+    path,
+    name,
+    repository,
+    sdkPath,
+    useRootAsPackage,
+    discoverNestedWorkspaces,
+    const DeepCollectionEquality(GlobEquality()).hash(packages),
+    const DeepCollectionEquality(GlobEquality()).hash(ignore),
+    scripts,
+    ide,
+    commands,
+    pub,
+  ]);
 
   Map<String, Object> toJson() {
     return {
@@ -832,6 +834,5 @@ class IdeRunConfiguration {
       other.isDefault == isDefault;
 
   @override
-  int get hashCode =>
-      runtimeType.hashCode ^ name.hashCode ^ args.hashCode ^ isDefault.hashCode;
+  int get hashCode => Object.hashAll([runtimeType, name, args, isDefault]);
 }

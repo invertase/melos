@@ -175,19 +175,17 @@ class VersionCommand extends MelosCommand {
   Future<void> run() async {
     final melos = Melos(logger: logger, config: config);
 
-    final force = argResults!['yes'] as bool;
+    final force = argResults!.optional('yes') as bool?;
     final updateDependentsConstraints =
-        argResults!['dependent-constraints'] as bool;
-    final tag = argResults!['git-tag-version'] as bool;
-    final commit = argResults!['git-commit-version'] as bool;
+        argResults!.optional('dependent-constraints') as bool?;
+    final tag = argResults!.optional('git-tag-version') as bool?;
+    final commit = argResults!.optional('git-commit-version') as bool?;
     final releaseUrl = argResults!.optional('release-url') as bool?;
     final groupCommits = argResults!.optional('group-commits') as bool?;
     final smartDependents = argResults!.optional('smart-dependents') as bool?;
-    final changelog = argResults!['changelog'] as bool;
-    final commitMessage = (argResults!['message'] as String?)?.replaceAll(
-      r'\n',
-      '\n',
-    );
+    final changelog = argResults!.optional('changelog') as bool?;
+    final commitMessage = (argResults!.optional('message') as String?)
+        ?.replaceAll(r'\n', '\n');
 
     if (argResults!.rest.isNotEmpty) {
       if (argResults!.rest.length != 2) {
@@ -219,17 +217,17 @@ class VersionCommand extends MelosCommand {
         updateChangelog: changelog,
         updateDependentsConstraints: updateDependentsConstraints,
         updateDependentsVersions: false,
-        smartDependents:
-            smartDependents ?? config.commands.version.smartDependents,
+        smartDependents: smartDependents,
         message: commitMessage,
       );
     } else {
       var asStableRelease = argResults!['graduate'] as bool;
       final asPrerelease = argResults!['prerelease'] as bool;
-      var updateDependentsVersions = argResults!['dependent-versions'] as bool;
-      final versionPrivatePackages = argResults!['all'] as bool;
-      final preid = argResults!['preid'] as String?;
-      final dependentPreid = argResults!['dependent-preid'] as String?;
+      var updateDependentsVersions =
+          argResults!.optional('dependent-versions') as bool?;
+      final versionPrivatePackages = argResults!.optional('all') as bool?;
+      final preid = argResults!.optional('preid') as String?;
+      final dependentPreid = argResults!.optional('dependent-preid') as String?;
       final manualVersionArgs = argResults!['manual-version'] as List<String>;
 
       final manualVersions = _parseManualVersions(manualVersionArgs);
@@ -245,7 +243,8 @@ class VersionCommand extends MelosCommand {
         asStableRelease = false;
       }
 
-      if (updateDependentsVersions && !updateDependentsConstraints) {
+      if ((updateDependentsVersions ?? false) &&
+          !(updateDependentsConstraints ?? true)) {
         logger.warning(
           'The setting --dependent-versions is turned on but '
           '--dependent-constraints is turned off. Versioning will continue '
@@ -265,8 +264,7 @@ class VersionCommand extends MelosCommand {
         updateChangelog: changelog,
         updateDependentsConstraints: updateDependentsConstraints,
         updateDependentsVersions: updateDependentsVersions,
-        smartDependents:
-            smartDependents ?? config.commands.version.smartDependents,
+        smartDependents: smartDependents,
         preid: preid,
         dependentPreid: dependentPreid,
         asPrerelease: asPrerelease,

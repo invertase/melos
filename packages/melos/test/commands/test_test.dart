@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:melos/melos.dart';
+import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:path/path.dart' as p;
 import 'package:pubspec_parse/pubspec_parse.dart';
@@ -173,5 +174,64 @@ void main() {
         expect(package.isFlutterPackage, isTrue);
       },
     );
+
+    group('config', () {
+      Future<TestLogger> runTestWith(
+        TestCommandConfigs testConfigs, {
+        int? concurrency,
+      }) async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_workspace',
+            packages: [createGlob('packages/**', currentDirectoryPath: path)],
+            commands: CommandConfigs(test: testConfigs),
+          ),
+          workspacePackages: ['a'],
+        );
+
+        final aDir = await createProject(workspaceDir, Pubspec('a'));
+        writeTextFile(
+          p.join(aDir.path, 'test', 'a_test.dart'),
+          'void main() {}',
+          recursive: true,
+        );
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+
+        await Melos(
+          logger: logger,
+          config: config,
+        ).test(concurrency: concurrency);
+
+        return logger;
+      }
+
+      test('uses the configured concurrency', () async {
+        final logger = await runTestWith(
+          const TestCommandConfigs(concurrency: 2),
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          contains('dart test --concurrency=2'),
+        );
+      });
+
+      test('command line options take precedence over the config', () async {
+        final logger = await runTestWith(
+          const TestCommandConfigs(concurrency: 2),
+          concurrency: 3,
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          contains('dart test --concurrency=3'),
+        );
+      });
+    });
   });
 }

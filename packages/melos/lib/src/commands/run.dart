@@ -5,7 +5,7 @@ mixin _RunMixin on _Melos {
   Future<void> run({
     GlobalOptions? global,
     String? scriptName,
-    bool noSelect = false,
+    bool? noSelect,
     bool listScripts = false,
     bool listScriptsAsJson = false,
     bool includePrivate = false,
@@ -13,6 +13,7 @@ mixin _RunMixin on _Melos {
     String? group,
     PackageFilters? packageFilters,
   }) async {
+    final skipSelection = noSelect ?? config.commands.run.noSelect ?? false;
     final publicScripts = Map<String, Script>.from(config.scripts);
     if (!includePrivate) {
       publicScripts.removeWhere((_, script) => script.isPrivate);
@@ -62,7 +63,7 @@ mixin _RunMixin on _Melos {
       final exitCode = await _runMultipleScripts(
         script,
         global: global,
-        noSelect: noSelect,
+        noSelect: skipSelection,
         scripts: config.scripts,
         steps: script.steps!,
         packageFilters: packageFilters,
@@ -92,7 +93,7 @@ mixin _RunMixin on _Melos {
     final exitCode = await _runScript(
       script,
       global: global,
-      noSelect: noSelect,
+      noSelect: skipSelection,
       extraArgs: extraArgs,
       packageFilters: packageFilters,
     );

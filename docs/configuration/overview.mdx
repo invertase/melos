@@ -329,6 +329,20 @@ Define custom scripts that can be executed in the workspace via the
 
 Learn more about defining scripts [here](/configuration/scripts).
 
+## command
+
+Configuration for the individual Melos commands, grouped per command under
+`command/<command name>`.
+
+Every command line option of a command can be given a default here, so it does
+not have to be typed out on every run. Options that select what a single
+invocation does rather than how the command behaves are not configurable: the
+[package filters](/filters), `melos init`, `melos run --list/--json/--group`,
+`melos list --cycles`, and `melos version --prerelease/--graduate/--manual-version`.
+
+An option passed on the command line always takes precedence over its
+configured default.
+
 ## command/bootstrap
 
 Configuration for the `bootstrap` command.
@@ -392,6 +406,20 @@ The default is `false`.
 
 To temporarily override this `melos bootstrap --no-enforce-lockfile / --enforce-lockfile` can be
 used.
+
+### noExample
+
+Whether to run `pub get` with the `--no-example` option, so the `example`
+directory of a package is not resolved.
+
+The default is `false`, which is the same as `melos bootstrap --no-example`.
+
+### noPub
+
+Whether to skip running `pub get` entirely. Shared dependencies, dependency
+overrides, IDE files and lifecycle hooks are still applied.
+
+The default is `false`, the same as `melos bootstrap --no-pub`.
 
 ### pubGetArgs
 
@@ -710,3 +738,275 @@ instead of being listed in a single flat list:
 
 This setting can be overridden per run with the `--[no-]group-commits` flag on
 `melos version`.
+
+### updateChangelog
+
+Whether to update the `CHANGELOG.md` files of the versioned packages.
+
+The default is `true`, the same as `melos version --changelog`.
+
+### updateDependentsConstraints
+
+Whether to update the dependency version constraints of packages that depend on
+any of the packages that are versioned.
+
+The default is `true`, the same as `melos version --dependent-constraints`.
+
+### updateDependentsVersions
+
+Whether to make a new patch version and changelog entry in packages that are
+updated because of [updateDependentsConstraints](#updatedependentsconstraints).
+
+Only usable with `updateDependentsConstraints` enabled. The default is `true`,
+the same as `melos version --dependent-versions`.
+
+### gitTagVersion
+
+Whether to tag the release.
+
+The default is `true`, the same as `melos version --git-tag-version`.
+
+### gitCommitVersion
+
+Whether to commit the changes made to the `pubspec.yaml` and changelog files.
+Disabling this also disables [gitTagVersion](#gittagversion).
+
+The default is `true`, the same as `melos version --git-commit-version`.
+
+### force
+
+Whether to skip the confirmation prompt.
+
+The default is `false`, the same as `melos version --yes`.
+
+### versionPrivatePackages
+
+Whether to also version private packages, which are skipped by default.
+
+The default is `false`, the same as `melos version --all`.
+
+### preid
+
+The prerelease identifier to use when versioning packages as a prerelease, e.g.
+a `nullsafety` preid results in a version in the `1.0.0-1.0.nullsafety.0`
+format.
+
+Same as `melos version --preid`.
+
+### dependentPreid
+
+The same as [preid](#preid), but only applied to packages that are versioned
+because of a change in a dependency version. Falls back to `preid` when not
+set.
+
+Same as `melos version --dependent-preid`.
+
+## command/analyze
+
+Configuration for the `analyze` command.
+
+```yaml
+melos:
+  command:
+    analyze:
+      concurrency: 4
+      fatalInfos: false
+      fatalWarnings: true
+      noPub: true
+```
+
+### concurrency
+
+The number of packages to analyze concurrently. The default is `1`.
+
+### fatalInfos
+
+Whether info level issues are treated as fatal errors. The default is `true`.
+
+### fatalWarnings
+
+Whether warnings are treated as fatal errors. Not set by default, which leaves
+the behavior to the Dart or Flutter SDK.
+
+### noPub
+
+Whether `--no-pub` is passed to `flutter analyze`, to skip the implicit
+`pub get`. It has no effect on `dart analyze`, which never runs `pub get`.
+
+The default is `false`.
+
+## command/exec
+
+Configuration for the `exec` command. These options are also used as the
+defaults for the `exec` options of [scripts](/configuration/scripts).
+
+```yaml
+melos:
+  command:
+    exec:
+      concurrency: 4
+      failFast: true
+      orderDependents: true
+      groupLogs: true
+```
+
+### concurrency
+
+The number of packages to run the command in concurrently. The default is the
+number of processors on the machine.
+
+### failFast
+
+Whether to stop executing the command in further packages as soon as it fails
+in one package. The default is `false`.
+
+### orderDependents
+
+Whether to order the execution of the command based on the dependency graph of
+the packages. The default is `false`.
+
+### groupLogs
+
+Whether the output of each package is buffered and printed grouped per package,
+instead of being streamed and interleaved. The default is `false`.
+
+## command/format
+
+Configuration for the `format` command.
+
+```yaml
+melos:
+  command:
+    format:
+      concurrency: 4
+      setExitIfChanged: true
+      output: none
+      lineLength: 120
+```
+
+### concurrency
+
+The number of packages to format concurrently. The default is `1`.
+
+### setExitIfChanged
+
+Whether to return exit code 1 if there are any formatting changes. The default
+is `false`.
+
+### output
+
+Where `dart format` writes its output to, one of `json`, `none`, `show` or
+`write`. The default is `write`.
+
+### lineLength
+
+The line length to format the code to.
+
+## command/list
+
+Configuration for the `list` and `changed` commands.
+
+```yaml
+melos:
+  command:
+    list:
+      long: true
+      relativePaths: true
+      format: json
+```
+
+### long
+
+Whether to show extended information. The default is `false`.
+
+### relativePaths
+
+Whether to print package paths relative to the root of the workspace. The
+default is `false`.
+
+### format
+
+The output format, one of `column`, `parsable`, `json`, `graph`, `gviz` or
+`mermaid`. The default is `column`.
+
+## command/publish
+
+Configuration for the `publish` command.
+
+```yaml
+melos:
+  command:
+    publish:
+      dryRun: false
+      gitTagVersion: true
+      force: true
+      skipValidation: true
+      pubServer: https://pub.flutter-io.cn
+```
+
+### dryRun
+
+Whether packages are validated but not actually published. The default is
+`true`.
+
+### gitTagVersion
+
+Whether to add any missing git tags for the release. Tags are only created when
+`dryRun` is disabled. The default is `false`.
+
+### force
+
+Whether to skip the confirmation prompt when `dryRun` is disabled. The default
+is `false`, the same as `melos publish --yes`.
+
+### skipValidation
+
+Whether to publish without validation and resolution, forwarded to
+`dart pub publish --skip-validation`. The default is `false`.
+
+### pubServer
+
+The URL of the package server to publish to. When not set, the per-package
+`publish_to` field in the `pubspec.yaml` is used.
+
+## command/run
+
+Configuration for the `run` command.
+
+```yaml
+melos:
+  command:
+    run:
+      noSelect: true
+```
+
+### noSelect
+
+Whether to skip the prompt that asks which package to run a script in, when the
+script defines [packageFilters](/configuration/scripts#packagefilters). The
+filters themselves are still applied.
+
+The default is `false`.
+
+## command/test
+
+Configuration for the `test` command.
+
+```yaml
+melos:
+  command:
+    test:
+      concurrency: 4
+      noPub: true
+```
+
+### concurrency
+
+The number of packages to run tests in concurrently. The default is `1`.
+
+### noPub
+
+Whether `--no-pub` is passed to `flutter test`, to skip the implicit `pub get`.
+It has no effect on `dart test`, which does not support the flag.
+
+The default is `false`.

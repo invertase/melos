@@ -42,17 +42,16 @@ class AnalyzeCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    final fatalInfos = argResults?['fatal-infos'] as bool;
+    final fatalInfos = argResults!.optional('fatal-infos') as bool?;
     final fatalWarnings = argResults!.optional('fatal-warnings') as bool?;
-    final concurrency = int.parse(argResults!['concurrency'] as String);
-    final noPub = argResults!['no-pub'] as bool;
+    final noPub = argResults!.optional('no-pub') as bool?;
 
     final melos = Melos(logger: logger, config: config);
 
     return melos.analyze(
       global: global,
       packageFilters: parsePackageFilters(config.path),
-      concurrency: concurrency,
+      concurrency: concurrencyOption,
       fatalInfos: fatalInfos,
       fatalWarnings: fatalWarnings,
       noPub: noPub,

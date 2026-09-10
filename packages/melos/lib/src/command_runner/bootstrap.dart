@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../commands/runner.dart';
+import '../common/utils.dart';
 import 'base.dart';
 
 class BootstrapCommand extends MelosCommand {
@@ -52,10 +53,10 @@ class BootstrapCommand extends MelosCommand {
     return melos.bootstrap(
       global: global,
       packageFilters: parsePackageFilters(config.path),
-      enforceLockfile: argResults?['enforce-lockfile'] as bool?,
-      noExample: argResults?['no-example'] as bool,
-      offline: argResults?['offline'] as bool,
-      noPub: argResults?['no-pub'] as bool,
+      enforceLockfile: argResults!.optional('enforce-lockfile') as bool?,
+      noExample: argResults!.optional('no-example') as bool?,
+      offline: argResults!.optional('offline') as bool?,
+      noPub: argResults!.optional('no-pub') as bool?,
     );
   }
 }

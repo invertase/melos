@@ -8,20 +8,20 @@ mixin _VersionMixin on _RunMixin {
     PackageFilters? packageFilters,
     bool asPrerelease = false,
     bool asStableRelease = false,
-    bool updateChangelog = true,
-    bool updateDependentsConstraints = true,
-    bool updateDependentsVersions = true,
-    bool gitTag = true,
-    bool gitCommit = true,
+    bool? updateChangelog,
+    bool? updateDependentsConstraints,
+    bool? updateDependentsVersions,
+    bool? gitTag,
+    bool? gitCommit,
     bool? releaseUrl,
     bool? groupCommits,
     String? message,
-    bool force = false,
+    bool? force,
     // all
     bool showPrivatePackages = false,
     String? preid,
     String? dependentPreid,
-    bool versionPrivatePackages = false,
+    bool? versionPrivatePackages,
     bool? smartDependents,
     Map<String, versioning.ManualVersionChange> manualVersions = const {},
   }) async {
@@ -29,11 +29,32 @@ mixin _VersionMixin on _RunMixin {
       throw ArgumentError('Cannot use both asPrerelease and asStableRelease.');
     }
 
-    if (updateDependentsVersions && !updateDependentsConstraints) {
-      throw ArgumentError(
-        'Cannot use updateDependentsVersions without '
-        'updateDependentsConstraints.',
+    final versionConfig = config.commands.version;
+    final effectiveUpdateDependentsConstraints =
+        updateDependentsConstraints ??
+        versionConfig.updateDependentsConstraints ??
+        true;
+    var effectiveUpdateDependentsVersions =
+        updateDependentsVersions ??
+        versionConfig.updateDependentsVersions ??
+        true;
+
+    if (effectiveUpdateDependentsVersions &&
+        !effectiveUpdateDependentsConstraints) {
+      if ((updateDependentsVersions ?? false) &&
+          !(updateDependentsConstraints ?? true)) {
+        throw ArgumentError(
+          'Cannot use updateDependentsVersions without '
+          'updateDependentsConstraints.',
+        );
+      }
+
+      logger.warning(
+        'updateDependentsVersions is turned on but '
+        'updateDependentsConstraints is turned off. Versioning will continue '
+        'with updateDependentsVersions turned off.',
       );
+      effectiveUpdateDependentsVersions = false;
     }
 
     if ((asPrerelease || asStableRelease) && manualVersions.isNotEmpty) {
@@ -58,20 +79,24 @@ mixin _VersionMixin on _RunMixin {
         packageFilters: packageFilters,
         asPrerelease: asPrerelease,
         asStableRelease: asStableRelease,
-        updateChangelog: updateChangelog,
-        updateDependentsConstraints: updateDependentsConstraints,
-        updateDependentsVersions: updateDependentsVersions,
-        smartDependents: smartDependents,
-        gitTag: gitTag,
-        gitCommit: gitCommit,
+        updateChangelog:
+            updateChangelog ?? versionConfig.updateChangelog ?? true,
+        updateDependentsConstraints: effectiveUpdateDependentsConstraints,
+        updateDependentsVersions: effectiveUpdateDependentsVersions,
+        smartDependents: smartDependents ?? versionConfig.smartDependents,
+        gitTag: gitTag ?? versionConfig.gitTagVersion ?? true,
+        gitCommit: gitCommit ?? versionConfig.gitCommitVersion ?? true,
         releaseUrl: releaseUrl,
         groupCommits: groupCommits,
         message: message,
-        force: force,
+        force: force ?? versionConfig.force ?? false,
         showPrivatePackages: showPrivatePackages,
-        preid: preid,
-        dependentPreid: dependentPreid,
-        versionPrivatePackages: versionPrivatePackages,
+        preid: preid ?? versionConfig.preid,
+        dependentPreid: dependentPreid ?? versionConfig.dependentPreid,
+        versionPrivatePackages:
+            versionPrivatePackages ??
+            versionConfig.versionPrivatePackages ??
+            false,
         manualVersions: manualVersions,
       );
     });

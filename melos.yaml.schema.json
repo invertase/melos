@@ -165,6 +165,21 @@
               "type": "boolean",
               "description": "Whether `pubspec.lock` is enforced when running `pub get` or not.\nUseful when you want to ensure the same versions of dependencies are used across different environments/machines.\n\nDefaults to false."
             },
+            "noExample": {
+              "type": "boolean",
+              "description": "Whether `pub get` is run with `--no-example`, so the example directory of a package is not resolved.\n\nDefaults to false."
+            },
+            "noPub": {
+              "type": "boolean",
+              "description": "Whether to skip running `pub get`. Shared dependencies, dependency overrides and IDE files are still applied.\n\nDefaults to false."
+            },
+            "pubGetArgs": {
+              "type": "array",
+              "description": "Additional arguments to pass to `pub get` during bootstrapping.",
+              "items": {
+                "type": "string"
+              }
+            },
             "hooks": {
               "description": "Hooks to run at certain points of the command lifecycle.",
               "allOf": [{ "$ref": "#/$defs/commonHooks" }]
@@ -199,6 +214,26 @@
           "description": "The publish command configuration.",
           "additionalProperties": false,
           "properties": {
+            "dryRun": {
+              "type": "boolean",
+              "description": "Whether packages are validated but not actually published.\n\nDefaults to true."
+            },
+            "gitTagVersion": {
+              "type": "boolean",
+              "description": "Whether to add any missing tags for the published release. Tags are only created when `dryRun` is disabled.\n\nDefaults to false."
+            },
+            "force": {
+              "type": "boolean",
+              "description": "Whether to skip the confirmation prompt when `dryRun` is disabled.\n\nDefaults to false."
+            },
+            "skipValidation": {
+              "type": "boolean",
+              "description": "Whether packages are published without validation and resolution, forwarded to `dart pub publish --skip-validation`.\n\nDefaults to false."
+            },
+            "pubServer": {
+              "type": "string",
+              "description": "The URL of the package server to publish to. When not set, the per-package `publish_to` field is used."
+            },
             "hooks": {
               "type": "object",
               "description": "Hooks to run at certain points of the command lifecycle.",
@@ -220,6 +255,42 @@
           "description": "The version command configuration.",
           "additionalProperties": false,
           "properties": {
+            "updateChangelog": {
+              "type": "boolean",
+              "description": "Whether to update the CHANGELOG.md files of the versioned packages.\n\nDefaults to true."
+            },
+            "updateDependentsConstraints": {
+              "type": "boolean",
+              "description": "Whether to update the dependency version constraints of packages that depend on any of the packages that are versioned.\n\nDefaults to true."
+            },
+            "updateDependentsVersions": {
+              "type": "boolean",
+              "description": "Whether to make a new patch version and changelog entry in packages that are updated because of `updateDependentsConstraints`.\n\nDefaults to true."
+            },
+            "gitTagVersion": {
+              "type": "boolean",
+              "description": "Whether to tag the release.\n\nDefaults to true."
+            },
+            "gitCommitVersion": {
+              "type": "boolean",
+              "description": "Whether to commit the changes made to the pubspec.yaml and changelog files. Disabling this also disables `gitTagVersion`.\n\nDefaults to true."
+            },
+            "force": {
+              "type": "boolean",
+              "description": "Whether to skip the confirmation prompt.\n\nDefaults to false."
+            },
+            "versionPrivatePackages": {
+              "type": "boolean",
+              "description": "Whether to also version private packages, which are skipped by default.\n\nDefaults to false."
+            },
+            "preid": {
+              "type": "string",
+              "description": "The prerelease identifier to use when versioning packages as a prerelease."
+            },
+            "dependentPreid": {
+              "type": "string",
+              "description": "The prerelease identifier to use for packages that are versioned because of a change in a dependency version. Falls back to `preid`."
+            },
             "message": {
               "type": "string",
               "description": "A custom header for the generated CHANGELOG.md."
@@ -302,6 +373,123 @@
             "hooks": {
               "description": "Hooks to run at certain points of the command lifecycle.",
               "allOf": [{ "$ref": "#/$defs/commonHooks" }]
+            }
+          }
+        }
+,
+        "analyze": {
+          "type": "object",
+          "description": "The analyze command configuration.",
+          "additionalProperties": false,
+          "properties": {
+            "concurrency": {
+              "type": "integer",
+              "description": "The number of packages to analyze concurrently.\n\nDefaults to 1."
+            },
+            "fatalInfos": {
+              "type": "boolean",
+              "description": "Whether info level issues are treated as fatal errors.\n\nDefaults to true."
+            },
+            "fatalWarnings": {
+              "type": "boolean",
+              "description": "Whether warnings are treated as fatal errors."
+            },
+            "noPub": {
+              "type": "boolean",
+              "description": "Whether `--no-pub` is passed to `flutter analyze`, to skip the implicit pub get. Has no effect on `dart analyze`.\n\nDefaults to false."
+            }
+          }
+        },
+        "exec": {
+          "type": "object",
+          "description": "The exec command configuration. Also used as the defaults for the exec options of scripts.",
+          "additionalProperties": false,
+          "properties": {
+            "concurrency": {
+              "type": "integer",
+              "description": "The number of packages to run the command in concurrently.\n\nDefaults to the number of processors."
+            },
+            "failFast": {
+              "type": "boolean",
+              "description": "Whether to stop executing the command in further packages as soon as it fails in one package.\n\nDefaults to false."
+            },
+            "orderDependents": {
+              "type": "boolean",
+              "description": "Whether to order the execution of the command based on the dependency graph of the packages.\n\nDefaults to false."
+            },
+            "groupLogs": {
+              "type": "boolean",
+              "description": "Whether the output of each package is buffered and printed grouped per package.\n\nDefaults to false."
+            }
+          }
+        },
+        "format": {
+          "type": "object",
+          "description": "The format command configuration.",
+          "additionalProperties": false,
+          "properties": {
+            "concurrency": {
+              "type": "integer",
+              "description": "The number of packages to format concurrently.\n\nDefaults to 1."
+            },
+            "setExitIfChanged": {
+              "type": "boolean",
+              "description": "Whether to return exit code 1 if there are any formatting changes.\n\nDefaults to false."
+            },
+            "output": {
+              "type": "string",
+              "enum": ["json", "none", "show", "write"],
+              "description": "Where `dart format` writes its output to.\n\nDefaults to write."
+            },
+            "lineLength": {
+              "type": "integer",
+              "description": "The line length to format the code to."
+            }
+          }
+        },
+        "list": {
+          "type": "object",
+          "description": "The list and changed command configuration.",
+          "additionalProperties": false,
+          "properties": {
+            "long": {
+              "type": "boolean",
+              "description": "Whether to show extended information.\n\nDefaults to false."
+            },
+            "relativePaths": {
+              "type": "boolean",
+              "description": "Whether to print package paths relative to the root of the workspace.\n\nDefaults to false."
+            },
+            "format": {
+              "type": "string",
+              "enum": ["column", "parsable", "json", "graph", "gviz", "mermaid"],
+              "description": "The output format.\n\nDefaults to column."
+            }
+          }
+        },
+        "run": {
+          "type": "object",
+          "description": "The run command configuration.",
+          "additionalProperties": false,
+          "properties": {
+            "noSelect": {
+              "type": "boolean",
+              "description": "Whether to skip the prompt that asks which package to run a script in, when the script defines packageFilters.\n\nDefaults to false."
+            }
+          }
+        },
+        "test": {
+          "type": "object",
+          "description": "The test command configuration.",
+          "additionalProperties": false,
+          "properties": {
+            "concurrency": {
+              "type": "integer",
+              "description": "The number of packages to run tests in concurrently.\n\nDefaults to 1."
+            },
+            "noPub": {
+              "type": "boolean",
+              "description": "Whether `--no-pub` is passed to `flutter test`, to skip the implicit pub get. Has no effect on `dart test`.\n\nDefaults to false."
             }
           }
         }

@@ -1698,4 +1698,58 @@ ${'-' * terminalWidth}
       },
     );
   });
+
+  group('config', () {
+    test(
+      'noSelect skips the package selection prompt for filtered scripts',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            commands: const CommandConfigs(
+              run: RunCommandConfigs(noSelect: true),
+            ),
+            scripts: Scripts({
+              'test_script': Script(
+                name: 'test_script',
+                run: 'melos exec -- "echo hello"',
+                packageFilters: PackageFilters(
+                  scope: [
+                    createGlob('*', currentDirectoryPath: path),
+                  ],
+                ),
+              ),
+            }),
+          ),
+          workspacePackages: ['a', 'b'],
+        );
+
+        await createProject(workspaceDir, Pubspec('a'));
+        await createProject(workspaceDir, Pubspec('b'));
+        await runPubGet(workspaceDir.path);
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+
+        await Melos(logger: logger, config: config).run(
+          scriptName: 'test_script',
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          isNot(contains('Select a package to run')),
+        );
+        expect(
+          logger.output.normalizeLines(),
+          contains('RUNNING (in 2 packages)'),
+        );
+      },
+    );
+  });
 }
