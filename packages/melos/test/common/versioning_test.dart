@@ -22,6 +22,13 @@ void main() {
         ConventionalCommit.tryParse('docs!: foo bar')!.isVersionableCommit,
         isTrue,
       );
+      // Including when the `!` precedes the scopes.
+      expect(
+        ConventionalCommit.tryParse(
+          'docs!(scope): foo bar',
+        )!.isVersionableCommit,
+        isTrue,
+      );
       expect(
         ConventionalCommit.tryParse(
           'refactor(scope): foo bar',
@@ -104,6 +111,12 @@ void main() {
     test('semverReleaseType', () {
       expect(
         ConventionalCommit.tryParse('chore!: foo bar')!.semverReleaseType,
+        equals(SemverReleaseType.major),
+      );
+      expect(
+        ConventionalCommit.tryParse(
+          'refactor!(scope): foo bar',
+        )!.semverReleaseType,
         equals(SemverReleaseType.major),
       );
       expect(

@@ -43,6 +43,20 @@ void main() {
       );
     });
 
+    test('breaking change marked before the scopes', () {
+      final workspace = buildWorkspaceWithRepository(includeScopes: true);
+      final package = workspace.allPackages['test_pkg']!;
+
+      expect(
+        renderCommitPackageUpdate(
+          workspace,
+          package,
+          testCommit(message: 'refactor!(a): b'),
+        ),
+        contains('**BREAKING** **REFACTOR**(a): b.'),
+      );
+    });
+
     test('merge commit without conventional commit', () {
       final workspace = buildWorkspaceWithRepository();
       final package = workspace.allPackages['test_pkg']!;

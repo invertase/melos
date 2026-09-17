@@ -1,7 +1,8 @@
 final _mergeCommitPrefixRegex = RegExp('^Merged? (.*?:)?');
 
 final _conventionalCommitHeaderRegex = RegExp(
-  r'(?<type>[a-zA-Z0-9_]+)(\((?<scope>[a-zA-Z0-9\-_,\s\*]+)\))?(?<breaking>!)?: ?(?<description>.+)',
+  '(?<type>[a-zA-Z0-9_]+)(?<breakingBeforeScope>!)?'
+  r'(\((?<scope>[a-zA-Z0-9\-_,\s\*]+)\))?(?<breaking>!)?: ?(?<description>.+)',
 );
 
 final _breakingChangeRegex = RegExp(
@@ -78,6 +79,7 @@ class ConventionalCommit {
 
     final isBreakingChange =
         headerMatch.namedGroup('breaking') != null ||
+        headerMatch.namedGroup('breakingBeforeScope') != null ||
         commitMessage.contains('BREAKING: ') ||
         commitMessage.contains('BREAKING CHANGE: ');
 
@@ -167,8 +169,10 @@ class ConventionalCommit {
   /// Whether this commit represents a bug fix.
   bool get isFix => type == 'fix';
 
-  /// Whether this commit was a breaking change, e.g. `!` was specified after
-  /// the scopes in the commit message.
+  /// Whether this commit was a breaking change, e.g. `!` was specified before
+  /// the colon in the commit message, either after the scopes as the
+  /// specification describes (`type(scope)!:`) or directly after the type
+  /// (`type!(scope):`).
   final bool isBreakingChange;
 
   /// The description of the breaking change, e.g. the text after BREAKING

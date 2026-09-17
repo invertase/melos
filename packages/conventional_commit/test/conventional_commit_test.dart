@@ -160,6 +160,10 @@ void main() {
         ConventionalCommit.tryParse('docs(scope,dope)!: foo bar')!.header,
         equals('docs(scope,dope)!: foo bar'),
       );
+      expect(
+        ConventionalCommit.tryParse('docs!(scope,dope): foo bar')!.header,
+        equals('docs!(scope,dope): foo bar'),
+      );
     });
 
     test('scopes', () {
@@ -184,6 +188,10 @@ void main() {
         equals(['scope', 'dope']),
       );
       // Should support spaces in comma delimited scope list.
+      expect(
+        ConventionalCommit.tryParse('docs!(scope,dope): foo bar')!.scopes,
+        equals(['scope', 'dope']),
+      );
       expect(
         ConventionalCommit.tryParse('docs(scope, dope)!: foo bar')!.scopes,
         equals(['scope', 'dope']),
@@ -232,6 +240,10 @@ void main() {
         equals('style'),
       );
       expect(
+        ConventionalCommit.tryParse('test!(scope): foo bar')!.type,
+        equals('test'),
+      );
+      expect(
         ConventionalCommit.tryParse('test(scope)!: foo bar')!.type,
         equals('test'),
       );
@@ -263,6 +275,24 @@ void main() {
       expect(
         ConventionalCommit.tryParse(
           'docs(scope,dope)!: foo bar',
+        )!.isBreakingChange,
+        isTrue,
+      );
+      // The specification places the `!` after the scopes, but accept it
+      // directly after the type too rather than skipping the commit.
+      expect(
+        ConventionalCommit.tryParse('docs!(scope): foo bar')!.isBreakingChange,
+        isTrue,
+      );
+      expect(
+        ConventionalCommit.tryParse(
+          'docs!(scope,dope): foo bar',
+        )!.isBreakingChange,
+        isTrue,
+      );
+      expect(
+        ConventionalCommit.tryParse(
+          'docs!(scope)!: foo bar',
         )!.isBreakingChange,
         isTrue,
       );
