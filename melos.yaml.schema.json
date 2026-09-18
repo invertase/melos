@@ -539,18 +539,12 @@
                 ]
               }
             },
+            { "not": { "required": ["run", "exec"] } },
+            { "not": { "required": ["exec", "steps"] } },
             {
               "anyOf": [
-                {
-                  "type": "object",
-                  "required": ["run"],
-                  "not": { "required": ["exec"] }
-                },
-                {
-                  "type": "object",
-                  "required": ["exec"],
-                  "not": { "required": ["run"] }
-                },
+                { "type": "object", "required": ["run"] },
+                { "type": "object", "required": ["exec"] },
                 { "type": "object", "required": ["steps"] }
               ]
             },
@@ -582,13 +576,15 @@
                       "type": "object",
                       "description": "The command to execute in multiple packages, and the options to pass to `exec`.",
                       "required": ["command"],
+                      "patternProperties": { "^x-": {} },
+                      "additionalProperties": false,
                       "properties": {
                         "command": {
                           "type": "string",
                           "description": "The command to execute in multiple packages."
                         },
                         "concurrency": {
-                          "type": "number",
+                          "type": "integer",
                           "description": "The number of packages to execute the command in concurrently."
                         },
                         "failFast": {

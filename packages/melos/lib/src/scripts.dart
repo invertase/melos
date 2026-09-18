@@ -123,10 +123,6 @@ class Scripts extends MapView<String, Script> {
 
     for (final entry in yaml.entries) {
       final name = assertIsA<String>(value: entry.key, key: 'scripts');
-
-      // Keys prefixed with `x-` are extension fields, which exist so that
-      // reusable YAML anchors can be declared alongside the scripts that
-      // alias them. They are not scripts themselves.
       if (name.startsWith(extensionFieldPrefix)) continue;
 
       final value = entry.value;

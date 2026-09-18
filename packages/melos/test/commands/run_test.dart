@@ -1328,6 +1328,43 @@ SUCCESS
     );
 
     test(
+      'explains that "x-" keys are not scripts when one is run',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: const Scripts({
+              'a': Script(name: 'a', run: 'echo a'),
+            }),
+          ),
+          workspacePackages: ['a'],
+        );
+
+        await createProject(workspaceDir, Pubspec('a'));
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(logger: TestLogger(), config: config);
+
+        expect(
+          () => melos.run(scriptName: 'x-analyze'),
+          throwsA(
+            isA<ScriptNotFoundException>().having(
+              (exception) => exception.toString(),
+              'toString()',
+              contains('extension fields for YAML anchors'),
+            ),
+          ),
+        );
+      },
+    );
+
+    test(
       'verifies that the --groups option shows an error '
       'if the specified group is empty',
       () async {

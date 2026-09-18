@@ -441,6 +441,14 @@ class ScriptNotFoundException implements MelosException {
       "in the 'pubspec.yaml' file.",
     );
 
+    if (scriptName.startsWith(extensionFieldPrefix)) {
+      builder.write(
+        ' Keys prefixed with "$extensionFieldPrefix" in "scripts" are '
+        'extension fields for YAML anchors, not scripts. Rename the script to '
+        'run it.',
+      );
+    }
+
     for (final scriptName in availableScriptNames) {
       builder.write('\n - $scriptName');
     }

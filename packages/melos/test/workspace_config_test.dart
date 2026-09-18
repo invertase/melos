@@ -964,6 +964,74 @@ void main() {
       expect(scripts.keys, ['a']);
     });
 
+    test('resolves an anchor declared in an "x-" field outside "scripts"', () {
+      final yaml =
+          loadYaml('''
+x-analyze: &analyze
+  command: dart analyze .
+  concurrency: 1
+  orderDependents: true
+
+scripts:
+  analyze:
+    exec: *analyze
+''')
+              as YamlMap;
+
+      final scripts = Scripts.fromYaml(
+        yaml['scripts'] as YamlMap,
+        workspacePath: testWorkspacePath,
+      );
+
+      final analyze = scripts['analyze']!;
+      expect(analyze.run, 'dart analyze .');
+      expect(analyze.exec?.concurrency, 1);
+      expect(analyze.exec?.orderDependents, true);
+    });
+
+    test('resolves an anchor declared in an "x-" field inside "scripts"', () {
+      final yaml =
+          loadYaml('''
+x-analyze: &analyze
+  exec:
+    command: dart analyze .
+    concurrency: 1
+
+analyze: *analyze
+''')
+              as YamlMap;
+
+      final scripts = Scripts.fromYaml(
+        yaml,
+        workspacePath: testWorkspacePath,
+      );
+
+      expect(scripts.keys, ['analyze']);
+      expect(scripts['analyze']!.run, 'dart analyze .');
+      expect(scripts['analyze']!.exec?.concurrency, 1);
+    });
+
+    test('does not support the YAML 1.1 merge key', () {
+      final yaml =
+          loadYaml('''
+x-options: &options
+  concurrency: 1
+
+analyze:
+  exec:
+    <<: *options
+    command: dart analyze .
+''')
+              as YamlMap;
+
+      final scripts = Scripts.fromYaml(
+        yaml,
+        workspacePath: testWorkspacePath,
+      );
+
+      expect(scripts['analyze']!.exec?.concurrency, isNull);
+    });
+
     group('exec', () {
       test('supports specifying command as a string through "exec"', () {
         final scripts = Scripts.fromYaml(
