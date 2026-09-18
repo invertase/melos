@@ -4,6 +4,7 @@
   "description": "The workspace configuration file for Melos",
   "type": "object",
   "required": ["name", "packages"],
+  "patternProperties": { "^x-": {} },
   "additionalProperties": false,
   "properties": {
     "name": {
@@ -19,6 +20,7 @@
         {
           "type": "object",
           "description": "The self-hosted git repository which contains the workspace.",
+          "patternProperties": { "^x-": {} },
           "additionalProperties": false,
           "required": ["type", "origin", "owner", "name"],
           "properties": {
@@ -70,6 +72,7 @@
     "pub": {
       "type": "object",
       "description": "Configuration for HTTP requests to pub or alternate registries.",
+      "patternProperties": { "^x-": {} },
       "additionalProperties": false,
       "properties": {
         "timeoutSeconds": {
@@ -79,6 +82,7 @@
         "retry": {
           "type": "object",
           "description": "Retry/backoff settings applied to registry HTTP requests.",
+          "patternProperties": { "^x-": {} },
           "additionalProperties": false,
           "properties": {
             "delayFactorMillis": {
@@ -112,6 +116,7 @@
     "ide": {
       "type": "object",
       "description": "IDE-specific configurations.\n\nThis allows connecting the different scripts to the IDE or tells melos to generate the necessary files for mono-repositories to work in the IDE.",
+      "patternProperties": { "^x-": {} },
       "additionalProperties": false,
       "properties": {
         "intellij": {
@@ -123,6 +128,7 @@
             },
             {
               "type": "object",
+              "patternProperties": { "^x-": {} },
               "additionalProperties": false,
               "properties": {
                 "enabled": {
@@ -146,11 +152,13 @@
     "command": {
       "type": "object",
       "description": "Command-specific configurations.\n\nThis allows customizing the default behavior of melos commands.",
+      "patternProperties": { "^x-": {} },
       "additionalProperties": false,
       "properties": {
         "bootstrap": {
           "type": "object",
           "description": "The bootstrap command configuration.",
+          "patternProperties": { "^x-": {} },
           "additionalProperties": false,
           "properties": {
             "runPubGetInParallel": {
@@ -212,6 +220,7 @@
         "publish": {
           "type": "object",
           "description": "The publish command configuration.",
+          "patternProperties": { "^x-": {} },
           "additionalProperties": false,
           "properties": {
             "dryRun": {
@@ -253,6 +262,7 @@
         "version": {
           "type": "object",
           "description": "The version command configuration.",
+          "patternProperties": { "^x-": {} },
           "additionalProperties": false,
           "properties": {
             "updateChangelog": {
@@ -339,6 +349,7 @@
             "changelogFormat": {
               "type": "object",
               "description": "Configure the format of the generated CHANGELOG.md.",
+              "patternProperties": { "^x-": {} },
               "additionalProperties": false,
               "properties": {
                 "includeDate": {
@@ -368,6 +379,7 @@
         "clean": {
           "type": "object",
           "description": "The clean command configuration.",
+          "patternProperties": { "^x-": {} },
           "additionalProperties": false,
           "properties": {
             "hooks": {
@@ -380,6 +392,7 @@
         "analyze": {
           "type": "object",
           "description": "The analyze command configuration.",
+          "patternProperties": { "^x-": {} },
           "additionalProperties": false,
           "properties": {
             "concurrency": {
@@ -403,6 +416,7 @@
         "exec": {
           "type": "object",
           "description": "The exec command configuration. Also used as the defaults for the exec options of scripts.",
+          "patternProperties": { "^x-": {} },
           "additionalProperties": false,
           "properties": {
             "concurrency": {
@@ -426,6 +440,7 @@
         "format": {
           "type": "object",
           "description": "The format command configuration.",
+          "patternProperties": { "^x-": {} },
           "additionalProperties": false,
           "properties": {
             "concurrency": {
@@ -450,6 +465,7 @@
         "list": {
           "type": "object",
           "description": "The list and changed command configuration.",
+          "patternProperties": { "^x-": {} },
           "additionalProperties": false,
           "properties": {
             "long": {
@@ -470,6 +486,7 @@
         "run": {
           "type": "object",
           "description": "The run command configuration.",
+          "patternProperties": { "^x-": {} },
           "additionalProperties": false,
           "properties": {
             "noSelect": {
@@ -481,6 +498,7 @@
         "test": {
           "type": "object",
           "description": "The test command configuration.",
+          "patternProperties": { "^x-": {} },
           "additionalProperties": false,
           "properties": {
             "concurrency": {
@@ -498,6 +516,7 @@
     "scripts": {
       "type": "object",
       "description": "A list of scripts that can be executed with `melos run` or will be executed before/after some specific melos commands.",
+      "patternProperties": { "^x-": {} },
       "additionalProperties": { "$ref": "#/$defs/script" }
     }
   },
@@ -512,23 +531,20 @@
                 {
                   "type": "object",
                   "required": ["run"],
-                  "properties": { "run": { "type": "string" } }
+                  "not": { "required": ["exec"] }
                 },
                 {
                   "type": "object",
                   "required": ["exec"],
-                  "properties": { "exec": { "type": "string" } }
+                  "not": { "required": ["run"] }
                 },
-                {
-                  "type": "object",
-                  "required": ["exec", "run"],
-                  "properties": { "exec": { "type": "object" } }
-                }
+                { "type": "object", "required": ["steps"] }
               ]
             },
             {
               "type": "object",
               "description": "The script definition.",
+              "patternProperties": { "^x-": {} },
               "additionalProperties": false,
               "properties": {
                 "name": {
@@ -551,8 +567,13 @@
                     },
                     {
                       "type": "object",
-                      "description": "The options to pass to `exec`.",
+                      "description": "The command to execute in multiple packages, and the options to pass to `exec`.",
+                      "required": ["command"],
                       "properties": {
+                        "command": {
+                          "type": "string",
+                          "description": "The command to execute in multiple packages."
+                        },
                         "concurrency": {
                           "type": "number",
                           "description": "The number of packages to execute the command in concurrently."
@@ -573,6 +594,24 @@
                     }
                   ]
                 },
+                "steps": {
+                  "type": "array",
+                  "description": "Scripts, or commands, to run one after the other.",
+                  "items": { "type": "string" }
+                },
+                "private": {
+                  "type": "boolean",
+                  "description": "Whether the script is hidden from `melos run`, so that it can only be referenced as a step of another script."
+                },
+                "groups": {
+                  "type": "array",
+                  "description": "The groups to list the script under when running `melos run` with no argument.",
+                  "items": { "type": "string" }
+                },
+                "stdio": {
+                  "description": "How the standard streams of the script's process are wired to melos. Use `inherit` to give the script a real terminal. The default is `pipe`.",
+                  "enum": ["pipe", "inherit"]
+                },
                 "env": {
                   "type": "object",
                   "description": "Environment variables that will be passed to the command to execute.",
@@ -590,6 +629,7 @@
                 "packageFilters": {
                   "type": "object",
                   "description": "If the command to execute is a melos command, allows filtering packages that will execute the command.",
+                  "patternProperties": { "^x-": {} },
                   "additionalProperties": false,
                   "properties": {
                     "scope": {
@@ -697,6 +737,7 @@
         {
           "type": "object",
           "required": ["steps"],
+          "patternProperties": { "^x-": {} },
           "additionalProperties": false,
           "properties": {
             "name": {

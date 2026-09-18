@@ -945,6 +945,25 @@ void main() {
   });
 
   group('Scripts', () {
+    test('ignores "x-" extension fields', () {
+      final scripts = Scripts.fromYaml(
+        createYamlMap({
+          'x-shared': {
+            'command': 'b',
+            'concurrency': 1,
+          },
+          'a': {
+            'exec': {
+              'command': 'b',
+              'concurrency': 1,
+            },
+          },
+        }),
+        workspacePath: testWorkspacePath,
+      );
+      expect(scripts.keys, ['a']);
+    });
+
     group('exec', () {
       test('supports specifying command as a string through "exec"', () {
         final scripts = Scripts.fromYaml(

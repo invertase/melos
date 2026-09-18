@@ -13,6 +13,13 @@ final _leadingMelosExecRegExp = RegExp(r'^\s*melos\s+exec');
 const _scriptsExecDocsUrl =
     'https://melos.invertase.dev/configuration/scripts#exec';
 
+/// Prefix marking a key as an extension field.
+///
+/// Extension fields are ignored by Melos and exist so that reusable YAML
+/// anchors can be declared in the configuration, following the convention used
+/// by the Compose specification.
+const extensionFieldPrefix = 'x-';
+
 /// Error message shown when a script specifies both `run` and `exec`, which is
 /// no longer supported as of Melos 8.0.0.
 String _execAndRunMigrationMessage({
@@ -112,21 +119,27 @@ class Scripts extends MapView<String, Script> {
     Map<Object?, Object?> yaml, {
     required String workspacePath,
   }) {
-    final scripts = yaml.map<String, Script>((key, value) {
-      final name = assertIsA<String>(value: key, key: 'scripts');
+    final scripts = <String, Script>{};
 
+    for (final entry in yaml.entries) {
+      final name = assertIsA<String>(value: entry.key, key: 'scripts');
+
+      // Keys prefixed with `x-` are extension fields, which exist so that
+      // reusable YAML anchors can be declared alongside the scripts that
+      // alias them. They are not scripts themselves.
+      if (name.startsWith(extensionFieldPrefix)) continue;
+
+      final value = entry.value;
       if (value == null) {
         throw MelosConfigException('The script $name has no value');
       }
 
-      final script = Script.fromYaml(
+      scripts[name] = Script.fromYaml(
         value,
         name: name,
         workspacePath: workspacePath,
       );
-
-      return MapEntry(name, script);
-    });
+    }
 
     return Scripts(UnmodifiableMapView(scripts));
   }

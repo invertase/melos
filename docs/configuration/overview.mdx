@@ -1010,3 +1010,44 @@ Whether `--no-pub` is passed to `flutter test`, to skip the implicit `pub get`.
 It has no effect on `dart test`, which does not support the flag.
 
 The default is `false`.
+
+## Extension fields (`x-`)
+
+Any key prefixed with `x-` is an extension field. Melos ignores these keys, so
+they can be used to declare reusable [YAML anchors] without tripping up
+configuration or schema validation. This follows the same convention as the
+Compose specification.
+
+```yaml
+melos:
+  x-analyze: &analyze
+    command: dart analyze .
+    concurrency: 1
+    orderDependents: true
+
+  scripts:
+    analyze:
+      exec: *analyze
+```
+
+Extension fields are also allowed inside the `scripts` section, so an anchor can
+be declared next to the scripts that alias it:
+
+```yaml
+melos:
+  scripts:
+    x-analyze: &analyze
+      exec:
+        command: dart analyze .
+        concurrency: 1
+
+    analyze: *analyze
+```
+
+<Warning>
+  Melos parses YAML 1.2, which supports anchors and aliases but not the YAML 1.1
+  merge key (`<<`). An alias replaces a whole value; it cannot be merged into a
+  mapping that also sets other keys.
+</Warning>
+
+[yaml anchors]: https://yaml.org/spec/1.2.2/#692-node-anchors
