@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-09-18
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v8.8.0`](#melos---v880)
+
+---
+
+#### `melos` - `v8.8.0`
+
+ - **FEAT**(config): allow "x-" extension fields so YAML anchors validate ([#1085](https://github.com/invertase/melos/issues/1085)). ([02bfed68](https://github.com/invertase/melos/commit/02bfed681f10983a9e9f37b188efc82c65d12948))
+ - **FEAT**(config): allow every command line option to be configured ([#1082](https://github.com/invertase/melos/issues/1082)). ([5fcc9867](https://github.com/invertase/melos/commit/5fcc9867fb8c69aaab1e785ae5fb5f7368bea5cb))
+ - **FEAT**(intellij): generate Dart run and test configurations for pure Dart packages ([#1080](https://github.com/invertase/melos/issues/1080)). ([8a4e21b6](https://github.com/invertase/melos/commit/8a4e21b64168ba0d668a54af2deb6b2c66d7eab7))
+ - **FEAT**: add --no-pub flag to bootstrap, test and analyze commands ([#1079](https://github.com/invertase/melos/issues/1079)). ([913ecbbe](https://github.com/invertase/melos/commit/913ecbbe258172b2c35d11d529727e74070801e4))
+
+
 ## 2026-09-09
 
 ### Changes
