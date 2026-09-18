@@ -1013,10 +1013,10 @@ The default is `false`.
 
 ## Extension fields (`x-`)
 
-Any key prefixed with `x-` is an extension field. Melos ignores these keys, so
-they can be used to declare reusable [YAML anchors] without tripping up
-configuration or schema validation. This follows the same convention as the
-Compose specification.
+Any key prefixed with `x-` is an extension field, following the convention used
+by the Compose specification. Melos ignores these keys wherever it expects a
+fixed set of options, so they can be used to declare reusable [YAML anchors]
+without tripping up configuration or schema validation.
 
 ```yaml
 melos:
@@ -1030,8 +1030,8 @@ melos:
       exec: *analyze
 ```
 
-Extension fields are also allowed inside the `scripts` section, so an anchor can
-be declared next to the scripts that alias it:
+`x-` is reserved in `scripts`, so an anchor can be declared next to the scripts
+that alias it. A script cannot be named `x-...`:
 
 ```yaml
 melos:
@@ -1045,9 +1045,18 @@ melos:
 ```
 
 <Warning>
+  The prefix has no special meaning in `categories` or in a script's `env`,
+  where the keys are names you choose rather than options Melos defines. An
+  `x-` key there is simply a category, or an environment variable, of that
+  name.
+</Warning>
+
+<Warning>
   Melos parses YAML 1.2, which supports anchors and aliases but not the YAML 1.1
   merge key (`<<`). An alias replaces a whole value; it cannot be merged into a
-  mapping that also sets other keys.
+  mapping that also sets other keys. In particular, an anchor aliased into
+  `exec` has to carry the `command` itself, so it can only be shared by scripts
+  that run the same command.
 </Warning>
 
 [yaml anchors]: https://yaml.org/spec/1.2.2/#692-node-anchors
