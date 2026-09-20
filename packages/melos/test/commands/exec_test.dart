@@ -47,8 +47,8 @@ void main() {
       await melos.exec(
         ['echo', 'hello', 'world'],
         concurrency: 1,
-        packageFilters: PackageFilters(
-          fileExists: const ['log.txt'],
+        packageFilters: const PackageFilters(
+          fileExists: ['log.txt'],
         ),
       );
 
@@ -840,8 +840,8 @@ ${'-' * terminalWidth}
           ['echo', 'hello', 'world'],
           concurrency: 2,
           orderDependents: true,
-          packageFilters: PackageFilters(
-            fileExists: const ['log.txt'],
+          packageFilters: const PackageFilters(
+            fileExists: ['log.txt'],
           ),
         );
 

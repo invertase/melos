@@ -81,7 +81,7 @@ void main() {
       expect(value.includeDateInChangelogEntry, false);
       expect(value.groupChangelogEntriesByType, false);
       expect(value.aggregateChangelogs, [
-        AggregateChangelogConfig.workspace(),
+        const AggregateChangelogConfig.workspace(),
       ]);
     });
 
@@ -282,7 +282,7 @@ void main() {
             },
             workspacePath: '.',
           ),
-          VersionCommandConfigs(
+          const VersionCommandConfigs(
             branch: 'branch',
             message: 'message',
             includeCommitId: true,
@@ -349,7 +349,7 @@ void main() {
             },
             workspacePath: '.',
           ),
-          VersionCommandConfigs(
+          const VersionCommandConfigs(
             aggregateChangelogs: [
               AggregateChangelogConfig.workspace(),
               AggregateChangelogConfig(

@@ -218,11 +218,11 @@ class AggregateChangelogConfig {
     this.description,
   });
 
-  AggregateChangelogConfig.workspace()
+  const AggregateChangelogConfig.workspace()
     : this(
         isWorkspaceChangelog: true,
         path: 'CHANGELOG.md',
-        packageFilters: PackageFilters(),
+        packageFilters: const PackageFilters(),
         description: '''
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.

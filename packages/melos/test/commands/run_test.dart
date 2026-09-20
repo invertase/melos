@@ -26,12 +26,12 @@ void main() {
             packages: [
               createGlob('packages/**', currentDirectoryPath: path),
             ],
-            scripts: Scripts({
+            scripts: const Scripts({
               'test_script': Script(
                 name: 'test_script',
                 run: 'melos exec -- "echo hello"',
                 packageFilters: PackageFilters(
-                  fileExists: const ['log.txt'],
+                  fileExists: ['log.txt'],
                 ),
               ),
             }),
@@ -95,12 +95,12 @@ ${'-' * terminalWidth}
               packages: [
                 createGlob('packages/**', currentDirectoryPath: path),
               ],
-              scripts: Scripts({
+              scripts: const Scripts({
                 'test_script': Script(
                   name: 'test_script',
                   run: 'melos exec -- "echo hello"',
                   packageFilters: PackageFilters(
-                    fileExists: const ['log.txt'],
+                    fileExists: ['log.txt'],
                   ),
                 ),
               }),
@@ -1589,12 +1589,12 @@ ${'-' * terminalWidth}
             packages: [
               createGlob('packages/**', currentDirectoryPath: path),
             ],
-            scripts: Scripts({
+            scripts: const Scripts({
               'test_script': Script(
                 name: 'test_script',
                 run: 'melos exec -- "echo hello"',
                 packageFilters: PackageFilters(
-                  fileExists: const ['log.txt'],
+                  fileExists: ['log.txt'],
                 ),
               ),
             }),
