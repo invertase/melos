@@ -417,7 +417,11 @@ class VirtualWorkspaceBuilder {
       path: path,
     );
 
-    final packageMap = _buildVirtualPackageMap(_packages, logger);
+    final packageMap = _buildVirtualPackageMap(
+      _packages,
+      logger,
+      entryPoints: config.ide.intelliJ.entryPoints,
+    );
     final rootPackage = _buildRootPackage(config, logger);
 
     return MelosWorkspace(
@@ -455,8 +459,9 @@ class VirtualWorkspaceBuilder {
 
   PackageMap _buildVirtualPackageMap(
     List<_VirtualPackage> packages,
-    MelosLogger logger,
-  ) {
+    MelosLogger logger, {
+    Map<String, List<String>> entryPoints = const {},
+  }) {
     final packageMap = <String, Package>{};
 
     for (final package in packages) {
@@ -476,6 +481,7 @@ class VirtualWorkspaceBuilder {
         packageMap: packageMap,
         pathRelativeToWorkspace: pathRelativeToWorkspace,
         categories: [],
+        entryPoints: entryPoints[name] ?? const [],
       );
     }
 

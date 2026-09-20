@@ -296,12 +296,16 @@ melos:
 
 ### runArguments
 
-Allows specifying additional run arguments per Flutter app package. This
-generates one IntelliJ run configuration per entry instead of the default single
-configuration.
+Allows specifying the entry point and additional run arguments per Flutter app
+package. This generates one IntelliJ run configuration per entry instead of the
+default single configuration.
 
 The `name` field sets the display name suffix and output filename. If `name` is
 omitted and `default: true` is set, the entry replaces the default configuration.
+
+The `entryPoint` field sets the Dart file to run, relative to the package root.
+The default is `lib/main.dart`. The `args` field sets additional arguments to
+pass to `flutter run` and can be omitted.
 
 ```yaml
 melos:
@@ -321,6 +325,25 @@ This generates:
 - `melos_flutter_run_my_app_local.xml`
 - `melos_flutter_run_my_app_prod.xml`
 - `melos_flutter_run_my_app.xml` (the default)
+
+A Flutter package without a `lib/main.dart` is only treated as a Flutter app
+when at least one of its entries has an `entryPoint`, which is how apps with one
+entry point per flavor are declared:
+
+```yaml
+melos:
+  ide:
+    intellij:
+      runArguments:
+        my_app:
+          - name: development
+            entryPoint: lib/main_development.dart
+            args: "--flavor development"
+            default: true
+          - name: production
+            entryPoint: lib/main_production.dart
+            args: "--flavor production"
+```
 
 ## scripts
 

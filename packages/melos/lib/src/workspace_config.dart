@@ -4,6 +4,7 @@ import 'package:ansi_styles/ansi_styles.dart';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
+import 'package:path/path.dart' as p;
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
@@ -103,19 +104,33 @@ class IntelliJConfig {
               path: 'ide/intellij',
             )
           : _defaultScriptNamePrefix;
-      final rawRunArgsYaml = yaml['runArguments'];
-      final rawRunArgs = (rawRunArgsYaml is Map)
-          ? rawRunArgsYaml.cast<Object?, Object?>()
-          : <Object?, Object?>{};
-      final runArguments = <String, List<IdeRunConfiguration>>{};
-      for (final entry in rawRunArgs.entries) {
-        final pkgName = entry.key! as String;
-        final list = (entry.value! as List)
-            .cast<Map<Object?, Object?>>()
-            .map(IdeRunConfiguration.fromYaml)
-            .toList();
-        runArguments[pkgName] = list;
-      }
+      const runArgumentsPath = 'ide/intellij/runArguments';
+      final runArguments = assertMapIsA<String, List<IdeRunConfiguration>>(
+        key: 'runArguments',
+        map: yaml,
+        isRequired: false,
+        path: 'ide/intellij',
+        assertKey: (key) =>
+            assertIsA<String>(value: key, path: runArgumentsPath),
+        assertValue: (key, value) {
+          final runConfigurations = assertIsA<List<Object?>>(
+            value: value,
+            key: key,
+            path: runArgumentsPath,
+          );
+          return [
+            for (final (index, runConfiguration) in runConfigurations.indexed)
+              IdeRunConfiguration.fromYaml(
+                assertIsA<Map<Object?, Object?>>(
+                  value: runConfiguration,
+                  index: index,
+                  path: '$runArgumentsPath/$key',
+                ),
+                path: '$runArgumentsPath/$key',
+              ),
+          ];
+        },
+      );
 
       return IntelliJConfig(
         enabled: enabled,
@@ -153,6 +168,16 @@ class IntelliJConfig {
   final String scriptNamePrefix;
 
   final Map<String, List<IdeRunConfiguration>> runArguments;
+
+  /// The entry points that are configured in [runArguments], by package name.
+  Map<String, List<String>> get entryPoints => {
+    for (final MapEntry(key: packageName, value: runConfigurations)
+        in runArguments.entries)
+      packageName: [
+        for (final runConfiguration in runConfigurations)
+          ?runConfiguration.entryPoint,
+      ],
+  };
 
   Object? toJson() {
     return {
@@ -203,7 +228,8 @@ IntelliJConfig(
   moduleNamePrefix: $moduleNamePrefix,
   executeInTerminal: $executeInTerminal,
   generateAppRunConfigs: $generateAppRunConfigs,
-  scriptNamePrefix: $scriptNamePrefix
+  scriptNamePrefix: $scriptNamePrefix,
+  runArguments: $runArguments,
 )
 ''';
   }
@@ -798,30 +824,68 @@ class UnresolvedWorkspace implements MelosException {
   String toString() => message;
 }
 
-/// A single named run configuration with additional arguments.
+/// A single named run configuration with an optional entry point and
+/// additional arguments.
 @immutable
 class IdeRunConfiguration {
   const IdeRunConfiguration({
-    required this.args,
+    this.args = '',
     this.name,
+    this.entryPoint,
     this.isDefault = false,
   });
 
-  factory IdeRunConfiguration.fromYaml(Map<Object?, Object?> yaml) {
-    return IdeRunConfiguration(
-      name: yaml['name'] as String?,
-      args: yaml['args'] as String? ?? '',
-      isDefault: yaml['default'] as bool? ?? false,
+  factory IdeRunConfiguration.fromYaml(
+    Map<Object?, Object?> yaml, {
+    String? path,
+  }) {
+    final rawEntryPoint = assertKeyIsA<String?>(
+      key: 'entryPoint',
+      map: yaml,
+      path: path,
     );
+    final entryPoint = rawEntryPoint == null
+        ? null
+        : p.posix.normalize(rawEntryPoint.trim().replaceAll(r'\', '/'));
+    if (rawEntryPoint != null && !_isInsidePackage(rawEntryPoint)) {
+      throw MelosConfigException(
+        'The entryPoint "$rawEntryPoint"${path == null ? '' : ' at $path'} '
+        'must be a path inside of the package, relative to the package root.',
+      );
+    }
+
+    return IdeRunConfiguration(
+      name: assertKeyIsA<String?>(key: 'name', map: yaml, path: path),
+      args: assertKeyIsA<String?>(key: 'args', map: yaml, path: path) ?? '',
+      entryPoint: entryPoint,
+      isDefault:
+          assertKeyIsA<bool?>(key: 'default', map: yaml, path: path) ?? false,
+    );
+  }
+
+  static bool _isInsidePackage(String entryPoint) {
+    final normalized = p.posix.normalize(entryPoint.replaceAll(r'\', '/'));
+    return entryPoint.trim().isNotEmpty &&
+        !p.posix.isAbsolute(normalized) &&
+        !p.windows.isAbsolute(entryPoint) &&
+        normalized != '.' &&
+        normalized != '..' &&
+        !normalized.startsWith('../');
   }
 
   final String? name;
   final String args;
+
+  /// The Dart file to run, relative to the package root and using `/` as the
+  /// separator, which defaults to `lib/main.dart` when not specified.
+  final String? entryPoint;
+
   final bool isDefault;
 
   Map<String, Object?> toJson() => {
     'name': name,
     'args': args,
+    if (entryPoint != null) 'entryPoint': entryPoint,
     'default': isDefault,
   };
 
@@ -831,8 +895,21 @@ class IdeRunConfiguration {
       runtimeType == other.runtimeType &&
       other.name == name &&
       other.args == args &&
+      other.entryPoint == entryPoint &&
       other.isDefault == isDefault;
 
   @override
-  int get hashCode => Object.hashAll([runtimeType, name, args, isDefault]);
+  int get hashCode =>
+      Object.hashAll([runtimeType, name, args, entryPoint, isDefault]);
+
+  @override
+  String toString() {
+    return '''
+IdeRunConfiguration(
+  name: $name,
+  args: $args,
+  entryPoint: $entryPoint,
+  isDefault: $isDefault,
+)''';
+  }
 }
