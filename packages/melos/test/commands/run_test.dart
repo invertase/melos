@@ -1509,6 +1509,46 @@ ${'-' * terminalWidth}
     );
 
     test(
+      'CLI --flutter is combined with script-defined packageFilters',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: Scripts({
+              'test_script': Script(
+                name: 'test_script',
+                run: 'melos exec -- "echo hello"',
+                packageFilters: PackageFilters(
+                  scope: [createGlob('a', currentDirectoryPath: path)],
+                ),
+              ),
+            }),
+          ),
+          workspacePackages: ['a'],
+        );
+        await createProject(workspaceDir, Pubspec('a'));
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(logger: TestLogger(), config: config);
+
+        await expectLater(
+          melos.run(
+            scriptName: 'test_script',
+            noSelect: true,
+            packageFilters: const PackageFilters(flutter: true),
+          ),
+          throwsA(isA<NoPackageFoundScriptException>()),
+        );
+      },
+    );
+
+    test(
       'CLI --scope applies to script without packageFilters',
       () async {
         final workspaceDir = await createTemporaryWorkspace(

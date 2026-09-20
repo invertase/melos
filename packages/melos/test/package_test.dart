@@ -279,15 +279,86 @@ void main() {
         expect(workspace.allPackages['a']!.isFlutterPackage, isTrue);
       });
 
-      test('is false for a hosted package that is only named flutter', () {
+      test('is true for the flutter package from another source', () {
         final workspace = buildWorkspace([
           '''
             name: a
             dependencies:
-              flutter: any
+              flutter:
+                path: ../flutter/packages/flutter
           ''',
         ]);
-        expect(workspace.allPackages['a']!.isFlutterPackage, isFalse);
+        expect(workspace.allPackages['a']!.isFlutterPackage, isTrue);
+      });
+
+      test('is false when only the dev dependencies or the dependency '
+          'overrides of a workspace dependency need Flutter', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dev_dependencies:
+              flutter_test:
+                sdk: flutter
+            dependency_overrides:
+              flutter:
+                sdk: flutter
+          ''',
+          '''
+            name: b
+            dependencies:
+              a: any
+          ''',
+          '''
+            name: c
+            dev_dependencies:
+              a: any
+          ''',
+        ]);
+        expect(workspace.allPackages['a']!.isFlutterPackage, isTrue);
+        expect(workspace.allPackages['b']!.isFlutterPackage, isFalse);
+        expect(workspace.allPackages['c']!.isFlutterPackage, isFalse);
+      });
+
+      test('is true for a dev dependency on a workspace package that '
+          'requires Flutter', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dependencies:
+              flutter:
+                sdk: flutter
+          ''',
+          '''
+            name: b
+            dev_dependencies:
+              a: any
+          ''',
+        ]);
+        expect(workspace.allPackages['b']!.isFlutterPackage, isTrue);
+      });
+
+      test('does not make a Dart package with a lib/main.dart an app', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dependencies:
+              flutter:
+                sdk: flutter
+          ''',
+          '''
+            name: b
+            dependencies:
+              a: any
+          ''',
+        ]);
+        final package = workspace.allPackages['b']!;
+        File(
+          p.join(package.path, 'lib', 'main.dart'),
+        ).createSync(recursive: true);
+
+        expect(package.isFlutterPackage, isTrue);
+        expect(package.isFlutterApp, isFalse);
+        expect(package.type, PackageType.flutterPackage);
       });
 
       test('is true for a Flutter SDK constraint in the environment', () {

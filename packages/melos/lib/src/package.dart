@@ -1198,28 +1198,43 @@ class Package {
 
   /// Returns whether this package is for Flutter.
   ///
-  /// This is determined by whether the package, or any package in the
-  /// workspace that it transitively depends on, declares that it needs the
-  /// Flutter SDK, see [_declaresFlutter].
+  /// This is determined by whether the package needs the Flutter SDK itself,
+  /// through any of its dependency sections, or whether it, or any package in
+  /// the workspace that it transitively depends on, requires the Flutter SDK
+  /// from the packages that depend on it, see [_requiresFlutter].
   late final bool isFlutterPackage =
-      _declaresFlutter ||
+      _requiresFlutter ||
+      _dependsOnFlutter({
+        ...pubspec.devDependencies,
+        ...pubspec.dependencyOverrides,
+      }) ||
       allTransitiveDependenciesInWorkspace.values.any(
-        (package) => package._declaresFlutter,
+        (package) => package._requiresFlutter,
       );
 
-  /// Whether the pubspec.yaml of this package declares that it needs the
-  /// Flutter SDK, either through a Flutter SDK constraint in its environment or
-  /// through a dependency on a package that is shipped with the Flutter SDK.
-  late final bool _declaresFlutter =
+  /// Whether this package requires the Flutter SDK from every package that
+  /// depends on it, either through a Flutter SDK constraint in its environment
+  /// or through a regular dependency on Flutter.
+  ///
+  /// The dev dependencies and the dependency overrides are not considered,
+  /// since they do not apply to the packages that depend on this package.
+  late final bool _requiresFlutter =
       pubspec.environment.containsKey('flutter') ||
-      [
-        ...pubspec.dependencies.values,
-        ...pubspec.devDependencies.values,
-        ...pubspec.dependencyOverrides.values,
-      ].any(
-        (dependency) =>
-            dependency is SdkDependency && dependency.sdk == 'flutter',
-      );
+      _dependsOnFlutter(pubspec.dependencies);
+
+  /// Whether any of the [dependencies] is a package that is shipped with the
+  /// Flutter SDK, or the `flutter` package from another source, for example a
+  /// path or a git dependency on a fork of the framework.
+  static bool _dependsOnFlutter(Map<String, Dependency> dependencies) {
+    return dependencies.entries.any(
+      (entry) =>
+          entry.key == 'flutter' ||
+          switch (entry.value) {
+            SdkDependency(:final sdk) => sdk == 'flutter',
+            _ => false,
+          },
+    );
+  }
 
   /// Returns whether this package is private (publish_to set to 'none').
   bool get isPrivate {
@@ -1285,7 +1300,7 @@ class Package {
   /// - c) a lib/main.dart file exists in the package.
   bool get isFlutterApp {
     // Must directly depend on the Flutter SDK.
-    if (!isFlutterPackage) {
+    if (!_dependsOnFlutter(pubspec.dependencies)) {
       return false;
     }
 
