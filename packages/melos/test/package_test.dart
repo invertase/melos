@@ -242,14 +242,14 @@ void main() {
       Package buildPackage({
         required String pubspec,
         String melosYaml = 'name: test',
-        bool createMainDart = false,
+        List<String> entryPointFiles = const [],
       }) {
         final workspaceBuilder = VirtualWorkspaceBuilder(melosYaml)
           ..addPackage(pubspec);
         final package = workspaceBuilder.build().allPackages['a']!;
-        if (createMainDart) {
+        for (final entryPointFile in entryPointFiles) {
           File(
-            p.join(package.path, 'lib', 'main.dart'),
+            p.joinAll([package.path, ...p.posix.split(entryPointFile)]),
           ).createSync(recursive: true);
         }
         return package;
@@ -274,7 +274,7 @@ void main() {
       test('is true when the default entry point exists', () {
         final package = buildPackage(
           pubspec: flutterPubspec,
-          createMainDart: true,
+          entryPointFiles: ['lib/main.dart'],
         );
         expect(package.isFlutterApp, isTrue);
         expect(package.type, PackageType.flutterApp);
@@ -286,10 +286,28 @@ void main() {
         expect(package.type, PackageType.flutterPackage);
       });
 
-      test('is true when an entry point is configured', () {
+      test('is false when the configured entry point does not exist', () {
         final package = buildPackage(
           pubspec: flutterPubspec,
           melosYaml: melosYamlWithEntryPoint,
+        );
+        expect(package.isFlutterApp, isFalse);
+        expect(package.type, PackageType.flutterPackage);
+      });
+
+      test('is false for an entry point that is not configured', () {
+        final package = buildPackage(
+          pubspec: flutterPubspec,
+          entryPointFiles: ['lib/main_development.dart'],
+        );
+        expect(package.isFlutterApp, isFalse);
+      });
+
+      test('is true when a configured entry point exists', () {
+        final package = buildPackage(
+          pubspec: flutterPubspec,
+          melosYaml: melosYamlWithEntryPoint,
+          entryPointFiles: ['lib/main_development.dart'],
         );
         expect(package.entryPoints, ['lib/main_development.dart']);
         expect(package.isFlutterApp, isTrue);
@@ -311,6 +329,7 @@ void main() {
                     pluginClass: APlugin
           ''',
           melosYaml: melosYamlWithEntryPoint,
+          entryPointFiles: ['lib/main_development.dart'],
         );
         expect(package.isFlutterApp, isFalse);
         expect(package.type, PackageType.flutterPlugin);
@@ -320,6 +339,7 @@ void main() {
         final package = buildPackage(
           pubspec: 'name: a',
           melosYaml: melosYamlWithEntryPoint,
+          entryPointFiles: ['lib/main_development.dart'],
         );
         expect(package.isFlutterApp, isFalse);
       });
@@ -345,13 +365,16 @@ void main() {
             ),
           ),
         );
-        await createProject(
+        final packageDir = await createProject(
           workspaceDir,
           Pubspec(
             'a',
             dependencies: {'flutter': SdkDependency('flutter')},
           ),
         );
+        File(
+          p.join(packageDir.path, 'lib', 'main_development.dart'),
+        ).createSync(recursive: true);
 
         final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
           workspaceDir,

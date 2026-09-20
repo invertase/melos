@@ -17,6 +17,7 @@ import 'common/io.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
 import 'package.dart';
+import 'scripts.dart';
 
 /// IDE-specific configurations.
 @immutable
@@ -104,33 +105,7 @@ class IntelliJConfig {
               path: 'ide/intellij',
             )
           : _defaultScriptNamePrefix;
-      const runArgumentsPath = 'ide/intellij/runArguments';
-      final runArguments = assertMapIsA<String, List<IdeRunConfiguration>>(
-        key: 'runArguments',
-        map: yaml,
-        isRequired: false,
-        path: 'ide/intellij',
-        assertKey: (key) =>
-            assertIsA<String>(value: key, path: runArgumentsPath),
-        assertValue: (key, value) {
-          final runConfigurations = assertIsA<List<Object?>>(
-            value: value,
-            key: key,
-            path: runArgumentsPath,
-          );
-          return [
-            for (final (index, runConfiguration) in runConfigurations.indexed)
-              IdeRunConfiguration.fromYaml(
-                assertIsA<Map<Object?, Object?>>(
-                  value: runConfiguration,
-                  index: index,
-                  path: '$runArgumentsPath/$key',
-                ),
-                path: '$runArgumentsPath/$key',
-              ),
-          ];
-        },
-      );
+      final runArguments = _runArgumentsFromYaml(yaml);
 
       return IntelliJConfig(
         enabled: enabled,
@@ -148,6 +123,61 @@ class IntelliJConfig {
       );
       return IntelliJConfig(enabled: enabled);
     }
+  }
+
+  static Map<String, List<IdeRunConfiguration>> _runArgumentsFromYaml(
+    Map<Object?, Object?> yaml,
+  ) {
+    const path = 'ide/intellij/runArguments';
+    final runArgumentsYaml = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'runArguments',
+      map: yaml,
+      path: 'ide/intellij',
+    );
+
+    final runArguments = <String, List<IdeRunConfiguration>>{};
+    for (final MapEntry(:key, :value)
+        in (runArgumentsYaml ?? const {}).entries) {
+      final packageName = assertIsA<String>(
+        value: key,
+        key: key ?? 'null',
+        path: path,
+      );
+      if (packageName.startsWith(extensionFieldPrefix)) {
+        continue;
+      }
+
+      final runConfigurationsYaml = assertIsA<List<Object?>>(
+        value: value,
+        key: packageName,
+        path: path,
+      );
+      final runConfigurations = [
+        for (final (index, runConfiguration) in runConfigurationsYaml.indexed)
+          IdeRunConfiguration.fromYaml(
+            assertIsA<Map<Object?, Object?>>(
+              value: runConfiguration,
+              index: index,
+              path: '$path/$packageName',
+            ),
+            path: '$path/$packageName/$index',
+          ),
+      ];
+
+      final fileNameSuffixes = <String?>{};
+      for (final runConfiguration in runConfigurations) {
+        if (!fileNameSuffixes.add(runConfiguration.fileNameSuffix)) {
+          throw MelosConfigException(
+            'The run configurations at $path/$packageName must have unique '
+            'names and only one of them can be the default, which is an entry '
+            'that has "default: true" or that has no name.',
+          );
+        }
+      }
+
+      runArguments[packageName] = runConfigurations;
+    }
+    return runArguments;
   }
 
   static const empty = IntelliJConfig();
@@ -843,11 +873,13 @@ class IdeRunConfiguration {
       key: 'entryPoint',
       map: yaml,
       path: path,
-    );
+    )?.trim();
     final entryPoint = rawEntryPoint == null
         ? null
-        : p.posix.normalize(rawEntryPoint.trim().replaceAll(r'\', '/'));
-    if (rawEntryPoint != null && !_isInsidePackage(rawEntryPoint)) {
+        : p.posix.normalize(rawEntryPoint.replaceAll(r'\', '/'));
+    if (rawEntryPoint != null &&
+        entryPoint != null &&
+        !_isInsidePackage(rawEntryPoint, entryPoint)) {
       throw MelosConfigException(
         'The entryPoint "$rawEntryPoint"${path == null ? '' : ' at $path'} '
         'must be a path inside of the package, relative to the package root.',
@@ -863,14 +895,13 @@ class IdeRunConfiguration {
     );
   }
 
-  static bool _isInsidePackage(String entryPoint) {
-    final normalized = p.posix.normalize(entryPoint.replaceAll(r'\', '/'));
-    return entryPoint.trim().isNotEmpty &&
-        !p.posix.isAbsolute(normalized) &&
-        !p.windows.isAbsolute(entryPoint) &&
-        normalized != '.' &&
-        normalized != '..' &&
-        !normalized.startsWith('../');
+  static bool _isInsidePackage(String rawEntryPoint, String entryPoint) {
+    return rawEntryPoint.isNotEmpty &&
+        !p.posix.isAbsolute(entryPoint) &&
+        !p.windows.isAbsolute(rawEntryPoint) &&
+        entryPoint != '.' &&
+        entryPoint != '..' &&
+        !entryPoint.startsWith('../');
   }
 
   final String? name;
@@ -881,6 +912,16 @@ class IdeRunConfiguration {
   final String? entryPoint;
 
   final bool isDefault;
+
+  /// Whether this run configuration replaces the default run configuration of
+  /// the package, which is the case when it is marked as the default or when
+  /// it has no name.
+  bool get replacesDefault => isDefault || (name?.isEmpty ?? true);
+
+  /// The suffix that distinguishes the generated file of this run
+  /// configuration from the others of the same package, which is `null` when
+  /// it [replacesDefault].
+  String? get fileNameSuffix => replacesDefault ? null : name;
 
   Map<String, Object?> toJson() => {
     'name': name,

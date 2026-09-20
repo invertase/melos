@@ -62,11 +62,11 @@ final _isValidPubPackageNameRegExp = RegExp(
 bool isValidPubPackageName(String name) =>
     _isValidPubPackageNameRegExp.hasMatch(name);
 
-/// Enum representing what type of package this is.
 /// The entry point that Flutter runs when no other target is specified,
 /// relative to the package root.
 const defaultEntryPoint = 'lib/main.dart';
 
+/// Enum representing what type of package this is.
 enum PackageType {
   dartPackage,
   flutterPackage,
@@ -1261,8 +1261,8 @@ class Package {
   /// - a) the package depends on the Flutter SDK.
   /// - b) the package does not define itself as a Flutter plugin inside
   ///   pubspec.yaml.
-  /// - c) the package has [entryPoints] configured, or the default entry point
-  ///   of Flutter, lib/main.dart, exists in the package.
+  /// - c) one of the configured [entryPoints], or the default entry point of
+  ///   Flutter, lib/main.dart, exists in the package.
   bool get isFlutterApp {
     // Must directly depend on the Flutter SDK.
     if (!isFlutterPackage) {
@@ -1274,8 +1274,13 @@ class Package {
       return false;
     }
 
-    return entryPoints.isNotEmpty ||
-        fileExists(p.joinAll([path, ...p.posix.split(defaultEntryPoint)]));
+    return [...entryPoints, defaultEntryPoint].any(hasEntryPoint);
+  }
+
+  /// Whether the [entryPoint], relative to the package root and using `/` as
+  /// the separator, exists in this package.
+  bool hasEntryPoint(String entryPoint) {
+    return fileExists(p.joinAll([path, ...p.posix.split(entryPoint)]));
   }
 
   /// Returns whether this package supports Flutter for Android.

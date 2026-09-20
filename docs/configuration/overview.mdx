@@ -326,9 +326,12 @@ This generates:
 - `melos_flutter_run_my_app_prod.xml`
 - `melos_flutter_run_my_app.xml` (the default)
 
+The entries of a package must have unique names, and only one of them can be
+the default.
+
 A Flutter package without a `lib/main.dart` is only treated as a Flutter app
-when at least one of its entries has an `entryPoint`, which is how apps with one
-entry point per flavor are declared:
+when at least one of its entries has an `entryPoint` that exists, which is how
+apps with one entry point per flavor are declared:
 
 ```yaml
 melos:

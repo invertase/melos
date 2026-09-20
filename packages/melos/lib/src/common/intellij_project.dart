@@ -417,19 +417,16 @@ class IntellijProject {
       } else {
         // One config per runArguments entry.
         for (final runArg in packageRunArgs) {
-          final isDefault =
-              runArg.isDefault || runArg.name == null || runArg.name!.isEmpty;
-          final configDisplayName = isDefault
+          final fileNameSuffix = runArg.fileNameSuffix;
+          final configDisplayName = fileNameSuffix == null
               ? "Flutter Run -&gt; '${package.name}'"
-              : "Flutter Run -&gt; '${package.name}' (${runArg.name})";
-          final fileSuffix = isDefault
+              : "Flutter Run -&gt; '${package.name}' ($fileNameSuffix)";
+          final fileSuffix = fileNameSuffix == null
               ? package.name
-              : '${package.name}_${runArg.name}';
+              : '${package.name}_$fileNameSuffix';
           final entryPoint = runArg.entryPoint ?? defaultEntryPoint;
 
-          if (!fileExists(
-            p.joinAll([package.path, ...p.posix.split(entryPoint)]),
-          )) {
+          if (!package.hasEntryPoint(entryPoint)) {
             _workspace.logger.warning(
               'runArguments references the entry point "$entryPoint" for '
               'package "${package.name}" which does not exist.',

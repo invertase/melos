@@ -938,7 +938,10 @@ void main() {
                     'args': '--flavor development',
                     'default': true,
                   },
-                  {'entryPoint': r'.\lib\main_production.dart'},
+                  {
+                    'name': 'production',
+                    'entryPoint': r' .\lib\main_production.dart ',
+                  },
                   {'name': 'local', 'args': '--flavor local'},
                 ],
               },
@@ -953,7 +956,10 @@ void main() {
                 args: '--flavor development',
                 isDefault: true,
               ),
-              IdeRunConfiguration(entryPoint: 'lib/main_production.dart'),
+              IdeRunConfiguration(
+                name: 'production',
+                entryPoint: 'lib/main_production.dart',
+              ),
               IdeRunConfiguration(name: 'local', args: '--flavor local'),
             ],
           });
@@ -981,6 +987,8 @@ void main() {
           '/lib/main.dart',
           r'C:\app\lib\main.dart',
           '../other/lib/main.dart',
+          ' ../other/lib/main.dart',
+          ' /lib/main.dart',
           'lib/../../other/main.dart',
           '.',
           ' ',
@@ -1000,6 +1008,91 @@ void main() {
             );
           });
         }
+
+        test('ignores "x-" extension fields', () {
+          final config = IntelliJConfig.fromYaml(
+            createYamlMap({
+              'runArguments': {
+                'x-shared': {'args': '--flavor development'},
+                'my_app': [
+                  {'name': 'development'},
+                ],
+              },
+            }),
+          );
+
+          expect(config.runArguments.keys, ['my_app']);
+        });
+
+        test('throws when a package name is not a string', () {
+          expect(
+            () => IntelliJConfig.fromYaml(
+              createYamlMap({
+                'runArguments': {
+                  1: [
+                    {'name': 'development'},
+                  ],
+                },
+              }),
+            ),
+            throwsMelosConfigException(),
+          );
+        });
+
+        for (final (description, runConfigurations) in [
+          (
+            'two entries without a name',
+            [
+              {'entryPoint': 'lib/main_development.dart'},
+              {'entryPoint': 'lib/main_production.dart'},
+            ],
+          ),
+          (
+            'two default entries',
+            [
+              {'name': 'development', 'default': true},
+              {'name': 'production', 'default': true},
+            ],
+          ),
+          (
+            'two entries with the same name',
+            [
+              {'name': 'development'},
+              {'name': 'development', 'args': '--flavor development'},
+            ],
+          ),
+        ]) {
+          test('throws for $description', () {
+            expect(
+              () => IntelliJConfig.fromYaml(
+                createYamlMap({
+                  'runArguments': {'my_app': runConfigurations},
+                }),
+              ),
+              throwsMelosConfigException(
+                message: contains('ide/intellij/runArguments/my_app'),
+              ),
+            );
+          });
+        }
+
+        test('names the path and index of an option with the wrong type', () {
+          expect(
+            () => IntelliJConfig.fromYaml(
+              createYamlMap({
+                'runArguments': {
+                  'my_app': [
+                    {'name': 'development'},
+                    {'name': 'production', 'entryPoint': 1},
+                  ],
+                },
+              }),
+            ),
+            throwsMelosConfigException(
+              message: contains('ide/intellij/runArguments/my_app/1'),
+            ),
+          );
+        });
 
         test('throws when the entries of a package are not a list', () {
           expect(

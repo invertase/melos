@@ -153,7 +153,8 @@
                 },
                 "runArguments": {
                   "type": "object",
-                  "description": "The run configurations to generate per Flutter app package, by package name. A package with a configured entry point is treated as a Flutter app.",
+                  "description": "The run configurations to generate per Flutter app package, by package name. A package with a configured entry point that exists is treated as a Flutter app.",
+                  "patternProperties": { "^x-": {} },
                   "additionalProperties": {
                     "type": "array",
                     "items": {

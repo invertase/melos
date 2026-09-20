@@ -448,9 +448,12 @@ $runArguments
 
       test('warns when an entry point does not exist', () async {
         final (project, logger) = await createAppProject(
+          entryPointFiles: ['lib/main_production.dart'],
           runArguments: '''
                   - name: development
-                    entryPoint: lib/main_development.dart''',
+                    entryPoint: lib/main_development.dart
+                  - name: production
+                    entryPoint: lib/main_production.dart''',
         );
 
         expect(
@@ -463,6 +466,31 @@ $runArguments
             'runArguments references the entry point '
             '"lib/main_development.dart" for package "my_app" which does not '
             'exist.',
+          ),
+        );
+      });
+
+      test('warns when none of the entry points exist', () async {
+        final (project, logger) = await createAppProject(
+          runArguments: '''
+                  - name: development
+                    entryPoint: lib/main_development.dart''',
+        );
+
+        expect(
+          File(
+            p.join(
+              project.runConfigurationsDir.path,
+              'melos_flutter_run_my_app_development.xml',
+            ),
+          ).existsSync(),
+          isFalse,
+        );
+        expect(
+          logger.output,
+          contains(
+            'runArguments references package "my_app" which is not a Flutter '
+            'app, so it has no effect.',
           ),
         );
       });
