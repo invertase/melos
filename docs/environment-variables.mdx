@@ -72,6 +72,10 @@ Define a comma delimited list of package names that Melos should focus on. This
 will act as the `scope` global package filter, and it will override the `scope`
 for all the filtering options defined in the `packageFilters` section.
 
+Melos also sets this variable itself when running a script that declares
+[`packageFilters`](/configuration/scripts#packagefilters), so that a `melos`
+command invoked by the script is scoped to the selected packages.
+
 ### `MELOS_SDK_PATH`
 
 The path to the Dart/Flutter SDK to use. This environment variable has
