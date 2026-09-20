@@ -13,6 +13,7 @@ mixin _VersionMixin on _RunMixin {
     bool? updateDependentsVersions,
     bool? gitTag,
     bool? gitCommit,
+    bool? signOff,
     bool? releaseUrl,
     bool? groupCommits,
     String? message,
@@ -86,6 +87,7 @@ mixin _VersionMixin on _RunMixin {
         smartDependents: smartDependents ?? versionConfig.smartDependents,
         gitTag: gitTag ?? versionConfig.gitTagVersion ?? true,
         gitCommit: gitCommit ?? versionConfig.gitCommitVersion ?? true,
+        signOff: signOff ?? versionConfig.signOff ?? false,
         releaseUrl: releaseUrl,
         groupCommits: groupCommits,
         message: message,
@@ -114,6 +116,7 @@ mixin _VersionMixin on _RunMixin {
     bool? smartDependents,
     bool gitTag = true,
     bool gitCommit = true,
+    bool signOff = false,
     bool? releaseUrl,
     bool? groupCommits,
     String? message,
@@ -471,6 +474,7 @@ mixin _VersionMixin on _RunMixin {
         pendingPackageUpdates,
         commitMessageTemplate,
         updateDependentsVersions: updateDependentsVersions,
+        signOff: signOff,
       );
     }
 
@@ -1446,6 +1450,7 @@ mixin _VersionMixin on _RunMixin {
     List<MelosPendingPackageUpdate> pendingPackageUpdates,
     Template commitMessageTemplate, {
     required bool updateDependentsVersions,
+    required bool signOff,
   }) async {
     final publishedPackagesMessage = pendingPackageUpdates
         .where((update) {
@@ -1469,6 +1474,7 @@ mixin _VersionMixin on _RunMixin {
       resolvedCommitMessage,
       workingDirectory: workspace.path,
       logger: logger,
+      signOff: signOff,
     );
   }
 

@@ -44,6 +44,7 @@ class VersionCommandConfigs {
     this.updateDependentsVersions,
     this.gitTagVersion,
     this.gitCommitVersion,
+    this.signOff,
     this.force,
     this.versionPrivatePackages,
     this.preid,
@@ -205,6 +206,12 @@ class VersionCommandConfigs {
       path: 'command/version',
     );
 
+    final signOff = assertKeyIsA<bool?>(
+      key: 'signOff',
+      map: yaml,
+      path: 'command/version',
+    );
+
     final force = assertKeyIsA<bool?>(
       key: 'force',
       map: yaml,
@@ -305,6 +312,7 @@ class VersionCommandConfigs {
       updateDependentsVersions: updateDependentsVersions,
       gitTagVersion: gitTagVersion,
       gitCommitVersion: gitCommitVersion,
+      signOff: signOff,
       force: force,
       versionPrivatePackages: versionPrivatePackages,
       preid: preid,
@@ -412,6 +420,11 @@ class VersionCommandConfigs {
   /// Disabling this also disables [gitTagVersion]. The default is `true`.
   final bool? gitCommitVersion;
 
+  /// Whether to add a `Signed-off-by` trailer to the version commit.
+  ///
+  /// The default is `false`.
+  final bool? signOff;
+
   /// Whether to skip the confirmation prompt.
   ///
   /// The default is `false`.
@@ -459,6 +472,7 @@ class VersionCommandConfigs {
         'updateDependentsVersions': updateDependentsVersions,
       if (gitTagVersion != null) 'gitTagVersion': gitTagVersion,
       if (gitCommitVersion != null) 'gitCommitVersion': gitCommitVersion,
+      if (signOff != null) 'signOff': signOff,
       if (force != null) 'force': force,
       if (versionPrivatePackages != null)
         'versionPrivatePackages': versionPrivatePackages,
@@ -496,6 +510,7 @@ class VersionCommandConfigs {
       other.updateDependentsVersions == updateDependentsVersions &&
       other.gitTagVersion == gitTagVersion &&
       other.gitCommitVersion == gitCommitVersion &&
+      other.signOff == signOff &&
       other.force == force &&
       other.versionPrivatePackages == versionPrivatePackages &&
       other.preid == preid &&
@@ -526,6 +541,7 @@ class VersionCommandConfigs {
     updateDependentsVersions,
     gitTagVersion,
     gitCommitVersion,
+    signOff,
     force,
     versionPrivatePackages,
     preid,
@@ -556,6 +572,7 @@ VersionCommandConfigs(
   updateDependentsVersions: $updateDependentsVersions,
   gitTagVersion: $gitTagVersion,
   gitCommitVersion: $gitCommitVersion,
+  signOff: $signOff,
   force: $force,
   versionPrivatePackages: $versionPrivatePackages,
   preid: $preid,

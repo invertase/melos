@@ -773,6 +773,13 @@ Disabling this also disables [gitTagVersion](#gittagversion).
 
 The default is `true`, the same as `melos version --git-commit-version`.
 
+### signOff
+
+Whether to add a `Signed-off-by` trailer to the version commit, the same as
+passing `--signoff` to `git commit`.
+
+The default is `false`, the same as `melos version --sign-off`.
+
 ### force
 
 Whether to skip the confirmation prompt.

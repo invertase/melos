@@ -285,6 +285,10 @@
               "type": "boolean",
               "description": "Whether to commit the changes made to the pubspec.yaml and changelog files. Disabling this also disables `gitTagVersion`.\n\nDefaults to true."
             },
+            "signOff": {
+              "type": "boolean",
+              "description": "Whether to add a `Signed-off-by` trailer to the version commit.\n\nDefaults to false."
+            },
             "force": {
               "type": "boolean",
               "description": "Whether to skip the confirmation prompt.\n\nDefaults to false."
