@@ -89,6 +89,13 @@ class VersionCommand extends MelosCommand {
           'behaviour, passing this also implies --no-git-tag-version.',
     );
     argParser.addFlag(
+      'sign-off',
+      abbr: 's',
+      help:
+          'Add a "Signed-off-by" trailer to the version commit, the same as '
+          'passing --signoff to git commit.',
+    );
+    argParser.addFlag(
       'release-url',
       abbr: 'r',
       help:
@@ -180,6 +187,7 @@ class VersionCommand extends MelosCommand {
         argResults!.optional('dependent-constraints') as bool?;
     final tag = argResults!.optional('git-tag-version') as bool?;
     final commit = argResults!.optional('git-commit-version') as bool?;
+    final signOff = argResults!.optional('sign-off') as bool?;
     final releaseUrl = argResults!.optional('release-url') as bool?;
     final groupCommits = argResults!.optional('group-commits') as bool?;
     final smartDependents = argResults!.optional('smart-dependents') as bool?;
@@ -212,6 +220,7 @@ class VersionCommand extends MelosCommand {
         force: force,
         gitTag: tag,
         gitCommit: commit,
+        signOff: signOff,
         releaseUrl: releaseUrl,
         groupCommits: groupCommits,
         updateChangelog: changelog,
@@ -259,6 +268,7 @@ class VersionCommand extends MelosCommand {
         force: force,
         gitTag: tag,
         gitCommit: commit,
+        signOff: signOff,
         releaseUrl: releaseUrl,
         groupCommits: groupCommits,
         updateChangelog: changelog,
