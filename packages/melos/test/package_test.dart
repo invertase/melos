@@ -237,6 +237,57 @@ void main() {
       });
     });
 
+    group('applying filters', () {
+      test('applyCategory', () {
+        Package createPackage(String name, List<String> category) {
+          return Package(
+            devDependencies: [],
+            dependencies: [],
+            dependencyOverrides: [],
+            packageMap: {},
+            name: name,
+            path: '/test',
+            pathRelativeToWorkspace: 'test',
+            version: Version(1, 0, 0),
+            publishTo: Uri(),
+            pubspec: Pubspec('melos_test'),
+            categories: category,
+          );
+        }
+
+        final packages = [
+          createPackage('package1', ['ab', 'bc']),
+          createPackage('package2', ['bc', 'cd']),
+          createPackage('package3', ['ab', 'cd']),
+        ];
+
+        final result1 = packages.applyCategories(
+          [Glob('ab')],
+        );
+
+        expect(
+          result1,
+          [
+            isA<Package>().having((p) => p.name, 'name', 'package1'),
+            isA<Package>().having((p) => p.name, 'name', 'package3'),
+          ],
+        );
+
+        final result2 = packages.applyCategories(
+          [Glob('*b*')],
+        );
+
+        expect(
+          result2,
+          [
+            isA<Package>().having((p) => p.name, 'name', 'package1'),
+            isA<Package>().having((p) => p.name, 'name', 'package2'),
+            isA<Package>().having((p) => p.name, 'name', 'package3'),
+          ],
+        );
+      });
+    });
+
     // https://github.com/invertase/melos/issues/164
     group('isFlutterApp', () {
       Package buildPackage({
@@ -385,57 +436,6 @@ void main() {
         );
 
         expect(workspace.allPackages['a']!.isFlutterApp, isTrue);
-      });
-    });
-
-    group('applying filters', () {
-      test('applyCategory', () {
-        Package createPackage(String name, List<String> category) {
-          return Package(
-            devDependencies: [],
-            dependencies: [],
-            dependencyOverrides: [],
-            packageMap: {},
-            name: name,
-            path: '/test',
-            pathRelativeToWorkspace: 'test',
-            version: Version(1, 0, 0),
-            publishTo: Uri(),
-            pubspec: Pubspec('melos_test'),
-            categories: category,
-          );
-        }
-
-        final packages = [
-          createPackage('package1', ['ab', 'bc']),
-          createPackage('package2', ['bc', 'cd']),
-          createPackage('package3', ['ab', 'cd']),
-        ];
-
-        final result1 = packages.applyCategories(
-          [Glob('ab')],
-        );
-
-        expect(
-          result1,
-          [
-            isA<Package>().having((p) => p.name, 'name', 'package1'),
-            isA<Package>().having((p) => p.name, 'name', 'package3'),
-          ],
-        );
-
-        final result2 = packages.applyCategories(
-          [Glob('*b*')],
-        );
-
-        expect(
-          result2,
-          [
-            isA<Package>().having((p) => p.name, 'name', 'package1'),
-            isA<Package>().having((p) => p.name, 'name', 'package2'),
-            isA<Package>().having((p) => p.name, 'name', 'package3'),
-          ],
-        );
       });
     });
   });
