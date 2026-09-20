@@ -202,11 +202,23 @@ A map of environment variables that will be passed to the executed command.
 
 ## packageFilters
 
-The [`melos exec`](/commands/exec) command allows you to execute a command for
-multiple packages. When used in a script, you can declare filter options in the
-`packageFilters` section.
+Selects the packages a script applies to. When running a script that uses
+`packageFilters`, you are prompted to select one of the matching packages, or
+all of them. Use the [`--no-select`](/commands/run#--no-select) option to skip
+the prompt and select all matching packages.
 
-The `hello_flutter` script below is only executed in Flutter packages:
+See the [global options](/filters) for a list of supported filters.
+
+<Warning>
+  The filter names in `packageFilters` are camel cased. For example, for the
+  equivalent of the command line option `--file-exists` use `fileExists`.
+</Warning>
+
+### With `exec`
+
+For an [`exec`](/configuration/scripts#exec) script, the filters decide in which
+packages the command is executed. The `hello_flutter` script below is only
+executed in Flutter packages:
 
 ```yaml
 scripts:
@@ -216,16 +228,47 @@ scripts:
       flutter: true
 ```
 
-See the [global options](/filters) for a list of supported filters.
+### With `run`
+
+A [`run`](/configuration/scripts#run) script always executes once, in the
+workspace root. `packageFilters` does not change that. What it does is pass the
+selected packages to the script through the
+[`MELOS_PACKAGES`](/environment-variables#melos_packages) environment variable,
+which scopes any `melos` command the script itself invokes.
+
+This is useful when the script wraps a Melos command:
+
+```yaml
+scripts:
+  analyze_with_lib:
+    run: melos exec -- dart analyze
+    packageFilters:
+      dirExists:
+        - lib
+```
+
+Selecting a package in the prompt above scopes the nested `melos exec`, so
+`dart analyze` runs in that package.
 
 <Warning>
-  The filter names in `packageFilters` are camel cased. For example, for the
-  equivalent of the command line option `--file-exists` use `fileExists`.
+  If the command is not a `melos` command, nothing reads `MELOS_PACKAGES`, so
+  the filters have no effect beyond the prompt.
 </Warning>
 
-When running a script that uses `packageFilters`, you will be prompted to select
-the package to execute the script in. If you want to skip this prompt and run
-the script in all packages, use the `--no-select` option.
+The script below always runs `dart analyze` once in the workspace root,
+whichever package is selected in the prompt:
+
+```yaml
+scripts:
+  analyze:
+    run: dart analyze
+    packageFilters:
+      dirExists:
+        - lib
+```
+
+To analyze each package individually, use
+[`exec`](/configuration/scripts#exec) instead of `run`.
 
 ## private
 
