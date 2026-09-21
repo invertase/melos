@@ -39,16 +39,18 @@ with a single package, where you can still use features like versioning,
 changelog generation, publishing and scripts, see
 [Using Melos without a monorepo](#using-melos-without-a-monorepo).
 
-## Migrate to Melos 7.x.x/8.x.x
+## Migrate to Melos 8.x.x
 
 Since the [pub workspaces](https://dart.dev/tools/pub/workspaces) feature has
 been released, Melos has been updated to rely on that, instead of creating
-`pubspec_overrides.yaml` files and thus some migration is needed.
+`pubspec_overrides.yaml` files and thus some migration is needed if you are
+coming from a version older than 7.0.0.
 
 The main difference for migration is that the `melos.yaml` file no longer
 exists, only the root `pubspec.yaml` file.
 
-To migrate to Melos 7.x.x a few steps are needed:
+To migrate from a version older than 7.0.0 to Melos 8.x.x a few steps are
+needed:
 1. Start with running `melos clean` to remove all the `pubspec_overrides.yaml`
    entries and then continue with moving all your content.
 2. Add `resolution: workspace` to all of your packages' `pubspec.yaml` files.
@@ -57,11 +59,34 @@ To migrate to Melos 7.x.x a few steps are needed:
 4. Move all the content from your `melos.yaml` file to the root `pubspec.yaml`
    file, under the `melos` key. (Note that the `packages` list is no longer
    needed as it is replaced with the `workspace` list.)
+5. Update the scripts that pass options to `exec`, since `run` and `exec` are
+   mutually exclusive in Melos 8.x.x. Move the command from `run` into `exec`
+   under the `command` key:
+   ```yaml
+   # Before (no longer supported)
+   scripts:
+     test:
+       run: dart test --concurrency=1
+       exec:
+         concurrency: 1
+
+   # After
+   scripts:
+     test:
+       exec:
+         command: dart test --concurrency=1
+         concurrency: 1
+   ```
 
 > [!NOTE]
-> The `workspace` list doesn't support globs yet, so you have to list all your
-> packages manually. Give a thumbs up [here](https://github.com/dart-lang/pub/issues/4391)
-> so that the team can prioritize this feature.
+> Starting from Melos 8.0.0 `melos version` retains and increments integer
+> build numbers, so `3.0.0+11` becomes `4.0.0+12` instead of `4.0.0`. A patch
+> release below `1.0.0` now bumps the patch component instead of adding a build
+> number, so `0.1.0` becomes `0.1.1` instead of `0.1.0+1`.
+
+> [!NOTE]
+> The `workspace` list supports globs starting from Dart SDK 3.11.0, with older
+> versions you have to list all your packages manually.
 
 > [!NOTE]
 > **Root packages migration:** If your existing project uses the repository
@@ -83,7 +108,7 @@ workspace:
   - packages/client_package
   - packages/server_package
 dev_dependencies:
-  melos: ^7.0.0-dev.9
+  melos: ^8.0.0
 
 melos:
   # All of the content of your previous melos.yaml file
@@ -100,7 +125,11 @@ resolution: workspace
 ```
 
 > [!NOTE]
-> You have to use Dart SDK 3.6.0 or newer to use pub workspaces.
+> Melos 8.x.x requires Dart SDK 3.9.0 or newer.
+
+If you are already on Melos 7.x.x only step 5 applies. See the
+[migration guide](https://melos.invertase.dev/~melos-latest/guides/migrations)
+for more details.
 
 ## Github Action
 
@@ -144,7 +173,7 @@ environment:
   sdk: ^3.9.0
 
 dev_dependencies:
-  melos: ^7.0.0
+  melos: ^8.0.0
 
 melos:
   useRootAsPackage: true
