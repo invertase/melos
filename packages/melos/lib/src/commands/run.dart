@@ -108,9 +108,10 @@ mixin _RunMixin on _Melos {
   }) async {
     await logger.flushGroupBufferIfNeed();
     if (exitCode != 0) {
-      logger.newLine();
-      logger.log(scriptName);
-      logger.child(failedLabel);
+      logger.essential
+        ..newLine()
+        ..log(scriptName)
+        ..child(failedLabel);
       throw ScriptException._(scriptName);
     }
     if (logSuccess) {
@@ -128,13 +129,13 @@ mixin _RunMixin on _Melos {
         'melos run ${group != null ? '--group $group ' : ''}--list --json',
       );
       logger.newLine();
-      logger.log(json.encode(scripts));
+      logger.stdout(json.encode(scripts));
     } else {
       logger.command(
         'melos run ${group != null ? '--group $group ' : ''}--list',
       );
       logger.newLine();
-      scripts.forEach((_, script) => logger.log(script.name));
+      scripts.forEach((_, script) => logger.stdout(script.name));
     }
   }
 
@@ -316,13 +317,32 @@ mixin _RunMixin on _Melos {
       environment[EnvironmentVariableKey.melosPackages] = packagesEnv;
     }
 
-    return startCommand(
+    final inheritStdio = script.stdio == ProcessStdio.inherit;
+    final group = logger.isQuiet && !inheritStdio ? script.name : null;
+
+    final exitCode = await startCommand(
       script.command(extraArgs: extraArgs, melosCommand: config.melosCommand),
       logger: logger,
       environment: environment,
       workingDirectory: config.path,
-      inheritStdio: script.stdio == ProcessStdio.inherit,
+      inheritStdio: inheritStdio,
+      group: group,
     );
+
+    if (group != null) {
+      await _flushQuietGroup(group, exitCode: exitCode);
+    }
+
+    return exitCode;
+  }
+
+  /// Prints the output that was buffered for [group] in quiet mode if the
+  /// command failed, and drops it otherwise.
+  Future<void> _flushQuietGroup(String group, {required int exitCode}) async {
+    if (exitCode == 0) {
+      logger.discardGroup(group);
+    }
+    await logger.flushGroupBufferIfNeed();
   }
 
   Future<int> _runMultipleScripts(
@@ -405,7 +425,12 @@ mixin _RunMixin on _Melos {
     for (final step in steps) {
       final scriptCommand = _buildScriptCommand(step, scripts);
 
-      exitCode = await shell.sendCommand(scriptCommand);
+      final group = logger.isQuiet ? step : null;
+
+      exitCode = await shell.sendCommand(scriptCommand, group: group);
+      if (group != null) {
+        await _flushQuietGroup(group, exitCode: exitCode);
+      }
       if (exitCode != 0) {
         break;
       }

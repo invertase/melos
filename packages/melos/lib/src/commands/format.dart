@@ -52,7 +52,8 @@ mixin _FormatMixin on _Melos {
       '.',
     ];
     final formatArgsString = formatArgs.join(' ');
-    final prefixLogs = effectiveConcurrency != 1 && packages.length != 1;
+    final prefixLogs =
+        !logger.isQuiet && effectiveConcurrency != 1 && packages.length != 1;
 
     logger.command('melos format', withDollarSign: true);
 
@@ -69,10 +70,15 @@ mixin _FormatMixin on _Melos {
     );
 
     await pool.forEach<Package, void>(packages, (package) async {
+      final group = logger.isQuiet ? package.name : null;
+
       if (!prefixLogs) {
         logger
-          ..horizontalLine()
-          ..log(AnsiStyles.bgBlack.bold.italic('${package.name}:'));
+          ..horizontalLine(group: group)
+          ..log(
+            AnsiStyles.bgBlack.bold.italic('${package.name}:'),
+            group: group,
+          );
       }
 
       final packageExitCode = await _formatForPackage(
@@ -80,12 +86,15 @@ mixin _FormatMixin on _Melos {
         package,
         formatArgs,
         prefixLogs: prefixLogs,
+        group: group,
       );
 
       packageResults[package.name]?.complete(packageExitCode);
 
       if (packageExitCode > 0) {
         failures[package.name] = packageExitCode;
+      } else if (logger.isQuiet) {
+        logger.discardGroup(package.name);
       } else if (!prefixLogs) {
         logger.log(
           AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
@@ -94,12 +103,16 @@ mixin _FormatMixin on _Melos {
       }
     }).drain<void>();
 
-    logger
+    await logger.flushGroupBufferIfNeed();
+
+    final summaryLogger = failures.isEmpty ? logger : logger.essential;
+
+    summaryLogger
       ..horizontalLine()
       ..newLine()
       ..command('melos format', withDollarSign: true);
 
-    final resultLogger = logger.child(targetStyle(formatArgsString));
+    final resultLogger = summaryLogger.child(targetStyle(formatArgsString));
 
     if (failures.isNotEmpty) {
       final failuresLogger = resultLogger.child(
@@ -123,6 +136,7 @@ mixin _FormatMixin on _Melos {
     Package package,
     List<String> formatArgs, {
     bool prefixLogs = true,
+    String? group,
   }) async {
     final packagePrefix = '[${AnsiStyles.blue.bold(package.name)}]: ';
 
@@ -140,6 +154,7 @@ mixin _FormatMixin on _Melos {
       environment: environment,
       workingDirectory: package.path,
       logPrefix: prefixLogs ? packagePrefix : null,
+      group: group,
     );
   }
 }

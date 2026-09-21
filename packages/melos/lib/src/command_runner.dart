@@ -54,6 +54,15 @@ class MelosCommandRunner extends CommandRunner<void> {
       negatable: false,
       help: 'Enable verbose logging.',
     );
+    argParser.addFlag(
+      globalOptionQuiet,
+      abbr: 'q',
+      help:
+          'Only print warnings, errors and the output of failed commands. This '
+          'command line option has precedence over the `quiet` option in the '
+          '`pubspec.yaml` configuration file and the `MELOS_QUIET` '
+          'environment variable.',
+    );
     argParser.addOption(
       globalOptionSdkPath,
       help:

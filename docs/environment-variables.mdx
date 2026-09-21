@@ -81,3 +81,13 @@ command invoked by the script is scoped to the selected packages.
 The path to the Dart/Flutter SDK to use. This environment variable has
 precedence over the `sdkPath` option in the root `pubspec.yaml`, but is
 overridden by the command line option `--sdk-path`.
+
+### `MELOS_QUIET`
+
+Set to `true` to only print warnings, errors and the output of failed commands.
+This environment variable has precedence over the
+[`quiet`](/configuration/overview#quiet) option in the root `pubspec.yaml`, but
+is overridden by the command line options `--quiet` and `--no-quiet`.
+
+Melos also sets this variable itself for the scripts that it runs in quiet mode,
+so that a `melos` command invoked by a script is quiet too.

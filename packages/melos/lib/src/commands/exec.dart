@@ -140,7 +140,7 @@ mixin _ExecMixin on _Melos {
 
     final execArgsString = execArgs.join(' ');
     final isConcurrent = concurrency != 1 && executablePackagesList.length != 1;
-    final useGroupBuffer = groupLogs && isConcurrent;
+    final useGroupBuffer = logger.isQuiet || (groupLogs && isConcurrent);
     final prefixLogs = isConcurrent && !useGroupBuffer;
 
     logger.command('melos exec', withDollarSign: true);
@@ -195,6 +195,8 @@ mixin _ExecMixin on _Melos {
 
           if (packageExitCode > 0) {
             failures[package.name] = packageExitCode;
+          } else if (logger.isQuiet) {
+            logger.discardGroup(package.name);
           } else if (!prefixLogs) {
             logger.log(
               AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
@@ -223,12 +225,14 @@ mixin _ExecMixin on _Melos {
       await logger.flushGroupBufferIfNeed(lastGroups: failures.keys.toList());
     }
 
-    logger
+    final summaryLogger = failures.isEmpty ? logger : logger.essential;
+
+    summaryLogger
       ..horizontalLine()
       ..newLine()
       ..command('melos exec', withDollarSign: true);
 
-    final resultLogger = logger.child(targetStyle(execArgsString));
+    final resultLogger = summaryLogger.child(targetStyle(execArgsString));
 
     if (failures.isNotEmpty) {
       final failuresLogger = resultLogger.child(

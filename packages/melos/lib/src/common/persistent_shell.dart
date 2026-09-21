@@ -20,6 +20,7 @@ class PersistentShell {
   final String? workingDirectory;
   late final Process _process;
   Completer<int>? _commandCompleter;
+  String? _group;
   final String _successEndMarker = '__SUCCESS_COMMAND_END__';
   final String _failureEndMarker = '__FAILURE_COMMAND_END__';
   bool _firstOutputSeen = false;
@@ -38,6 +39,7 @@ class PersistentShell {
       workingDirectory: workingDirectory,
       environment: {
         ...environment,
+        ...quietEnvironment(logger),
         EnvironmentVariableKey.melosTerminalWidth: terminalWidth.toString(),
       },
     );
@@ -46,9 +48,14 @@ class PersistentShell {
     _listenToProcessStream(_process.stderr, isErrorStream: true);
   }
 
-  Future<int> sendCommand(String command) {
+  /// Runs [command] in the shell and returns its exit code.
+  ///
+  /// When a [group] is given, the output of the command is buffered in that
+  /// log group instead of being printed right away.
+  Future<int> sendCommand(String command, {String? group}) {
     assert(_commandCompleter == null, 'A command is already in progress.');
     _commandCompleter = Completer<int>();
+    _group = group;
 
     final resolvedCommand = resolveEnvironmentVariableReferences(
       command,
@@ -106,6 +113,7 @@ class PersistentShell {
         _failureEndMarker,
         _commandCompleter,
         asError: isErrorStream,
+        group: _group,
       );
     });
   }

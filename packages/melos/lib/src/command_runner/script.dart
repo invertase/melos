@@ -70,7 +70,7 @@ class ScriptCommand extends MelosCommand {
       );
     } on NoPackageFoundScriptException catch (err) {
       logger.warning(err.toString(), label: false);
-      logger.log(usage);
+      logger.stdout(usage);
     }
   }
 }

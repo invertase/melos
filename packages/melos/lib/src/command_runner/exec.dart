@@ -58,8 +58,8 @@ class ExecCommand extends MelosCommand {
     final execArgs = argResults!.rest;
 
     if (execArgs.isEmpty) {
-      logger.log(description);
-      logger.log(argParser.usage);
+      logger.stdout(description);
+      logger.stdout(argParser.usage);
       exit(1);
     }
 
