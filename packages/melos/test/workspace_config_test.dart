@@ -1423,6 +1423,140 @@ a:
       });
     });
 
+    group('dependsOn', () {
+      Scripts parseScripts(String yaml) {
+        return Scripts.fromYaml(
+          loadYaml(yaml) as Map<Object?, Object?>,
+          workspacePath: testWorkspacePath,
+        );
+      }
+
+      test('defaults to an empty list when the key is omitted', () {
+        final scripts = parseScripts('''
+a: echo a
+b:
+  run: echo b
+''');
+        expect(scripts['a']!.dependsOn, isEmpty);
+        expect(scripts['b']!.dependsOn, isEmpty);
+      });
+
+      test('parses a list of script names', () {
+        final scripts = parseScripts('''
+a: echo a
+b: echo b
+c:
+  run: echo c
+  dependsOn:
+    - a
+    - b
+''');
+        expect(scripts['c']!.dependsOn, ['a', 'b']);
+        expect(scripts['c']!.toJson()['dependsOn'], ['a', 'b']);
+        expect(scripts.validate, returnsNormally);
+      });
+
+      test('throws if a script depends on a script that does not exist', () {
+        final scripts = parseScripts('''
+a:
+  run: echo a
+  dependsOn:
+    - missing
+''');
+        expect(
+          scripts.validate,
+          throwsA(
+            isA<MelosConfigException>().having(
+              (e) => e.message,
+              'message',
+              allOf(contains('"a"'), contains('"missing"')),
+            ),
+          ),
+        );
+      });
+
+      test('throws if a script depends on itself', () {
+        final scripts = parseScripts('''
+a:
+  run: echo a
+  dependsOn:
+    - a
+''');
+        expect(
+          scripts.validate,
+          throwsA(
+            isA<MelosConfigException>().having(
+              (e) => e.message,
+              'message',
+              contains('a -> a'),
+            ),
+          ),
+        );
+      });
+
+      test('throws if the dependencies form a cycle', () {
+        final scripts = parseScripts('''
+a:
+  run: echo a
+  dependsOn:
+    - b
+b:
+  run: echo b
+  dependsOn:
+    - c
+c:
+  run: echo c
+  dependsOn:
+    - a
+''');
+        expect(
+          scripts.validate,
+          throwsA(
+            isA<MelosConfigException>().having(
+              (e) => e.message,
+              'message',
+              contains('a -> b -> c -> a'),
+            ),
+          ),
+        );
+      });
+
+      test(
+        'inExecutionOrder orders dependencies first and includes each script '
+        'once',
+        () {
+          final scripts = parseScripts('''
+generate: echo generate
+build:
+  run: echo build
+  dependsOn:
+    - generate
+test:
+  run: echo test
+  dependsOn:
+    - generate
+verify:
+  dependsOn:
+    - build
+    - test
+unrelated: echo unrelated
+''');
+          expect(
+            scripts
+                .inExecutionOrder(scripts['verify']!)
+                .map((script) => script.name),
+            ['generate', 'build', 'test', 'verify'],
+          );
+          expect(
+            scripts
+                .inExecutionOrder(scripts['generate']!)
+                .map((script) => script.name),
+            ['generate'],
+          );
+        },
+      );
+    });
+
     group('stdio', () {
       test('defaults to ProcessStdio.pipe when the key is omitted', () {
         final scripts = Scripts.fromYaml(

@@ -51,14 +51,35 @@ mixin _RunMixin on _Melos {
       );
     }
 
+    _detectRecursiveScriptCalls(script);
+
+    for (final scriptToRun in config.scripts.inExecutionOrder(script)) {
+      final isRequestedScript = scriptToRun.name == script.name;
+      await _runScriptWithoutDependencies(
+        scriptToRun,
+        global: global,
+        skipSelection: skipSelection,
+        extraArgs: isRequestedScript ? extraArgs : const [],
+        packageFilters: packageFilters,
+      );
+    }
+  }
+
+  /// Runs [script] on its own, assuming that the scripts that it depends on
+  /// have already run.
+  Future<void> _runScriptWithoutDependencies(
+    Script script, {
+    required bool skipSelection,
+    GlobalOptions? global,
+    List<String> extraArgs = const [],
+    PackageFilters? packageFilters,
+  }) async {
     if (script.steps != null && script.steps!.isNotEmpty) {
       if (script.exec != null) {
         throw ScriptExecOptionsException._(
-          scriptName,
+          script.name,
         );
       }
-
-      _detectRecursiveScriptCalls(script);
 
       final exitCode = await _runMultipleScripts(
         script,
@@ -73,9 +94,12 @@ mixin _RunMixin on _Melos {
       return;
     }
 
-    if (script.run == null && script.exec is! String) {
+    if (script.run == null) {
+      if (script.dependsOn.isNotEmpty) {
+        return;
+      }
       throw MissingScriptCommandException._(
-        scriptName,
+        script.name,
       );
     }
 
@@ -141,18 +165,21 @@ mixin _RunMixin on _Melos {
 
   /// Detects recursive script calls within the provided [script].
   ///
-  /// This method recursively traverses the steps of the script to check
-  /// for any recursive calls. If a step calls another script that
-  /// eventually leads back to the original script, it indicates a
-  /// recursive script call, which can result in an infinite loop during
-  /// execution.
+  /// This method recursively traverses the steps of the script, and the
+  /// scripts that it depends on, to check for any recursive calls. If a step
+  /// or a dependency calls another script that eventually leads back to the
+  /// original script, it indicates a recursive script call, which can result
+  /// in an infinite loop during execution.
   void _detectRecursiveScriptCalls(Script script) {
     final visitedScripts = <String>{};
 
     void traverseSteps(Script currentScript) {
       visitedScripts.add(currentScript.name);
 
-      for (final step in currentScript.steps!) {
+      for (final step in [
+        ...currentScript.dependsOn,
+        ...?currentScript.steps,
+      ]) {
         if (visitedScripts.contains(step)) {
           throw RecursiveScriptCallException._(step);
         }
@@ -530,7 +557,8 @@ class MissingScriptCommandException implements MelosException {
         'to execute. You must specify a script to run. '
         'This can be done by filling "run" with a command, '
         'defining a sequence of commands in the "steps", '
-        'or by providing a script execution definition in the "exec".';
+        'providing a script execution definition in the "exec", '
+        'or by listing the scripts to run in "dependsOn".';
   }
 }
 

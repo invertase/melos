@@ -1101,6 +1101,160 @@ SUCCESS
     });
   });
 
+  group('dependsOn', () {
+    Future<Melos> createMelos(TestLogger logger, Scripts scripts) async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: scripts,
+        ),
+        workspacePackages: ['a'],
+      );
+
+      await createProject(workspaceDir, Pubspec('a'));
+      await runPubGet(workspaceDir.path);
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      return Melos(logger: logger, config: config);
+    }
+
+    test(
+      'runs the scripts that a script depends on first, each of them once',
+      () async {
+        final logger = TestLogger();
+        final melos = await createMelos(
+          logger,
+          const Scripts({
+            'generate': Script(name: 'generate', run: 'echo ran_generate'),
+            'build': Script(
+              name: 'build',
+              run: 'echo ran_build',
+              dependsOn: ['generate'],
+            ),
+            'check': Script(
+              name: 'check',
+              steps: ['echo ran_check'],
+              dependsOn: ['generate'],
+              isPrivate: true,
+            ),
+            'verify': Script(
+              name: 'verify',
+              run: 'echo ran_verify',
+              dependsOn: ['build', 'check'],
+            ),
+          }),
+        );
+
+        await melos.run(
+          scriptName: 'verify',
+          noSelect: true,
+          extraArgs: ['extra_argument'],
+        );
+
+        final lines = logger.output.normalizeLines().split('\n');
+        expect(
+          lines,
+          containsAllInOrder([
+            'melos run generate',
+            'ran_generate',
+            'melos run build',
+            'ran_build',
+            'melos run check',
+            'ran_check',
+            'melos run verify',
+            'ran_verify extra_argument',
+          ]),
+        );
+        expect(lines.where((line) => line == 'ran_generate'), hasLength(1));
+        expect(lines, isNot(contains('ran_build extra_argument')));
+      },
+    );
+
+    test(
+      'does not run a script if a script that it depends on fails',
+      () async {
+        final logger = TestLogger();
+        final melos = await createMelos(
+          logger,
+          const Scripts({
+            'failing': Script(name: 'failing', run: 'absolute_bogus_command'),
+            'test_script': Script(
+              name: 'test_script',
+              run: 'echo ran_test_script',
+              dependsOn: ['failing'],
+            ),
+          }),
+        );
+
+        await expectLater(
+          () => melos.run(scriptName: 'test_script', noSelect: true),
+          throwsA(
+            isA<ScriptException>().having(
+              (exception) => exception.scriptName,
+              'scriptName',
+              'failing',
+            ),
+          ),
+        );
+
+        expect(
+          logger.output.normalizeLines().split('\n'),
+          isNot(contains('ran_test_script')),
+        );
+      },
+    );
+
+    test('supports a script that only consists of dependsOn', () async {
+      final logger = TestLogger();
+      final melos = await createMelos(
+        logger,
+        const Scripts({
+          'first': Script(name: 'first', run: 'echo ran_first'),
+          'second': Script(name: 'second', run: 'echo ran_second'),
+          'all': Script(name: 'all', dependsOn: ['first', 'second']),
+        }),
+      );
+
+      await melos.run(scriptName: 'all', noSelect: true);
+
+      expect(
+        logger.output.normalizeLines().split('\n'),
+        containsAllInOrder(['ran_first', 'ran_second']),
+      );
+    });
+
+    test(
+      'throws an error if a script is called recursively through a mix of '
+      'dependsOn and steps',
+      () async {
+        final logger = TestLogger();
+        final melos = await createMelos(
+          logger,
+          const Scripts({
+            'hello_script': Script(
+              name: 'hello_script',
+              run: 'echo hello',
+              dependsOn: ['test_script'],
+            ),
+            'test_script': Script(
+              name: 'test_script',
+              steps: ['echo "test_script_1"', 'hello_script'],
+            ),
+          }),
+        );
+
+        expect(
+          () => melos.run(scriptName: 'hello_script', noSelect: true),
+          throwsA(const TypeMatcher<RecursiveScriptCallException>()),
+        );
+      },
+    );
+  });
+
   group('quiet', () {
     Future<(Melos, TestLogger)> createQuietMelos(Scripts scripts) async {
       final workspaceDir = await createTemporaryWorkspace(

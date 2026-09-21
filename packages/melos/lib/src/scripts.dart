@@ -157,7 +157,61 @@ class Scripts extends MapView<String, Script> {
   void validate() {
     for (final script in values) {
       script.validate();
+
+      for (final dependency in script.dependsOn) {
+        if (!containsKey(dependency)) {
+          throw MelosConfigException(
+            'The script "${script.name}" depends on the script "$dependency", '
+            'which does not exist.',
+          );
+        }
+      }
     }
+
+    values.forEach(inExecutionOrder);
+  }
+
+  /// Returns the scripts that have to run for [script] to run, in the order
+  /// they have to run in, ending with [script] itself.
+  ///
+  /// Every script that [script] depends on, directly or transitively, comes
+  /// before the scripts that depend on it and is only included once, even if
+  /// multiple scripts depend on it.
+  ///
+  /// Throws a [MelosConfigException] if the dependencies form a cycle.
+  List<Script> inExecutionOrder(Script script) {
+    final ordered = <String, Script>{};
+    final path = <String>[];
+
+    void visit(Script current) {
+      if (ordered.containsKey(current.name)) {
+        return;
+      }
+
+      if (path.contains(current.name)) {
+        final cycle = [
+          ...path.skipWhile((name) => name != current.name),
+          current.name,
+        ];
+        throw MelosConfigException(
+          'The "dependsOn" of the scripts form a cycle: ${cycle.join(' -> ')}.',
+        );
+      }
+
+      path.add(current.name);
+      for (final dependency in current.dependsOn) {
+        final dependencyScript = this[dependency];
+        if (dependencyScript != null) {
+          visit(dependencyScript);
+        }
+      }
+      path.removeLast();
+
+      ordered[current.name] = current;
+    }
+
+    visit(script);
+    return ordered.values.toList();
   }
 
   Map<Object?, Object?> toJson() {
@@ -269,6 +323,7 @@ class Script {
     this.isPrivate = false,
     this.groups = const [],
     this.stdio = ProcessStdio.pipe,
+    this.dependsOn = const [],
   });
 
   factory Script.fromYaml(
@@ -420,6 +475,22 @@ class Script {
           )
         : [];
 
+    final dependsOnList = yaml['dependsOn'];
+    final dependsOn = dependsOnList is List && dependsOnList.isNotEmpty
+        ? assertListIsA<String>(
+            key: 'dependsOn',
+            map: yaml,
+            isRequired: false,
+            assertItemIsA: (index, value) {
+              return assertIsA<String>(
+                value: value,
+                index: index,
+                path: scriptPath,
+              );
+            },
+          )
+        : <String>[];
+
     final stdioValue = assertKeyIsA<String?>(
       key: 'stdio',
       map: yaml,
@@ -440,6 +511,7 @@ class Script {
       isPrivate: isPrivate ?? false,
       groups: groups,
       stdio: stdio,
+      dependsOn: dependsOn,
     );
   }
 
@@ -532,6 +604,10 @@ class Script {
   /// melos. Defaults to [ProcessStdio.pipe]; set to [ProcessStdio.inherit] for
   /// interactive commands that need a real terminal.
   final ProcessStdio stdio;
+
+  /// The names of the scripts that have to run successfully before this script
+  /// runs.
+  final List<String> dependsOn;
 
   /// Returns the full command to run when executing this script.
   ///
@@ -640,6 +716,7 @@ class Script {
       'private': isPrivate,
       if (groups != null) 'groups': groups,
       if (stdio != ProcessStdio.pipe) 'stdio': stdio.name,
+      if (dependsOn.isNotEmpty) 'dependsOn': dependsOn,
     };
   }
 
@@ -656,7 +733,8 @@ class Script {
       other.isPrivate == isPrivate &&
       other.groups == groups &&
       other.exec == exec &&
-      other.stdio == stdio;
+      other.stdio == stdio &&
+      const DeepCollectionEquality().equals(other.dependsOn, dependsOn);
 
   @override
   int get hashCode => Object.hashAll([
@@ -671,6 +749,7 @@ class Script {
     isPrivate,
     groups,
     stdio,
+    const DeepCollectionEquality().hash(dependsOn),
   ]);
 
   @override
@@ -686,7 +765,8 @@ Script(
   exec: ${exec.toString().indent('  ')},
   private: $isPrivate,
   groups: $groups,
-  stdio: ${stdio.name}
+  stdio: ${stdio.name},
+  dependsOn: $dependsOn
 )''';
   }
 }
