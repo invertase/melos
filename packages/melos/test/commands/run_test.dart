@@ -1106,7 +1106,7 @@ SUCCESS
         const Scripts({
           'test_script': Script(
             name: 'test_script',
-            run: 'echo "hello" && exit 1',
+            run: 'echo hello && exit 1',
           ),
         }),
       );
@@ -1117,13 +1117,11 @@ SUCCESS
       );
 
       expect(
-        logger.output.normalizeLines(),
-        ignoringAnsii('''
-hello
-
-test_script
-  └> FAILED
-'''),
+        logger.output
+            .normalizeLines()
+            .split('\n')
+            .map((line) => line.trimRight()),
+        ['hello', '', 'test_script', '  └> FAILED', ''],
       );
     });
 
@@ -1132,7 +1130,7 @@ test_script
         const Scripts({
           'test_script': Script(
             name: 'test_script',
-            steps: ['echo "first"', 'echo "second" && absolute_bogus_command'],
+            steps: ['echo first', 'echo second && absolute_bogus_command'],
           ),
         }),
       );
@@ -1145,7 +1143,7 @@ test_script
       final output = logger.output.normalizeLines();
       expect(output, isNot(contains('first')));
       expect(
-        output.split('\n'),
+        output.split('\n').map((line) => line.trimRight()),
         containsAllInOrder(['second', 'test_script', '  └> FAILED']),
       );
     });
