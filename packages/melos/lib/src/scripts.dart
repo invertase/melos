@@ -587,28 +587,26 @@ class Script {
       path: execPath,
     );
 
-    final sourcesList = yaml['sources'];
-    final sources = sourcesList is List && sourcesList.isNotEmpty
-        ? assertListIsA<String>(
-            key: 'sources',
-            map: yaml,
-            isRequired: false,
-            assertItemIsA: (index, value) {
-              return assertIsA<String>(
-                value: value,
-                index: index,
-                path: execPath,
-              );
-            },
-          )
-        : null;
+    final sources = assertListIsA<String>(
+      key: 'sources',
+      map: yaml,
+      isRequired: false,
+      path: execPath,
+      assertItemIsA: (index, value) {
+        return assertIsA<String>(
+          value: value,
+          index: index,
+          path: '$execPath/sources',
+        );
+      },
+    );
 
     return ExecOptions(
       concurrency: concurrency,
       failFast: failFast,
       orderDependents: orderDependents,
       groupLogs: groupLogs,
-      sources: sources,
+      sources: sources.isEmpty ? null : sources,
     );
   }
 
@@ -707,7 +705,7 @@ class Script {
       }
 
       for (final source in exec.sources ?? const <String>[]) {
-        execCommand.addAll(['--sources', '"$source"']);
+        execCommand.addAll(['--sources', '"${source.replaceAll('"', r'\"')}"']);
       }
 
       execCommand.addAll(['--', quoteScript(scriptCommand.join(' '))]);

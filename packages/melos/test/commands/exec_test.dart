@@ -1457,8 +1457,27 @@ ${'-' * terminalWidth}
           ).deleteSync(recursive: true);
         }
 
+        void writeRunScript(Directory packageDir) {
+          File(p.join(packageDir.path, 'run.dart')).writeAsStringSync(r'''
+import 'dart:io';
+
+void main() {
+  File('runs.txt').writeAsStringSync('run', mode: FileMode.append);
+  if (File('generate.txt').existsSync()) {
+    File('lib/source.g.dart').writeAsStringSync(
+      '// ${DateTime.now().microsecondsSinceEpoch}',
+    );
+  }
+  exit(File('fail.txt').existsSync() ? 1 : 0);
+}
+''');
+        }
+
+        const dartCommand = ['dart', 'run.dart'];
+
         test(
-          'runs in the dependents of a package in which the command runs',
+          'does not run in the dependents of a package in which the command '
+          'runs without changing the sources',
           () async {
             final (melos, _) = await createMelos(workspaceDir);
             await melos.exec(command, sources: sources);
@@ -1467,38 +1486,50 @@ ${'-' * terminalWidth}
 
             final (secondMelos, _) = await createMelos(workspaceDir);
             await secondMelos.exec(command, sources: sources);
-            expect(runCount(dependentDir), 2);
+            expect(runCount(dependentDir), 1);
             expect(runCount(dependencyDir), 2);
           },
         );
 
         test(
-          'runs again in a dependent in which the command failed while it was '
-          'only running because of its dependency',
+          'keeps skipping the dependents of a package in which the command '
+          'keeps failing',
           () async {
-            File(p.join(dependentDir.path, 'run.dart')).writeAsStringSync('''
-import 'dart:io';
-
-void main() {
-  File('runs.txt').writeAsStringSync('run', mode: FileMode.append);
-  exit(File('fail.txt').existsSync() ? 1 : 0);
-}
-''');
-            copyFile(
-              p.join(dependentDir.path, 'run.dart'),
-              p.join(dependencyDir.path, 'run.dart'),
-            );
-            const dartCommand = ['dart', 'run.dart'];
+            writeRunScript(dependentDir);
+            writeRunScript(dependencyDir);
 
             final (melos, _) = await createMelos(workspaceDir);
             await melos.exec(dartCommand, sources: sources);
 
-            deleteFingerprints(dependencyDir);
+            writeSource(dependencyDir, '// b changed');
+            File(p.join(dependencyDir.path, 'fail.txt')).createSync();
+
+            for (var i = 0; i < 2; i++) {
+              final (nextMelos, _) = await createMelos(workspaceDir);
+              await nextMelos.exec(dartCommand, sources: sources);
+              exitCode = 0;
+            }
+
+            expect(runCount(dependentDir), 2);
+            expect(runCount(dependencyDir), 3);
+          },
+        );
+
+        test(
+          'runs again in a package in which the command failed when it was '
+          'forced',
+          () async {
+            writeRunScript(dependentDir);
+            writeRunScript(dependencyDir);
+
+            final (melos, _) = await createMelos(workspaceDir);
+            await melos.exec(dartCommand, sources: sources);
+
             final failFile = File(p.join(dependentDir.path, 'fail.txt'))
               ..createSync();
 
             final (secondMelos, _) = await createMelos(workspaceDir);
-            await secondMelos.exec(dartCommand, sources: sources);
+            await secondMelos.exec(dartCommand, sources: sources, force: true);
             exitCode = 0;
             expect(runCount(dependentDir), 2);
             expect(runCount(dependencyDir), 2);
@@ -1511,6 +1542,103 @@ void main() {
             expect(runCount(dependencyDir), 2);
           },
         );
+
+        test(
+          'reports the packages that are up to date as skipped when failing '
+          'fast',
+          () async {
+            writeRunScript(dependentDir);
+            writeRunScript(dependencyDir);
+
+            final (melos, _) = await createMelos(workspaceDir);
+            await melos.exec(dartCommand, sources: sources);
+
+            deleteFingerprints(dependencyDir);
+            File(p.join(dependencyDir.path, 'fail.txt')).createSync();
+
+            final (secondMelos, logger) = await createMelos(workspaceDir);
+            await secondMelos.exec(
+              dartCommand,
+              concurrency: 1,
+              failFast: true,
+              orderDependents: true,
+              sources: sources,
+            );
+            exitCode = 0;
+
+            expect(
+              logger.output.normalizeLines(),
+              ignoringAnsii(
+                allOf([
+                  contains('b (with exit code 1)'),
+                  contains('a: SKIPPED (sources are unchanged)'),
+                  isNot(contains('dependency failed')),
+                ]),
+              ),
+            );
+          },
+        );
+
+        group('when the command changes the sources of the dependency', () {
+          setUp(() async {
+            writeRunScript(dependentDir);
+            writeRunScript(dependencyDir);
+            final (melos, _) = await createMelos(workspaceDir);
+            await melos.exec(dartCommand, sources: sources);
+
+            deleteFingerprints(dependencyDir);
+            File(p.join(dependencyDir.path, 'generate.txt')).createSync();
+          });
+
+          test(
+            'warns about a dependent that was skipped before, and runs in it '
+            'the next time',
+            () async {
+              final (melos, logger) = await createMelos(workspaceDir);
+              await melos.exec(dartCommand, concurrency: 1, sources: sources);
+              expect(runCount(dependentDir), 1);
+              expect(runCount(dependencyDir), 2);
+              expect(
+                logger.output.normalizeLines(),
+                ignoringAnsii(
+                  allOf([
+                    contains('WARNING: The command changed files'),
+                    contains('  a (b)'),
+                  ]),
+                ),
+              );
+
+              File(p.join(dependencyDir.path, 'generate.txt')).deleteSync();
+
+              final (nextMelos, nextLogger) = await createMelos(workspaceDir);
+              await nextMelos.exec(
+                dartCommand,
+                concurrency: 1,
+                sources: sources,
+              );
+              expect(runCount(dependentDir), 2);
+              expect(runCount(dependencyDir), 2);
+              expect(nextLogger.output, isNot(contains('WARNING')));
+            },
+          );
+
+          test(
+            'runs in the dependent in the same run when the dependents are '
+            'ordered',
+            () async {
+              final (melos, logger) = await createMelos(workspaceDir);
+              await melos.exec(
+                dartCommand,
+                concurrency: 1,
+                orderDependents: true,
+                sources: sources,
+              );
+              expect(runCount(dependentDir), 2);
+              expect(runCount(dependencyDir), 2);
+              expect(logger.output, isNot(contains('WARNING')));
+            },
+          );
+        });
 
         group('when the command generates files that match the sources', () {
           final generatingCommand = [
@@ -1577,6 +1705,51 @@ void main() {
             },
           );
         });
+      });
+
+      test('matches the files inside of a directory', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a'],
+        );
+        final aDir = await createProject(workspaceDir, Pubspec('a'));
+        writeSource(aDir, '// a');
+
+        final (melos, _) = await createMelos(workspaceDir);
+        await melos.exec(command, concurrency: 1, sources: ['lib']);
+
+        writeSource(aDir, '// a changed');
+
+        final (secondMelos, _) = await createMelos(workspaceDir);
+        await secondMelos.exec(command, concurrency: 1, sources: ['lib']);
+        expect(runCount(aDir), 2);
+      });
+
+      test('warns about sources that do not match any file', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a'],
+        );
+        final aDir = await createProject(workspaceDir, Pubspec('a'));
+        writeSource(aDir, '// a');
+
+        final (melos, logger) = await createMelos(workspaceDir);
+        await melos.exec(
+          command,
+          concurrency: 1,
+          sources: [...sources, 'libb/**.dart'],
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          ignoringAnsii(
+            allOf([
+              contains(
+                'WARNING: The sources glob "libb/**.dart" does not match a '
+                'file in any package.',
+              ),
+              isNot(contains('"lib/**.dart"')),
+            ]),
+          ),
+        );
       });
 
       test('runs again in the packages in which the command failed', () async {

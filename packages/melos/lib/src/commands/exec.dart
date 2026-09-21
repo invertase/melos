@@ -161,9 +161,14 @@ mixin _ExecMixin on _Melos {
       logger.horizontalLine();
     }
 
-    // The sources of all packages are hashed before the command starts in any
-    // of them, since the command can change them.
-    final upToDate = await fingerprints?.findUpToDate(executablePackagesList);
+    if (fingerprints != null) {
+      await fingerprints.hashSources(executablePackagesList);
+      for (final source in fingerprints.unmatchedSources) {
+        logger.warning(
+          'The sources glob "$source" does not match a file in any package.',
+        );
+      }
+    }
 
     final packageResults = Map.fromEntries(
       executablePackages.map(
@@ -177,15 +182,13 @@ mixin _ExecMixin on _Melos {
 
       operation = CancelableOperation.fromFuture(
         pool.forEach<Package, void>(packageLayer, (package) async {
-          if (failFast && failures.isNotEmpty) {
-            packageResults[package.name]?.complete();
-            failures[package.name] = null;
-            return;
-          }
-
           final group = useGroupBuffer ? package.name : null;
 
-          if (!force && (upToDate?.contains(package.name) ?? false)) {
+          final isUpToDate =
+              fingerprints != null &&
+              !force &&
+              await fingerprints.isUpToDate(package);
+          if (isUpToDate) {
             packageResults[package.name]?.complete(0);
             skipped.add(package.name);
             if (!logger.isQuiet) {
@@ -205,6 +208,12 @@ mixin _ExecMixin on _Melos {
                   );
               }
             }
+            return;
+          }
+
+          if (failFast && failures.isNotEmpty) {
+            packageResults[package.name]?.complete();
+            failures[package.name] = null;
             return;
           }
 
@@ -233,14 +242,29 @@ mixin _ExecMixin on _Melos {
 
           packageResults[package.name]?.complete(packageExitCode);
 
+          final failed = packageExitCode > 0;
+          if (failed) {
+            // The failure is recorded before the sources are hashed again, so
+            // that the command does not start in further packages when failing
+            // fast.
+            failures[package.name] = packageExitCode;
+            if (failFast) {
+              processOutputCancelToken.cancel();
+              await operation.cancel();
+              return;
+            }
+          }
+
           await fingerprints?.commandFinished(
             package,
             succeeded: packageExitCode == 0,
           );
 
-          if (packageExitCode > 0) {
-            failures[package.name] = packageExitCode;
-          } else if (logger.isQuiet) {
+          if (failed) {
+            return;
+          }
+
+          if (logger.isQuiet) {
             logger.discardGroup(package.name);
           } else if (!prefixLogs) {
             logger.log(
@@ -250,11 +274,6 @@ mixin _ExecMixin on _Melos {
                   ),
               group: group,
             );
-          }
-
-          if (packageExitCode > 0 && failFast) {
-            processOutputCancelToken.cancel();
-            await operation.cancel();
           }
         }).drain<void>(),
       );
@@ -347,11 +366,11 @@ mixin _ExecMixin on _Melos {
         ..warning(
           'The command changed files that match the sources in the '
           'dependencies of the following packages, after it had already '
-          'started in these packages:\n'
+          'started in these packages or skipped them:\n'
           '$affectedPackages\n'
-          'The command will therefore run again in these packages the next '
-          'time. Specify "orderDependents" to run the command in the '
-          'dependencies of a package first.',
+          'The command will therefore run in these packages the next time. '
+          'Specify "orderDependents" to run the command in the dependencies '
+          'of a package first.',
         );
     }
   }

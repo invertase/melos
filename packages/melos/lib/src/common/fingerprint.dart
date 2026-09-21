@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:collection/collection.dart';
 import 'package:crypto/crypto.dart';
 import 'package:glob/list_local_fs.dart';
 import 'package:path/path.dart' as p;
@@ -32,8 +33,9 @@ class ExecFingerprints {
   final List<String> sources;
 
   final _sourcesDigests = <String, Future<String>>{};
+  final _matchedSources = <String>{};
   final _dependenciesDigestsAtStart = <String, Map<String, String>>{};
-  final _dependenciesDigestsOfSucceeded = <String, Map<String, String>>{};
+  final _dependenciesDigestsOfUpToDate = <String, Map<String, String>>{};
   final _hashingPool = Pool(32);
 
   late final _fileName =
@@ -42,41 +44,40 @@ class ExecFingerprints {
   String _fingerprintPath(Package package) =>
       p.join(package.path, fingerprintsDirectory, _fileName);
 
-  /// Returns the names of the [packages] in which [command] does not have to
-  /// run again.
+  /// Hashes the sources of [packages] and of their dependencies.
   ///
-  /// This is decided for all packages before the command starts in any of them,
-  /// so that the result does not depend on the order in which the packages
-  /// run. A package in which the fingerprint is unchanged still has to run
-  /// when the command runs in one of its dependencies, because that can change
-  /// the sources of the dependency.
-  Future<Set<String>> findUpToDate(List<Package> packages) async {
-    final hasStoredFingerprint = await Future.wait(
-      packages.map(_hasStoredFingerprint),
-    );
-    final outdated = {
-      for (final (index, package) in packages.indexed)
-        if (!hasStoredFingerprint[index]) package.name,
+  /// Has to be called before [command] starts in any package, so that no
+  /// sources are hashed for the first time while the command is changing them.
+  Future<void> hashSources(List<Package> packages) async {
+    final packagesToHash = {
+      for (final package in packages) ...{
+        package.name: package,
+        ...package.allTransitiveDependenciesInWorkspace,
+      },
     };
+    await Future.wait(packagesToHash.values.map(_sourcesDigest));
+  }
 
-    var foundOutdatedDependent = true;
-    while (foundOutdatedDependent) {
-      foundOutdatedDependent = false;
-      for (final package in packages) {
-        if (!outdated.contains(package.name) &&
-            package.allTransitiveDependenciesInWorkspace.keys.any(
-              outdated.contains,
-            )) {
-          outdated.add(package.name);
-          foundOutdatedDependent = true;
-        }
-      }
+  /// The [sources] that did not match a file in any of the packages that were
+  /// hashed, which usually indicates a mistake in the glob.
+  List<String> get unmatchedSources =>
+      sources.whereNot(_matchedSources.contains).toList();
+
+  /// Whether [command] does not have to run in [package], because its
+  /// fingerprint is the same as when the command last succeeded in it.
+  ///
+  /// This has to be checked right before the command would start in the
+  /// package, so that it takes into account what the command changed in the
+  /// dependencies in which it already finished.
+  Future<bool> isUpToDate(Package package) async {
+    final dependenciesDigests = await _dependenciesDigests(package);
+    final fingerprint = await _fingerprint(package, dependenciesDigests);
+    if (await _storedFingerprint(package) != fingerprint) {
+      return false;
     }
 
-    return {
-      for (final package in packages)
-        if (!outdated.contains(package.name)) package.name,
-    };
+    _dependenciesDigestsOfUpToDate[package.name] = dependenciesDigests;
+    return true;
   }
 
   /// Has to be called right before [command] starts in [package].
@@ -111,7 +112,7 @@ class ExecFingerprints {
     if (!succeeded || dependenciesDigests == null) {
       return;
     }
-    _dependenciesDigestsOfSucceeded[package.name] = dependenciesDigests;
+    _dependenciesDigestsOfUpToDate[package.name] = dependenciesDigests;
 
     await writeTextFileAsync(
       _fingerprintPath(package),
@@ -124,19 +125,19 @@ class ExecFingerprints {
     );
   }
 
-  /// Returns the packages in which [command] succeeded, even though it changed
-  /// the sources of some of their dependencies after it had started in them,
-  /// mapped to these dependencies.
+  /// Returns the packages that are considered up to date, because they were
+  /// skipped or [command] succeeded in them, even though the command changed
+  /// the sources of some of their dependencies afterwards, mapped to these
+  /// dependencies.
   ///
-  /// The result of the command in these packages can be based on outdated
-  /// sources, which is why the command runs in them again the next time.
+  /// These packages can be based on outdated sources, which is why the command
+  /// runs in them the next time.
   Future<Map<String, List<String>>> findChangedDependencies() async {
     final changedDependencies = <String, List<String>>{};
-    for (final MapEntry(key: name, value: digestsAtStart)
-        in _dependenciesDigestsOfSucceeded.entries) {
+    for (final MapEntry(key: name, value: digests)
+        in _dependenciesDigestsOfUpToDate.entries.toList()) {
       final changed = [
-        for (final MapEntry(key: dependency, value: digest)
-            in digestsAtStart.entries)
+        for (final MapEntry(key: dependency, value: digest) in digests.entries)
           if (await _sourcesDigests[dependency] != digest) dependency,
       ];
       if (changed.isNotEmpty) {
@@ -146,25 +147,22 @@ class ExecFingerprints {
     return changedDependencies;
   }
 
-  Future<bool> _hasStoredFingerprint(Package package) async {
-    // The sources are also hashed when there is no stored fingerprint, so that
-    // none of them are hashed while the command is changing them.
-    final fingerprint = await _fingerprint(
-      package,
-      await _dependenciesDigests(package),
-    );
-
+  Future<String?> _storedFingerprint(Package package) async {
     final path = _fingerprintPath(package);
     if (!fileExists(path)) {
-      return false;
+      return null;
     }
 
     try {
       final stored = jsonDecode(await readTextFileAsync(path));
-      return stored is Map<String, Object?> &&
-          stored['fingerprint'] == fingerprint;
+      final fingerprint = stored is Map<String, Object?>
+          ? stored['fingerprint']
+          : null;
+      return fingerprint is String ? fingerprint : null;
     } on FormatException {
-      return false;
+      return null;
+    } on FileSystemException {
+      return null;
     }
   }
 
@@ -202,15 +200,32 @@ class ExecFingerprints {
       _sourcesDigests[package.name] ??= _computeSourcesDigest(package);
 
   Future<String> _computeSourcesDigest(Package package) async {
+    try {
+      return await _hashSources(package);
+    } on FileSystemException {
+      // A file could not be read, for example because another process removed
+      // it after it was listed. This never matches another digest, so the
+      // command runs again.
+      return 'unreadable ${DateTime.now().microsecondsSinceEpoch}';
+    }
+  }
+
+  Future<String> _hashSources(Package package) async {
     final storedFingerprintsPath = p.join(package.path, fingerprintsDirectory);
     final paths = <String>{};
 
     for (final pattern in sources) {
-      final glob = createGlob(pattern, currentDirectoryPath: package.path);
+      // A glob that matches a directory also matches the files inside of it.
+      final glob = createGlob(
+        pattern,
+        currentDirectoryPath: package.path,
+        recursive: true,
+      );
       await for (final entity in glob.list(root: package.path)) {
         if (entity is File &&
             !p.isWithin(storedFingerprintsPath, entity.path)) {
           paths.add(p.normalize(entity.path));
+          _matchedSources.add(pattern);
         }
       }
     }

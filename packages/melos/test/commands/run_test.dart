@@ -559,6 +559,19 @@ ${'-' * terminalWidth}
         ]);
       });
 
+      test('escapes the quotes in the sources of "exec" scripts', () {
+        const script = Script(
+          name: 'test_script',
+          run: 'echo hello',
+          exec: ExecOptions(sources: ['lib/"quoted"/**']),
+        );
+
+        expect(
+          script.command(),
+          containsAllInOrder(['--sources', r'"lib/\"quoted\"/**"']),
+        );
+      });
+
       test(
         'uses the provided melosCommand for "exec" scripts when Melos is '
         'installed locally',

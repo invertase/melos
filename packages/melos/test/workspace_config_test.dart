@@ -1292,6 +1292,23 @@ analyze:
         );
       });
 
+      test('throws when the "sources" of "exec" are not a list', () {
+        expect(
+          () => Scripts.fromYaml(
+            createYamlMap({
+              'a': {
+                'exec': {
+                  'command': 'b',
+                  'sources': 'lib/**.dart',
+                },
+              },
+            }),
+            workspacePath: testWorkspacePath,
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
       test('throws when specifying a string command in "run" and "exec"', () {
         expect(
           () => Scripts.fromYaml(
