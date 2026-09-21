@@ -395,9 +395,6 @@ class IntellijProject {
       }
 
       final packageRunArgs = runArguments[package.name] ?? [];
-      final mainDartPath = p
-          .join(package.pathRelativeToWorkspace, 'lib', 'main.dart')
-          .replaceAll(r'\', '/');
 
       if (packageRunArgs.isEmpty) {
         // Original behaviour — one default config, no extra args.
@@ -405,7 +402,10 @@ class IntellijProject {
           flutterRunTemplate,
           {
             'flutterRunName': "Flutter Run -&gt; '${package.name}'",
-            'flutterRunMainDartPathRelative': mainDartPath,
+            'flutterRunMainDartPathRelative': _entryPointPath(
+              package,
+              defaultEntryPoint,
+            ),
           },
         );
         final outputFile = p.join(
@@ -417,21 +417,34 @@ class IntellijProject {
       } else {
         // One config per runArguments entry.
         for (final runArg in packageRunArgs) {
-          final isDefault =
-              runArg.isDefault || runArg.name == null || runArg.name!.isEmpty;
-          final configDisplayName = isDefault
+          final fileNameSuffix = runArg.fileNameSuffix;
+          final configDisplayName = fileNameSuffix == null
               ? "Flutter Run -&gt; '${package.name}'"
-              : "Flutter Run -&gt; '${package.name}' (${runArg.name})";
-          final fileSuffix = isDefault
+              : "Flutter Run -&gt; '${package.name}' ($fileNameSuffix)";
+          final fileSuffix = fileNameSuffix == null
               ? package.name
-              : '${package.name}_${runArg.name}';
+              : '${package.name}_$fileNameSuffix';
+          final entryPoint = runArg.entryPoint ?? defaultEntryPoint;
+
+          if (!package.hasEntryPoint(entryPoint)) {
+            _workspace.logger.warning(
+              'runArguments references the entry point "$entryPoint" for '
+              'package "${package.name}" which does not exist.',
+            );
+          }
 
           final generatedRunConfiguration = injectTemplateVariables(
-            flutterRunWithArgsTemplate,
+            runArg.args.isEmpty
+                ? flutterRunTemplate
+                : flutterRunWithArgsTemplate,
             {
               'flutterRunName': configDisplayName,
-              'flutterRunMainDartPathRelative': mainDartPath,
-              'flutterRunAdditionalArgs': _escapeXmlAttr(runArg.args),
+              'flutterRunMainDartPathRelative': _entryPointPath(
+                package,
+                entryPoint,
+              ),
+              if (runArg.args.isNotEmpty)
+                'flutterRunAdditionalArgs': _escapeXmlAttr(runArg.args),
             },
           );
           final outputFile = p.join(
@@ -443,6 +456,19 @@ class IntellijProject {
         }
       }
     });
+  }
+
+  /// Builds the path to [entryPoint] inside [package] relative to the
+  /// workspace root, always using `/` as the separator.
+  String _entryPointPath(Package package, String entryPoint) {
+    return _escapeXmlAttr(
+      p.posix.normalize(
+        p.posix.join(
+          package.pathRelativeToWorkspace.replaceAll(r'\', '/'),
+          entryPoint,
+        ),
+      ),
+    );
   }
 
   /// Escapes characters that are unsafe inside XML attribute values.

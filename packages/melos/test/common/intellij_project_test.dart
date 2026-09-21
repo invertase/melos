@@ -324,6 +324,177 @@ void main() {
         expect(content, isNot(contains('"value"')));
       },
     );
+
+    // https://github.com/invertase/melos/issues/164
+    group('entryPoint', () {
+      Future<(IntellijProject, TestLogger)> createAppProject({
+        required String runArguments,
+        List<String> entryPointFiles = const [],
+      }) async {
+        final tempDir = createTestTempDir();
+        await createProject(
+          tempDir,
+          Pubspec(
+            'my_app',
+            dependencies: {
+              'flutter': SdkDependency('flutter'),
+            },
+          ),
+          path: 'packages/my_app',
+        );
+        for (final entryPointFile in entryPointFiles) {
+          File(
+            p.joinAll([
+              tempDir.path,
+              'packages',
+              'my_app',
+              ...p.posix.split(entryPointFile),
+            ]),
+          ).createSync(recursive: true);
+        }
+
+        final logger = TestLogger();
+        final workspaceBuilder = VirtualWorkspaceBuilder(
+          path: tempDir.path,
+          logger: logger,
+          '''
+          packages:
+            - packages/my_app
+          ide:
+            intellij:
+              runArguments:
+                my_app:
+$runArguments
+          ''',
+        );
+        workspaceBuilder.addPackage(
+          File(
+            p.join(tempDir.path, 'packages', 'my_app', 'pubspec.yaml'),
+          ).readAsStringSync(),
+        );
+
+        final project = IntellijProject.fromWorkspace(workspaceBuilder.build());
+        await project.writeFlutterRunScripts();
+        return (project, logger);
+      }
+
+      String readRunConfiguration(IntellijProject project, String suffix) {
+        return readTextFile(
+          p.join(
+            project.runConfigurationsDir.path,
+            'melos_flutter_run_my_app$suffix.xml',
+          ),
+        );
+      }
+
+      test(
+        'targets the entry point of each entry without a lib/main.dart',
+        () async {
+          final (project, logger) = await createAppProject(
+            entryPointFiles: [
+              'lib/main_development.dart',
+              'lib/main_production.dart',
+            ],
+            runArguments: '''
+                  - name: development
+                    entryPoint: lib/main_development.dart
+                    args: "--flavor development"
+                  - name: production
+                    entryPoint: lib/main_production.dart''',
+          );
+
+          final development = readRunConfiguration(project, '_development');
+          expect(
+            development,
+            contains(
+              r'value="$PROJECT_DIR$/packages/my_app/lib/main_development.dart"',
+            ),
+          );
+          expect(development, contains('--flavor development'));
+
+          final production = readRunConfiguration(project, '_production');
+          expect(
+            production,
+            contains(
+              r'value="$PROJECT_DIR$/packages/my_app/lib/main_production.dart"',
+            ),
+          );
+          expect(production, isNot(contains('additionalArgs')));
+          expect(logger.output, isNot(contains('runArguments references')));
+        },
+      );
+
+      test('uses lib/main.dart for entries without an entry point', () async {
+        final (project, _) = await createAppProject(
+          entryPointFiles: ['lib/main.dart', 'lib/main_staging.dart'],
+          runArguments: '''
+                  - name: staging
+                    entryPoint: lib/main_staging.dart
+                  - name: local
+                    args: "--flavor local"''',
+        );
+
+        expect(
+          readRunConfiguration(project, '_staging'),
+          contains(
+            r'value="$PROJECT_DIR$/packages/my_app/lib/main_staging.dart"',
+          ),
+        );
+        expect(
+          readRunConfiguration(project, '_local'),
+          contains(r'value="$PROJECT_DIR$/packages/my_app/lib/main.dart"'),
+        );
+      });
+
+      test('warns when an entry point does not exist', () async {
+        final (project, logger) = await createAppProject(
+          entryPointFiles: ['lib/main_production.dart'],
+          runArguments: '''
+                  - name: development
+                    entryPoint: lib/main_development.dart
+                  - name: production
+                    entryPoint: lib/main_production.dart''',
+        );
+
+        expect(
+          readRunConfiguration(project, '_development'),
+          contains('lib/main_development.dart'),
+        );
+        expect(
+          logger.output,
+          contains(
+            'runArguments references the entry point '
+            '"lib/main_development.dart" for package "my_app" which does not '
+            'exist.',
+          ),
+        );
+      });
+
+      test('warns when none of the entry points exist', () async {
+        final (project, logger) = await createAppProject(
+          runArguments: '''
+                  - name: development
+                    entryPoint: lib/main_development.dart''',
+        );
+
+        expect(
+          File(
+            p.join(
+              project.runConfigurationsDir.path,
+              'melos_flutter_run_my_app_development.xml',
+            ),
+          ).existsSync(),
+          isFalse,
+        );
+        expect(
+          logger.output,
+          contains(
+            'runArguments references package "my_app" which is not a Flutter '
+            'app, so it has no effect.',
+          ),
+        );
+      });
+    });
   });
 
   // https://github.com/invertase/melos/issues/644

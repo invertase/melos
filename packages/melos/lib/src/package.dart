@@ -62,6 +62,10 @@ final _isValidPubPackageNameRegExp = RegExp(
 bool isValidPubPackageName(String name) =>
     _isValidPubPackageNameRegExp.hasMatch(name);
 
+/// The entry point that Flutter runs when no other target is specified,
+/// relative to the package root.
+const defaultEntryPoint = 'lib/main.dart';
+
 /// Enum representing what type of package this is.
 enum PackageType {
   dartPackage,
@@ -513,6 +517,7 @@ class PackageMap {
     required String workspacePath,
     required MelosLogger logger,
     Map<String, List<Glob>> categories = const {},
+    Map<String, List<String>> entryPoints = const {},
   }) async {
     return PackageMap.resolvePackages(
       workspacePath: workspacePath,
@@ -522,6 +527,7 @@ class PackageMap {
       ignore: [],
       categories: categories,
       logger: logger,
+      entryPoints: entryPoints,
     ).then((packageMap) => packageMap.values.first);
   }
 
@@ -532,6 +538,7 @@ class PackageMap {
     required Map<String, List<Glob>> categories,
     required MelosLogger logger,
     bool discoverNestedWorkspaces = false,
+    Map<String, List<String>> entryPoints = const {},
   }) async {
     final pubspecFiles = await _resolvePubspecFiles(
       workspacePath: workspacePath,
@@ -592,6 +599,7 @@ The packages that caused the problem are:
         pubspec: pubspec,
         categories: filteredCategories,
         rawPubspecFileContent: pubspecFileAsString,
+        entryPoints: entryPoints[name] ?? const [],
       );
     }
 
@@ -1078,6 +1086,7 @@ class Package {
     required this.pubspec,
     required this.categories,
     this.rawPubspecFileContent,
+    this.entryPoints = const [],
   }) : _packageMap = packageMap,
        assert(p.isAbsolute(path));
 
@@ -1105,6 +1114,10 @@ class Package {
   /// Can be removed if [Dart SDK issue #2155](https://github.com/dart-lang/tools/issues/2155)
   /// has been closed.
   final String? rawPubspecFileContent;
+
+  /// The entry points that are configured for this package in the workspace
+  /// configuration, relative to the package root.
+  final List<String> entryPoints;
 
   /// Package path as a normalized string relative to the root of the workspace.
   /// e.g. "packages/firebase_database".
@@ -1299,7 +1312,8 @@ class Package {
   /// - a) the package depends on the Flutter SDK.
   /// - b) the package does not define itself as a Flutter plugin inside
   ///   pubspec.yaml.
-  /// - c) a lib/main.dart file exists in the package.
+  /// - c) one of the configured [entryPoints], or the default entry point of
+  ///   Flutter, lib/main.dart, exists in the package.
   bool get isFlutterApp {
     // Must directly depend on the Flutter SDK.
     if (!_dependsOnFlutter(pubspec.dependencies)) {
@@ -1311,7 +1325,13 @@ class Package {
       return false;
     }
 
-    return fileExists(p.join(path, 'lib', 'main.dart'));
+    return [...entryPoints, defaultEntryPoint].any(hasEntryPoint);
+  }
+
+  /// Whether the [entryPoint], relative to the package root and using `/` as
+  /// the separator, exists in this package.
+  bool hasEntryPoint(String entryPoint) {
+    return fileExists(p.joinAll([path, ...p.posix.split(entryPoint)]));
   }
 
   /// Returns whether this package supports Flutter for Android.

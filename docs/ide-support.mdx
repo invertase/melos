@@ -17,7 +17,8 @@ Melos will create an IntelliJ project module for each package in your Melos
 workspace, and will create Run configurations for your packages:
 
 - **Flutter Run** for each Flutter app (a Flutter package with a
-  `lib/main.dart`).
+  `lib/main.dart`, or with an entry point configured through
+  [`runArguments`](/configuration/overview#runarguments)).
 - **Dart Run** for each Dart file in the `bin` directory of a pure Dart
   package (a package that does not [need the Flutter SDK](/filters#--flutter)).
 - **Flutter Test** for each Flutter package or plugin, excluding apps, that has
