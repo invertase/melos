@@ -1,7 +1,9 @@
 import 'package:glob/glob.dart';
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/glob.dart';
+import 'package:melos/src/common/http.dart';
 import 'package:melos/src/common/io.dart';
+import 'package:melos/src/common/pub_credential.dart';
 import 'package:path/path.dart' as p;
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
@@ -340,6 +342,59 @@ void main() {
             throwsMelosConfigException(),
           );
         }
+      });
+
+      test('looks up the published state of each package once', () async {
+        final previousHttpClient = internalHttpClient;
+        final previousCredentialStore = internalPubCredentialStore;
+        addTearDown(() {
+          internalHttpClient = previousHttpClient;
+          internalPubCredentialStore = previousCredentialStore;
+        });
+        internalPubCredentialStore = PubCredentialStore([]);
+        final requestedPackages = <String>[];
+        internalHttpClient = HttpClientMock((request) {
+          final name = request.url.pathSegments.last;
+          requestedPackages.add(name);
+          return HttpClientMock.parseResponse(
+            '{"name": "$name", "versions": []}',
+          );
+        });
+
+        final workspaceBuilder = VirtualWorkspaceBuilder('name: test')
+          ..addPackage('''
+            name: app
+            version: 1.0.0
+            dependencies:
+              models: any
+              utils: any
+          ''')
+          ..addPackage('''
+            name: models
+            version: 1.0.0
+          ''')
+          ..addPackage('''
+            name: utils
+            version: 1.0.0
+          ''');
+        final workspace = workspaceBuilder.build();
+        final filteredPackages = await workspace.allPackages.applyFilters(
+          PackageFilters(
+            scope: [Glob('app')],
+            published: false,
+            includeDependencies: true,
+            postFilters: const PackageFilters(published: false),
+          ),
+        );
+
+        expect(
+          filteredPackages.keys,
+          unorderedEquals(['app', 'models', 'utils']),
+        );
+        expect(
+          requestedPackages,
+          unorderedEquals(['app', 'models', 'utils']),
+        );
       });
 
       test('included packages skip the other filters when there are no '
