@@ -590,6 +590,10 @@ Map<String, String> quietEnvironment(MelosLogger logger) {
   };
 }
 
+/// The exit code that `dart test` and `flutter test` use when no tests ran,
+/// for example when no tests match the requested tags.
+const noTestsRanExitCode = 79;
+
 final _runningPids = <int>[];
 
 List<int> get runningPids => UnmodifiableListView(_runningPids);

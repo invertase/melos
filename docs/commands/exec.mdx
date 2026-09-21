@@ -27,6 +27,15 @@ melos exec -- "melos bootstrap && melos run build"
 It is important to pass multiple commands as a single string to `melos exec`,
 otherwise the shell will pass only the first command to `melos exec`.
 
+`dart test` and `flutter test` exit with the exit code `79` when no tests ran,
+for example when no tests in a package match the requested `--tags`. Melos
+treats this exit code as a success, so that packages without matching tests do
+not fail the command or trigger `--fail-fast`:
+
+```shell
+melos exec --fail-fast -- "flutter test --tags integration"
+```
+
 ## concurrency (-c)
 
 Defines the max concurrency value of how many packages will execute the command

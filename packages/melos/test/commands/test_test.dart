@@ -100,6 +100,46 @@ void main() {
 
       exitCode = previousExitCode;
     });
+
+    test('does not fail when no tests ran in a package', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_workspace',
+          packages: const [],
+          sdkPath: 'fake_sdk',
+        ),
+      );
+      final aDir = await createProject(workspaceDir, Pubspec('a'));
+      writeTextFile(
+        p.join(aDir.path, 'test', 'a_test.dart'),
+        '',
+        recursive: true,
+      );
+
+      final fakeDartPath = p.join(workspaceDir.path, 'fake_sdk', 'bin', 'dart');
+      writeTextFile(fakeDartPath, '#!/bin/sh\nexit 79\n', recursive: true);
+      if (Platform.isWindows) {
+        writeTextFile('$fakeDartPath.bat', '@echo off\r\nexit /b 79\r\n');
+      } else {
+        await Process.run('chmod', ['+x', fakeDartPath]);
+      }
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(logger: logger, config: config);
+
+      final previousExitCode = exitCode;
+      await melos.test();
+
+      expect(exitCode, previousExitCode);
+      expect(
+        logger.output.normalizeLines(),
+        ignoringAnsii(contains('a: SUCCESS (no tests ran)')),
+      );
+    });
+
     test('passes --no-pub only to flutter test', () async {
       final workspaceDir = await createTemporaryWorkspace(
         workspacePackages: ['a', 'b'],
