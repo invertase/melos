@@ -34,6 +34,11 @@ bases into multi-package repositories (sometimes called
 **Melos is a tool that optimizes the workflow around managing multi-package
 repositories with git and Pub.**
 
+It is in active development and is in use on projects such as
+[FlutterFire](https://github.com/firebase/flutterfire) and
+[Flame](https://github.com/flame-engine/flame), see
+[Who is using Melos?](#who-is-using-melos) for more projects.
+
 Melos is not limited to monorepos though. It works just as well in a repository
 with a single package, where you can still use features like versioning,
 changelog generation, publishing and scripts, see
