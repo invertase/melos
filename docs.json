@@ -23,6 +23,7 @@
       [
         ["bootstrap", "/commands/bootstrap"],
         ["changed", "/commands/changed"],
+        ["cherry-pick", "/commands/cherry-pick"],
         ["clean", "/commands/clean"],
         ["format", "/commands/format"],
         ["exec", "/commands/exec"],
@@ -42,6 +43,7 @@
           "https://sagarsuri56.medium.com/managing-multi-package-flutter-projects-with-melos-c8ce96fa7c82"
         ],
         ["Automated Releases", "/guides/automated-releases"],
+        ["Releasing from Hot-fix Branches", "/guides/hot-fix-releases"],
         ["Migrations", "/guides/migrations"]
       ]
     ]

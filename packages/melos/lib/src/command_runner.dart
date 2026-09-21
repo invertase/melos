@@ -12,6 +12,7 @@ import '../version.g.dart';
 import 'command_runner/analyze.dart';
 import 'command_runner/bootstrap.dart';
 import 'command_runner/changed.dart';
+import 'command_runner/cherry_pick.dart';
 import 'command_runner/clean.dart';
 import 'command_runner/exec.dart';
 import 'command_runner/format.dart';
@@ -82,6 +83,7 @@ class MelosCommandRunner extends CommandRunner<void> {
       ChangedCommand(config),
       PublishCommand(config),
       VersionCommand(config),
+      CherryPickCommand(config),
       FormatCommand(config),
       TestCommand(config),
     ];
