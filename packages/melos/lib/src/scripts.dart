@@ -3,12 +3,22 @@ import 'dart:collection';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
+import 'common/environment_variable_key.dart';
+import 'common/platform.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
 import 'package.dart';
 
 // https://regex101.com/r/44dzaz/1
 final _leadingMelosExecRegExp = RegExp(r'^\s*melos\s+exec');
+
+/// Matches the `$` of an unescaped `$FOO` or `${FOO}` reference to one of the
+/// variables that `melos exec` defines per package.
+final _packageVariableReferenceRegExp = RegExp(
+  r'(?<!\\)\$(?=\{?(?:'
+  '${EnvironmentVariableKey.packageKeys().join('|')}'
+  ')(?![A-Za-z0-9_]))',
+);
 
 const _scriptsExecDocsUrl =
     'https://melos.invertase.dev/configuration/scripts#exec';
@@ -533,7 +543,20 @@ class Script {
     List<String>? extraArgs,
     List<String> melosCommand = defaultMelosCommand,
   }) {
-    String quoteScript(String script) => '"${script.replaceAll('"', r'\"')}"';
+    String quoteScript(String script) {
+      final quotedScript = script.replaceAll('"', r'\"');
+      if (currentPlatform.isWindows) {
+        return '"$quotedScript"';
+      }
+      // The shell that runs this command would expand the variables that
+      // `melos exec` only defines per package to empty strings, so their
+      // expansion is deferred to the shell that `melos exec` starts.
+      final deferredScript = quotedScript.replaceAll(
+        _packageVariableReferenceRegExp,
+        r'\$',
+      );
+      return '"$deferredScript"';
+    }
 
     final scriptCommand = run!.split(' ').toList();
     if (extraArgs != null && extraArgs.isNotEmpty) {

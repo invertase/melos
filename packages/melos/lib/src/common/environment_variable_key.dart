@@ -39,6 +39,17 @@ class EnvironmentVariableKey {
   /// `$HOME/.pub-cache` on POSIX and `%LOCALAPPDATA%\Pub\Cache` on Windows.
   static const String pubCache = 'PUB_CACHE';
 
+  /// The variables that `melos exec` defines separately for every package it
+  /// runs a command in.
+  static List<String> packageKeys() => [
+    melosPackageName,
+    melosPackageVersion,
+    melosPackagePath,
+    melosParentPackageName,
+    melosParentPackageVersion,
+    melosParentPackagePath,
+  ];
+
   static List<String> allMelosKeys() => [
     melosRootPath,
     melosPackageName,
