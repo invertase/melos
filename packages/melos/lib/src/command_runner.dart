@@ -115,6 +115,8 @@ FutureOr<void> melosEntryPoint(
   List<String> arguments,
   LaunchContext context,
 ) async {
+  utils.applyAnsiStylesEnvironment();
+
   if (arguments.contains('--version') || arguments.contains('-v')) {
     final logger = MelosLogger(Logger.standard());
 

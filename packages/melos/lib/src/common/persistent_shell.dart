@@ -18,6 +18,12 @@ class PersistentShell {
   final MelosLogger logger;
   final Map<String, String> environment;
   final String? workingDirectory;
+  late final Map<String, String> _shellEnvironment = {
+    ...environment,
+    ...quietEnvironment(logger),
+    ...ansiStylesEnvironment,
+    EnvironmentVariableKey.melosTerminalWidth: terminalWidth.toString(),
+  };
   late final Process _process;
   Completer<int>? _commandCompleter;
   String? _group;
@@ -37,11 +43,7 @@ class PersistentShell {
       executable,
       args,
       workingDirectory: workingDirectory,
-      environment: {
-        ...environment,
-        ...quietEnvironment(logger),
-        EnvironmentVariableKey.melosTerminalWidth: terminalWidth.toString(),
-      },
+      environment: _shellEnvironment,
     );
 
     _listenToProcessStream(_process.stdout);
@@ -59,7 +61,7 @@ class PersistentShell {
 
     final resolvedCommand = resolveEnvironmentVariableReferences(
       command,
-      environment: environment,
+      environment: _shellEnvironment,
     );
     final fullCommand = _buildFullCommand(resolvedCommand);
     _process.stdin.writeln(fullCommand);

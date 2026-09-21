@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:ansi_styles/ansi_styles.dart';
 import 'package:melos/src/common/environment_variable_key.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
@@ -106,6 +107,69 @@ void main() {
         ignoringAnsii('$testDir\n'),
       );
     });
+  });
+
+  group('ansiStyles', () {
+    late bool initialAnsiStylesDisabled;
+
+    setUp(() => initialAnsiStylesDisabled = ansiStylesDisabled);
+
+    tearDown(() => ansiStylesDisabled = initialAnsiStylesDisabled);
+
+    for (final enabled in [true, false]) {
+      test(
+        'passes on to scripts that styles are '
+        '${enabled ? 'enabled' : 'disabled'}',
+        () async {
+          ansiStylesDisabled = !enabled;
+          final workspaceDir = await createTemporaryWorkspace(
+            workspacePackages: [],
+          );
+          const variable = EnvironmentVariableKey.melosAnsiStyles;
+
+          final logger = TestLogger();
+          await startCommand(
+            ['echo', if (Platform.isWindows) '%$variable%' else '\$$variable'],
+            logger: logger.toMelosLogger(),
+            workingDirectory: workspaceDir.path,
+          );
+
+          expect(logger.output.normalizeLines(), '$enabled\n');
+        },
+      );
+
+      test(
+        'are ${enabled ? 'enabled' : 'disabled'} by the environment variable',
+        withMockPlatform(
+          () {
+            ansiStylesDisabled = enabled;
+
+            applyAnsiStylesEnvironment();
+
+            expect(ansiStylesDisabled, !enabled);
+          },
+          platform: FakePlatform(
+            environment: {
+              EnvironmentVariableKey.melosAnsiStyles: enabled.toString(),
+            },
+          ),
+        ),
+      );
+    }
+
+    test(
+      'are left untouched without the environment variable',
+      withMockPlatform(
+        () {
+          ansiStylesDisabled = true;
+
+          applyAnsiStylesEnvironment();
+
+          expect(ansiStylesDisabled, isTrue);
+        },
+        platform: FakePlatform(environment: {}),
+      ),
+    );
   });
 
   group('resolveEnvironmentVariableReferences', () {

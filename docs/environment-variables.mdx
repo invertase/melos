@@ -125,3 +125,19 @@ is overridden by the command line options `--quiet` and `--no-quiet`.
 
 Melos also sets this variable itself for the scripts that it runs in quiet mode,
 so that a `melos` command invoked by a script is quiet too.
+
+### `MELOS_ANSI_STYLES`
+
+Set to `true` to make Melos style its output with colors, even if it does not
+write to a terminal, for example on a continuous integration server. Set to
+`false` to never style the output.
+
+Melos also sets this variable itself for the scripts that it runs. Melos
+captures the output of those scripts, so a `melos` command invoked by a script
+cannot detect the terminal on its own and would otherwise lose its colors.
+
+Other tools that are invoked by a script do not write to a terminal either, so
+most of them turn off their colors. They usually have an option to turn colors
+back on, for example `flutter --color test` or `dart test --color`. Scripts that
+need a real terminal can use
+[`stdio: inherit`](/configuration/scripts#stdio).
