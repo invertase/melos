@@ -51,15 +51,56 @@ mixin _RunMixin on _Melos {
       );
     }
 
-    if (script.steps != null && script.steps!.isNotEmpty) {
-      if (script.exec != null) {
-        throw ScriptExecOptionsException._(
-          scriptName,
+    _detectRecursiveScriptCalls(script);
+
+    final scriptsToRun = config.scripts.inExecutionOrder(script);
+    scriptsToRun.forEach(_validateScriptCommand);
+
+    for (final scriptToRun in scriptsToRun) {
+      final isRequestedScript = scriptToRun.name == script.name;
+      try {
+        await _runScriptWithoutDependencies(
+          scriptToRun,
+          global: global,
+          skipSelection: skipSelection,
+          extraArgs: isRequestedScript ? extraArgs : const [],
+          packageFilters: packageFilters,
+        );
+      } on NoPackageFoundScriptException {
+        if (isRequestedScript) {
+          rethrow;
+        }
+        logger.warning(
+          'Skipping the script ${scriptToRun.name}, that ${script.name} '
+          'depends on, since no package matches its filters.',
         );
       }
+    }
+  }
 
-      _detectRecursiveScriptCalls(script);
+  /// Throws if [script] does not specify what to run, or specifies it in a way
+  /// that is not supported.
+  void _validateScriptCommand(Script script) {
+    final hasSteps = script.steps != null && script.steps!.isNotEmpty;
+    if (hasSteps && script.exec != null) {
+      throw ScriptExecOptionsException._(script.name);
+    }
 
+    if (!hasSteps && script.run == null && script.dependsOn.isEmpty) {
+      throw MissingScriptCommandException._(script.name);
+    }
+  }
+
+  /// Runs [script] on its own, assuming that the scripts that it depends on
+  /// have already run.
+  Future<void> _runScriptWithoutDependencies(
+    Script script, {
+    required bool skipSelection,
+    GlobalOptions? global,
+    List<String> extraArgs = const [],
+    PackageFilters? packageFilters,
+  }) async {
+    if (script.steps != null && script.steps!.isNotEmpty) {
       final exitCode = await _runMultipleScripts(
         script,
         global: global,
@@ -73,10 +114,10 @@ mixin _RunMixin on _Melos {
       return;
     }
 
-    if (script.run == null && script.exec is! String) {
-      throw MissingScriptCommandException._(
-        scriptName,
-      );
+    if (script.run == null) {
+      logger.command('melos run ${script.name}');
+      logger.log(successLabel);
+      return;
     }
 
     final scriptSourceCode = targetStyle(
@@ -141,18 +182,25 @@ mixin _RunMixin on _Melos {
 
   /// Detects recursive script calls within the provided [script].
   ///
-  /// This method recursively traverses the steps of the script to check
-  /// for any recursive calls. If a step calls another script that
-  /// eventually leads back to the original script, it indicates a
-  /// recursive script call, which can result in an infinite loop during
-  /// execution.
+  /// This method recursively traverses the steps of the script, and the
+  /// scripts that it depends on, to check for any recursive calls. If a step
+  /// or a dependency calls another script that eventually leads back to the
+  /// original script, it indicates a recursive script call, which can result
+  /// in an infinite loop during execution.
   void _detectRecursiveScriptCalls(Script script) {
     final visitedScripts = <String>{};
+    final checkedScripts = <String>{};
 
     void traverseSteps(Script currentScript) {
+      if (checkedScripts.contains(currentScript.name)) {
+        return;
+      }
       visitedScripts.add(currentScript.name);
 
-      for (final step in currentScript.steps!) {
+      for (final step in [
+        ...currentScript.dependsOn,
+        ...?currentScript.steps,
+      ]) {
         if (visitedScripts.contains(step)) {
           throw RecursiveScriptCallException._(step);
         }
@@ -164,6 +212,7 @@ mixin _RunMixin on _Melos {
       }
 
       visitedScripts.remove(currentScript.name);
+      checkedScripts.add(currentScript.name);
     }
 
     traverseSteps(script);
@@ -530,7 +579,8 @@ class MissingScriptCommandException implements MelosException {
         'to execute. You must specify a script to run. '
         'This can be done by filling "run" with a command, '
         'defining a sequence of commands in the "steps", '
-        'or by providing a script execution definition in the "exec".';
+        'providing a script execution definition in the "exec", '
+        'or by listing the scripts to run in "dependsOn".';
   }
 }
 

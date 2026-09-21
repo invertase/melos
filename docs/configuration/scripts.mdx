@@ -122,6 +122,67 @@ related to exec — such as concurrency — or `packageFilters` cannot be direct
 applied within the steps configuration. Instead, these options should be 
 configured in the individual scripts that are being called as part of the step.
 
+## dependsOn
+
+The names of the scripts that have to run successfully before the script runs.
+In the example below, `melos run test` first runs `generate`, and only runs the
+tests if `generate` succeeded.
+
+```yaml
+scripts:
+  generate:
+    exec: dart run build_runner build
+
+  test:
+    exec: dart test
+    dependsOn:
+      - generate
+```
+
+The dependencies form a graph, which is more flexible than a sequential list of
+[`steps`](/configuration/scripts#steps):
+
+- The scripts that a script depends on can depend on other scripts themselves.
+  All of them run before the requested script, each one after the scripts that
+  it depends on.
+- A script that multiple scripts depend on only runs once when the dependencies
+  of the requested script are resolved. A script that is called from
+  [`steps`](/configuration/scripts#steps) resolves its own dependencies, so a
+  dependency that is shared between multiple steps runs once for each of them.
+- If one of the scripts fails, the scripts that come after it do not run.
+- A script can consist of only `dependsOn`, without `run`, `exec` or `steps`,
+  to group other scripts under a single name. The `env` and `packageFilters` of
+  such a script are not applied to the scripts that it depends on.
+
+```yaml
+scripts:
+  generate: dart run tool/generate.dart
+  build:
+    run: dart run tool/build.dart
+    dependsOn:
+      - generate
+  test:
+    exec: dart test
+    dependsOn:
+      - generate
+  # Runs generate, build and test, with generate only running once.
+  verify:
+    dependsOn:
+      - build
+      - test
+```
+
+Extra arguments that are passed to `melos run` are only passed to the requested
+script, not to the scripts that it depends on. Package filters that are passed
+on the command line, such as `--scope`, apply to all of the scripts. A script
+that is depended on is skipped with a warning if no package matches its filters,
+since it has nothing to do for the selected packages.
+[Private](/configuration/scripts#private) scripts can be used as dependencies.
+
+Melos reports an error if a script depends on a script that does not exist, or
+if the dependencies form a cycle. `dependsOn` is not supported for
+[hooks](/configuration/scripts#hooks).
+
 ## exec
 
 Execute a script in multiple packages through `melos exec`.
@@ -275,7 +336,8 @@ To analyze each package individually, use
 This option allows you to mark scripts as **private**.
 Private scripts cannot be executed directly and are hidden from the command prompt.
 
-They can only be referenced as `steps` within other scripts.
+They can only be referenced as `steps` within other scripts, or in the
+[`dependsOn`](/configuration/scripts#dependson) of other scripts.
 
 If you use the `--include-private` flag, this restriction is ignored.
 

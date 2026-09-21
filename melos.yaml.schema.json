@@ -597,7 +597,8 @@
               "anyOf": [
                 { "type": "object", "required": ["run"] },
                 { "type": "object", "required": ["exec"] },
-                { "type": "object", "required": ["steps"] }
+                { "type": "object", "required": ["steps"] },
+                { "type": "object", "required": ["dependsOn"] }
               ]
             },
             {
@@ -658,6 +659,11 @@
                 "steps": {
                   "type": "array",
                   "description": "Scripts, or commands, to run one after the other.",
+                  "items": { "type": "string" }
+                },
+                "dependsOn": {
+                  "type": "array",
+                  "description": "The names of the scripts that have to run successfully before this script runs.",
                   "items": { "type": "string" }
                 },
                 "private": {
