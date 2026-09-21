@@ -13,8 +13,8 @@ topics:
   - monorepo
   - cli
   - release
-  - nx
-  - turborepo
+  - versioning
+  - changelog
 
 environment:
   sdk: ^3.9.0
