@@ -23,6 +23,7 @@ final successStyle = AnsiStyles.bold;
 final labelStyle = AnsiStyles.bold;
 
 final successLabel = successLableColor(labelStyle('SUCCESS'));
+final noTestsRanLabel = '$successLabel (no tests ran)';
 final warningLabel = warningLabelColor(labelStyle('WARNING'));
 final errorLabel = errorLabelColor(labelStyle('ERROR'));
 final failedLabel = errorLabelColor(labelStyle('FAILED'));

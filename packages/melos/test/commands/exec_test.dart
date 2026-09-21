@@ -313,6 +313,50 @@ ${'-' * terminalWidth}
       });
     });
 
+    group('no tests ran', () {
+      test('treats the no tests ran exit code as a success', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a'],
+        );
+
+        await createProject(
+          workspaceDir,
+          Pubspec('a'),
+        );
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+
+        final previousExitCode = exitCode;
+        await melos.exec(
+          ['exit', '79'],
+          concurrency: 1,
+          failFast: true,
+        );
+
+        expect(exitCode, previousExitCode);
+        expect(
+          logger.output.normalizeLines(),
+          ignoringAnsii(
+            allOf([
+              contains('a: SUCCESS (no tests ran)'),
+              contains(r'''
+$ melos exec
+  └> exit 79
+     └> SUCCESS'''),
+              isNot(contains('FAILED')),
+            ]),
+          ),
+        );
+      });
+    });
+
     group('order dependents', () {
       test('sorts execution order topologically', () async {
         final workspaceDir = await createTemporaryWorkspace(

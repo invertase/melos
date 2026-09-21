@@ -78,7 +78,7 @@ mixin _TestMixin on _Melos {
         ..horizontalLine(group: group)
         ..log(AnsiStyles.bgBlack.bold.italic('${package.name}:'), group: group);
 
-      final packageExitCode = await _testForPackage(
+      final testExitCode = await _testForPackage(
         workspace,
         package,
         _getTestArgs(
@@ -89,6 +89,8 @@ mixin _TestMixin on _Melos {
         ),
         group: group,
       );
+      final noTestsRan = testExitCode == noTestsRanExitCode;
+      final packageExitCode = noTestsRan ? 0 : testExitCode;
 
       if (packageExitCode > 0) {
         failures[package.name] = packageExitCode;
@@ -97,7 +99,7 @@ mixin _TestMixin on _Melos {
       } else {
         logger.log(
           AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
-              AnsiStyles.bgBlack(successLabel),
+              AnsiStyles.bgBlack(noTestsRan ? noTestsRanLabel : successLabel),
           group: group,
         );
       }

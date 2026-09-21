@@ -181,7 +181,7 @@ mixin _ExecMixin on _Melos {
               );
           }
 
-          final packageExitCode = await _execForPackage(
+          final commandExitCode = await _execForPackage(
             workspace,
             package,
             execArgs,
@@ -190,6 +190,8 @@ mixin _ExecMixin on _Melos {
             cancelToken: processOutputCancelToken,
             group: group,
           );
+          final noTestsRan = commandExitCode == noTestsRanExitCode;
+          final packageExitCode = noTestsRan ? 0 : commandExitCode;
 
           packageResults[package.name]?.complete(packageExitCode);
 
@@ -200,7 +202,9 @@ mixin _ExecMixin on _Melos {
           } else if (!prefixLogs) {
             logger.log(
               AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
-                  AnsiStyles.bgBlack(successLabel),
+                  AnsiStyles.bgBlack(
+                    noTestsRan ? noTestsRanLabel : successLabel,
+                  ),
               group: group,
             );
           }
