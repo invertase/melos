@@ -257,6 +257,34 @@ more than one package with a [`concurrency`](#concurrency) greater than 1 — wi
 
 See [`melos exec --group-logs`](/commands/exec#--group-logs) for more details.
 
+### sources
+
+A list of globs, relative to the root of each package, that match the files the
+result of the script depends on. The script is skipped in the packages in which
+none of the matching files, including those of their dependencies in the
+workspace, changed since the script last succeeded in them.
+
+```yaml
+melos:
+  scripts:
+    generate:
+      exec:
+        command: dart run build_runner build
+        orderDependents: true
+        sources:
+          - lib/**.dart
+          - pubspec.yaml
+```
+
+A script that generates files that match the sources, like the one above,
+should also specify [`orderDependents`](#orderdependents). Scripts that do not
+change the sources, such as running tests, do not need it.
+
+Use [`melos run --force`](/commands/run#--force) to run the script in every
+package regardless.
+
+See [`melos exec --sources`](/commands/exec#--sources) for more details.
+
 ## env
 
 A map of environment variables that will be passed to the executed command.

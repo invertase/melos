@@ -40,6 +40,12 @@ class EnvironmentVariableKey {
 
   static const String melosTerminalWidth = 'MELOS_TERMINAL_WIDTH';
 
+  /// When set to `true`, `melos exec` runs the command in every package, even
+  /// in the packages in which the `sources` did not change since the command
+  /// last succeeded. `melos run --force` sets this environment variable for the
+  /// scripts it runs, so that it reaches the nested `melos exec` commands.
+  static const String melosForce = 'MELOS_FORCE';
+
   static const String path = 'PATH';
 
   /// Location of the pub package cache. When unset, pub defaults to
@@ -68,5 +74,6 @@ class EnvironmentVariableKey {
     melosQuiet,
     melosAnsiStyles,
     melosTerminalWidth,
+    melosForce,
   ];
 }

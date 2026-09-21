@@ -126,6 +126,16 @@ is overridden by the command line options `--quiet` and `--no-quiet`.
 Melos also sets this variable itself for the scripts that it runs in quiet mode,
 so that a `melos` command invoked by a script is quiet too.
 
+### `MELOS_FORCE`
+
+Set to `true` to make [`melos exec`](/commands/exec#--sources) run the command
+in every package, even in the packages in which the sources did not change. This
+has the same effect as the command line option `--force`.
+
+Melos also sets this variable itself for the scripts that it runs with
+[`melos run --force`](/commands/run#--force), so that it applies to every
+`melos exec` command invoked by a script.
+
 ### `MELOS_ANSI_STYLES`
 
 Set to `true` to make Melos style its output with colors, even if it does not

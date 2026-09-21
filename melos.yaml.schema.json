@@ -651,6 +651,13 @@
                         "groupLogs": {
                           "type": "boolean",
                           "description": "Whether the output of each package should be buffered and printed grouped per package once every package has finished, with failed packages printed last."
+                        },
+                        "sources": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "Globs relative to the root of each package. The script is skipped in the packages in which the matching files, and those of their dependencies in the workspace, did not change since the script last succeeded."
                         }
                       }
                     }

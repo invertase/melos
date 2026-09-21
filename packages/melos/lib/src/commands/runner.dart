@@ -26,6 +26,7 @@ import '../common/environment_variable_key.dart';
 import '../common/exception.dart';
 import '../common/extensions/dependency.dart';
 import '../common/extensions/environment.dart';
+import '../common/fingerprint.dart';
 import '../common/git.dart';
 import '../common/git_commit.dart';
 import '../common/git_repository.dart';

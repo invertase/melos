@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import '../commands/runner.dart';
+import '../common/environment_variable_key.dart';
+import '../common/platform.dart';
 import '../common/utils.dart';
 import 'base.dart';
 
@@ -40,6 +42,23 @@ class ExecCommand extends MelosCommand {
           'that generates code in multiple packages, which depend on each '
           'other.',
     );
+    argParser.addMultiOption(
+      'sources',
+      valueHelp: 'glob',
+      splitCommas: false,
+      help:
+          'Globs relative to the root of each package. The command is skipped '
+          'in the packages in which the matching files, and those of their '
+          'dependencies in the workspace, did not change since the command '
+          'last succeeded. Can be specified multiple times.',
+    );
+    argParser.addFlag(
+      'force',
+      negatable: false,
+      help:
+          'Run the command in every package, even in the packages in which '
+          'the files matching --sources did not change.',
+    );
   }
 
   @override
@@ -69,6 +88,11 @@ class ExecCommand extends MelosCommand {
     final failFast = argResults!.optional('fail-fast') as bool?;
     final orderDependents = argResults!.optional('order-dependents') as bool?;
     final groupLogs = argResults!.optional('group-logs') as bool?;
+    final sources = argResults!['sources'] as List<String>;
+    final force =
+        argResults!['force'] as bool ||
+        currentPlatform.environment[EnvironmentVariableKey.melosForce] ==
+            'true';
 
     return melos.exec(
       execArgs,
@@ -76,6 +100,8 @@ class ExecCommand extends MelosCommand {
       failFast: failFast,
       orderDependents: orderDependents,
       groupLogs: groupLogs,
+      sources: sources,
+      force: force,
       global: global,
       packageFilters: packageFilters,
     );

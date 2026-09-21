@@ -12,6 +12,7 @@ mixin _RunMixin on _Melos {
     List<String> extraArgs = const [],
     String? group,
     PackageFilters? packageFilters,
+    bool force = false,
   }) async {
     final skipSelection = noSelect ?? config.commands.run.noSelect ?? false;
     final publicScripts = Map<String, Script>.from(config.scripts);
@@ -65,6 +66,7 @@ mixin _RunMixin on _Melos {
           skipSelection: skipSelection,
           extraArgs: isRequestedScript ? extraArgs : const [],
           packageFilters: packageFilters,
+          force: force,
         );
       } on NoPackageFoundScriptException {
         if (isRequestedScript) {
@@ -99,6 +101,7 @@ mixin _RunMixin on _Melos {
     GlobalOptions? global,
     List<String> extraArgs = const [],
     PackageFilters? packageFilters,
+    bool force = false,
   }) async {
     if (script.steps != null && script.steps!.isNotEmpty) {
       final exitCode = await _runMultipleScripts(
@@ -108,6 +111,7 @@ mixin _RunMixin on _Melos {
         scripts: config.scripts,
         steps: script.steps!,
         packageFilters: packageFilters,
+        force: force,
       );
 
       await _handleExitCode(exitCode, script.name);
@@ -137,6 +141,7 @@ mixin _RunMixin on _Melos {
       noSelect: skipSelection,
       extraArgs: extraArgs,
       packageFilters: packageFilters,
+      force: force,
     );
 
     await _handleExitCode(exitCode, script.name, logSuccess: false);
@@ -291,6 +296,7 @@ mixin _RunMixin on _Melos {
     bool noSelect = false,
     List<String> extraArgs = const [],
     PackageFilters? packageFilters,
+    bool force = false,
   }) async {
     final mergedFilters = _mergePackageFilters(
       script.packageFilters,
@@ -312,6 +318,7 @@ mixin _RunMixin on _Melos {
         EnvironmentVariableKey.melosSdkPath: workspace.sdkPath!,
       if (workspace.childProcessPath != null)
         EnvironmentVariableKey.path: workspace.childProcessPath!,
+      if (force) EnvironmentVariableKey.melosForce: 'true',
       ...script.env,
     };
 
@@ -405,6 +412,7 @@ mixin _RunMixin on _Melos {
     GlobalOptions? global,
     bool noSelect = false,
     PackageFilters? packageFilters,
+    bool force = false,
   }) async {
     final mergedFilters = _mergePackageFilters(
       script.packageFilters,
@@ -423,6 +431,7 @@ mixin _RunMixin on _Melos {
         EnvironmentVariableKey.melosSdkPath: workspace.sdkPath!,
       if (workspace.childProcessPath != null)
         EnvironmentVariableKey.path: workspace.childProcessPath!,
+      if (force) EnvironmentVariableKey.melosForce: 'true',
       ...script.env,
     };
 

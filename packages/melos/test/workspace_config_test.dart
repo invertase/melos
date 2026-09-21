@@ -1273,6 +1273,7 @@ analyze:
                 'failFast': true,
                 'orderDependents': true,
                 'groupLogs': true,
+                'sources': ['lib/**.dart', 'pubspec.yaml'],
               },
             },
           }),
@@ -1286,6 +1287,7 @@ analyze:
             failFast: true,
             orderDependents: true,
             groupLogs: true,
+            sources: ['lib/**.dart', 'pubspec.yaml'],
           ),
         );
       });

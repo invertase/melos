@@ -36,6 +36,15 @@ To skip the prompt for every run, set
 [`command/run/noSelect`](/configuration/overview#noselect) in the workspace
 configuration.
 
+## --force
+
+Runs scripts that specify [`exec/sources`](/configuration/scripts#sources) in
+every package, even in the packages in which the sources did not change.
+
+```bash
+melos run <name> --force
+```
+
 ## --list
 
 Displays all scripts defined in the Melos workspace.

@@ -9,6 +9,8 @@ mixin _ExecMixin on _Melos {
     bool? failFast,
     bool? orderDependents,
     bool? groupLogs,
+    List<String> sources = const [],
+    bool force = false,
     Map<String, String> extraEnvironment = const {},
   }) async {
     final workspace = await createWorkspace(
@@ -44,6 +46,10 @@ mixin _ExecMixin on _Melos {
       concurrency: effectiveConcurrency,
       orderDependents: effectiveOrderDependents,
       groupLogs: effectiveGroupLogs,
+      fingerprints: sources.isEmpty
+          ? null
+          : ExecFingerprints(command: execArgs, sources: sources),
+      force: force,
       additionalEnvironment: extraEnvironment,
     );
   }
@@ -117,6 +123,8 @@ mixin _ExecMixin on _Melos {
     required bool failFast,
     required bool orderDependents,
     bool groupLogs = false,
+    ExecFingerprints? fingerprints,
+    bool force = false,
     Map<String, String> additionalEnvironment = const {},
   }) async {
     final allPackagesList = workspace.allPackages.values.toList(
@@ -136,6 +144,7 @@ mixin _ExecMixin on _Melos {
     }
 
     final failures = <String, int?>{};
+    final skipped = <String>[];
     final pool = Pool(concurrency);
 
     final execArgsString = execArgs.join(' ');
@@ -151,6 +160,10 @@ mixin _ExecMixin on _Melos {
     if (prefixLogs) {
       logger.horizontalLine();
     }
+
+    // The sources of all packages are hashed before the command starts in any
+    // of them, since the command can change them.
+    final upToDate = await fingerprints?.findUpToDate(executablePackagesList);
 
     final packageResults = Map.fromEntries(
       executablePackages.map(
@@ -172,6 +185,29 @@ mixin _ExecMixin on _Melos {
 
           final group = useGroupBuffer ? package.name : null;
 
+          if (!force && (upToDate?.contains(package.name) ?? false)) {
+            packageResults[package.name]?.complete(0);
+            skipped.add(package.name);
+            if (!logger.isQuiet) {
+              const skippedMessage = '(sources are unchanged)';
+              if (prefixLogs) {
+                logger.log(
+                  '[${AnsiStyles.blue.bold(package.name)}]: '
+                  '$skippedLabel $skippedMessage',
+                );
+              } else {
+                logger
+                  ..horizontalLine(group: group)
+                  ..log(
+                    AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
+                        AnsiStyles.bgBlack('$skippedLabel $skippedMessage'),
+                    group: group,
+                  );
+              }
+            }
+            return;
+          }
+
           if (!prefixLogs) {
             logger
               ..horizontalLine(group: group)
@@ -180,6 +216,8 @@ mixin _ExecMixin on _Melos {
                 group: group,
               );
           }
+
+          await fingerprints?.commandStarted(package);
 
           final commandExitCode = await _execForPackage(
             workspace,
@@ -194,6 +232,11 @@ mixin _ExecMixin on _Melos {
           final packageExitCode = noTestsRan ? 0 : commandExitCode;
 
           packageResults[package.name]?.complete(packageExitCode);
+
+          await fingerprints?.commandFinished(
+            package,
+            succeeded: packageExitCode == 0,
+          );
 
           if (packageExitCode > 0) {
             failures[package.name] = packageExitCode;
@@ -285,6 +328,31 @@ mixin _ExecMixin on _Melos {
       exitCode = failFast ? failures[failures.keys.first]! : 1;
     } else {
       resultLogger.child(successLabel);
+    }
+
+    if (skipped.isNotEmpty) {
+      resultLogger.child(
+        '$skippedLabel (in ${skipped.length} packages with unchanged sources)',
+      );
+    }
+
+    final changedDependencies =
+        await fingerprints?.findChangedDependencies() ?? const {};
+    if (changedDependencies.isNotEmpty) {
+      final affectedPackages = changedDependencies.entries
+          .map((entry) => '  ${entry.key} (${entry.value.join(', ')})')
+          .join('\n');
+      logger
+        ..newLine()
+        ..warning(
+          'The command changed files that match the sources in the '
+          'dependencies of the following packages, after it had already '
+          'started in these packages:\n'
+          '$affectedPackages\n'
+          'The command will therefore run again in these packages the next '
+          'time. Specify "orderDependents" to run the command in the '
+          'dependencies of a package first.',
+        );
     }
   }
 }
