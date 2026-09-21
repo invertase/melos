@@ -30,6 +30,11 @@ The Flutter Run and Dart Run configurations can be disabled with the
 [`generateAppRunConfigs`](/configuration/overview#generateapprunconfigs)
 option.
 
+The IntelliJ files are not generated when Melos detects that it is running in a
+continuous integration environment, which is when one of the `CI`,
+`CONTINUOUS_INTEGRATION`, `BUILD_NUMBER` or `RUN_ID` environment variables is
+set.
+
 ![Generated Run configurations](/assets/intellij-run-configurations.png)
 
 ### `melos.yaml`
