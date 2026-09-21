@@ -156,7 +156,7 @@ void main() {
 
       final config = await resolveLocalLaunchConfig(['bootstrap'], context);
 
-      expect(config.sdkPath, sdkPath);
+      expect(config.sdkPath, p.normalize(sdkPath));
     });
 
     test('has no sdk path without a local installation', () async {
