@@ -721,6 +721,18 @@ void main() {
       );
     });
 
+    test('serializes category', () {
+      final filters = PackageFilters(
+        scope: [Glob('a')],
+        categories: [Glob('b')],
+      );
+
+      expect(filters.toJson(), {
+        'scope': ['a'],
+        'category': ['b'],
+      });
+    });
+
     test('serializes postFilters', () {
       const filters = PackageFilters(
         includeDependents: true,
