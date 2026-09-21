@@ -945,6 +945,7 @@ melos:
       failFast: true
       orderDependents: true
       groupLogs: true
+      ignoreSources: true
 ```
 
 ### concurrency
@@ -966,6 +967,19 @@ the packages. The default is `false`.
 
 Whether the output of each package is buffered and printed grouped per package,
 instead of being streamed and interleaved. The default is `false`.
+
+### ignoreSources
+
+Whether the [`sources`](/configuration/scripts#sources) of commands are ignored,
+so that they run in every package without calculating or storing checksums. The
+default is `false`.
+
+The option is resolved in the following order, where the first one that is
+specified wins:
+
+1. `--ignore-sources` and `--no-ignore-sources` command line options
+2. `MELOS_IGNORE_SOURCES` environment variable
+3. `ignoreSources` in the workspace configuration
 
 ## command/format
 

@@ -2,11 +2,11 @@
   <a href="https://melos.invertase.dev/~melos-latest">
   <img src="https://static.invertase.io/assets/melos-logo.png" alt="Melos" /> <br /><br />
   </a>
-  <span>A tool for managing Dart projects with multiple packages, inspired by <a href="https://lerna.js.org">Lerna</a>.</span>
+  <span>A tool for managing Dart and Flutter projects, with one or many packages, inspired by <a href="https://lerna.js.org">Lerna</a>.</span>
 </p>
 
 <p align="center">
-  <a href="https://github.com/invertase/melos#readme-badge"><img src="https://img.shields.io/badge/maintained%20with-melos-f700ff.svg?style=flat-square" alt="Melos" /></a>
+  <a href="https://github.com/invertase/melos#using-melos"><img src="https://img.shields.io/badge/maintained%20with-melos-f700ff.svg?style=flat-square" alt="Melos" /></a>
   <a href="https://docs.page"><img src="https://img.shields.io/badge/powered%20by-docs.page-34C4AC.svg?style=flat-square" alt="docs.page" /></a>
  <a href="https://invertase.link/discord">
    <img src="https://img.shields.io/discord/295953187817521152.svg?style=flat-square&colorA=7289da&label=Chat%20on%20Discord" alt="Chat on Discord">
@@ -34,16 +34,63 @@ bases into multi-package repositories (sometimes called
 **Melos is a tool that optimizes the workflow around managing multi-package
 repositories with git and Pub.**
 
-## Migrate to Melos 7.x.x
+It is in active development and is in use on projects such as
+[FlutterFire](https://github.com/firebase/flutterfire) and
+[Flame](https://github.com/flame-engine/flame), see
+[Projects using Melos](https://melos.invertase.dev/~melos-latest#projects-using-melos)
+for more projects.
+
+Melos is for applications just as much as it is for packages that are published
+to [pub.dev](https://pub.dev). A workspace can contain your Flutter and Dart
+applications together with the internal packages that they share, and Melos
+will run your scripts, tests and analysis across all of them, generate IDE run
+configurations for the applications and version them, including the build
+number of a version like `1.2.3+45`. Nothing has to be published to use Melos.
+
+Melos is not limited to monorepos either. It works just as well in a repository
+with a single application or package, where you can still use features like
+versioning, changelog generation, publishing and scripts, see
+[Using Melos without a monorepo](#using-melos-without-a-monorepo).
+
+### How does Melos relate to other monorepo tools?
+
+Melos is the monorepo tool for the Dart and Flutter ecosystem. If you are coming
+from another ecosystem, Melos is the Dart and Flutter alternative to tools like:
+
+- [Lerna](https://lerna.js.org), [Nx](https://nx.dev),
+  [Turborepo](https://turborepo.com) and [Rush](https://rushjs.io) for
+  JavaScript and TypeScript, which run tasks across packages and handle
+  versioning and publishing.
+- [npm workspaces](https://docs.npmjs.com/cli/using-npm/workspaces),
+  [Yarn workspaces](https://yarnpkg.com/features/workspaces) and
+  [pnpm workspaces](https://pnpm.io/workspaces) for JavaScript and TypeScript,
+  and [Cargo workspaces](https://doc.rust-lang.org/cargo/reference/workspaces.html)
+  for Rust, which link local packages together. In Dart this part is handled by
+  [pub workspaces](https://dart.dev/tools/pub/workspaces), which Melos builds
+  on top of.
+- [Changesets](https://github.com/changesets/changesets),
+  [semantic-release](https://semantic-release.gitbook.io) and
+  [release-please](https://github.com/googleapis/release-please) for automated
+  versioning, changelog generation and publishing.
+
+Melos combines these responsibilities in a single tool that understands Dart and
+Flutter packages, `pubspec.yaml` files and [pub.dev](https://pub.dev), so that
+you can run scripts and commands across packages, filter packages, and version
+and publish them based on
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+
+## Migrate to Melos 8.x.x
 
 Since the [pub workspaces](https://dart.dev/tools/pub/workspaces) feature has
 been released, Melos has been updated to rely on that, instead of creating
-`pubspec_overrides.yaml` files and thus some migration is needed.
+`pubspec_overrides.yaml` files and thus some migration is needed if you are
+coming from a version older than 7.0.0.
 
 The main difference for migration is that the `melos.yaml` file no longer
 exists, only the root `pubspec.yaml` file.
 
-To migrate to Melos 7.x.x a few steps are needed:
+To migrate from a version older than 7.0.0 to Melos 8.x.x a few steps are
+needed:
 1. Start with running `melos clean` to remove all the `pubspec_overrides.yaml`
    entries and then continue with moving all your content.
 2. Add `resolution: workspace` to all of your packages' `pubspec.yaml` files.
@@ -52,11 +99,34 @@ To migrate to Melos 7.x.x a few steps are needed:
 4. Move all the content from your `melos.yaml` file to the root `pubspec.yaml`
    file, under the `melos` key. (Note that the `packages` list is no longer
    needed as it is replaced with the `workspace` list.)
+5. Update the scripts that pass options to `exec`, since `run` and `exec` are
+   mutually exclusive in Melos 8.x.x. Move the command from `run` into `exec`
+   under the `command` key:
+   ```yaml
+   # Before (no longer supported)
+   scripts:
+     test:
+       run: dart test --concurrency=1
+       exec:
+         concurrency: 1
+
+   # After
+   scripts:
+     test:
+       exec:
+         command: dart test --concurrency=1
+         concurrency: 1
+   ```
 
 > [!NOTE]
-> The `workspace` list doesn't support globs yet, so you have to list all your
-> packages manually. Give a thumbs up [here](https://github.com/dart-lang/pub/issues/4391)
-> so that the team can prioritize this feature.
+> Starting from Melos 8.0.0 `melos version` retains and increments integer
+> build numbers, so `3.0.0+11` becomes `4.0.0+12` instead of `4.0.0`. A patch
+> release below `1.0.0` now bumps the patch component instead of adding a build
+> number, so `0.1.0` becomes `0.1.1` instead of `0.1.0+1`.
+
+> [!NOTE]
+> The `workspace` list supports globs starting from Dart SDK 3.11.0, with older
+> versions you have to list all your packages manually.
 
 > [!NOTE]
 > **Root packages migration:** If your existing project uses the repository
@@ -78,7 +148,7 @@ workspace:
   - packages/client_package
   - packages/server_package
 dev_dependencies:
-  melos: ^7.0.0-dev.9
+  melos: ^8.0.0
 
 melos:
   # All of the content of your previous melos.yaml file
@@ -95,9 +165,13 @@ resolution: workspace
 ```
 
 > [!NOTE]
-> You have to use Dart SDK 3.6.0 or newer to use pub workspaces.
+> Melos 8.x.x requires Dart SDK 3.9.0 or newer.
 
-## Github Action
+If you are already on Melos 7.x.x only step 5 applies. See the
+[migration guide](https://melos.invertase.dev/~melos-latest/guides/migrations)
+for more details.
+
+## GitHub Action
 
 If you're planning on using Melos in your GitHub Actions workflows, you can use
 the [Melos Action](https://github.com/marketplace/actions/melos-action)
@@ -111,6 +185,11 @@ A default file structure looks something like this:
 ```
 my-melos-repo/
   pubspec.yaml
+  apps/
+    app-1/
+      pubspec.yaml
+    app-2/
+      pubspec.yaml
   packages/
     package-1/
       pubspec.yaml
@@ -118,10 +197,65 @@ my-melos-repo/
       pubspec.yaml
 ```
 
-The location of your packages needs be configured via the `workspace`
-section in your root `pubspec.yaml` file, see the
+Applications and packages are treated the same way, an application is simply a
+package that is not published, so the `apps` and `packages` directories are
+only a convention.
+
+The location of your applications and packages needs to be configured via the
+`workspace` section in your root `pubspec.yaml` file, see the
 [pub workspaces](https://dart.dev/tools/pub/workspaces) documentation for more
 information.
+
+## Using Melos without a monorepo
+
+You don't need a monorepo to use Melos. In a repository with a single
+application or package you can still use `melos version`, `melos publish`,
+`melos run` and the rest of the commands to get automated versioning, changelog
+generation, publishing and scripts. For an application this means that the
+version and the build number in the `pubspec.yaml` file, the changelog and the
+git tag of each release are handled for you.
+
+To set it up, add Melos as a dev dependency and set `useRootAsPackage: true`
+in the `pubspec.yaml` file of your application or package, no `workspace` list
+is needed:
+
+```yaml
+name: my_single_package
+environment:
+  sdk: ^3.9.0
+
+dev_dependencies:
+  melos: ^8.0.0
+
+melos:
+  useRootAsPackage: true
+```
+
+Applications are usually private (`publish_to: none`) and private packages are
+skipped by `melos version` by default, so for an application you also need to
+pass `--all` to `melos version`, or set `versionPrivatePackages: true`:
+
+```yaml
+name: my_application
+publish_to: none
+environment:
+  sdk: ^3.9.0
+
+dev_dependencies:
+  melos: ^8.0.0
+
+melos:
+  useRootAsPackage: true
+  command:
+    version:
+      versionPrivatePackages: true
+```
+
+See the
+[Getting Started](https://melos.invertase.dev/~melos-latest/getting-started#single-package-projects-non-monorepo)
+page and the
+[Configuration Overview](https://melos.invertase.dev/~melos-latest/configuration/overview#useRootAsPackage)
+for more details.
 
 ## What can Melos do?
 
@@ -129,6 +263,11 @@ information.
   overrides (achieved by pub workspaces).
 - 📦 Automatically version, create changelogs and publish your packages using
   [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+  - Applications can be versioned too, and the build number of their version is
+    retained and incremented, so `1.2.3+45` becomes `1.3.0+46`. Since
+    applications are private (`publish_to: none`) they are only versioned when
+    you pass `--all` to `melos version` or set
+    [`versionPrivatePackages: true`](https://melos.invertase.dev/~melos-latest/configuration/overview#versionprivatepackages).
 - 📜 Pre-define advanced custom scripts for your workspace in your root
   `pubspec.yaml` configuration to use via `melos run [scriptName]`. Anyone
   contributing to your workspace can just run `melos run` to be prompted to
@@ -139,7 +278,7 @@ information.
 - ⚡ Execute commands across your packages easily with
   `melos exec -- <command here>` with additional concurrency and fail-fast
   options.
-  - [Environment variables](https://melos.invertase.dev/environment-variables)
+  - [Environment variables](https://melos.invertase.dev/~melos-latest/environment-variables)
     containing various information about the current package and the workspace
     are available in each execution.
   - Can be combined with all package filters.
@@ -156,6 +295,10 @@ information.
       "-no-flutter" to filter packages that do not depend on the Flutter SDK.
   - `--scope=<glob>`
     - Include only packages with names matching the given glob.
+  - `--category=<glob>`
+    - Include only packages with
+      [categories](https://melos.invertase.dev/~melos-latest/configuration/overview#categories)
+      matching the given glob.
   - `--ignore=<glob>`
     - Exclude packages with names matching the given glob.
   - `--diff=<ref>`
@@ -191,69 +334,10 @@ Go to the
 page of the [documentation](https://melos.invertase.dev/~melos-latest) to start
 using Melos.
 
-## Who is using Melos?
-
-The following projects are using Melos:
-
-- [firebase/flutterfire](https://github.com/firebase/flutterfire)
-- [Flame-Engine/Flame](https://github.com/flame-engine/flame)
-- [fluttercommunity/plus_plugins](https://github.com/fluttercommunity/plus_plugins)
-- [GetStream/stream-chat-flutter](https://github.com/GetStream/stream-chat-flutter)
-- [canonical/ubuntu-desktop-provision](https://github.com/canonical/ubuntu-desktop-provision)
-- [ubuntu/app-center](https://github.com/ubuntu/app-center)
-- [4itworks/opensource_qwkin_dart](https://github.com/4itworks/opensource_qwkin_dart)
-- [gql-dart/ferry](https://github.com/gql-dart/ferry)
-- [cbl-dart/cbl-dart](https://github.com/cbl-dart/cbl-dart)
-- [ema987/paddinger](https://github.com/ema987/paddinger)
-- [flutter-stripe/flutter_stripe](https://github.com/flutter-stripe/flutter_stripe)
-- [danvick/flutter_form_builder](https://github.com/danvick/flutter_form_builder)
-- [kmartins/groveman](https://github.com/kmartins/groveman)
-- [flutternetwork/WiFiFlutter](https://github.com/flutternetwork/WiFiFlutter)
-- [iapicca/yak_packages](https://github.com/iapicca/yak_packages)
-- [atsign-foundation/at_app](https://github.com/atsign-foundation/at_app)
-- [sub6resources/flutter_html](https://github.com/sub6resources/flutter_html)
-- [ferraridamiano/ConverterNOW](https://github.com/ferraridamiano/ConverterNOW)
-- [rrifafauzikomara/youtube_video](https://github.com/rrifafauzikomara/youtube_video)
-- [mobxjs/mobx.dart](https://github.com/mobxjs/mobx.dart)
-- [NetGlade/auto_mappr](https://github.com/netglade/auto_mappr)
-- [myConsciousness/atproto.dart](https://github.com/myConsciousness/atproto.dart)
-- [GrowERP Flutter ERP](https://github.com/growerp/growerp)
-- [mrverdant13/coverde](https://github.com/mrverdant13/coverde)
-- [ThexXTURBOXx/flutter_web_auth_2](https://github.com/ThexXTURBOXx/flutter_web_auth_2)
-- [woltapp/wolt_modal_sheet](https://github.com/woltapp/wolt_modal_sheet)
-- [cfug/dio](https://github.com/cfug/dio)
-- [simolus3/drift](https://github.com/simolus3/drift)
-- [Lyokone/flutterlocation](https://github.com/Lyokone/flutterlocation)
-- [FlutterGen/flutter_gen](https://github.com/FlutterGen/flutter_gen)
-- [jhomlala/alice](https://github.com/jhomlala/alice)
-- [powersync/powersync.dart](https://github.com/powersync-ja/powersync.dart)
-- [rodydavis/signals.dart](https://github.com/rodydavis/signals.dart)
-- [foss42/apidash](https://github.com/foss42/apidash)
-- [ReactiveX/rxdart](https://github.com/ReactiveX/rxdart)
-- [StacDev/stac](https://github.com/StacDev/stac)
-- [Jaspr](https://github.com/schultek/jaspr)
-- [starknet.dart](https://github.com/focustree/starknet.dart)
-- [flyerhq/flutter_chat_ui](https://github.com/flyerhq/flutter_chat_ui)
-- [maplibre/flutter-maplibre-gl](https://github.com/maplibre/flutter-maplibre-gl)
-- [Khuwn-Soulutions/supabase_codegen](https://github.com/Khuwn-Soulutions/supabase_codegen)
-- [G1Joshi/Booking-App](https://github.com/G1Joshi/Booking-App)
-
-> Submit a PR if you'd like to add your project to the list. Update the
-> [README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md)
-> and the [docs](https://github.com/invertase/melos/edit/main/docs/index.mdx).
->
-> You can also add a [README badge](#readme-badge) to your projects README to
-> let others know about Melos 💙.
-
 ## Documentation
 
 Documentation is available at
 [https://melos.invertase.dev](https://melos.invertase.dev/~melos-latest).
-
-## Migrations
-
-When migrating between major versions of Melos, please read the
-[migration guide](https://melos.invertase.dev/~melos-latest/guides/migrations).
 
 ## Commands
 
@@ -262,37 +346,60 @@ Full commands list and args can be viewed by running `melos --help`.
 ```
 > melos --help
 
-A CLI tool for managing Dart & Flutter projects with multiple packages.
+A CLI tool for managing Dart & Flutter projects with one or many packages.
+
+To get started with Melos, run "melos init".
 
 Usage: melos <command> [arguments]
 
 Global options:
 -h, --help          Print this usage information.
     --verbose       Enable verbose logging.
--q, --[no-]quiet    Only print warnings, errors and the output of failed commands. This command
-                    line option has precedence over the `quiet` option in the `pubspec.yaml`
-                    configuration file and the `MELOS_QUIET` environment variable.
-    --sdk-path      Path to the Dart/Flutter SDK that should be used. This command line option has
-                    precedence over the `sdkPath` option in the root `pubspec.yaml` configuration
-                    file and the `MELOS_SDK_PATH` environment variable. To use the system-wide SDK,
-                    provide the special value "auto".
+-q, --[no-]quiet    Only print warnings, errors and the output of failed
+                    commands. This command line option has precedence over the
+                    `quiet` option in the `pubspec.yaml` configuration file and
+                    the `MELOS_QUIET` environment variable.
+    --sdk-path      Path to the Dart/Flutter SDK that should be used. This
+                    command line option has precedence over the `sdkPath` option
+                    in the `pubspec.yaml` configuration file and the
+                    `MELOS_SDK_PATH` environment variable. To use the
+                    system-wide SDK, provide the special value "auto".
 
 Available commands:
-  bootstrap   Initialize the workspace, link local packages together and install remaining package
-              dependencies. Supports all package filtering options.
-  changed     List local packages that have changed since a git commit or tag, by default since the
-              latest release tag of each package. Supports all package filtering options, except
-              --diff, which is given as the argument of this command.
-  clean       Clean this workspace and all packages. This deletes the temporary pub & ide files such
-              as ".packages" & ".flutter-plugins". Supports all package filtering options.
-  exec        Execute an arbitrary command in each package. Supports all package filtering options.
-  format      Idiomatically format Dart source code.
-  list        List local packages in various output formats. Supports all package filtering options.
-  publish     Publish any unpublished packages or package versions in your repository to pub.dev. Dry
-              run is on by default.
-  run         Run a script by name defined in the workspace pubspec.yaml config file.
-  version     Automatically version and generate changelogs based on the Conventional Commits
-              specification. Supports all package filtering options.
+  analyze       Analyzes all packages in your project for potential issues in a
+                single run. Optionally configure severity levels. Supports all
+                package filtering options.
+  bootstrap     Initialize the workspace, link local packages together and
+                install remaining package dependencies. Supports all package
+                filtering options.
+  changed       List local packages that have changed since a git commit or tag,
+                by default since the latest release tag of each package.
+                Supports all package filtering options, except --diff, which is
+                given as the argument of this command.
+  cherry-pick   Cherry-pick commits onto the current branch without the release
+                changes they contain. Changes to changelogs, to the versions of
+                packages and to the dependencies between the packages of the
+                workspace are left out, so that "melos version" can release the
+                picked commits from this branch, for example a hot-fix branch.
+  clean         Clean this workspace and all packages. This deletes the
+                temporary pub & ide files such as ".packages" &
+                ".flutter-plugins". Supports all package filtering options.
+  exec          Execute an arbitrary command in each package. Supports all
+                package filtering options.
+  format        Idiomatically format Dart source code.
+  init          Initialize a new Melos workspace.
+  list          List local packages in various output formats. Supports all
+                package filtering options.
+  publish       Publish any unpublished packages or package versions in your
+                repository to pub.dev. Dry run is on by default.
+  run           Run a script by name defined in the workspace pubspec.yaml
+                config file.
+  test          Run `flutter test`/`dart test` for all packages in the workspace
+                that have a test/ directory, in a single run. Supports all
+                package filtering options.
+  version       Automatically version and generate changelogs based on the
+                Conventional Commits specification. Supports all package
+                filtering options.
 
 Run "melos help <command>" for more information about a command.
 ```
@@ -306,15 +413,20 @@ To start making contributions please refer to
 
 This project is heavily inspired by [Lerna](https://lerna.js.org/).
 
-## README Badge
+## Using Melos?
 
-Using Melos? Add a README badge to show it off:
+Add a README badge to your project to show it off:
 
 [![melos](https://img.shields.io/badge/maintained%20with-melos-f700ff.svg?style=flat-square)](https://github.com/invertase/melos)
 
 ```markdown
 [![melos](https://img.shields.io/badge/maintained%20with-melos-f700ff.svg?style=flat-square)](https://github.com/invertase/melos)
 ```
+
+You can also submit a PR to add your project to the list of
+[projects using Melos](https://melos.invertase.dev/~melos-latest#projects-using-melos),
+by updating the
+[docs](https://github.com/invertase/melos/edit/main/docs/index.mdx).
 
 ## License
 

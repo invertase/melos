@@ -126,6 +126,29 @@ is overridden by the command line options `--quiet` and `--no-quiet`.
 Melos also sets this variable itself for the scripts that it runs in quiet mode,
 so that a `melos` command invoked by a script is quiet too.
 
+### `MELOS_RUN_UNCHANGED`
+
+Set to `true` to make [`melos exec`](/commands/exec#--sources) run the command
+in every package, even in the packages in which the sources did not change. This
+has the same effect as the command line option `--run-unchanged`.
+
+Melos also sets this variable itself for the scripts that it runs with
+[`melos run --run-unchanged`](/commands/run#--run-unchanged), so that it
+applies to every `melos exec` command invoked by a script.
+
+### `MELOS_IGNORE_SOURCES`
+
+Set to `true` to make [`melos exec`](/commands/exec#--ignore-sources) ignore the
+sources of commands, so that they run in every package without calculating or
+storing checksums, for example on a continuous integration server. This
+environment variable has precedence over the
+[`ignoreSources`](/configuration/overview#ignoresources) option in the root
+`pubspec.yaml`, but is overridden by the command line options
+`--ignore-sources` and `--no-ignore-sources`.
+
+Melos also sets this variable itself for the scripts that it runs with
+[`melos run --ignore-sources`](/commands/run#--ignore-sources).
+
 ### `MELOS_ANSI_STYLES`
 
 Set to `true` to make Melos style its output with colors, even if it does not

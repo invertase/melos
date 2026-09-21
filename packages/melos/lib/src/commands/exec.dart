@@ -9,6 +9,9 @@ mixin _ExecMixin on _Melos {
     bool? failFast,
     bool? orderDependents,
     bool? groupLogs,
+    List<String> sources = const [],
+    bool runUnchanged = false,
+    bool? ignoreSources,
     Map<String, String> extraEnvironment = const {},
   }) async {
     final workspace = await createWorkspace(
@@ -22,6 +25,8 @@ mixin _ExecMixin on _Melos {
     final effectiveOrderDependents =
         orderDependents ?? execConfig.orderDependents ?? false;
     final effectiveGroupLogs = groupLogs ?? execConfig.groupLogs ?? false;
+    final effectiveIgnoreSources =
+        ignoreSources ?? execConfig.ignoreSources ?? false;
     final allPackages = workspace.allPackages.values.toList(growable: false);
     final executablePackages = workspace.filteredPackages.values.toList(
       growable: false,
@@ -36,6 +41,15 @@ mixin _ExecMixin on _Melos {
       }
     }
 
+    final fingerprints = sources.isEmpty
+        ? null
+        : ExecFingerprints(command: execArgs, sources: sources);
+    if (effectiveIgnoreSources) {
+      // The command runs without checksums, so the stored ones no longer say
+      // anything about the result of the last run.
+      fingerprints?.removeStored(executablePackages);
+    }
+
     await _execForAllPackages(
       workspace,
       execArgs,
@@ -44,6 +58,8 @@ mixin _ExecMixin on _Melos {
       concurrency: effectiveConcurrency,
       orderDependents: effectiveOrderDependents,
       groupLogs: effectiveGroupLogs,
+      fingerprints: effectiveIgnoreSources ? null : fingerprints,
+      runUnchanged: runUnchanged,
       additionalEnvironment: extraEnvironment,
     );
   }
@@ -117,6 +133,8 @@ mixin _ExecMixin on _Melos {
     required bool failFast,
     required bool orderDependents,
     bool groupLogs = false,
+    ExecFingerprints? fingerprints,
+    bool runUnchanged = false,
     Map<String, String> additionalEnvironment = const {},
   }) async {
     final allPackagesList = workspace.allPackages.values.toList(
@@ -136,6 +154,7 @@ mixin _ExecMixin on _Melos {
     }
 
     final failures = <String, int?>{};
+    final skipped = <String>[];
     final pool = Pool(concurrency);
 
     final execArgsString = execArgs.join(' ');
@@ -152,6 +171,22 @@ mixin _ExecMixin on _Melos {
       logger.horizontalLine();
     }
 
+    if (fingerprints != null) {
+      await fingerprints.hashSources(executablePackagesList);
+      for (final source in fingerprints.unmatchedSources) {
+        logger.warning(
+          'The sources glob "$source" does not match a file in any package.',
+        );
+      }
+      for (final MapEntry(key: name, value: error)
+          in fingerprints.unreadableSources.entries) {
+        logger.warning(
+          'The sources of $name could not be read, so the command runs in it '
+          'regardless of whether they changed: $error',
+        );
+      }
+    }
+
     final packageResults = Map.fromEntries(
       executablePackages.map(
         (package) => MapEntry(package.name, Completer<int?>()),
@@ -164,13 +199,60 @@ mixin _ExecMixin on _Melos {
 
       operation = CancelableOperation.fromFuture(
         pool.forEach<Package, void>(packageLayer, (package) async {
-          if (failFast && failures.isNotEmpty) {
-            packageResults[package.name]?.complete();
-            failures[package.name] = null;
+          bool cancelIfFailedFast() {
+            if (failFast && failures.isNotEmpty) {
+              packageResults[package.name]?.complete();
+              failures[package.name] = null;
+              return true;
+            }
+            return false;
+          }
+
+          if (cancelIfFailedFast()) {
             return;
           }
 
           final group = useGroupBuffer ? package.name : null;
+
+          final isUpToDate =
+              fingerprints != null &&
+              !runUnchanged &&
+              await fingerprints.isUpToDate(package);
+          // The command can have failed in another package while the
+          // fingerprint was being checked.
+          if (cancelIfFailedFast()) {
+            return;
+          }
+
+          if (isUpToDate) {
+            packageResults[package.name]?.complete(0);
+            skipped.add(package.name);
+            if (!logger.isQuiet) {
+              const skippedMessage = '(sources are unchanged)';
+              if (prefixLogs) {
+                logger.log(
+                  '[${AnsiStyles.blue.bold(package.name)}]: '
+                  '$skippedLabel $skippedMessage',
+                );
+              } else {
+                logger
+                  ..horizontalLine(group: group)
+                  ..log(
+                    AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
+                        AnsiStyles.bgBlack('$skippedLabel $skippedMessage'),
+                    group: group,
+                  );
+              }
+            }
+            return;
+          }
+
+          if (fingerprints != null) {
+            await fingerprints.commandStarted(package);
+            if (cancelIfFailedFast()) {
+              return;
+            }
+          }
 
           if (!prefixLogs) {
             logger
@@ -195,9 +277,31 @@ mixin _ExecMixin on _Melos {
 
           packageResults[package.name]?.complete(packageExitCode);
 
-          if (packageExitCode > 0) {
+          final failed = packageExitCode > 0;
+          if (failed) {
+            // The failure is recorded before the sources are hashed again, so
+            // that the command does not start in further packages when failing
+            // fast.
             failures[package.name] = packageExitCode;
-          } else if (logger.isQuiet) {
+            if (failFast) {
+              processOutputCancelToken.cancel();
+              await operation.cancel();
+              return;
+            }
+          }
+
+          if (fingerprints != null) {
+            await fingerprints.commandFinished(
+              package,
+              succeeded: packageExitCode == 0,
+            );
+          }
+
+          if (failed) {
+            return;
+          }
+
+          if (logger.isQuiet) {
             logger.discardGroup(package.name);
           } else if (!prefixLogs) {
             logger.log(
@@ -207,11 +311,6 @@ mixin _ExecMixin on _Melos {
                   ),
               group: group,
             );
-          }
-
-          if (packageExitCode > 0 && failFast) {
-            processOutputCancelToken.cancel();
-            await operation.cancel();
           }
         }).drain<void>(),
       );
@@ -285,6 +384,31 @@ mixin _ExecMixin on _Melos {
       exitCode = failFast ? failures[failures.keys.first]! : 1;
     } else {
       resultLogger.child(successLabel);
+    }
+
+    if (skipped.isNotEmpty) {
+      resultLogger.child(
+        '$skippedLabel (in ${skipped.length} packages with unchanged sources)',
+      );
+    }
+
+    final changedDependencies =
+        await fingerprints?.findChangedDependencies() ?? const {};
+    if (changedDependencies.isNotEmpty) {
+      final affectedPackages = changedDependencies.entries
+          .map((entry) => '  ${entry.key} (${entry.value.join(', ')})')
+          .join('\n');
+      logger
+        ..newLine()
+        ..warning(
+          'The command changed files that match the sources in the '
+          'dependencies of the following packages, after it had already '
+          'started in these packages or skipped them:\n'
+          '$affectedPackages\n'
+          'The command will therefore run in these packages the next time. '
+          'Specify "orderDependents" to run the command in the dependencies '
+          'of a package first.',
+        );
     }
   }
 }
