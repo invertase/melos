@@ -40,9 +40,16 @@ It is in active development and is in use on projects such as
 [Projects using Melos](https://melos.invertase.dev/~melos-latest#projects-using-melos)
 for more projects.
 
-Melos is not limited to monorepos though. It works just as well in a repository
-with a single package, where you can still use features like versioning,
-changelog generation, publishing and scripts, see
+Melos is for applications just as much as it is for packages that are published
+to [pub.dev](https://pub.dev). A workspace can contain your Flutter and Dart
+applications together with the internal packages that they share, and Melos
+will run your scripts, tests and analysis across all of them, generate IDE run
+configurations for the applications and version them, including the build
+number of a version like `1.2.3+45`. Nothing has to be published to use Melos.
+
+Melos is not limited to monorepos either. It works just as well in a repository
+with a single application or package, where you can still use features like
+versioning, changelog generation, publishing and scripts, see
 [Using Melos without a monorepo](#using-melos-without-a-monorepo).
 
 ### How does Melos relate to other monorepo tools?
@@ -178,6 +185,11 @@ A default file structure looks something like this:
 ```
 my-melos-repo/
   pubspec.yaml
+  apps/
+    app-1/
+      pubspec.yaml
+    app-2/
+      pubspec.yaml
   packages/
     package-1/
       pubspec.yaml
@@ -185,20 +197,27 @@ my-melos-repo/
       pubspec.yaml
 ```
 
-The location of your packages needs be configured via the `workspace`
-section in your root `pubspec.yaml` file, see the
+Applications and packages are treated the same way, an application is simply a
+package that is not published, so the `apps` and `packages` directories are
+only a convention.
+
+The location of your applications and packages needs to be configured via the
+`workspace` section in your root `pubspec.yaml` file, see the
 [pub workspaces](https://dart.dev/tools/pub/workspaces) documentation for more
 information.
 
 ## Using Melos without a monorepo
 
-You don't need a monorepo to use Melos. In a repository with a single package
-you can still use `melos version`, `melos publish`, `melos run` and the rest of
-the commands to get automated versioning, changelog generation, publishing and
-scripts.
+You don't need a monorepo to use Melos. In a repository with a single
+application or package you can still use `melos version`, `melos publish`,
+`melos run` and the rest of the commands to get automated versioning, changelog
+generation, publishing and scripts. For an application this means that the
+version and the build number in the `pubspec.yaml` file, the changelog and the
+git tag of each release are handled for you.
 
 To set it up, add Melos as a dev dependency and set `useRootAsPackage: true`
-in the `pubspec.yaml` file of your package, no `workspace` list is needed:
+in the `pubspec.yaml` file of your application or package, no `workspace` list
+is needed:
 
 ```yaml
 name: my_single_package
@@ -210,6 +229,26 @@ dev_dependencies:
 
 melos:
   useRootAsPackage: true
+```
+
+Applications are usually private (`publish_to: none`) and private packages are
+skipped by `melos version` by default, so for an application you also need to
+pass `--all` to `melos version`, or set `versionPrivatePackages: true`:
+
+```yaml
+name: my_application
+publish_to: none
+environment:
+  sdk: ^3.9.0
+
+dev_dependencies:
+  melos: ^8.0.0
+
+melos:
+  useRootAsPackage: true
+  command:
+    version:
+      versionPrivatePackages: true
 ```
 
 See the
@@ -224,6 +263,11 @@ for more details.
   overrides (achieved by pub workspaces).
 - 📦 Automatically version, create changelogs and publish your packages using
   [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+  - Applications can be versioned too, and the build number of their version is
+    retained and incremented, so `1.2.3+45` becomes `1.3.0+46`. Since
+    applications are private (`publish_to: none`) they are only versioned when
+    you pass `--all` to `melos version` or set
+    [`versionPrivatePackages: true`](https://melos.invertase.dev/~melos-latest/configuration/overview#versionprivatepackages).
 - 📜 Pre-define advanced custom scripts for your workspace in your root
   `pubspec.yaml` configuration to use via `melos run [scriptName]`. Anyone
   contributing to your workspace can just run `melos run` to be prompted to

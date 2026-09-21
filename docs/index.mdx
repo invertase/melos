@@ -34,9 +34,16 @@ Melos also works great on CI/CD environments to help automate complex tasks and
 challenges. If you're using GitHub you can check out the
 [Melos GitHub Action](https://github.com/bluefireteam/melos-action).
 
-Melos is not limited to monorepos though. It works just as well in a repository
-with a single package, where you can still use features like versioning,
-changelog generation, publishing and scripts, see
+Melos is for applications just as much as it is for packages that are published
+to [pub.dev](https://pub.dev). A workspace can contain your Flutter and Dart
+applications together with the internal packages that they share, and Melos
+will run your scripts, tests and analysis across all of them, generate IDE run
+configurations for the applications and version them, including the build
+number of a version like `1.2.3+45`. Nothing has to be published to use Melos.
+
+Melos is not limited to monorepos either. It works just as well in a repository
+with a single application or package, where you can still use features like
+versioning, changelog generation, publishing and scripts, see
 [Single package projects](/getting-started#single-package-projects-non-monorepo).
 
 ## How does Melos relate to other monorepo tools?
