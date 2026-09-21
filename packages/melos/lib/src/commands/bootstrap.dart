@@ -185,7 +185,7 @@ mixin _BootstrapMixin on _CleanMixin {
     // leaking resources and to ensure that the process exits.
     final stdout = process.stdout.toStringAndLogAfterTimeout(
       timeout: logTimeout,
-      log: logLineTo(logger.stdout),
+      log: logLineTo(logger.log),
     );
     final stderr = process.stderr.toStringAndLogAfterTimeout(
       timeout: logTimeout,
@@ -466,7 +466,7 @@ mixin _BootstrapMixin on _CleanMixin {
         .toList()
         .join('\n');
 
-    logger
+    logger.essential
         .child(targetStyle(package.name), prefix: '- ')
         .child(packagePathStyle(printablePath(package.pathRelativeToWorkspace)))
         .child(errorMessageColor(exception.message), stderr: true)

@@ -1009,6 +1009,75 @@ ${'-' * terminalWidth}
         );
       });
 
+      test('only prints the output of failed packages when quiet', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b', 'c'],
+        );
+
+        final a = await createProject(workspaceDir, Pubspec('a'));
+        createLoggingFile(a, package: 'a');
+
+        final b = await createProject(workspaceDir, Pubspec('b'));
+        createLoggingFile(b, package: 'b', exitCode: 1);
+
+        final c = await createProject(workspaceDir, Pubspec('c'));
+        createLoggingFile(c, package: 'c');
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(
+          logger: MelosLogger(logger, isQuiet: true),
+          config: config,
+        );
+
+        await melos.exec(['dart', 'log_lines.dart'], concurrency: 1);
+
+        expect(
+          logger.output.normalizeLines(),
+          ignoringAnsii(
+            '''
+${'-' * terminalWidth}
+b:
+b line 1
+b line 2
+${'-' * terminalWidth}
+
+\$ melos exec
+  └> dart log_lines.dart
+     └> FAILED (in 1 packages)
+        └> b (with exit code 1)
+''',
+          ),
+        );
+      });
+
+      test('prints nothing when quiet and all packages succeed', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b'],
+        );
+
+        final a = await createProject(workspaceDir, Pubspec('a'));
+        createLoggingFile(a, package: 'a');
+
+        final b = await createProject(workspaceDir, Pubspec('b'));
+        createLoggingFile(b, package: 'b');
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(
+          logger: MelosLogger(logger, isQuiet: true),
+          config: config,
+        );
+
+        await melos.exec(['dart', 'log_lines.dart'], concurrency: 2);
+
+        expect(logger.output, isEmpty);
+      });
+
       test('is a no-op when running with a concurrency of 1', () async {
         final workspaceDir = await createTemporaryWorkspace(
           workspacePackages: ['a', 'b'],

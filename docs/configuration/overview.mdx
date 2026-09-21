@@ -64,6 +64,34 @@ The configured SDK is also used to resolve the dependencies of, and run, the
 local installation of Melos in the workspace, so no system-wide Dart or Flutter
 SDK is required.
 
+## quiet
+
+Whether to only print warnings, errors and the output of failed commands.
+Defaults to `false`.
+
+This keeps the logs of large workspaces readable, for example on a continuous
+integration server. When a command such as `melos analyze`, `melos format`,
+`melos test`, `melos exec` or `melos run` succeeds, nothing is printed. When it
+fails, only the output of the packages or scripts that failed is printed,
+followed by the summary of the failures. The results of commands like
+`melos list` are always printed.
+
+The output of a package or script is buffered until it has finished, so that it
+can be dropped when it succeeded. Scripts that use `stdio: inherit` write
+directly to the terminal and are therefore not affected.
+
+If the option is specified though multiple mechanisms, the precedence from
+highest to lowest is:
+
+1. `--quiet` (or `--no-quiet`) global command line option
+2. `MELOS_QUIET` environment variable
+3. `quiet` in the `melos` section in the root `pubspec.yaml`
+
+```yaml
+melos:
+  quiet: true
+```
+
 ## useRootAsPackage
 
 Whether to include the repository root as a package in the workspace.

@@ -100,6 +100,59 @@ ${'-' * terminalWidth}
       );
     });
 
+    test('should print nothing when quiet and nothing fails', () async {
+      final quietMelos = Melos(
+        logger: MelosLogger(logger, isQuiet: true),
+        config: melos.config,
+      );
+
+      await quietMelos.format();
+
+      expect(logger.output, isEmpty);
+    });
+
+    test('should only print the failed packages when quiet', () async {
+      writeTextFile(
+        p.join(aDir.path, 'main.dart'),
+        r'''
+        void main() {for (var i = 0; i < 10; i++) {print('hello ${i + 1}');}
+        }
+      ''',
+      );
+
+      final quietMelos = Melos(
+        logger: MelosLogger(logger, isQuiet: true),
+        config: melos.config,
+      );
+
+      await quietMelos.format(setExitIfChanged: true, output: 'none');
+
+      expect(
+        logger.output.normalizeLines(),
+        ignoringAnsii(
+          matches(
+            RegExp(
+              RegExp.escape('''
+${'-' * terminalWidth}
+a:
+Changed main.dart
+Formatted 1 file (1 changed) in 0.''') +
+                  r'\d{2}' +
+                  RegExp.escape('''
+ seconds.
+${'-' * terminalWidth}
+
+\$ melos format
+  └> dart format --set-exit-if-changed --output none .
+     └> FAILED (in 1 packages)
+        └> a (with exit code 1)
+'''),
+            ),
+          ),
+        ),
+      );
+    });
+
     test('should run format with --set-exit-if-changed flag', () async {
       writeTextFile(
         p.join(aDir.path, 'main.dart'),

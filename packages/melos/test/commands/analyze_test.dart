@@ -117,6 +117,59 @@ ${'-' * terminalWidth}
       );
     });
 
+    test('should only print the packages with issues when quiet', () async {
+      writeTextFile(
+        p.join(aDir.path, 'main.dart'),
+        r'''
+        void main() {
+          for (var i = 0; i < 10; i++) {
+            print('hello ${i + 1}');
+          }
+        }
+      ''',
+      );
+
+      final quietMelos = Melos(
+        logger: MelosLogger(logger, isQuiet: true),
+        config: melos.config,
+      );
+
+      await quietMelos.analyze();
+
+      expect(
+        logger.output,
+        ignoringAnsii(
+          '''
+${'-' * terminalWidth}
+a:
+Analyzing a...
+
+   info - main.dart:3:13 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - main.dart:5:10 - Missing a newline at the end of the file. Try adding a newline at the end of the file. - eol_at_end_of_file
+
+2 issues found.
+${'-' * terminalWidth}
+
+\$ melos analyze
+  └> dart analyze --fatal-infos
+     └> FAILED (in 1 packages)
+        └> a (with exit code 1)
+''',
+        ),
+      );
+    });
+
+    test('should print nothing when quiet and there are no issues', () async {
+      final quietMelos = Melos(
+        logger: MelosLogger(logger, isQuiet: true),
+        config: melos.config,
+      );
+
+      await quietMelos.analyze();
+
+      expect(logger.output, isEmpty);
+    });
+
     test('should run analysis with --fatal-warnings flag', () async {
       writeTextFile(
         p.join(aDir.path, 'main.dart'),

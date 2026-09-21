@@ -59,6 +59,11 @@
       "type": "string",
       "description": "Path to the Dart/Flutter SDK that should be used."
     },
+    "quiet": {
+      "type": "boolean",
+      "description": "Whether to only print warnings, errors and the output of failed commands. Defaults to false.",
+      "default": false
+    },
     "useRootAsPackage": {
       "type": "boolean",
       "description": "Whether to include the repository root as a package in the workspace. Defaults to false.",

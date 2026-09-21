@@ -20,6 +20,7 @@ import 'platform.dart';
 import 'process_output_cancel_token.dart';
 
 const globalOptionVerbose = 'verbose';
+const globalOptionQuiet = 'quiet';
 const globalOptionSdkPath = 'sdk-path';
 
 const autoSdkPathOptionValue = 'auto';
@@ -556,6 +557,18 @@ Future<Process> startCommandRaw(
   );
 }
 
+/// The environment variables that make nested Melos commands as quiet as
+/// [logger].
+Map<String, String> quietEnvironment(MelosLogger logger) {
+  final isInherited = currentPlatform.environment.containsKey(
+    EnvironmentVariableKey.melosQuiet,
+  );
+  return {
+    if (logger.isQuiet || isInherited)
+      EnvironmentVariableKey.melosQuiet: logger.isQuiet.toString(),
+  };
+}
+
 final _runningPids = <int>[];
 
 List<int> get runningPids => UnmodifiableListView(_runningPids);
@@ -581,7 +594,10 @@ Future<int> startCommand(
   final process = await startCommandRaw(
     processedCommand,
     workingDirectory: workingDirectory,
-    environment: environment,
+    environment: {
+      ...environment,
+      ...quietEnvironment(logger),
+    },
     includeParentEnvironment: includeParentEnvironment,
     mode: inheritStdio
         ? ProcessStartMode.inheritStdio
