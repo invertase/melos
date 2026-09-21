@@ -1,3 +1,24 @@
+## 8.9.0
+
+ - **REFACTOR**: remove the nullsafety package filter ([#1104](https://github.com/invertase/melos/issues/1104)). ([96fce8e8](https://github.com/invertase/melos/commit/96fce8e88ff7d7312c457a547bca5587874a1edc))
+ - **PERF**: look up the published state of each package once when filtering ([#1097](https://github.com/invertase/melos/issues/1097)). ([cc270809](https://github.com/invertase/melos/commit/cc2708094d22875524ee74d9eaaefcc0e1393b96))
+ - **FIX**: skip generating the IntelliJ IDE files in CI ([#1101](https://github.com/invertase/melos/issues/1101)). ([4993f592](https://github.com/invertase/melos/commit/4993f5920b13238124f1719c7d72c6c2fe0b8449))
+ - **FIX**: correct the category and nullsafety keys of packageFilters ([#1096](https://github.com/invertase/melos/issues/1096)). ([5ef2eb29](https://github.com/invertase/melos/commit/5ef2eb29c07ecdf6a80159d54711ce68304fe182))
+ - **FIX**: keep colors in the output of nested Melos commands ([#1095](https://github.com/invertase/melos/issues/1095)). ([6424bc2d](https://github.com/invertase/melos/commit/6424bc2d9fbfcb734f2a3f3e8fea9bc1875f3754))
+ - **FIX**: expand the package environment variables in exec scripts ([#1094](https://github.com/invertase/melos/issues/1094)). ([c0c21c16](https://github.com/invertase/melos/commit/c0c21c1640af2d22bf8e0b23d742f52f0944bc5d))
+ - **FIX**: respect sdkPath when resolving and launching the local Melos installation ([#1081](https://github.com/invertase/melos/issues/1081)). ([00b80d27](https://github.com/invertase/melos/commit/00b80d2744b449aee497273d4a7a56c8e2711d64))
+ - **FIX**: detect Flutter packages through the workspace dependency graph ([#1089](https://github.com/invertase/melos/issues/1089)). ([c8f7ed7d](https://github.com/invertase/melos/commit/c8f7ed7db825cd1cc0b74712305c60d4ef118172))
+ - **FEAT**: skip packages with unchanged sources in exec ([#1102](https://github.com/invertase/melos/issues/1102)). ([3ffd2900](https://github.com/invertase/melos/commit/3ffd29009dbeb2e56127aa1b755879b918c35030))
+ - **FEAT**: add a dependsOn option to declare dependencies between scripts ([#1100](https://github.com/invertase/melos/issues/1100)). ([e216495a](https://github.com/invertase/melos/commit/e216495aca2fa46c8deefdf6ae7e69dc67192c4b))
+ - **FEAT**: add a markSharedDependencies option to mark shared dependencies with a comment ([#1099](https://github.com/invertase/melos/issues/1099)). ([5ad49d3b](https://github.com/invertase/melos/commit/5ad49d3b88f36ab1ddb5248c0ca75a8eb619946b))
+ - **FEAT**: treat the no tests ran exit code as a success in exec and test ([#1098](https://github.com/invertase/melos/issues/1098)). ([0f3075e0](https://github.com/invertase/melos/commit/0f3075e0a81589f306628053320511989e280f71))
+ - **FEAT**: add a --post-filter option to filter included dependents and dependencies ([#1093](https://github.com/invertase/melos/issues/1093)). ([0507f65f](https://github.com/invertase/melos/commit/0507f65fbff5fe648f3892107cf10c107b96db83))
+ - **FEAT**: add a cherry-pick command for releasing from hot-fix branches ([#1091](https://github.com/invertase/melos/issues/1091)). ([912374b5](https://github.com/invertase/melos/commit/912374b5f4cdfb097e0c63dedc72d3919fdb39bc))
+ - **FEAT**: add a global --quiet option to only print warnings, errors and failed output ([#1092](https://github.com/invertase/melos/issues/1092)). ([f4228490](https://github.com/invertase/melos/commit/f42284901a3da9a538a63626d64d343986e2a157))
+ - **FEAT**(intellij): allow configuring Flutter entry points ([#1090](https://github.com/invertase/melos/issues/1090)). ([f7307f3a](https://github.com/invertase/melos/commit/f7307f3a284f8d20edd12b131b6901fa5bee284f))
+ - **FEAT**(version): add a --sign-off option for the version commit ([#1088](https://github.com/invertase/melos/issues/1088)). ([e773ac8c](https://github.com/invertase/melos/commit/e773ac8cce51d6611a7faa49ed979d290545d03c))
+ - **DOCS**: clarify single package usage and update the migration instructions ([#1103](https://github.com/invertase/melos/issues/1103)). ([51c42c72](https://github.com/invertase/melos/commit/51c42c72bd36c6fbfd68274b3f906951fd7eb8a5))
+
 ## 8.8.0
 
  - **FEAT**(config): allow "x-" extension fields so YAML anchors validate ([#1085](https://github.com/invertase/melos/issues/1085)). ([02bfed68](https://github.com/invertase/melos/commit/02bfed681f10983a9e9f37b188efc82c65d12948))
