@@ -119,14 +119,10 @@ void main() {
       );
 
       final fakeDartPath = p.join(workspaceDir.path, 'fake_sdk', 'bin', 'dart');
+      writeTextFile(fakeDartPath, '#!/bin/sh\nexit 79\n', recursive: true);
       if (Platform.isWindows) {
-        writeTextFile(
-          '$fakeDartPath.bat',
-          '@echo off\r\nexit /b 79\r\n',
-          recursive: true,
-        );
+        writeTextFile('$fakeDartPath.bat', '@echo off\r\nexit /b 79\r\n');
       } else {
-        writeTextFile(fakeDartPath, '#!/bin/sh\nexit 79\n', recursive: true);
         await Process.run('chmod', ['+x', fakeDartPath]);
       }
 
