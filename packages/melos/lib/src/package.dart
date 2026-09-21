@@ -848,11 +848,14 @@ The packages that caused the problem are:
       return this;
     }
 
+    final isPublishedCache = <String, bool>{};
+
     var packageList = await _applyNarrowingFilters(
       values,
       filters,
       pubConfig: pubConfig,
       workspaceTag: workspaceTag,
+      isPublishedCache: isPublishedCache,
     );
 
     packageList = packageList.applyIncludeDependentsOrDependencies(
@@ -870,6 +873,7 @@ The packages that caused the problem are:
         postFilters,
         pubConfig: pubConfig,
         workspaceTag: workspaceTag,
+        isPublishedCache: isPublishedCache,
       );
     }
 
@@ -888,6 +892,7 @@ The packages that caused the problem are:
     PackageFilters filters, {
     required PubClientConfig pubConfig,
     required bool workspaceTag,
+    required Map<String, bool> isPublishedCache,
   }) async {
     final packageList = await packages
         .applyIgnore(filters.ignore)
@@ -904,6 +909,7 @@ The packages that caused the problem are:
           published: filters.published,
           logger: _logger,
           pubConfig: pubConfig,
+          isPublishedCache: isPublishedCache,
         );
 
     return packageList.applyDiff(
@@ -978,10 +984,14 @@ extension IterablePackageExt on Iterable<Package> {
   ///
   /// If `include` is true, only include published packages. If false, only
   /// include unpublished packages. If null, does nothing.
+  ///
+  /// The registry is not queried for packages that are in [isPublishedCache],
+  /// which is updated with the packages that were looked up.
   Future<Iterable<Package>> filterPublishedPackages({
     required bool? published,
     MelosLogger? logger,
     PubClientConfig pubConfig = const PubClientConfig(),
+    Map<String, bool>? isPublishedCache,
   }) async {
     if (published == null) {
       return this;
@@ -990,16 +1000,22 @@ extension IterablePackageExt on Iterable<Package> {
     final pool = Pool(10);
     final packagesFilteredWithPublishStatus = <Package>[];
 
-    await pool.forEach<Package, void>(this, (package) async {
+    Future<bool> isPublished(Package package) async {
       final pubPackage = await package.getPublishedPackage(
         logger: logger,
         backoff: pubConfig.retryBackoff,
         timeout: pubConfig.requestTimeout,
       );
 
-      final isOnPubRegistry = pubPackage?.isVersionPublished(package.version);
+      return pubPackage?.isVersionPublished(package.version) ?? false;
+    }
 
-      if (published == (isOnPubRegistry ?? false)) {
+    await pool.forEach<Package, void>(this, (package) async {
+      final isOnPubRegistry =
+          isPublishedCache?[package.name] ?? await isPublished(package);
+      isPublishedCache?[package.name] = isOnPubRegistry;
+
+      if (published == isOnPubRegistry) {
         packagesFilteredWithPublishStatus.add(package);
       }
     }).drain<void>();
