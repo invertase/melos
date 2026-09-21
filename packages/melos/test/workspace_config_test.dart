@@ -1734,6 +1734,46 @@ a:
         expect(repository.name, 'melos');
       });
 
+      test('quiet defaults to false', () async {
+        final workspace = await createTemporaryWorkspace(workspacePackages: []);
+        final config = MelosWorkspaceConfig.fromYaml(
+          createYamlMap({}, defaults: configMapDefaults),
+          path: workspace.path,
+        );
+
+        expect(config.quiet, false);
+      });
+
+      test('quiet can be set to true', () async {
+        final workspace = await createTemporaryWorkspace(workspacePackages: []);
+        final config = MelosWorkspaceConfig.fromYaml(
+          createYamlMap(
+            {
+              'melos': {'quiet': true},
+            },
+            defaults: configMapDefaults,
+          ),
+          path: workspace.path,
+        );
+
+        expect(config.quiet, true);
+      });
+
+      test('throws if quiet is not a boolean', () {
+        expect(
+          () => MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {
+                'melos': {'quiet': 'not_a_bool'},
+              },
+              defaults: configMapDefaults,
+            ),
+            path: testWorkspacePath,
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
       test('useRootAsPackage defaults to false', () async {
         final workspace = await createTemporaryWorkspace(workspacePackages: []);
         final config = MelosWorkspaceConfig.fromYaml(

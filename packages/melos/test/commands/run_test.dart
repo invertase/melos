@@ -1062,6 +1062,115 @@ SUCCESS
     });
   });
 
+  group('quiet', () {
+    Future<(Melos, TestLogger)> createQuietMelos(Scripts scripts) async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_package',
+          packages: [
+            createGlob('packages/**', currentDirectoryPath: path),
+          ],
+          scripts: scripts,
+        ),
+        workspacePackages: ['a'],
+      );
+
+      await createProject(workspaceDir, Pubspec('a'));
+      await runPubGet(workspaceDir.path);
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(
+        logger: MelosLogger(logger, isQuiet: true),
+        config: config,
+      );
+
+      return (melos, logger);
+    }
+
+    test('prints nothing when the script succeeds', () async {
+      final (melos, logger) = await createQuietMelos(
+        const Scripts({
+          'test_script': Script(name: 'test_script', run: 'echo "hello"'),
+        }),
+      );
+
+      await melos.run(scriptName: 'test_script', noSelect: true);
+
+      expect(logger.output, isEmpty);
+    });
+
+    test('prints the output of the script when it fails', () async {
+      final (melos, logger) = await createQuietMelos(
+        const Scripts({
+          'test_script': Script(
+            name: 'test_script',
+            run: 'echo "hello" && exit 1',
+          ),
+        }),
+      );
+
+      await expectLater(
+        () => melos.run(scriptName: 'test_script', noSelect: true),
+        throwsA(const TypeMatcher<ScriptException>()),
+      );
+
+      expect(
+        logger.output.normalizeLines(),
+        ignoringAnsii('''
+hello
+
+test_script
+  └> FAILED
+'''),
+      );
+    });
+
+    test('only prints the output of the step that fails', () async {
+      final (melos, logger) = await createQuietMelos(
+        const Scripts({
+          'test_script': Script(
+            name: 'test_script',
+            steps: ['echo "first"', 'echo "second" && absolute_bogus_command'],
+          ),
+        }),
+      );
+
+      await expectLater(
+        () => melos.run(scriptName: 'test_script', noSelect: true),
+        throwsA(const TypeMatcher<ScriptException>()),
+      );
+
+      final output = logger.output.normalizeLines();
+      expect(output, isNot(contains('first')));
+      expect(
+        output.split('\n'),
+        containsAllInOrder(['second', 'test_script', '  └> FAILED']),
+      );
+    });
+
+    test('makes nested Melos commands quiet', () async {
+      final (melos, logger) = await createQuietMelos(
+        const Scripts({
+          'test_script': Script(
+            name: 'test_script',
+            run:
+                'echo "quiet=\$${EnvironmentVariableKey.melosQuiet}" '
+                '&& exit 1',
+          ),
+        }),
+      );
+
+      await expectLater(
+        () => melos.run(scriptName: 'test_script', noSelect: true),
+        throwsA(const TypeMatcher<ScriptException>()),
+      );
+
+      expect(logger.output.normalizeLines(), contains('quiet=true'));
+    }, skip: currentPlatform.isWindows);
+  });
+
   group('flags', () {
     test(
       'verifies that the --list flag lists all scripts in the config',

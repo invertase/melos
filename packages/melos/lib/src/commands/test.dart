@@ -43,7 +43,8 @@ mixin _TestMixin on _Melos {
       concurrency: concurrency,
       noPub: noPub,
     ).join(' ');
-    final useGroupBuffer = concurrency != 1 && packages.length != 1;
+    final useGroupBuffer =
+        logger.isQuiet || (concurrency != 1 && packages.length != 1);
     final dartPackageCount = packages.where((e) => !e.isFlutterPackage).length;
     final flutterPackageCount = packages
         .where((e) => e.isFlutterPackage)
@@ -91,6 +92,8 @@ mixin _TestMixin on _Melos {
 
       if (packageExitCode > 0) {
         failures[package.name] = packageExitCode;
+      } else if (logger.isQuiet) {
+        logger.discardGroup(package.name);
       } else {
         logger.log(
           AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
@@ -102,12 +105,14 @@ mixin _TestMixin on _Melos {
 
     await logger.flushGroupBufferIfNeed();
 
-    logger
+    final summaryLogger = failures.isEmpty ? logger : logger.essential;
+
+    summaryLogger
       ..horizontalLine()
       ..newLine()
       ..command('melos test', withDollarSign: true);
 
-    final resultLogger = logger.child(targetStyle(testArgsString));
+    final resultLogger = summaryLogger.child(targetStyle(testArgsString));
 
     if (failures.isNotEmpty) {
       final failuresLogger = resultLogger.child(

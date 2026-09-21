@@ -268,12 +268,15 @@ A CLI tool for managing Dart & Flutter projects with multiple packages.
 Usage: melos <command> [arguments]
 
 Global options:
--h, --help        Print this usage information.
-    --verbose     Enable verbose logging.
-    --sdk-path    Path to the Dart/Flutter SDK that should be used. This command line option has
-                  precedence over the `sdkPath` option in the root `pubspec.yaml` configuration
-                  file and the `MELOS_SDK_PATH` environment variable. To use the system-wide SDK,
-                  provide the special value "auto".
+-h, --help          Print this usage information.
+    --verbose       Enable verbose logging.
+-q, --[no-]quiet    Only print warnings, errors and the output of failed commands. This command
+                    line option has precedence over the `quiet` option in the `pubspec.yaml`
+                    configuration file and the `MELOS_QUIET` environment variable.
+    --sdk-path      Path to the Dart/Flutter SDK that should be used. This command line option has
+                    precedence over the `sdkPath` option in the root `pubspec.yaml` configuration
+                    file and the `MELOS_SDK_PATH` environment variable. To use the system-wide SDK,
+                    provide the special value "auto".
 
 Available commands:
   bootstrap   Initialize the workspace, link local packages together and install remaining package

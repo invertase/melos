@@ -336,6 +336,7 @@ class MelosWorkspaceConfig {
     required this.name,
     required this.packages,
     this.sdkPath,
+    this.quiet = false,
     this.repository,
     this.categories = const {},
     this.ignore = const [],
@@ -474,6 +475,13 @@ class MelosWorkspaceConfig {
       map: melosYaml,
     );
 
+    final quiet =
+        assertKeyIsA<bool?>(
+          key: 'quiet',
+          map: melosYaml,
+        ) ??
+        false;
+
     final useRootAsPackage =
         assertKeyIsA<bool?>(
           key: 'useRootAsPackage',
@@ -498,6 +506,7 @@ class MelosWorkspaceConfig {
       repository: repository,
       pub: pubConfig,
       sdkPath: sdkPath,
+      quiet: quiet,
       categories: categories.map(
         (key, value) => MapEntry(
           key,
@@ -705,6 +714,11 @@ class MelosWorkspaceConfig {
   /// the command line option or the environment variable.
   final String? sdkPath;
 
+  /// Whether to only print warnings, errors and the output of failed commands,
+  /// unless overridden though the command line option or the environment
+  /// variable. Defaults to false.
+  final bool quiet;
+
   /// Whether to include the repository root as a package in the workspace.
   /// Defaults to false.
   final bool useRootAsPackage;
@@ -766,6 +780,7 @@ class MelosWorkspaceConfig {
       other.name == name &&
       other.repository == repository &&
       other.sdkPath == sdkPath &&
+      other.quiet == quiet &&
       other.useRootAsPackage == useRootAsPackage &&
       other.discoverNestedWorkspaces == discoverNestedWorkspaces &&
       const DeepCollectionEquality(
@@ -786,6 +801,7 @@ class MelosWorkspaceConfig {
     name,
     repository,
     sdkPath,
+    quiet,
     useRootAsPackage,
     discoverNestedWorkspaces,
     const DeepCollectionEquality(GlobEquality()).hash(packages),
@@ -801,6 +817,7 @@ class MelosWorkspaceConfig {
       'melos': {
         if (repository != null) 'repository': repository!,
         if (sdkPath != null) 'sdkPath': sdkPath!,
+        if (quiet) 'quiet': quiet,
         if (useRootAsPackage) 'useRootAsPackage': useRootAsPackage,
         if (discoverNestedWorkspaces)
           'discoverNestedWorkspaces': discoverNestedWorkspaces,
@@ -832,6 +849,7 @@ MelosWorkspaceConfig(
   name: $name,
   repository: $repository,
   sdkPath: $sdkPath,
+  quiet: $quiet,
   useRootAsPackage: $useRootAsPackage,
   categories: $categories,
   packages: $packages,

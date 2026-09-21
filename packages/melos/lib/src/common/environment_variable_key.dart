@@ -24,6 +24,13 @@ class EnvironmentVariableKey {
   /// `pubspec.yaml`, but is overridden by the command line option `--sdk-path`.
   static const String melosSdkPath = 'MELOS_SDK_PATH';
 
+  /// When set to `true`, Melos only prints warnings, errors and the output of
+  /// failed commands. Melos sets this environment variable for the scripts it
+  /// runs, so that nested Melos commands are quiet too. The `--quiet` command
+  /// line option and the `quiet` option in `pubspec.yaml` enable the same
+  /// behavior.
+  static const String melosQuiet = 'MELOS_QUIET';
+
   static const String melosTerminalWidth = 'MELOS_TERMINAL_WIDTH';
 
   static const String path = 'PATH';
@@ -45,6 +52,7 @@ class EnvironmentVariableKey {
     melosTest,
     melosPackages,
     melosSdkPath,
+    melosQuiet,
     melosTerminalWidth,
   ];
 }

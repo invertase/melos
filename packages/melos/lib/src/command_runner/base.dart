@@ -2,12 +2,33 @@ import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:cli_util/cli_logging.dart';
 
+import '../common/environment_variable_key.dart';
 import '../common/glob.dart';
+import '../common/platform.dart';
 import '../common/utils.dart';
 import '../global_options.dart';
 import '../logging.dart';
 import '../package.dart';
 import '../workspace_config.dart';
+
+/// Resolves whether Melos should only print warnings, errors and the output of
+/// failed commands.
+///
+/// The `--quiet` command line option has precedence over the `MELOS_QUIET`
+/// environment variable, which has precedence over the `quiet` option in
+/// `pubspec.yaml`.
+bool resolveQuiet({
+  required bool configQuiet,
+  required String? envQuiet,
+  required bool? commandQuiet,
+}) {
+  return commandQuiet ??
+      switch (envQuiet?.toLowerCase()) {
+        'true' || '1' => true,
+        'false' || '0' => false,
+        _ => configQuiet,
+      };
+}
 
 abstract class MelosCommand extends Command<void> {
   MelosCommand(this.config);
@@ -19,6 +40,7 @@ abstract class MelosCommand extends Command<void> {
 
   late final logger = MelosLogger(
     global.verbose ? Logger.verbose() : Logger.standard(),
+    isQuiet: global.quiet,
   );
 
   /// The `pubspec.yaml` configuration for this command. see
@@ -35,6 +57,14 @@ abstract class MelosCommand extends Command<void> {
   GlobalOptions _parseGlobalOptions() {
     return GlobalOptions(
       verbose: globalResults![globalOptionVerbose]! as bool,
+      quiet: resolveQuiet(
+        configQuiet: config.quiet,
+        envQuiet:
+            currentPlatform.environment[EnvironmentVariableKey.melosQuiet],
+        commandQuiet: globalResults!.wasParsed(globalOptionQuiet)
+            ? globalResults![globalOptionQuiet] as bool
+            : null,
+      ),
       sdkPath: globalResults![globalOptionSdkPath] as String?,
     );
   }

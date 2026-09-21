@@ -5,11 +5,15 @@ import 'package:meta/meta.dart';
 class GlobalOptions {
   const GlobalOptions({
     this.verbose = false,
+    this.quiet = false,
     this.sdkPath,
   });
 
   /// Whether to print verbose output.
   final bool verbose;
+
+  /// Whether to only print warnings, errors and the output of failed commands.
+  final bool quiet;
 
   /// Path to the Dart/Flutter SDK that should be used.
   final String? sdkPath;
@@ -17,6 +21,7 @@ class GlobalOptions {
   Map<String, Object?> toJson() {
     return {
       'verbose': verbose,
+      'quiet': quiet,
       'sdkPath': sdkPath,
     };
   }
@@ -27,16 +32,18 @@ class GlobalOptions {
       other is GlobalOptions &&
           other.runtimeType == runtimeType &&
           other.verbose == verbose &&
+          other.quiet == quiet &&
           other.sdkPath == sdkPath;
 
   @override
-  int get hashCode => Object.hashAll([runtimeType, verbose, sdkPath]);
+  int get hashCode => Object.hashAll([runtimeType, verbose, quiet, sdkPath]);
 
   @override
   String toString() {
     return '''
 GlobalOptions(
   verbose: $verbose,
+  quiet: $quiet,
   sdkPath: $sdkPath,
 )''';
   }
