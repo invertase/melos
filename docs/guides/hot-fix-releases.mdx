@@ -104,8 +104,9 @@ Several commits and ranges of commits can be picked at once, see the
   commit records which commit it originates from.
 - Keeps the changelogs of the hot-fix branch as they are, even if the picked
   commit changed them or conflicts with them.
-- Keeps the package versions of the hot-fix branch as they are, while picking
-  all other changes to the `pubspec.yaml` files.
+- Keeps the package versions of the hot-fix branch as they are, as well as the
+  constraints that the packages of the workspace have on each other, while
+  picking all other changes to the `pubspec.yaml` files.
 - Skips commits that contain nothing but release changes, such as the commits
   that `melos version` creates on the default branch.
 

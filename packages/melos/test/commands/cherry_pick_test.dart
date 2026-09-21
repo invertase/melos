@@ -10,6 +10,7 @@ import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
+import 'package:yaml_edit/yaml_edit.dart';
 
 import '../utils.dart';
 
@@ -200,6 +201,122 @@ void main() {
       );
     });
 
+    test('resolves version conflicts with the version of the current '
+        'branch', () async {
+      _setVersion(workspaceDir, 'a', '2.0.0');
+      await _commitAll(workspaceDir, 'chore(release): publish 2.0.0');
+      final start = await _commitId(workspaceDir, 'HEAD');
+      final pubspec = _readFile(workspaceDir, 'packages/a/pubspec.yaml');
+      _writeFile(
+        workspaceDir,
+        'packages/a/pubspec.yaml',
+        '${pubspec.trimRight()}\ndescription: A described package.\n',
+      );
+      _setVersion(workspaceDir, 'a', '2.1.0');
+      await _commitAll(workspaceDir, 'feat: describe a');
+      _setVersion(workspaceDir, 'a', '2.1.1');
+      await _commitAll(workspaceDir, 'chore(release): publish 2.1.1');
+      await _git(['checkout', 'hot-fix'], workspaceDir);
+
+      await cherryPick(['$start..main']);
+
+      expect(await _commitCount(workspaceDir), 2);
+      expect(await _subject(workspaceDir, 'HEAD'), 'feat: describe a');
+      expect(_version(workspaceDir, 'a'), '1.0.0');
+      expect(
+        _readFile(workspaceDir, 'packages/a/pubspec.yaml'),
+        contains('description: A described package.'),
+      );
+      expect(await _status(workspaceDir), isEmpty);
+    });
+
+    test('keeps the lines of a message that start with a comment character '
+        'when resolving conflicts', () async {
+      _writeFile(workspaceDir, 'packages/a/lib/fix.dart', '// A fix.\n');
+      _writeFile(workspaceDir, 'packages/a/CHANGELOG.md', '## 1.0.1\n');
+      await _commitAll(workspaceDir, 'fix: a bug\n\n#123 is fixed by this.');
+      final fixId = await _commitId(workspaceDir, 'HEAD');
+      await _git(['checkout', 'hot-fix'], workspaceDir);
+      _writeFile(workspaceDir, 'packages/a/CHANGELOG.md', '## 1.0.0+1\n');
+      await _commitAll(workspaceDir, 'chore(release): publish 1.0.0+1');
+
+      await cherryPick([fixId]);
+
+      expect(
+        await _message(workspaceDir, 'HEAD'),
+        'fix: a bug\n\n#123 is fixed by this.\n\n'
+        '(cherry picked from commit $fixId)',
+      );
+    });
+
+    test('skips release commits that update the constraints of '
+        'dependents', () async {
+      _setDependency(workspaceDir, 'b', 'a', '^1.0.0');
+      await _commitAll(workspaceDir, 'chore: let b depend on a');
+      await _git(['branch', '--force', 'hot-fix'], workspaceDir);
+      _writeFile(
+        workspaceDir,
+        'packages/a/CHANGELOG.md',
+        '## 1.1.0\n\n - **FEAT**: a feature.\n\n## 1.0.0\n',
+      );
+      _setVersion(workspaceDir, 'a', '1.1.0');
+      _setVersion(workspaceDir, 'b', '1.0.1');
+      _setDependency(workspaceDir, 'b', 'a', '^1.1.0');
+      await _commitAll(workspaceDir, 'chore(release): publish packages');
+      final releaseId = await _commitId(workspaceDir, 'HEAD');
+      await _git(['checkout', 'hot-fix'], workspaceDir);
+
+      await cherryPick([releaseId]);
+
+      expect(await _commitCount(workspaceDir), 2);
+      expect(_version(workspaceDir, 'b'), '1.0.0');
+      expect(
+        _readFile(workspaceDir, 'packages/b/pubspec.yaml'),
+        contains('a: ^1.0.0'),
+      );
+      expect(await _status(workspaceDir), isEmpty);
+    });
+
+    test('skips commits whose changes are already on the branch', () async {
+      _writeFile(workspaceDir, 'packages/a/lib/fix.dart', '// A fix.\n');
+      await _commitAll(workspaceDir, 'fix: a bug');
+      final fixId = await _commitId(workspaceDir, 'HEAD');
+      await _git(['checkout', 'hot-fix'], workspaceDir);
+      await cherryPick([fixId]);
+
+      await cherryPick([fixId]);
+
+      expect(await _commitCount(workspaceDir), 2);
+      expect(await _status(workspaceDir), isEmpty);
+      expect(logger.output, contains('are already on this branch'));
+    });
+
+    test('picks a commit once when several revisions refer to it', () async {
+      final start = await _commitId(workspaceDir, 'HEAD');
+      _writeFile(workspaceDir, 'packages/a/lib/fix.dart', '// A fix.\n');
+      await _commitAll(workspaceDir, 'fix: a bug');
+      final fixId = await _commitId(workspaceDir, 'HEAD');
+      await _git(['checkout', 'hot-fix'], workspaceDir);
+
+      await cherryPick(['$start..main', fixId]);
+
+      expect(await _commitCount(workspaceDir), 2);
+      expect(logger.output, isNot(contains('Skipped')));
+    });
+
+    test('throws for revisions that exclude commits', () async {
+      await expectLater(
+        cherryPick(['^main']),
+        throwsA(
+          isA<CherryPickException>().having(
+            (exception) => exception.message,
+            'message',
+            contains('main..<end-commit>'),
+          ),
+        ),
+      );
+    });
+
     test('lets melos version release the picked commits from a hot-fix '
         'branch', () async {
       await _git(['tag', 'a-v1.0.0'], workspaceDir);
@@ -250,6 +367,17 @@ void main() {
 
       expect(await _subject(workspaceDir, 'HEAD~1'), 'fix: first');
       expect(await _subject(workspaceDir, 'HEAD'), 'fix: second');
+    });
+
+    test('picks a range that leaves out the start commit', () async {
+      _writeFile(workspaceDir, 'packages/a/lib/first.dart', '// First.\n');
+      await _commitAll(workspaceDir, 'fix: first');
+      await _git(['checkout', 'hot-fix'], workspaceDir);
+
+      await cherryPick(['..main']);
+
+      expect(await _subject(workspaceDir, 'HEAD'), 'fix: first');
+      expect(await _commitCount(workspaceDir), 2);
     });
 
     test('stops at conflicts that are not in release files', () async {
@@ -433,6 +561,26 @@ String? _version(Directory workspaceDir, String packageName) => RegExp(
   r'^version: (.*)$',
   multiLine: true,
 ).firstMatch(_readFile(workspaceDir, 'packages/$packageName/pubspec.yaml'))?[1];
+
+void _setDependency(
+  Directory workspaceDir,
+  String packageName,
+  String dependencyName,
+  String constraint,
+) {
+  final file = 'packages/$packageName/pubspec.yaml';
+  final editor = YamlEditor(_readFile(workspaceDir, file));
+  final dependencies = editor.parseAt(
+    ['dependencies'],
+    orElse: () => wrapAsYamlNode(null),
+  );
+  if (dependencies.value == null) {
+    editor.update(['dependencies'], {dependencyName: constraint});
+  } else {
+    editor.update(['dependencies', dependencyName], constraint);
+  }
+  _writeFile(workspaceDir, file, editor.toString());
+}
 
 void _setVersion(Directory workspaceDir, String packageName, String version) {
   final file = 'packages/$packageName/pubspec.yaml';

@@ -5,12 +5,11 @@ class CherryPickCommand extends MelosCommand {
   CherryPickCommand(super.config) {
     argParser.addFlag(
       'record-origin',
-      abbr: 'x',
       defaultsTo: true,
       help:
           'Append a line that says "(cherry picked from commit ...)" to the '
           'message of each picked commit, to record which commit it '
-          'originates from.',
+          'originates from, like the -x option of "git cherry-pick" does.',
     );
     argParser.addOption(
       'mainline',
@@ -28,8 +27,9 @@ class CherryPickCommand extends MelosCommand {
   @override
   final String description =
       'Cherry-pick commits onto the current branch without the release '
-      'changes they contain. Changes to changelogs and to the versions of '
-      'packages are left out, so that "melos version" can release the picked '
+      'changes they contain. Changes to changelogs, to the versions of '
+      'packages and to the dependencies between the packages of the workspace '
+      'are left out, so that "melos version" can release the picked '
       'commits from this branch, for example a hot-fix branch.';
 
   @override
