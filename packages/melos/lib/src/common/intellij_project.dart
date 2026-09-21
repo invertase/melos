@@ -469,16 +469,6 @@ class IntellijProject {
     return '\$PROJECT_DIR\$/$relativePath';
   }
 
-  /// Whether [package] needs the Flutter tooling to run or test, which is the
-  /// case when it depends on Flutter in any dependency section.
-  bool _usesFlutter(Package package) {
-    const flutterDependencies = {'flutter', 'flutter_test'};
-    return [
-      ...package.dependencies,
-      ...package.devDependencies,
-    ].any(flutterDependencies.contains);
-  }
-
   Future<void> writeFlutterTestScripts() {
     return _writeTestScripts(
       templateFileName: 'flutter_test.xml',
@@ -494,7 +484,7 @@ class IntellijProject {
       templateFileName: 'dart_test.xml',
       displayName: 'Dart Test',
       outputFilePrefix: 'melos_dart_test_',
-      shouldGenerate: (package) => !_usesFlutter(package),
+      shouldGenerate: (package) => !package.isFlutterPackage,
     );
   }
 
@@ -538,7 +528,7 @@ class IntellijProject {
     );
 
     await Future.forEach(_workspace.filteredPackages.values, (package) async {
-      if (_usesFlutter(package)) {
+      if (package.isFlutterPackage) {
         return;
       }
 

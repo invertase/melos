@@ -81,14 +81,14 @@ RegExp dependencyTagReplaceRegex(String dependencyName) {
 
 @immutable
 class PackageFilters {
-  PackageFilters({
+  const PackageFilters({
     this.scope = const [],
     this.ignore = const [],
     this.categories = const [],
     this.dirExists = const [],
     this.fileExists = const [],
-    List<String> dependsOn = const [],
-    List<String> noDependsOn = const [],
+    this.dependsOn = const [],
+    this.noDependsOn = const [],
     this.diff,
     this.includePrivatePackages,
     this.published,
@@ -96,15 +96,7 @@ class PackageFilters {
     bool? flutter,
     this.includeDependencies = false,
     this.includeDependents = false,
-  }) : dependsOn = [
-         ...dependsOn,
-         // ignore: use_if_null_to_convert_nulls_to_bools
-         if (flutter == true) 'flutter',
-       ],
-       noDependsOn = [
-         ...noDependsOn,
-         if (flutter == false) 'flutter',
-       ];
+  }) : includeFlutterPackages = flutter;
 
   factory PackageFilters.fromYaml(
     Map<Object?, Object?> yaml, {
@@ -257,6 +249,7 @@ class PackageFilters {
     required this.includePrivatePackages,
     required this.published,
     required this.nullSafe,
+    required this.includeFlutterPackages,
     required this.includeDependencies,
     required this.includeDependents,
   });
@@ -301,6 +294,10 @@ class PackageFilters {
   /// Include/exclude packages that are null-safe.
   final bool? nullSafe;
 
+  /// Include/exclude packages that are Flutter packages, see
+  /// [Package.isFlutterPackage].
+  final bool? includeFlutterPackages;
+
   /// Whether to include packages that depends on the filtered packages.
   ///
   /// This supersede other filters.
@@ -331,6 +328,8 @@ class PackageFilters {
         filterOptionPrivate.camelCased: includePrivatePackages,
       if (published != null) filterOptionPublished.camelCased: published,
       if (nullSafe != null) filterOptionNullsafety.camelCased: nullSafe,
+      if (includeFlutterPackages != null)
+        filterOptionFlutter.camelCased: includeFlutterPackages,
       if (includeDependents) filterOptionIncludeDependents.camelCased: true,
       if (includeDependencies) filterOptionIncludeDependencies.camelCased: true,
     };
@@ -345,6 +344,7 @@ class PackageFilters {
       includePrivatePackages: includePrivatePackages,
       noDependsOn: noDependsOn,
       nullSafe: nullSafe,
+      includeFlutterPackages: includeFlutterPackages,
       published: published,
       scope: scope,
       diff: diff,
@@ -363,6 +363,7 @@ class PackageFilters {
       includePrivatePackages: includePrivatePackages,
       noDependsOn: noDependsOn,
       nullSafe: nullSafe,
+      includeFlutterPackages: includeFlutterPackages,
       published: published,
       scope: scope,
       diff: diff,
@@ -380,6 +381,7 @@ class PackageFilters {
     bool? includePrivatePackages,
     List<String>? noDependsOn,
     bool? nullSafe,
+    bool? includeFlutterPackages,
     bool? published,
     List<Glob>? scope,
     String? diff,
@@ -397,6 +399,8 @@ class PackageFilters {
           includePrivatePackages ?? this.includePrivatePackages,
       noDependsOn: noDependsOn ?? this.noDependsOn,
       nullSafe: nullSafe ?? this.nullSafe,
+      includeFlutterPackages:
+          includeFlutterPackages ?? this.includeFlutterPackages,
       published: published ?? this.published,
       scope: scope ?? this.scope,
       diff: diff ?? this.diff,
@@ -410,6 +414,7 @@ class PackageFilters {
       other is PackageFilters &&
       runtimeType == other.runtimeType &&
       other.nullSafe == nullSafe &&
+      other.includeFlutterPackages == includeFlutterPackages &&
       other.published == published &&
       other.includeDependencies == includeDependencies &&
       other.includeDependents == includeDependents &&
@@ -427,6 +432,7 @@ class PackageFilters {
   int get hashCode => Object.hashAll([
     runtimeType,
     nullSafe,
+    includeFlutterPackages,
     published,
     includeDependencies,
     includeDependents,
@@ -446,6 +452,7 @@ class PackageFilters {
     return '''
 PackageFilters(
   nullSafe: $nullSafe,
+  includeFlutterPackages: $includeFlutterPackages,
   published: $published,
   includeDependencies: $includeDependencies,
   includeDependents: $includeDependents,
@@ -796,6 +803,7 @@ The packages that caused the problem are:
         .applyDependsOn(filters.dependsOn)
         .applyNoDependsOn(filters.noDependsOn)
         .filterNullSafe(nullSafe: filters.nullSafe)
+        .filterFlutterPackages(include: filters.includeFlutterPackages)
         .filterPublishedPackages(
           published: filters.published,
           logger: _logger,
@@ -971,6 +979,14 @@ extension IterablePackageExt on Iterable<Package> {
 
       return nullSafe == isNullsafetyVersion;
     });
+  }
+
+  Iterable<Package> filterFlutterPackages({bool? include}) {
+    if (include == null) {
+      return this;
+    }
+
+    return where((package) => include == package.isFlutterPackage);
   }
 
   Iterable<Package> applyScope(List<Glob> scope) {
@@ -1184,8 +1200,43 @@ class Package {
 
   /// Returns whether this package is for Flutter.
   ///
-  /// This is determined by whether the package depends on the Flutter SDK.
-  late final bool isFlutterPackage = dependencies.contains('flutter');
+  /// This is determined by whether the package needs the Flutter SDK itself,
+  /// through any of its dependency sections, or whether it, or any package in
+  /// the workspace that it transitively depends on, requires the Flutter SDK
+  /// from the packages that depend on it, see [_requiresFlutter].
+  late final bool isFlutterPackage =
+      _requiresFlutter ||
+      _dependsOnFlutter({
+        ...pubspec.devDependencies,
+        ...pubspec.dependencyOverrides,
+      }) ||
+      allTransitiveDependenciesInWorkspace.values.any(
+        (package) => package._requiresFlutter,
+      );
+
+  /// Whether this package requires the Flutter SDK from every package that
+  /// depends on it, either through a Flutter SDK constraint in its environment
+  /// or through a regular dependency on Flutter.
+  ///
+  /// The dev dependencies and the dependency overrides are not considered,
+  /// since they do not apply to the packages that depend on this package.
+  late final bool _requiresFlutter =
+      pubspec.environment.containsKey('flutter') ||
+      _dependsOnFlutter(pubspec.dependencies);
+
+  /// Whether any of the [dependencies] is a package that is shipped with the
+  /// Flutter SDK, or the `flutter` package from another source, for example a
+  /// path or a git dependency on a fork of the framework.
+  static bool _dependsOnFlutter(Map<String, Dependency> dependencies) {
+    return dependencies.entries.any(
+      (entry) =>
+          entry.key == 'flutter' ||
+          switch (entry.value) {
+            SdkDependency(:final sdk) => sdk == 'flutter',
+            _ => false,
+          },
+    );
+  }
 
   /// Returns whether this package is private (publish_to set to 'none').
   bool get isPrivate {
@@ -1251,7 +1302,7 @@ class Package {
   /// - c) a lib/main.dart file exists in the package.
   bool get isFlutterApp {
     // Must directly depend on the Flutter SDK.
-    if (!isFlutterPackage) {
+    if (!_dependsOnFlutter(pubspec.dependencies)) {
       return false;
     }
 

@@ -96,13 +96,35 @@ melos bootstrap --file-exists="README.md"
 
 ## --flutter
 
-Filter packages where the package depends on the Flutter SDK.
+Filter packages that need the Flutter SDK. A package needs the Flutter SDK when
+its `pubspec.yaml` either:
+
+- depends on a package that is shipped with the Flutter SDK (`sdk: flutter`),
+  for example `flutter` or `flutter_test`, in any dependency section,
+- declares a Flutter SDK constraint under `environment`, or
+- depends, directly or transitively, on another package in the workspace that
+  declares a Flutter SDK constraint or that has Flutter in its `dependencies`.
+  The `dev_dependencies` and `dependency_overrides` of that package are not
+  considered, since they do not apply to the packages that depend on it.
 
 ```bash
 melos exec --flutter -- flutter test
 ```
 
-Use `--no-flutter` to filter packages that do not depend on the Flutter SDK.
+Use `--no-flutter` to filter packages that do not need the Flutter SDK.
+
+A package that only needs the Flutter SDK because of a dependency that is not
+part of the workspace, for example a hosted package, can declare that with a
+Flutter SDK constraint:
+
+```yaml
+environment:
+  sdk: ^3.9.0
+  flutter: ">=3.35.0"
+```
+
+The same rules decide whether Melos uses the `flutter` or the `dart` tool for a
+package in commands such as `melos analyze` and `melos test`.
 
 ## --depends-on
 

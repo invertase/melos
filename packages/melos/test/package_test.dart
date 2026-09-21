@@ -237,6 +237,201 @@ void main() {
       });
     });
 
+    group('isFlutterPackage', () {
+      MelosWorkspace buildWorkspace(List<String> pubspecs) {
+        final workspaceBuilder = VirtualWorkspaceBuilder('name: test');
+        pubspecs.forEach(workspaceBuilder.addPackage);
+        return workspaceBuilder.build();
+      }
+
+      test('is false for a package that does not need Flutter', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dependencies:
+              path: any
+          ''',
+        ]);
+        expect(workspace.allPackages['a']!.isFlutterPackage, isFalse);
+      });
+
+      test('is true for a direct dependency on the Flutter SDK', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dependencies:
+              flutter:
+                sdk: flutter
+          ''',
+        ]);
+        expect(workspace.allPackages['a']!.isFlutterPackage, isTrue);
+      });
+
+      test('is true for a dev dependency that ships with the Flutter SDK', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dev_dependencies:
+              flutter_test:
+                sdk: flutter
+          ''',
+        ]);
+        expect(workspace.allPackages['a']!.isFlutterPackage, isTrue);
+      });
+
+      test('is true for the flutter package from another source', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dependencies:
+              flutter:
+                path: ../flutter/packages/flutter
+          ''',
+        ]);
+        expect(workspace.allPackages['a']!.isFlutterPackage, isTrue);
+      });
+
+      test('is false when only the dev dependencies or the dependency '
+          'overrides of a workspace dependency need Flutter', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dev_dependencies:
+              flutter_test:
+                sdk: flutter
+            dependency_overrides:
+              flutter:
+                sdk: flutter
+          ''',
+          '''
+            name: b
+            dependencies:
+              a: any
+          ''',
+          '''
+            name: c
+            dev_dependencies:
+              a: any
+          ''',
+        ]);
+        expect(workspace.allPackages['a']!.isFlutterPackage, isTrue);
+        expect(workspace.allPackages['b']!.isFlutterPackage, isFalse);
+        expect(workspace.allPackages['c']!.isFlutterPackage, isFalse);
+      });
+
+      test('is true for a dev dependency on a workspace package that '
+          'requires Flutter', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dependencies:
+              flutter:
+                sdk: flutter
+          ''',
+          '''
+            name: b
+            dev_dependencies:
+              a: any
+          ''',
+        ]);
+        expect(workspace.allPackages['b']!.isFlutterPackage, isTrue);
+      });
+
+      test('does not make a Dart package with a lib/main.dart an app', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dependencies:
+              flutter:
+                sdk: flutter
+          ''',
+          '''
+            name: b
+            dependencies:
+              a: any
+          ''',
+        ]);
+        final package = workspace.allPackages['b']!;
+        File(
+          p.join(package.path, 'lib', 'main.dart'),
+        ).createSync(recursive: true);
+
+        expect(package.isFlutterPackage, isTrue);
+        expect(package.isFlutterApp, isFalse);
+        expect(package.type, PackageType.flutterPackage);
+      });
+
+      test('is true for a Flutter SDK constraint in the environment', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            environment:
+              sdk: ^3.0.0
+              flutter: ">=3.0.0"
+          ''',
+        ]);
+        expect(workspace.allPackages['a']!.isFlutterPackage, isTrue);
+      });
+
+      test('is true when a transitive workspace dependency needs Flutter', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dependencies:
+              flutter:
+                sdk: flutter
+          ''',
+          '''
+            name: b
+            dependencies:
+              a: any
+          ''',
+          '''
+            name: c
+            dependencies:
+              b: any
+          ''',
+          '''
+            name: d
+          ''',
+        ]);
+        expect(workspace.allPackages['b']!.isFlutterPackage, isTrue);
+        expect(workspace.allPackages['c']!.isFlutterPackage, isTrue);
+        expect(workspace.allPackages['d']!.isFlutterPackage, isFalse);
+      });
+
+      test('handles dependency cycles between workspace packages', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dependencies:
+              b: any
+          ''',
+          '''
+            name: b
+            dependencies:
+              a: any
+              flutter:
+                sdk: flutter
+          ''',
+          '''
+            name: c
+            dependencies:
+              d: any
+          ''',
+          '''
+            name: d
+            dependencies:
+              c: any
+          ''',
+        ]);
+        expect(workspace.allPackages['a']!.isFlutterPackage, isTrue);
+        expect(workspace.allPackages['b']!.isFlutterPackage, isTrue);
+        expect(workspace.allPackages['c']!.isFlutterPackage, isFalse);
+        expect(workspace.allPackages['d']!.isFlutterPackage, isFalse);
+      });
+    });
+
     group('applying filters', () {
       test('applyCategory', () {
         Package createPackage(String name, List<String> category) {
@@ -291,7 +486,7 @@ void main() {
 
   group('PackageFilters', () {
     test('default', () {
-      final filters = PackageFilters();
+      const filters = PackageFilters();
 
       expect(filters.dependsOn, isEmpty);
       expect(filters.noDependsOn, isEmpty);
@@ -310,7 +505,7 @@ void main() {
 
     group('copyWithWithDiff', () {
       test('can assign null', () {
-        final filters = PackageFilters(diff: '123');
+        const filters = PackageFilters(diff: '123');
 
         expect(filters.copyWithDiff(null).diff, null);
       });

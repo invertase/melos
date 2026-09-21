@@ -30,8 +30,8 @@ void main() {
       final workspace = await MelosWorkspace.fromConfig(
         config,
         logger: TestLogger().toMelosLogger(),
-        packageFilters: PackageFilters(
-          dirExists: const ['test'],
+        packageFilters: const PackageFilters(
+          dirExists: ['test'],
         ),
       );
 
@@ -68,8 +68,8 @@ void main() {
       final workspace = await MelosWorkspace.fromConfig(
         config,
         logger: TestLogger().toMelosLogger(),
-        packageFilters: PackageFilters(
-          fileExists: const ['log.txt'],
+        packageFilters: const PackageFilters(
+          fileExists: ['log.txt'],
         ),
       );
 
@@ -199,6 +199,54 @@ void main() {
           isA<Package>().having((p) => p.name, 'name', 'abc'),
         ],
       );
+    });
+
+    group('flutter', () {
+      MelosWorkspace buildWorkspace() {
+        final workspaceBuilder = VirtualWorkspaceBuilder('name: test')
+          ..addPackage('''
+            name: a
+            dependencies:
+              flutter:
+                sdk: flutter
+          ''')
+          ..addPackage('''
+            name: b
+            dependencies:
+              a: any
+          ''')
+          ..addPackage('''
+            name: c
+          ''');
+        return workspaceBuilder.build();
+      }
+
+      test('includes packages that transitively need Flutter', () async {
+        final workspace = buildWorkspace();
+        final filteredPackages = await workspace.allPackages.applyFilters(
+          const PackageFilters(flutter: true),
+        );
+
+        expect(filteredPackages.keys, ['a', 'b']);
+      });
+
+      test('excludes packages that transitively need Flutter', () async {
+        final workspace = buildWorkspace();
+        final filteredPackages = await workspace.allPackages.applyFilters(
+          const PackageFilters(flutter: false),
+        );
+
+        expect(filteredPackages.keys, ['c']);
+      });
+
+      test('does not filter when not specified', () async {
+        final workspace = buildWorkspace();
+        final filteredPackages = await workspace.allPackages.applyFilters(
+          const PackageFilters(),
+        );
+
+        expect(filteredPackages.keys, ['a', 'b', 'c']);
+      });
     });
   });
 }

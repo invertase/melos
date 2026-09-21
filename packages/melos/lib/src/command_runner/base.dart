@@ -74,8 +74,9 @@ abstract class MelosCommand extends Command<void> {
       filterOptionFlutter,
       defaultsTo: null,
       help:
-          'Filter packages where the package depends on the Flutter SDK. Or '
-          '"-no-flutter" to filter packages that do not depend on the Flutter '
+          'Filter packages that need the Flutter SDK, either directly or '
+          'through another package in the workspace that they depend on. Or '
+          '"--no-flutter" to filter packages that do not need the Flutter '
           'SDK.',
     );
 
