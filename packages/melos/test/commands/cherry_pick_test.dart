@@ -40,6 +40,9 @@ void main() {
       await _git(['config', 'user.email', 'test@example.com'], workspaceDir);
       await _git(['config', 'user.name', 'Test'], workspaceDir);
       await _git(['config', 'commit.gpgsign', 'false'], workspaceDir);
+      // Git for Windows converts line endings when it checks out files by
+      // default, which the expected file contents do not account for.
+      await _git(['config', 'core.autocrlf', 'false'], workspaceDir);
       await _commitAll(workspaceDir, 'chore: initial commit');
       await _git(['branch', 'hot-fix'], workspaceDir);
     });
