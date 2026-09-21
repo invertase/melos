@@ -50,12 +50,13 @@ class RetryBackoff {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
+    runtimeType,
     delayFactor,
     randomizationFactor,
     maxDelay,
     maxAttempts,
-  );
+  ]);
 }
 
 final _random = math.Random();

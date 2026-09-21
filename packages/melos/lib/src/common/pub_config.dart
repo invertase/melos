@@ -111,7 +111,8 @@ class PubClientConfig {
   }
 
   @override
-  int get hashCode => requestTimeout.hashCode ^ retryBackoff.hashCode;
+  int get hashCode =>
+      Object.hashAll([runtimeType, requestTimeout, retryBackoff]);
 
   @override
   String toString() {

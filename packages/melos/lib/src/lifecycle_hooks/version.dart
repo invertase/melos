@@ -42,8 +42,7 @@ class VersionLifecycleHooks extends LifecycleHooks {
       other.preCommit == preCommit;
 
   @override
-  int get hashCode =>
-      runtimeType.hashCode ^ pre.hashCode ^ post.hashCode ^ preCommit.hashCode;
+  int get hashCode => Object.hashAll([runtimeType, pre, post, preCommit]);
 
   @override
   String toString() {

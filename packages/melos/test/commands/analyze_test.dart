@@ -4,6 +4,7 @@ library;
 import 'dart:io';
 
 import 'package:melos/melos.dart';
+import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
@@ -427,6 +428,42 @@ ${'-' * terminalWidth}
       },
     );
 
+    test('should pass --no-pub only to flutter analyze', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a', 'b'],
+      );
+
+      await createProject(
+        workspaceDir,
+        Pubspec(
+          'a',
+          dependencies: {
+            'flutter': SdkDependency('flutter'),
+          },
+        ),
+      );
+
+      await createProject(workspaceDir, Pubspec('b'));
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+      await melos.analyze(noPub: true);
+
+      final output = logger.output.removeAnsiCodes();
+
+      expect(output, contains('flutter analyze --fatal-infos --no-pub'));
+
+      final dartRegex = RegExp(
+        r'\$ melos analyze\s+└> dart analyze --fatal-infos\s',
+      );
+      expect(dartRegex.hasMatch(output), isTrue);
+      expect(output, isNot(contains('dart analyze --fatal-infos --no-pub')));
+    });
+
     test('should run analysis using dart', () async {
       final workspaceDir = await createTemporaryWorkspace(
         workspacePackages: ['a'],
@@ -542,5 +579,70 @@ ${'-' * terminalWidth}
         );
       },
     );
+
+    group('config', () {
+      Future<TestLogger> runAnalyzeWith(
+        AnalyzeCommandConfigs analyzeConfigs, {
+        bool? fatalInfos,
+        int? concurrency,
+      }) async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_workspace',
+            packages: [createGlob('packages/**', currentDirectoryPath: path)],
+            commands: CommandConfigs(analyze: analyzeConfigs),
+          ),
+          workspacePackages: ['a'],
+        );
+        await createProject(workspaceDir, Pubspec('a'));
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        await Melos(logger: logger, config: config).analyze(
+          fatalInfos: fatalInfos,
+          concurrency: concurrency,
+        );
+
+        return logger;
+      }
+
+      test('uses the configured fatalInfos and concurrency', () async {
+        final logger = await runAnalyzeWith(
+          const AnalyzeCommandConfigs(fatalInfos: false, concurrency: 2),
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          contains('dart analyze --concurrency 2'),
+        );
+      });
+
+      test('uses the configured fatalWarnings', () async {
+        final logger = await runAnalyzeWith(
+          const AnalyzeCommandConfigs(fatalWarnings: true),
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          contains('dart analyze --fatal-infos --fatal-warnings'),
+        );
+      });
+
+      test('command line options take precedence over the config', () async {
+        final logger = await runAnalyzeWith(
+          const AnalyzeCommandConfigs(fatalInfos: false, concurrency: 2),
+          fatalInfos: true,
+          concurrency: 3,
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          contains('dart analyze --fatal-infos --concurrency 3'),
+        );
+      });
+    });
   });
 }

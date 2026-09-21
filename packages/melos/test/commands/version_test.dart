@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:glob/glob.dart';
 import 'package:melos/melos.dart';
-import 'package:melos/src/command_configs/command_configs.dart';
 import 'package:melos/src/command_runner.dart';
 import 'package:melos/src/common/git_tag_pattern_dependency.dart';
 import 'package:melos/src/common/glob.dart';
@@ -2559,6 +2558,172 @@ dev_dependencies:
         },
       );
     });
+
+    group('config', () {
+      Version pubspecVersion(Directory workspaceDir, String packageName) {
+        return Pubspec.parse(
+          File(
+            p.join(workspaceDir.path, 'packages', packageName, 'pubspec.yaml'),
+          ).readAsStringSync(),
+        ).version!;
+      }
+
+      bool hasChangelog(Directory workspaceDir, String packageName) {
+        return File(
+          p.join(workspaceDir.path, 'packages', packageName, 'CHANGELOG.md'),
+        ).existsSync();
+      }
+
+      test(
+        'CLI runner respects the versioning defaults from melos.yaml',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _versionDefaultsWorkspaceConfigBuilder,
+            workspacePackages: ['a'],
+            useLocalTmpDirectory: true,
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+
+          // Neither --yes, --all, --no-changelog, --no-git-tag-version nor
+          // --no-git-commit-version is passed, they all come from the config.
+          await MelosCommandRunner(config).run(['version', '-V', 'a:1.0.1']);
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          expect(hasChangelog(workspaceDir, 'a'), isFalse);
+        },
+      );
+
+      test('command line options take precedence over the config', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _versionDefaultsWorkspaceConfigBuilder,
+          workspacePackages: ['a'],
+          useLocalTmpDirectory: true,
+        );
+
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+
+        await MelosCommandRunner(
+          config,
+        ).run(['version', '--changelog', '-V', 'a:1.0.1']);
+
+        expect(hasChangelog(workspaceDir, 'a'), isTrue);
+      });
+    });
+
+    group('sign off', () {
+      Future<Directory> createWorkspace({
+        MelosWorkspaceConfig Function(String path)? configBuilder,
+      }) async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: configBuilder ?? _workspaceConfigBuilder,
+          workspacePackages: ['a'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await _runGit(workspaceDir, ['init']);
+        await _runGit(workspaceDir, ['config', 'user.name', 'Melos Test']);
+        await _runGit(
+          workspaceDir,
+          ['config', 'user.email', 'test@melos.invertase.dev'],
+        );
+        await _runGit(workspaceDir, ['config', 'commit.gpgsign', 'false']);
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+        File(
+          p.join(workspaceDir.path, 'packages', 'a', 'change.txt'),
+        ).writeAsStringSync('feat');
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', 'feat: a new feature']);
+        return workspaceDir;
+      }
+
+      test('is disabled by default', () async {
+        final workspaceDir = await createWorkspace();
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.version(force: true);
+
+        expect(
+          await _gitLastCommitMessage(workspaceDir),
+          isNot(contains('Signed-off-by:')),
+        );
+      });
+
+      test('adds a Signed-off-by trailer when enabled', () async {
+        final workspaceDir = await createWorkspace();
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.version(force: true, signOff: true);
+
+        expect(
+          await _gitLastCommitMessage(workspaceDir),
+          contains('Signed-off-by: Melos Test <test@melos.invertase.dev>'),
+        );
+      });
+
+      test('can be enabled from the config', () async {
+        final workspaceDir = await createWorkspace(
+          configBuilder: _signOffWorkspaceConfigBuilder,
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+
+        await MelosCommandRunner(config).run(['version', '--yes']);
+
+        expect(
+          await _gitLastCommitMessage(workspaceDir),
+          contains('Signed-off-by: Melos Test <test@melos.invertase.dev>'),
+        );
+      });
+
+      test(
+        'the command line option takes precedence over the config',
+        () async {
+          final workspaceDir = await createWorkspace(
+            configBuilder: _signOffWorkspaceConfigBuilder,
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+
+          await MelosCommandRunner(
+            config,
+          ).run(['version', '--yes', '--no-sign-off']);
+
+          expect(
+            await _gitLastCommitMessage(workspaceDir),
+            isNot(contains('Signed-off-by:')),
+          );
+        },
+      );
+    });
   });
 }
 
@@ -2616,6 +2781,15 @@ Future<void> _runGit(Directory workspaceDir, List<String> args) async {
       'git ${args.join(' ')} failed:\n${result.stdout}\n${result.stderr}',
     );
   }
+}
+
+Future<String> _gitLastCommitMessage(Directory workspaceDir) async {
+  final result = await Process.run(
+    'git',
+    ['log', '-1', '--format=%B'],
+    workingDirectory: workspaceDir.path,
+  );
+  return result.stdout as String;
 }
 
 Future<String> _gitTagMessage(Directory workspaceDir, String tag) async {
@@ -2696,6 +2870,39 @@ MelosWorkspaceConfig _workspaceConfigBuilder(String path) {
       version: VersionCommandConfigs(
         fetchTags: false,
         updateGitTagRefs: true,
+      ),
+    ),
+  );
+}
+
+MelosWorkspaceConfig _signOffWorkspaceConfigBuilder(String path) {
+  return MelosWorkspaceConfig(
+    path: path,
+    name: 'test_workspace',
+    packages: [
+      createGlob('packages/**', currentDirectoryPath: path),
+    ],
+    commands: const CommandConfigs(
+      version: VersionCommandConfigs(fetchTags: false, signOff: true),
+    ),
+  );
+}
+
+MelosWorkspaceConfig _versionDefaultsWorkspaceConfigBuilder(String path) {
+  return MelosWorkspaceConfig(
+    path: path,
+    name: 'test_workspace',
+    packages: [
+      createGlob('packages/**', currentDirectoryPath: path),
+    ],
+    commands: const CommandConfigs(
+      version: VersionCommandConfigs(
+        fetchTags: false,
+        force: true,
+        versionPrivatePackages: true,
+        updateChangelog: false,
+        gitTagVersion: false,
+        gitCommitVersion: false,
       ),
     ),
   );

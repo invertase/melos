@@ -1,8 +1,6 @@
 import 'dart:io';
 
 import 'package:melos/melos.dart';
-import 'package:melos/src/command_configs/command_configs.dart';
-import 'package:melos/src/command_configs/publish.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/topology.dart';
 import 'package:melos/src/lifecycle_hooks/publish.dart';
@@ -281,6 +279,67 @@ void main() {
           );
         },
       );
+    });
+
+    group('config', () {
+      Future<TestLogger> runPublishWith(
+        PublishCommandConfigs publishConfigs, {
+        bool? skipValidation,
+      }) async {
+        final logger = TestLogger();
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_workspace',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            commands: CommandConfigs(publish: publishConfigs),
+          ),
+          workspacePackages: const ['a'],
+        );
+
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 2, 3)),
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+
+        await expectLater(
+          Melos(
+            logger: logger,
+            config: config,
+          ).publish(skipValidation: skipValidation),
+          completes,
+        );
+
+        return logger;
+      }
+
+      test('uses the configured force and skipValidation', () async {
+        // `force` skips the confirmation prompt, which would otherwise make
+        // this test hang.
+        final logger = await runPublishWith(
+          const PublishCommandConfigs(force: true, skipValidation: true),
+        );
+
+        expect(logger.output.normalizeLines(), contains('--skip-validation'));
+      });
+
+      test('command line options take precedence over the config', () async {
+        final logger = await runPublishWith(
+          const PublishCommandConfigs(force: true, skipValidation: true),
+          skipValidation: false,
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          isNot(contains('--skip-validation')),
+        );
+      });
     });
 
     test(

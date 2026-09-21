@@ -39,6 +39,16 @@ class VersionCommandConfigs {
     this.includeDateInChangelogEntry = false,
     this.groupChangelogEntriesByType = false,
     this.smartDependents = false,
+    this.updateChangelog,
+    this.updateDependentsConstraints,
+    this.updateDependentsVersions,
+    this.gitTagVersion,
+    this.gitCommitVersion,
+    this.signOff,
+    this.force,
+    this.versionPrivatePackages,
+    this.preid,
+    this.dependentPreid,
   }) : _aggregateChangelogs = aggregateChangelogs;
 
   factory VersionCommandConfigs.fromYaml(
@@ -166,6 +176,66 @@ class VersionCommandConfigs {
       path: 'command/version',
     );
 
+    final updateChangelog = assertKeyIsA<bool?>(
+      key: 'updateChangelog',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final updateDependentsConstraints = assertKeyIsA<bool?>(
+      key: 'updateDependentsConstraints',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final updateDependentsVersions = assertKeyIsA<bool?>(
+      key: 'updateDependentsVersions',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final gitTagVersion = assertKeyIsA<bool?>(
+      key: 'gitTagVersion',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final gitCommitVersion = assertKeyIsA<bool?>(
+      key: 'gitCommitVersion',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final signOff = assertKeyIsA<bool?>(
+      key: 'signOff',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final force = assertKeyIsA<bool?>(
+      key: 'force',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final versionPrivatePackages = assertKeyIsA<bool?>(
+      key: 'versionPrivatePackages',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final preid = assertKeyIsA<String?>(
+      key: 'preid',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final dependentPreid = assertKeyIsA<String?>(
+      key: 'dependentPreid',
+      map: yaml,
+      path: 'command/version',
+    );
+
     final hooksMap = assertKeyIsA<Map<Object?, Object?>?>(
       key: 'hooks',
       map: yaml,
@@ -237,6 +307,16 @@ class VersionCommandConfigs {
       includeDateInChangelogEntry: includeDate ?? false,
       groupChangelogEntriesByType: groupByType ?? false,
       smartDependents: smartDependents ?? false,
+      updateChangelog: updateChangelog,
+      updateDependentsConstraints: updateDependentsConstraints,
+      updateDependentsVersions: updateDependentsVersions,
+      gitTagVersion: gitTagVersion,
+      gitCommitVersion: gitCommitVersion,
+      signOff: signOff,
+      force: force,
+      versionPrivatePackages: versionPrivatePackages,
+      preid: preid,
+      dependentPreid: dependentPreid,
     );
   }
 
@@ -313,6 +393,58 @@ class VersionCommandConfigs {
   /// "Bug Fixes" header) instead of listing them in a single flat list.
   final bool groupChangelogEntriesByType;
 
+  /// Whether to update the `CHANGELOG.md` files of versioned packages.
+  ///
+  /// The default is `true`.
+  final bool? updateChangelog;
+
+  /// Whether to update the dependency version constraints of packages that
+  /// depend on any of the packages that are versioned.
+  ///
+  /// The default is `true`.
+  final bool? updateDependentsConstraints;
+
+  /// Whether to make a new patch version and changelog entry in packages that
+  /// are updated because of [updateDependentsConstraints].
+  ///
+  /// The default is `true`.
+  final bool? updateDependentsVersions;
+
+  /// Whether to tag the release.
+  ///
+  /// The default is `true`.
+  final bool? gitTagVersion;
+
+  /// Whether to commit the changes made to `pubspec.yaml` and changelog files.
+  ///
+  /// Disabling this also disables [gitTagVersion]. The default is `true`.
+  final bool? gitCommitVersion;
+
+  /// Whether to add a `Signed-off-by` trailer to the version commit.
+  ///
+  /// The default is `false`.
+  final bool? signOff;
+
+  /// Whether to skip the confirmation prompt.
+  ///
+  /// The default is `false`.
+  final bool? force;
+
+  /// Whether to also version private packages, which are skipped by default.
+  ///
+  /// The default is `false`.
+  final bool? versionPrivatePackages;
+
+  /// The prerelease identifier to use when versioning packages as a
+  /// prerelease, e.g. `nullsafety` for a `1.0.0-1.0.nullsafety.0` version.
+  final String? preid;
+
+  /// The prerelease identifier to use for packages that are versioned because
+  /// of a change in a dependency version.
+  ///
+  /// Falls back to [preid] when not set.
+  final String? dependentPreid;
+
   Map<String, Object?> toJson() {
     return {
       if (branch != null) 'branch': branch,
@@ -333,6 +465,19 @@ class VersionCommandConfigs {
         'includeDate': includeDateInChangelogEntry,
         'groupByType': groupChangelogEntriesByType,
       },
+      if (updateChangelog != null) 'updateChangelog': updateChangelog,
+      if (updateDependentsConstraints != null)
+        'updateDependentsConstraints': updateDependentsConstraints,
+      if (updateDependentsVersions != null)
+        'updateDependentsVersions': updateDependentsVersions,
+      if (gitTagVersion != null) 'gitTagVersion': gitTagVersion,
+      if (gitCommitVersion != null) 'gitCommitVersion': gitCommitVersion,
+      if (signOff != null) 'signOff': signOff,
+      if (force != null) 'force': force,
+      if (versionPrivatePackages != null)
+        'versionPrivatePackages': versionPrivatePackages,
+      if (preid != null) 'preid': preid,
+      if (dependentPreid != null) 'dependentPreid': dependentPreid,
     };
   }
 
@@ -344,6 +489,8 @@ class VersionCommandConfigs {
       other.message == message &&
       other.includeScopes == includeScopes &&
       other.includeCommitId == includeCommitId &&
+      other.includeCommitBody == includeCommitBody &&
+      other.commitBodyOnlyBreaking == commitBodyOnlyBreaking &&
       other.linkToCommits == linkToCommits &&
       other.updateGitTagRefs == updateGitTagRefs &&
       other.releaseUrl == releaseUrl &&
@@ -357,26 +504,49 @@ class VersionCommandConfigs {
       other.fetchTags == fetchTags &&
       other.hooks == hooks &&
       other.includeDateInChangelogEntry == includeDateInChangelogEntry &&
-      other.groupChangelogEntriesByType == groupChangelogEntriesByType;
+      other.groupChangelogEntriesByType == groupChangelogEntriesByType &&
+      other.updateChangelog == updateChangelog &&
+      other.updateDependentsConstraints == updateDependentsConstraints &&
+      other.updateDependentsVersions == updateDependentsVersions &&
+      other.gitTagVersion == gitTagVersion &&
+      other.gitCommitVersion == gitCommitVersion &&
+      other.signOff == signOff &&
+      other.force == force &&
+      other.versionPrivatePackages == versionPrivatePackages &&
+      other.preid == preid &&
+      other.dependentPreid == dependentPreid;
 
   @override
-  int get hashCode =>
-      runtimeType.hashCode ^
-      branch.hashCode ^
-      message.hashCode ^
-      includeScopes.hashCode ^
-      includeCommitId.hashCode ^
-      linkToCommits.hashCode ^
-      updateGitTagRefs.hashCode ^
-      releaseUrl.hashCode ^
-      smartDependents.hashCode ^
-      mode.hashCode ^
-      workspaceTag.hashCode ^
-      const DeepCollectionEquality().hash(aggregateChangelogs) ^
-      fetchTags.hashCode ^
-      hooks.hashCode ^
-      includeDateInChangelogEntry.hashCode ^
-      groupChangelogEntriesByType.hashCode;
+  int get hashCode => Object.hashAll([
+    runtimeType,
+    branch,
+    message,
+    includeScopes,
+    includeCommitId,
+    includeCommitBody,
+    commitBodyOnlyBreaking,
+    linkToCommits,
+    updateGitTagRefs,
+    releaseUrl,
+    smartDependents,
+    mode,
+    workspaceTag,
+    const DeepCollectionEquality().hash(aggregateChangelogs),
+    fetchTags,
+    hooks,
+    includeDateInChangelogEntry,
+    groupChangelogEntriesByType,
+    updateChangelog,
+    updateDependentsConstraints,
+    updateDependentsVersions,
+    gitTagVersion,
+    gitCommitVersion,
+    signOff,
+    force,
+    versionPrivatePackages,
+    preid,
+    dependentPreid,
+  ]);
 
   @override
   String toString() {
@@ -397,6 +567,16 @@ VersionCommandConfigs(
   hooks: $hooks,
   includeDateInChangelogEntry: $includeDateInChangelogEntry,
   groupChangelogEntriesByType: $groupChangelogEntriesByType,
+  updateChangelog: $updateChangelog,
+  updateDependentsConstraints: $updateDependentsConstraints,
+  updateDependentsVersions: $updateDependentsVersions,
+  gitTagVersion: $gitTagVersion,
+  gitCommitVersion: $gitCommitVersion,
+  signOff: $signOff,
+  force: $force,
+  versionPrivatePackages: $versionPrivatePackages,
+  preid: $preid,
+  dependentPreid: $dependentPreid,
 )''';
   }
 }

@@ -50,6 +50,15 @@ This option configures the melos analyze command to ignore warnings, allowing th
 melos analyze --no-fatal-warnings
 ```
 
+## --no-pub
+Skips the implicit `pub get` that `flutter analyze` runs before analyzing a
+package, by passing `--no-pub` to it. This has no effect on Dart-only packages,
+since `dart analyze` never runs `pub get`.
+
+```bash
+melos analyze --no-pub
+```
+
 ## concurrency (-c)
 
 Defines the max concurrency value of how many packages will execute the command in at any one time. Defaults to `1`.

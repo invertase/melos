@@ -45,7 +45,7 @@ class CleanCommandConfigs {
       other.hooks == hooks;
 
   @override
-  int get hashCode => runtimeType.hashCode ^ hooks.hashCode;
+  int get hashCode => Object.hashAll([runtimeType, hooks]);
 
   @override
   String toString() {

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import '../commands/runner.dart';
+import '../common/utils.dart';
 import 'base.dart';
 
 class ExecCommand extends MelosCommand {
@@ -65,14 +66,13 @@ class ExecCommand extends MelosCommand {
     final melos = Melos(logger: logger, config: config);
 
     final packageFilters = parsePackageFilters(config.path);
-    final concurrency = int.parse(argResults!['concurrency'] as String);
-    final failFast = argResults!['fail-fast'] as bool;
-    final orderDependents = argResults!['order-dependents'] as bool;
-    final groupLogs = argResults!['group-logs'] as bool;
+    final failFast = argResults!.optional('fail-fast') as bool?;
+    final orderDependents = argResults!.optional('order-dependents') as bool?;
+    final groupLogs = argResults!.optional('group-logs') as bool?;
 
     return melos.exec(
       execArgs,
-      concurrency: concurrency,
+      concurrency: concurrencyOption,
       failFast: failFast,
       orderDependents: orderDependents,
       groupLogs: groupLogs,

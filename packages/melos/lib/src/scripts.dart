@@ -13,6 +13,13 @@ final _leadingMelosExecRegExp = RegExp(r'^\s*melos\s+exec');
 const _scriptsExecDocsUrl =
     'https://melos.invertase.dev/configuration/scripts#exec';
 
+/// Prefix marking a key as an extension field.
+///
+/// Extension fields are ignored by Melos and exist so that reusable YAML
+/// anchors can be declared in the configuration, following the convention used
+/// by the Compose specification.
+const extensionFieldPrefix = 'x-';
+
 /// Error message shown when a script specifies both `run` and `exec`, which is
 /// no longer supported as of Melos 8.0.0.
 String _execAndRunMigrationMessage({
@@ -112,21 +119,23 @@ class Scripts extends MapView<String, Script> {
     Map<Object?, Object?> yaml, {
     required String workspacePath,
   }) {
-    final scripts = yaml.map<String, Script>((key, value) {
-      final name = assertIsA<String>(value: key, key: 'scripts');
+    final scripts = <String, Script>{};
 
+    for (final entry in yaml.entries) {
+      final name = assertIsA<String>(value: entry.key, key: 'scripts');
+      if (name.startsWith(extensionFieldPrefix)) continue;
+
+      final value = entry.value;
       if (value == null) {
         throw MelosConfigException('The script $name has no value');
       }
 
-      final script = Script.fromYaml(
+      scripts[name] = Script.fromYaml(
         value,
         name: name,
         workspacePath: workspacePath,
       );
-
-      return MapEntry(name, script);
-    });
+    }
 
     return Scripts(UnmodifiableMapView(scripts));
   }
@@ -183,12 +192,13 @@ class ExecOptions {
       groupLogs == other.groupLogs;
 
   @override
-  int get hashCode =>
-      runtimeType.hashCode ^
-      concurrency.hashCode ^
-      failFast.hashCode ^
-      orderDependents.hashCode ^
-      groupLogs.hashCode;
+  int get hashCode => Object.hashAll([
+    runtimeType,
+    concurrency,
+    failFast,
+    orderDependents,
+    groupLogs,
+  ]);
 
   @override
   String toString() =>
@@ -626,18 +636,19 @@ class Script {
       other.stdio == stdio;
 
   @override
-  int get hashCode =>
-      runtimeType.hashCode ^
-      name.hashCode ^
-      run.hashCode ^
-      description.hashCode ^
-      const DeepCollectionEquality().hash(env) ^
-      packageFilters.hashCode ^
-      steps.hashCode ^
-      exec.hashCode ^
-      isPrivate.hashCode ^
-      groups.hashCode ^
-      stdio.hashCode;
+  int get hashCode => Object.hashAll([
+    runtimeType,
+    name,
+    run,
+    description,
+    const DeepCollectionEquality().hash(env),
+    packageFilters,
+    steps,
+    exec,
+    isPrivate,
+    groups,
+    stdio,
+  ]);
 
   @override
   String toString() {

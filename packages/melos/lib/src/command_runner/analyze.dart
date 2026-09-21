@@ -21,6 +21,14 @@ class AnalyzeCommand extends MelosCommand {
           'Enables or disables treating warnings as fatal errors. '
           'When enabled, any warning will cause the command to fail.',
     );
+
+    argParser.addFlag(
+      'no-pub',
+      negatable: false,
+      help:
+          'Run `flutter analyze` with --no-pub to skip the implicit pub get. '
+          'Has no effect on `dart analyze`, which never runs pub get.',
+    );
   }
 
   @override
@@ -34,18 +42,19 @@ class AnalyzeCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    final fatalInfos = argResults?['fatal-infos'] as bool;
+    final fatalInfos = argResults!.optional('fatal-infos') as bool?;
     final fatalWarnings = argResults!.optional('fatal-warnings') as bool?;
-    final concurrency = int.parse(argResults!['concurrency'] as String);
+    final noPub = argResults!.optional('no-pub') as bool?;
 
     final melos = Melos(logger: logger, config: config);
 
     return melos.analyze(
       global: global,
       packageFilters: parsePackageFilters(config.path),
-      concurrency: concurrency,
+      concurrency: concurrencyOption,
       fatalInfos: fatalInfos,
       fatalWarnings: fatalWarnings,
+      noPub: noPub,
     );
   }
 }

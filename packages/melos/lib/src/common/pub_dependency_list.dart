@@ -115,7 +115,7 @@ class VersionedEntry {
       other is VersionedEntry && name == other.name;
 
   @override
-  int get hashCode => name.hashCode;
+  int get hashCode => Object.hashAll([runtimeType, name]);
 
   @override
   String toString() => '$name @ $version';

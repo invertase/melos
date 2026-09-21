@@ -4,28 +4,29 @@ mixin _PublishMixin on _ExecMixin {
   Future<void> publish({
     GlobalOptions? global,
     PackageFilters? packageFilters,
-    bool dryRun = true,
-    bool gitTagVersion = true,
+    bool? dryRun,
+    bool? gitTagVersion,
     // yes
-    bool force = false,
+    bool? force,
     String? pubServer,
-    bool skipValidation = false,
+    bool? skipValidation,
   }) async {
     final workspace = await createWorkspace(
       global: global,
       packageFilters: packageFilters,
     );
+    final publishConfig = workspace.config.commands.publish;
 
     return _runLifecycle(workspace, CommandWithLifecycle.publish, () {
       return _publish(
         workspace: workspace,
         global: global,
         packageFilters: packageFilters,
-        dryRun: dryRun,
-        gitTagVersion: gitTagVersion,
-        force: force,
-        pubServer: pubServer ?? workspace.config.commands.publish.pubServer,
-        skipValidation: skipValidation,
+        dryRun: dryRun ?? publishConfig.dryRun ?? true,
+        gitTagVersion: gitTagVersion ?? publishConfig.gitTagVersion ?? false,
+        force: force ?? publishConfig.force ?? false,
+        pubServer: pubServer ?? publishConfig.pubServer,
+        skipValidation: skipValidation ?? publishConfig.skipValidation ?? false,
       );
     });
   }
@@ -35,7 +36,7 @@ mixin _PublishMixin on _ExecMixin {
     GlobalOptions? global,
     PackageFilters? packageFilters,
     bool dryRun = true,
-    bool gitTagVersion = true,
+    bool gitTagVersion = false,
     // yes
     bool force = false,
     String? pubServer,

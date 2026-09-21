@@ -1328,6 +1328,43 @@ SUCCESS
     );
 
     test(
+      'explains that "x-" keys are not scripts when one is run',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: const Scripts({
+              'a': Script(name: 'a', run: 'echo a'),
+            }),
+          ),
+          workspacePackages: ['a'],
+        );
+
+        await createProject(workspaceDir, Pubspec('a'));
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(logger: TestLogger(), config: config);
+
+        expect(
+          () => melos.run(scriptName: 'x-analyze'),
+          throwsA(
+            isA<ScriptNotFoundException>().having(
+              (exception) => exception.toString(),
+              'toString()',
+              contains('extension fields for YAML anchors'),
+            ),
+          ),
+        );
+      },
+    );
+
+    test(
       'verifies that the --groups option shows an error '
       'if the specified group is empty',
       () async {
@@ -1694,6 +1731,60 @@ ${'-' * terminalWidth}
      └> SUCCESS
 ''',
           ),
+        );
+      },
+    );
+  });
+
+  group('config', () {
+    test(
+      'noSelect skips the package selection prompt for filtered scripts',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            commands: const CommandConfigs(
+              run: RunCommandConfigs(noSelect: true),
+            ),
+            scripts: Scripts({
+              'test_script': Script(
+                name: 'test_script',
+                run: 'melos exec -- "echo hello"',
+                packageFilters: PackageFilters(
+                  scope: [
+                    createGlob('*', currentDirectoryPath: path),
+                  ],
+                ),
+              ),
+            }),
+          ),
+          workspacePackages: ['a', 'b'],
+        );
+
+        await createProject(workspaceDir, Pubspec('a'));
+        await createProject(workspaceDir, Pubspec('b'));
+        await runPubGet(workspaceDir.path);
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+
+        await Melos(logger: logger, config: config).run(
+          scriptName: 'test_script',
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          isNot(contains('Select a package to run')),
+        );
+        expect(
+          logger.output.normalizeLines(),
+          contains('RUNNING (in 2 packages)'),
         );
       },
     );

@@ -49,11 +49,13 @@ class PublishCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    final dryRun = argResults![publishOptionDryRun] as bool;
-    final gitTagVersion = argResults![publishOptionGitTagVersion] as bool;
-    final yes = argResults![publishOptionYes] as bool;
-    final pubServer = argResults![publishOptionServer] as String?;
-    final skipValidation = argResults![publishOptionSkipValidation] as bool;
+    final dryRun = argResults!.optional(publishOptionDryRun) as bool?;
+    final gitTagVersion =
+        argResults!.optional(publishOptionGitTagVersion) as bool?;
+    final yes = argResults!.optional(publishOptionYes) as bool?;
+    final pubServer = argResults!.optional(publishOptionServer) as String?;
+    final skipValidation =
+        argResults!.optional(publishOptionSkipValidation) as bool?;
 
     final melos = Melos(logger: logger, config: config);
     final packageFilters = parsePackageFilters(config.path);

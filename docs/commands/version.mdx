@@ -133,6 +133,29 @@ melos version -t
 
 Use `--no-git-tag-version` to disable.
 
+## --[no-]sign-off (-s)
+
+Add a `Signed-off-by` trailer to the version commit, the same as passing
+`--signoff` to `git commit`. Defaults to `false`.
+
+```bash
+melos version --sign-off
+melos version -s
+```
+
+Use `--no-sign-off` to disable.
+
+The default for this option can be configured in
+[command/version/signOff](/configuration/overview#signoff) in your root
+`pubspec.yaml` file.
+
+<Info>
+  Melos runs `git commit` in your repository, so signing the commit with GPG or
+  SSH is handled by git itself. Set `git config commit.gpgsign true` (and
+  `tag.gpgSign` for the version tags) to have the commits created by Melos
+  signed.
+</Info>
+
 ## --[no-]release-url (-r)
 
 Generate and print a link to the prefilled release creation page for each

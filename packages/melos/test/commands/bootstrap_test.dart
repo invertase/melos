@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:melos/melos.dart';
-import 'package:melos/src/command_configs/command_configs.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
@@ -836,6 +835,46 @@ Generating IntelliJ IDE files...
       );
     });
 
+    test('can run pub get without the example directory', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: [],
+        configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
+          createYamlMap(
+            {
+              'melos': {
+                'command': {
+                  'bootstrap': {
+                    'noExample': true,
+                  },
+                },
+              },
+            },
+            defaults: configMapDefaults,
+          ),
+          path: path,
+        ),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final workspace = await MelosWorkspace.fromConfig(
+        config,
+        logger: logger.toMelosLogger(),
+      );
+      final melos = Melos(logger: logger, config: config);
+      final pubExecArgs = pubCommandExecArgs(
+        useFlutter: workspace.isFlutterWorkspace,
+        workspace: workspace,
+      );
+
+      await runMelosBootstrap(melos, logger);
+
+      expect(
+        logger.output.normalizeLines(),
+        contains('Running "${pubExecArgs.join(' ')} get --no-example"'),
+      );
+    });
+
     test('can run pub get --enforce-lockfile', () async {
       final workspaceDir = await createTemporaryWorkspace(
         workspacePackages: [],
@@ -1516,18 +1555,115 @@ Generating IntelliJ IDE files...
       );
     });
   });
+
+  group('melos bs --no-pub', () {
+    test('should skip pub get', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+      );
+      await createProject(
+        workspaceDir,
+        Pubspec('a'),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(logger: logger, config: config);
+
+      await runMelosBootstrap(melos, logger, noPub: true);
+
+      expect(
+        logger.output,
+        ignoringAnsii(
+          '''
+melos bootstrap
+  └> ${workspaceDir.path}
+
+Skipping "dart pub get" in workspace (--no-pub)...
+  > SUCCESS
+
+Generating IntelliJ IDE files...
+  > SUCCESS
+
+ -> 1 packages bootstrapped
+''',
+        ),
+      );
+      expect(
+        File(p.join(workspaceDir.path, 'pubspec.lock')).existsSync(),
+        isFalse,
+      );
+    });
+
+    test('should still apply shared dependencies', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+        configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
+          createYamlMap(
+            {
+              'melos': {
+                'command': {
+                  'bootstrap': {
+                    'dependencies': {
+                      'flame': '^1.21.0',
+                    },
+                  },
+                },
+              },
+            },
+            defaults: configMapDefaults,
+          ),
+          path: path,
+        ),
+      );
+
+      final pkgA = await createProject(
+        workspaceDir,
+        Pubspec(
+          'a',
+          dependencies: {
+            'flame': HostedDependency(version: VersionConstraint.any),
+          },
+        ),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(logger: logger, config: config);
+
+      await runMelosBootstrap(melos, logger, noPub: true);
+
+      final pubspecContent = _pubspecContent(pkgA);
+      expect(
+        (pubspecContent['dependencies']! as YamlMap)['flame'],
+        '^1.21.0',
+      );
+      expect(
+        logger.output,
+        ignoringAnsii(
+          contains('Skipping "dart pub get" in workspace (--no-pub)...'),
+        ),
+      );
+      expect(
+        File(p.join(workspaceDir.path, 'pubspec.lock')).existsSync(),
+        isFalse,
+      );
+    });
+  });
 }
 
 Future<void> runMelosBootstrap(
   Melos melos,
   TestLogger logger, {
   bool? enforceLockfile,
-  bool offline = false,
+  bool? offline,
+  bool? noPub,
 }) async {
   try {
     await melos.bootstrap(
       enforceLockfile: enforceLockfile,
       offline: offline,
+      noPub: noPub,
     );
   } on BootstrapException {
     // ignore: avoid_print

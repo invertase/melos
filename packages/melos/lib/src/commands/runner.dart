@@ -33,6 +33,7 @@ import '../common/git_tag_pattern_dependency.dart';
 import '../common/glob.dart';
 import '../common/intellij_project.dart';
 import '../common/io.dart';
+import '../common/list_output_kind.dart';
 import '../common/pending_package_update.dart';
 import '../common/persistent_shell.dart';
 import '../common/platform.dart';
@@ -181,7 +182,7 @@ abstract class _Melos {
 
   Future<void> run({
     String? scriptName,
-    bool noSelect = false,
+    bool? noSelect,
     PackageFilters? packageFilters,
   });
 

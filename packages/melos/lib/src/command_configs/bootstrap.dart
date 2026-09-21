@@ -17,6 +17,8 @@ class BootstrapCommandConfigs {
     this.runPubGetInParallel = true,
     this.runPubGetOffline = false,
     this.enforceLockfile = false,
+    this.noExample = false,
+    this.noPub = false,
     this.pubGetArgs = const [],
     this.environment,
     this.dependencies,
@@ -48,6 +50,22 @@ class BootstrapCommandConfigs {
     final enforceLockfile =
         assertKeyIsA<bool?>(
           key: 'enforceLockfile',
+          map: yaml,
+          path: 'command/bootstrap',
+        ) ??
+        false;
+
+    final noExample =
+        assertKeyIsA<bool?>(
+          key: 'noExample',
+          map: yaml,
+          path: 'command/bootstrap',
+        ) ??
+        false;
+
+    final noPub =
+        assertKeyIsA<bool?>(
+          key: 'noPub',
           map: yaml,
           path: 'command/bootstrap',
         ) ??
@@ -99,6 +117,8 @@ class BootstrapCommandConfigs {
       runPubGetInParallel: runPubGetInParallel,
       runPubGetOffline: runPubGetOffline,
       enforceLockfile: enforceLockfile,
+      noExample: noExample,
+      noPub: noPub,
       pubGetArgs: pubGetArgs,
       environment: environment.isEmpty ? null : environment,
       dependencies: dependencies.isEmpty ? null : dependencies,
@@ -133,6 +153,17 @@ class BootstrapCommandConfigs {
   /// The default is `false`.
   final bool enforceLockfile;
 
+  /// Whether `pub get` is run without the `example` directory of a package.
+  ///
+  /// The default is `false`.
+  final bool noExample;
+
+  /// Whether to skip running `pub get`. Shared dependencies, dependency
+  /// overrides and IDE files are still applied.
+  ///
+  /// The default is `false`.
+  final bool noPub;
+
   /// Additional arguments to pass to `pub get` during bootstrapping.
   final List<String> pubGetArgs;
 
@@ -163,6 +194,8 @@ class BootstrapCommandConfigs {
       'runPubGetInParallel': runPubGetInParallel,
       'runPubGetOffline': runPubGetOffline,
       'enforceLockfile': enforceLockfile,
+      'noExample': noExample,
+      'noPub': noPub,
       if (pubGetArgs.isNotEmpty) 'pubGetArgs': pubGetArgs,
       if (environment != null) 'environment': environment!.toJson(),
       if (dependencies != null) 'dependencies': dependencies!.toYaml(),
@@ -183,6 +216,8 @@ class BootstrapCommandConfigs {
       other.runPubGetInParallel == runPubGetInParallel &&
       other.runPubGetOffline == runPubGetOffline &&
       other.enforceLockfile == enforceLockfile &&
+      other.noExample == noExample &&
+      other.noPub == noPub &&
       const ListEquality<String>().equals(other.pubGetArgs, pubGetArgs) &&
       // Extracting equality from environment here as it does not implement ==
       other.environment.sdkConstraint == environment.sdkConstraint &&
@@ -198,22 +233,23 @@ class BootstrapCommandConfigs {
       other.hooks == hooks;
 
   @override
-  int get hashCode =>
-      runtimeType.hashCode ^
-      runPubGetInParallel.hashCode ^
-      runPubGetOffline.hashCode ^
-      enforceLockfile.hashCode ^
-      const ListEquality<String>().hash(pubGetArgs) ^
-      // Extracting hashCode from environment here as it does not implement
-      // hashCode
-      environment.sdkConstraint.hashCode ^
-      const DeepCollectionEquality().hash(environment) ^
-      const DeepCollectionEquality().hash(dependencies) ^
-      const DeepCollectionEquality().hash(devDependencies) ^
-      const DeepCollectionEquality(
-        GlobEquality(),
-      ).hash(dependencyOverridePaths) ^
-      hooks.hashCode;
+  int get hashCode => Object.hashAll([
+    runtimeType,
+    runPubGetInParallel,
+    runPubGetOffline,
+    enforceLockfile,
+    noExample,
+    noPub,
+    const ListEquality<String>().hash(pubGetArgs),
+    // Extracting hashCode from environment here as it does not implement
+    // hashCode
+    environment.sdkConstraint,
+    const DeepCollectionEquality().hash(environment),
+    const DeepCollectionEquality().hash(dependencies),
+    const DeepCollectionEquality().hash(devDependencies),
+    const DeepCollectionEquality(GlobEquality()).hash(dependencyOverridePaths),
+    hooks,
+  ]);
 
   @override
   String toString() {
@@ -222,6 +258,8 @@ BootstrapCommandConfigs(
   runPubGetInParallel: $runPubGetInParallel,
   runPubGetOffline: $runPubGetOffline,
   enforceLockfile: $enforceLockfile,
+  noExample: $noExample,
+  noPub: $noPub,
   pubGetArgs: $pubGetArgs,
   environment: $environment,
   dependencies: $dependencies,

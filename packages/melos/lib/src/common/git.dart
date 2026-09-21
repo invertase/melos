@@ -372,12 +372,15 @@ Future<void> gitAdd(
 }
 
 /// Commit any staged changes with a specific git message.
+///
+/// Set [signOff] to add a `Signed-off-by` trailer to the commit message.
 Future<void> gitCommit(
   String message, {
   required String workingDirectory,
   required MelosLogger logger,
+  bool signOff = false,
 }) async {
-  final arguments = ['commit', '-m', message];
+  final arguments = ['commit', if (signOff) '--signoff', '-m', message];
   await gitExecuteCommand(
     arguments: arguments,
     workingDirectory: workingDirectory,

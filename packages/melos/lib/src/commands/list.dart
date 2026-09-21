@@ -1,41 +1,43 @@
 part of 'runner.dart';
 
-// TODO find better names
-enum ListOutputKind { json, parsable, graph, gviz, mermaid, column, cycles }
-
 mixin _ListMixin on _Melos {
   Future<void> list({
     GlobalOptions? global,
-    bool long = false,
-    bool relativePaths = false,
+    bool? long,
+    bool? relativePaths,
     PackageFilters? packageFilters,
-    ListOutputKind kind = ListOutputKind.column,
+    ListOutputKind? kind,
   }) async {
     final workspace = await createWorkspace(
       global: global,
       packageFilters: packageFilters,
     );
 
-    switch (kind) {
+    final listConfig = workspace.config.commands.list;
+    final effectiveLong = long ?? listConfig.long ?? false;
+    final effectiveRelativePaths =
+        relativePaths ?? listConfig.relativePaths ?? false;
+
+    switch (kind ?? listConfig.format ?? ListOutputKind.column) {
       case ListOutputKind.graph:
         return _listGraph(workspace);
       case ListOutputKind.parsable:
         return _listParsable(
           workspace,
-          long: long,
-          relativePaths: relativePaths,
+          long: effectiveLong,
+          relativePaths: effectiveRelativePaths,
         );
       case ListOutputKind.column:
         return _listColumn(
           workspace,
-          long: long,
-          relativePaths: relativePaths,
+          long: effectiveLong,
+          relativePaths: effectiveRelativePaths,
         );
       case ListOutputKind.json:
         return _listJson(
           workspace,
-          relativePaths: relativePaths,
-          long: long,
+          relativePaths: effectiveRelativePaths,
+          long: effectiveLong,
         );
       case ListOutputKind.gviz:
         return _listGviz(workspace);

@@ -1,4 +1,6 @@
 import '../commands/runner.dart';
+import '../common/list_output_kind.dart';
+import '../common/utils.dart';
 import 'base.dart';
 
 /// Command line options for commands that print a list of packages.
@@ -46,11 +48,13 @@ mixin PackageListOutputOptions on MelosCommand {
     );
   }
 
-  bool get long => argResults!['long'] as bool;
+  bool? get long => argResults!.optional('long') as bool?;
 
-  bool get relativePaths => argResults!['relative'] as bool;
+  bool? get relativePaths => argResults!.optional('relative') as bool?;
 
-  ListOutputKind get outputKind {
+  /// The output format requested on the command line, or `null` when none was
+  /// requested and the one configured in `command/list` should be used.
+  ListOutputKind? get outputKind {
     if (argResults!['mermaid'] as bool) {
       return ListOutputKind.mermaid;
     }
@@ -66,7 +70,7 @@ mixin PackageListOutputOptions on MelosCommand {
     if (argResults!['parsable'] as bool) {
       return ListOutputKind.parsable;
     }
-    return ListOutputKind.column;
+    return null;
   }
 }
 
@@ -96,7 +100,7 @@ class ListCommand extends MelosCommand with PackageListOutputOptions {
   final String invocation = 'melos list';
 
   @override
-  ListOutputKind get outputKind =>
+  ListOutputKind? get outputKind =>
       argResults!['cycles'] as bool ? ListOutputKind.cycles : super.outputKind;
 
   @override

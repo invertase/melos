@@ -142,7 +142,7 @@ GitHubRepository(
           other.name == name;
 
   @override
-  int get hashCode => origin.hashCode ^ owner.hashCode ^ name.hashCode;
+  int get hashCode => Object.hashAll([runtimeType, origin, owner, name]);
 }
 
 /// A git repository, hosted by GitLab.
@@ -208,7 +208,7 @@ GitLabRepository(
           other.name == name;
 
   @override
-  int get hashCode => origin.hashCode ^ owner.hashCode ^ name.hashCode;
+  int get hashCode => Object.hashAll([runtimeType, origin, owner, name]);
 }
 
 class BitbucketRepository extends HostedGitRepository {
@@ -335,7 +335,7 @@ AzureDevOpsRepository(
           other.name == name;
 
   @override
-  int get hashCode => origin.hashCode ^ owner.hashCode ^ name.hashCode;
+  int get hashCode => Object.hashAll([runtimeType, origin, owner, name]);
 }
 
 final _hostsToUrlParser = {

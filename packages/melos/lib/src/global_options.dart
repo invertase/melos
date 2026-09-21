@@ -30,7 +30,7 @@ class GlobalOptions {
           other.sdkPath == sdkPath;
 
   @override
-  int get hashCode => verbose.hashCode ^ sdkPath.hashCode;
+  int get hashCode => Object.hashAll([runtimeType, verbose, sdkPath]);
 
   @override
   String toString() {

@@ -6,22 +6,28 @@ mixin _ExecMixin on _Melos {
     GlobalOptions? global,
     PackageFilters? packageFilters,
     int? concurrency,
-    bool failFast = false,
-    bool orderDependents = false,
-    bool groupLogs = false,
+    bool? failFast,
+    bool? orderDependents,
+    bool? groupLogs,
     Map<String, String> extraEnvironment = const {},
   }) async {
-    concurrency ??= Platform.numberOfProcessors;
     final workspace = await createWorkspace(
       global: global,
       packageFilters: packageFilters,
     );
+    final execConfig = workspace.config.commands.exec;
+    final effectiveConcurrency =
+        concurrency ?? execConfig.concurrency ?? Platform.numberOfProcessors;
+    final effectiveFailFast = failFast ?? execConfig.failFast ?? false;
+    final effectiveOrderDependents =
+        orderDependents ?? execConfig.orderDependents ?? false;
+    final effectiveGroupLogs = groupLogs ?? execConfig.groupLogs ?? false;
     final allPackages = workspace.allPackages.values.toList(growable: false);
     final executablePackages = workspace.filteredPackages.values.toList(
       growable: false,
     );
 
-    if (orderDependents) {
+    if (effectiveOrderDependents) {
       final cycles = findCyclicDependenciesInWorkspace(allPackages);
       if (cycles.isNotEmpty) {
         printCyclesInDependencies(cycles, logger);
@@ -34,10 +40,10 @@ mixin _ExecMixin on _Melos {
       workspace,
       execArgs,
       executablePackages: executablePackages,
-      failFast: failFast,
-      concurrency: concurrency,
-      orderDependents: orderDependents,
-      groupLogs: groupLogs,
+      failFast: effectiveFailFast,
+      concurrency: effectiveConcurrency,
+      orderDependents: effectiveOrderDependents,
+      groupLogs: effectiveGroupLogs,
       additionalEnvironment: extraEnvironment,
     );
   }

@@ -191,7 +191,7 @@ class MelosPendingPackageUpdate {
   }
 
   @override
-  int get hashCode => package.name.hashCode;
+  int get hashCode => Object.hashAll([runtimeType, package.name]);
 
   @override
   String toString() {

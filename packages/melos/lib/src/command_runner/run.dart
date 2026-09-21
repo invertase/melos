@@ -1,4 +1,5 @@
 import '../commands/runner.dart';
+import '../common/utils.dart';
 import 'base.dart';
 
 class RunCommand extends MelosCommand {
@@ -55,7 +56,7 @@ class RunCommand extends MelosCommand {
   Future<void> run() async {
     final melos = Melos(logger: logger, config: config);
 
-    final noSelect = argResults!['no-select'] as bool;
+    final noSelect = argResults!.optional('no-select') as bool?;
     final scriptName = argResults!.rest.isEmpty ? null : argResults!.rest.first;
     final extraArgs = scriptName != null
         ? argResults!.rest.skip(1).toList()
