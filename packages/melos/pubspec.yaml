@@ -10,11 +10,11 @@ issue_tracker: https://github.com/invertase/melos/issues
 resolution: workspace
 
 topics:
-  - tool
-  - repository-management
-  - cli
   - monorepo
+  - cli
   - lerna
+  - nx
+  - turborepo
 
 environment:
   sdk: ^3.9.0
