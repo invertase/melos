@@ -7,10 +7,44 @@ description:
 
 # Environment Variables
 
-These variables are available as environment variables in scripts run by
-`melos exec`. They can also automatically replaced/injected on `melos exec`
-commands e.g.
-`melos exec --file-exists="./test_driver/MELOS_PARENT_PACKAGE_NAME_e2e.dart" --scope="*example*" -- echo hello`
+These variables are available as environment variables in the commands run by
+`melos exec` and in [`exec`](/configuration/scripts#exec) scripts:
+
+```yaml
+melos:
+  scripts:
+    echo:vars:
+      exec: echo $MELOS_PACKAGE_NAME $MELOS_PACKAGE_VERSION $MELOS_PACKAGE_PATH
+```
+
+The variables that describe a package only exist while `melos exec` runs a
+command in that package. When you call `melos exec` yourself, from a terminal or
+from a [`run`](/configuration/scripts#run) script, a POSIX shell expands
+`$MELOS_PACKAGE_NAME` to an empty string before Melos starts. Wrap the command
+in single quotes, or escape the reference as `\$MELOS_PACKAGE_NAME`, so that the
+shell started by `melos exec` expands it instead:
+
+```bash
+melos exec -- 'echo $MELOS_PACKAGE_NAME'
+```
+
+A command substitution in an `exec` script still runs once, before `melos exec`
+starts, so the package variables are not defined inside of it. Escape the
+substitution to run it in every package instead:
+
+```yaml
+melos:
+  scripts:
+    echo:directory:
+      exec: echo \$(basename $MELOS_PACKAGE_PATH)
+```
+
+`$MELOS_PACKAGE_NAME` is also replaced in the paths passed to the
+`--file-exists` package filter:
+
+```bash
+melos exec --file-exists='test_driver/$MELOS_PACKAGE_NAME_e2e.dart' -- echo hello
+```
 
 ## Defined by Melos
 

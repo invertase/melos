@@ -517,6 +517,45 @@ ${'-' * terminalWidth}
           );
         },
       );
+
+      // https://github.com/invertase/melos/issues/564
+      group('references to the variables that are defined per package', () {
+        const script = Script(
+          name: 'test_script',
+          run:
+              r'echo $MELOS_ROOT_PATH $MELOS_PACKAGE_NAME '
+              r'${MELOS_PARENT_PACKAGE_PATH} \$MELOS_PACKAGE_VERSION '
+              r'$MELOS_PACKAGE_NAME_SUFFIX',
+          exec: ExecOptions(),
+        );
+
+        test(
+          'are left for the shell of "melos exec" to expand on POSIX',
+          withMockPlatform(
+            () {
+              expect(
+                script.command().last,
+                [
+                  r'"echo $MELOS_ROOT_PATH \$MELOS_PACKAGE_NAME',
+                  r'\${MELOS_PARENT_PACKAGE_PATH} \$MELOS_PACKAGE_VERSION',
+                  r'$MELOS_PACKAGE_NAME_SUFFIX"',
+                ].join(' '),
+              );
+            },
+            platform: FakePlatform(operatingSystem: 'linux'),
+          ),
+        );
+
+        test(
+          'are left untouched on Windows',
+          withMockPlatform(
+            () {
+              expect(script.command().last, '"${script.run}"');
+            },
+            platform: FakePlatform(operatingSystem: 'windows'),
+          ),
+        );
+      });
     });
   });
 
