@@ -1935,5 +1935,60 @@ ${'-' * terminalWidth}
         );
       },
     );
+
+    test(
+      'CLI --post-filter is applied after the script-defined '
+      'includeDependencies',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: Scripts({
+              'test_script': Script(
+                name: 'test_script',
+                run: 'melos exec -- "echo hello"',
+                packageFilters: PackageFilters(
+                  scope: [
+                    createGlob('a', currentDirectoryPath: path),
+                  ],
+                  includeDependencies: true,
+                ),
+              ),
+            }),
+          ),
+          workspacePackages: ['a', 'b'],
+        );
+
+        await createProject(
+          workspaceDir,
+          Pubspec('a', dependencies: {'b': HostedDependency()}),
+        );
+        await createProject(workspaceDir, Pubspec('b'));
+        await runPubGet(workspaceDir.path);
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+
+        await Melos(logger: logger, config: config).run(
+          scriptName: 'test_script',
+          noSelect: true,
+          packageFilters: const PackageFilters(
+            postFilters: PackageFilters(noDependsOn: ['b']),
+          ),
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          contains('RUNNING (in 1 packages)'),
+        );
+        expect(logger.output.normalizeLines(), contains('b: SUCCESS'));
+      },
+    );
   });
 }

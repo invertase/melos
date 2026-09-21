@@ -100,6 +100,7 @@ class PackageFilters {
     bool? flutter,
     this.includeDependencies = false,
     this.includeDependents = false,
+    this.postFilters,
   }) : includeFlutterPackages = flutter;
 
   factory PackageFilters.fromYaml(
@@ -218,6 +219,21 @@ class PackageFilters {
       path: path,
     );
 
+    final postFiltersKey = filterOptionPostFilters.camelCased;
+    final postFiltersMap = assertKeyIsA<Map<Object?, Object?>?>(
+      key: postFiltersKey,
+      map: yaml,
+      path: path,
+    );
+    final postFilters = postFiltersMap == null
+        ? null
+        : PackageFilters.fromYaml(
+            postFiltersMap,
+            path: '$path/$postFiltersKey',
+            workspacePath: workspacePath,
+          );
+    postFilters?.assertValidPostFilters(path: '$path/$postFiltersKey');
+
     Glob createPackageGlob(String pattern) =>
         createGlob(pattern, currentDirectoryPath: workspacePath);
 
@@ -236,6 +252,7 @@ class PackageFilters {
       nullSafe: nullSafe,
       flutter: flutter,
       categories: category.map(createPackageGlob).toList(),
+      postFilters: postFilters,
     );
   }
 
@@ -256,6 +273,7 @@ class PackageFilters {
     required this.includeFlutterPackages,
     required this.includeDependencies,
     required this.includeDependents,
+    required this.postFilters,
   });
 
   /// Patterns for filtering packages by name.
@@ -312,6 +330,26 @@ class PackageFilters {
   /// This supersede other filters.
   final bool includeDependencies;
 
+  /// Filters that are applied to all packages after the dependents and
+  /// dependencies have been included through [includeDependents] and
+  /// [includeDependencies].
+  ///
+  /// These filters cannot include dependents or dependencies themselves and
+  /// cannot have their own [postFilters].
+  final PackageFilters? postFilters;
+
+  /// Throws a [MelosConfigException] if these filters cannot be used as
+  /// [postFilters].
+  void assertValidPostFilters({required String path}) {
+    if (includeDependents || includeDependencies || postFilters != null) {
+      throw MelosConfigException(
+        '"${filterOptionIncludeDependents.camelCased}", '
+        '"${filterOptionIncludeDependencies.camelCased}" and '
+        '"${filterOptionPostFilters.camelCased}" cannot be used in "$path".',
+      );
+    }
+  }
+
   Map<String, Object?> toJson() {
     return {
       if (scope.isNotEmpty)
@@ -336,6 +374,8 @@ class PackageFilters {
         filterOptionFlutter.camelCased: includeFlutterPackages,
       if (includeDependents) filterOptionIncludeDependents.camelCased: true,
       if (includeDependencies) filterOptionIncludeDependencies.camelCased: true,
+      if (postFilters != null)
+        filterOptionPostFilters.camelCased: postFilters!.toJson(),
     };
   }
 
@@ -355,6 +395,7 @@ class PackageFilters {
       includeDependencies: includeDependencies,
       includeDependents: includeDependents,
       categories: categories,
+      postFilters: postFilters,
     );
   }
 
@@ -374,6 +415,7 @@ class PackageFilters {
       includeDependencies: includeDependencies,
       includeDependents: includeDependents,
       categories: categories,
+      postFilters: postFilters,
     );
   }
 
@@ -392,6 +434,7 @@ class PackageFilters {
     bool? includeDependencies,
     bool? includeDependents,
     List<Glob>? categories,
+    PackageFilters? postFilters,
   }) {
     return PackageFilters._(
       dependsOn: dependsOn ?? this.dependsOn,
@@ -410,6 +453,7 @@ class PackageFilters {
       diff: diff ?? this.diff,
       includeDependencies: includeDependencies ?? this.includeDependencies,
       includeDependents: includeDependents ?? this.includeDependents,
+      postFilters: postFilters ?? this.postFilters,
     );
   }
 
@@ -430,7 +474,8 @@ class PackageFilters {
       const DeepCollectionEquality().equals(other.dependsOn, dependsOn) &&
       const DeepCollectionEquality().equals(other.noDependsOn, noDependsOn) &&
       const DeepCollectionEquality().equals(other.categories, categories) &&
-      other.diff == diff;
+      other.diff == diff &&
+      other.postFilters == postFilters;
 
   @override
   int get hashCode => Object.hashAll([
@@ -449,6 +494,7 @@ class PackageFilters {
     const DeepCollectionEquality().hash(noDependsOn),
     const DeepCollectionEquality().hash(categories),
     diff,
+    postFilters,
   ]);
 
   @override
@@ -469,6 +515,7 @@ PackageFilters(
   dependsOn: $dependsOn,
   noDependsOn: $noDependsOn,
   diff: $diff,
+  postFilters: ${postFilters.toString().indent('  ')},
 )''';
   }
 }
@@ -801,7 +848,45 @@ The packages that caused the problem are:
       return this;
     }
 
-    var packageList = await values
+    var packageList = await _applyNarrowingFilters(
+      values,
+      filters,
+      pubConfig: pubConfig,
+      workspaceTag: workspaceTag,
+    );
+
+    packageList = packageList.applyIncludeDependentsOrDependencies(
+      includeDependents: filters.includeDependents,
+      includeDependencies: filters.includeDependencies,
+    );
+
+    final postFilters = filters.postFilters;
+    if (postFilters != null) {
+      packageList = await _applyNarrowingFilters(
+        packageList,
+        postFilters,
+        pubConfig: pubConfig,
+        workspaceTag: workspaceTag,
+      );
+    }
+
+    return PackageMap(
+      {
+        for (final package in packageList) package.name: package,
+      },
+      _logger,
+    );
+  }
+
+  /// Applies all filters of [filters] that narrow down [packages], which is
+  /// every filter except the ones that include dependents and dependencies.
+  Future<Iterable<Package>> _applyNarrowingFilters(
+    Iterable<Package> packages,
+    PackageFilters filters, {
+    required PubClientConfig pubConfig,
+    required bool workspaceTag,
+  }) async {
+    final packageList = await packages
         .applyIgnore(filters.ignore)
         .applyDirExists(filters.dirExists)
         .applyFileExists(filters.fileExists)
@@ -818,25 +903,10 @@ The packages that caused the problem are:
           pubConfig: pubConfig,
         );
 
-    final diff = filters.diff;
-    if (diff != null) {
-      packageList = await packageList.applyDiff(
-        diff,
-        _logger,
-        workspaceTag: workspaceTag,
-      );
-    }
-
-    packageList = packageList.applyIncludeDependentsOrDependencies(
-      includeDependents: filters.includeDependents,
-      includeDependencies: filters.includeDependencies,
-    );
-
-    return PackageMap(
-      {
-        for (final package in packageList) package.name: package,
-      },
+    return packageList.applyDiff(
+      filters.diff,
       _logger,
+      workspaceTag: workspaceTag,
     );
   }
 }

@@ -784,6 +784,18 @@
                     "flutter": {
                       "type": "boolean",
                       "description": "Include/Exclude packages that are Flutter packages."
+                    },
+                    "includeDependents": {
+                      "type": "boolean",
+                      "description": "Include all transitive dependents for each package that matches the other filters."
+                    },
+                    "includeDependencies": {
+                      "type": "boolean",
+                      "description": "Include all transitive dependencies for each package that matches the other filters."
+                    },
+                    "postFilters": {
+                      "type": "object",
+                      "description": "Filters that are applied to all packages after the dependents and dependencies have been included. Supports the same filters as `packageFilters`, except `includeDependents`, `includeDependencies` and `postFilters`."
                     }
                   }
                 }

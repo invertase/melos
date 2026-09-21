@@ -199,6 +199,10 @@ mixin _RunMixin on _Melos {
       includeFlutterPackages: cliFilters.includeFlutterPackages,
       includeDependents: cliFilters.includeDependents ? true : null,
       includeDependencies: cliFilters.includeDependencies ? true : null,
+      postFilters: _mergePackageFilters(
+        scriptFilters.postFilters,
+        cliFilters.postFilters,
+      ),
     );
   }
 

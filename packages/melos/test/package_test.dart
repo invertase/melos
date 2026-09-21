@@ -12,6 +12,7 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
+import 'matchers.dart';
 import 'mock_env.dart';
 import 'utils.dart';
 
@@ -695,6 +696,78 @@ void main() {
         expect(copy.nullSafe, filters.nullSafe);
         expect(copy.published, filters.published);
       });
+    });
+  });
+
+  group('PackageFilters.fromYaml', () {
+    test('parses postFilters', () {
+      final filters = PackageFilters.fromYaml(
+        const {
+          'scope': 'a',
+          'includeDependencies': true,
+          'postFilters': {
+            'dependsOn': 'build_runner',
+            'flutter': false,
+          },
+        },
+        path: 'scripts/test/packageFilters',
+        workspacePath: '.',
+      );
+
+      expect(filters.includeDependencies, isTrue);
+      expect(
+        filters.postFilters,
+        const PackageFilters(dependsOn: ['build_runner'], flutter: false),
+      );
+    });
+
+    test('serializes postFilters', () {
+      const filters = PackageFilters(
+        includeDependents: true,
+        postFilters: PackageFilters(dirExists: ['test']),
+      );
+
+      expect(
+        PackageFilters.fromYaml(
+          filters.toJson(),
+          path: 'scripts/test/packageFilters',
+          workspacePath: '.',
+        ),
+        filters,
+      );
+    });
+
+    for (final key in [
+      'includeDependents',
+      'includeDependencies',
+    ]) {
+      test('throws when postFilters contains $key', () {
+        expect(
+          () => PackageFilters.fromYaml(
+            {
+              'postFilters': {key: true},
+            },
+            path: 'scripts/test/packageFilters',
+            workspacePath: '.',
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+    }
+
+    test('throws when postFilters contains postFilters', () {
+      expect(
+        () => PackageFilters.fromYaml(
+          const {
+            'postFilters': {
+              'postFilters': {'scope': 'a'},
+            },
+          },
+          path: 'scripts/test/packageFilters',
+          workspacePath: '.',
+        ),
+        throwsMelosConfigException(),
+      );
     });
   });
 

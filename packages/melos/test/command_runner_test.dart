@@ -1,5 +1,7 @@
+import 'package:args/command_runner.dart';
 import 'package:melos/melos.dart';
 import 'package:melos/src/command_runner.dart';
+import 'package:melos/src/command_runner/base.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:test/test.dart';
 
@@ -157,4 +159,78 @@ void main() {
       );
     });
   });
+
+  group('--post-filter', () {
+    Future<PackageFilters> parseFilters(List<String> arguments) async {
+      final command = _FilterCommand(MelosWorkspaceConfig.empty());
+      final runner = CommandRunner<void>('melos', '')..addCommand(command);
+      await runner.run([command.name, ...arguments]);
+      return command.filters;
+    }
+
+    test('is not set by default', () async {
+      final filters = await parseFilters(['--scope=a']);
+
+      expect(filters.postFilters, isNull);
+    });
+
+    test('parses the values as filters', () async {
+      final filters = await parseFilters([
+        '--scope=a',
+        '--include-dependencies',
+        '--post-filter=depends-on=build_runner',
+        '--post-filter',
+        'dir-exists=test',
+        '--post-filter=no-flutter',
+      ]);
+
+      expect(filters.includeDependencies, isTrue);
+      expect(filters.dependsOn, isEmpty);
+      expect(
+        filters.postFilters,
+        const PackageFilters(
+          dependsOn: ['build_runner'],
+          dirExists: ['test'],
+          flutter: false,
+        ),
+      );
+    });
+
+    test('supports comma separated values', () async {
+      final filters = await parseFilters(['--post-filter=depends-on=a,b']);
+
+      expect(filters.postFilters, const PackageFilters(dependsOn: ['a', 'b']));
+    });
+
+    for (final filter in [
+      'include-dependents',
+      'include-dependencies',
+      'post-filter=scope=a',
+      'unknown',
+    ]) {
+      test('throws for the value $filter', () {
+        expect(
+          parseFilters(['--post-filter=$filter']),
+          throwsA(isA<UsageException>()),
+        );
+      });
+    }
+  });
+}
+
+class _FilterCommand extends MelosCommand {
+  _FilterCommand(super.config) {
+    setupPackageFilterParser();
+  }
+
+  late PackageFilters filters;
+
+  @override
+  String get name => 'filter';
+
+  @override
+  String get description => 'Parses the package filters.';
+
+  @override
+  void run() => filters = parsePackageFilters(config.path);
 }

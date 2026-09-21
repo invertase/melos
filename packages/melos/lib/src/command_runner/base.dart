@@ -1,6 +1,7 @@
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:cli_util/cli_logging.dart';
+import 'package:glob/glob.dart';
 
 import '../common/environment_variable_key.dart';
 import '../common/glob.dart';
@@ -74,7 +75,43 @@ abstract class MelosCommand extends Command<void> {
   /// Commands that determine the compared revision range themselves can set
   /// [diff] to `false` to leave out the `--diff` option.
   void setupPackageFilterParser({bool diff = true}) {
+    _addPackageFilterOptions(argParser, diff: diff);
+
     argParser.addFlag(
+      filterOptionIncludeDependents,
+      negatable: false,
+      help:
+          'Include all transitive dependents for each package that matches '
+          'the other filters. The included packages skip --ignore and '
+          '--diff checks, use --post-filter to filter them.',
+    );
+
+    argParser.addFlag(
+      filterOptionIncludeDependencies,
+      negatable: false,
+      help:
+          'Include all transitive dependencies for each package that '
+          'matches the other filters. The included packages skip --ignore '
+          'and --diff checks, use --post-filter to filter them.',
+    );
+
+    argParser.addMultiOption(
+      filterOptionPostFilter,
+      valueHelp: 'filter',
+      splitCommas: false,
+      help:
+          'A filter that is applied to all packages after the dependents and '
+          'dependencies have been included, written as any of the other '
+          'filters without the leading dashes, for example '
+          '"--post-filter=depends-on=build_runner" or '
+          '"--post-filter=no-private". This option can be repeated.',
+    );
+  }
+
+  /// Adds the options for the filters that narrow down the list of packages
+  /// to [parser].
+  static void _addPackageFilterOptions(ArgParser parser, {required bool diff}) {
+    parser.addFlag(
       filterOptionPrivate,
       help:
           'Whether to include or exclude packages with `publish_to: "none"`. '
@@ -82,7 +119,7 @@ abstract class MelosCommand extends Command<void> {
       defaultsTo: null,
     );
 
-    argParser.addFlag(
+    parser.addFlag(
       filterOptionPublished,
       defaultsTo: null,
       help:
@@ -91,7 +128,7 @@ abstract class MelosCommand extends Command<void> {
           'their current version published yet.',
     );
 
-    argParser.addFlag(
+    parser.addFlag(
       filterOptionNullsafety,
       defaultsTo: null,
       help:
@@ -100,7 +137,7 @@ abstract class MelosCommand extends Command<void> {
           'their current version does not have a "nullsafety" preid.',
     );
 
-    argParser.addFlag(
+    parser.addFlag(
       filterOptionFlutter,
       defaultsTo: null,
       help:
@@ -110,7 +147,7 @@ abstract class MelosCommand extends Command<void> {
           'SDK.',
     );
 
-    argParser.addMultiOption(
+    parser.addMultiOption(
       filterOptionScope,
       valueHelp: 'glob',
       help:
@@ -118,7 +155,7 @@ abstract class MelosCommand extends Command<void> {
           'option can be repeated.',
     );
 
-    argParser.addMultiOption(
+    parser.addMultiOption(
       filterOptionCategory,
       valueHelp: 'glob',
       help:
@@ -126,7 +163,7 @@ abstract class MelosCommand extends Command<void> {
           'option can be repeated.',
     );
 
-    argParser.addMultiOption(
+    parser.addMultiOption(
       filterOptionIgnore,
       valueHelp: 'glob',
       help:
@@ -135,7 +172,7 @@ abstract class MelosCommand extends Command<void> {
     );
 
     if (diff) {
-      argParser.addOption(
+      parser.addOption(
         filterOptionDiff,
         valueHelp: 'ref',
         help:
@@ -147,7 +184,7 @@ abstract class MelosCommand extends Command<void> {
       );
     }
 
-    argParser.addMultiOption(
+    parser.addMultiOption(
       filterOptionDirExists,
       valueHelp: 'dirRelativeToPackageRoot',
       help:
@@ -155,14 +192,14 @@ abstract class MelosCommand extends Command<void> {
           'the package.',
     );
 
-    argParser.addMultiOption(
+    parser.addMultiOption(
       filterOptionFileExists,
       valueHelp: 'fileRelativeToPackageRoot',
       help:
           'Include only packages where a specific file exists in the package.',
     );
 
-    argParser.addMultiOption(
+    parser.addMultiOption(
       filterOptionDependsOn,
       valueHelp: 'dependentPackageName',
       help:
@@ -170,30 +207,12 @@ abstract class MelosCommand extends Command<void> {
           'option can be repeated, to further filter the list of packages.',
     );
 
-    argParser.addMultiOption(
+    parser.addMultiOption(
       filterOptionNoDependsOn,
       valueHelp: 'noDependantPackageName',
       help:
           "Include only packages that *don't* depend on a specific package. "
           'This option can be repeated.',
-    );
-
-    argParser.addFlag(
-      filterOptionIncludeDependents,
-      negatable: false,
-      help:
-          'Include all transitive dependents for each package that matches '
-          'the other filters. The included packages skip --ignore and '
-          '--diff checks.',
-    );
-
-    argParser.addFlag(
-      filterOptionIncludeDependencies,
-      negatable: false,
-      help:
-          'Include all transitive dependencies for each package that '
-          'matches the other filters. The included packages skip --ignore '
-          'and --diff checks.',
     );
   }
 
@@ -225,6 +244,7 @@ abstract class MelosCommand extends Command<void> {
       filterOptionFlutter,
       filterOptionIncludeDependents,
       filterOptionIncludeDependencies,
+      filterOptionPostFilter,
     ];
 
     return allFilterOptions
@@ -237,34 +257,96 @@ abstract class MelosCommand extends Command<void> {
     bool diffEnabled = true,
     bool includeConfigIgnore = true,
   }) {
-    final diff = diffEnabled ? argResults![filterOptionDiff] as String? : null;
-    final scope = argResults![filterOptionScope] as List<String>? ?? [];
-    final categories = argResults![filterOptionCategory] as List<String>? ?? [];
-    final ignore = argResults![filterOptionIgnore] as List<String>? ?? [];
+    final results = argResults!;
+
+    return _packageFiltersFromResults(
+      results,
+      workingDirPath,
+      diffEnabled: diffEnabled,
+      configIgnore: includeConfigIgnore ? config.ignore : const [],
+    ).copyWith(
+      includeDependents: results[filterOptionIncludeDependents] as bool,
+      includeDependencies: results[filterOptionIncludeDependencies] as bool,
+      postFilters: _parsePostFilters(
+        workingDirPath,
+        diffEnabled: diffEnabled,
+      ),
+    );
+  }
+
+  /// Parses the values of the `--post-filter` option by reading each of them
+  /// as one of the filter options.
+  PackageFilters? _parsePostFilters(
+    String workingDirPath, {
+    required bool diffEnabled,
+  }) {
+    final postFilters =
+        argResults![filterOptionPostFilter] as List<String>? ?? [];
+    if (postFilters.isEmpty) {
+      return null;
+    }
+
+    final hasDiffOption = argParser.options.containsKey(filterOptionDiff);
+    final postFilterParser = ArgParser();
+    _addPackageFilterOptions(postFilterParser, diff: hasDiffOption);
+
+    final ArgResults results;
+    try {
+      results = postFilterParser.parse(
+        postFilters.map((filter) => '--$filter'),
+      );
+    } on FormatException catch (exception) {
+      usageException(
+        'Invalid value for --$filterOptionPostFilter: ${exception.message}',
+      );
+    }
+    if (results.rest.isNotEmpty) {
+      usageException(
+        'Invalid value for --$filterOptionPostFilter: '
+        '"${results.rest.join(' ')}"',
+      );
+    }
+
+    return _packageFiltersFromResults(
+      results,
+      workingDirPath,
+      diffEnabled: diffEnabled && hasDiffOption,
+    );
+  }
+
+  static PackageFilters _packageFiltersFromResults(
+    ArgResults results,
+    String workingDirPath, {
+    required bool diffEnabled,
+    List<Glob> configIgnore = const [],
+  }) {
+    final diff = diffEnabled ? results[filterOptionDiff] as String? : null;
+    final scope = results[filterOptionScope] as List<String>? ?? [];
+    final categories = results[filterOptionCategory] as List<String>? ?? [];
+    final ignore = results[filterOptionIgnore] as List<String>? ?? [];
 
     return PackageFilters(
       scope: scope
           .map((e) => createGlob(e, currentDirectoryPath: workingDirPath))
           .toList(),
-      ignore:
-          ignore
-              .map((e) => createGlob(e, currentDirectoryPath: workingDirPath))
-              .toList()
-            ..addAll(includeConfigIgnore ? config.ignore : []),
+      ignore: [
+        ...ignore.map(
+          (e) => createGlob(e, currentDirectoryPath: workingDirPath),
+        ),
+        ...configIgnore,
+      ],
       categories: categories
           .map((e) => createGlob(e, currentDirectoryPath: workingDirPath))
           .toList(),
       diff: diff,
-      includePrivatePackages: argResults![filterOptionPrivate] as bool?,
-      published: argResults![filterOptionPublished] as bool?,
-      nullSafe: argResults![filterOptionNullsafety] as bool?,
-      dirExists: argResults![filterOptionDirExists] as List<String>? ?? [],
-      fileExists: argResults![filterOptionFileExists] as List<String>? ?? [],
-      flutter: argResults![filterOptionFlutter] as bool?,
-      dependsOn: argResults![filterOptionDependsOn] as List<String>? ?? [],
-      noDependsOn: argResults![filterOptionNoDependsOn] as List<String>? ?? [],
-      includeDependents: argResults![filterOptionIncludeDependents] as bool,
-      includeDependencies: argResults![filterOptionIncludeDependencies] as bool,
+      includePrivatePackages: results[filterOptionPrivate] as bool?,
+      published: results[filterOptionPublished] as bool?,
+      nullSafe: results[filterOptionNullsafety] as bool?,
+      dirExists: results[filterOptionDirExists] as List<String>? ?? [],
+      fileExists: results[filterOptionFileExists] as List<String>? ?? [],
+      flutter: results[filterOptionFlutter] as bool?,
+      dependsOn: results[filterOptionDependsOn] as List<String>? ?? [],
+      noDependsOn: results[filterOptionNoDependsOn] as List<String>? ?? [],
     );
   }
 }

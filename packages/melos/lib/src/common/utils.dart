@@ -40,6 +40,8 @@ const filterOptionDependsOn = 'depends-on';
 const filterOptionNoDependsOn = 'no-depends-on';
 const filterOptionIncludeDependents = 'include-dependents';
 const filterOptionIncludeDependencies = 'include-dependencies';
+const filterOptionPostFilter = 'post-filter';
+const filterOptionPostFilters = 'post-filters';
 
 const publishOptionDryRun = 'dry-run';
 const publishOptionNoDryRun = 'no-dry-run';

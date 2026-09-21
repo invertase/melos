@@ -180,6 +180,9 @@ information.
   - `--include-dependents`
     - Expands the filtered list of packages to include those packages'
       transitive dependents (ignoring filters).
+  - `--post-filter`
+    - Applies a filter after the dependencies and dependents have been
+      included.
 - ♨️ Advanced support for IntelliJ IDEs with automatic creation of
   [run configurations for workspace defined scripts and more](https://melos.invertase.dev/~melos-latest/ide-support)
   on workspace bootstrap.
