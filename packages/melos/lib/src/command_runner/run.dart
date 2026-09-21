@@ -40,6 +40,21 @@ class RunCommand extends MelosCommand {
       abbr: 'g',
       help: 'Filters the scripts by the group they are belonging to.',
     );
+
+    argParser.addFlag(
+      'run-unchanged',
+      negatable: false,
+      help:
+          'Run "exec" scripts in every package, even in the packages in which '
+          'the files matching their "sources" did not change.',
+    );
+
+    argParser.addFlag(
+      'ignore-sources',
+      help:
+          'Ignore the "sources" of "exec" scripts, so that they run in every '
+          'package without calculating or storing checksums.',
+    );
   }
 
   @override
@@ -65,6 +80,8 @@ class RunCommand extends MelosCommand {
     final listScriptsAsJson = argResults!['json'] as bool;
     final includePrivate = argResults!['include-private'] as bool;
     final group = argResults!['group'] as String?;
+    final runUnchanged = argResults!['run-unchanged'] as bool;
+    final ignoreSources = argResults!.optional('ignore-sources') as bool?;
 
     final packageFilters = hasPackageFilterArgs
         ? parsePackageFilters(config.path, includeConfigIgnore: false)
@@ -81,6 +98,8 @@ class RunCommand extends MelosCommand {
         includePrivate: includePrivate,
         group: group,
         packageFilters: packageFilters,
+        runUnchanged: runUnchanged,
+        ignoreSources: ignoreSources,
       );
     } on NoPackageFoundScriptException catch (err) {
       logger.warning(err.toString(), label: false);

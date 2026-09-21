@@ -706,6 +706,7 @@ void main() {
               'failFast': true,
               'orderDependents': true,
               'groupLogs': true,
+              'ignoreSources': true,
             },
           ),
           const ExecCommandConfigs(
@@ -713,6 +714,7 @@ void main() {
             failFast: true,
             orderDependents: true,
             groupLogs: true,
+            ignoreSources: true,
           ),
         );
       });
@@ -1273,6 +1275,7 @@ analyze:
                 'failFast': true,
                 'orderDependents': true,
                 'groupLogs': true,
+                'sources': ['lib/**.dart', 'pubspec.yaml'],
               },
             },
           }),
@@ -1286,7 +1289,42 @@ analyze:
             failFast: true,
             orderDependents: true,
             groupLogs: true,
+            sources: ['lib/**.dart', 'pubspec.yaml'],
           ),
+        );
+      });
+
+      test('throws when the "sources" of "exec" are not a list', () {
+        expect(
+          () => Scripts.fromYaml(
+            createYamlMap({
+              'a': {
+                'exec': {
+                  'command': 'b',
+                  'sources': 'lib/**.dart',
+                },
+              },
+            }),
+            workspacePath: testWorkspacePath,
+          ),
+          throwsMelosConfigException(),
+        );
+      });
+
+      test('throws when a glob in the "sources" of "exec" is invalid', () {
+        expect(
+          () => Scripts.fromYaml(
+            createYamlMap({
+              'a': {
+                'exec': {
+                  'command': 'b',
+                  'sources': ['lib/['],
+                },
+              },
+            }),
+            workspacePath: testWorkspacePath,
+          ),
+          throwsMelosConfigException(),
         );
       });
 

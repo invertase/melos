@@ -12,6 +12,8 @@ mixin _RunMixin on _Melos {
     List<String> extraArgs = const [],
     String? group,
     PackageFilters? packageFilters,
+    bool runUnchanged = false,
+    bool? ignoreSources,
   }) async {
     final skipSelection = noSelect ?? config.commands.run.noSelect ?? false;
     final publicScripts = Map<String, Script>.from(config.scripts);
@@ -65,6 +67,8 @@ mixin _RunMixin on _Melos {
           skipSelection: skipSelection,
           extraArgs: isRequestedScript ? extraArgs : const [],
           packageFilters: packageFilters,
+          runUnchanged: runUnchanged,
+          ignoreSources: ignoreSources,
         );
       } on NoPackageFoundScriptException {
         if (isRequestedScript) {
@@ -99,6 +103,8 @@ mixin _RunMixin on _Melos {
     GlobalOptions? global,
     List<String> extraArgs = const [],
     PackageFilters? packageFilters,
+    bool runUnchanged = false,
+    bool? ignoreSources,
   }) async {
     if (script.steps != null && script.steps!.isNotEmpty) {
       final exitCode = await _runMultipleScripts(
@@ -108,6 +114,8 @@ mixin _RunMixin on _Melos {
         scripts: config.scripts,
         steps: script.steps!,
         packageFilters: packageFilters,
+        runUnchanged: runUnchanged,
+        ignoreSources: ignoreSources,
       );
 
       await _handleExitCode(exitCode, script.name);
@@ -137,6 +145,8 @@ mixin _RunMixin on _Melos {
       noSelect: skipSelection,
       extraArgs: extraArgs,
       packageFilters: packageFilters,
+      runUnchanged: runUnchanged,
+      ignoreSources: ignoreSources,
     );
 
     await _handleExitCode(exitCode, script.name, logSuccess: false);
@@ -291,6 +301,8 @@ mixin _RunMixin on _Melos {
     bool noSelect = false,
     List<String> extraArgs = const [],
     PackageFilters? packageFilters,
+    bool runUnchanged = false,
+    bool? ignoreSources,
   }) async {
     final mergedFilters = _mergePackageFilters(
       script.packageFilters,
@@ -312,6 +324,9 @@ mixin _RunMixin on _Melos {
         EnvironmentVariableKey.melosSdkPath: workspace.sdkPath!,
       if (workspace.childProcessPath != null)
         EnvironmentVariableKey.path: workspace.childProcessPath!,
+      if (runUnchanged) EnvironmentVariableKey.melosRunUnchanged: 'true',
+      if (ignoreSources != null)
+        EnvironmentVariableKey.melosIgnoreSources: ignoreSources.toString(),
       ...script.env,
     };
 
@@ -405,6 +420,8 @@ mixin _RunMixin on _Melos {
     GlobalOptions? global,
     bool noSelect = false,
     PackageFilters? packageFilters,
+    bool runUnchanged = false,
+    bool? ignoreSources,
   }) async {
     final mergedFilters = _mergePackageFilters(
       script.packageFilters,
@@ -423,6 +440,9 @@ mixin _RunMixin on _Melos {
         EnvironmentVariableKey.melosSdkPath: workspace.sdkPath!,
       if (workspace.childProcessPath != null)
         EnvironmentVariableKey.path: workspace.childProcessPath!,
+      if (runUnchanged) EnvironmentVariableKey.melosRunUnchanged: 'true',
+      if (ignoreSources != null)
+        EnvironmentVariableKey.melosIgnoreSources: ignoreSources.toString(),
       ...script.env,
     };
 

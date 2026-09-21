@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:collection/collection.dart';
+import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 
 import 'common/environment_variable_key.dart';
@@ -236,6 +237,7 @@ class ExecOptions {
     this.failFast,
     this.orderDependents,
     this.groupLogs,
+    this.sources,
   });
 
   final int? concurrency;
@@ -247,11 +249,18 @@ class ExecOptions {
   /// and interleaved while the packages run.
   final bool? groupLogs;
 
+  /// Globs relative to the root of each package. When specified, the command is
+  /// skipped in the packages in which the matching files, and those of their
+  /// dependencies in the workspace, did not change since the command last
+  /// succeeded.
+  final List<String>? sources;
+
   Map<String, Object?> toJson() => {
     if (concurrency != null) 'concurrency': concurrency,
     if (failFast != null) 'failFast': failFast,
     if (orderDependents != null) 'orderDependents': orderDependents,
     if (groupLogs != null) 'groupLogs': groupLogs,
+    if (sources != null) 'sources': sources,
   };
 
   @override
@@ -261,7 +270,8 @@ class ExecOptions {
       concurrency == other.concurrency &&
       failFast == other.failFast &&
       orderDependents == other.orderDependents &&
-      groupLogs == other.groupLogs;
+      groupLogs == other.groupLogs &&
+      const DeepCollectionEquality().equals(sources, other.sources);
 
   @override
   int get hashCode => Object.hashAll([
@@ -270,6 +280,7 @@ class ExecOptions {
     failFast,
     orderDependents,
     groupLogs,
+    const DeepCollectionEquality().hash(sources),
   ]);
 
   @override
@@ -280,6 +291,7 @@ ExecOptions(
   failFast: $failFast,
   orderDependents: $orderDependents,
   groupLogs: $groupLogs,
+  sources: $sources,
 )''';
 }
 
@@ -576,11 +588,35 @@ class Script {
       path: execPath,
     );
 
+    final sources = assertListIsA<String>(
+      key: 'sources',
+      map: yaml,
+      isRequired: false,
+      path: execPath,
+      assertItemIsA: (index, value) {
+        final source = assertIsA<String>(
+          value: value,
+          index: index,
+          path: '$execPath/sources',
+        );
+        try {
+          Glob(source);
+        } on FormatException catch (error) {
+          throw MelosConfigException(
+            'The glob "$source" in $execPath/sources is invalid: '
+            '${error.message}',
+          );
+        }
+        return source;
+      },
+    );
+
     return ExecOptions(
       concurrency: concurrency,
       failFast: failFast,
       orderDependents: orderDependents,
       groupLogs: groupLogs,
+      sources: sources.isEmpty ? null : sources,
     );
   }
 
@@ -676,6 +712,10 @@ class Script {
 
       if (exec.groupLogs ?? false) {
         execCommand.add('--group-logs');
+      }
+
+      for (final source in exec.sources ?? const <String>[]) {
+        execCommand.addAll(['--sources', '"${source.replaceAll('"', r'\"')}"']);
       }
 
       execCommand.addAll(['--', quoteScript(scriptCommand.join(' '))]);

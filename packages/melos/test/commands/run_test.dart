@@ -418,6 +418,66 @@ ${'-' * terminalWidth}
     });
 
     test(
+      'skips the packages with unchanged "sources" unless they are requested',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_package',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            scripts: const Scripts({
+              'test_script': Script(
+                name: 'test_script',
+                run: 'echo run >> runs.txt',
+                exec: ExecOptions(sources: ['lib/**.dart']),
+              ),
+            }),
+          ),
+          workspacePackages: ['a'],
+        );
+
+        final aDir = await createProject(workspaceDir, Pubspec('a'));
+        writeTextFile(
+          p.join(aDir.path, 'lib', 'source.dart'),
+          '// a',
+          recursive: true,
+        );
+        await runPubGet(workspaceDir.path);
+
+        int runCount() => 'run'
+            .allMatches(readTextFile(p.join(aDir.path, 'runs.txt')))
+            .length;
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(logger: TestLogger(), config: config);
+
+        await melos.run(scriptName: 'test_script', noSelect: true);
+        expect(runCount(), 1);
+
+        await melos.run(scriptName: 'test_script', noSelect: true);
+        expect(runCount(), 1);
+
+        await melos.run(
+          scriptName: 'test_script',
+          noSelect: true,
+          runUnchanged: true,
+        );
+        expect(runCount(), 2);
+
+        await melos.run(
+          scriptName: 'test_script',
+          noSelect: true,
+          ignoreSources: true,
+        );
+        expect(runCount(), 3);
+      },
+    );
+
+    test(
       'throws an error if neither run, steps, nor exec are provided',
       () async {
         final workspaceDir = await createTemporaryWorkspace(
@@ -489,6 +549,38 @@ ${'-' * terminalWidth}
         );
 
         expect(script.command(), ['melos', 'exec', '--', r'"echo \"hello\""']);
+      });
+
+      test('passes the sources of "exec" scripts to "melos exec"', () {
+        const script = Script(
+          name: 'test_script',
+          run: 'echo hello',
+          exec: ExecOptions(sources: ['lib/**.dart', 'pubspec.yaml']),
+        );
+
+        expect(script.command(), [
+          'melos',
+          'exec',
+          '--sources',
+          '"lib/**.dart"',
+          '--sources',
+          '"pubspec.yaml"',
+          '--',
+          '"echo hello"',
+        ]);
+      });
+
+      test('escapes the quotes in the sources of "exec" scripts', () {
+        const script = Script(
+          name: 'test_script',
+          run: 'echo hello',
+          exec: ExecOptions(sources: ['lib/"quoted"/**']),
+        );
+
+        expect(
+          script.command(),
+          containsAllInOrder(['--sources', r'"lib/\"quoted\"/**"']),
+        );
       });
 
       test(
