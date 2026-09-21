@@ -290,25 +290,40 @@ abstract class MelosCommand extends Command<void> {
     final postFilterParser = ArgParser();
     _addPackageFilterOptions(postFilterParser, diff: hasDiffOption);
 
-    final ArgResults results;
-    try {
-      results = postFilterParser.parse(
-        postFilters.map((filter) => '--$filter'),
-      );
-    } on FormatException catch (exception) {
-      usageException(
-        'Invalid value for --$filterOptionPostFilter: ${exception.message}',
-      );
+    ArgResults parse(Iterable<String> filters) {
+      final ArgResults results;
+      try {
+        results = postFilterParser.parse(
+          filters.map((filter) => '--$filter'),
+        );
+      } on FormatException catch (exception) {
+        usageException(
+          'Invalid value for --$filterOptionPostFilter: ${exception.message}',
+        );
+      }
+      if (results.rest.isNotEmpty) {
+        usageException(
+          'Invalid value for --$filterOptionPostFilter: '
+          '"${results.rest.join(' ')}"',
+        );
+      }
+      return results;
     }
-    if (results.rest.isNotEmpty) {
-      usageException(
-        'Invalid value for --$filterOptionPostFilter: '
-        '"${results.rest.join(' ')}"',
-      );
+
+    // Each value is parsed on its own first, since an option that is missing
+    // its value would otherwise consume the next post filter as its value.
+    for (final filter in postFilters) {
+      if (filter.isEmpty) {
+        usageException(
+          'Invalid value for --$filterOptionPostFilter: '
+          'The filter cannot be empty.',
+        );
+      }
+      parse([filter]);
     }
 
     return _packageFiltersFromResults(
-      results,
+      parse(postFilters),
       workingDirPath,
       diffEnabled: diffEnabled && hasDiffOption,
     );

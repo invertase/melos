@@ -215,6 +215,21 @@ void main() {
         );
       });
     }
+
+    test('throws for an empty value', () {
+      expect(
+        parseFilters(['--post-filter=']),
+        throwsA(isA<UsageException>()),
+      );
+    });
+
+    test('throws when an option is missing its value instead of consuming '
+        'the next post filter', () {
+      expect(
+        parseFilters(['--post-filter=scope', '--post-filter=no-private']),
+        throwsA(isA<UsageException>()),
+      );
+    });
   });
 }
 

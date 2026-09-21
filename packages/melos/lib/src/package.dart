@@ -190,7 +190,7 @@ class PackageFilters {
         excludePrivatePackagesTmp != null) {
       throw MelosConfigException(
         'Cannot specify both "$noPrivateOptionKey" and '
-        '"$excludePrivatePackagesTmp" at the same time in "$path".',
+        '"$privateOptionKey" at the same time in "$path".',
       );
     }
     bool? includePrivatePackages;
@@ -862,6 +862,9 @@ The packages that caused the problem are:
 
     final postFilters = filters.postFilters;
     if (postFilters != null) {
+      postFilters.assertValidPostFilters(
+        path: filterOptionPostFilters.camelCased,
+      );
       packageList = await _applyNarrowingFilters(
         packageList,
         postFilters,

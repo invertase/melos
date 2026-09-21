@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
+import 'matchers.dart';
 import 'utils.dart';
 
 void main() {
@@ -321,6 +322,24 @@ void main() {
         );
 
         expect(filteredPackages.keys, ['models']);
+      });
+
+      test('throws when the post filters include dependents, dependencies '
+          'or other post filters', () async {
+        final workspace = buildWorkspace();
+
+        for (final postFilters in const [
+          PackageFilters(includeDependents: true),
+          PackageFilters(includeDependencies: true),
+          PackageFilters(postFilters: PackageFilters()),
+        ]) {
+          await expectLater(
+            workspace.allPackages.applyFilters(
+              PackageFilters(postFilters: postFilters),
+            ),
+            throwsMelosConfigException(),
+          );
+        }
       });
 
       test('included packages skip the other filters when there are no '

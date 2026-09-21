@@ -70,7 +70,11 @@ mixin _VersionMixin on _RunMixin {
       // already filters it itself, filtering here would map dependent version
       // fail as it won't be aware of any packages that have been filtered out
       // here because of the 'diff' filter.
-      packageFilters: packageFilters?.copyWithDiff(null),
+      packageFilters: packageFilters
+          ?.copyWithDiff(null)
+          .copyWith(
+            postFilters: packageFilters.postFilters?.copyWithDiff(null),
+          ),
     );
 
     return _runLifecycle(workspace, CommandWithLifecycle.version, () {
