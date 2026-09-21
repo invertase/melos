@@ -1,19 +1,19 @@
 ---
-description: A tool for managing Dart projects with multiple packages.
+description: A tool for managing Dart and Flutter projects, with one or many packages.
 ---
 
 <Image
   src="https://static.invertase.io/assets/melos-logo.png"
   alt="Melos"
   zoom={false}
-  caption="A tool for managing Dart projects with multiple packages."
+  caption="A tool for managing Dart and Flutter projects, with one or many packages."
 />
 
 ## About
 
 Melos is a [CLI](https://en.wikipedia.org/wiki/Command-line_interface) tool used
-to help manage Dart projects with multiple packages (also known as mono-repos).
-It is in active development and is in use on projects such as
+to help manage Dart and Flutter projects with multiple packages (also known as
+mono-repos). It is in active development and is in use on projects such as
 [FlutterFire](https://github.com/firebase/flutterfire).
 
 Splitting up large code bases into separate independently versioned packages is
@@ -32,6 +32,38 @@ other. Features include:
 Melos also works great on CI/CD environments to help automate complex tasks and
 challenges. If you're using GitHub you can check out the
 [Melos GitHub Action](https://github.com/bluefireteam/melos-action).
+
+Melos is not limited to monorepos though. It works just as well in a repository
+with a single package, where you can still use features like versioning,
+changelog generation, publishing and scripts, see
+[Single package projects](/getting-started#single-package-projects-non-monorepo).
+
+## How does Melos relate to other monorepo tools?
+
+Melos is the monorepo tool for the Dart and Flutter ecosystem. If you are coming
+from another ecosystem, Melos is the Dart and Flutter alternative to tools like:
+
+- [Lerna](https://lerna.js.org), [Nx](https://nx.dev),
+  [Turborepo](https://turborepo.com) and [Rush](https://rushjs.io) for
+  JavaScript and TypeScript, which run tasks across packages and handle
+  versioning and publishing.
+- [npm workspaces](https://docs.npmjs.com/cli/using-npm/workspaces),
+  [Yarn workspaces](https://yarnpkg.com/features/workspaces) and
+  [pnpm workspaces](https://pnpm.io/workspaces) for JavaScript and TypeScript,
+  and [Cargo workspaces](https://doc.rust-lang.org/cargo/reference/workspaces.html)
+  for Rust, which link local packages together. In Dart this part is handled by
+  [pub workspaces](https://dart.dev/tools/pub/workspaces), which Melos builds
+  on top of.
+- [Changesets](https://github.com/changesets/changesets),
+  [semantic-release](https://semantic-release.gitbook.io) and
+  [release-please](https://github.com/googleapis/release-please) for automated
+  versioning, changelog generation and publishing.
+
+Melos combines these responsibilities in a single tool that understands Dart and
+Flutter packages, `pubspec.yaml` files and [pub.dev](https://pub.dev), so that
+you can run scripts and commands across packages, filter packages, and version
+and publish them based on
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
 
 ## Projects using Melos
 

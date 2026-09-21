@@ -158,7 +158,7 @@ If you are already on Melos 7.x.x only step 5 applies. See the
 [migration guide](https://melos.invertase.dev/~melos-latest/guides/migrations)
 for more details.
 
-## Github Action
+## GitHub Action
 
 If you're planning on using Melos in your GitHub Actions workflows, you can use
 the [Melos Action](https://github.com/marketplace/actions/melos-action)
@@ -228,7 +228,7 @@ for more details.
 - ⚡ Execute commands across your packages easily with
   `melos exec -- <command here>` with additional concurrency and fail-fast
   options.
-  - [Environment variables](https://melos.invertase.dev/environment-variables)
+  - [Environment variables](https://melos.invertase.dev/~melos-latest/environment-variables)
     containing various information about the current package and the workspace
     are available in each execution.
   - Can be combined with all package filters.
@@ -240,15 +240,15 @@ for more details.
     - Filter packages where the current local package version exists on pub.dev.
       Or "-no-published" to filter packages that have not had their current
       version published yet.
-  - `--[no-]nullsafety`
-    - Filter packages where the current local version uses a "nullsafety"
-      prerelease preid. Or "-no-nullsafety" to filter packages where their
-      current version does not have a "nullsafety" preid.
   - `--[no-]flutter`
     - Filter packages where the package depends on the Flutter SDK. Or
       "-no-flutter" to filter packages that do not depend on the Flutter SDK.
   - `--scope=<glob>`
     - Include only packages with names matching the given glob.
+  - `--category=<glob>`
+    - Include only packages with
+      [categories](https://melos.invertase.dev/~melos-latest/configuration/overview#categories)
+      matching the given glob.
   - `--ignore=<glob>`
     - Exclude packages with names matching the given glob.
   - `--diff=<ref>`
@@ -343,11 +343,6 @@ The following projects are using Melos:
 Documentation is available at
 [https://melos.invertase.dev](https://melos.invertase.dev/~melos-latest).
 
-## Migrations
-
-When migrating between major versions of Melos, please read the
-[migration guide](https://melos.invertase.dev/~melos-latest/guides/migrations).
-
 ## Commands
 
 Full commands list and args can be viewed by running `melos --help`.
@@ -357,35 +352,58 @@ Full commands list and args can be viewed by running `melos --help`.
 
 A CLI tool for managing Dart & Flutter projects with multiple packages.
 
+To get started with Melos, run "melos init".
+
 Usage: melos <command> [arguments]
 
 Global options:
 -h, --help          Print this usage information.
     --verbose       Enable verbose logging.
--q, --[no-]quiet    Only print warnings, errors and the output of failed commands. This command
-                    line option has precedence over the `quiet` option in the `pubspec.yaml`
-                    configuration file and the `MELOS_QUIET` environment variable.
-    --sdk-path      Path to the Dart/Flutter SDK that should be used. This command line option has
-                    precedence over the `sdkPath` option in the root `pubspec.yaml` configuration
-                    file and the `MELOS_SDK_PATH` environment variable. To use the system-wide SDK,
-                    provide the special value "auto".
+-q, --[no-]quiet    Only print warnings, errors and the output of failed
+                    commands. This command line option has precedence over the
+                    `quiet` option in the `pubspec.yaml` configuration file and
+                    the `MELOS_QUIET` environment variable.
+    --sdk-path      Path to the Dart/Flutter SDK that should be used. This
+                    command line option has precedence over the `sdkPath` option
+                    in the `pubspec.yaml` configuration file and the
+                    `MELOS_SDK_PATH` environment variable. To use the
+                    system-wide SDK, provide the special value "auto".
 
 Available commands:
-  bootstrap   Initialize the workspace, link local packages together and install remaining package
-              dependencies. Supports all package filtering options.
-  changed     List local packages that have changed since a git commit or tag, by default since the
-              latest release tag of each package. Supports all package filtering options, except
-              --diff, which is given as the argument of this command.
-  clean       Clean this workspace and all packages. This deletes the temporary pub & ide files such
-              as ".packages" & ".flutter-plugins". Supports all package filtering options.
-  exec        Execute an arbitrary command in each package. Supports all package filtering options.
-  format      Idiomatically format Dart source code.
-  list        List local packages in various output formats. Supports all package filtering options.
-  publish     Publish any unpublished packages or package versions in your repository to pub.dev. Dry
-              run is on by default.
-  run         Run a script by name defined in the workspace pubspec.yaml config file.
-  version     Automatically version and generate changelogs based on the Conventional Commits
-              specification. Supports all package filtering options.
+  analyze       Analyzes all packages in your project for potential issues in a
+                single run. Optionally configure severity levels. Supports all
+                package filtering options.
+  bootstrap     Initialize the workspace, link local packages together and
+                install remaining package dependencies. Supports all package
+                filtering options.
+  changed       List local packages that have changed since a git commit or tag,
+                by default since the latest release tag of each package.
+                Supports all package filtering options, except --diff, which is
+                given as the argument of this command.
+  cherry-pick   Cherry-pick commits onto the current branch without the release
+                changes they contain. Changes to changelogs, to the versions of
+                packages and to the dependencies between the packages of the
+                workspace are left out, so that "melos version" can release the
+                picked commits from this branch, for example a hot-fix branch.
+  clean         Clean this workspace and all packages. This deletes the
+                temporary pub & ide files such as ".packages" &
+                ".flutter-plugins". Supports all package filtering options.
+  exec          Execute an arbitrary command in each package. Supports all
+                package filtering options.
+  format        Idiomatically format Dart source code.
+  init          Initialize a new Melos workspace.
+  list          List local packages in various output formats. Supports all
+                package filtering options.
+  publish       Publish any unpublished packages or package versions in your
+                repository to pub.dev. Dry run is on by default.
+  run           Run a script by name defined in the workspace pubspec.yaml
+                config file.
+  test          Run `flutter test`/`dart test` for all packages in the workspace
+                that have a test/ directory, in a single run. Supports all
+                package filtering options.
+  version       Automatically version and generate changelogs based on the
+                Conventional Commits specification. Supports all package
+                filtering options.
 
 Run "melos help <command>" for more information about a command.
 ```
