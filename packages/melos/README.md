@@ -37,7 +37,8 @@ repositories with git and Pub.**
 It is in active development and is in use on projects such as
 [FlutterFire](https://github.com/firebase/flutterfire) and
 [Flame](https://github.com/flame-engine/flame), see
-[Who is using Melos?](#who-is-using-melos) for more projects.
+[Projects using Melos](https://melos.invertase.dev/~melos-latest#projects-using-melos)
+for more projects.
 
 Melos is not limited to monorepos though. It works just as well in a repository
 with a single package, where you can still use features like versioning,
@@ -288,60 +289,6 @@ Go to the
 [Getting Started](https://melos.invertase.dev/~melos-latest/getting-started)
 page of the [documentation](https://melos.invertase.dev/~melos-latest) to start
 using Melos.
-
-## Who is using Melos?
-
-The following projects are using Melos:
-
-- [firebase/flutterfire](https://github.com/firebase/flutterfire)
-- [Flame-Engine/Flame](https://github.com/flame-engine/flame)
-- [fluttercommunity/plus_plugins](https://github.com/fluttercommunity/plus_plugins)
-- [GetStream/stream-chat-flutter](https://github.com/GetStream/stream-chat-flutter)
-- [canonical/ubuntu-desktop-provision](https://github.com/canonical/ubuntu-desktop-provision)
-- [ubuntu/app-center](https://github.com/ubuntu/app-center)
-- [4itworks/opensource_qwkin_dart](https://github.com/4itworks/opensource_qwkin_dart)
-- [gql-dart/ferry](https://github.com/gql-dart/ferry)
-- [cbl-dart/cbl-dart](https://github.com/cbl-dart/cbl-dart)
-- [ema987/paddinger](https://github.com/ema987/paddinger)
-- [flutter-stripe/flutter_stripe](https://github.com/flutter-stripe/flutter_stripe)
-- [danvick/flutter_form_builder](https://github.com/danvick/flutter_form_builder)
-- [kmartins/groveman](https://github.com/kmartins/groveman)
-- [flutternetwork/WiFiFlutter](https://github.com/flutternetwork/WiFiFlutter)
-- [iapicca/yak_packages](https://github.com/iapicca/yak_packages)
-- [atsign-foundation/at_app](https://github.com/atsign-foundation/at_app)
-- [sub6resources/flutter_html](https://github.com/sub6resources/flutter_html)
-- [ferraridamiano/ConverterNOW](https://github.com/ferraridamiano/ConverterNOW)
-- [rrifafauzikomara/youtube_video](https://github.com/rrifafauzikomara/youtube_video)
-- [mobxjs/mobx.dart](https://github.com/mobxjs/mobx.dart)
-- [NetGlade/auto_mappr](https://github.com/netglade/auto_mappr)
-- [myConsciousness/atproto.dart](https://github.com/myConsciousness/atproto.dart)
-- [GrowERP Flutter ERP](https://github.com/growerp/growerp)
-- [mrverdant13/coverde](https://github.com/mrverdant13/coverde)
-- [ThexXTURBOXx/flutter_web_auth_2](https://github.com/ThexXTURBOXx/flutter_web_auth_2)
-- [woltapp/wolt_modal_sheet](https://github.com/woltapp/wolt_modal_sheet)
-- [cfug/dio](https://github.com/cfug/dio)
-- [simolus3/drift](https://github.com/simolus3/drift)
-- [Lyokone/flutterlocation](https://github.com/Lyokone/flutterlocation)
-- [FlutterGen/flutter_gen](https://github.com/FlutterGen/flutter_gen)
-- [jhomlala/alice](https://github.com/jhomlala/alice)
-- [powersync/powersync.dart](https://github.com/powersync-ja/powersync.dart)
-- [rodydavis/signals.dart](https://github.com/rodydavis/signals.dart)
-- [foss42/apidash](https://github.com/foss42/apidash)
-- [ReactiveX/rxdart](https://github.com/ReactiveX/rxdart)
-- [StacDev/stac](https://github.com/StacDev/stac)
-- [Jaspr](https://github.com/schultek/jaspr)
-- [starknet.dart](https://github.com/focustree/starknet.dart)
-- [flyerhq/flutter_chat_ui](https://github.com/flyerhq/flutter_chat_ui)
-- [maplibre/flutter-maplibre-gl](https://github.com/maplibre/flutter-maplibre-gl)
-- [Khuwn-Soulutions/supabase_codegen](https://github.com/Khuwn-Soulutions/supabase_codegen)
-- [G1Joshi/Booking-App](https://github.com/G1Joshi/Booking-App)
-
-> Submit a PR if you'd like to add your project to the list. Update the
-> [README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md)
-> and the [docs](https://github.com/invertase/melos/edit/main/docs/index.mdx).
->
-> You can also add a [README badge](#readme-badge) to your projects README to
-> let others know about Melos 💙.
 
 ## Documentation
 
