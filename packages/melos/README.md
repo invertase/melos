@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/invertase/melos#readme-badge"><img src="https://img.shields.io/badge/maintained%20with-melos-f700ff.svg?style=flat-square" alt="Melos" /></a>
+  <a href="https://github.com/invertase/melos#using-melos"><img src="https://img.shields.io/badge/maintained%20with-melos-f700ff.svg?style=flat-square" alt="Melos" /></a>
   <a href="https://docs.page"><img src="https://img.shields.io/badge/powered%20by-docs.page-34C4AC.svg?style=flat-square" alt="docs.page" /></a>
  <a href="https://invertase.link/discord">
    <img src="https://img.shields.io/discord/295953187817521152.svg?style=flat-square&colorA=7289da&label=Chat%20on%20Discord" alt="Chat on Discord">
@@ -369,15 +369,20 @@ To start making contributions please refer to
 
 This project is heavily inspired by [Lerna](https://lerna.js.org/).
 
-## README Badge
+## Using Melos?
 
-Using Melos? Add a README badge to show it off:
+Add a README badge to your project to show it off:
 
 [![melos](https://img.shields.io/badge/maintained%20with-melos-f700ff.svg?style=flat-square)](https://github.com/invertase/melos)
 
 ```markdown
 [![melos](https://img.shields.io/badge/maintained%20with-melos-f700ff.svg?style=flat-square)](https://github.com/invertase/melos)
 ```
+
+You can also submit a PR to add your project to the list of
+[projects using Melos](https://melos.invertase.dev/~melos-latest#projects-using-melos),
+by updating the
+[docs](https://github.com/invertase/melos/edit/main/docs/index.mdx).
 
 ## License
 
