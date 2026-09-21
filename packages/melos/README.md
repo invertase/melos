@@ -302,7 +302,7 @@ Full commands list and args can be viewed by running `melos --help`.
 ```
 > melos --help
 
-A CLI tool for managing Dart & Flutter projects with multiple packages.
+A CLI tool for managing Dart & Flutter projects with one or many packages.
 
 To get started with Melos, run "melos init".
 

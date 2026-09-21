@@ -44,7 +44,7 @@ class MelosCommandRunner extends CommandRunner<void> {
   MelosCommandRunner(MelosWorkspaceConfig config)
     : super(
         'melos',
-        'A CLI tool for managing Dart & Flutter projects with multiple '
+        'A CLI tool for managing Dart & Flutter projects with one or many '
             'packages.\n\n'
             'To get started with Melos, run "melos init".',
         usageLineLength: terminalWidth,
