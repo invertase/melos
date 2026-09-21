@@ -55,7 +55,7 @@ class ExecCommand extends MelosCommand {
           'last succeeded. Can be specified multiple times.',
     );
     argParser.addFlag(
-      'force',
+      'run-unchanged',
       negatable: false,
       help:
           'Run the command in every package, even in the packages in which '
@@ -107,9 +107,9 @@ class ExecCommand extends MelosCommand {
       }
     }
     final environment = currentPlatform.environment;
-    final force =
-        argResults!['force'] as bool ||
-        environment[EnvironmentVariableKey.melosForce] == 'true';
+    final runUnchanged =
+        argResults!['run-unchanged'] as bool ||
+        environment[EnvironmentVariableKey.melosRunUnchanged] == 'true';
     final ignoreSources =
         argResults!.optional('ignore-sources') as bool? ??
         bool.tryParse(
@@ -123,7 +123,7 @@ class ExecCommand extends MelosCommand {
       orderDependents: orderDependents,
       groupLogs: groupLogs,
       sources: sources,
-      force: force,
+      runUnchanged: runUnchanged,
       ignoreSources: ignoreSources,
       global: global,
       packageFilters: packageFilters,

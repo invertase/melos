@@ -142,17 +142,18 @@ do not need to be ordered and keep running in all packages concurrently.
 <Warning>
   Only the files that match the sources are taken into account. Melos does not
   notice a changed environment variable, a new version of a tool or a changed
-  file outside of the sources. Use [`--force`](#--force) in these cases.
+  file outside of the sources. Use
+  [`--run-unchanged`](#--run-unchanged) in these cases.
 </Warning>
 
-## --force
+## --run-unchanged
 
 Run the command in every package, even in the packages in which the files
 matching [`--sources`](#--sources) did not change. The checksums of the packages
 in which the command succeeds are still updated.
 
 ```bash
-melos exec --force --sources "lib/**.dart" -- "dart run build_runner build"
+melos exec --run-unchanged --sources "lib/**.dart" -- "dart run build_runner build"
 ```
 
 ## --ignore-sources
@@ -166,7 +167,8 @@ from a fresh checkout, since it avoids reading all of the source files.
 melos exec --ignore-sources --sources "lib/**.dart" -- "dart test"
 ```
 
-In contrast to [`--force`](#--force), no checksums are stored. The stored
+In contrast to [`--run-unchanged`](#--run-unchanged), no checksums are
+stored. The stored
 checksums of the packages that the command runs in are removed, so the command
 also runs in them the next time that the sources are taken into account.
 

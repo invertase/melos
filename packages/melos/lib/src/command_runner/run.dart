@@ -42,7 +42,7 @@ class RunCommand extends MelosCommand {
     );
 
     argParser.addFlag(
-      'force',
+      'run-unchanged',
       negatable: false,
       help:
           'Run "exec" scripts in every package, even in the packages in which '
@@ -80,7 +80,7 @@ class RunCommand extends MelosCommand {
     final listScriptsAsJson = argResults!['json'] as bool;
     final includePrivate = argResults!['include-private'] as bool;
     final group = argResults!['group'] as String?;
-    final force = argResults!['force'] as bool;
+    final runUnchanged = argResults!['run-unchanged'] as bool;
     final ignoreSources = argResults!.optional('ignore-sources') as bool?;
 
     final packageFilters = hasPackageFilterArgs
@@ -98,7 +98,7 @@ class RunCommand extends MelosCommand {
         includePrivate: includePrivate,
         group: group,
         packageFilters: packageFilters,
-        force: force,
+        runUnchanged: runUnchanged,
         ignoreSources: ignoreSources,
       );
     } on NoPackageFoundScriptException catch (err) {

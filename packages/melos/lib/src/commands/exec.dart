@@ -10,7 +10,7 @@ mixin _ExecMixin on _Melos {
     bool? orderDependents,
     bool? groupLogs,
     List<String> sources = const [],
-    bool force = false,
+    bool runUnchanged = false,
     bool? ignoreSources,
     Map<String, String> extraEnvironment = const {},
   }) async {
@@ -59,7 +59,7 @@ mixin _ExecMixin on _Melos {
       orderDependents: effectiveOrderDependents,
       groupLogs: effectiveGroupLogs,
       fingerprints: effectiveIgnoreSources ? null : fingerprints,
-      force: force,
+      runUnchanged: runUnchanged,
       additionalEnvironment: extraEnvironment,
     );
   }
@@ -134,7 +134,7 @@ mixin _ExecMixin on _Melos {
     required bool orderDependents,
     bool groupLogs = false,
     ExecFingerprints? fingerprints,
-    bool force = false,
+    bool runUnchanged = false,
     Map<String, String> additionalEnvironment = const {},
   }) async {
     final allPackagesList = workspace.allPackages.values.toList(
@@ -216,7 +216,7 @@ mixin _ExecMixin on _Melos {
 
           final isUpToDate =
               fingerprints != null &&
-              !force &&
+              !runUnchanged &&
               await fingerprints.isUpToDate(package);
           // The command can have failed in another package while the
           // fingerprint was being checked.

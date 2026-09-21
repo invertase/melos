@@ -1517,8 +1517,8 @@ void main() {
         );
 
         test(
-          'runs again in a package in which the command failed when it was '
-          'forced',
+          'runs again in a package in which the command failed while running '
+          'in the unchanged packages',
           () async {
             writeRunScript(dependentDir);
             writeRunScript(dependencyDir);
@@ -1530,7 +1530,11 @@ void main() {
               ..createSync();
 
             final (secondMelos, _) = await createMelos(workspaceDir);
-            await secondMelos.exec(dartCommand, sources: sources, force: true);
+            await secondMelos.exec(
+              dartCommand,
+              sources: sources,
+              runUnchanged: true,
+            );
             exitCode = 0;
             expect(runCount(dependentDir), 2);
             expect(runCount(dependencyDir), 2);
@@ -1823,7 +1827,7 @@ void main() {
         expect(runCount(aDir), 2);
       });
 
-      test('runs in the packages with unchanged sources when forced', () async {
+      test('runs in the packages with unchanged sources on request', () async {
         final workspaceDir = await createTemporaryWorkspace(
           workspacePackages: ['a'],
         );
@@ -1836,7 +1840,7 @@ void main() {
             command,
             concurrency: 1,
             sources: sources,
-            force: true,
+            runUnchanged: true,
           );
         }
 

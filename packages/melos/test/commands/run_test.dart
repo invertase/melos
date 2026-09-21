@@ -418,7 +418,7 @@ ${'-' * terminalWidth}
     });
 
     test(
-      'skips the packages with unchanged "sources" unless forced',
+      'skips the packages with unchanged "sources" unless they are requested',
       () async {
         final workspaceDir = await createTemporaryWorkspace(
           configBuilder: (path) => MelosWorkspaceConfig(
@@ -461,7 +461,11 @@ ${'-' * terminalWidth}
         await melos.run(scriptName: 'test_script', noSelect: true);
         expect(runCount(), 1);
 
-        await melos.run(scriptName: 'test_script', noSelect: true, force: true);
+        await melos.run(
+          scriptName: 'test_script',
+          noSelect: true,
+          runUnchanged: true,
+        );
         expect(runCount(), 2);
 
         await melos.run(

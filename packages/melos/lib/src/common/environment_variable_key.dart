@@ -42,9 +42,10 @@ class EnvironmentVariableKey {
 
   /// When set to `true`, `melos exec` runs the command in every package, even
   /// in the packages in which the `sources` did not change since the command
-  /// last succeeded. `melos run --force` sets this environment variable for the
-  /// scripts it runs, so that it reaches the nested `melos exec` commands.
-  static const String melosForce = 'MELOS_FORCE';
+  /// last succeeded. `melos run --run-unchanged` sets this environment variable
+  /// for the scripts it runs, so that it reaches the nested `melos exec`
+  /// commands.
+  static const String melosRunUnchanged = 'MELOS_RUN_UNCHANGED';
 
   /// When set to `true`, `melos exec` ignores the `sources` of the command, so
   /// that it runs in every package without calculating or storing checksums.
@@ -82,7 +83,7 @@ class EnvironmentVariableKey {
     melosQuiet,
     melosAnsiStyles,
     melosTerminalWidth,
-    melosForce,
+    melosRunUnchanged,
     melosIgnoreSources,
   ];
 }
