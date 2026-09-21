@@ -2,7 +2,7 @@
   <a href="https://melos.invertase.dev/~melos-latest">
   <img src="https://static.invertase.io/assets/melos-logo.png" alt="Melos" /> <br /><br />
   </a>
-  <span>A tool for managing Dart and Flutter projects, inspired by <a href="https://lerna.js.org">Lerna</a>.</span>
+  <span>A tool for managing Dart and Flutter projects, with one or many packages, inspired by <a href="https://lerna.js.org">Lerna</a>.</span>
 </p>
 
 <p align="center">
@@ -33,6 +33,11 @@ bases into multi-package repositories (sometimes called
 
 **Melos is a tool that optimizes the workflow around managing multi-package
 repositories with git and Pub.**
+
+Melos is not limited to monorepos though. It works just as well in a repository
+with a single package, where you can still use features like versioning,
+changelog generation, publishing and scripts, see
+[Using Melos without a monorepo](#using-melos-without-a-monorepo).
 
 ## Migrate to Melos 7.x.x/8.x.x
 
@@ -122,6 +127,34 @@ The location of your packages needs be configured via the `workspace`
 section in your root `pubspec.yaml` file, see the
 [pub workspaces](https://dart.dev/tools/pub/workspaces) documentation for more
 information.
+
+## Using Melos without a monorepo
+
+You don't need a monorepo to use Melos. In a repository with a single package
+you can still use `melos version`, `melos publish`, `melos run` and the rest of
+the commands to get automated versioning, changelog generation, publishing and
+scripts.
+
+To set it up, add Melos as a dev dependency and set `useRootAsPackage: true`
+in the `pubspec.yaml` file of your package, no `workspace` list is needed:
+
+```yaml
+name: my_single_package
+environment:
+  sdk: ^3.9.0
+
+dev_dependencies:
+  melos: ^7.0.0
+
+melos:
+  useRootAsPackage: true
+```
+
+See the
+[Getting Started](https://melos.invertase.dev/~melos-latest/getting-started#single-package-projects-non-monorepo)
+page and the
+[Configuration Overview](https://melos.invertase.dev/~melos-latest/configuration/overview#useRootAsPackage)
+for more details.
 
 ## What can Melos do?
 
