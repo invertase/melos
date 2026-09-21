@@ -132,6 +132,19 @@ melos:
 # ...
 ```
 
+Since the synced versions are overwritten on every bootstrap, it can be useful
+to make it visible in the packages that an entry is shared. When
+[`markSharedDependencies`](/configuration/overview#markshareddependencies) is
+enabled, every shared entry in the `pubspec.yaml` files of the packages is
+marked with a comment:
+
+```yaml
+# packages/my_package/pubspec.yaml
+dependencies:
+  collection: ^1.18.0 # Managed by Melos, change it in the root pubspec.yaml
+  path: ^1.9.0
+```
+
 ## Adding a post bootstrap lifecycle script
 
 Melos supports various command [lifecycle hooks](/configuration/scripts#hooks)

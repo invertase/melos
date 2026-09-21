@@ -438,6 +438,31 @@ melos:
         - '../external_project/packages/**'
 ```
 
+### markSharedDependencies
+
+Whether the entries that are synced from the
+[shared dependencies](/commands/bootstrap#shared-dependencies) are marked with
+a comment in the `pubspec.yaml` files of the packages, so that it is visible
+that they should be changed in the root `pubspec.yaml` file instead.
+
+```yaml
+dependencies:
+  collection: ^1.18.0 # Managed by Melos, change it in the root pubspec.yaml
+```
+
+The marker is kept up to date on every bootstrap. It is removed again from
+entries that are no longer shared, and from all entries when the option is
+disabled.
+
+The default is `false`.
+
+```yaml
+melos:
+  command:
+    bootstrap:
+      markSharedDependencies: true
+```
+
 ### runPubGetInParallel
 
 Whether to run `pub get` in parallel during bootstrapping.

@@ -39,6 +39,7 @@ import '../common/persistent_shell.dart';
 import '../common/platform.dart';
 import '../common/process_output_cancel_token.dart';
 import '../common/pubspec_overrides.dart';
+import '../common/shared_dependency_marker.dart';
 import '../common/topology.dart';
 import '../common/utils.dart' as utils;
 import '../common/utils.dart';
