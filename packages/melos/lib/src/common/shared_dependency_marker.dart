@@ -3,10 +3,11 @@ import 'package:yaml/yaml.dart';
 /// The comment that marks an entry of a `pubspec.yaml` file as being synced
 /// from the shared dependencies of the bootstrap config.
 const sharedDependencyMarker =
-    '# Managed by Melos, change it in the root pubspec.yaml';
+    '# Managed by Melos, change it in the bootstrap config of the root '
+    'pubspec.yaml';
 
 final _sharedDependencyMarkerPattern = RegExp(
-  '[ \\t]*${RegExp.escape(sharedDependencyMarker)}',
+  '[ \\t]*${RegExp.escape(sharedDependencyMarker)}(?=[ \\t]*\\r?(?:\\n|\$))',
 );
 
 /// Returns [pubspecContent] where exactly the entries in [sharedKeys] are
@@ -32,27 +33,40 @@ String applySharedDependencyMarkers(
     return content;
   }
 
-  final markerOffsets = <int>[];
+  final markerOffsets = <int>{};
   for (final MapEntry(key: section, value: keys) in sharedKeys.entries) {
     final entries = pubspec.nodes[section];
     if (entries is! YamlMap) {
       continue;
     }
-    for (final key in entries.nodes.keys.cast<YamlNode>()) {
+    for (final MapEntry(:key as YamlNode, :value) in entries.nodes.entries) {
       if (!keys.contains(key.value)) {
         continue;
       }
-      final keyEnd = key.span.end.offset;
-      final newline = content.indexOf('\n', keyEnd);
+      final anchor = _acceptsCommentOnlyAfterLastLine(value)
+          ? value.span.end.offset
+          : key.span.end.offset;
+      final newline = content.indexOf('\n', anchor);
       final lineEnd = newline == -1 ? content.length : newline;
-      final line = content.substring(keyEnd, lineEnd);
-      markerOffsets.add(keyEnd + line.trimRight().length);
+      final line = content.substring(anchor, lineEnd);
+      markerOffsets.add(anchor + line.trimRight().length);
     }
   }
 
-  markerOffsets.sort();
-  for (final offset in markerOffsets.reversed) {
+  for (final offset in markerOffsets.toList()..sort((a, b) => b - a)) {
     content = content.replaceRange(offset, offset, ' $sharedDependencyMarker');
   }
   return content;
+}
+
+bool _acceptsCommentOnlyAfterLastLine(YamlNode node) {
+  if (node is! YamlScalar || node.span.length == 0) {
+    return false;
+  }
+  return switch (node.style) {
+    ScalarStyle.PLAIN ||
+    ScalarStyle.SINGLE_QUOTED ||
+    ScalarStyle.DOUBLE_QUOTED => true,
+    _ => false,
+  };
 }

@@ -93,6 +93,65 @@ dependencies:
       );
     });
 
+    test('marks the last line of values that span multiple lines', () {
+      const pubspec = '''
+name: a
+dependencies:
+  b: ">=1.0.0
+    <2.0.0"
+  c: ^1.0.0
+    || ^2.0.0
+''';
+
+      expect(
+        applySharedDependencyMarkers(
+          pubspec,
+          sharedKeys: {
+            'dependencies': ['b', 'c'],
+          },
+        ),
+        '''
+name: a
+dependencies:
+  b: ">=1.0.0
+    <2.0.0" $sharedDependencyMarker
+  c: ^1.0.0
+    || ^2.0.0 $sharedDependencyMarker
+''',
+      );
+    });
+
+    test('marks a line with multiple shared entries once', () {
+      const pubspec = '''
+name: a
+dependencies: {collection: ^1.18.0, path: ^1.9.0}
+''';
+
+      expect(
+        applySharedDependencyMarkers(
+          pubspec,
+          sharedKeys: {
+            'dependencies': ['collection', 'path'],
+          },
+        ),
+        '''
+name: a
+dependencies: {collection: ^1.18.0, path: ^1.9.0} $sharedDependencyMarker
+''',
+      );
+    });
+
+    test('does not remove a marker that is followed by other text', () {
+      const pubspec =
+          '''
+name: a
+dependencies:
+  collection: ^1.18.0 $sharedDependencyMarker (see the docs)
+''';
+
+      expect(applySharedDependencyMarkers(pubspec, sharedKeys: {}), pubspec);
+    });
+
     test('keeps the line endings and the missing trailing newline', () {
       const pubspec =
           'name: a\r\n'

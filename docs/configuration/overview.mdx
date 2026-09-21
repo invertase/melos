@@ -447,12 +447,14 @@ that they should be changed in the root `pubspec.yaml` file instead.
 
 ```yaml
 dependencies:
-  collection: ^1.18.0 # Managed by Melos, change it in the root pubspec.yaml
+  collection: ^1.18.0 # Managed by Melos, change it in the bootstrap config of the root pubspec.yaml
 ```
 
 The marker is kept up to date on every bootstrap. It is removed again from
 entries that are no longer shared, and from all entries when the option is
-disabled.
+disabled. This only happens while at least one shared dependency is still
+configured, since the `pubspec.yaml` files of the packages are not touched
+otherwise.
 
 The default is `false`.
 
