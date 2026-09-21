@@ -153,3 +153,43 @@ transitive dependents (ignoring filters).
 ```bash
 melos list --scope=some_package --include-dependents
 ```
+
+## --post-filter
+
+The packages that are included through `--include-dependencies` and
+`--include-dependents` skip all the other filters. Use `--post-filter` to apply
+a filter after the dependencies and dependents have been included. The value is
+any of the other filters, written without the leading dashes. The option can be
+repeated.
+
+```bash
+# Run `build_runner` in `some_package` and all of its transitive dependencies,
+# but only in the packages that depend on `build_runner`.
+melos exec --scope=some_package --include-dependencies \
+  --post-filter=depends-on=build_runner -- dart run build_runner build
+
+# Run the tests of all changed packages and their transitive dependents, but
+# only in the packages that have a `test` directory.
+melos exec --diff=origin/main...HEAD --include-dependents \
+  --post-filter=dir-exists=test -- dart test
+```
+
+Flags are written in the same way, for example `--post-filter=no-private`.
+
+The post filters are applied to all the packages, including the ones that
+matched the other filters. `include-dependencies` and `include-dependents`
+cannot be used as post filters.
+
+In [`packageFilters`](/configuration/scripts#packagefilters), the post filters
+are defined with the `postFilters` option:
+
+```yaml
+scripts:
+  generate:
+    exec: dart run build_runner build
+    packageFilters:
+      scope: some_package
+      includeDependencies: true
+      postFilters:
+        dependsOn: build_runner
+```

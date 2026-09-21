@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
+import 'matchers.dart';
 import 'utils.dart';
 
 void main() {
@@ -246,6 +247,115 @@ void main() {
         );
 
         expect(filteredPackages.keys, ['a', 'b', 'c']);
+      });
+    });
+
+    group('postFilters', () {
+      MelosWorkspace buildWorkspace() {
+        final workspaceBuilder = VirtualWorkspaceBuilder('name: test')
+          ..addPackage('''
+            name: app
+            dependencies:
+              models: any
+              utils: any
+          ''')
+          ..addPackage('''
+            name: models
+            dependencies:
+              utils: any
+            dev_dependencies:
+              build_runner: any
+          ''')
+          ..addPackage('''
+            name: utils
+          ''');
+        return workspaceBuilder.build();
+      }
+
+      test('filters the included dependencies', () async {
+        final workspace = buildWorkspace();
+        final filteredPackages = await workspace.allPackages.applyFilters(
+          PackageFilters(
+            scope: [Glob('app')],
+            includeDependencies: true,
+            postFilters: const PackageFilters(dependsOn: ['build_runner']),
+          ),
+        );
+
+        expect(filteredPackages.keys, ['models']);
+      });
+
+      test('filters the included dependents', () async {
+        final workspace = buildWorkspace();
+        final filteredPackages = await workspace.allPackages.applyFilters(
+          PackageFilters(
+            scope: [Glob('utils')],
+            includeDependents: true,
+            postFilters: PackageFilters(ignore: [Glob('app')]),
+          ),
+        );
+
+        expect(filteredPackages.keys, unorderedEquals(['utils', 'models']));
+      });
+
+      test('are also applied to the packages that matched the other '
+          'filters', () async {
+        final workspace = buildWorkspace();
+        final filteredPackages = await workspace.allPackages.applyFilters(
+          PackageFilters(
+            scope: [Glob('app')],
+            includeDependencies: true,
+            postFilters: const PackageFilters(noDependsOn: ['models']),
+          ),
+        );
+
+        expect(filteredPackages.keys, unorderedEquals(['models', 'utils']));
+      });
+
+      test('are applied without including dependents or '
+          'dependencies', () async {
+        final workspace = buildWorkspace();
+        final filteredPackages = await workspace.allPackages.applyFilters(
+          const PackageFilters(
+            postFilters: PackageFilters(dependsOn: ['build_runner']),
+          ),
+        );
+
+        expect(filteredPackages.keys, ['models']);
+      });
+
+      test('throws when the post filters include dependents, dependencies '
+          'or other post filters', () async {
+        final workspace = buildWorkspace();
+
+        for (final postFilters in const [
+          PackageFilters(includeDependents: true),
+          PackageFilters(includeDependencies: true),
+          PackageFilters(postFilters: PackageFilters()),
+        ]) {
+          await expectLater(
+            workspace.allPackages.applyFilters(
+              PackageFilters(postFilters: postFilters),
+            ),
+            throwsMelosConfigException(),
+          );
+        }
+      });
+
+      test('included packages skip the other filters when there are no '
+          'post filters', () async {
+        final workspace = buildWorkspace();
+        final filteredPackages = await workspace.allPackages.applyFilters(
+          PackageFilters(
+            scope: [Glob('app')],
+            includeDependencies: true,
+          ),
+        );
+
+        expect(
+          filteredPackages.keys,
+          unorderedEquals(['app', 'models', 'utils']),
+        );
       });
     });
   });

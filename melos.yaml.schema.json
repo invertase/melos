@@ -683,115 +683,139 @@
                     "description": "The value of the environment variable."
                   }
                 },
-                "packageFilters": {
-                  "type": "object",
-                  "description": "If the command to execute is a melos command, allows filtering packages that will execute the command.",
-                  "patternProperties": { "^x-": {} },
-                  "additionalProperties": false,
-                  "properties": {
-                    "scope": {
-                      "description": "Patterns for including packages by name.",
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "array",
-                          "items": { "type": "string" }
-                        }
-                      ]
-                    },
-                    "ignore": {
-                      "description": "Patterns for excluding packages by name.",
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "array",
-                          "items": { "type": "string" }
-                        }
-                      ]
-                    },
-                    "dirExists": {
-                      "description": "Include a package only if a given directory exists.",
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "array",
-                          "items": { "type": "string" }
-                        }
-                      ]
-                    },
-                    "fileExists": {
-                      "description": "Include a package only if a given file exists.",
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "array",
-                          "items": { "type": "string" }
-                        }
-                      ]
-                    },
-                    "dependsOn": {
-                      "description": "Include only packages that depend on a specific package.",
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "array",
-                          "items": { "type": "string" }
-                        }
-                      ]
-                    },
-                    "noDependsOn": {
-                      "description": "Include only packages that do not depend on a specific package.",
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "array",
-                          "items": { "type": "string" }
-                        }
-                      ]
-                    },
-                    "diff": {
-                      "type": "string",
-                      "description": "Filter packages based on whether there were changes between a commit and the current HEAD or within a range of commits. A range of commits can be specified using the git short hand syntax `<start-commit>..<end-commit>` and `<start-commit>...<end-commit>."
-                    },
-                    "private": {
-                      "type": "boolean",
-                      "description": "Include packages with `publish_to: none`."
-                    },
-                    "noPrivate": {
-                      "type": "boolean",
-                      "description": "Exclude packages with `publish_to: none`."
-                    },
-                    "published": {
-                      "type": "boolean",
-                      "description": "Include/Exclude packages that are up-to-date on pub.dev."
-                    },
-                    "nullSafety": {
-                      "type": "boolean",
-                      "description": "Include/Exclude packages that are null-safe."
-                    },
-                    "flutter": {
-                      "type": "boolean",
-                      "description": "Include/Exclude packages that are Flutter packages."
-                    }
-                  }
-                }
+                "packageFilters": { "$ref": "#/$defs/packageFilters" }
               }
             }
           ]
         }
       ]
+    },
+    "packageFilters": {
+      "type": "object",
+      "description": "If the command to execute is a melos command, allows filtering packages that will execute the command.",
+      "patternProperties": { "^x-": {} },
+      "additionalProperties": false,
+      "properties": {
+        "scope": {
+          "description": "Patterns for including packages by name.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          ]
+        },
+        "ignore": {
+          "description": "Patterns for excluding packages by name.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          ]
+        },
+        "dirExists": {
+          "description": "Include a package only if a given directory exists.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          ]
+        },
+        "fileExists": {
+          "description": "Include a package only if a given file exists.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          ]
+        },
+        "dependsOn": {
+          "description": "Include only packages that depend on a specific package.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          ]
+        },
+        "noDependsOn": {
+          "description": "Include only packages that do not depend on a specific package.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          ]
+        },
+        "diff": {
+          "type": "string",
+          "description": "Filter packages based on whether there were changes between a commit and the current HEAD or within a range of commits. A range of commits can be specified using the git short hand syntax `<start-commit>..<end-commit>` and `<start-commit>...<end-commit>."
+        },
+        "private": {
+          "type": "boolean",
+          "description": "Include packages with `publish_to: none`."
+        },
+        "noPrivate": {
+          "type": "boolean",
+          "description": "Exclude packages with `publish_to: none`."
+        },
+        "published": {
+          "type": "boolean",
+          "description": "Include/Exclude packages that are up-to-date on pub.dev."
+        },
+        "nullSafety": {
+          "type": "boolean",
+          "description": "Include/Exclude packages that are null-safe."
+        },
+        "flutter": {
+          "type": "boolean",
+          "description": "Include/Exclude packages that are Flutter packages."
+        },
+        "includeDependents": {
+          "type": "boolean",
+          "description": "Include all transitive dependents for each package that matches the other filters."
+        },
+        "includeDependencies": {
+          "type": "boolean",
+          "description": "Include all transitive dependencies for each package that matches the other filters."
+        },
+        "postFilters": {
+          "description": "Filters that are applied to all packages after the dependents and dependencies have been included. Supports the same filters as `packageFilters`, except `includeDependents`, `includeDependencies` and `postFilters`.",
+          "allOf": [
+            { "$ref": "#/$defs/packageFilters" },
+            {
+              "not": {
+                "anyOf": [
+                  { "required": ["includeDependents"] },
+                  { "required": ["includeDependencies"] },
+                  { "required": ["postFilters"] }
+                ]
+              }
+            }
+          ]
+        }
+      }
     },
     "commonHooks": {
       "type": "object",
