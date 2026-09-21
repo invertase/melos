@@ -2,7 +2,7 @@
   <a href="https://melos.invertase.dev/~melos-latest">
   <img src="https://static.invertase.io/assets/melos-logo.png" alt="Melos" /> <br /><br />
   </a>
-  <span>A tool for managing Dart projects with multiple packages, inspired by <a href="https://lerna.js.org">Lerna</a>.</span>
+  <span>A tool for managing Dart and Flutter projects, inspired by <a href="https://lerna.js.org">Lerna</a>.</span>
 </p>
 
 <p align="center">
@@ -34,7 +34,7 @@ bases into multi-package repositories (sometimes called
 **Melos is a tool that optimizes the workflow around managing multi-package
 repositories with git and Pub.**
 
-## Migrate to Melos 7.x.x
+## Migrate to Melos 7.x.x/8.x.x
 
 Since the [pub workspaces](https://dart.dev/tools/pub/workspaces) feature has
 been released, Melos has been updated to rely on that, instead of creating
