@@ -1,20 +1,21 @@
 ---
-description: A tool for managing Dart projects with multiple packages.
+description: A tool for managing Dart and Flutter projects, with one or many packages.
 ---
 
 <Image
   src="https://static.invertase.io/assets/melos-logo.png"
   alt="Melos"
   zoom={false}
-  caption="A tool for managing Dart projects with multiple packages."
+  caption="A tool for managing Dart and Flutter projects, with one or many packages."
 />
 
 ## About
 
 Melos is a [CLI](https://en.wikipedia.org/wiki/Command-line_interface) tool used
-to help manage Dart projects with multiple packages (also known as mono-repos).
-It is in active development and is in use on projects such as
-[FlutterFire](https://github.com/firebase/flutterfire).
+to help manage Dart and Flutter projects with multiple packages (also known as
+mono-repos). It is in active development and is in use on projects such as
+[FlutterFire](https://github.com/firebase/flutterfire) and
+[Flame](https://github.com/flame-engine/flame).
 
 Splitting up large code bases into separate independently versioned packages is
 extremely useful for code sharing. However, making changes across many
@@ -33,6 +34,45 @@ Melos also works great on CI/CD environments to help automate complex tasks and
 challenges. If you're using GitHub you can check out the
 [Melos GitHub Action](https://github.com/bluefireteam/melos-action).
 
+Melos is for applications just as much as it is for packages that are published
+to [pub.dev](https://pub.dev). A workspace can contain your Flutter and Dart
+applications together with the internal packages that they share, and Melos
+will run your scripts, tests and analysis across all of them, generate IDE run
+configurations for the applications and version them, including the build
+number of a version like `1.2.3+45`. Nothing has to be published to use Melos.
+
+Melos is not limited to monorepos either. It works just as well in a repository
+with a single application or package, where you can still use features like
+versioning, changelog generation, publishing and scripts, see
+[Single package projects](/getting-started#single-package-projects-non-monorepo).
+
+## How does Melos relate to other monorepo tools?
+
+Melos is the monorepo tool for the Dart and Flutter ecosystem. If you are coming
+from another ecosystem, Melos is the Dart and Flutter alternative to tools like:
+
+- [Lerna](https://lerna.js.org), [Nx](https://nx.dev),
+  [Turborepo](https://turborepo.com) and [Rush](https://rushjs.io) for
+  JavaScript and TypeScript, which run tasks across packages and handle
+  versioning and publishing.
+- [npm workspaces](https://docs.npmjs.com/cli/using-npm/workspaces),
+  [Yarn workspaces](https://yarnpkg.com/features/workspaces) and
+  [pnpm workspaces](https://pnpm.io/workspaces) for JavaScript and TypeScript,
+  and [Cargo workspaces](https://doc.rust-lang.org/cargo/reference/workspaces.html)
+  for Rust, which link local packages together. In Dart this part is handled by
+  [pub workspaces](https://dart.dev/tools/pub/workspaces), which Melos builds
+  on top of.
+- [Changesets](https://github.com/changesets/changesets),
+  [semantic-release](https://semantic-release.gitbook.io) and
+  [release-please](https://github.com/googleapis/release-please) for automated
+  versioning, changelog generation and publishing.
+
+Melos combines these responsibilities in a single tool that understands Dart and
+Flutter packages, `pubspec.yaml` files and [pub.dev](https://pub.dev), so that
+you can run scripts and commands across packages, filter packages, and version
+and publish them based on
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+
 ## Projects using Melos
 
 The following projects are using Melos:
@@ -48,18 +88,22 @@ The following projects are using Melos:
 - [cbl-dart/cbl-dart](https://github.com/cbl-dart/cbl-dart)
 - [ema987/paddinger](https://github.com/ema987/paddinger)
 - [flutter-stripe/flutter_stripe](https://github.com/flutter-stripe/flutter_stripe)
+- [danvick/flutter_form_builder](https://github.com/danvick/flutter_form_builder)
 - [kmartins/groveman](https://github.com/kmartins/groveman)
 - [ApptiveGrid/apptive_grid_flutter](https://github.com/ApptiveGrid/apptive_grid_flutter)
 - [flutternetwork/WiFiFlutter](https://github.com/flutternetwork/WiFiFlutter)
 - [iapicca/yak_packages](https://github.com/iapicca/yak_packages)
 - [atsign-foundation/at_mono](https://github.com/atsign-foundation/at_mono)
+- [atsign-foundation/at_app](https://github.com/atsign-foundation/at_app)
 - [sub6resources/flutter_html](https://github.com/sub6resources/flutter_html)
 - [ferraridamiano/ConverterNOW](https://github.com/ferraridamiano/ConverterNOW)
 - [rrifafauzikomara/youtube_video](https://github.com/rrifafauzikomara/youtube_video)
+- [mobxjs/mobx.dart](https://github.com/mobxjs/mobx.dart)
 - [NetGlade/auto_mappr](https://github.com/netglade/auto_mappr)
 - [myConsciousness/atproto.dart](https://github.com/myConsciousness/atproto.dart)
 - [GrowERP Flutter ERP](https://github.com/growerp/growerp)
 - [mrverdant13/coverde](https://github.com/mrverdant13/coverde)
+- [ThexXTURBOXx/flutter_web_auth_2](https://github.com/ThexXTURBOXx/flutter_web_auth_2)
 - [woltapp/wolt_modal_sheet](https://github.com/woltapp/wolt_modal_sheet)
 - [cfug/dio](https://github.com/cfug/dio)
 - [simolus3/drift](https://github.com/simolus3/drift)
@@ -67,7 +111,9 @@ The following projects are using Melos:
 - [FlutterGen/flutter_gen](https://github.com/FlutterGen/flutter_gen)
 - [heftapp/graphql_codegen](https://github.com/heftapp/graphql_codegen)
 - [leonardocustodio/polkadart](https://github.com/leonardocustodio/polkadart)
+- [jhomlala/alice](https://github.com/jhomlala/alice)
 - [powersync/powersync.dart](https://github.com/powersync-ja/powersync.dart)
+- [rodydavis/signals.dart](https://github.com/rodydavis/signals.dart)
 - [foss42/apidash](https://github.com/foss42/apidash)
 - [ReactiveX/rxdart](https://github.com/ReactiveX/rxdart)
 - [StacDev/stac](https://github.com/StacDev/stac)
@@ -80,9 +126,8 @@ The following projects are using Melos:
 
 <Info>
 
-Submit a PR if you'd like to add your project to the list. Update the
-[README.md](https://github.com/invertase/melos/edit/main/packages/melos/README.md)
-and the [docs](https://github.com/invertase/melos/edit/main/docs/index.mdx).
+Submit a PR if you'd like to add your project to the list by updating the
+[docs](https://github.com/invertase/melos/edit/main/docs/index.mdx).
 
 You can also add a [README badge](/#README-badge) to your projects README to let
 others know about Melos 💙.

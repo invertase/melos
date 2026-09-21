@@ -135,25 +135,50 @@ If you wonder why bootstrapping is needed you can read more about it in the
 
 ## Single package projects (non-monorepo)
 
-Melos can also be used for single package projects to leverage its features
-like versioning, publishing, and changelog generation. This is useful when you
-want to use Melos tools but don't have a monorepo structure.
+Melos can also be used for projects with a single application or package to
+leverage its features like versioning, publishing, and changelog generation.
+This is useful when you want to use Melos tools but don't have a monorepo
+structure.
 
-For single package setup, just add `useRootAsPackage: true` to your 
+For single package setup, just add `useRootAsPackage: true` to your
 `pubspec.yaml`:
 
 ```yaml
 name: my_single_package
+environment:
+  sdk: ^3.9.0
+
+dev_dependencies:
+  melos: ^8.0.0
+
+melos:
+  useRootAsPackage: true
+```
+
+Applications are usually private (`publish_to: none`) and private packages are
+skipped by `melos version` by default. To version an application you also need
+to pass `--all` to `melos version`, or set
+[`versionPrivatePackages: true`](/configuration/overview#versionprivatepackages):
+
+```yaml
+name: my_application
 publish_to: none
 environment:
   sdk: ^3.9.0
 
 dev_dependencies:
-  melos: ^7.0.0
+  melos: ^8.0.0
 
 melos:
   useRootAsPackage: true
+  command:
+    version:
+      versionPrivatePackages: true
 ```
+
+The build number of the version of an application is retained and incremented
+when it is versioned, so `1.2.3+45` becomes `1.3.0+46`, see
+[Build numbers](/guides/automated-releases#build-numbers).
 
 ## Next steps
 
