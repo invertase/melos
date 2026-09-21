@@ -258,6 +258,10 @@
             "dev_dependencies": {
               "type": "object",
               "description": "Dev dependencies to be synced between all packages."
+            },
+            "markSharedDependencies": {
+              "type": "boolean",
+              "description": "Whether the entries that are synced from `environment`, `dependencies` and `dev_dependencies` are marked with a comment in the `pubspec.yaml` files of the packages.\n\nDefaults to false."
             }
           }
         },

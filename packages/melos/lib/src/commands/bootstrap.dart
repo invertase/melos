@@ -68,6 +68,8 @@ mixin _BootstrapMixin on _CleanMixin {
                 environment: bootstrapCommandConfig.environment,
                 dependencies: bootstrapCommandConfig.dependencies,
                 devDependencies: bootstrapCommandConfig.devDependencies,
+                markSharedDependencies:
+                    bootstrapCommandConfig.markSharedDependencies,
               );
             }).drain<void>();
           }
@@ -287,6 +289,7 @@ mixin _BootstrapMixin on _CleanMixin {
     required Map<String, VersionConstraint?>? environment,
     required Map<String, Dependency>? dependencies,
     required Map<String, Dependency>? devDependencies,
+    required bool markSharedDependencies,
   }) async {
     final pubspecEditor = YamlEditor(pubspecContent);
 
@@ -310,8 +313,19 @@ mixin _BootstrapMixin on _CleanMixin {
       pubspecKey: 'dev_dependencies',
     );
 
-    if (pubspecEditor.edits.isNotEmpty) {
-      await writeTextFileAsync(pubspecPath, pubspecEditor.toString());
+    final updatedPubspecContent = applySharedDependencyMarkers(
+      pubspecEditor.toString(),
+      sharedKeys: markSharedDependencies
+          ? {
+              'environment': ?environment?.keys,
+              'dependencies': ?dependencies?.keys,
+              'dev_dependencies': ?devDependencies?.keys,
+            }
+          : const {},
+    );
+
+    if (updatedPubspecContent != pubspecContent) {
+      await writeTextFileAsync(pubspecPath, updatedPubspecContent);
 
       final message = <String>[
         if (updatedEnvironment) 'Updated environment',

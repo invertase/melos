@@ -48,6 +48,7 @@ void main() {
               'enforceLockfile': true,
               'noExample': true,
               'noPub': true,
+              'markSharedDependencies': true,
               'dependencyOverridePaths': ['a'],
             },
             workspacePath: '.',
@@ -58,6 +59,7 @@ void main() {
             enforceLockfile: true,
             noExample: true,
             noPub: true,
+            markSharedDependencies: true,
             dependencyOverridePaths: [
               createGlob('a', currentDirectoryPath: '.'),
             ],

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
+import 'package:melos/src/common/shared_dependency_marker.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
@@ -1380,6 +1381,65 @@ Generating IntelliJ IDE files...
       expect(
         (pubspecContent['dependencies']! as YamlMap)['flame'],
         '^1.21.0',
+      );
+      expect(
+        File(p.join(pkgA.path, 'pubspec.yaml')).readAsStringSync(),
+        isNot(contains(sharedDependencyMarker)),
+      );
+    });
+
+    test('marks shared dependencies when configured', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+        configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
+          createYamlMap(
+            {
+              'melos': {
+                'command': {
+                  'bootstrap': {
+                    'markSharedDependencies': true,
+                    'dependencies': {
+                      'flame': '^1.21.0',
+                      'collection': 'any',
+                    },
+                  },
+                },
+              },
+            },
+            defaults: configMapDefaults,
+          ),
+          path: path,
+        ),
+      );
+
+      final pkgA = await createProject(
+        workspaceDir,
+        Pubspec(
+          'a',
+          dependencies: {
+            'flame': HostedDependency(version: VersionConstraint.any),
+            'collection': HostedDependency(version: VersionConstraint.any),
+            'path': HostedDependency(version: VersionConstraint.any),
+          },
+        ),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(logger: logger, config: config);
+
+      await runMelosBootstrap(melos, logger, noPub: true);
+
+      final pubspecLines = File(
+        p.join(pkgA.path, 'pubspec.yaml'),
+      ).readAsLinesSync();
+      expect(
+        pubspecLines,
+        containsAll([
+          '  flame: ^1.21.0 $sharedDependencyMarker',
+          '  collection: any $sharedDependencyMarker',
+          '  path: any',
+        ]),
       );
     });
   });

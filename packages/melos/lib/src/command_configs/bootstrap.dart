@@ -23,6 +23,7 @@ class BootstrapCommandConfigs {
     this.environment,
     this.dependencies,
     this.devDependencies,
+    this.markSharedDependencies = false,
     this.dependencyOverridePaths = const [],
     this.hooks = LifecycleHooks.empty,
   });
@@ -66,6 +67,14 @@ class BootstrapCommandConfigs {
     final noPub =
         assertKeyIsA<bool?>(
           key: 'noPub',
+          map: yaml,
+          path: 'command/bootstrap',
+        ) ??
+        false;
+
+    final markSharedDependencies =
+        assertKeyIsA<bool?>(
+          key: 'markSharedDependencies',
           map: yaml,
           path: 'command/bootstrap',
         ) ??
@@ -123,6 +132,7 @@ class BootstrapCommandConfigs {
       environment: environment.isEmpty ? null : environment,
       dependencies: dependencies.isEmpty ? null : dependencies,
       devDependencies: devDependencies.isEmpty ? null : devDependencies,
+      markSharedDependencies: markSharedDependencies,
       dependencyOverridePaths: dependencyOverridePaths
           .map(
             (override) =>
@@ -176,6 +186,13 @@ class BootstrapCommandConfigs {
   /// Dev dependencies to be synced between all packages.
   final Map<String, Dependency>? devDependencies;
 
+  /// Whether the entries that are synced from [environment], [dependencies]
+  /// and [devDependencies] are marked with a comment in the `pubspec.yaml`
+  /// files of the packages.
+  ///
+  /// The default is `false`.
+  final bool markSharedDependencies;
+
   /// A list of [Glob]s for paths that contain packages to be used as
   /// dependency overrides for the Melos workspace.
   ///
@@ -201,6 +218,7 @@ class BootstrapCommandConfigs {
       if (dependencies != null) 'dependencies': dependencies!.toYaml(),
       if (devDependencies != null)
         'dev_dependencies': devDependencies!.toYaml(),
+      'markSharedDependencies': markSharedDependencies,
       if (dependencyOverridePaths.isNotEmpty)
         'dependencyOverridePaths': dependencyOverridePaths
             .map((path) => path.toString())
@@ -227,6 +245,7 @@ class BootstrapCommandConfigs {
         other.devDependencies,
         devDependencies,
       ) &&
+      other.markSharedDependencies == markSharedDependencies &&
       const DeepCollectionEquality(
         GlobEquality(),
       ).equals(other.dependencyOverridePaths, dependencyOverridePaths) &&
@@ -247,6 +266,7 @@ class BootstrapCommandConfigs {
     const DeepCollectionEquality().hash(environment),
     const DeepCollectionEquality().hash(dependencies),
     const DeepCollectionEquality().hash(devDependencies),
+    markSharedDependencies,
     const DeepCollectionEquality(GlobEquality()).hash(dependencyOverridePaths),
     hooks,
   ]);
@@ -264,6 +284,7 @@ BootstrapCommandConfigs(
   environment: $environment,
   dependencies: $dependencies,
   devDependencies: $devDependencies,
+  markSharedDependencies: $markSharedDependencies,
   dependencyOverridePaths: $dependencyOverridePaths,
   hooks: $hooks,
 )''';
