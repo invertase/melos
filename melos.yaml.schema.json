@@ -720,6 +720,18 @@
             }
           ]
         },
+        "category": {
+          "description": "Patterns for including packages by category.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          ]
+        },
         "dirExists": {
           "description": "Include a package only if a given directory exists.",
           "anyOf": [
@@ -784,7 +796,7 @@
           "type": "boolean",
           "description": "Include/Exclude packages that are up-to-date on pub.dev."
         },
-        "nullSafety": {
+        "nullsafety": {
           "type": "boolean",
           "description": "Include/Exclude packages that are null-safe."
         },

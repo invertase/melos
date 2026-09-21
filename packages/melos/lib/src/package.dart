@@ -355,7 +355,7 @@ class PackageFilters {
       if (scope.isNotEmpty)
         filterOptionScope.camelCased: scope.map((e) => e.toString()).toList(),
       if (categories.isNotEmpty)
-        filterOptionCategory.camelCased: scope
+        filterOptionCategory.camelCased: categories
             .map((e) => e.toString())
             .toList(),
       if (ignore.isNotEmpty)
