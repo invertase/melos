@@ -119,7 +119,7 @@ mixin _BootstrapMixin on _CleanMixin {
           rethrow;
         }
 
-        if (workspace.config.ide.intelliJ.enabled) {
+        if (workspace.config.ide.intelliJ.enabled && !utils.isCI) {
           logger.log('Generating IntelliJ IDE files...');
 
           await cleanIntelliJ(workspace);

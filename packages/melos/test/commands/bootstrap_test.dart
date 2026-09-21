@@ -5,12 +5,14 @@ import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
+import 'package:platform/platform.dart' show FakePlatform, LocalPlatform;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 
 import '../matchers.dart';
+import '../mock_env.dart';
 import '../utils.dart';
 import '../workspace_config_test.dart';
 
@@ -1556,6 +1558,43 @@ Generating IntelliJ IDE files...
     });
   });
 
+  group('melos bs in CI', () {
+    test('should not generate IntelliJ IDE files', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+      );
+      await createProject(
+        workspaceDir,
+        Pubspec('a'),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(logger: logger, config: config);
+
+      await runMelosBootstrap(melos, logger, noPub: true, isCI: true);
+
+      expect(
+        logger.output,
+        ignoringAnsii(
+          '''
+melos bootstrap
+  └> ${workspaceDir.path}
+
+Skipping "dart pub get" in workspace (--no-pub)...
+  > SUCCESS
+
+ -> 1 packages bootstrapped
+''',
+        ),
+      );
+      expect(
+        Directory(p.join(workspaceDir.path, '.idea')).existsSync(),
+        isFalse,
+      );
+    });
+  });
+
   group('melos bs --no-pub', () {
     test('should skip pub get', () async {
       final workspaceDir = await createTemporaryWorkspace(
@@ -1658,19 +1697,40 @@ Future<void> runMelosBootstrap(
   bool? enforceLockfile,
   bool? offline,
   bool? noPub,
+  bool isCI = false,
 }) async {
-  try {
-    await melos.bootstrap(
-      enforceLockfile: enforceLockfile,
-      offline: offline,
-      noPub: noPub,
-    );
-  } on BootstrapException {
-    // ignore: avoid_print
-    print(logger.output);
-    rethrow;
-  }
+  final environment = {
+    for (final entry in const LocalPlatform().environment.entries)
+      if (!_ciEnvironmentKeys.contains(entry.key)) entry.key: entry.value,
+    if (isCI) 'CI': 'true',
+  };
+
+  await withMockPlatform(
+    () async {
+      try {
+        await melos.bootstrap(
+          enforceLockfile: enforceLockfile,
+          offline: offline,
+          noPub: noPub,
+        );
+      } on BootstrapException {
+        // ignore: avoid_print
+        print(logger.output);
+        rethrow;
+      }
+    },
+    platform: FakePlatform.fromPlatform(
+      const LocalPlatform(),
+    ).copyWith(environment: environment),
+  )();
 }
+
+const _ciEnvironmentKeys = {
+  'CI',
+  'CONTINUOUS_INTEGRATION',
+  'BUILD_NUMBER',
+  'RUN_ID',
+};
 
 YamlMap _pubspecContent(Directory directory) {
   final source = readTextFile(pubspecPath(directory.path));
