@@ -45,4 +45,4 @@ export 'src/package.dart'
 export 'src/scripts.dart' show ExecOptions, ProcessStdio, Script, Scripts;
 export 'src/workspace.dart' show IdeWorkspace, MelosWorkspace;
 export 'src/workspace_config.dart'
-    show IDEConfigs, IntelliJConfig, MelosWorkspaceConfig;
+    show IDEConfigs, IdeRunConfiguration, IntelliJConfig, MelosWorkspaceConfig;

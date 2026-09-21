@@ -62,6 +62,10 @@ final _isValidPubPackageNameRegExp = RegExp(
 bool isValidPubPackageName(String name) =>
     _isValidPubPackageNameRegExp.hasMatch(name);
 
+/// The entry point that Flutter runs when no other target is specified,
+/// relative to the package root.
+const defaultEntryPoint = 'lib/main.dart';
+
 /// Enum representing what type of package this is.
 enum PackageType {
   dartPackage,
@@ -81,14 +85,14 @@ RegExp dependencyTagReplaceRegex(String dependencyName) {
 
 @immutable
 class PackageFilters {
-  PackageFilters({
+  const PackageFilters({
     this.scope = const [],
     this.ignore = const [],
     this.categories = const [],
     this.dirExists = const [],
     this.fileExists = const [],
-    List<String> dependsOn = const [],
-    List<String> noDependsOn = const [],
+    this.dependsOn = const [],
+    this.noDependsOn = const [],
     this.diff,
     this.includePrivatePackages,
     this.published,
@@ -96,15 +100,7 @@ class PackageFilters {
     bool? flutter,
     this.includeDependencies = false,
     this.includeDependents = false,
-  }) : dependsOn = [
-         ...dependsOn,
-         // ignore: use_if_null_to_convert_nulls_to_bools
-         if (flutter == true) 'flutter',
-       ],
-       noDependsOn = [
-         ...noDependsOn,
-         if (flutter == false) 'flutter',
-       ];
+  }) : includeFlutterPackages = flutter;
 
   factory PackageFilters.fromYaml(
     Map<Object?, Object?> yaml, {
@@ -257,6 +253,7 @@ class PackageFilters {
     required this.includePrivatePackages,
     required this.published,
     required this.nullSafe,
+    required this.includeFlutterPackages,
     required this.includeDependencies,
     required this.includeDependents,
   });
@@ -301,6 +298,10 @@ class PackageFilters {
   /// Include/exclude packages that are null-safe.
   final bool? nullSafe;
 
+  /// Include/exclude packages that are Flutter packages, see
+  /// [Package.isFlutterPackage].
+  final bool? includeFlutterPackages;
+
   /// Whether to include packages that depends on the filtered packages.
   ///
   /// This supersede other filters.
@@ -331,6 +332,8 @@ class PackageFilters {
         filterOptionPrivate.camelCased: includePrivatePackages,
       if (published != null) filterOptionPublished.camelCased: published,
       if (nullSafe != null) filterOptionNullsafety.camelCased: nullSafe,
+      if (includeFlutterPackages != null)
+        filterOptionFlutter.camelCased: includeFlutterPackages,
       if (includeDependents) filterOptionIncludeDependents.camelCased: true,
       if (includeDependencies) filterOptionIncludeDependencies.camelCased: true,
     };
@@ -345,6 +348,7 @@ class PackageFilters {
       includePrivatePackages: includePrivatePackages,
       noDependsOn: noDependsOn,
       nullSafe: nullSafe,
+      includeFlutterPackages: includeFlutterPackages,
       published: published,
       scope: scope,
       diff: diff,
@@ -363,6 +367,7 @@ class PackageFilters {
       includePrivatePackages: includePrivatePackages,
       noDependsOn: noDependsOn,
       nullSafe: nullSafe,
+      includeFlutterPackages: includeFlutterPackages,
       published: published,
       scope: scope,
       diff: diff,
@@ -380,6 +385,7 @@ class PackageFilters {
     bool? includePrivatePackages,
     List<String>? noDependsOn,
     bool? nullSafe,
+    bool? includeFlutterPackages,
     bool? published,
     List<Glob>? scope,
     String? diff,
@@ -397,6 +403,8 @@ class PackageFilters {
           includePrivatePackages ?? this.includePrivatePackages,
       noDependsOn: noDependsOn ?? this.noDependsOn,
       nullSafe: nullSafe ?? this.nullSafe,
+      includeFlutterPackages:
+          includeFlutterPackages ?? this.includeFlutterPackages,
       published: published ?? this.published,
       scope: scope ?? this.scope,
       diff: diff ?? this.diff,
@@ -410,6 +418,7 @@ class PackageFilters {
       other is PackageFilters &&
       runtimeType == other.runtimeType &&
       other.nullSafe == nullSafe &&
+      other.includeFlutterPackages == includeFlutterPackages &&
       other.published == published &&
       other.includeDependencies == includeDependencies &&
       other.includeDependents == includeDependents &&
@@ -427,6 +436,7 @@ class PackageFilters {
   int get hashCode => Object.hashAll([
     runtimeType,
     nullSafe,
+    includeFlutterPackages,
     published,
     includeDependencies,
     includeDependents,
@@ -446,6 +456,7 @@ class PackageFilters {
     return '''
 PackageFilters(
   nullSafe: $nullSafe,
+  includeFlutterPackages: $includeFlutterPackages,
   published: $published,
   includeDependencies: $includeDependencies,
   includeDependents: $includeDependents,
@@ -506,6 +517,7 @@ class PackageMap {
     required String workspacePath,
     required MelosLogger logger,
     Map<String, List<Glob>> categories = const {},
+    Map<String, List<String>> entryPoints = const {},
   }) async {
     return PackageMap.resolvePackages(
       workspacePath: workspacePath,
@@ -515,6 +527,7 @@ class PackageMap {
       ignore: [],
       categories: categories,
       logger: logger,
+      entryPoints: entryPoints,
     ).then((packageMap) => packageMap.values.first);
   }
 
@@ -525,6 +538,7 @@ class PackageMap {
     required Map<String, List<Glob>> categories,
     required MelosLogger logger,
     bool discoverNestedWorkspaces = false,
+    Map<String, List<String>> entryPoints = const {},
   }) async {
     final pubspecFiles = await _resolvePubspecFiles(
       workspacePath: workspacePath,
@@ -585,6 +599,7 @@ The packages that caused the problem are:
         pubspec: pubspec,
         categories: filteredCategories,
         rawPubspecFileContent: pubspecFileAsString,
+        entryPoints: entryPoints[name] ?? const [],
       );
     }
 
@@ -796,6 +811,7 @@ The packages that caused the problem are:
         .applyDependsOn(filters.dependsOn)
         .applyNoDependsOn(filters.noDependsOn)
         .filterNullSafe(nullSafe: filters.nullSafe)
+        .filterFlutterPackages(include: filters.includeFlutterPackages)
         .filterPublishedPackages(
           published: filters.published,
           logger: _logger,
@@ -973,6 +989,14 @@ extension IterablePackageExt on Iterable<Package> {
     });
   }
 
+  Iterable<Package> filterFlutterPackages({bool? include}) {
+    if (include == null) {
+      return this;
+    }
+
+    return where((package) => include == package.isFlutterPackage);
+  }
+
   Iterable<Package> applyScope(List<Glob> scope) {
     if (scope.isEmpty) {
       return this;
@@ -1062,6 +1086,7 @@ class Package {
     required this.pubspec,
     required this.categories,
     this.rawPubspecFileContent,
+    this.entryPoints = const [],
   }) : _packageMap = packageMap,
        assert(p.isAbsolute(path));
 
@@ -1089,6 +1114,10 @@ class Package {
   /// Can be removed if [Dart SDK issue #2155](https://github.com/dart-lang/tools/issues/2155)
   /// has been closed.
   final String? rawPubspecFileContent;
+
+  /// The entry points that are configured for this package in the workspace
+  /// configuration, relative to the package root.
+  final List<String> entryPoints;
 
   /// Package path as a normalized string relative to the root of the workspace.
   /// e.g. "packages/firebase_database".
@@ -1184,8 +1213,43 @@ class Package {
 
   /// Returns whether this package is for Flutter.
   ///
-  /// This is determined by whether the package depends on the Flutter SDK.
-  late final bool isFlutterPackage = dependencies.contains('flutter');
+  /// This is determined by whether the package needs the Flutter SDK itself,
+  /// through any of its dependency sections, or whether it, or any package in
+  /// the workspace that it transitively depends on, requires the Flutter SDK
+  /// from the packages that depend on it, see [_requiresFlutter].
+  late final bool isFlutterPackage =
+      _requiresFlutter ||
+      _dependsOnFlutter({
+        ...pubspec.devDependencies,
+        ...pubspec.dependencyOverrides,
+      }) ||
+      allTransitiveDependenciesInWorkspace.values.any(
+        (package) => package._requiresFlutter,
+      );
+
+  /// Whether this package requires the Flutter SDK from every package that
+  /// depends on it, either through a Flutter SDK constraint in its environment
+  /// or through a regular dependency on Flutter.
+  ///
+  /// The dev dependencies and the dependency overrides are not considered,
+  /// since they do not apply to the packages that depend on this package.
+  late final bool _requiresFlutter =
+      pubspec.environment.containsKey('flutter') ||
+      _dependsOnFlutter(pubspec.dependencies);
+
+  /// Whether any of the [dependencies] is a package that is shipped with the
+  /// Flutter SDK, or the `flutter` package from another source, for example a
+  /// path or a git dependency on a fork of the framework.
+  static bool _dependsOnFlutter(Map<String, Dependency> dependencies) {
+    return dependencies.entries.any(
+      (entry) =>
+          entry.key == 'flutter' ||
+          switch (entry.value) {
+            SdkDependency(:final sdk) => sdk == 'flutter',
+            _ => false,
+          },
+    );
+  }
 
   /// Returns whether this package is private (publish_to set to 'none').
   bool get isPrivate {
@@ -1248,10 +1312,11 @@ class Package {
   /// - a) the package depends on the Flutter SDK.
   /// - b) the package does not define itself as a Flutter plugin inside
   ///   pubspec.yaml.
-  /// - c) a lib/main.dart file exists in the package.
+  /// - c) one of the configured [entryPoints], or the default entry point of
+  ///   Flutter, lib/main.dart, exists in the package.
   bool get isFlutterApp {
     // Must directly depend on the Flutter SDK.
-    if (!isFlutterPackage) {
+    if (!_dependsOnFlutter(pubspec.dependencies)) {
       return false;
     }
 
@@ -1260,7 +1325,13 @@ class Package {
       return false;
     }
 
-    return fileExists(p.join(path, 'lib', 'main.dart'));
+    return [...entryPoints, defaultEntryPoint].any(hasEntryPoint);
+  }
+
+  /// Whether the [entryPoint], relative to the package root and using `/` as
+  /// the separator, exists in this package.
+  bool hasEntryPoint(String entryPoint) {
+    return fileExists(p.joinAll([path, ...p.posix.split(entryPoint)]));
   }
 
   /// Returns whether this package supports Flutter for Android.

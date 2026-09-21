@@ -237,6 +237,201 @@ void main() {
       });
     });
 
+    group('isFlutterPackage', () {
+      MelosWorkspace buildWorkspace(List<String> pubspecs) {
+        final workspaceBuilder = VirtualWorkspaceBuilder('name: test');
+        pubspecs.forEach(workspaceBuilder.addPackage);
+        return workspaceBuilder.build();
+      }
+
+      test('is false for a package that does not need Flutter', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dependencies:
+              path: any
+          ''',
+        ]);
+        expect(workspace.allPackages['a']!.isFlutterPackage, isFalse);
+      });
+
+      test('is true for a direct dependency on the Flutter SDK', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dependencies:
+              flutter:
+                sdk: flutter
+          ''',
+        ]);
+        expect(workspace.allPackages['a']!.isFlutterPackage, isTrue);
+      });
+
+      test('is true for a dev dependency that ships with the Flutter SDK', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dev_dependencies:
+              flutter_test:
+                sdk: flutter
+          ''',
+        ]);
+        expect(workspace.allPackages['a']!.isFlutterPackage, isTrue);
+      });
+
+      test('is true for the flutter package from another source', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dependencies:
+              flutter:
+                path: ../flutter/packages/flutter
+          ''',
+        ]);
+        expect(workspace.allPackages['a']!.isFlutterPackage, isTrue);
+      });
+
+      test('is false when only the dev dependencies or the dependency '
+          'overrides of a workspace dependency need Flutter', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dev_dependencies:
+              flutter_test:
+                sdk: flutter
+            dependency_overrides:
+              flutter:
+                sdk: flutter
+          ''',
+          '''
+            name: b
+            dependencies:
+              a: any
+          ''',
+          '''
+            name: c
+            dev_dependencies:
+              a: any
+          ''',
+        ]);
+        expect(workspace.allPackages['a']!.isFlutterPackage, isTrue);
+        expect(workspace.allPackages['b']!.isFlutterPackage, isFalse);
+        expect(workspace.allPackages['c']!.isFlutterPackage, isFalse);
+      });
+
+      test('is true for a dev dependency on a workspace package that '
+          'requires Flutter', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dependencies:
+              flutter:
+                sdk: flutter
+          ''',
+          '''
+            name: b
+            dev_dependencies:
+              a: any
+          ''',
+        ]);
+        expect(workspace.allPackages['b']!.isFlutterPackage, isTrue);
+      });
+
+      test('does not make a Dart package with a lib/main.dart an app', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dependencies:
+              flutter:
+                sdk: flutter
+          ''',
+          '''
+            name: b
+            dependencies:
+              a: any
+          ''',
+        ]);
+        final package = workspace.allPackages['b']!;
+        File(
+          p.join(package.path, 'lib', 'main.dart'),
+        ).createSync(recursive: true);
+
+        expect(package.isFlutterPackage, isTrue);
+        expect(package.isFlutterApp, isFalse);
+        expect(package.type, PackageType.flutterPackage);
+      });
+
+      test('is true for a Flutter SDK constraint in the environment', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            environment:
+              sdk: ^3.0.0
+              flutter: ">=3.0.0"
+          ''',
+        ]);
+        expect(workspace.allPackages['a']!.isFlutterPackage, isTrue);
+      });
+
+      test('is true when a transitive workspace dependency needs Flutter', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dependencies:
+              flutter:
+                sdk: flutter
+          ''',
+          '''
+            name: b
+            dependencies:
+              a: any
+          ''',
+          '''
+            name: c
+            dependencies:
+              b: any
+          ''',
+          '''
+            name: d
+          ''',
+        ]);
+        expect(workspace.allPackages['b']!.isFlutterPackage, isTrue);
+        expect(workspace.allPackages['c']!.isFlutterPackage, isTrue);
+        expect(workspace.allPackages['d']!.isFlutterPackage, isFalse);
+      });
+
+      test('handles dependency cycles between workspace packages', () {
+        final workspace = buildWorkspace([
+          '''
+            name: a
+            dependencies:
+              b: any
+          ''',
+          '''
+            name: b
+            dependencies:
+              a: any
+              flutter:
+                sdk: flutter
+          ''',
+          '''
+            name: c
+            dependencies:
+              d: any
+          ''',
+          '''
+            name: d
+            dependencies:
+              c: any
+          ''',
+        ]);
+        expect(workspace.allPackages['a']!.isFlutterPackage, isTrue);
+        expect(workspace.allPackages['b']!.isFlutterPackage, isTrue);
+        expect(workspace.allPackages['c']!.isFlutterPackage, isFalse);
+        expect(workspace.allPackages['d']!.isFlutterPackage, isFalse);
+      });
+    });
+
     group('applying filters', () {
       test('applyCategory', () {
         Package createPackage(String name, List<String> category) {
@@ -287,11 +482,162 @@ void main() {
         );
       });
     });
+
+    // https://github.com/invertase/melos/issues/164
+    group('isFlutterApp', () {
+      Package buildPackage({
+        required String pubspec,
+        String melosYaml = 'name: test',
+        List<String> entryPointFiles = const [],
+      }) {
+        final workspaceBuilder = VirtualWorkspaceBuilder(melosYaml)
+          ..addPackage(pubspec);
+        final package = workspaceBuilder.build().allPackages['a']!;
+        for (final entryPointFile in entryPointFiles) {
+          File(
+            p.joinAll([package.path, ...p.posix.split(entryPointFile)]),
+          ).createSync(recursive: true);
+        }
+        return package;
+      }
+
+      const flutterPubspec = '''
+        name: a
+        dependencies:
+          flutter:
+            sdk: flutter
+      ''';
+      const melosYamlWithEntryPoint = '''
+        name: test
+        ide:
+          intellij:
+            runArguments:
+              a:
+                - name: development
+                  entryPoint: lib/main_development.dart
+      ''';
+
+      test('is true when the default entry point exists', () {
+        final package = buildPackage(
+          pubspec: flutterPubspec,
+          entryPointFiles: ['lib/main.dart'],
+        );
+        expect(package.isFlutterApp, isTrue);
+        expect(package.type, PackageType.flutterApp);
+      });
+
+      test('is false without any entry point', () {
+        final package = buildPackage(pubspec: flutterPubspec);
+        expect(package.isFlutterApp, isFalse);
+        expect(package.type, PackageType.flutterPackage);
+      });
+
+      test('is false when the configured entry point does not exist', () {
+        final package = buildPackage(
+          pubspec: flutterPubspec,
+          melosYaml: melosYamlWithEntryPoint,
+        );
+        expect(package.isFlutterApp, isFalse);
+        expect(package.type, PackageType.flutterPackage);
+      });
+
+      test('is false for an entry point that is not configured', () {
+        final package = buildPackage(
+          pubspec: flutterPubspec,
+          entryPointFiles: ['lib/main_development.dart'],
+        );
+        expect(package.isFlutterApp, isFalse);
+      });
+
+      test('is true when a configured entry point exists', () {
+        final package = buildPackage(
+          pubspec: flutterPubspec,
+          melosYaml: melosYamlWithEntryPoint,
+          entryPointFiles: ['lib/main_development.dart'],
+        );
+        expect(package.entryPoints, ['lib/main_development.dart']);
+        expect(package.isFlutterApp, isTrue);
+        expect(package.type, PackageType.flutterApp);
+      });
+
+      test('is false for a plugin with a configured entry point', () {
+        final package = buildPackage(
+          pubspec: '''
+            name: a
+            dependencies:
+              flutter:
+                sdk: flutter
+            flutter:
+              plugin:
+                platforms:
+                  android:
+                    package: com.example.a
+                    pluginClass: APlugin
+          ''',
+          melosYaml: melosYamlWithEntryPoint,
+          entryPointFiles: ['lib/main_development.dart'],
+        );
+        expect(package.isFlutterApp, isFalse);
+        expect(package.type, PackageType.flutterPlugin);
+      });
+
+      test('is false for a Dart package with a configured entry point', () {
+        final package = buildPackage(
+          pubspec: 'name: a',
+          melosYaml: melosYamlWithEntryPoint,
+          entryPointFiles: ['lib/main_development.dart'],
+        );
+        expect(package.isFlutterApp, isFalse);
+      });
+
+      test('uses the entry points of the workspace configuration', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a'],
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_workspace',
+            packages: [createGlob('packages/**', currentDirectoryPath: path)],
+            ide: const IDEConfigs(
+              intelliJ: IntelliJConfig(
+                runArguments: {
+                  'a': [
+                    IdeRunConfiguration(
+                      name: 'development',
+                      entryPoint: 'lib/main_development.dart',
+                    ),
+                  ],
+                },
+              ),
+            ),
+          ),
+        );
+        final packageDir = await createProject(
+          workspaceDir,
+          Pubspec(
+            'a',
+            dependencies: {'flutter': SdkDependency('flutter')},
+          ),
+        );
+        File(
+          p.join(packageDir.path, 'lib', 'main_development.dart'),
+        ).createSync(recursive: true);
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final workspace = await MelosWorkspace.fromConfig(
+          config,
+          logger: TestLogger().toMelosLogger(),
+        );
+
+        expect(workspace.allPackages['a']!.isFlutterApp, isTrue);
+      });
+    });
   });
 
   group('PackageFilters', () {
     test('default', () {
-      final filters = PackageFilters();
+      const filters = PackageFilters();
 
       expect(filters.dependsOn, isEmpty);
       expect(filters.noDependsOn, isEmpty);
@@ -310,7 +656,7 @@ void main() {
 
     group('copyWithWithDiff', () {
       test('can assign null', () {
-        final filters = PackageFilters(diff: '123');
+        const filters = PackageFilters(diff: '123');
 
         expect(filters.copyWithDiff(null).diff, null);
       });

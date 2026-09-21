@@ -78,7 +78,7 @@ class PublishCommandConfigs {
 
     final aggregateChangelogs = <AggregateChangelogConfig>[];
     if (workspaceChangelog ?? true) {
-      aggregateChangelogs.add(AggregateChangelogConfig.workspace());
+      aggregateChangelogs.add(const AggregateChangelogConfig.workspace());
     }
 
     final changelogsYaml = assertKeyIsA<List<Object?>?>(
@@ -248,7 +248,7 @@ class PublishCommandConfigs {
   /// A list of changelogs configurations that will be used to generate
   /// changelogs which describe the changes in multiple packages.
   List<AggregateChangelogConfig> get aggregateChangelogs =>
-      _aggregateChangelogs ?? [AggregateChangelogConfig.workspace()];
+      _aggregateChangelogs ?? [const AggregateChangelogConfig.workspace()];
 
   final List<AggregateChangelogConfig>? _aggregateChangelogs;
 

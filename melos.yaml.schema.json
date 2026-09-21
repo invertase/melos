@@ -139,9 +139,48 @@
                   "type": "string",
                   "description": "Used when generating IntelliJ project modules files, this value specifies a string to prepend to a package's IntelliJ module name.\n\nThe default is 'melos_'."
                 },
+                "executeInTerminal": {
+                  "type": "boolean",
+                  "description": "Whether to execute the script in a terminal.\n\nThe default is true."
+                },
+                "generateAppRunConfigs": {
+                  "type": "boolean",
+                  "description": "Whether to generate the run configurations for running Flutter apps and the executables of Dart packages.\n\nThe default is true."
+                },
                 "scriptNamePrefix": {
                   "type": "string",
                   "description": "The text prepended to generated IntelliJ run configuration names for Melos scripts.\n\nThe default is 'Melos Run -> '. Set this to an empty string to omit the prefix."
+                },
+                "runArguments": {
+                  "type": "object",
+                  "description": "The run configurations to generate per Flutter app package, by package name. A package with a configured entry point that exists is treated as a Flutter app.",
+                  "patternProperties": { "^x-": {} },
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "patternProperties": { "^x-": {} },
+                      "additionalProperties": false,
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "description": "The display name suffix and output file name of the run configuration."
+                        },
+                        "entryPoint": {
+                          "type": "string",
+                          "description": "The Dart file to run, relative to the package root.\n\nThe default is 'lib/main.dart'."
+                        },
+                        "args": {
+                          "type": "string",
+                          "description": "Additional arguments to pass to 'flutter run'."
+                        },
+                        "default": {
+                          "type": "boolean",
+                          "description": "Whether the entry replaces the default run configuration of the package."
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }

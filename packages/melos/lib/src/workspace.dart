@@ -47,6 +47,7 @@ class MelosWorkspace {
     PackageFilters? packageFilters,
     required MelosLogger logger,
   }) async {
+    final entryPoints = workspaceConfig.ide.intelliJ.entryPoints;
     final packages = await PackageMap.resolvePackages(
       workspacePath: workspaceConfig.path,
       packages: workspaceConfig.packages,
@@ -54,6 +55,7 @@ class MelosWorkspace {
       categories: workspaceConfig.categories,
       logger: logger,
       discoverNestedWorkspaces: workspaceConfig.discoverNestedWorkspaces,
+      entryPoints: entryPoints,
     );
     final dependencyOverridePackages = await PackageMap.resolvePackages(
       workspacePath: workspaceConfig.path,
@@ -66,6 +68,7 @@ class MelosWorkspace {
       workspacePath: workspaceConfig.path,
       logger: logger,
       categories: workspaceConfig.categories,
+      entryPoints: entryPoints,
     );
 
     // Add root package to workspace packages if enabled

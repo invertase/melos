@@ -4,6 +4,7 @@ import 'package:ansi_styles/ansi_styles.dart';
 import 'package:collection/collection.dart';
 import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
+import 'package:path/path.dart' as p;
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_edit/yaml_edit.dart';
@@ -16,6 +17,7 @@ import 'common/io.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
 import 'package.dart';
+import 'scripts.dart';
 
 /// IDE-specific configurations.
 @immutable
@@ -103,19 +105,7 @@ class IntelliJConfig {
               path: 'ide/intellij',
             )
           : _defaultScriptNamePrefix;
-      final rawRunArgsYaml = yaml['runArguments'];
-      final rawRunArgs = (rawRunArgsYaml is Map)
-          ? rawRunArgsYaml.cast<Object?, Object?>()
-          : <Object?, Object?>{};
-      final runArguments = <String, List<IdeRunConfiguration>>{};
-      for (final entry in rawRunArgs.entries) {
-        final pkgName = entry.key! as String;
-        final list = (entry.value! as List)
-            .cast<Map<Object?, Object?>>()
-            .map(IdeRunConfiguration.fromYaml)
-            .toList();
-        runArguments[pkgName] = list;
-      }
+      final runArguments = _runArgumentsFromYaml(yaml);
 
       return IntelliJConfig(
         enabled: enabled,
@@ -133,6 +123,61 @@ class IntelliJConfig {
       );
       return IntelliJConfig(enabled: enabled);
     }
+  }
+
+  static Map<String, List<IdeRunConfiguration>> _runArgumentsFromYaml(
+    Map<Object?, Object?> yaml,
+  ) {
+    const path = 'ide/intellij/runArguments';
+    final runArgumentsYaml = assertKeyIsA<Map<Object?, Object?>?>(
+      key: 'runArguments',
+      map: yaml,
+      path: 'ide/intellij',
+    );
+
+    final runArguments = <String, List<IdeRunConfiguration>>{};
+    for (final MapEntry(:key, :value)
+        in (runArgumentsYaml ?? const {}).entries) {
+      final packageName = assertIsA<String>(
+        value: key,
+        key: key ?? 'null',
+        path: path,
+      );
+      if (packageName.startsWith(extensionFieldPrefix)) {
+        continue;
+      }
+
+      final runConfigurationsYaml = assertIsA<List<Object?>>(
+        value: value,
+        key: packageName,
+        path: path,
+      );
+      final runConfigurations = [
+        for (final (index, runConfiguration) in runConfigurationsYaml.indexed)
+          IdeRunConfiguration.fromYaml(
+            assertIsA<Map<Object?, Object?>>(
+              value: runConfiguration,
+              index: index,
+              path: '$path/$packageName',
+            ),
+            path: '$path/$packageName/$index',
+          ),
+      ];
+
+      final fileNameSuffixes = <String?>{};
+      for (final runConfiguration in runConfigurations) {
+        if (!fileNameSuffixes.add(runConfiguration.fileNameSuffix)) {
+          throw MelosConfigException(
+            'The run configurations at $path/$packageName must have unique '
+            'names and only one of them can be the default, which is an entry '
+            'that has "default: true" or that has no name.',
+          );
+        }
+      }
+
+      runArguments[packageName] = runConfigurations;
+    }
+    return runArguments;
   }
 
   static const empty = IntelliJConfig();
@@ -153,6 +198,16 @@ class IntelliJConfig {
   final String scriptNamePrefix;
 
   final Map<String, List<IdeRunConfiguration>> runArguments;
+
+  /// The entry points that are configured in [runArguments], by package name.
+  Map<String, List<String>> get entryPoints => {
+    for (final MapEntry(key: packageName, value: runConfigurations)
+        in runArguments.entries)
+      packageName: [
+        for (final runConfiguration in runConfigurations)
+          ?runConfiguration.entryPoint,
+      ],
+  };
 
   Object? toJson() {
     return {
@@ -203,7 +258,8 @@ IntelliJConfig(
   moduleNamePrefix: $moduleNamePrefix,
   executeInTerminal: $executeInTerminal,
   generateAppRunConfigs: $generateAppRunConfigs,
-  scriptNamePrefix: $scriptNamePrefix
+  scriptNamePrefix: $scriptNamePrefix,
+  runArguments: $runArguments,
 )
 ''';
   }
@@ -218,11 +274,11 @@ class AggregateChangelogConfig {
     this.description,
   });
 
-  AggregateChangelogConfig.workspace()
+  const AggregateChangelogConfig.workspace()
     : this(
         isWorkspaceChangelog: true,
         path: 'CHANGELOG.md',
-        packageFilters: PackageFilters(),
+        packageFilters: const PackageFilters(),
         description: '''
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
@@ -798,30 +854,79 @@ class UnresolvedWorkspace implements MelosException {
   String toString() => message;
 }
 
-/// A single named run configuration with additional arguments.
+/// A single named run configuration with an optional entry point and
+/// additional arguments.
 @immutable
 class IdeRunConfiguration {
   const IdeRunConfiguration({
-    required this.args,
+    this.args = '',
     this.name,
+    this.entryPoint,
     this.isDefault = false,
   });
 
-  factory IdeRunConfiguration.fromYaml(Map<Object?, Object?> yaml) {
+  factory IdeRunConfiguration.fromYaml(
+    Map<Object?, Object?> yaml, {
+    String? path,
+  }) {
+    final rawEntryPoint = assertKeyIsA<String?>(
+      key: 'entryPoint',
+      map: yaml,
+      path: path,
+    )?.trim();
+    final entryPoint = rawEntryPoint == null
+        ? null
+        : p.posix.normalize(rawEntryPoint.replaceAll(r'\', '/'));
+    if (rawEntryPoint != null &&
+        entryPoint != null &&
+        !_isInsidePackage(rawEntryPoint, entryPoint)) {
+      throw MelosConfigException(
+        'The entryPoint "$rawEntryPoint"${path == null ? '' : ' at $path'} '
+        'must be a path inside of the package, relative to the package root.',
+      );
+    }
+
     return IdeRunConfiguration(
-      name: yaml['name'] as String?,
-      args: yaml['args'] as String? ?? '',
-      isDefault: yaml['default'] as bool? ?? false,
+      name: assertKeyIsA<String?>(key: 'name', map: yaml, path: path),
+      args: assertKeyIsA<String?>(key: 'args', map: yaml, path: path) ?? '',
+      entryPoint: entryPoint,
+      isDefault:
+          assertKeyIsA<bool?>(key: 'default', map: yaml, path: path) ?? false,
     );
+  }
+
+  static bool _isInsidePackage(String rawEntryPoint, String entryPoint) {
+    return rawEntryPoint.isNotEmpty &&
+        !p.posix.isAbsolute(entryPoint) &&
+        !p.windows.isAbsolute(rawEntryPoint) &&
+        entryPoint != '.' &&
+        entryPoint != '..' &&
+        !entryPoint.startsWith('../');
   }
 
   final String? name;
   final String args;
+
+  /// The Dart file to run, relative to the package root and using `/` as the
+  /// separator, which defaults to `lib/main.dart` when not specified.
+  final String? entryPoint;
+
   final bool isDefault;
+
+  /// Whether this run configuration replaces the default run configuration of
+  /// the package, which is the case when it is marked as the default or when
+  /// it has no name.
+  bool get replacesDefault => isDefault || (name?.isEmpty ?? true);
+
+  /// The suffix that distinguishes the generated file of this run
+  /// configuration from the others of the same package, which is `null` when
+  /// it [replacesDefault].
+  String? get fileNameSuffix => replacesDefault ? null : name;
 
   Map<String, Object?> toJson() => {
     'name': name,
     'args': args,
+    if (entryPoint != null) 'entryPoint': entryPoint,
     'default': isDefault,
   };
 
@@ -831,8 +936,21 @@ class IdeRunConfiguration {
       runtimeType == other.runtimeType &&
       other.name == name &&
       other.args == args &&
+      other.entryPoint == entryPoint &&
       other.isDefault == isDefault;
 
   @override
-  int get hashCode => Object.hashAll([runtimeType, name, args, isDefault]);
+  int get hashCode =>
+      Object.hashAll([runtimeType, name, args, entryPoint, isDefault]);
+
+  @override
+  String toString() {
+    return '''
+IdeRunConfiguration(
+  name: $name,
+  args: $args,
+  entryPoint: $entryPoint,
+  isDefault: $isDefault,
+)''';
+  }
 }
