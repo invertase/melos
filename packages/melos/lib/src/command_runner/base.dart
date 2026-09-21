@@ -129,15 +129,6 @@ abstract class MelosCommand extends Command<void> {
     );
 
     parser.addFlag(
-      filterOptionNullsafety,
-      defaultsTo: null,
-      help:
-          'Filter packages where the current local version uses a "nullsafety" '
-          'prerelease preid. Or "-no-nullsafety" to filter packages where '
-          'their current version does not have a "nullsafety" preid.',
-    );
-
-    parser.addFlag(
       filterOptionFlutter,
       defaultsTo: null,
       help:
@@ -240,7 +231,6 @@ abstract class MelosCommand extends Command<void> {
       filterOptionNoDependsOn,
       filterOptionPrivate,
       filterOptionPublished,
-      filterOptionNullsafety,
       filterOptionFlutter,
       filterOptionIncludeDependents,
       filterOptionIncludeDependencies,
@@ -356,7 +346,6 @@ abstract class MelosCommand extends Command<void> {
       diff: diff,
       includePrivatePackages: results[filterOptionPrivate] as bool?,
       published: results[filterOptionPublished] as bool?,
-      nullSafe: results[filterOptionNullsafety] as bool?,
       dirExists: results[filterOptionDirExists] as List<String>? ?? [],
       fileExists: results[filterOptionFileExists] as List<String>? ?? [],
       flutter: results[filterOptionFlutter] as bool?,

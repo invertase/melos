@@ -31,7 +31,6 @@ const filterOptionIgnore = 'ignore';
 const filterOptionDirExists = 'dir-exists';
 const filterOptionFileExists = 'file-exists';
 const filterOptionDiff = 'diff';
-const filterOptionNullsafety = 'nullsafety';
 const filterOptionNoPrivate = 'no-private';
 const filterOptionPrivate = 'private';
 const filterOptionPublished = 'published';

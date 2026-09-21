@@ -650,7 +650,6 @@ void main() {
       expect(filters.includeDependencies, false);
       expect(filters.includeDependents, false);
       expect(filters.includePrivatePackages, null);
-      expect(filters.nullSafe, null);
       expect(filters.published, null);
       expect(filters.diff, null);
     });
@@ -675,7 +674,6 @@ void main() {
           includeDependents: true,
           includePrivatePackages: false,
           noDependsOn: const ['a'],
-          nullSafe: true,
           published: true,
           diff: '123',
         );
@@ -693,7 +691,6 @@ void main() {
         expect(copy.includeDependents, filters.includeDependents);
         expect(copy.includePrivatePackages, filters.includePrivatePackages);
         expect(copy.noDependsOn, filters.noDependsOn);
-        expect(copy.nullSafe, filters.nullSafe);
         expect(copy.published, filters.published);
       });
     });

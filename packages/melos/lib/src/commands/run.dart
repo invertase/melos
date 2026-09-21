@@ -254,7 +254,6 @@ mixin _RunMixin on _Melos {
       noDependsOn: ifNotEmpty(cliFilters.noDependsOn),
       includePrivatePackages: cliFilters.includePrivatePackages,
       published: cliFilters.published,
-      nullSafe: cliFilters.nullSafe,
       includeFlutterPackages: cliFilters.includeFlutterPackages,
       includeDependents: cliFilters.includeDependents ? true : null,
       includeDependencies: cliFilters.includeDependencies ? true : null,

@@ -817,10 +817,6 @@
           "type": "boolean",
           "description": "Include/Exclude packages that are up-to-date on pub.dev."
         },
-        "nullsafety": {
-          "type": "boolean",
-          "description": "Include/Exclude packages that are null-safe."
-        },
         "flutter": {
           "type": "boolean",
           "description": "Include/Exclude packages that are Flutter packages."
