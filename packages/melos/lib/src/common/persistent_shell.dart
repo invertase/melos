@@ -40,6 +40,7 @@ class PersistentShell {
       environment: {
         ...environment,
         ...quietEnvironment(logger),
+        ...ansiStylesEnvironment,
         EnvironmentVariableKey.melosTerminalWidth: terminalWidth.toString(),
       },
     );

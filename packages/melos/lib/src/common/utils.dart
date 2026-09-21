@@ -549,12 +549,31 @@ Future<Process> startCommandRaw(
     workingDirectory: workingDirectory,
     environment: {
       ...environment,
+      ...ansiStylesEnvironment,
       EnvironmentVariableKey.melosTerminalWidth: terminalWidth.toString(),
       EnvironmentVariableKey.melosScript: command.join(' '),
     },
     includeParentEnvironment: includeParentEnvironment,
     mode: mode,
   );
+}
+
+/// The environment variables that make nested Melos commands style their
+/// output like this process, even though their output is captured.
+Map<String, String> get ansiStylesEnvironment => {
+  EnvironmentVariableKey.melosAnsiStyles: (!ansiStylesDisabled).toString(),
+};
+
+/// Applies the [EnvironmentVariableKey.melosAnsiStyles] environment variable,
+/// which has precedence over the detection of a terminal that supports ANSI
+/// escape codes.
+void applyAnsiStylesEnvironment() {
+  final value = bool.tryParse(
+    currentPlatform.environment[EnvironmentVariableKey.melosAnsiStyles] ?? '',
+  );
+  if (value != null) {
+    ansiStylesDisabled = !value;
+  }
 }
 
 /// The environment variables that make nested Melos commands as quiet as

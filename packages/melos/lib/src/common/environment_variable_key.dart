@@ -31,6 +31,13 @@ class EnvironmentVariableKey {
   /// behavior.
   static const String melosQuiet = 'MELOS_QUIET';
 
+  /// When set to `true`, Melos styles its output with ANSI escape codes even if
+  /// it does not write to a terminal, and when set to `false` it never does.
+  /// Melos sets this environment variable for the scripts it runs, because it
+  /// captures their output, which would otherwise make nested Melos commands
+  /// lose their colors.
+  static const String melosAnsiStyles = 'MELOS_ANSI_STYLES';
+
   static const String melosTerminalWidth = 'MELOS_TERMINAL_WIDTH';
 
   static const String path = 'PATH';
@@ -53,6 +60,7 @@ class EnvironmentVariableKey {
     melosPackages,
     melosSdkPath,
     melosQuiet,
+    melosAnsiStyles,
     melosTerminalWidth,
   ];
 }
