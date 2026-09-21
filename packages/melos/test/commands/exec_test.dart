@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:ansi_styles/ansi_styles.dart';
 import 'package:glob/glob.dart';
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/fingerprint.dart';
@@ -1544,8 +1545,7 @@ void main() {
         );
 
         test(
-          'reports the packages that are up to date as skipped when failing '
-          'fast',
+          'does not print anything after the summary when failing fast',
           () async {
             writeRunScript(dependentDir);
             writeRunScript(dependencyDir);
@@ -1553,29 +1553,24 @@ void main() {
             final (melos, _) = await createMelos(workspaceDir);
             await melos.exec(dartCommand, sources: sources);
 
-            deleteFingerprints(dependencyDir);
-            File(p.join(dependencyDir.path, 'fail.txt')).createSync();
+            deleteFingerprints(dependentDir);
+            File(p.join(dependentDir.path, 'fail.txt')).createSync();
 
             final (secondMelos, logger) = await createMelos(workspaceDir);
             await secondMelos.exec(
               dartCommand,
               concurrency: 1,
               failFast: true,
-              orderDependents: true,
               sources: sources,
             );
             exitCode = 0;
+            await Future<void>.delayed(const Duration(milliseconds: 500));
 
-            expect(
-              logger.output.normalizeLines(),
-              ignoringAnsii(
-                allOf([
-                  contains('b (with exit code 1)'),
-                  contains('a: SKIPPED (sources are unchanged)'),
-                  isNot(contains('dependency failed')),
-                ]),
-              ),
-            );
+            final output = AnsiStyles.strip(logger.output.normalizeLines());
+            expect(output, contains('a (with exit code 1)'));
+            expect(output, isNot(contains('b: SKIPPED')));
+            expect(output.trimRight(), endsWith('(due to failFast)'));
+            expect(runCount(dependencyDir), 1);
           },
         );
 
@@ -1724,6 +1719,65 @@ void main() {
         expect(runCount(aDir), 2);
       });
 
+      test('matches files outside of the package', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a'],
+        );
+        final aDir = await createProject(workspaceDir, Pubspec('a'));
+        final sharedPath = p.join(workspaceDir.path, 'shared', 'config.txt');
+        writeTextFile(sharedPath, 'one', recursive: true);
+        const sharedSources = ['../../shared/**.txt'];
+
+        for (var i = 0; i < 2; i++) {
+          final (melos, logger) = await createMelos(workspaceDir);
+          await melos.exec(command, concurrency: 1, sources: sharedSources);
+          expect(logger.output, isNot(contains('does not match')));
+        }
+        expect(runCount(aDir), 1);
+
+        writeTextFile(sharedPath, 'two');
+
+        final (melos, _) = await createMelos(workspaceDir);
+        await melos.exec(command, concurrency: 1, sources: sharedSources);
+        expect(runCount(aDir), 2);
+      });
+
+      test(
+        'does not take the fingerprints of nested packages into account',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            workspacePackages: ['a'],
+            withExamples: true,
+          );
+          final aDir = await createProject(workspaceDir, Pubspec('a'));
+          final exampleDir = await createProject(
+            workspaceDir,
+            Pubspec(
+              'a_example',
+              dependencies: {
+                'a': HostedDependency(version: VersionConstraint.any),
+              },
+            ),
+            path: p.join('packages', 'a', 'example'),
+          );
+          writeSource(aDir, '// a');
+          writeSource(exampleDir, '// example');
+
+          for (var i = 0; i < 3; i++) {
+            final (melos, _) = await createMelos(workspaceDir);
+            await melos.exec(
+              command,
+              concurrency: 1,
+              orderDependents: true,
+              sources: ['**.dart', '**.json'],
+            );
+          }
+
+          expect(runCount(aDir), 1);
+          expect(runCount(exampleDir), 1);
+        },
+      );
+
       test('warns about sources that do not match any file', () async {
         final workspaceDir = await createTemporaryWorkspace(
           workspacePackages: ['a'],
@@ -1787,6 +1841,95 @@ void main() {
         }
 
         expect(runCount(aDir), 2);
+      });
+
+      group('ignoreSources', () {
+        late Directory workspaceDir;
+        late Directory aDir;
+
+        Future<Melos> createMelosWith(ExecCommandConfigs execConfigs) async {
+          workspaceDir = await createTemporaryWorkspace(
+            configBuilder: (path) => MelosWorkspaceConfig(
+              path: path,
+              name: 'test_workspace',
+              packages: [createGlob('packages/**', currentDirectoryPath: path)],
+              commands: CommandConfigs(exec: execConfigs),
+            ),
+            workspacePackages: ['a'],
+          );
+          aDir = await createProject(workspaceDir, Pubspec('a'));
+          writeSource(aDir, '// a');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          return Melos(logger: TestLogger(), config: config);
+        }
+
+        bool hasFingerprints() => Directory(
+          p.join(aDir.path, fingerprintsDirectory),
+        ).existsSync();
+
+        test('runs in every package without storing checksums', () async {
+          final melos = await createMelosWith(ExecCommandConfigs.empty);
+
+          for (var i = 0; i < 2; i++) {
+            await melos.exec(
+              command,
+              concurrency: 1,
+              sources: sources,
+              ignoreSources: true,
+            );
+          }
+
+          expect(runCount(aDir), 2);
+          expect(hasFingerprints(), isFalse);
+        });
+
+        test('removes the stored checksums of the packages', () async {
+          final melos = await createMelosWith(ExecCommandConfigs.empty);
+
+          await melos.exec(command, concurrency: 1, sources: sources);
+          await melos.exec(
+            command,
+            concurrency: 1,
+            sources: sources,
+            ignoreSources: true,
+          );
+          await melos.exec(command, concurrency: 1, sources: sources);
+
+          expect(runCount(aDir), 3);
+        });
+
+        test('can be configured for the workspace', () async {
+          final melos = await createMelosWith(
+            const ExecCommandConfigs(ignoreSources: true),
+          );
+
+          for (var i = 0; i < 2; i++) {
+            await melos.exec(command, concurrency: 1, sources: sources);
+          }
+
+          expect(runCount(aDir), 2);
+          expect(hasFingerprints(), isFalse);
+        });
+
+        test('command line option takes precedence over the config', () async {
+          final melos = await createMelosWith(
+            const ExecCommandConfigs(ignoreSources: true),
+          );
+
+          for (var i = 0; i < 2; i++) {
+            await melos.exec(
+              command,
+              concurrency: 1,
+              sources: sources,
+              ignoreSources: false,
+            );
+          }
+
+          expect(runCount(aDir), 1);
+        });
       });
 
       test('tracks the sources of every command separately', () async {

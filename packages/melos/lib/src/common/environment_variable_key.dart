@@ -46,6 +46,14 @@ class EnvironmentVariableKey {
   /// scripts it runs, so that it reaches the nested `melos exec` commands.
   static const String melosForce = 'MELOS_FORCE';
 
+  /// When set to `true`, `melos exec` ignores the `sources` of the command, so
+  /// that it runs in every package without calculating or storing checksums.
+  /// This environment variable has precedence over the `ignoreSources` option
+  /// of `melos exec` in `pubspec.yaml`, but is overridden by the command line
+  /// option `--ignore-sources`. `melos run --ignore-sources` sets this
+  /// environment variable for the scripts it runs.
+  static const String melosIgnoreSources = 'MELOS_IGNORE_SOURCES';
+
   static const String path = 'PATH';
 
   /// Location of the pub package cache. When unset, pub defaults to
@@ -75,5 +83,6 @@ class EnvironmentVariableKey {
     melosAnsiStyles,
     melosTerminalWidth,
     melosForce,
+    melosIgnoreSources,
   ];
 }

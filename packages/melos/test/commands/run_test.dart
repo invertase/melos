@@ -463,6 +463,13 @@ ${'-' * terminalWidth}
 
         await melos.run(scriptName: 'test_script', noSelect: true, force: true);
         expect(runCount(), 2);
+
+        await melos.run(
+          scriptName: 'test_script',
+          noSelect: true,
+          ignoreSources: true,
+        );
+        expect(runCount(), 3);
       },
     );
 

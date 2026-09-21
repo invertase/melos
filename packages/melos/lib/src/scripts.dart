@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:collection/collection.dart';
+import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 
 import 'common/environment_variable_key.dart';
@@ -593,11 +594,20 @@ class Script {
       isRequired: false,
       path: execPath,
       assertItemIsA: (index, value) {
-        return assertIsA<String>(
+        final source = assertIsA<String>(
           value: value,
           index: index,
           path: '$execPath/sources',
         );
+        try {
+          Glob(source);
+        } on FormatException catch (error) {
+          throw MelosConfigException(
+            'The glob "$source" in $execPath/sources is invalid: '
+            '${error.message}',
+          );
+        }
+        return source;
       },
     );
 

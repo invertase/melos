@@ -11,6 +11,7 @@ mixin _ExecMixin on _Melos {
     bool? groupLogs,
     List<String> sources = const [],
     bool force = false,
+    bool? ignoreSources,
     Map<String, String> extraEnvironment = const {},
   }) async {
     final workspace = await createWorkspace(
@@ -24,6 +25,8 @@ mixin _ExecMixin on _Melos {
     final effectiveOrderDependents =
         orderDependents ?? execConfig.orderDependents ?? false;
     final effectiveGroupLogs = groupLogs ?? execConfig.groupLogs ?? false;
+    final effectiveIgnoreSources =
+        ignoreSources ?? execConfig.ignoreSources ?? false;
     final allPackages = workspace.allPackages.values.toList(growable: false);
     final executablePackages = workspace.filteredPackages.values.toList(
       growable: false,
@@ -38,6 +41,15 @@ mixin _ExecMixin on _Melos {
       }
     }
 
+    final fingerprints = sources.isEmpty
+        ? null
+        : ExecFingerprints(command: execArgs, sources: sources);
+    if (effectiveIgnoreSources) {
+      // The command runs without checksums, so the stored ones no longer say
+      // anything about the result of the last run.
+      fingerprints?.removeStored(executablePackages);
+    }
+
     await _execForAllPackages(
       workspace,
       execArgs,
@@ -46,9 +58,7 @@ mixin _ExecMixin on _Melos {
       concurrency: effectiveConcurrency,
       orderDependents: effectiveOrderDependents,
       groupLogs: effectiveGroupLogs,
-      fingerprints: sources.isEmpty
-          ? null
-          : ExecFingerprints(command: execArgs, sources: sources),
+      fingerprints: effectiveIgnoreSources ? null : fingerprints,
       force: force,
       additionalEnvironment: extraEnvironment,
     );
@@ -168,6 +178,13 @@ mixin _ExecMixin on _Melos {
           'The sources glob "$source" does not match a file in any package.',
         );
       }
+      for (final MapEntry(key: name, value: error)
+          in fingerprints.unreadableSources.entries) {
+        logger.warning(
+          'The sources of $name could not be read, so the command runs in it '
+          'regardless of whether they changed: $error',
+        );
+      }
     }
 
     final packageResults = Map.fromEntries(
@@ -182,12 +199,31 @@ mixin _ExecMixin on _Melos {
 
       operation = CancelableOperation.fromFuture(
         pool.forEach<Package, void>(packageLayer, (package) async {
+          bool cancelIfFailedFast() {
+            if (failFast && failures.isNotEmpty) {
+              packageResults[package.name]?.complete();
+              failures[package.name] = null;
+              return true;
+            }
+            return false;
+          }
+
+          if (cancelIfFailedFast()) {
+            return;
+          }
+
           final group = useGroupBuffer ? package.name : null;
 
           final isUpToDate =
               fingerprints != null &&
               !force &&
               await fingerprints.isUpToDate(package);
+          // The command can have failed in another package while the
+          // fingerprint was being checked.
+          if (cancelIfFailedFast()) {
+            return;
+          }
+
           if (isUpToDate) {
             packageResults[package.name]?.complete(0);
             skipped.add(package.name);
@@ -211,10 +247,11 @@ mixin _ExecMixin on _Melos {
             return;
           }
 
-          if (failFast && failures.isNotEmpty) {
-            packageResults[package.name]?.complete();
-            failures[package.name] = null;
-            return;
+          if (fingerprints != null) {
+            await fingerprints.commandStarted(package);
+            if (cancelIfFailedFast()) {
+              return;
+            }
           }
 
           if (!prefixLogs) {
@@ -225,8 +262,6 @@ mixin _ExecMixin on _Melos {
                 group: group,
               );
           }
-
-          await fingerprints?.commandStarted(package);
 
           final commandExitCode = await _execForPackage(
             workspace,
@@ -255,10 +290,12 @@ mixin _ExecMixin on _Melos {
             }
           }
 
-          await fingerprints?.commandFinished(
-            package,
-            succeeded: packageExitCode == 0,
-          );
+          if (fingerprints != null) {
+            await fingerprints.commandFinished(
+              package,
+              succeeded: packageExitCode == 0,
+            );
+          }
 
           if (failed) {
             return;

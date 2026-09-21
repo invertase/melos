@@ -10,6 +10,7 @@ class ExecCommandConfigs {
     this.failFast,
     this.orderDependents,
     this.groupLogs,
+    this.ignoreSources,
   });
 
   factory ExecCommandConfigs.fromYaml(Map<Object?, Object?> yaml) {
@@ -37,11 +38,18 @@ class ExecCommandConfigs {
       path: 'command/exec',
     );
 
+    final ignoreSources = assertKeyIsA<bool?>(
+      key: 'ignoreSources',
+      map: yaml,
+      path: 'command/exec',
+    );
+
     return ExecCommandConfigs(
       concurrency: concurrency,
       failFast: failFast,
       orderDependents: orderDependents,
       groupLogs: groupLogs,
+      ignoreSources: ignoreSources,
     );
   }
 
@@ -70,12 +78,19 @@ class ExecCommandConfigs {
   /// The default is `false`.
   final bool? groupLogs;
 
+  /// Whether the `sources` of the command are ignored, so that it runs in every
+  /// package without calculating or storing checksums.
+  ///
+  /// The default is `false`.
+  final bool? ignoreSources;
+
   Map<String, Object?> toJson() {
     return {
       if (concurrency != null) 'concurrency': concurrency,
       if (failFast != null) 'failFast': failFast,
       if (orderDependents != null) 'orderDependents': orderDependents,
       if (groupLogs != null) 'groupLogs': groupLogs,
+      if (ignoreSources != null) 'ignoreSources': ignoreSources,
     };
   }
 
@@ -86,7 +101,8 @@ class ExecCommandConfigs {
       other.concurrency == concurrency &&
       other.failFast == failFast &&
       other.orderDependents == orderDependents &&
-      other.groupLogs == groupLogs;
+      other.groupLogs == groupLogs &&
+      other.ignoreSources == ignoreSources;
 
   @override
   int get hashCode => Object.hashAll([
@@ -95,6 +111,7 @@ class ExecCommandConfigs {
     failFast,
     orderDependents,
     groupLogs,
+    ignoreSources,
   ]);
 
   @override
@@ -105,6 +122,7 @@ ExecCommandConfigs(
   failFast: $failFast,
   orderDependents: $orderDependents,
   groupLogs: $groupLogs,
+  ignoreSources: $ignoreSources,
 )''';
   }
 }

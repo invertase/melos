@@ -106,7 +106,9 @@ match a file in any package, since that usually is a mistake.
 The checksum of a package also covers the matching files of all of its
 dependencies in the workspace, because the result of a command such as code
 generation can depend on them. A change in a package therefore makes the
-command run again in every package that depends on it.
+command run again in every package that depends on it. Packages that are
+excluded from the workspace with [`ignore`](/configuration/overview#ignore) are
+not taken into account.
 
 A package in which the command fails is not considered up to date, so the
 command runs in it again the next time. The packages that depend on it are not
@@ -152,3 +154,24 @@ in which the command succeeds are still updated.
 ```bash
 melos exec --force --sources "lib/**.dart" -- "dart run build_runner build"
 ```
+
+## --ignore-sources
+
+Ignore [`--sources`](#--sources), so that the command runs in every package
+without calculating or storing checksums. This is useful where the checksums
+are never reused, for example on a continuous integration server that starts
+from a fresh checkout, since it avoids reading all of the source files.
+
+```bash
+melos exec --ignore-sources --sources "lib/**.dart" -- "dart test"
+```
+
+In contrast to [`--force`](#--force), no checksums are stored. The stored
+checksums of the packages that the command runs in are removed, so the command
+also runs in them the next time that the sources are taken into account.
+
+The sources can be ignored for the whole workspace with
+[`command/exec/ignoreSources`](/configuration/overview#ignoresources) or the
+[`MELOS_IGNORE_SOURCES`](/environment-variables#melos_ignore_sources)
+environment variable. Use `--no-ignore-sources` to take them into account
+regardless.

@@ -48,6 +48,13 @@ class RunCommand extends MelosCommand {
           'Run "exec" scripts in every package, even in the packages in which '
           'the files matching their "sources" did not change.',
     );
+
+    argParser.addFlag(
+      'ignore-sources',
+      help:
+          'Ignore the "sources" of "exec" scripts, so that they run in every '
+          'package without calculating or storing checksums.',
+    );
   }
 
   @override
@@ -74,6 +81,7 @@ class RunCommand extends MelosCommand {
     final includePrivate = argResults!['include-private'] as bool;
     final group = argResults!['group'] as String?;
     final force = argResults!['force'] as bool;
+    final ignoreSources = argResults!.optional('ignore-sources') as bool?;
 
     final packageFilters = hasPackageFilterArgs
         ? parsePackageFilters(config.path, includeConfigIgnore: false)
@@ -91,6 +99,7 @@ class RunCommand extends MelosCommand {
         group: group,
         packageFilters: packageFilters,
         force: force,
+        ignoreSources: ignoreSources,
       );
     } on NoPackageFoundScriptException catch (err) {
       logger.warning(err.toString(), label: false);

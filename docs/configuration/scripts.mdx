@@ -281,7 +281,9 @@ should also specify [`orderDependents`](#orderdependents). Scripts that do not
 change the sources, such as running tests, do not need it.
 
 Use [`melos run --force`](/commands/run#--force) to run the script in every
-package regardless.
+package regardless, or
+[`melos run --ignore-sources`](/commands/run#--ignore-sources) to turn off the
+checksums completely.
 
 See [`melos exec --sources`](/commands/exec#--sources) for more details.
 

@@ -486,6 +486,10 @@
             "groupLogs": {
               "type": "boolean",
               "description": "Whether the output of each package is buffered and printed grouped per package.\n\nDefaults to false."
+            },
+            "ignoreSources": {
+              "type": "boolean",
+              "description": "Whether the sources of commands are ignored, so that they run in every package without calculating or storing checksums.\n\nDefaults to false."
             }
           }
         },

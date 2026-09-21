@@ -15,6 +15,8 @@ import 'io.dart';
 /// the commands that succeeded in it.
 final fingerprintsDirectory = p.join('.dart_tool', 'melos', 'fingerprints');
 
+const _fingerprintsDirectoryPattern = '/.dart_tool/melos/fingerprints/';
+
 /// Tracks whether the [sources] of packages changed since [command] last
 /// succeeded in them, so that `melos exec` can skip the packages that are up
 /// to date.
@@ -34,6 +36,10 @@ class ExecFingerprints {
 
   final _sourcesDigests = <String, Future<String>>{};
   final _matchedSources = <String>{};
+
+  /// The packages of which the sources could not be read, mapped to the error.
+  final unreadableSources = <String, FileSystemException>{};
+
   final _dependenciesDigestsAtStart = <String, Map<String, String>>{};
   final _dependenciesDigestsOfUpToDate = <String, Map<String, String>>{};
   final _hashingPool = Pool(32);
@@ -80,6 +86,19 @@ class ExecFingerprints {
     return true;
   }
 
+  /// Removes the stored fingerprints of [packages], so that [command] runs in
+  /// them the next time.
+  void removeStored(Iterable<Package> packages) {
+    packages.forEach(_removeStored);
+  }
+
+  void _removeStored(Package package) {
+    final path = _fingerprintPath(package);
+    if (fileExists(path)) {
+      deleteEntry(path);
+    }
+  }
+
   /// Has to be called right before [command] starts in [package].
   ///
   /// The stored fingerprint is removed, so that the package is not considered
@@ -87,10 +106,7 @@ class ExecFingerprints {
   /// dependencies is recorded, because the result of the command is only known
   /// to be based on the sources that they have at this point.
   Future<void> commandStarted(Package package) async {
-    final path = _fingerprintPath(package);
-    if (fileExists(path)) {
-      deleteEntry(path);
-    }
+    _removeStored(package);
     _dependenciesDigestsAtStart[package.name] = await _dependenciesDigests(
       package,
     );
@@ -201,30 +217,47 @@ class ExecFingerprints {
 
   Future<String> _computeSourcesDigest(Package package) async {
     try {
-      return await _hashSources(package);
-    } on FileSystemException {
+      final digest = await _hashSources(package);
+      unreadableSources.remove(package.name);
+      return digest;
+    } on FileSystemException catch (error) {
       // A file could not be read, for example because another process removed
       // it after it was listed. This never matches another digest, so the
       // command runs again.
+      unreadableSources[package.name] = error;
       return 'unreadable ${DateTime.now().microsecondsSinceEpoch}';
     }
   }
 
   Future<String> _hashSources(Package package) async {
-    final storedFingerprintsPath = p.join(package.path, fingerprintsDirectory);
     final paths = <String>{};
 
     for (final pattern in sources) {
+      // The leading parent directory segments are resolved here, because a
+      // case insensitive glob, which is the default on Windows, does not match
+      // them.
+      var root = package.path;
+      var relativePattern = pattern;
+      while (relativePattern.startsWith('../')) {
+        root = p.dirname(root);
+        relativePattern = relativePattern.substring('../'.length);
+      }
+
       // A glob that matches a directory also matches the files inside of it.
       final glob = createGlob(
-        pattern,
-        currentDirectoryPath: package.path,
+        relativePattern,
+        currentDirectoryPath: root,
         recursive: true,
       );
-      await for (final entity in glob.list(root: package.path)) {
-        if (entity is File &&
-            !p.isWithin(storedFingerprintsPath, entity.path)) {
-          paths.add(p.normalize(entity.path));
+      final entities = await _hashingPool.withResource(
+        () => glob.list(root: root).toList(),
+      );
+      for (final file in entities.whereType<File>()) {
+        final path = p.normalize(file.path);
+        // The fingerprints of nested packages are excluded too, since they
+        // change with every run.
+        if (!p.split(path).join('/').contains(_fingerprintsDirectoryPattern)) {
+          paths.add(path);
           _matchedSources.add(pattern);
         }
       }

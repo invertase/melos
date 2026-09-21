@@ -136,6 +136,19 @@ Melos also sets this variable itself for the scripts that it runs with
 [`melos run --force`](/commands/run#--force), so that it applies to every
 `melos exec` command invoked by a script.
 
+### `MELOS_IGNORE_SOURCES`
+
+Set to `true` to make [`melos exec`](/commands/exec#--ignore-sources) ignore the
+sources of commands, so that they run in every package without calculating or
+storing checksums, for example on a continuous integration server. This
+environment variable has precedence over the
+[`ignoreSources`](/configuration/overview#ignoresources) option in the root
+`pubspec.yaml`, but is overridden by the command line options
+`--ignore-sources` and `--no-ignore-sources`.
+
+Melos also sets this variable itself for the scripts that it runs with
+[`melos run --ignore-sources`](/commands/run#--ignore-sources).
+
 ### `MELOS_ANSI_STYLES`
 
 Set to `true` to make Melos style its output with colors, even if it does not

@@ -45,6 +45,17 @@ every package, even in the packages in which the sources did not change.
 melos run <name> --force
 ```
 
+## --ignore-sources
+
+Ignores the [`exec/sources`](/configuration/scripts#sources) of scripts, so that
+they run in every package without calculating or storing checksums. See
+[`melos exec --ignore-sources`](/commands/exec#--ignore-sources) for more
+details.
+
+```bash
+melos run <name> --ignore-sources
+```
+
 ## --list
 
 Displays all scripts defined in the Melos workspace.

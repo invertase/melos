@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:glob/glob.dart';
+
 import '../commands/runner.dart';
 import '../common/environment_variable_key.dart';
 import '../common/platform.dart';
@@ -59,6 +61,12 @@ class ExecCommand extends MelosCommand {
           'Run the command in every package, even in the packages in which '
           'the files matching --sources did not change.',
     );
+    argParser.addFlag(
+      'ignore-sources',
+      help:
+          'Ignore --sources, so that the command runs in every package '
+          'without calculating or storing checksums.',
+    );
   }
 
   @override
@@ -89,10 +97,24 @@ class ExecCommand extends MelosCommand {
     final orderDependents = argResults!.optional('order-dependents') as bool?;
     final groupLogs = argResults!.optional('group-logs') as bool?;
     final sources = argResults!['sources'] as List<String>;
+    for (final source in sources) {
+      try {
+        Glob(source);
+      } on FormatException catch (error) {
+        usageException(
+          'The glob "$source" of --sources is invalid: ${error.message}',
+        );
+      }
+    }
+    final environment = currentPlatform.environment;
     final force =
         argResults!['force'] as bool ||
-        currentPlatform.environment[EnvironmentVariableKey.melosForce] ==
-            'true';
+        environment[EnvironmentVariableKey.melosForce] == 'true';
+    final ignoreSources =
+        argResults!.optional('ignore-sources') as bool? ??
+        bool.tryParse(
+          environment[EnvironmentVariableKey.melosIgnoreSources] ?? '',
+        );
 
     return melos.exec(
       execArgs,
@@ -102,6 +124,7 @@ class ExecCommand extends MelosCommand {
       groupLogs: groupLogs,
       sources: sources,
       force: force,
+      ignoreSources: ignoreSources,
       global: global,
       packageFilters: packageFilters,
     );
