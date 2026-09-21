@@ -52,12 +52,7 @@ class EnvironmentVariableKey {
 
   static List<String> allMelosKeys() => [
     melosRootPath,
-    melosPackageName,
-    melosPackageVersion,
-    melosPackagePath,
-    melosParentPackageName,
-    melosParentPackageVersion,
-    melosParentPackagePath,
+    ...packageKeys(),
     melosPublishDryRun,
     melosScript,
     melosTest,

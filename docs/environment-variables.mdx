@@ -19,7 +19,7 @@ melos:
 
 The variables that describe a package only exist while `melos exec` runs a
 command in that package. When you call `melos exec` yourself, from a terminal or
-from a [`run`](/configuration/scripts#run) script, your shell expands
+from a [`run`](/configuration/scripts#run) script, a POSIX shell expands
 `$MELOS_PACKAGE_NAME` to an empty string before Melos starts. Wrap the command
 in single quotes, or escape the reference as `\$MELOS_PACKAGE_NAME`, so that the
 shell started by `melos exec` expands it instead:
@@ -28,9 +28,23 @@ shell started by `melos exec` expands it instead:
 melos exec -- 'echo $MELOS_PACKAGE_NAME'
 ```
 
-`$MELOS_PACKAGE_NAME` is also replaced in the paths passed to the `--file-exists`
-package filter, e.g.
-`melos exec --file-exists='test_driver/$MELOS_PACKAGE_NAME_e2e.dart' -- echo hello`
+A command substitution in an `exec` script still runs once, before `melos exec`
+starts, so the package variables are not defined inside of it. Escape the
+substitution to run it in every package instead:
+
+```yaml
+melos:
+  scripts:
+    echo:directory:
+      exec: echo \$(basename $MELOS_PACKAGE_PATH)
+```
+
+`$MELOS_PACKAGE_NAME` is also replaced in the paths passed to the
+`--file-exists` package filter:
+
+```bash
+melos exec --file-exists='test_driver/$MELOS_PACKAGE_NAME_e2e.dart' -- echo hello
+```
 
 ## Defined by Melos
 
