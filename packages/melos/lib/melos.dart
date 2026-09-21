@@ -15,6 +15,8 @@ export 'src/command_configs/command_configs.dart'
 export 'src/commands/runner.dart'
     show
         BootstrapException,
+        CherryPickConflictException,
+        CherryPickException,
         FixedVersioningException,
         Melos,
         NoPackageFoundScriptException,

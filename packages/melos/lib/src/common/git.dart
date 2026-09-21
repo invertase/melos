@@ -394,6 +394,14 @@ final _gitVersionRangeShortHandRegExp = RegExp(r'^.+\.{2,3}.+$');
 /// RegExp that matches the `..` or `...` separating the commits of a range.
 final _gitVersionRangeSeparatorRegExp = RegExp(r'\.{2,3}');
 
+/// Whether [revision] is a range of commits in the git shorthand syntax
+/// `<start-commit>..<end-commit>` or `<start-commit>...<end-commit>`.
+///
+/// Either end of the range can be left out, in which case git uses `HEAD` for
+/// it, as in `..<end-commit>`.
+bool gitIsRevisionRange(String revision) =>
+    _gitVersionRangeSeparatorRegExp.hasMatch(revision);
+
 /// The diff value that resolves to the changes a package has seen since its
 /// latest release tag.
 const gitDiffSinceLatestTag = '';

@@ -1,0 +1,116 @@
+---
+title: Cherry-pick Command
+description: Learn more about the `cherry-pick` command in Melos.
+---
+
+# Cherry-pick Command
+
+Cherry-pick commits onto the current branch without the release changes they
+contain.
+
+```bash
+melos cherry-pick 4ba1b8f
+```
+
+This command is meant for branches other than the default branch that packages
+are released from, for example a hot-fix branch for an older version. The
+changelogs and the versions on such a branch differ from the ones on the default
+branch, so they must not be carried over together with a fix. `melos
+cherry-pick` runs `git cherry-pick` for you and leaves out the following
+changes from each picked commit:
+
+- Changes to the `CHANGELOG.md` files of the packages, to the workspace
+  changelog, and to the other
+  [aggregate changelogs](/configuration/overview#changelogs) of the workspace.
+  Conflicts in these files are resolved automatically by keeping the changelog
+  of the current branch.
+- Changes to the `version` of the packages in their `pubspec.yaml` files.
+- Changes to the dependencies between the packages of the workspace, which are
+  the version constraints and tag references that `melos version` updates in the
+  dependents of a released package. A dependency on a workspace package that a
+  commit adds is still picked, only changes to existing ones are left out.
+
+All other changes to a `pubspec.yaml` file are kept. Conflicts that only
+concern the fields above are resolved automatically by keeping the values of the
+current branch.
+
+All other changes are picked as usual. Afterwards, [`melos
+version`](/commands/version) can be run on the branch. It finds the picked
+commits since the latest release of the branch, and writes the changelog entries
+and the new versions that are correct for this branch.
+
+<Info>
+  To learn more about the whole workflow, visit the [Releasing from Hot-fix
+  Branches](/guides/hot-fix-releases) guide.
+</Info>
+
+Several commits can be picked at once. They are picked in the order that they
+are given in, and a commit that is given more than once is only picked once:
+
+```bash
+melos cherry-pick 4ba1b8f 9c2d1e0
+```
+
+A range of commits can be given using the git shorthand syntax
+`<start-commit>..<end-commit>`. The commits of a range are picked from the
+oldest to the newest:
+
+```bash
+melos cherry-pick 4ba1b8f..9c2d1e0
+```
+
+<Warning>
+  The start commit of a range is not included in the range. Use
+  `4ba1b8f~1..9c2d1e0` to also pick `4ba1b8f`.
+</Warning>
+
+A commit that contains nothing but release changes, such as the commit that
+`melos version` creates, is skipped. This makes it safe to pick a range of
+commits that contains releases of the default branch. A commit whose changes are
+already on the current branch is skipped as well.
+
+The repository must not have uncommitted changes to tracked files when running
+this command.
+
+## Conflicts
+
+When a commit conflicts with the current branch in something other than the
+release changes, the command stops and lists the conflicted
+files. The changelogs are already restored at this point. Resolve the conflicts
+as you would with `git cherry-pick`:
+
+```bash
+# Resolve the conflicts in the listed files, then stage them.
+git add .
+git cherry-pick --continue
+```
+
+If a `pubspec.yaml` file is listed, other parts of it than the release changes
+conflict as well. Keep the `version` and the constraints on other workspace
+packages of the current branch when resolving it. To cancel the pick instead,
+run `git cherry-pick --abort`.
+
+If more commits were given than the one that conflicted, the command prints the
+ones that have not been picked yet. Run `melos cherry-pick` again with those
+commits once the conflicts are resolved.
+
+## --[no-]record-origin
+
+Whether to append the line `(cherry picked from commit <commit>)` to the message
+of each picked commit, which records the commit that it originates from. This
+is the same as the `-x` option of `git cherry-pick`. Defaults to `true`.
+
+```bash
+melos cherry-pick 4ba1b8f --no-record-origin
+```
+
+## --mainline (-m)
+
+The number of the parent, starting from 1, that a merge commit is compared
+against. This is required when picking merge commits and is the same as the
+`--mainline` option of `git cherry-pick`. For a merge commit that merged a pull
+request into the default branch, the first parent is usually the right one.
+
+```bash
+melos cherry-pick 4ba1b8f --mainline 1
+```

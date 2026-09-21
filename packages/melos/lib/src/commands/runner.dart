@@ -54,6 +54,7 @@ import '../workspace_config.dart';
 
 part 'analyze.dart';
 part 'bootstrap.dart';
+part 'cherry_pick.dart';
 part 'clean.dart';
 part 'exec.dart';
 part 'format.dart';
@@ -80,6 +81,7 @@ class Melos extends _Melos
         _RunMixin,
         _ExecMixin,
         _VersionMixin,
+        _CherryPickMixin,
         _PublishMixin,
         _FormatMixin,
         _InitMixin,
