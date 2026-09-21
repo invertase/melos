@@ -21,15 +21,18 @@
     [
       "Commands",
       [
+        ["analyze", "/commands/analyze"],
         ["bootstrap", "/commands/bootstrap"],
         ["changed", "/commands/changed"],
         ["cherry-pick", "/commands/cherry-pick"],
         ["clean", "/commands/clean"],
         ["format", "/commands/format"],
         ["exec", "/commands/exec"],
+        ["init", "/commands/init"],
         ["list", "/commands/list"],
         ["publish", "/commands/publish"],
         ["run", "/commands/run"],
+        ["test", "/commands/test"],
         ["version", "/commands/version"]
       ]
     ],

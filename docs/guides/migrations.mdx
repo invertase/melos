@@ -47,6 +47,15 @@ scripts:
 Melos will fail with a descriptive error, including the converted configuration,
 if it encounters the old format.
 
+### Build numbers when versioning
+
+`melos version` now retains and increments an integer build number on every
+version bump, so `3.0.0+11` becomes `4.0.0+12` instead of `4.0.0`.
+
+A patch release below `1.0.0` now bumps the patch component instead of adding a
+build number, so `0.1.0` becomes `0.1.1` instead of `0.1.0+1`. See
+[Build numbers](/guides/automated-releases#build-numbers) for more details.
+
 ## 6.x.x to 7.x.x
 
 Since the [pub workspaces](https://dart.dev/tools/pub/workspaces) feature has
@@ -93,10 +102,14 @@ If you are using an older version of the Dart SDK, you can still use Melos
 with pub workspaces, but then you have to rely on the `7.0.0-dev.x` versions.
 </Info>
 
-### `melos analyze` no longer exists
+### `melos analyze` was removed in 7.x.x
 
 Since `flutter/dart analyze` now runs in the full pub workspace, the
-`melos analyze` command has been removed.
+`melos analyze` command was removed in Melos 7.0.0.
+
+The command was restored in Melos 8.1.0, where it analyzes all the packages in
+a single run and supports all the package filtering options, see the
+[analyze command](/commands/analyze).
 
 ### Root packages
 
