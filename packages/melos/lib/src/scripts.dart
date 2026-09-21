@@ -168,7 +168,10 @@ class Scripts extends MapView<String, Script> {
       }
     }
 
-    values.forEach(inExecutionOrder);
+    final ordered = <String, Script>{};
+    for (final script in values) {
+      _visitInExecutionOrder(script, ordered: ordered, path: {});
+    }
   }
 
   /// Returns the scripts that have to run for [script] to run, in the order
@@ -181,37 +184,42 @@ class Scripts extends MapView<String, Script> {
   /// Throws a [MelosConfigException] if the dependencies form a cycle.
   List<Script> inExecutionOrder(Script script) {
     final ordered = <String, Script>{};
-    final path = <String>[];
+    _visitInExecutionOrder(script, ordered: ordered, path: {});
+    return ordered.values.toList();
+  }
 
-    void visit(Script current) {
-      if (ordered.containsKey(current.name)) {
-        return;
-      }
-
-      if (path.contains(current.name)) {
-        final cycle = [
-          ...path.skipWhile((name) => name != current.name),
-          current.name,
-        ];
-        throw MelosConfigException(
-          'The "dependsOn" of the scripts form a cycle: ${cycle.join(' -> ')}.',
-        );
-      }
-
-      path.add(current.name);
-      for (final dependency in current.dependsOn) {
-        final dependencyScript = this[dependency];
-        if (dependencyScript != null) {
-          visit(dependencyScript);
-        }
-      }
-      path.removeLast();
-
-      ordered[current.name] = current;
+  /// Adds [script] to [ordered], after the scripts that it depends on.
+  ///
+  /// The [path] holds the names of the scripts that are currently being
+  /// visited, in the order that they were reached, to detect cycles.
+  void _visitInExecutionOrder(
+    Script script, {
+    required Map<String, Script> ordered,
+    required Set<String> path,
+  }) {
+    if (ordered.containsKey(script.name)) {
+      return;
     }
 
-    visit(script);
-    return ordered.values.toList();
+    if (!path.add(script.name)) {
+      final cycle = [
+        ...path.skipWhile((name) => name != script.name),
+        script.name,
+      ];
+      throw MelosConfigException(
+        'The "dependsOn" of the scripts form a cycle: ${cycle.join(' -> ')}.',
+      );
+    }
+
+    for (final dependency in script.dependsOn) {
+      final dependencyScript = this[dependency];
+      if (dependencyScript != null) {
+        _visitInExecutionOrder(dependencyScript, ordered: ordered, path: path);
+      }
+    }
+
+    path.remove(script.name);
+    ordered[script.name] = script;
   }
 
   Map<Object?, Object?> toJson() {
@@ -475,21 +483,19 @@ class Script {
           )
         : [];
 
-    final dependsOnList = yaml['dependsOn'];
-    final dependsOn = dependsOnList is List && dependsOnList.isNotEmpty
-        ? assertListIsA<String>(
-            key: 'dependsOn',
-            map: yaml,
-            isRequired: false,
-            assertItemIsA: (index, value) {
-              return assertIsA<String>(
-                value: value,
-                index: index,
-                path: scriptPath,
-              );
-            },
-          )
-        : <String>[];
+    final dependsOn = assertListIsA<String>(
+      key: 'dependsOn',
+      map: yaml,
+      isRequired: false,
+      path: scriptPath,
+      assertItemIsA: (index, value) {
+        return assertIsA<String>(
+          value: value,
+          index: index,
+          path: '$scriptPath/dependsOn',
+        );
+      },
+    );
 
     final stdioValue = assertKeyIsA<String?>(
       key: 'stdio',
@@ -525,7 +531,18 @@ class Script {
     if (script == null) {
       return null;
     }
-    return Script.fromYaml(script, name: name, workspacePath: workspacePath);
+    final hook = Script.fromYaml(
+      script,
+      name: name,
+      workspacePath: workspacePath,
+    );
+    if (hook.dependsOn.isNotEmpty) {
+      throw MelosConfigException(
+        'The "$name" hook specifies "dependsOn", which is only supported for '
+        'the scripts in "scripts" and not for hooks.',
+      );
+    }
+    return hook;
   }
 
   @visibleForTesting

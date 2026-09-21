@@ -3,6 +3,7 @@ import 'package:melos/src/common/git_repository.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/common/retry_backoff.dart';
+import 'package:melos/src/lifecycle_hooks/lifecycle_hooks.dart';
 import 'package:melos/src/workspace_config.dart';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
@@ -1456,6 +1457,40 @@ c:
         expect(scripts.validate, returnsNormally);
       });
 
+      test('throws if the value is not a list', () {
+        expect(
+          () => parseScripts('''
+a: echo a
+b:
+  run: echo b
+  dependsOn: a
+'''),
+          throwsA(isA<MelosConfigException>()),
+        );
+      });
+
+      test('throws if a hook specifies dependsOn', () {
+        expect(
+          () => LifecycleHooks.fromYaml(
+            loadYaml('''
+pre:
+  run: echo pre
+  dependsOn:
+    - a
+''')
+                as Map<Object?, Object?>,
+            workspacePath: testWorkspacePath,
+          ),
+          throwsA(
+            isA<MelosConfigException>().having(
+              (exception) => exception.message,
+              'message',
+              allOf(contains('"pre"'), contains('"dependsOn"')),
+            ),
+          ),
+        );
+      });
+
       test('throws if a script depends on a script that does not exist', () {
         final scripts = parseScripts('''
 a:
@@ -1467,7 +1502,7 @@ a:
           scripts.validate,
           throwsA(
             isA<MelosConfigException>().having(
-              (e) => e.message,
+              (exception) => exception.message,
               'message',
               allOf(contains('"a"'), contains('"missing"')),
             ),
@@ -1486,7 +1521,7 @@ a:
           scripts.validate,
           throwsA(
             isA<MelosConfigException>().having(
-              (e) => e.message,
+              (exception) => exception.message,
               'message',
               contains('a -> a'),
             ),
@@ -1513,7 +1548,7 @@ c:
           scripts.validate,
           throwsA(
             isA<MelosConfigException>().having(
-              (e) => e.message,
+              (exception) => exception.message,
               'message',
               contains('a -> b -> c -> a'),
             ),

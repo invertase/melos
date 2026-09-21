@@ -145,11 +145,14 @@ The dependencies form a graph, which is more flexible than a sequential list of
 - The scripts that a script depends on can depend on other scripts themselves.
   All of them run before the requested script, each one after the scripts that
   it depends on.
-- A script that multiple scripts depend on only runs once per `melos run`
-  invocation.
+- A script that multiple scripts depend on only runs once when the dependencies
+  of the requested script are resolved. A script that is called from
+  [`steps`](/configuration/scripts#steps) resolves its own dependencies, so a
+  dependency that is shared between multiple steps runs once for each of them.
 - If one of the scripts fails, the scripts that come after it do not run.
 - A script can consist of only `dependsOn`, without `run`, `exec` or `steps`,
-  to group other scripts under a single name.
+  to group other scripts under a single name. The `env` and `packageFilters` of
+  such a script are not applied to the scripts that it depends on.
 
 ```yaml
 scripts:
@@ -171,11 +174,14 @@ scripts:
 
 Extra arguments that are passed to `melos run` are only passed to the requested
 script, not to the scripts that it depends on. Package filters that are passed
-on the command line, such as `--scope`, apply to all of the scripts.
+on the command line, such as `--scope`, apply to all of the scripts. A script
+that is depended on is skipped with a warning if no package matches its filters,
+since it has nothing to do for the selected packages.
 [Private](/configuration/scripts#private) scripts can be used as dependencies.
 
 Melos reports an error if a script depends on a script that does not exist, or
-if the dependencies form a cycle.
+if the dependencies form a cycle. `dependsOn` is not supported for
+[hooks](/configuration/scripts#hooks).
 
 ## exec
 

@@ -53,15 +53,41 @@ mixin _RunMixin on _Melos {
 
     _detectRecursiveScriptCalls(script);
 
-    for (final scriptToRun in config.scripts.inExecutionOrder(script)) {
+    final scriptsToRun = config.scripts.inExecutionOrder(script);
+    scriptsToRun.forEach(_validateScriptCommand);
+
+    for (final scriptToRun in scriptsToRun) {
       final isRequestedScript = scriptToRun.name == script.name;
-      await _runScriptWithoutDependencies(
-        scriptToRun,
-        global: global,
-        skipSelection: skipSelection,
-        extraArgs: isRequestedScript ? extraArgs : const [],
-        packageFilters: packageFilters,
-      );
+      try {
+        await _runScriptWithoutDependencies(
+          scriptToRun,
+          global: global,
+          skipSelection: skipSelection,
+          extraArgs: isRequestedScript ? extraArgs : const [],
+          packageFilters: packageFilters,
+        );
+      } on NoPackageFoundScriptException {
+        if (isRequestedScript) {
+          rethrow;
+        }
+        logger.warning(
+          'Skipping the script ${scriptToRun.name}, that ${script.name} '
+          'depends on, since no package matches its filters.',
+        );
+      }
+    }
+  }
+
+  /// Throws if [script] does not specify what to run, or specifies it in a way
+  /// that is not supported.
+  void _validateScriptCommand(Script script) {
+    final hasSteps = script.steps != null && script.steps!.isNotEmpty;
+    if (hasSteps && script.exec != null) {
+      throw ScriptExecOptionsException._(script.name);
+    }
+
+    if (!hasSteps && script.run == null && script.dependsOn.isEmpty) {
+      throw MissingScriptCommandException._(script.name);
     }
   }
 
@@ -75,12 +101,6 @@ mixin _RunMixin on _Melos {
     PackageFilters? packageFilters,
   }) async {
     if (script.steps != null && script.steps!.isNotEmpty) {
-      if (script.exec != null) {
-        throw ScriptExecOptionsException._(
-          script.name,
-        );
-      }
-
       final exitCode = await _runMultipleScripts(
         script,
         global: global,
@@ -95,12 +115,9 @@ mixin _RunMixin on _Melos {
     }
 
     if (script.run == null) {
-      if (script.dependsOn.isNotEmpty) {
-        return;
-      }
-      throw MissingScriptCommandException._(
-        script.name,
-      );
+      logger.command('melos run ${script.name}');
+      logger.log(successLabel);
+      return;
     }
 
     final scriptSourceCode = targetStyle(
@@ -172,8 +189,12 @@ mixin _RunMixin on _Melos {
   /// in an infinite loop during execution.
   void _detectRecursiveScriptCalls(Script script) {
     final visitedScripts = <String>{};
+    final checkedScripts = <String>{};
 
     void traverseSteps(Script currentScript) {
+      if (checkedScripts.contains(currentScript.name)) {
+        return;
+      }
       visitedScripts.add(currentScript.name);
 
       for (final step in [
@@ -191,6 +212,7 @@ mixin _RunMixin on _Melos {
       }
 
       visitedScripts.remove(currentScript.name);
+      checkedScripts.add(currentScript.name);
     }
 
     traverseSteps(script);

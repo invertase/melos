@@ -1223,9 +1223,72 @@ SUCCESS
 
       expect(
         logger.output.normalizeLines().split('\n'),
-        containsAllInOrder(['ran_first', 'ran_second']),
+        containsAllInOrder([
+          'ran_first',
+          'ran_second',
+          'melos run all',
+          'SUCCESS',
+        ]),
       );
     });
+
+    test(
+      'reports a script without a command before any of the scripts run',
+      () async {
+        final logger = TestLogger();
+        final melos = await createMelos(
+          logger,
+          const Scripts({
+            'first': Script(name: 'first', run: 'echo ran_first'),
+            'broken': Script(name: 'broken'),
+            'all': Script(name: 'all', dependsOn: ['first', 'broken']),
+          }),
+        );
+
+        await expectLater(
+          () => melos.run(scriptName: 'all', noSelect: true),
+          throwsA(isA<MissingScriptCommandException>()),
+        );
+
+        expect(
+          logger.output.normalizeLines().split('\n'),
+          isNot(contains('ran_first')),
+        );
+      },
+    );
+
+    test(
+      'skips a script that is depended on if no package matches its filters',
+      () async {
+        final logger = TestLogger();
+        final melos = await createMelos(
+          logger,
+          const Scripts({
+            'generate': Script(
+              name: 'generate',
+              run: 'echo ran_generate',
+              exec: ExecOptions(),
+              packageFilters: PackageFilters(fileExists: ['build.yaml']),
+            ),
+            'test_script': Script(
+              name: 'test_script',
+              run: 'echo ran_test_script',
+              dependsOn: ['generate'],
+            ),
+          }),
+        );
+
+        await melos.run(scriptName: 'test_script', noSelect: true);
+
+        final lines = logger.output.normalizeLines().split('\n');
+        expect(lines, contains('ran_test_script'));
+        expect(lines, isNot(contains('ran_generate')));
+        expect(
+          logger.output.normalizeLines(),
+          contains('Skipping the script generate'),
+        );
+      },
+    );
 
     test(
       'throws an error if a script is called recursively through a mix of '
