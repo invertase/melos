@@ -195,7 +195,7 @@ mixin _RunMixin on _Melos {
       includePrivatePackages: cliFilters.includePrivatePackages,
       published: cliFilters.published,
       nullSafe: cliFilters.nullSafe,
-      flutter: cliFilters.flutter,
+      includeFlutterPackages: cliFilters.includeFlutterPackages,
       includeDependents: cliFilters.includeDependents ? true : null,
       includeDependencies: cliFilters.includeDependencies ? true : null,
     );

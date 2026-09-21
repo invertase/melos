@@ -93,10 +93,10 @@ class PackageFilters {
     this.includePrivatePackages,
     this.published,
     this.nullSafe,
-    this.flutter,
+    bool? flutter,
     this.includeDependencies = false,
     this.includeDependents = false,
-  });
+  }) : includeFlutterPackages = flutter;
 
   factory PackageFilters.fromYaml(
     Map<Object?, Object?> yaml, {
@@ -249,7 +249,7 @@ class PackageFilters {
     required this.includePrivatePackages,
     required this.published,
     required this.nullSafe,
-    required this.flutter,
+    required this.includeFlutterPackages,
     required this.includeDependencies,
     required this.includeDependents,
   });
@@ -296,7 +296,7 @@ class PackageFilters {
 
   /// Include/exclude packages that are Flutter packages, see
   /// [Package.isFlutterPackage].
-  final bool? flutter;
+  final bool? includeFlutterPackages;
 
   /// Whether to include packages that depends on the filtered packages.
   ///
@@ -328,7 +328,8 @@ class PackageFilters {
         filterOptionPrivate.camelCased: includePrivatePackages,
       if (published != null) filterOptionPublished.camelCased: published,
       if (nullSafe != null) filterOptionNullsafety.camelCased: nullSafe,
-      if (flutter != null) filterOptionFlutter.camelCased: flutter,
+      if (includeFlutterPackages != null)
+        filterOptionFlutter.camelCased: includeFlutterPackages,
       if (includeDependents) filterOptionIncludeDependents.camelCased: true,
       if (includeDependencies) filterOptionIncludeDependencies.camelCased: true,
     };
@@ -343,7 +344,7 @@ class PackageFilters {
       includePrivatePackages: includePrivatePackages,
       noDependsOn: noDependsOn,
       nullSafe: nullSafe,
-      flutter: flutter,
+      includeFlutterPackages: includeFlutterPackages,
       published: published,
       scope: scope,
       diff: diff,
@@ -362,7 +363,7 @@ class PackageFilters {
       includePrivatePackages: includePrivatePackages,
       noDependsOn: noDependsOn,
       nullSafe: nullSafe,
-      flutter: flutter,
+      includeFlutterPackages: includeFlutterPackages,
       published: published,
       scope: scope,
       diff: diff,
@@ -380,7 +381,7 @@ class PackageFilters {
     bool? includePrivatePackages,
     List<String>? noDependsOn,
     bool? nullSafe,
-    bool? flutter,
+    bool? includeFlutterPackages,
     bool? published,
     List<Glob>? scope,
     String? diff,
@@ -398,7 +399,8 @@ class PackageFilters {
           includePrivatePackages ?? this.includePrivatePackages,
       noDependsOn: noDependsOn ?? this.noDependsOn,
       nullSafe: nullSafe ?? this.nullSafe,
-      flutter: flutter ?? this.flutter,
+      includeFlutterPackages:
+          includeFlutterPackages ?? this.includeFlutterPackages,
       published: published ?? this.published,
       scope: scope ?? this.scope,
       diff: diff ?? this.diff,
@@ -412,7 +414,7 @@ class PackageFilters {
       other is PackageFilters &&
       runtimeType == other.runtimeType &&
       other.nullSafe == nullSafe &&
-      other.flutter == flutter &&
+      other.includeFlutterPackages == includeFlutterPackages &&
       other.published == published &&
       other.includeDependencies == includeDependencies &&
       other.includeDependents == includeDependents &&
@@ -430,7 +432,7 @@ class PackageFilters {
   int get hashCode => Object.hashAll([
     runtimeType,
     nullSafe,
-    flutter,
+    includeFlutterPackages,
     published,
     includeDependencies,
     includeDependents,
@@ -450,7 +452,7 @@ class PackageFilters {
     return '''
 PackageFilters(
   nullSafe: $nullSafe,
-  flutter: $flutter,
+  includeFlutterPackages: $includeFlutterPackages,
   published: $published,
   includeDependencies: $includeDependencies,
   includeDependents: $includeDependents,
@@ -801,7 +803,7 @@ The packages that caused the problem are:
         .applyDependsOn(filters.dependsOn)
         .applyNoDependsOn(filters.noDependsOn)
         .filterNullSafe(nullSafe: filters.nullSafe)
-        .filterFlutter(flutter: filters.flutter)
+        .filterFlutterPackages(include: filters.includeFlutterPackages)
         .filterPublishedPackages(
           published: filters.published,
           logger: _logger,
@@ -979,12 +981,12 @@ extension IterablePackageExt on Iterable<Package> {
     });
   }
 
-  Iterable<Package> filterFlutter({required bool? flutter}) {
-    if (flutter == null) {
+  Iterable<Package> filterFlutterPackages({bool? include}) {
+    if (include == null) {
       return this;
     }
 
-    return where((package) => package.isFlutterPackage == flutter);
+    return where((package) => include == package.isFlutterPackage);
   }
 
   Iterable<Package> applyScope(List<Glob> scope) {
