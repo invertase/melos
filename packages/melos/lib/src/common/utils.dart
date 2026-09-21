@@ -604,19 +604,21 @@ Future<int> startCommand(
   ProcessOutputCancelToken? cancelToken,
   bool inheritStdio = false,
 }) async {
+  final scriptEnvironment = {
+    ...environment,
+    ...quietEnvironment(logger),
+    ...ansiStylesEnvironment,
+  };
   final processedCommand = command
       // Remove empty arguments.
       .whereNot((argument) => argument.trim().isEmpty)
-      .map(_scriptArgumentFormatter(environment))
+      .map(_scriptArgumentFormatter(scriptEnvironment))
       .toList();
 
   final process = await startCommandRaw(
     processedCommand,
     workingDirectory: workingDirectory,
-    environment: {
-      ...environment,
-      ...quietEnvironment(logger),
-    },
+    environment: scriptEnvironment,
     includeParentEnvironment: includeParentEnvironment,
     mode: inheritStdio
         ? ProcessStartMode.inheritStdio
