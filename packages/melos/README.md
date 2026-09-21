@@ -151,10 +151,6 @@ information.
     - Filter packages where the current local package version exists on pub.dev.
       Or "-no-published" to filter packages that have not had their current
       version published yet.
-  - `--[no-]nullsafety`
-    - Filter packages where the current local version uses a "nullsafety"
-      prerelease preid. Or "-no-nullsafety" to filter packages where their
-      current version does not have a "nullsafety" preid.
   - `--[no-]flutter`
     - Filter packages where the package depends on the Flutter SDK. Or
       "-no-flutter" to filter packages that do not depend on the Flutter SDK.

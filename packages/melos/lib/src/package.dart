@@ -96,7 +96,6 @@ class PackageFilters {
     this.diff,
     this.includePrivatePackages,
     this.published,
-    this.nullSafe,
     bool? flutter,
     this.includeDependencies = false,
     this.includeDependents = false,
@@ -207,12 +206,6 @@ class PackageFilters {
       path: path,
     );
 
-    final nullSafe = assertKeyIsA<bool?>(
-      key: filterOptionNullsafety.camelCased,
-      map: yaml,
-      path: path,
-    );
-
     final flutter = assertKeyIsA<bool?>(
       key: filterOptionFlutter.camelCased,
       map: yaml,
@@ -249,7 +242,6 @@ class PackageFilters {
       includeDependencies: includeDependencies,
       includePrivatePackages: includePrivatePackages,
       published: published,
-      nullSafe: nullSafe,
       flutter: flutter,
       categories: category.map(createPackageGlob).toList(),
       postFilters: postFilters,
@@ -269,7 +261,6 @@ class PackageFilters {
     required this.diff,
     required this.includePrivatePackages,
     required this.published,
-    required this.nullSafe,
     required this.includeFlutterPackages,
     required this.includeDependencies,
     required this.includeDependents,
@@ -312,9 +303,6 @@ class PackageFilters {
 
   /// Include/exclude packages that are up-to-date on pub.dev
   final bool? published;
-
-  /// Include/exclude packages that are null-safe.
-  final bool? nullSafe;
 
   /// Include/exclude packages that are Flutter packages, see
   /// [Package.isFlutterPackage].
@@ -369,7 +357,6 @@ class PackageFilters {
       if (includePrivatePackages != null)
         filterOptionPrivate.camelCased: includePrivatePackages,
       if (published != null) filterOptionPublished.camelCased: published,
-      if (nullSafe != null) filterOptionNullsafety.camelCased: nullSafe,
       if (includeFlutterPackages != null)
         filterOptionFlutter.camelCased: includeFlutterPackages,
       if (includeDependents) filterOptionIncludeDependents.camelCased: true,
@@ -387,7 +374,6 @@ class PackageFilters {
       ignore: ignore,
       includePrivatePackages: includePrivatePackages,
       noDependsOn: noDependsOn,
-      nullSafe: nullSafe,
       includeFlutterPackages: includeFlutterPackages,
       published: published,
       scope: scope,
@@ -407,7 +393,6 @@ class PackageFilters {
       ignore: ignore,
       includePrivatePackages: includePrivatePackages,
       noDependsOn: noDependsOn,
-      nullSafe: nullSafe,
       includeFlutterPackages: includeFlutterPackages,
       published: published,
       scope: scope,
@@ -426,7 +411,6 @@ class PackageFilters {
     List<Glob>? ignore,
     bool? includePrivatePackages,
     List<String>? noDependsOn,
-    bool? nullSafe,
     bool? includeFlutterPackages,
     bool? published,
     List<Glob>? scope,
@@ -445,7 +429,6 @@ class PackageFilters {
       includePrivatePackages:
           includePrivatePackages ?? this.includePrivatePackages,
       noDependsOn: noDependsOn ?? this.noDependsOn,
-      nullSafe: nullSafe ?? this.nullSafe,
       includeFlutterPackages:
           includeFlutterPackages ?? this.includeFlutterPackages,
       published: published ?? this.published,
@@ -461,7 +444,6 @@ class PackageFilters {
   bool operator ==(Object other) =>
       other is PackageFilters &&
       runtimeType == other.runtimeType &&
-      other.nullSafe == nullSafe &&
       other.includeFlutterPackages == includeFlutterPackages &&
       other.published == published &&
       other.includeDependencies == includeDependencies &&
@@ -480,7 +462,6 @@ class PackageFilters {
   @override
   int get hashCode => Object.hashAll([
     runtimeType,
-    nullSafe,
     includeFlutterPackages,
     published,
     includeDependencies,
@@ -501,7 +482,6 @@ class PackageFilters {
   String toString() {
     return '''
 PackageFilters(
-  nullSafe: $nullSafe,
   includeFlutterPackages: $includeFlutterPackages,
   published: $published,
   includeDependencies: $includeDependencies,
@@ -903,7 +883,6 @@ The packages that caused the problem are:
         .applyCategories(filters.categories)
         .applyDependsOn(filters.dependsOn)
         .applyNoDependsOn(filters.noDependsOn)
-        .filterNullSafe(nullSafe: filters.nullSafe)
         .filterFlutterPackages(include: filters.includeFlutterPackages)
         .filterPublishedPackages(
           published: filters.published,
@@ -1057,25 +1036,6 @@ extension IterablePackageExt on Iterable<Package> {
         .where((event) => event.value)
         .map((event) => event.key)
         .toList();
-  }
-
-  /// Whether to include/exclude packages that are null-safe.
-  ///
-  /// If `include` is true, only null-safe packages. If false, only include
-  /// packages that are not null-safe. If null, does nothing.
-  Iterable<Package> filterNullSafe({required bool? nullSafe}) {
-    if (nullSafe == null) {
-      return this;
-    }
-
-    return where((package) {
-      final version = package.version;
-
-      final isNullsafetyVersion =
-          version.isPreRelease && version.preRelease.contains('nullsafety');
-
-      return nullSafe == isNullsafetyVersion;
-    });
   }
 
   Iterable<Package> filterFlutterPackages({bool? include}) {
