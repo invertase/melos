@@ -3,7 +3,7 @@ name: Stale Issue/PR Manager
 on:
   workflow_dispatch:
   schedule:
-    - cron: 35 * * * *
+    - cron: 35 0 * * 1
 permissions:
   contents: read
 jobs:
