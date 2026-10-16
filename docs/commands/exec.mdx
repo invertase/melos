@@ -39,14 +39,14 @@ melos exec --fail-fast -- "flutter test --tags integration"
 ## concurrency (-c)
 
 Defines the max concurrency value of how many packages will execute the command
-in at any one time. Defaults to `5`.
+in at any one time. Defaults to the number of processors of the machine.
 
 ```bash
 # Set a 1 concurrency
 melos exec -c 1  -- "dart analyze ."
 ```
 
-## --fail-fast
+## --fail-fast (-f)
 
 Whether exec should fail fast and not execute the script in further packages if
 the script fails in an individual package. Defaults to `false`.
@@ -54,6 +54,18 @@ the script fails in an individual package. Defaults to `false`.
 ```bash
 # Fail fast
 melos exec --fail-fast -- "dart analyze ."
+```
+
+## --order-dependents (-o)
+
+Whether exec should order the execution of the script in multiple packages
+based on the dependency graph of the packages. The script is executed in leaf
+packages first, then in the packages that depend on them, and so on. This is
+useful for example for a script that generates code in multiple packages that
+depend on each other. Defaults to `false`.
+
+```bash
+melos exec --order-dependents -- "dart run build_runner build"
 ```
 
 ## --group-logs

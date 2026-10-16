@@ -61,9 +61,10 @@ scripts:
   prepare: melos bootstrap && melos run build
 ```
 
-## name
+## Script name
 
-A unique identifier for the script.
+Each script is identified by its key in the `scripts` map, which must be
+unique. There is no separate `name` field.
 
 ## description
 
@@ -392,11 +393,12 @@ Hooks are configured in the `hooks` section of a command's configuration in the
 root `pubspec.yaml` file.
 
 ```yaml
-command:
-  bootstrap:
-    hooks:
-      pre: echo `bootstrap command is running...`
-      post: echo `bootstrap command is done`
+melos:
+  command:
+    bootstrap:
+      hooks:
+        pre: echo `bootstrap command is running...`
+        post: echo `bootstrap command is done`
 ```
 
 Currently, the following Melos commands support hooks:

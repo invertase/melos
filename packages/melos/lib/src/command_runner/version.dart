@@ -108,7 +108,7 @@ class VersionCommand extends MelosCommand {
           'Group changelog entries by their conventional commit type, e.g. '
           'all features under a "Features" header and all fixes under a "Bug '
           'Fixes" header. Overrides the "changelogFormat/groupByType" setting '
-          'in melos.yaml.',
+          'in the root pubspec.yaml.',
     );
     argParser.addOption(
       'message',

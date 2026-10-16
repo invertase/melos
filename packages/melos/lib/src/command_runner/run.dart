@@ -16,14 +16,14 @@ class RunCommand extends MelosCommand {
     argParser.addFlag(
       'list',
       negatable: false,
-      help: 'Lists all scripts defined in the melos.yaml config file.',
+      help: 'Lists all scripts defined in the root pubspec.yaml.',
     );
 
     argParser.addFlag(
       'json',
       negatable: false,
       help:
-          'Lists all scripts defined in the melos.yaml config file with '
+          'Lists all scripts defined in the root pubspec.yaml with '
           'description in json format.',
     );
 

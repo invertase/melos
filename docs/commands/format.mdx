@@ -37,15 +37,14 @@ By default, dart format overwrites the Dart files.
 This option is useful when you want to review formatting changes without
 directly overwriting your files.
 
-```bash
-melos format --output
-# or
-melos format -o
-```
+It takes one of `json`, `none`, `show` or `write` (the default, which
+overwrites the files on disk).
 
 Outputs the formatted code to the console.
 
 ```bash
+melos format --output show
+# or
 melos format -o show
 ```
 
@@ -60,6 +59,14 @@ or making changes.
 
 ```bash
 melos format -o none
+```
+
+## --line-length
+
+The line length to format the code to. Forwarded to `dart format`.
+
+```bash
+melos format --line-length 100
 ```
 
 ## concurrency (-c)

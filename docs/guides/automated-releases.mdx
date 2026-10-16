@@ -63,13 +63,15 @@ steps:
 
 Currently the following commit types trigger a version bump:
 
-- `docs` - A documentation change.
 - `feat` - A new feature.
 - `fix` - A bug fix.
 - `bug` - A bug fix.
 - `perf` - A change that improves performance.
 - `refactor` - A change that neither fixes a bug nor adds a feature.
 - `revert` - A change that reverts a previous commit.
+
+`docs` commits (documentation changes) do not trigger a version bump on their
+own, but they are listed in the changelog when the package is versioned.
 
 The first matching rule in the list below determines the version bump for a
 commit:
@@ -171,7 +173,9 @@ package.
 
 Package version tags have the format `<package-name>-v<version>`.
 
-This behavior can be disabled by passing `--no-git-tag-version`.
+Creating the tags can be disabled by passing `--no-git-tag-version`; the
+version commit is still created. To skip the commit as well, pass
+`--no-git-commit-version`, which also implies `--no-git-tag-version`.
 
 #### Hook
 
