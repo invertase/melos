@@ -163,6 +163,41 @@ void main() {
       },
     );
 
+    test(
+      'adds packages matching the --packages globs to the workspace',
+      () async {
+        final config = MelosWorkspaceConfig.emptyWith(
+          name: 'melos_init_test_',
+          path: tempDir.path,
+        );
+        final melos = Melos(logger: logger, config: config);
+
+        final originalDir = Directory.current;
+        try {
+          Directory.current = tempDir;
+          final modulesDir = Directory(p.join(tempDir.path, 'modules'))
+            ..createSync();
+          await Process.run(
+            'dart',
+            ['create', 'test_module'],
+            workingDirectory: modulesDir.absolute.path,
+          );
+          await melos.init(
+            '.',
+            directory: '.',
+            packages: ['modules/*'],
+            useAppDir: false,
+          );
+
+          final pubspecYaml =
+              loadYaml(File('pubspec.yaml').readAsStringSync()) as YamlMap;
+          expect(pubspecYaml['workspace'], equals(['modules/test_module']));
+        } finally {
+          Directory.current = originalDir;
+        }
+      },
+    );
+
     test('throws error if target directory already exists', () async {
       final workspaceDir = Directory(p.join(tempDir.path, 'existing_workspace'))
         ..createSync();

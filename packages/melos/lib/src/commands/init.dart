@@ -27,9 +27,13 @@ mixin _InitMixin on _Melos {
     }
 
     final dartVersion = utils.currentDartVersion('dart');
-    final packages = await PackageMap.resolvePackages(
+    final workspacePackages = await PackageMap.resolvePackages(
       workspacePath: dir.path,
-      packages: [Glob('packages/**'), if (useAppDir) Glob('apps/**')],
+      packages: [
+        Glob('packages/**'),
+        if (useAppDir) Glob('apps/**'),
+        ...packages.map(Glob.new),
+      ],
       ignore: [],
       categories: {},
       logger: logger,
@@ -43,7 +47,7 @@ mixin _InitMixin on _Melos {
       'dev_dependencies': {
         'melos': '^$melosVersion',
       },
-      'workspace': packages.values
+      'workspace': workspacePackages.values
           .map((pkg) => p.relative(pkg.path, from: dir.absolute.path))
           .map((rel) => rel.replaceAll(r'\', '/'))
           .toList(),
