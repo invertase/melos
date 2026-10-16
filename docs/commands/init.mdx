@@ -32,8 +32,10 @@ melos init my_workspace --directory custom_dir
 
 ### --packages (-p)
 Defines additional glob patterns for package directories
-to include in the workspace. Accepts comma-separated values and can be
-specified multiple times.
+to include in the workspace, on top of `packages/**` and, if enabled,
+`apps/**`. Accepts comma-separated values and can be specified multiple times.
+Packages that already exist and match one of the patterns are added to the
+`workspace` list of the created `pubspec.yaml`.
 
 ```bash
 melos init --packages "modules/*" --packages "libs/*"
@@ -56,23 +58,24 @@ The command creates the following structure:
 
 ```
 <directory>/
-├── melos.yaml    # Workspace configuration
-├── pubspec.yaml  # Root package configuration
+├── pubspec.yaml  # Root package and Melos workspace configuration
 ├── packages/     # Packages directory (always created)
 └── apps/         # Apps directory (created if confirmed during setup)
 ```
 
-### melos.yaml
-Contains the workspace configuration with:
-- Workspace name
-- Package locations (defaults to ['packages/*'] and optionally 'apps/*')
-- Additional package glob patterns (if specified via --packages)
+No `melos.yaml` file is created: Melos is configured in the `melos` section of
+the root `pubspec.yaml`, see the [configuration overview](/configuration/overview).
 
 ### pubspec.yaml
 Contains the root package configuration with:
 - Project name (same as workspace name)
 - Dart SDK constraints (based on current Dart version)
 - Melos as a dev dependency
+- A `workspace` list with the paths of the packages that already exist in
+  `packages/`, `apps/` (if enabled) and the `--packages` patterns. It is omitted
+  when no packages exist yet; add your packages to it once you have created
+  them.
+- An empty `melos` section
 
 ## Example
 

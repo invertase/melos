@@ -29,7 +29,9 @@ melos:
 ```
 
 When using a self-hosted GitHub, GitLab, Bitbucket or Azure DevOps instance,
-you can specify the repository location like this:
+you can specify the repository location like this. All four fields `type`,
+`origin`, `owner` and `name` are required, and `type` is one of `github`,
+`gitlab`, `bitbucket` or `azuredevops` (case-insensitive):
 
 ```yaml
 melos:
@@ -83,7 +85,7 @@ directly to the terminal and are therefore not affected.
 If the option is specified though multiple mechanisms, the precedence from
 highest to lowest is:
 
-1. `--quiet` (or `--no-quiet`) global command line option
+1. `--quiet` (`-q`, or `--no-quiet`) global command line option
 2. `MELOS_QUIET` environment variable
 3. `quiet` in the `melos` section in the root `pubspec.yaml`
 
@@ -91,6 +93,9 @@ highest to lowest is:
 melos:
   quiet: true
 ```
+
+The opposite, more detailed logging, is enabled with the `--verbose` global
+command line option, for example `melos --verbose bootstrap`.
 
 ## useRootAsPackage
 
@@ -204,12 +209,27 @@ melos:
 Total seconds to wait for a registry request. Use 0 or omit to disable the
 timeout (default).
 
+### retry
+
+Configures the exponential backoff used to retry failed requests. The
+following keys are nested under `pub/retry`.
+
 ### delayFactorMillis
 
-The delay before the first retry, which is then doubled on each subsequent 
-retry until the maxDelaySeconds is exceeded. 
+The base delay of the backoff. The delay before the n-th retry is
+`delayFactorMillis * 2^n` (so twice this value before the first retry), capped
+at `maxDelaySeconds`.
 
 Defaults to 200ms.
+
+### randomizationFactor
+
+How much each delay is randomized, to avoid many clients retrying at the same
+time. A delay is multiplied by a random value between
+`1 - randomizationFactor` and `1 + randomizationFactor`. Use `0` to disable the
+randomization.
+
+Defaults to 0.25.
 
 
 ### maxDelaySeconds
@@ -234,9 +254,10 @@ Melos scripts.
 Each entry can be a specific path or a [glob] pattern.
 
 ```yaml
-ignore:
-  # e.g. ignore example apps
-  - 'packages/**/example'
+melos:
+  ignore:
+    # e.g. ignore example apps
+    - 'packages/**/example'
 ```
 
 ## categories
@@ -546,12 +567,13 @@ chore(release): publish packages
 ```
 
 ```yaml
-command:
-  version:
-    message: |
-      chore: cut package releases 🎉
+melos:
+  command:
+    version:
+      message: |
+        chore: cut package releases 🎉
 
-      {new_package_versions}
+        {new_package_versions}
 ```
 
 ### branch
@@ -782,7 +804,9 @@ Whether to include commit bodies in the changelog. Defaults to `false`.
 
 #### onlyBreaking
 
-Whether to include only breaking changes in the changelog. Defaults to `true`.
+Whether to include commit bodies only for breaking changes. This does not filter
+the changelog entries themselves, only which entries get their commit body.
+Defaults to `true`.
 
 ### changelogFormat
 

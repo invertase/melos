@@ -64,13 +64,14 @@ melos:
 Another common use case is to run `flutter clean` in all Flutter packages;
 
 ```yaml
-# melos.yaml
+# root pubspec.yaml
 # ...
-command:
-  clean:
-    hooks:
-      # Runs "flutter clean" in all Flutter packages (`--flutter`)
-      # with a concurrency of 3 at a time (`--concurrency=3`).
-      post: melos exec --flutter --concurrency=3 -- "flutter clean"
+melos:
+  command:
+    clean:
+      hooks:
+        # Runs "flutter clean" in all Flutter packages (`--flutter`)
+        # with a concurrency of 3 at a time (`--concurrency=3`).
+        post: melos exec --flutter --concurrency=3 -- "flutter clean"
 # ...
 ```

@@ -28,7 +28,7 @@ class PublishCommand extends MelosCommand {
       publishOptionServer,
       help:
           'The URL of the package server to publish to. '
-          'Overrides the pubServer option in melos.yaml.',
+          'Overrides the pubServer option in the root pubspec.yaml.',
     );
     argParser.addFlag(
       publishOptionSkipValidation,

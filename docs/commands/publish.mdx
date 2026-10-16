@@ -14,7 +14,7 @@ pub.dev. `dry-run` is enabled by default.
 melos publish
 ```
 
-## --dry-run
+## --[no-]dry-run (-n)
 
 Flags whether to publish the packages as a dry run (validate but do not
 publish). Defaults to `true`.
@@ -39,14 +39,16 @@ in `pubspec.yaml`.
 melos publish --no-dry-run --server https://pub.flutter-io.cn
 ```
 
-This can also be set workspace-wide in `melos.yaml` via the `pubServer` option
-under `command/publish`, so you don't have to pass it on every invocation:
+This can also be set workspace-wide in the root `pubspec.yaml` via the
+`pubServer` option under `command/publish`, so you don't have to pass it on
+every invocation:
 
 ```yaml
-# melos.yaml
-command:
-  publish:
-    pubServer: https://pub.flutter-io.cn
+# root pubspec.yaml
+melos:
+  command:
+    publish:
+      pubServer: https://pub.flutter-io.cn
 ```
 
 The CLI flag takes precedence over the `pubServer` config value when both are
@@ -65,6 +67,15 @@ melos publish --no-dry-run --skip-validation
 
 Note that melos already forwards `--force` to `dart pub publish` when running
 with `--no-dry-run`, since the confirmation prompt is handled by melos itself.
+
+## --yes (-y)
+
+Skip the `Y/n` confirmation prompt when publishing with `--no-dry-run`, for
+example on a continuous integration server.
+
+```bash
+melos publish --no-dry-run --yes
+```
 
 ## --git-tag-version (-t)
 

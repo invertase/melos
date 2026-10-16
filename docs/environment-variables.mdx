@@ -87,6 +87,15 @@ in a script (when using `melos exec`).
 Whether the current publish is a dry run or not. This is `true` when running
 `melos publish --dry-run` and `false` otherwise.
 
+### `MELOS_TERMINAL_WIDTH`
+
+The width of the terminal, in columns, that Melos uses to wrap its output.
+Melos sets this variable for the scripts that it runs, so that a `melos`
+command invoked by a script uses the same width as the outer one. It can also
+be set by the user to override the detected width, for example on a continuous
+integration server where no terminal is attached (Melos falls back to 80
+columns there).
+
 #### What is a 'parent package'
 
 If an example package exists in a directory that is a child of another package,
