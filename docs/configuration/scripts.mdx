@@ -6,8 +6,9 @@ description:
 
 # Workspace Scripts
 
-Workspace scripts can be executed with `melos run` or will be executed as
-lifecycle hooks of some specific Melos commands.
+Workspace scripts can be executed with `melos run <name>`, or directly as
+`melos <name>`, or will be executed as lifecycle hooks of some specific Melos
+commands.
 
 Remember, the scripts go in the `scripts` section under the `melos` section in
 the root `pubspec.yaml` file. For readability the `melos` section is omitted in
@@ -27,7 +28,6 @@ The extends syntax allows for a more complex configuration of a script:
 ```yaml
 scripts:
   hello:
-    name: hey
     description: Greet the world
     run: echo "$GREETING World"
     env:

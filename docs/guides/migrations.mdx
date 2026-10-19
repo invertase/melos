@@ -14,11 +14,12 @@ command was specified in `run` and the `melos exec` options in `exec`:
 
 ```yaml
 # Before (no longer supported)
-scripts:
-  test:
-    run: dart test --concurrency=1
-    exec:
-      concurrency: 1
+melos:
+  scripts:
+    test:
+      run: dart test --concurrency=1
+      exec:
+        concurrency: 1
 ```
 
 `run` and `exec` are now mutually exclusive: a script either runs once in the
@@ -28,20 +29,22 @@ need to pass options to `exec`, move the command into `exec` under the new
 
 ```yaml
 # After
-scripts:
-  test:
-    exec:
-      command: dart test --concurrency=1
-      concurrency: 1
+melos:
+  scripts:
+    test:
+      exec:
+        command: dart test --concurrency=1
+        concurrency: 1
 ```
 
 The shorthand form, where `exec` is a string containing the command, is
 unchanged:
 
 ```yaml
-scripts:
-  hello:
-    exec: echo 'Hello $(dirname $PWD)'
+melos:
+  scripts:
+    hello:
+      exec: echo 'Hello $(dirname $PWD)'
 ```
 
 Melos will fail with a descriptive error, including the converted configuration,

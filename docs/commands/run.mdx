@@ -12,6 +12,12 @@ root `pubspec.yaml` config file.
 melos run <name>
 ```
 
+A script can also be run directly as `melos <name>`, without `run`:
+
+```bash
+melos <name>
+```
+
 <Info>Supports all [Melos filtering](/filters) flags.</Info>
 
 Package filter options can be passed to override or further restrict the filters
@@ -79,7 +85,7 @@ The private scripts are shown in prompts, listings and they can be executed dire
 melos run --list --include-private
 ```
 
-### --group
+### --group (-g)
 
 Filters scripts to include only those that belong to the specified group.
 

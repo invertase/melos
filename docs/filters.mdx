@@ -184,12 +184,13 @@ In [`packageFilters`](/configuration/scripts#packagefilters), the post filters
 are defined with the `postFilters` option:
 
 ```yaml
-scripts:
-  generate:
-    exec: dart run build_runner build
-    packageFilters:
-      scope: some_package
-      includeDependencies: true
-      postFilters:
-        dependsOn: build_runner
+melos:
+  scripts:
+    generate:
+      exec: dart run build_runner build
+      packageFilters:
+        scope: some_package
+        includeDependencies: true
+        postFilters:
+          dependsOn: build_runner
 ```
