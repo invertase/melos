@@ -25,18 +25,20 @@ description: >-
 - Commits are attributed to a package when they touch files inside its
   directory. Changes outside the packages, such as to the root
   `pubspec.yaml`, release nothing.
-- `melos version` finds the commits since the tag of the current version,
-  `<package>-v<version>` (plain `v<version>` for the root package and in
-  fixed mode with `workspaceTag`). The tag of the version in the pubspec must
-  exist on the branch.
+- `melos version` finds the commits since the latest release tag of the
+  package, `<package>-v<version>` (plain `v<version>` for the root package
+  and in fixed mode with `workspaceTag`). The tag of the current version is
+  used when it exists, otherwise the highest existing tag, and without any
+  tag the whole history. Keep the release tags reachable from the branch.
 - Private packages (`publish_to: none`) are skipped unless `--all` is passed
   or `versionPrivatePackages: true` is configured. Applications need that.
 - Always run `melos publish` first, it is a dry run by default. Publish for
   real with `melos publish --no-dry-run`.
 - On CI, add `--yes` to skip the confirmation prompts, and push with
   `git push --follow-tags` afterwards.
-- `melos version` fetches tags from `origin` first. On a branch without an
-  upstream, push it with `--set-upstream` or set `fetchTags: false`.
+- `melos version` runs `git pull --tags -f` first, which also merges the
+  upstream of the branch. On a branch without an upstream, push it with
+  `--set-upstream` or set `fetchTags: false`.
 - Restrict releases to one branch with `command/version/branch: main`.
 
 ## Version bumps
@@ -136,9 +138,13 @@ melos:
       pubServer: https://pub.dev
 ```
 
-Every `melos version` and `melos publish` option can be defaulted here under
-its camel cased name, except `--prerelease`, `--graduate` and
-`--manual-version`.
+Most `melos version` and `melos publish` options have a default here, but the
+key is not always the camel cased option name: `--changelog` is
+`updateChangelog`, `--dependent-constraints` is `updateDependentsConstraints`,
+`--dependent-versions` is `updateDependentsVersions`, `--all` is
+`versionPrivatePackages`, `--group-commits` is `changelogFormat/groupByType`
+and `--yes` of `melos publish` is `force`. `--prerelease`, `--graduate` and
+`--manual-version` have no key.
 
 ## Fixed (lockstep) versioning
 
@@ -173,8 +179,10 @@ never merge the hot-fix branch back.
 
 ## Anti-patterns
 
-- Bumping `version:` by hand and then running `melos version`: the tag for
-  the hand-written version does not exist, so Melos cannot find the commits.
+- Bumping `version:` by hand and then running `melos version`: there is no
+  tag for the hand-written version, so Melos falls back to the previous tag,
+  bumps the version a second time and repeats the commits since that tag in
+  the changelog.
 - Expecting a `chore:` or `ci:` commit to release a package: it does not.
 - Running `melos publish` and wondering why nothing was published: dry run
   is the default.

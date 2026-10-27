@@ -1,6 +1,8 @@
 # Configuration for `skills_lint`, which validates the agent skills that the
-# `melos` package ships in `packages/melos/skills`. Run it with
-# `dart pub global activate skills_lint && skills_lint`.
+# `melos` package ships in `packages/melos/skills`. Run it like the
+# `skills_lint` job in `.github/workflows/validate.yaml`:
+# `dart pub global activate skills_lint` and then
+# `dart pub global run skills_lint --print-warnings`.
 skills_lint:
   directories:
     - path: packages/melos/skills

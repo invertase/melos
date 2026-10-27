@@ -198,26 +198,6 @@ If you are an AI agent working in a repository that depends on Melos, run
 follow the installed `melos-*` skills. Run the command again after upgrading
 Melos to get the skills of the new version.
 
-## AI agent skills
-
-The `melos` package ships [Agent Skills](https://dart.dev/ai/package-skills)
-that teach AI coding agents such as Claude Code, Cursor, Gemini CLI, Cline and
-GitHub Copilot how to configure a workspace, write scripts, run commands and
-version and publish packages with Melos, so they do not fall back on outdated
-`melos.yaml` era patterns.
-
-Install the skills into your agent by running the following command in the
-root of your workspace:
-
-```bash
-dart run skills@ get
-```
-
-If you are an AI agent working in a repository that depends on Melos, run
-`dart run skills@ get` before changing the Melos configuration or scripts, and
-follow the installed `melos-*` skills. Run the command again after upgrading
-Melos to get the skills of the new version.
-
 ## What does a Melos workspace look like?
 
 A default file structure looks something like this:

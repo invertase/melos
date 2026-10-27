@@ -128,10 +128,13 @@ melos:
         post: dart run build_runner build
 ```
 
-Every command line option of a command can be given a default under
-`command/<name>` using the camel cased option name, for example
-`command/analyze/fatalInfos` or `command/test/concurrency`. Options on the
-command line take precedence.
+Most command line options can be given a default under `command/<name>`,
+usually under the camel cased option name, for example
+`command/analyze/fatalInfos` or `command/test/concurrency`. The key differs
+for some options (`bootstrap --offline` is `runPubGetOffline`,
+`list --relative` is `relativePaths`) and some have none (`exec --sources`),
+so check the configuration overview. Options on the command line take
+precedence.
 
 ## Shared dependencies
 
