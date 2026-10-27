@@ -1,3 +1,8 @@
+## 8.10.0
+
+ - **FEAT**: ship agent skills with the melos package ([#1110](https://github.com/invertase/melos/issues/1110)). ([290a11f0](https://github.com/invertase/melos/commit/290a11f02b3fb33719812d8cb6018f0a5d0b282d))
+ - **DOCS**: sync the docs with the current code and fix `init --packages` ([#1108](https://github.com/invertase/melos/issues/1108)). ([fb8b35bc](https://github.com/invertase/melos/commit/fb8b35bcc667aaae3ee3d62527a94c7dc97c76d6))
+
 ## 8.9.0
 
  - **REFACTOR**: remove the nullsafety package filter ([#1104](https://github.com/invertase/melos/issues/1104)). ([96fce8e8](https://github.com/invertase/melos/commit/96fce8e88ff7d7312c457a547bca5587874a1edc))
