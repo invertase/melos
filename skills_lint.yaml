@@ -1,0 +1,12 @@
+# Configuration for `skills_lint`, which validates the agent skills that the
+# `melos` package ships in `packages/melos/skills`. Run it with
+# `dart pub global activate skills_lint && skills_lint`.
+skills_lint:
+  directories:
+    - path: packages/melos/skills
+      rules:
+        check-relative-paths: error
+        check-absolute-paths: error
+        check-trailing-whitespace: error
+        published-skill-name: error
+        pub-archive-includes-skill: error
