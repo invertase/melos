@@ -81,7 +81,7 @@ dependencies:
       );
 
       expect(gitTagDependency, isNotNull);
-      expect(gitTagDependency!.version, Version(2, 0, 0));
+      expect(gitTagDependency!.minVersion, Version(2, 0, 0));
     });
     test('Does min version in git tag pattern dependency'
         ' on minor version change', () async {
@@ -142,7 +142,7 @@ dependencies:
       );
 
       expect(gitTagDependency, isNotNull);
-      expect(gitTagDependency!.version, Version(1, 1, 0));
+      expect(gitTagDependency!.minVersion, Version(1, 1, 0));
     });
     test('Does min version in git tag pattern dependency'
         ' on patch version change', () async {
@@ -203,7 +203,7 @@ dependencies:
       );
 
       expect(gitTagDependency, isNotNull);
-      expect(gitTagDependency!.version, Version(1, 0, 1));
+      expect(gitTagDependency!.minVersion, Version(1, 0, 1));
     });
     test('Does fix version in git tag pattern dependency'
         ' on version change', () async {
@@ -264,7 +264,7 @@ dependencies:
       );
 
       expect(gitTagDependency, isNotNull);
-      expect(gitTagDependency!.version, Version(1, 1, 0));
+      expect(gitTagDependency!.minVersion, Version(1, 1, 0));
     });
     test('Correctly updates package version', () async {
       final workspaceDir = await createTemporaryWorkspace(

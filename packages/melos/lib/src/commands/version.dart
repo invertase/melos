@@ -882,7 +882,7 @@ mixin _VersionMixin on _RunMixin {
     final dependency = gitTagDependency ?? normalDependency ?? devDependency;
 
     if (gitTagDependency != null) {
-      return gitTagDependency.version == nextVersion;
+      return gitTagDependency.minVersion == nextVersion;
     }
 
     if (dependency == null) {
