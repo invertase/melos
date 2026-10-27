@@ -2,26 +2,32 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:yaml/yaml.dart';
 
-// TODO: Remove this class once pubspec_parse supports tag_pattern dependencies.
 /// Represents a Git dependency that uses tag patterns for versioning.
 ///
-/// Instead of using pubspec_parse for parsing this dependency, we
-/// manually parse the pubspec string to extract the necessary fields.
-/// Though the tag_pattern feature is officially supported by dart since
-/// SDK version 3.9.0, the pubspec_parse package does not yet support it.
-/// See: [Dart SDK issue](https://github.com/dart-lang/tools/issues/2155)
+/// The pubspec string is parsed manually, instead of relying on the parsed
+/// [Pubspec], to find the section the dependency is declared in and the
+/// minimum version of its constraint, which are needed to rewrite the
+/// constraint when the dependency is versioned.
 class GitTagPatternDependency extends GitDependency {
   GitTagPatternDependency({
     required this.name,
-    required this.tagPattern,
-    required this.version,
+    required String tagPattern,
+    required VersionRange version,
     required this.section,
     required Uri url,
     String? path,
-  }) : super(url, path: path);
+  }) : minVersion = version.min!,
+       super(url, path: path, tagPattern: tagPattern, version: version);
+
   final String name;
-  final String tagPattern;
-  final Version version;
+
+  /// The minimum version allowed by the constraint of the dependency.
+  final Version minVersion;
+
+  /// The tag pattern of the dependency, which is never `null` for this type
+  /// of dependency.
+  @override
+  String get tagPattern => super.tagPattern!;
 
   /// The top-level pubspec key (`dependencies`, `dev_dependencies`, or
   /// `dependency_overrides`) this dependency was found under.
@@ -91,7 +97,7 @@ class GitTagPatternDependency extends GitDependency {
         url: Uri.parse(url),
         path: path,
         tagPattern: tagPattern,
-        version: version.min!,
+        version: version,
         section: section,
       );
     }

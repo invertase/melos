@@ -32,6 +32,21 @@ jobs:
       - name: Run Melos
         run: ./.github/workflows/scripts/install-tools.sh
 
+  # This job validates the agent skills that the `melos` package ships in
+  # `packages/melos/skills`, see `skills_lint.yaml` in the repository root.
+  skills_lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - name: Install skills_lint
+        run: dart pub global activate skills_lint
+      - name: Lint skills
+        run: dart pub global run skills_lint --print-warnings
+
   # This job ensures `melos` can be installed alongside Flutter dependencies on
   # the stable channel.
   melos_flutter_deps_check:
