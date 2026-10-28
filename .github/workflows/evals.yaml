@@ -1,0 +1,28 @@
+name: evals
+
+on:
+  pull_request:
+    paths:
+      - evals/**
+      - packages/melos/skills/**
+      - .github/workflows/evals.yaml
+
+jobs:
+  # This job checks that the agent evals in `evals/` type check and plan,
+  # without running an agent. See `evals/README.md` to run them.
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: evals
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: evals/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npx reeval run --dry-run
