@@ -1,0 +1,15 @@
+{
+  "name": "melos-evals",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "eval": "reeval run",
+    "plan": "reeval run --dry-run",
+    "typecheck": "tsc"
+  },
+  "devDependencies": {
+    "reeval": "0.15.1",
+    "typescript": "^5.9.3",
+    "yaml": "^2.9.1"
+  }
+}
