@@ -423,7 +423,7 @@ const _versioningTestCases = [
   ),
   VersioningTestCase(
     '0.1.0-dev.0+1',
-    '0.1.0+1',
+    '0.1.0+2',
     SemverReleaseType.patch,
     shouldMakeGraduateVersion: true,
   ),

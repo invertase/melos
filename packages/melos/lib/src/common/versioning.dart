@@ -67,45 +67,23 @@ Version nextStableVersion(
   Version currentVersion,
   SemverReleaseType releaseType,
 ) {
-  final Version bumpedVersion;
   if (currentVersion.major > 0) {
     // Standard semantic versioning once the version reaches 1.0.0.
-    switch (releaseType) {
-      case SemverReleaseType.major:
-        bumpedVersion = currentVersion.nextBreaking;
-      case SemverReleaseType.minor:
-        bumpedVersion = currentVersion.nextMinor;
-      case SemverReleaseType.patch:
-        bumpedVersion = currentVersion.nextPatch;
-    }
-  } else {
-    // Below 1.0.0 the interpretation of each number is shifted down one slot:
-    //   - a breaking change bumps the minor: 0.1.2 -> 0.2.0
-    //   - a new feature or a change that doesn't affect the public API bumps
-    //     the patch: 0.1.2 -> 0.1.3
-    switch (releaseType) {
-      case SemverReleaseType.major:
-        bumpedVersion = currentVersion.nextMinor;
-      case SemverReleaseType.minor:
-      case SemverReleaseType.patch:
-        bumpedVersion = currentVersion.nextPatch;
-    }
+    return switch (releaseType) {
+      SemverReleaseType.major => currentVersion.nextBreaking,
+      SemverReleaseType.minor => currentVersion.nextMinor,
+      SemverReleaseType.patch => currentVersion.nextPatch,
+    };
   }
-
-  // Retain and increment an integer build number (e.g. `+11` -> `+12`) when the
-  // current version has one. Non-integer or multi-component build metadata
-  // (prerelease-style tags, git hashes, dot-separated builds) is not retained.
-  final currentBuildNumber = _integerBuildNumber(currentVersion);
-  if (currentBuildNumber != null) {
-    return Version(
-      bumpedVersion.major,
-      bumpedVersion.minor,
-      bumpedVersion.patch,
-      build: (currentBuildNumber + 1).toString(),
-    );
-  }
-
-  return bumpedVersion;
+  // Below 1.0.0 the interpretation of each number is shifted down one slot:
+  //   - a breaking change bumps the minor: 0.1.2 -> 0.2.0
+  //   - a new feature or a change that doesn't affect the public API bumps
+  //     the patch: 0.1.2 -> 0.1.3
+  return switch (releaseType) {
+    SemverReleaseType.major => currentVersion.nextMinor,
+    SemverReleaseType.minor ||
+    SemverReleaseType.patch => currentVersion.nextPatch,
+  };
 }
 
 /// Returns the build number of [version] if its build metadata is a single
@@ -140,15 +118,11 @@ Version nextPrereleaseVersion(
       nextPreidInt = 0;
     }
 
-    final currentBuildNumber = _integerBuildNumber(currentVersion);
     return Version(
       currentVersion.major,
       currentVersion.minor,
       currentVersion.patch,
       pre: '$nextPreidName.$nextPreidInt',
-      build: currentBuildNumber == null
-          ? null
-          : (currentBuildNumber + 1).toString(),
     );
   }
 
@@ -158,15 +132,46 @@ Version nextPrereleaseVersion(
     nextVersion.minor,
     nextVersion.patch,
     pre: '$preid.0',
-    build: nextVersion.build.isNotEmpty ? nextVersion.build.join('.') : null,
   );
 }
 
+/// Returns the next version of [currentVersion].
+///
+/// An integer build number (e.g. `+11`) is retained and incremented on every
+/// version bump. Non-integer or multi-component build metadata
+/// (prerelease-style tags, git hashes, dot-separated builds) is not retained.
 Version nextVersion(
   Version currentVersion,
   SemverReleaseType releaseType, {
   bool graduate = false,
   bool prerelease = false,
+  String? preid,
+}) {
+  final next = _nextVersionWithoutBuild(
+    currentVersion,
+    releaseType,
+    graduate: graduate,
+    prerelease: prerelease,
+    preid: preid,
+  );
+  final currentBuildNumber = _integerBuildNumber(currentVersion);
+  if (currentBuildNumber == null) {
+    return next;
+  }
+  return Version(
+    next.major,
+    next.minor,
+    next.patch,
+    pre: next.isPreRelease ? next.preRelease.join('.') : null,
+    build: '${currentBuildNumber + 1}',
+  );
+}
+
+Version _nextVersionWithoutBuild(
+  Version currentVersion,
+  SemverReleaseType releaseType, {
+  required bool graduate,
+  required bool prerelease,
   String? preid,
 }) {
   var requestedPreidOrDefault = preid ?? 'dev';
@@ -228,9 +233,6 @@ Version nextVersion(
       currentVersion.major,
       currentVersion.minor,
       currentVersion.patch,
-      build: currentVersion.build.isNotEmpty
-          ? currentVersion.build.join('.')
-          : null,
     );
   }
 
@@ -279,9 +281,6 @@ Version nextVersion(
       nextMajorStable.minor,
       nextMajorStable.patch,
       pre: '1.0.nullsafety.0',
-      build: nextMajorStable.build.isNotEmpty
-          ? nextMajorStable.build.join('.')
-          : null,
     );
   }
 
@@ -318,7 +317,6 @@ Version nextVersion(
       baseVersion.minor,
       baseVersion.patch,
       pre: '1.0.nullsafety.0',
-      build: baseVersion.build.isNotEmpty ? baseVersion.build.join('.') : null,
     );
   }
 
@@ -351,9 +349,6 @@ Version nextVersion(
       currentVersion.minor,
       currentVersion.patch,
       pre: '$nextPreMajor.$nextPreMinor.$requestedPreidOrDefault.$nextPrePatch',
-      build: currentVersion.build.isNotEmpty
-          ? currentVersion.build.join('.')
-          : null,
     );
   }
 
