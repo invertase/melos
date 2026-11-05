@@ -24,7 +24,8 @@ class AggregateChangelog {
   final List<MelosPendingPackageUpdate> pendingPackageUpdates;
   final String path;
 
-  String get _changelogFileHeader => '''
+  String get _changelogFileHeader =>
+      '''
 # Change Log
 
 ${description?.withoutTrailing('\n') ?? ''}
@@ -37,21 +38,42 @@ ${description?.withoutTrailing('\n') ?? ''}
   String _packageVersionMarkdownAnchor(MelosPendingPackageUpdate update) {
     // ignore: prefer_interpolation_to_compose_strings
     return '#' +
-        _packageVersionTitle(update)
-            .replaceAll(' ', '-')
-            .replaceAll(RegExp('[^a-zA-Z_0-9-]'), '');
+        _packageVersionTitle(
+          update,
+        ).replaceAll(' ', '-').replaceAll(RegExp('[^a-zA-Z_0-9-]'), '');
   }
 
   String get markdown {
     final body = StringBuffer();
-    final dependencyOnlyPackages = pendingPackageUpdates
-        .where((update) => update.reason == PackageUpdateReason.dependency);
+    final dependencyOnlyPackages = pendingPackageUpdates.where(
+      (update) => update.reason == PackageUpdateReason.dependency,
+    );
+    final lockstepOnlyPackages = pendingPackageUpdates.where(
+      (update) => update.reason == PackageUpdateReason.lockstep,
+    );
+    // Only packages graduated without any new commits since the last
+    // pre-release are listed in the dedicated graduation section. Graduated
+    // packages with new commits are treated like regular changes so their
+    // commits appear in the changelog.
     final graduatedPackages = pendingPackageUpdates
-        .where((update) => update.reason == PackageUpdateReason.graduate);
-    final packagesWithBreakingChanges =
-        pendingPackageUpdates.where((update) => update.hasBreakingChanges);
-    final packagesWithOtherChanges =
-        pendingPackageUpdates.where((update) => !update.hasBreakingChanges);
+        .where(
+          (update) =>
+              update.reason == PackageUpdateReason.graduate &&
+              !update.hasChangelogCommits,
+        )
+        .toSet();
+    final packagesWithBreakingChanges = pendingPackageUpdates.where(
+      (update) =>
+          !graduatedPackages.contains(update) &&
+          update.reason != PackageUpdateReason.lockstep &&
+          update.hasBreakingChanges,
+    );
+    final packagesWithOtherChanges = pendingPackageUpdates.where(
+      (update) =>
+          !graduatedPackages.contains(update) &&
+          update.reason != PackageUpdateReason.lockstep &&
+          !update.hasBreakingChanges,
+    );
 
     body.writeln(_changelogFileHeader);
     body.writeln('## $newEntryTitle');
@@ -115,6 +137,20 @@ ${description?.withoutTrailing('\n') ?? ''}
         body.writeln(' - ${_packageVersionTitle(update)}');
       }
     }
+    if (lockstepOnlyPackages.isNotEmpty) {
+      body.writeln();
+      body.writeln('Packages versioned in lockstep only:');
+      body.writeln();
+      body.writeln(
+        '> Packages listed below have no changes of their own. Their versions '
+        'have been bumped to keep all packages in this workspace in '
+        'lockstep.',
+      );
+      body.writeln();
+      for (final update in lockstepOnlyPackages) {
+        body.writeln(' - ${_packageVersionTitle(update)}');
+      }
+    }
     if (packagesWithOtherChanges.isNotEmpty ||
         packagesWithBreakingChanges.isNotEmpty) {
       final allChanges = packagesWithBreakingChanges.toList()
@@ -133,7 +169,7 @@ ${description?.withoutTrailing('\n') ?? ''}
         body.writeln('#### ${_packageVersionTitle(update)}');
         body.writeln();
 
-        body.writePackageUpdateChanges(update);
+        body.writePackageUpdateChanges(update, groupHeadingPrefix: '#####');
       }
     }
 
@@ -152,7 +188,9 @@ ${description?.withoutTrailing('\n') ?? ''}
   Future<String> read() async {
     if (fileExists(absolutePath)) {
       final contents = await readTextFileAsync(absolutePath);
-      return contents.replaceFirst(_changelogFileHeader, '');
+      return contents
+          .replaceAll('\r\n', '\n')
+          .replaceFirst(_changelogFileHeader, '');
     }
     return '';
   }

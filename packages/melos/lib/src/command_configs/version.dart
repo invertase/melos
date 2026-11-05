@@ -4,7 +4,19 @@ import 'package:meta/meta.dart';
 import '../../melos.dart';
 import '../common/validation.dart';
 import '../lifecycle_hooks/version.dart';
-import '../workspace_configs.dart';
+import '../workspace_config.dart';
+
+/// The mode in which packages in the workspace are versioned.
+enum VersioningMode {
+  /// Each package is versioned independently, based on its own changes.
+  independent,
+
+  /// All packages in the workspace are versioned together (also known as
+  /// lockstep versioning): every versioning run bumps all packages to the
+  /// same new version, which is determined by the most significant change
+  /// across the whole workspace.
+  fixed,
+}
 
 /// Configurations for `melos version`.
 @immutable
@@ -19,10 +31,24 @@ class VersionCommandConfigs {
     this.commitBodyOnlyBreaking = true,
     this.updateGitTagRefs = false,
     this.releaseUrl = false,
+    this.mode = VersioningMode.independent,
+    this.workspaceTag = false,
     List<AggregateChangelogConfig>? aggregateChangelogs,
     this.fetchTags = true,
     this.hooks = VersionLifecycleHooks.empty,
     this.includeDateInChangelogEntry = false,
+    this.groupChangelogEntriesByType = false,
+    this.smartDependents = false,
+    this.updateChangelog,
+    this.updateDependentsConstraints,
+    this.updateDependentsVersions,
+    this.gitTagVersion,
+    this.gitCommitVersion,
+    this.signOff,
+    this.force,
+    this.versionPrivatePackages,
+    this.preid,
+    this.dependentPreid,
   }) : _aggregateChangelogs = aggregateChangelogs;
 
   factory VersionCommandConfigs.fromYaml(
@@ -65,6 +91,31 @@ class VersionCommandConfigs {
       map: yaml,
       path: 'command/version',
     );
+    final smartDependents = assertKeyIsA<bool?>(
+      key: 'smartDependents',
+      map: yaml,
+      path: 'command/version',
+    );
+    final modeName = assertKeyIsA<String?>(
+      key: 'mode',
+      map: yaml,
+      path: 'command/version',
+    );
+    final mode = switch (modeName) {
+      null => VersioningMode.independent,
+      'independent' => VersioningMode.independent,
+      'fixed' => VersioningMode.fixed,
+      _ => throw MelosConfigException(
+        'The value at "command/version/mode" must be either "independent" '
+        'or "fixed" but got "$modeName".',
+      ),
+    };
+
+    final workspaceTag = assertKeyIsA<bool?>(
+      key: 'workspaceTag',
+      map: yaml,
+      path: 'command/version',
+    );
 
     final workspaceChangelog = assertKeyIsA<bool?>(
       key: 'workspaceChangelog',
@@ -74,7 +125,7 @@ class VersionCommandConfigs {
 
     final aggregateChangelogs = <AggregateChangelogConfig>[];
     if (workspaceChangelog ?? true) {
-      aggregateChangelogs.add(AggregateChangelogConfig.workspace());
+      aggregateChangelogs.add(const AggregateChangelogConfig.workspace());
     }
 
     final changelogsYaml = assertKeyIsA<List<Object?>?>(
@@ -125,6 +176,66 @@ class VersionCommandConfigs {
       path: 'command/version',
     );
 
+    final updateChangelog = assertKeyIsA<bool?>(
+      key: 'updateChangelog',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final updateDependentsConstraints = assertKeyIsA<bool?>(
+      key: 'updateDependentsConstraints',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final updateDependentsVersions = assertKeyIsA<bool?>(
+      key: 'updateDependentsVersions',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final gitTagVersion = assertKeyIsA<bool?>(
+      key: 'gitTagVersion',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final gitCommitVersion = assertKeyIsA<bool?>(
+      key: 'gitCommitVersion',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final signOff = assertKeyIsA<bool?>(
+      key: 'signOff',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final force = assertKeyIsA<bool?>(
+      key: 'force',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final versionPrivatePackages = assertKeyIsA<bool?>(
+      key: 'versionPrivatePackages',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final preid = assertKeyIsA<String?>(
+      key: 'preid',
+      map: yaml,
+      path: 'command/version',
+    );
+
+    final dependentPreid = assertKeyIsA<String?>(
+      key: 'dependentPreid',
+      map: yaml,
+      path: 'command/version',
+    );
+
     final hooksMap = assertKeyIsA<Map<Object?, Object?>?>(
       key: 'hooks',
       map: yaml,
@@ -138,7 +249,8 @@ class VersionCommandConfigs {
           )
         : VersionLifecycleHooks.empty;
 
-    final changelogCommitBodiesEntry = assertKeyIsA<Map<Object?, Object?>?>(
+    final changelogCommitBodiesEntry =
+        assertKeyIsA<Map<Object?, Object?>?>(
           key: 'changelogCommitBodies',
           map: yaml,
           path: 'command/version',
@@ -157,7 +269,8 @@ class VersionCommandConfigs {
       path: 'command/version/changelogCommitBodies',
     );
 
-    final changelogFormat = assertKeyIsA<Map<Object?, Object?>?>(
+    final changelogFormat =
+        assertKeyIsA<Map<Object?, Object?>?>(
           key: 'changelogFormat',
           map: yaml,
           path: 'command/version',
@@ -166,6 +279,12 @@ class VersionCommandConfigs {
 
     final includeDate = assertKeyIsA<bool?>(
       key: 'includeDate',
+      map: changelogFormat,
+      path: 'command/version/changelogFormat',
+    );
+
+    final groupByType = assertKeyIsA<bool?>(
+      key: 'groupByType',
       map: changelogFormat,
       path: 'command/version/changelogFormat',
     );
@@ -180,10 +299,24 @@ class VersionCommandConfigs {
       linkToCommits: linkToCommits ?? repositoryIsConfigured,
       updateGitTagRefs: updateGitTagRefs ?? false,
       releaseUrl: releaseUrl ?? false,
+      mode: mode,
+      workspaceTag: workspaceTag ?? false,
       aggregateChangelogs: aggregateChangelogs,
       fetchTags: fetchTags ?? true,
       hooks: hooks,
       includeDateInChangelogEntry: includeDate ?? false,
+      groupChangelogEntriesByType: groupByType ?? false,
+      smartDependents: smartDependents ?? false,
+      updateChangelog: updateChangelog,
+      updateDependentsConstraints: updateDependentsConstraints,
+      updateDependentsVersions: updateDependentsVersions,
+      gitTagVersion: gitTagVersion,
+      gitCommitVersion: gitCommitVersion,
+      signOff: signOff,
+      force: force,
+      versionPrivatePackages: versionPrivatePackages,
+      preid: preid,
+      dependentPreid: dependentPreid,
     );
   }
 
@@ -203,7 +336,7 @@ class VersionCommandConfigs {
   /// Whether to add commits ids in the generated CHANGELOG.md.
   final bool includeCommitId;
 
-  /// Wheter to include commit bodies in the generated CHANGELOG.md.
+  /// Whether to include commit bodies in the generated CHANGELOG.md.
   final bool includeCommitBody;
 
   /// Whether to only include commit bodies for breaking changes.
@@ -219,10 +352,30 @@ class VersionCommandConfigs {
   /// page for each package after versioning.
   final bool releaseUrl;
 
+  /// Whether to only bump dependent versions and update constraints when
+  /// declared SemVer constraints do not allow the updated version.
+  final bool smartDependents;
+
+  /// The mode in which packages in the workspace are versioned.
+  ///
+  /// In [VersioningMode.fixed] mode, every versioning run bumps all packages
+  /// to the same new version, which is determined by the most significant
+  /// change across the whole workspace. Defaults to
+  /// [VersioningMode.independent].
+  final VersioningMode mode;
+
+  /// Whether to tag releases with a single plain version tag for the whole
+  /// workspace, e.g. `v1.2.3`, instead of one tag per package, e.g.
+  /// `package_name-v1.2.3`.
+  ///
+  /// Only supported in [VersioningMode.fixed] mode, since all packages share
+  /// the same version there. Defaults to `false`.
+  final bool workspaceTag;
+
   /// A list of changelogs configurations that will be used to generate
   /// changelogs which describe the changes in multiple packages.
   List<AggregateChangelogConfig> get aggregateChangelogs =>
-      _aggregateChangelogs ?? [AggregateChangelogConfig.workspace()];
+      _aggregateChangelogs ?? [const AggregateChangelogConfig.workspace()];
 
   final List<AggregateChangelogConfig>? _aggregateChangelogs;
 
@@ -235,6 +388,63 @@ class VersionCommandConfigs {
   /// Whether to include the date in the changelog entry in format `yyyy-MM-dd`.
   final bool includeDateInChangelogEntry;
 
+  /// Whether to group changelog entries by their conventional commit type
+  /// (e.g. all features under a "Features" header, all fixes under a
+  /// "Bug Fixes" header) instead of listing them in a single flat list.
+  final bool groupChangelogEntriesByType;
+
+  /// Whether to update the `CHANGELOG.md` files of versioned packages.
+  ///
+  /// The default is `true`.
+  final bool? updateChangelog;
+
+  /// Whether to update the dependency version constraints of packages that
+  /// depend on any of the packages that are versioned.
+  ///
+  /// The default is `true`.
+  final bool? updateDependentsConstraints;
+
+  /// Whether to make a new patch version and changelog entry in packages that
+  /// are updated because of [updateDependentsConstraints].
+  ///
+  /// The default is `true`.
+  final bool? updateDependentsVersions;
+
+  /// Whether to tag the release.
+  ///
+  /// The default is `true`.
+  final bool? gitTagVersion;
+
+  /// Whether to commit the changes made to `pubspec.yaml` and changelog files.
+  ///
+  /// Disabling this also disables [gitTagVersion]. The default is `true`.
+  final bool? gitCommitVersion;
+
+  /// Whether to add a `Signed-off-by` trailer to the version commit.
+  ///
+  /// The default is `false`.
+  final bool? signOff;
+
+  /// Whether to skip the confirmation prompt.
+  ///
+  /// The default is `false`.
+  final bool? force;
+
+  /// Whether to also version private packages, which are skipped by default.
+  ///
+  /// The default is `false`.
+  final bool? versionPrivatePackages;
+
+  /// The prerelease identifier to use when versioning packages as a
+  /// prerelease, e.g. `nullsafety` for a `1.0.0-1.0.nullsafety.0` version.
+  final String? preid;
+
+  /// The prerelease identifier to use for packages that are versioned because
+  /// of a change in a dependency version.
+  ///
+  /// Falls back to [preid] when not set.
+  final String? dependentPreid;
+
   Map<String, Object?> toJson() {
     return {
       if (branch != null) 'branch': branch,
@@ -243,13 +453,31 @@ class VersionCommandConfigs {
       'includeCommitId': includeCommitId,
       'linkToCommits': linkToCommits,
       'updateGitTagRefs': updateGitTagRefs,
-      'aggregateChangelogs':
-          aggregateChangelogs.map((config) => config.toJson()).toList(),
+      'smartDependents': smartDependents,
+      'mode': mode.name,
+      'workspaceTag': workspaceTag,
+      'aggregateChangelogs': aggregateChangelogs
+          .map((config) => config.toJson())
+          .toList(),
       'fetchTags': fetchTags,
       'hooks': hooks.toJson(),
       'changelogFormat': {
         'includeDate': includeDateInChangelogEntry,
+        'groupByType': groupChangelogEntriesByType,
       },
+      if (updateChangelog != null) 'updateChangelog': updateChangelog,
+      if (updateDependentsConstraints != null)
+        'updateDependentsConstraints': updateDependentsConstraints,
+      if (updateDependentsVersions != null)
+        'updateDependentsVersions': updateDependentsVersions,
+      if (gitTagVersion != null) 'gitTagVersion': gitTagVersion,
+      if (gitCommitVersion != null) 'gitCommitVersion': gitCommitVersion,
+      if (signOff != null) 'signOff': signOff,
+      if (force != null) 'force': force,
+      if (versionPrivatePackages != null)
+        'versionPrivatePackages': versionPrivatePackages,
+      if (preid != null) 'preid': preid,
+      if (dependentPreid != null) 'dependentPreid': dependentPreid,
     };
   }
 
@@ -261,29 +489,64 @@ class VersionCommandConfigs {
       other.message == message &&
       other.includeScopes == includeScopes &&
       other.includeCommitId == includeCommitId &&
+      other.includeCommitBody == includeCommitBody &&
+      other.commitBodyOnlyBreaking == commitBodyOnlyBreaking &&
       other.linkToCommits == linkToCommits &&
       other.updateGitTagRefs == updateGitTagRefs &&
       other.releaseUrl == releaseUrl &&
-      const DeepCollectionEquality()
-          .equals(other.aggregateChangelogs, aggregateChangelogs) &&
+      other.smartDependents == smartDependents &&
+      other.mode == mode &&
+      other.workspaceTag == workspaceTag &&
+      const DeepCollectionEquality().equals(
+        other.aggregateChangelogs,
+        aggregateChangelogs,
+      ) &&
       other.fetchTags == fetchTags &&
       other.hooks == hooks &&
-      other.includeDateInChangelogEntry == includeDateInChangelogEntry;
+      other.includeDateInChangelogEntry == includeDateInChangelogEntry &&
+      other.groupChangelogEntriesByType == groupChangelogEntriesByType &&
+      other.updateChangelog == updateChangelog &&
+      other.updateDependentsConstraints == updateDependentsConstraints &&
+      other.updateDependentsVersions == updateDependentsVersions &&
+      other.gitTagVersion == gitTagVersion &&
+      other.gitCommitVersion == gitCommitVersion &&
+      other.signOff == signOff &&
+      other.force == force &&
+      other.versionPrivatePackages == versionPrivatePackages &&
+      other.preid == preid &&
+      other.dependentPreid == dependentPreid;
 
   @override
-  int get hashCode =>
-      runtimeType.hashCode ^
-      branch.hashCode ^
-      message.hashCode ^
-      includeScopes.hashCode ^
-      includeCommitId.hashCode ^
-      linkToCommits.hashCode ^
-      updateGitTagRefs.hashCode ^
-      releaseUrl.hashCode ^
-      const DeepCollectionEquality().hash(aggregateChangelogs) ^
-      fetchTags.hashCode ^
-      hooks.hashCode ^
-      includeDateInChangelogEntry.hashCode;
+  int get hashCode => Object.hashAll([
+    runtimeType,
+    branch,
+    message,
+    includeScopes,
+    includeCommitId,
+    includeCommitBody,
+    commitBodyOnlyBreaking,
+    linkToCommits,
+    updateGitTagRefs,
+    releaseUrl,
+    smartDependents,
+    mode,
+    workspaceTag,
+    const DeepCollectionEquality().hash(aggregateChangelogs),
+    fetchTags,
+    hooks,
+    includeDateInChangelogEntry,
+    groupChangelogEntriesByType,
+    updateChangelog,
+    updateDependentsConstraints,
+    updateDependentsVersions,
+    gitTagVersion,
+    gitCommitVersion,
+    signOff,
+    force,
+    versionPrivatePackages,
+    preid,
+    dependentPreid,
+  ]);
 
   @override
   String toString() {
@@ -296,10 +559,24 @@ VersionCommandConfigs(
   linkToCommits: $linkToCommits,
   updateGitTagRefs: $updateGitTagRefs,
   releaseUrl: $releaseUrl,
+  smartDependents: $smartDependents,
+  mode: ${mode.name},
+  workspaceTag: $workspaceTag,
   aggregateChangelogs: $aggregateChangelogs,
   fetchTags: $fetchTags,
   hooks: $hooks,
   includeDateInChangelogEntry: $includeDateInChangelogEntry,
+  groupChangelogEntriesByType: $groupChangelogEntriesByType,
+  updateChangelog: $updateChangelog,
+  updateDependentsConstraints: $updateDependentsConstraints,
+  updateDependentsVersions: $updateDependentsVersions,
+  gitTagVersion: $gitTagVersion,
+  gitCommitVersion: $gitCommitVersion,
+  signOff: $signOff,
+  force: $force,
+  versionPrivatePackages: $versionPrivatePackages,
+  preid: $preid,
+  dependentPreid: $dependentPreid,
 )''';
   }
 }

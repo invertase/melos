@@ -14,9 +14,12 @@ import 'package:yaml/yaml.dart';
 Matcher ignoringDependencyMessages(String expected) {
   return predicate(
     (actual) {
-      final normalizedActual = actual
+      final filtered = actual
           .toString()
           .split('\n')
+          // Strip Windows CMD prompt prefix (e.g. "C:\path>") from the
+          // beginning of lines so that the rest of the line is preserved.
+          .map((line) => line.replaceFirst(RegExp(r'^[A-Za-z]:\\[^>]*>'), ''))
           .where(
             (line) =>
                 !line.startsWith('Resolving dependencies...') &&
@@ -24,15 +27,48 @@ Matcher ignoringDependencyMessages(String expected) {
                 !line.startsWith('Got dependencies!') &&
                 // Removes lines like "  pub_updater 0.4.0 (0.5.0 available)"
                 !(line.startsWith('  ') && line.contains(' available)')) &&
+                // Removes lines like "! pkg 1.0.0 from path ... (overridden)"
+                !line.startsWith('! ') &&
+                !line.startsWith('No dependencies would change in') &&
+                !line.startsWith('Would change') &&
                 !line.contains(
                   'newer versions incompatible with dependency constraints',
                 ) &&
-                !line.startsWith(
-                  'Try `dart pub outdated` for more information.',
-                ),
+                !(line.startsWith('Try ') && line.contains('pub outdated')) &&
+                // Removes Windows CMD banner lines
+                !line.startsWith('Microsoft Windows [Version') &&
+                !line.startsWith('(c) Microsoft Corporation'),
           )
-          .join('\n');
-      return ignoringAnsii(expected).matches(normalizedActual, {});
+          .toList();
+
+      // Collapse consecutive blank lines into one and strip leading/trailing
+      // blank lines so that platform differences in blank-line count don't
+      // cause spurious test failures.
+      String collapseBlankLines(List<String> lines) {
+        final result = <String>[];
+        var prevBlank = false;
+        for (final line in lines) {
+          final isBlank = line.trim().isEmpty;
+          if (isBlank) {
+            if (!prevBlank) result.add('');
+            prevBlank = true;
+          } else {
+            result.add(line);
+            prevBlank = false;
+          }
+        }
+        while (result.isNotEmpty && result.first.trim().isEmpty) {
+          result.removeAt(0);
+        }
+        while (result.isNotEmpty && result.last.trim().isEmpty) {
+          result.removeLast();
+        }
+        return result.join('\n');
+      }
+
+      final normalizedActual = collapseBlankLines(filtered);
+      final normalizedExpected = collapseBlankLines(expected.split('\n'));
+      return ignoringAnsii(normalizedExpected).matches(normalizedActual, {});
     },
     'ignores dependency resolution messages',
   );
@@ -46,7 +82,7 @@ Matcher ignoringAnsii(Object? matcher) {
 
 class _IgnoringAnsii extends CustomMatcher {
   _IgnoringAnsii(Object? matcher)
-      : super('String ignoring Ansii', 'String', matcher);
+    : super('String ignoring Ansii', 'String', matcher);
 
   @override
   Object? featureValueOf(covariant String actual) {
@@ -56,7 +92,7 @@ class _IgnoringAnsii extends CustomMatcher {
 
 class _PackageNameMatcher extends CustomMatcher {
   _PackageNameMatcher(Object? matcher)
-      : super('package named', 'name', matcher);
+    : super('package named', 'name', matcher);
 
   @override
   Object? featureValueOf(Object? actual) => (actual! as Package).name;

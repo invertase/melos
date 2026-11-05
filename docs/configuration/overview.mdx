@@ -1,30 +1,20 @@
 ---
 title: Configuration overview
-description: Configure Melos using the `melos.yaml` file.
+description: Configure Melos using the `pubspec.yaml` file.
 ---
 
 # Configuration Overview
 
-Every project requires a `melos.yaml` project in the root. The below outlines
-all the configurable fields and their purpose.
-
-Additionally, projects may include a `melos_overrides.yaml` file to override any
-`melos.yaml` field. This is useful for making untracked customizations to a
-project.
-
-## name
-
-<Warning>Required</Warning>
-
-The name of this project for display purposes within IO environments and IDEs.
-
-```yaml
-name: my_project
-```
+Every workspace requires a `pubspec.yaml` file in the root. The below outlines
+all the configurable fields for the `melos` section of the `pubspec.yaml` file.
 
 ## repository
 
 The URL of the git repository that contains the Melos workspace.
+
+If this is defined on the top level in the pubspec file you don't have to
+define it here, but if it's not just a URL you have to define it in the
+`melos` section, since pubspec only supports strings for the repository field.
 
 Supported hosts:
 
@@ -34,25 +24,29 @@ Supported hosts:
 - Azure DevOps (https://dev.azure.com)
 
 ```yaml
-repository: https://github.com/invertase/melos
+melos:
+  repository: https://github.com/invertase/melos
 ```
 
 When using a self-hosted GitHub, GitLab, Bitbucket or Azure DevOps instance,
-you can specify the repository location like this:
+you can specify the repository location like this. All four fields `type`,
+`origin`, `owner` and `name` are required, and `type` is one of `github`,
+`gitlab`, `bitbucket` or `azuredevops` (case-insensitive):
 
 ```yaml
-repository:
-  type: gitlab
-  origin: https://gitlab.example.dev
-  owner: invertase
-  name: melos
+melos:
+  repository:
+    type: gitlab
+    origin: https://gitlab.example.dev
+    owner: invertase
+    name: melos
 ```
 
 ## sdkPath
 
 Path to the Dart/Flutter SDK that should be used.
 
-Relative paths are resolved relative to the `melos.yaml` file.
+Relative paths are resolved relative to the root `pubspec.yaml` file.
 
 To use the system-wide SDK, provide the special value "auto".
 
@@ -61,72 +55,228 @@ highest to lowest is:
 
 1. `--sdk-path` global command line option
 2. `MELOS_SDK_PATH` environment variable
-3. `sdkPath` in `melos.yaml`
+3. `sdkPath` in the `melos` section in the root `pubspec.yaml`
 
 ```yaml
-sdkPath: .fvm/flutter_sdk
+melos:
+  sdkPath: .fvm/flutter_sdk
 ```
 
-## packages
+The configured SDK is also used to resolve the dependencies of, and run, the
+local installation of Melos in the workspace, so no system-wide Dart or Flutter
+SDK is required.
 
-<Warning>Required</Warning>
+## quiet
 
-A list of paths to local packages that are included in the Melos workspace. Each
-entry can be a specific path or a [glob] pattern.
+Whether to only print warnings, errors and the output of failed commands.
+Defaults to `false`.
+
+This keeps the logs of large workspaces readable, for example on a continuous
+integration server. When a command such as `melos analyze`, `melos format`,
+`melos test`, `melos exec` or `melos run` succeeds, nothing is printed. When it
+fails, only the output of the packages or scripts that failed is printed,
+followed by the summary of the failures. The results of commands like
+`melos list` are always printed.
+
+The output of a package or script is buffered until it has finished, so that it
+can be dropped when it succeeded. Scripts that use `stdio: inherit` write
+directly to the terminal and are therefore not affected.
+
+If the option is specified though multiple mechanisms, the precedence from
+highest to lowest is:
+
+1. `--quiet` (`-q`, or `--no-quiet`) global command line option
+2. `MELOS_QUIET` environment variable
+3. `quiet` in the `melos` section in the root `pubspec.yaml`
 
 ```yaml
-packages:
-  # Include the package in the workspace root.
-  - .
-  # Include all packages inside the `packages` directory that are direct children.
-  - packages/*
-  # Include all packages inside the `packages` directory and all descendants.
-  - packages/**
+melos:
+  quiet: true
 ```
 
-<Info>
-  You can also reduce the scope of packages on a per-command basis via the
-  [`--scope` filter](/filters#--scope) flag.
-</Info>
+The opposite, more detailed logging, is enabled with the `--verbose` global
+command line option, for example `melos --verbose bootstrap`.
 
-Avoid recursive wildcards (`**`) as they require walking large parts of the
-file system and can be slow. If you have packages at multiple levels of depth,
-consider using multiple patterns instead:
+## useRootAsPackage
+
+Whether to include the repository root as a package in the workspace.
+
+When enabled, the root directory (containing the workspace configuration) will
+be treated as a package and included in workspace operations such as scripts,
+filtering, and categorization.
+
+Defaults to `false` for backward compatibility.
 
 ```yaml
-packages:
-  - packages/*
-  - packages/*/example
+melos:
+  useRootAsPackage: true
+  categories:
+    app:
+      - "."
+    packages:
+      - "packages/**"
 ```
+
+**Use cases:**
+- Legacy projects migrating from Melos 6.x that have main application in root
+- Projects where the primary Flutter app lives at repository root
+- When you need to apply category-based filtering to root packages
+- Single package projects (non-monorepo) that want to use Melos features like
+  versioning, publishing, and changelog generation
+
+**Single package setup:**
+For non-monorepo projects, you can use an empty workspace with
+`useRootAsPackage: true`.
+
+This allows you to leverage Melos features like `melos version`,
+`melos publish`, and `melos run` on a single package project.
+
+**Git tags:**
+The root package uses plain version tags, e.g. `v1.2.3`, instead of tags
+prefixed with the package name, e.g. `my_package-v1.2.3`, that all other
+packages use. Existing root package tags prefixed with the package name are
+still recognized when determining the commits since the last release. If tags
+of both formats exist, the one with the highest version is used, and the plain
+version tag is preferred when both have the same version.
+
+**Note:** While we recommend keeping the root directory focused on workspace
+configuration for monorepos, this option provides flexibility for existing
+project structures and enables single package usage.
+
+## discoverNestedWorkspaces
+
+Whether to recursively discover packages in nested workspaces.
+
+When enabled, Melos will, in addition to the packages matched by your
+`workspace` globs, recursively discover packages inside any workspace roots
+(`pubspec.yaml` files that define a `workspace:` field) that are found under
+those globs. This makes the behaviour of `melos list` consistent with
+`dart pub workspace list` for nested workspace structures.
+
+Defaults to `false` to preserve the existing, non-recursive behaviour.
+
+```yaml
+melos:
+  discoverNestedWorkspaces: true
+  # Example workspace layout:
+  # packages/
+  #   base/
+  #     ui/                        # workspace root with workspace: ['core', 'components']
+  #       pubspec.yaml             # defines workspace: ['core', 'components']
+  #       core/
+  #         pubspec.yaml
+  #       components/
+  #         pubspec.yaml
+  #       example/                 # nested workspace with example
+  #         pubspec.yaml           # defines workspace: ['example']
+  #         example/
+  #           pubspec.yaml
+
+workspace:
+  - packages/**        # discovers ui, core, components, example, etc.
+```
+
+**Use cases:**
+- Monorepos that already use `dart pub workspace` with nested workspaces and
+  want `melos list`/`melos run` to see the same set of packages.
+- Projects where an intermediate package acts as a workspace root and contains
+  additional packages or examples underneath it.
+
+If you prefer the previous behaviour where only the packages directly matched
+by `workspace` globs are discovered, leave `discoverNestedWorkspaces` at its
+default value `false`.
+
+## pub (timeouts and retries)
+
+Configure how Melos talks to pub (or an alternate registry) when fetching
+package metadata. Defaults usually don’t need changing.
+By default no timeout is applied (useful for large downloads); set a value if 
+you need to cap request duration.
+
+```yaml
+melos:
+  pub:
+    timeoutSeconds: 60        # optional per-request timeout; 0/omit = no timeout
+    retry:
+      delayFactorMillis: 200  # base delay; doubled each retry
+      randomizationFactor: 0.25
+      maxDelaySeconds: 30
+      maxAttempts: 8          # includes the first attempt
+```
+
+### timeoutSeconds
+
+Total seconds to wait for a registry request. Use 0 or omit to disable the
+timeout (default).
+
+### retry
+
+Configures the exponential backoff used to retry failed requests. The
+following keys are nested under `pub/retry`.
+
+### delayFactorMillis
+
+The base delay of the backoff. The delay before the n-th retry is
+`delayFactorMillis * 2^n` (so twice this value before the first retry), capped
+at `maxDelaySeconds`.
+
+Defaults to 200ms.
+
+### randomizationFactor
+
+How much each delay is randomized, to avoid many clients retrying at the same
+time. A delay is multiplied by a random value between
+`1 - randomizationFactor` and `1 + randomizationFactor`. Use `0` to disable the
+randomization.
+
+Defaults to 0.25.
+
+
+### maxDelaySeconds
+
+The maximum time to wait between retry attempts. 
+
+Defaults to 30 seconds.
+
+
+### maxAttempts
+
+The maximum number of retry attempts including the first request.
+
+Defaults to 8.
 
 ## ignore
 
 A list of paths to local packages that are excluded from the Melos workspace.
+Do note that they are not excluded for the Dart/Flutter tooling, but only for
+Melos scripts.
+
 Each entry can be a specific path or a [glob] pattern.
 
 ```yaml
-ignore:
-  # e.g. ignore example apps
-  - 'packages/**/example'
+melos:
+  ignore:
+    # e.g. ignore example apps
+    - 'packages/**/example'
 ```
 
 ## categories
 
 Categories are used to group packages together.
 
-To define custom package categories, add a `categories` section in your `melos.yaml` file.
-Under this section, you can specify category names as keys, and their corresponding values
-should be lists of glob patterns that match the packages you want to include in each category.
+To define custom package categories, add a `categories` section in your root
+`pubspec.yaml` file. Under this section, you can specify category names as keys,
+and their corresponding values should be lists of glob patterns that match the
+packages you want to include in each category.
 
 ```yaml
-# melos.yaml
-
-categories:
-  examples:
-    - packages/example*
-  alpha:
-    - packages/feature_a/*
-    - packages/feature_b
+melos:
+  categories:
+    examples:
+      - packages/example*
+    alpha:
+      - packages/feature_a/*
+      - packages/feature_b
 ```
 
 ## ide/intellij
@@ -138,12 +288,14 @@ Configuration relating to IntelliJ IDE support.
 Whether to generate IntelliJ IDEA config files to improve the developer
 experience when working in a Melos workspace.
 
-The default is `true`.
+The default is `true`. The files are never generated in a continuous integration
+environment, see [IDE support](/ide-support#intellij).
 
 ```yaml
-ide:
-  intellij:
-    enabled: false
+melos:
+  ide:
+    intellij:
+      enabled: false
 ```
 
 ### moduleNamePrefix
@@ -154,6 +306,102 @@ collisions with other IntelliJ modules you may already have in place.
 
 The default is 'melos\_'.
 
+### executeInTerminal
+
+Whether to execute the script in a terminal.
+
+The default is `true`.
+
+```yaml
+melos:
+  ide:
+    intellij:
+      executeInTerminal: false
+```
+
+### generateAppRunConfigs
+
+Whether to generate the run configurations for running Flutter apps and the
+executables of Dart packages. Test and Melos script run configurations are
+always generated.
+
+The default is `true`.
+
+```yaml
+melos:
+  ide:
+    intellij:
+      generateAppRunConfigs: false
+```
+
+### scriptNamePrefix
+
+The text prepended to generated IntelliJ run configuration names for Melos
+scripts.
+
+The default is `Melos Run -> `. Set this to an empty string to omit the prefix.
+
+```yaml
+melos:
+  ide:
+    intellij:
+      scriptNamePrefix: ""
+```
+
+### runArguments
+
+Allows specifying the entry point and additional run arguments per Flutter app
+package. This generates one IntelliJ run configuration per entry instead of the
+default single configuration.
+
+The `name` field sets the display name suffix and output filename. If `name` is
+omitted and `default: true` is set, the entry replaces the default configuration.
+
+The `entryPoint` field sets the Dart file to run, relative to the package root.
+The default is `lib/main.dart`. The `args` field sets additional arguments to
+pass to `flutter run` and can be omitted.
+
+```yaml
+melos:
+  ide:
+    intellij:
+      runArguments:
+        my_app:
+          - name: local
+            args: "--flavor local --dart-define-from-file=local.json"
+          - name: prod
+            args: "--flavor prod --dart-define-from-file=prod.json"
+          - default: true
+            args: "--flavor dev"
+```
+
+This generates:
+- `melos_flutter_run_my_app_local.xml`
+- `melos_flutter_run_my_app_prod.xml`
+- `melos_flutter_run_my_app.xml` (the default)
+
+The entries of a package must have unique names, and only one of them can be
+the default.
+
+A Flutter package without a `lib/main.dart` is only treated as a Flutter app
+when at least one of its entries has an `entryPoint` that exists, which is how
+apps with one entry point per flavor are declared:
+
+```yaml
+melos:
+  ide:
+    intellij:
+      runArguments:
+        my_app:
+          - name: development
+            entryPoint: lib/main_development.dart
+            args: "--flavor development"
+            default: true
+          - name: production
+            entryPoint: lib/main_production.dart
+            args: "--flavor production"
+```
+
 ## scripts
 
 Define custom scripts that can be executed in the workspace via the
@@ -161,22 +409,82 @@ Define custom scripts that can be executed in the workspace via the
 
 Learn more about defining scripts [here](/configuration/scripts).
 
+## command
+
+Configuration for the individual Melos commands, grouped per command under
+`command/<command name>`.
+
+Every command line option of a command can be given a default here, so it does
+not have to be typed out on every run. Options that select what a single
+invocation does rather than how the command behaves are not configurable: the
+[package filters](/filters), `melos init`, `melos run --list/--json/--group`,
+`melos list --cycles`, and `melos version --prerelease/--graduate/--manual-version`.
+
+An option passed on the command line always takes precedence over its
+configured default.
+
 ## command/bootstrap
 
 Configuration for the `bootstrap` command.
 
 ### dependencyOverridePaths
 
-A list of paths to local packages relative to the workspace directory that
-should be added to each workspace package's dependency overrides. Each entry can
-be a specific path or a [glob] pattern.
+A list of paths to local packages that should be linked into the workspace as
+`dependency_overrides`. Paths are resolved relative to the workspace directory
+and each entry can be a specific path or a [glob] pattern.
+
+During `melos bootstrap`, every matched package is written as a path-based
+`dependency_overrides` entry into the workspace root `pubspec_overrides.yaml`.
+The managed entries are tagged with a `melos_managed_dependency_overrides`
+marker comment so any user-defined entries in the same file are preserved
+across bootstraps:
+
+```yaml
+# melos_managed_dependency_overrides: my_pkg
+dependency_overrides:
+  my_pkg:
+    path: ../external_project/packages/my_pkg
+```
+
+Entries no longer matched by `dependencyOverridePaths` are removed on the next
+bootstrap. Entries without the marker comment are left untouched.
 
 **Tip:** External local packages can be referenced using paths relative to the
 workspace root.
 
 ```yaml
-dependencyOverridePaths:
-  - '../external_project/packages/**'
+melos:
+  command:
+    bootstrap:
+      dependencyOverridePaths:
+        - '../external_project/packages/**'
+```
+
+### markSharedDependencies
+
+Whether the entries that are synced from the
+[shared dependencies](/commands/bootstrap#shared-dependencies) are marked with
+a comment in the `pubspec.yaml` files of the packages, so that it is visible
+that they should be changed in the root `pubspec.yaml` file instead.
+
+```yaml
+dependencies:
+  collection: ^1.18.0 # Managed by Melos, change it in the bootstrap config of the root pubspec.yaml
+```
+
+The marker is kept up to date on every bootstrap. It is removed again from
+entries that are no longer shared, and from all entries when the option is
+disabled. This only happens while at least one shared dependency is still
+configured, since the `pubspec.yaml` files of the packages are not touched
+otherwise.
+
+The default is `false`.
+
+```yaml
+melos:
+  command:
+    bootstrap:
+      markSharedDependencies: true
 ```
 
 ### runPubGetInParallel
@@ -206,6 +514,37 @@ The default is `false`.
 To temporarily override this `melos bootstrap --no-enforce-lockfile / --enforce-lockfile` can be
 used.
 
+### noExample
+
+Whether to run `pub get` with the `--no-example` option, so the `example`
+directory of a package is not resolved.
+
+The default is `false`, which is the same as `melos bootstrap --no-example`.
+
+### noPub
+
+Whether to skip running `pub get` entirely. Shared dependencies, dependency
+overrides, IDE files and lifecycle hooks are still applied.
+
+The default is `false`, the same as `melos bootstrap --no-pub`.
+
+### pubGetArgs
+
+A list of additional arguments to pass to `pub get` during bootstrapping.
+
+This is useful when you want to pass custom flags to `pub get` for all runs of
+`melos bootstrap` without having to specify them every time.
+
+The default is an empty list.
+
+```yaml
+melos:
+  command:
+    bootstrap:
+      pubGetArgs:
+        - --no-precompile
+```
+
 ## command/version
 
 Configuration for the `version` command.
@@ -228,12 +567,13 @@ chore(release): publish packages
 ```
 
 ```yaml
-command:
-  version:
-    message: |
-      chore: cut package releases 🎉
+melos:
+  command:
+    version:
+      message: |
+        chore: cut package releases 🎉
 
-      {new_package_versions}
+        {new_package_versions}
 ```
 
 ### branch
@@ -242,10 +582,15 @@ If specified, prevents `melos version` from being used inside branches other
 than the one specified.
 
 ```yaml
-command:
-  version:
-    branch: main
+melos:
+  command:
+    version:
+      branch: main
 ```
+
+To release from another branch, such as a hot-fix branch, change this option on
+that branch. See the [Releasing from Hot-fix
+Branches](/guides/hot-fix-releases) guide.
 
 ### includeScopes
 
@@ -253,9 +598,10 @@ Whether to include conventional commit scopes in the generated CHANGELOG.md.
 Defaults to `true`.
 
 ```yaml
-command:
-  version:
-    includeScopes: false
+melos:
+  command:
+    version:
+      includeScopes: false
 ```
 
 ### includeCommitId
@@ -264,9 +610,10 @@ Whether to add short commit ids to commits (no links) in the CHANGELOG.md that
 is generated by `melos version`.
 
 ```yaml
-command:
-  version:
-    includeCommitId: true
+melos:
+  command:
+    version:
+      includeCommitId: true
 ```
 
 ### linkToCommits
@@ -278,9 +625,10 @@ Enabling this option, requires
 [`repository`](/configuration/overview#repository) to be specified.
 
 ```yaml
-command:
-  version:
-    linkToCommits: false
+melos:
+  command:
+    version:
+      linkToCommits: false
 ```
 
 ### workspaceChangelog
@@ -289,9 +637,10 @@ Whether to additionally build a CHANGELOG.md at the root of the workspace when
 running `melos version`. Defaults to `true`.
 
 ```yaml
-command:
-  version:
-    workspaceChangelog: false
+melos:
+  command:
+    version:
+      workspaceChangelog: false
 ```
 
 ### changelogs
@@ -300,14 +649,15 @@ Configure aggregate changelogs which document the changes made to multiple
 packages.
 
 ```yaml
-command:
-  version:
-    changelogs:
-      - path: FOO_CHANGELOG.md
-        description: |
-          All notable changes to foo packages will be documented in this file.
-        packageFilters:
-          scope: foo_*
+melos:
+  command:
+    version:
+      changelogs:
+        - path: FOO_CHANGELOG.md
+          description: |
+            All notable changes to foo packages will be documented in this file.
+          packageFilters:
+            scope: foo_*
 ```
 
 #### path
@@ -342,9 +692,24 @@ See the
 for more information.
 
 ```yaml
-command:
-  version:
-    updateGitTagRefs: true
+melos:
+  command:
+    version:
+      updateGitTagRefs: true
+```
+
+### smartDependents
+
+Whether to only bump dependent package versions and update constraints when
+declared SemVer constraints do not allow the updated version. When enabled,
+packages whose declared constraints already satisfy the new dependency version
+are skipped. Defaults to `false`.
+
+```yaml
+melos:
+  command:
+    version:
+      smartDependents: true
 ```
 
 ### releaseUrl
@@ -354,15 +719,70 @@ each package after versioning. Defaults to `false`.
 
 [glob]: https://docs.python.org/3/library/glob.html
 
+### mode
+
+The mode in which packages in the workspace are versioned. Either
+`independent` (the default) or `fixed`, matching the release modes of tools
+like Nx and Lerna in the JavaScript ecosystem.
+
+In `fixed` mode (also known as lockstep versioning), every `melos version` run
+bumps all packages to the same new version. The new version is based on the
+highest current version in the workspace, incremented by the most significant
+change found in any package (a breaking change anywhere causes a major bump
+for all packages, a feature a minor bump, and so on). Packages without changes
+of their own are bumped too, with a changelog entry noting that the bump keeps
+the workspace in lockstep.
+
+```yaml
+melos:
+  command:
+    version:
+      mode: fixed
+```
+
+When manually versioning with `melos version <package> <version>` in `fixed`
+mode, the specified version is applied to all packages in the workspace.
+Relative version changes (`major`, `minor`, `patch` or `build`) are applied to
+the highest current version in the workspace, regardless of which package was
+named. Specifying conflicting versions for multiple packages is an error.
+
+See the
+[version command documentation](/commands/version#fixed-versioning-mode) for
+more information.
+
+### workspaceTag
+
+Whether to tag releases with a single plain version tag for the whole
+workspace, e.g. `v1.2.3`, instead of one tag per package, e.g.
+`my_package-v1.2.3`. Defaults to `false`.
+
+This option is only supported in `fixed` [mode](#mode), since all packages
+share the same version there. When enabled, `melos version` creates one
+annotated tag per release containing the changelogs of all versioned packages,
+and determines the commits since the last release from the latest plain
+version tag. Existing tags prefixed with the package name are still recognized,
+so the option can be enabled in a workspace that was previously tagged per
+package. `melos publish` also creates the plain version tag when it tags
+published versions.
+
+```yaml
+melos:
+  command:
+    version:
+      mode: fixed
+      workspaceTag: true
+```
+
 ### fetchTags
 
 Whether to fetch tags from the `origin` remote before versioning. Defaults to
 `true`.
 
 ```yaml
-command:
-  version:
-    fetchTags: false
+melos:
+  command:
+    version:
+      fetchTags: false
 ```
 
 ### changelogCommitBodies
@@ -370,11 +790,12 @@ command:
 Configuration for including commit bodies in the changelog.
 
 ```yaml
-command:
-  version:
-    changelogCommitBodies:
-      include: true
-      onlyBreaking: false
+melos:
+  command:
+    version:
+      changelogCommitBodies:
+        include: true
+        onlyBreaking: false
 ```
 
 #### include
@@ -383,17 +804,21 @@ Whether to include commit bodies in the changelog. Defaults to `false`.
 
 #### onlyBreaking
 
-Whether to include only breaking changes in the changelog. Defaults to `true`.
+Whether to include commit bodies only for breaking changes. This does not filter
+the changelog entries themselves, only which entries get their commit body.
+Defaults to `true`.
 
 ### changelogFormat
 
 Configure the format of the generated CHANGELOG.md.
 
 ```yaml
-command:
-  version:
-    changelogFormat:
-      includeDate: true
+melos:
+  command:
+    version:
+      changelogFormat:
+        includeDate: true
+        groupByType: true
 ```
 
 #### includeDate
@@ -401,3 +826,372 @@ command:
 Whether to include the date in the generated CHANGELOG.md. Defaults to `false`.
 
 With enabled, changelog entry header will include the date in the `yyyy-MM-dd` format.
+
+#### groupByType
+
+Whether to group changelog entries by their conventional commit type. Defaults
+to `false`.
+
+When enabled, entries are grouped under a single header per type (e.g. all
+features under a `Features` header and all fixes under a `Bug Fixes` header)
+instead of being listed in a single flat list:
+
+```md
+## 1.2.0
+
+### Features
+
+ - added user authentication.
+ - implemented dark mode support.
+
+### Bug Fixes
+
+ - corrected issue with API call.
+ - resolved UI glitch on iOS.
+```
+
+This setting can be overridden per run with the `--[no-]group-commits` flag on
+`melos version`.
+
+### updateChangelog
+
+Whether to update the `CHANGELOG.md` files of the versioned packages.
+
+The default is `true`, the same as `melos version --changelog`.
+
+### updateDependentsConstraints
+
+Whether to update the dependency version constraints of packages that depend on
+any of the packages that are versioned.
+
+The default is `true`, the same as `melos version --dependent-constraints`.
+
+### updateDependentsVersions
+
+Whether to make a new patch version and changelog entry in packages that are
+updated because of [updateDependentsConstraints](#updatedependentsconstraints).
+
+Only usable with `updateDependentsConstraints` enabled. The default is `true`,
+the same as `melos version --dependent-versions`.
+
+### gitTagVersion
+
+Whether to tag the release.
+
+The default is `true`, the same as `melos version --git-tag-version`.
+
+### gitCommitVersion
+
+Whether to commit the changes made to the `pubspec.yaml` and changelog files.
+Disabling this also disables [gitTagVersion](#gittagversion).
+
+The default is `true`, the same as `melos version --git-commit-version`.
+
+### signOff
+
+Whether to add a `Signed-off-by` trailer to the version commit, the same as
+passing `--signoff` to `git commit`.
+
+The default is `false`, the same as `melos version --sign-off`.
+
+### force
+
+Whether to skip the confirmation prompt.
+
+The default is `false`, the same as `melos version --yes`.
+
+### versionPrivatePackages
+
+Whether to also version private packages, which are skipped by default.
+
+The default is `false`, the same as `melos version --all`.
+
+### preid
+
+The prerelease identifier to use when versioning packages as a prerelease, e.g.
+a `nullsafety` preid results in a version in the `1.0.0-1.0.nullsafety.0`
+format.
+
+Same as `melos version --preid`.
+
+### dependentPreid
+
+The same as [preid](#preid), but only applied to packages that are versioned
+because of a change in a dependency version. Falls back to `preid` when not
+set.
+
+Same as `melos version --dependent-preid`.
+
+## command/analyze
+
+Configuration for the `analyze` command.
+
+```yaml
+melos:
+  command:
+    analyze:
+      concurrency: 4
+      fatalInfos: false
+      fatalWarnings: true
+      noPub: true
+```
+
+### concurrency
+
+The number of packages to analyze concurrently. The default is `1`.
+
+### fatalInfos
+
+Whether info level issues are treated as fatal errors. The default is `true`.
+
+### fatalWarnings
+
+Whether warnings are treated as fatal errors. Not set by default, which leaves
+the behavior to the Dart or Flutter SDK.
+
+### noPub
+
+Whether `--no-pub` is passed to `flutter analyze`, to skip the implicit
+`pub get`. It has no effect on `dart analyze`, which never runs `pub get`.
+
+The default is `false`.
+
+## command/exec
+
+Configuration for the `exec` command. These options are also used as the
+defaults for the `exec` options of [scripts](/configuration/scripts).
+
+```yaml
+melos:
+  command:
+    exec:
+      concurrency: 4
+      failFast: true
+      orderDependents: true
+      groupLogs: true
+      ignoreSources: true
+```
+
+### concurrency
+
+The number of packages to run the command in concurrently. The default is the
+number of processors on the machine.
+
+### failFast
+
+Whether to stop executing the command in further packages as soon as it fails
+in one package. The default is `false`.
+
+### orderDependents
+
+Whether to order the execution of the command based on the dependency graph of
+the packages. The default is `false`.
+
+### groupLogs
+
+Whether the output of each package is buffered and printed grouped per package,
+instead of being streamed and interleaved. The default is `false`.
+
+### ignoreSources
+
+Whether the [`sources`](/configuration/scripts#sources) of commands are ignored,
+so that they run in every package without calculating or storing checksums. The
+default is `false`.
+
+The option is resolved in the following order, where the first one that is
+specified wins:
+
+1. `--ignore-sources` and `--no-ignore-sources` command line options
+2. `MELOS_IGNORE_SOURCES` environment variable
+3. `ignoreSources` in the workspace configuration
+
+## command/format
+
+Configuration for the `format` command.
+
+```yaml
+melos:
+  command:
+    format:
+      concurrency: 4
+      setExitIfChanged: true
+      output: none
+      lineLength: 120
+```
+
+### concurrency
+
+The number of packages to format concurrently. The default is `1`.
+
+### setExitIfChanged
+
+Whether to return exit code 1 if there are any formatting changes. The default
+is `false`.
+
+### output
+
+Where `dart format` writes its output to, one of `json`, `none`, `show` or
+`write`. The default is `write`.
+
+### lineLength
+
+The line length to format the code to.
+
+## command/list
+
+Configuration for the `list` and `changed` commands.
+
+```yaml
+melos:
+  command:
+    list:
+      long: true
+      relativePaths: true
+      format: json
+```
+
+### long
+
+Whether to show extended information. The default is `false`.
+
+### relativePaths
+
+Whether to print package paths relative to the root of the workspace. The
+default is `false`.
+
+### format
+
+The output format, one of `column`, `parsable`, `json`, `graph`, `gviz` or
+`mermaid`. The default is `column`.
+
+## command/publish
+
+Configuration for the `publish` command.
+
+```yaml
+melos:
+  command:
+    publish:
+      dryRun: false
+      gitTagVersion: true
+      force: true
+      skipValidation: true
+      pubServer: https://pub.flutter-io.cn
+```
+
+### dryRun
+
+Whether packages are validated but not actually published. The default is
+`true`.
+
+### gitTagVersion
+
+Whether to add any missing git tags for the release. Tags are only created when
+`dryRun` is disabled. The default is `false`.
+
+### force
+
+Whether to skip the confirmation prompt when `dryRun` is disabled. The default
+is `false`, the same as `melos publish --yes`.
+
+### skipValidation
+
+Whether to publish without validation and resolution, forwarded to
+`dart pub publish --skip-validation`. The default is `false`.
+
+### pubServer
+
+The URL of the package server to publish to. When not set, the per-package
+`publish_to` field in the `pubspec.yaml` is used.
+
+## command/run
+
+Configuration for the `run` command.
+
+```yaml
+melos:
+  command:
+    run:
+      noSelect: true
+```
+
+### noSelect
+
+Whether to skip the prompt that asks which package to run a script in, when the
+script defines [packageFilters](/configuration/scripts#packagefilters). The
+filters themselves are still applied.
+
+The default is `false`.
+
+## command/test
+
+Configuration for the `test` command.
+
+```yaml
+melos:
+  command:
+    test:
+      concurrency: 4
+      noPub: true
+```
+
+### concurrency
+
+The number of packages to run tests in concurrently. The default is `1`.
+
+### noPub
+
+Whether `--no-pub` is passed to `flutter test`, to skip the implicit `pub get`.
+It has no effect on `dart test`, which does not support the flag.
+
+The default is `false`.
+
+## Extension fields (`x-`)
+
+Any key prefixed with `x-` is an extension field, following the convention used
+by the Compose specification. Melos ignores these keys wherever it expects a
+fixed set of options, so they can be used to declare reusable [YAML anchors]
+without tripping up configuration or schema validation.
+
+```yaml
+melos:
+  x-analyze: &analyze
+    command: dart analyze .
+    concurrency: 1
+    orderDependents: true
+
+  scripts:
+    analyze:
+      exec: *analyze
+```
+
+`x-` is reserved in `scripts`, so an anchor can be declared next to the scripts
+that alias it. A script cannot be named `x-...`:
+
+```yaml
+melos:
+  scripts:
+    x-analyze: &analyze
+      exec:
+        command: dart analyze .
+        concurrency: 1
+
+    analyze: *analyze
+```
+
+<Warning>
+  The prefix has no special meaning in `categories` or in a script's `env`,
+  where the keys are names you choose rather than options Melos defines. An
+  `x-` key there is simply a category, or an environment variable, of that
+  name.
+</Warning>
+
+<Warning>
+  Melos parses YAML 1.2, which supports anchors and aliases but not the YAML 1.1
+  merge key (`<<`). An alias replaces a whole value; it cannot be merged into a
+  mapping that also sets other keys. In particular, an anchor aliased into
+  `exec` has to carry the `command` itself, so it can only be shared by scripts
+  that run the same command.
+</Warning>
+
+[yaml anchors]: https://yaml.org/spec/1.2.2/#692-node-anchors

@@ -7,6 +7,24 @@ import 'package:yaml/yaml.dart';
 
 import '../utils.dart';
 
+Future<void> _createPackages(Directory dir) async {
+  final packageDir = Directory(p.join(dir.absolute.path, 'packages'));
+  packageDir.createSync(recursive: true);
+  await Process.run(
+    'dart',
+    ['create', 'test_package'],
+    workingDirectory: packageDir.absolute.path,
+  );
+
+  final appDir = Directory(p.join(dir.absolute.path, 'apps'));
+  appDir.createSync(recursive: true);
+  await Process.run(
+    'dart',
+    ['create', 'test_app'],
+    workingDirectory: appDir.absolute.path,
+  );
+}
+
 void main() {
   group('init', () {
     late TestLogger logger;
@@ -44,17 +62,25 @@ void main() {
       );
       expect(Directory(p.join(workspaceDir.path, 'apps')).existsSync(), isTrue);
 
-      // Verify melos.yaml content
-      final melosYaml = loadYaml(
-        File(p.join(workspaceDir.path, 'melos.yaml')).readAsStringSync(),
-      ) as YamlMap;
+      // Verify pubspec.yaml content
+      final melosYaml =
+          loadYaml(
+                File(
+                  p.join(workspaceDir.path, 'pubspec.yaml'),
+                ).readAsStringSync(),
+              )
+              as YamlMap;
       expect(melosYaml['name'], equals('my_workspace'));
-      expect(melosYaml['packages'], equals(['apps/*', 'packages/*']));
+      expect(melosYaml['workspace'], isNull);
 
       // Verify pubspec.yaml content
-      final pubspecYaml = loadYaml(
-        File(p.join(workspaceDir.path, 'pubspec.yaml')).readAsStringSync(),
-      ) as YamlMap;
+      final pubspecYaml =
+          loadYaml(
+                File(
+                  p.join(workspaceDir.path, 'pubspec.yaml'),
+                ).readAsStringSync(),
+              )
+              as YamlMap;
       expect(pubspecYaml['name'], equals('my_workspace'));
       expect(
         (pubspecYaml['environment'] as YamlMap)['sdk'],
@@ -89,44 +115,88 @@ void main() {
         useAppDir: false,
       );
 
-      final melosYaml = loadYaml(
-        File(p.join(workspaceDir.path, 'melos.yaml')).readAsStringSync(),
-      ) as YamlMap;
-      expect(melosYaml['packages'], equals(['custom/*', 'plugins/**']));
+      final melosYaml =
+          loadYaml(
+                File(
+                  p.join(workspaceDir.path, 'pubspec.yaml'),
+                ).readAsStringSync(),
+              )
+              as YamlMap;
+      expect(melosYaml['workspace'], isNull);
     });
 
-    test('creates workspace in current directory when directory is "."',
-        () async {
-      final config = MelosWorkspaceConfig.emptyWith(
-        name: 'melos_init_test_',
-        path: tempDir.path,
-      );
-      final melos = Melos(logger: logger, config: config);
-
-      final originalDir = Directory.current;
-      try {
-        Directory.current = tempDir;
-
-        await melos.init(
-          '.',
-          directory: '.',
-          packages: [],
-          useAppDir: true,
+    test(
+      'creates workspace in current directory when directory is "."',
+      () async {
+        final config = MelosWorkspaceConfig.emptyWith(
+          name: 'melos_init_test_',
+          path: tempDir.path,
         );
+        final melos = Melos(logger: logger, config: config);
 
-        // Verify files were created in current directory
-        expect(File('melos.yaml').existsSync(), isTrue);
-        expect(File('pubspec.yaml').existsSync(), isTrue);
-        expect(Directory('packages').existsSync(), isTrue);
-        expect(Directory('apps').existsSync(), isTrue);
+        final originalDir = Directory.current;
+        try {
+          Directory.current = tempDir;
+          await _createPackages(tempDir);
+          await melos.init(
+            '.',
+            directory: '.',
+            packages: [],
+            useAppDir: true,
+          );
 
-        final melosYaml =
-            loadYaml(File('melos.yaml').readAsStringSync()) as YamlMap;
-        expect(melosYaml['name'], equals(p.basename(tempDir.path)));
-      } finally {
-        Directory.current = originalDir;
-      }
-    });
+          // Verify files were created in current directory
+          expect(File('pubspec.yaml').existsSync(), isTrue);
+          expect(Directory('packages').existsSync(), isTrue);
+          expect(Directory('apps').existsSync(), isTrue);
+
+          final pubspecYaml =
+              loadYaml(File('pubspec.yaml').readAsStringSync()) as YamlMap;
+          expect(pubspecYaml['name'], equals(p.basename(tempDir.path)));
+          expect(
+            pubspecYaml['workspace'],
+            equals(['apps/test_app', 'packages/test_package']),
+          );
+        } finally {
+          Directory.current = originalDir;
+        }
+      },
+    );
+
+    test(
+      'adds packages matching the --packages globs to the workspace',
+      () async {
+        final config = MelosWorkspaceConfig.emptyWith(
+          name: 'melos_init_test_',
+          path: tempDir.path,
+        );
+        final melos = Melos(logger: logger, config: config);
+
+        final originalDir = Directory.current;
+        try {
+          Directory.current = tempDir;
+          final modulesDir = Directory(p.join(tempDir.path, 'modules'))
+            ..createSync();
+          await Process.run(
+            'dart',
+            ['create', 'test_module'],
+            workingDirectory: modulesDir.absolute.path,
+          );
+          await melos.init(
+            '.',
+            directory: '.',
+            packages: ['modules/*'],
+            useAppDir: false,
+          );
+
+          final pubspecYaml =
+              loadYaml(File('pubspec.yaml').readAsStringSync()) as YamlMap;
+          expect(pubspecYaml['workspace'], equals(['modules/test_module']));
+        } finally {
+          Directory.current = originalDir;
+        }
+      },
+    );
 
     test('throws error if target directory already exists', () async {
       final workspaceDir = Directory(p.join(tempDir.path, 'existing_workspace'))
@@ -154,31 +224,39 @@ void main() {
       );
     });
 
-    test('creates workspace without apps directory when useAppDir is false',
-        () async {
-      final workspaceDir = Directory(p.join(tempDir.path, 'no_apps_workspace'));
-      final config = MelosWorkspaceConfig.emptyWith(
-        name: 'no_apps_workspace',
-        path: tempDir.path,
-      );
-      final melos = Melos(logger: logger, config: config);
+    test(
+      'creates workspace without apps directory when useAppDir is false',
+      () async {
+        final workspaceDir = Directory(
+          p.join(tempDir.path, 'no_apps_workspace'),
+        );
+        final config = MelosWorkspaceConfig.emptyWith(
+          name: 'no_apps_workspace',
+          path: tempDir.path,
+        );
+        final melos = Melos(logger: logger, config: config);
 
-      await melos.init(
-        'no_apps_workspace',
-        directory: workspaceDir.path,
-        packages: [],
-        useAppDir: false,
-      );
+        await melos.init(
+          'no_apps_workspace',
+          directory: workspaceDir.path,
+          packages: [],
+          useAppDir: false,
+        );
 
-      expect(
-        Directory(p.join(workspaceDir.path, 'apps')).existsSync(),
-        isFalse,
-      );
+        expect(
+          Directory(p.join(workspaceDir.path, 'apps')).existsSync(),
+          isFalse,
+        );
 
-      final melosYaml = loadYaml(
-        File(p.join(workspaceDir.path, 'melos.yaml')).readAsStringSync(),
-      ) as YamlMap;
-      expect(melosYaml['packages'], equals(['packages/*']));
-    });
+        final melosYaml =
+            loadYaml(
+                  File(
+                    p.join(workspaceDir.path, 'pubspec.yaml'),
+                  ).readAsStringSync(),
+                )
+                as YamlMap;
+        expect(melosYaml['workspace'], isNull);
+      },
+    );
   });
 }

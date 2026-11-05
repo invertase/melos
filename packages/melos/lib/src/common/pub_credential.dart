@@ -21,7 +21,7 @@ class PubCredentialStore {
   PubCredentialStore(this.credentials);
 
   factory PubCredentialStore.fromConfigFile({String? configDir}) {
-    configDir ??= applicationConfigHome('dart');
+    configDir ??= BaseDirectories('dart').configHome;
     final tokenFilePath = path.join(configDir, _pubTokenFileName);
 
     if (!fileExists(tokenFilePath)) {
@@ -102,7 +102,9 @@ class PubCredential {
   }
 
   String? getAuthHeader() {
-    if (!isValid()) return null;
+    if (!isValid()) {
+      return null;
+    }
     return 'Bearer $_tokenValue';
   }
 }

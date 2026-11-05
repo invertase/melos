@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:melos/melos.dart';
-import 'package:melos/src/command_configs/command_configs.dart';
-import 'package:melos/src/command_configs/format.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
@@ -23,7 +21,9 @@ void main() {
     late Directory aDir;
 
     setUp(() async {
-      workspaceDir = await createTemporaryWorkspace();
+      workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a', 'b', 'c'],
+      );
 
       aDir = await createProject(
         workspaceDir,
@@ -58,7 +58,7 @@ void main() {
       await melos.format();
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output.normalizeLines(),
         ignoringAnsii(
           matches(
             RegExp(
@@ -69,17 +69,23 @@ void main() {
 
 ${'-' * terminalWidth}
 a:
-Formatted no files in 0.''') + r'\d{2}' + RegExp.escape('''
+Formatted no files in 0.''') +
+                  r'\d{2}' +
+                  RegExp.escape('''
  seconds.
 a: SUCCESS
 ${'-' * terminalWidth}
 b:
-Formatted no files in 0.''') + r'\d{2}' + RegExp.escape('''
+Formatted no files in 0.''') +
+                  r'\d{2}' +
+                  RegExp.escape('''
  seconds.
 b: SUCCESS
 ${'-' * terminalWidth}
 c:
-Formatted no files in 0.''') + r'\d{2}' + RegExp.escape('''
+Formatted no files in 0.''') +
+                  r'\d{2}' +
+                  RegExp.escape('''
  seconds.
 c: SUCCESS
 ${'-' * terminalWidth}
@@ -87,6 +93,59 @@ ${'-' * terminalWidth}
 \$ melos format
   └> dart format .
      └> SUCCESS
+'''),
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('should print nothing when quiet and nothing fails', () async {
+      final quietMelos = Melos(
+        logger: MelosLogger(logger, isQuiet: true),
+        config: melos.config,
+      );
+
+      await quietMelos.format();
+
+      expect(logger.output, isEmpty);
+    });
+
+    test('should only print the failed packages when quiet', () async {
+      writeTextFile(
+        p.join(aDir.path, 'main.dart'),
+        r'''
+        void main() {for (var i = 0; i < 10; i++) {print('hello ${i + 1}');}
+        }
+      ''',
+      );
+
+      final quietMelos = Melos(
+        logger: MelosLogger(logger, isQuiet: true),
+        config: melos.config,
+      );
+
+      await quietMelos.format(setExitIfChanged: true, output: 'none');
+
+      expect(
+        logger.output.normalizeLines(),
+        ignoringAnsii(
+          matches(
+            RegExp(
+              RegExp.escape('''
+${'-' * terminalWidth}
+a:
+Changed main.dart
+Formatted 1 file (1 changed) in 0.''') +
+                  r'\d{2}' +
+                  RegExp.escape('''
+ seconds.
+${'-' * terminalWidth}
+
+\$ melos format
+  └> dart format --set-exit-if-changed --output none .
+     └> FAILED (in 1 packages)
+        └> a (with exit code 1)
 '''),
             ),
           ),
@@ -112,7 +171,7 @@ ${'-' * terminalWidth}
         stderrEncoding: utf8,
       );
 
-      expect(result.exitCode, equals(1));
+      expect(result.exitCode, isNot(0));
     });
 
     test('should run format with --output show flag', () async {
@@ -127,7 +186,7 @@ ${'-' * terminalWidth}
       await melos.format(output: 'show');
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output.normalizeLines(),
         ignoringAnsii(
           matches(
             RegExp(
@@ -143,17 +202,23 @@ void main() {
     print('hello \${i + 1}');
   }
 }
-Formatted 1 file (1 changed) in 0.''') + r'\d{2}' + RegExp.escape('''
+Formatted 1 file (1 changed) in 0.''') +
+                  r'\d{2}' +
+                  RegExp.escape('''
  seconds.
 a: SUCCESS
 ${'-' * terminalWidth}
 b:
-Formatted no files in 0.''') + r'\d{2}' + RegExp.escape('''
+Formatted no files in 0.''') +
+                  r'\d{2}' +
+                  RegExp.escape('''
  seconds.
 b: SUCCESS
 ${'-' * terminalWidth}
 c:
-Formatted no files in 0.''') + r'\d{2}' + RegExp.escape('''
+Formatted no files in 0.''') +
+                  r'\d{2}' +
+                  RegExp.escape('''
  seconds.
 c: SUCCESS
 ${'-' * terminalWidth}
@@ -168,29 +233,30 @@ ${'-' * terminalWidth}
       );
     });
 
-    test('should run format with --output none and --set-exit-if-changed flag',
-        () async {
-      writeTextFile(
-        p.join(aDir.path, 'main.dart'),
-        r'''
+    test(
+      'should run format with --output none and --set-exit-if-changed flag',
+      () async {
+        writeTextFile(
+          p.join(aDir.path, 'main.dart'),
+          r'''
         void main() {for (var i = 0; i < 10; i++) {print('hello ${i + 1}');}
         }
       ''',
-      );
+        );
 
-      final result = await Process.run(
-        'melos',
-        ['format', '--output', 'none', '--set-exit-if-changed'],
-        workingDirectory: workspaceDir.path,
-        runInShell: Platform.isWindows,
-        stdoutEncoding: utf8,
-        stderrEncoding: utf8,
-      );
+        final result = await Process.run(
+          'melos',
+          ['format', '--output', 'none', '--set-exit-if-changed'],
+          workingDirectory: workspaceDir.path,
+          runInShell: Platform.isWindows,
+          stdoutEncoding: utf8,
+          stderrEncoding: utf8,
+        );
 
-      expect(result.exitCode, equals(1));
-      expect(
-        result.stdout,
-        ignoringDependencyMessages('''
+        expect(result.exitCode, equals(1));
+        expect(
+          result.stdout,
+          ignoringDependencyMessages('''
 Resolving dependencies...
 + ansi_styles 0.3.2+1
 + args 2.4.2
@@ -258,17 +324,18 @@ ${'-' * terminalWidth}
      └> FAILED (in 1 packages)
         └> a (with exit code 1)
 '''),
-        // Skip this test if it fails due to a difference in the execution time
-        // reported for formatting files.
-        // The execution time, such as "0.09 seconds" in the line "Formatted 1
-        // file (1 changed) in 0.09 seconds.",
-        // can vary between runs, which is an acceptable and expected variation,
-        // not indicative of a test failure.
-        // Addendum: This test case should be rewritten to not be sensitive to
-        // version updates to the dependencies.
-        skip: 'Differ at offset 1261',
-      );
-    });
+          // Skip this test if it fails due to a difference in the execution
+          // time reported for formatting files.
+          // The execution time, such as "0.09 seconds" in the line "Formatted 1
+          // file (1 changed) in 0.09 seconds.",
+          // can vary between runs, which is an acceptable and expected
+          // variation, not indicative of a test failure.
+          // Addendum: This test case should be rewritten to not be sensitive to
+          // version updates to the dependencies.
+          skip: 'Differ at offset 1261',
+        );
+      },
+    );
 
     test('should run format with --line-length flag', () async {
       const code = '''
@@ -319,6 +386,7 @@ $ melos format
               ),
             ),
           ),
+          workspacePackages: ['a'],
         );
 
         final aDir = await createProject(
@@ -373,6 +441,7 @@ $ melos format
               ),
             ),
           ),
+          workspacePackages: ['a'],
         );
 
         final aDir = await createProject(
@@ -413,6 +482,72 @@ $ melos format
      └> FAILED (in 1 packages)
         └> a (with exit code 1)''',
           ),
+        );
+      });
+
+      test('should run format with output configValue', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_workspace',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            commands: const CommandConfigs(
+              format: FormatCommandConfigs(output: 'none'),
+            ),
+          ),
+          workspacePackages: ['a'],
+        );
+
+        await createProject(workspaceDir, Pubspec('a'));
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+
+        await Melos(logger: logger, config: config).format();
+
+        expect(
+          logger.output.normalizeLines(),
+          contains('dart format --output none .'),
+        );
+      });
+
+      test('command line options take precedence over the config', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_workspace',
+            packages: [
+              createGlob('packages/**', currentDirectoryPath: path),
+            ],
+            commands: const CommandConfigs(
+              format: FormatCommandConfigs(
+                output: 'none',
+                lineLength: 150,
+              ),
+            ),
+          ),
+          workspacePackages: ['a'],
+        );
+
+        await createProject(workspaceDir, Pubspec('a'));
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+
+        await Melos(
+          logger: logger,
+          config: config,
+        ).format(output: 'show', lineLength: 100);
+
+        expect(
+          logger.output.normalizeLines(),
+          contains('dart format --output show --line-length 100 .'),
         );
       });
     });

@@ -40,7 +40,7 @@ class LifecycleHooks {
       other.post == post;
 
   @override
-  int get hashCode => runtimeType.hashCode ^ pre.hashCode ^ post.hashCode;
+  int get hashCode => Object.hashAll([runtimeType, pre, post]);
 
   @override
   String toString() {

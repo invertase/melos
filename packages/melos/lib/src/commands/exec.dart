@@ -6,24 +6,60 @@ mixin _ExecMixin on _Melos {
     GlobalOptions? global,
     PackageFilters? packageFilters,
     int? concurrency,
-    bool failFast = false,
-    bool orderDependents = false,
+    bool? failFast,
+    bool? orderDependents,
+    bool? groupLogs,
+    List<String> sources = const [],
+    bool runUnchanged = false,
+    bool? ignoreSources,
     Map<String, String> extraEnvironment = const {},
   }) async {
-    concurrency ??= Platform.numberOfProcessors;
     final workspace = await createWorkspace(
       global: global,
       packageFilters: packageFilters,
     );
-    final packages = workspace.filteredPackages.values;
+    final execConfig = workspace.config.commands.exec;
+    final effectiveConcurrency =
+        concurrency ?? execConfig.concurrency ?? Platform.numberOfProcessors;
+    final effectiveFailFast = failFast ?? execConfig.failFast ?? false;
+    final effectiveOrderDependents =
+        orderDependents ?? execConfig.orderDependents ?? false;
+    final effectiveGroupLogs = groupLogs ?? execConfig.groupLogs ?? false;
+    final effectiveIgnoreSources =
+        ignoreSources ?? execConfig.ignoreSources ?? false;
+    final allPackages = workspace.allPackages.values.toList(growable: false);
+    final executablePackages = workspace.filteredPackages.values.toList(
+      growable: false,
+    );
+
+    if (effectiveOrderDependents) {
+      final cycles = findCyclicDependenciesInWorkspace(allPackages);
+      if (cycles.isNotEmpty) {
+        printCyclesInDependencies(cycles, logger);
+        exitCode = 1;
+        return;
+      }
+    }
+
+    final fingerprints = sources.isEmpty
+        ? null
+        : ExecFingerprints(command: execArgs, sources: sources);
+    if (effectiveIgnoreSources) {
+      // The command runs without checksums, so the stored ones no longer say
+      // anything about the result of the last run.
+      fingerprints?.removeStored(executablePackages);
+    }
 
     await _execForAllPackages(
       workspace,
-      packages,
       execArgs,
-      failFast: failFast,
-      concurrency: concurrency,
-      orderDependents: orderDependents,
+      executablePackages: executablePackages,
+      failFast: effectiveFailFast,
+      concurrency: effectiveConcurrency,
+      orderDependents: effectiveOrderDependents,
+      groupLogs: effectiveGroupLogs,
+      fingerprints: effectiveIgnoreSources ? null : fingerprints,
+      runUnchanged: runUnchanged,
       additionalEnvironment: extraEnvironment,
     );
   }
@@ -35,6 +71,8 @@ mixin _ExecMixin on _Melos {
     List<String> execArgs, {
     bool prefixLogs = true,
     Map<String, String> extraEnvironment = const {},
+    ProcessOutputCancelToken? cancelToken,
+    String? group,
   }) async {
     final packagePrefix = '[${AnsiStyles.blue.bold(package.name)}]: ';
 
@@ -53,8 +91,9 @@ mixin _ExecMixin on _Melos {
 
     if (package.isExample) {
       final exampleParentPackagePath = p.normalize('${package.path}/..');
-      final exampleParentPubspecPath =
-          p.normalize('$exampleParentPackagePath/pubspec.yaml');
+      final exampleParentPubspecPath = p.normalize(
+        '$exampleParentPackagePath/pubspec.yaml',
+      );
 
       if (fileExists(exampleParentPubspecPath)) {
         final exampleParentPackage = Pubspec.parse(
@@ -78,132 +117,240 @@ mixin _ExecMixin on _Melos {
       logger: logger,
       environment: environment,
       workingDirectory: package.path,
-      prefix: prefixLogs ? packagePrefix : null,
+      logPrefix: prefixLogs ? packagePrefix : null,
       // The parent env is injected manually above
       includeParentEnvironment: false,
+      cancelToken: cancelToken,
+      group: group,
     );
   }
 
   Future<void> _execForAllPackages(
     MelosWorkspace workspace,
-    Iterable<Package> packages,
     List<String> execArgs, {
+    required Iterable<Package> executablePackages,
     required int concurrency,
     required bool failFast,
     required bool orderDependents,
+    bool groupLogs = false,
+    ExecFingerprints? fingerprints,
+    bool runUnchanged = false,
     Map<String, String> additionalEnvironment = const {},
   }) async {
-    final sortedPackages = packages.toList(growable: false);
-    var hasImpactfulCycles = false;
+    final allPackagesList = workspace.allPackages.values.toList(
+      growable: false,
+    );
+    final executablePackagesList = executablePackages.toList(growable: false);
+    final List<List<Package>> sortedPackageLayers;
 
     if (orderDependents) {
-      // TODO: This is not really the right way to do this. Cyclic dependencies
-      // are handled in a way that is specific for publishing.
-      sortPackagesForPublishing(sortedPackages);
-      hasImpactfulCycles =
-          findCyclicDependenciesInWorkspace(sortedPackages).isNotEmpty;
+      final allPackagesLayers = sortPackagesForExecution(allPackagesList);
+      sortedPackageLayers = whereOnlyExecutablePackages(
+        allPackagesLayers,
+        executablePackagesList,
+      );
+    } else {
+      sortedPackageLayers = [executablePackagesList];
     }
 
-    final calculatedConcurrency = hasImpactfulCycles ? 1 : concurrency;
     final failures = <String, int?>{};
-    final pool = Pool(calculatedConcurrency);
+    final skipped = <String>[];
+    final pool = Pool(concurrency);
+
     final execArgsString = execArgs.join(' ');
-    final prefixLogs = concurrency != 1 && packages.length != 1;
+    final isConcurrent = concurrency != 1 && executablePackagesList.length != 1;
+    final useGroupBuffer = logger.isQuiet || (groupLogs && isConcurrent);
+    final prefixLogs = isConcurrent && !useGroupBuffer;
 
     logger.command('melos exec', withDollarSign: true);
     logger
         .child(targetStyle(execArgsString))
-        .child('$runningLabel (in ${packages.length} packages)')
+        .child('$runningLabel (in ${executablePackages.length} packages)')
         .newLine();
     if (prefixLogs) {
       logger.horizontalLine();
     }
 
-    final packageResults = Map.fromEntries(
-      packages.map((package) => MapEntry(package.name, Completer<int?>())),
-    );
-
-    late final CancelableOperation<void> operation;
-
-    operation = CancelableOperation.fromFuture(
-      pool.forEach<Package, void>(sortedPackages, (package) async {
-        assert(!(failFast && failures.isNotEmpty));
-
-        if (orderDependents && !hasImpactfulCycles) {
-          final dependenciesResults = await Future.wait(
-            package.allDependenciesInWorkspace.values
-                .map((package) => packageResults[package.name]?.future)
-                .nonNulls,
-          );
-
-          final dependencyFailed = dependenciesResults.any(
-            (exitCode) => exitCode == null || exitCode > 0,
-          );
-          if (dependencyFailed) {
-            packageResults[package.name]?.complete();
-            failures[package.name] = null;
-
-            return;
-          }
-        }
-
-        if (!prefixLogs) {
-          logger
-            ..horizontalLine()
-            ..log(AnsiStyles.bgBlack.bold.italic('${package.name}:'));
-        }
-
-        final packageExitCode = await _execForPackage(
-          workspace,
-          package,
-          execArgs,
-          prefixLogs: prefixLogs,
-          extraEnvironment: additionalEnvironment,
+    if (fingerprints != null) {
+      await fingerprints.hashSources(executablePackagesList);
+      for (final source in fingerprints.unmatchedSources) {
+        logger.warning(
+          'The sources glob "$source" does not match a file in any package.',
         );
-
-        packageResults[package.name]?.complete(packageExitCode);
-
-        if (packageExitCode > 0) {
-          failures[package.name] = packageExitCode;
-        } else if (!prefixLogs) {
-          logger.log(
-            AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
-                AnsiStyles.bgBlack(successLabel),
-          );
-        }
-
-        if (packageExitCode > 0 && failFast) {
-          await operation.cancel();
-        }
-      }).drain<void>(),
-    );
-
-    await operation.valueOrCancellation();
-
-    if (failFast) {
-      runningPids.forEach(Process.killPid);
+      }
+      for (final MapEntry(key: name, value: error)
+          in fingerprints.unreadableSources.entries) {
+        logger.warning(
+          'The sources of $name could not be read, so the command runs in it '
+          'regardless of whether they changed: $error',
+        );
+      }
     }
 
-    logger
+    final packageResults = Map.fromEntries(
+      executablePackages.map(
+        (package) => MapEntry(package.name, Completer<int?>()),
+      ),
+    );
+
+    for (final packageLayer in sortedPackageLayers) {
+      late final CancelableOperation<void> operation;
+      final processOutputCancelToken = ProcessOutputCancelToken();
+
+      operation = CancelableOperation.fromFuture(
+        pool.forEach<Package, void>(packageLayer, (package) async {
+          bool cancelIfFailedFast() {
+            if (failFast && failures.isNotEmpty) {
+              packageResults[package.name]?.complete();
+              failures[package.name] = null;
+              return true;
+            }
+            return false;
+          }
+
+          if (cancelIfFailedFast()) {
+            return;
+          }
+
+          final group = useGroupBuffer ? package.name : null;
+
+          final isUpToDate =
+              fingerprints != null &&
+              !runUnchanged &&
+              await fingerprints.isUpToDate(package);
+          // The command can have failed in another package while the
+          // fingerprint was being checked.
+          if (cancelIfFailedFast()) {
+            return;
+          }
+
+          if (isUpToDate) {
+            packageResults[package.name]?.complete(0);
+            skipped.add(package.name);
+            if (!logger.isQuiet) {
+              const skippedMessage = '(sources are unchanged)';
+              if (prefixLogs) {
+                logger.log(
+                  '[${AnsiStyles.blue.bold(package.name)}]: '
+                  '$skippedLabel $skippedMessage',
+                );
+              } else {
+                logger
+                  ..horizontalLine(group: group)
+                  ..log(
+                    AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
+                        AnsiStyles.bgBlack('$skippedLabel $skippedMessage'),
+                    group: group,
+                  );
+              }
+            }
+            return;
+          }
+
+          if (fingerprints != null) {
+            await fingerprints.commandStarted(package);
+            if (cancelIfFailedFast()) {
+              return;
+            }
+          }
+
+          if (!prefixLogs) {
+            logger
+              ..horizontalLine(group: group)
+              ..log(
+                AnsiStyles.bgBlack.bold.italic('${package.name}:'),
+                group: group,
+              );
+          }
+
+          final commandExitCode = await _execForPackage(
+            workspace,
+            package,
+            execArgs,
+            prefixLogs: prefixLogs,
+            extraEnvironment: additionalEnvironment,
+            cancelToken: processOutputCancelToken,
+            group: group,
+          );
+          final noTestsRan = commandExitCode == noTestsRanExitCode;
+          final packageExitCode = noTestsRan ? 0 : commandExitCode;
+
+          packageResults[package.name]?.complete(packageExitCode);
+
+          final failed = packageExitCode > 0;
+          if (failed) {
+            // The failure is recorded before the sources are hashed again, so
+            // that the command does not start in further packages when failing
+            // fast.
+            failures[package.name] = packageExitCode;
+            if (failFast) {
+              processOutputCancelToken.cancel();
+              await operation.cancel();
+              return;
+            }
+          }
+
+          if (fingerprints != null) {
+            await fingerprints.commandFinished(
+              package,
+              succeeded: packageExitCode == 0,
+            );
+          }
+
+          if (failed) {
+            return;
+          }
+
+          if (logger.isQuiet) {
+            logger.discardGroup(package.name);
+          } else if (!prefixLogs) {
+            logger.log(
+              AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
+                  AnsiStyles.bgBlack(
+                    noTestsRan ? noTestsRanLabel : successLabel,
+                  ),
+              group: group,
+            );
+          }
+        }).drain<void>(),
+      );
+
+      await operation.valueOrCancellation();
+      if (failFast) {
+        runningPids.forEach(Process.killPid);
+      }
+    }
+
+    if (useGroupBuffer) {
+      // Print the buffered output of every package, grouped per package and in
+      // the order the packages started, with the failed packages last so that
+      // they are easy to spot at the end of the log.
+      await logger.flushGroupBufferIfNeed(lastGroups: failures.keys.toList());
+    }
+
+    final summaryLogger = failures.isEmpty ? logger : logger.essential;
+
+    summaryLogger
       ..horizontalLine()
       ..newLine()
       ..command('melos exec', withDollarSign: true);
 
-    final resultLogger = logger.child(targetStyle(execArgsString));
+    final resultLogger = summaryLogger.child(targetStyle(execArgsString));
 
     if (failures.isNotEmpty) {
-      final failuresLogger =
-          resultLogger.child('$failedLabel (in ${failures.length} packages)');
+      final failuresLogger = resultLogger.child(
+        '$failedLabel (in ${failures.length} packages)',
+      );
       for (final packageName in failures.keys) {
         failuresLogger.child(
           '${errorPackageNameStyle(packageName)} '
           '${failures[packageName] == null ? '(dependency failed)' : '('
-              'with exit code ${failures[packageName]})'}',
+                    'with exit code ${failures[packageName]})'}',
         );
       }
 
       final canceled = <String>[];
-      for (final package in packages) {
+      for (final package in executablePackages) {
         if (failures.containsKey(package.name)) {
           continue;
         }
@@ -224,8 +371,9 @@ mixin _ExecMixin on _Melos {
       }
 
       if (canceled.isNotEmpty) {
-        final canceledLogger = resultLogger
-            .child('$canceledLabel (in ${canceled.length} packages)');
+        final canceledLogger = resultLogger.child(
+          '$canceledLabel (in ${canceled.length} packages)',
+        );
         for (final packageName in canceled) {
           canceledLogger.child(
             '${errorPackageNameStyle(packageName)} (due to failFast)',
@@ -236,6 +384,31 @@ mixin _ExecMixin on _Melos {
       exitCode = failFast ? failures[failures.keys.first]! : 1;
     } else {
       resultLogger.child(successLabel);
+    }
+
+    if (skipped.isNotEmpty) {
+      resultLogger.child(
+        '$skippedLabel (in ${skipped.length} packages with unchanged sources)',
+      );
+    }
+
+    final changedDependencies =
+        await fingerprints?.findChangedDependencies() ?? const {};
+    if (changedDependencies.isNotEmpty) {
+      final affectedPackages = changedDependencies.entries
+          .map((entry) => '  ${entry.key} (${entry.value.join(', ')})')
+          .join('\n');
+      logger
+        ..newLine()
+        ..warning(
+          'The command changed files that match the sources in the '
+          'dependencies of the following packages, after it had already '
+          'started in these packages or skipped them:\n'
+          '$affectedPackages\n'
+          'The command will therefore run in these packages the next time. '
+          'Specify "orderDependents" to run the command in the dependencies '
+          'of a package first.',
+        );
     }
   }
 }

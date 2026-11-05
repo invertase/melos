@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:melos/src/common/extensions/dependency.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
@@ -21,6 +22,8 @@ extension PubspecExtension on Pubspec {
     List<Screenshot>? screenshots,
     String? documentation,
     Map<String, VersionConstraint?>? environment,
+    List<String>? workspace,
+    String? resolution,
     Map<String, Dependency>? dependencies,
     Map<String, Dependency>? devDependencies,
     Map<String, Dependency>? dependencyOverrides,
@@ -40,6 +43,8 @@ extension PubspecExtension on Pubspec {
       screenshots: screenshots ?? this.screenshots,
       documentation: documentation ?? this.documentation,
       environment: environment ?? this.environment,
+      workspace: workspace ?? this.workspace,
+      resolution: resolution ?? this.resolution,
       dependencies: dependencies ?? this.dependencies,
       devDependencies: devDependencies ?? this.devDependencies,
       dependencyOverrides: dependencyOverrides ?? this.dependencyOverrides,
@@ -49,8 +54,9 @@ extension PubspecExtension on Pubspec {
 
   /// Saves the pubspec to the [projectDirectory].
   Future<void> save(Directory projectDirectory) async {
-    final ioSink =
-        File(p.join(projectDirectory.path, 'pubspec.yaml')).openWrite();
+    final ioSink = File(
+      p.join(projectDirectory.path, 'pubspec.yaml'),
+    ).openWrite();
     try {
       const YamlToString().writeYamlString(toJson(), ioSink);
     } finally {
@@ -70,17 +76,24 @@ extension PubspecExtension on Pubspec {
       'funding': funding?.map((uri) => uri.toString()).toList(),
       'topics': topics,
       'ignored_advisories': ignoredAdvisories,
-      'screenshots':
-          screenshots?.map((screenshot) => screenshot.toJson()).toList(),
+      'screenshots': screenshots
+          ?.map((screenshot) => screenshot.toJson())
+          .toList(),
       'documentation': documentation,
-      'environment':
-          environment?.map((key, value) => MapEntry(key, value?.toString())),
-      'dependencies':
-          dependencies.map((key, value) => MapEntry(key, value.toJson())),
-      'dev_dependencies':
-          devDependencies.map((key, value) => MapEntry(key, value.toJson())),
-      'dependency_overrides': dependencyOverrides
-          .map((key, value) => MapEntry(key, value.toJson())),
+      'environment': environment.map(
+        (key, value) => MapEntry(key, value?.toString()),
+      ),
+      'workspace': workspace,
+      'resolution': resolution,
+      'dependencies': dependencies.map(
+        (key, value) => MapEntry(key, value.toYaml()),
+      ),
+      'dev_dependencies': devDependencies.map(
+        (key, value) => MapEntry(key, value.toYaml()),
+      ),
+      'dependency_overrides': dependencyOverrides.map(
+        (key, value) => MapEntry(key, value.toYaml()),
+      ),
       'flutter': flutter,
     }..removeWhere((_, value) => value == null);
   }
@@ -91,47 +104,6 @@ extension on Screenshot {
     return {
       'path': path,
       'description': description,
-    };
-  }
-}
-
-extension DependencyExtension on Dependency {
-  Map<String, dynamic> toJson() {
-    if (this is SdkDependency) {
-      final sdkDep = this as SdkDependency;
-      return {
-        'sdk': sdkDep.sdk,
-        'version': sdkDep.version.toString(),
-      };
-    } else if (this is GitDependency) {
-      final gitDep = this as GitDependency;
-      return {
-        'url': gitDep.url.toString(),
-        'ref': gitDep.ref,
-        'path': gitDep.path,
-      };
-    } else if (this is PathDependency) {
-      final pathDep = this as PathDependency;
-      return {
-        'path': pathDep.path,
-      };
-    } else if (this is HostedDependency) {
-      final hostedDep = this as HostedDependency;
-      return {
-        'version': hostedDep.version.toString(),
-        if (hostedDep.hosted != null) 'hosted': hostedDep.hosted?.toJson(),
-      };
-    } else {
-      throw UnsupportedError('Unknown Dependency type');
-    }
-  }
-}
-
-extension HostedDetailsExtension on HostedDetails {
-  Map<String, dynamic> toJson() {
-    return {
-      'name': declaredName,
-      'url': url?.toString(),
     };
   }
 }

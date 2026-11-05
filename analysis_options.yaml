@@ -16,6 +16,9 @@
 
 include: all_lint_rules.yaml
 
+formatter:
+  trailing_commas: preserve
+
 analyzer:
   language:
     strict-casts: true

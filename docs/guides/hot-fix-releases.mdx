@@ -1,0 +1,195 @@
+---
+title: Releasing from Hot-fix Branches
+description:
+  Learn how to release packages from branches other than the default branch,
+  such as hot-fix branches.
+---
+
+# Releasing from Hot-fix Branches
+
+Most workspaces release their packages from a single default branch, such as
+`main`. Sometimes a fix also has to be released for an older version, for
+example when `main` already contains breaking changes or features that are not
+ready for a release, but the users of version `1.0.0` need a bug fix. The fix is
+then released from a separate branch, which this guide calls a hot-fix branch.
+
+The changelogs and the package versions of a hot-fix branch differ from the
+ones on the default branch. The changelog on `main` might already have an entry
+for version `2.0.0` that lists the fix, while the changelog on the hot-fix
+branch ends at `1.0.0`. This guide describes how to get a fix onto such a branch
+and how to release it from there, without ending up with a changelog that lists
+changes which the branch does not contain.
+
+## How Melos finds the commits to release
+
+It helps to know how [`melos version`](/commands/version) decides what to
+release, since it explains the rules in the rest of this guide.
+
+For each package, `melos version` reads the `version` from the `pubspec.yaml`
+of the package on the current branch and looks for the git tag of that version,
+for example `my_package-v1.0.0`. All commits on the current branch that came
+after that tag, and that changed files in the package, are released. They
+decide the next version and become the entries of the new changelog section.
+
+This works on every branch, as long as the following holds true for the branch:
+
+- The `version` in each `pubspec.yaml` is the version that was last released
+  from this branch.
+- The git tag of that version exists.
+- The changelog only contains the versions that were released from this branch
+  or from its ancestors.
+
+Picking a fix from `main` with plain `git cherry-pick` keeps these rules intact
+for most commits. It breaks them as soon as a picked commit contains release
+changes, which are changes to a `CHANGELOG.md` file or to the `version` of a
+package. Such a commit either conflicts with the older changelog, or it brings
+the changelog entries and the version of `main` onto the hot-fix branch. The
+[`melos cherry-pick`](/commands/cherry-pick) command avoids this by leaving the
+release changes out of the commits that it picks.
+
+## Step by step
+
+### 1. Create the hot-fix branch from the release tag
+
+Create the branch from the tag of the version that needs the fix, not from the
+current state of the default branch:
+
+```bash
+git checkout -b hot-fix/1.0.x my_package-v1.0.0
+git push --set-upstream origin hot-fix/1.0.x
+```
+
+Pushing the branch with `--set-upstream` matters. By default `melos version`
+fetches the tags of the remote with `git pull --tags` before it looks for the
+latest release, which fails on a branch that does not track a remote branch.
+If you do not want to push the branch yet, turn off
+[`fetchTags`](/configuration/overview#fetchtags) on the hot-fix branch instead.
+
+In a workspace with several packages that are released independently, the tag
+of one package is usually enough as the starting point, as long as no other
+package that needs the fix was released after it. Otherwise create the branch
+from the newest commit that all affected releases have in common.
+
+### 2. Allow versioning on the branch
+
+If the workspace restricts versioning to one branch with
+[`command/version/branch`](/configuration/overview#branch), `melos version`
+refuses to run on the hot-fix branch. Change the option on the hot-fix branch to
+the name of that branch and commit the change. Since the configuration lives in
+the repository, this does not affect the default branch:
+
+```yaml
+melos:
+  command:
+    version:
+      branch: hot-fix/1.0.x
+```
+
+Use a commit type that does not trigger a release for this change, for example
+`chore: allow versioning on the hot-fix branch`.
+
+### 3. Pick the fix
+
+Land the fix on the default branch first, then pick it onto the hot-fix branch.
+This way the default branch can never miss a fix that an older version has.
+
+```bash
+melos cherry-pick 4ba1b8f
+```
+
+Several commits and ranges of commits can be picked at once, see the
+[`cherry-pick`](/commands/cherry-pick) command for all options. The command:
+
+- Picks each commit with `git cherry-pick -x`, so that the message of the new
+  commit records which commit it originates from.
+- Keeps the changelogs of the hot-fix branch as they are, even if the picked
+  commit changed them or conflicts with them.
+- Keeps the package versions of the hot-fix branch as they are, as well as the
+  constraints that the packages of the workspace have on each other, while
+  picking all other changes to the `pubspec.yaml` files.
+- Skips commits that contain nothing but release changes, such as the commits
+  that `melos version` creates on the default branch.
+
+The message of the commit is kept. This is important, since the
+[Conventional Commits](/guides/automated-releases#conventional-commits) type in
+the message decides the next version on the hot-fix branch in the same way as
+it does on the default branch.
+
+<Warning>
+  Do not pick or merge the release commits of the default branch with plain
+  git commands, and do not merge the default branch into the hot-fix branch.
+  Both bring the version and the changelog of the default branch onto the
+  hot-fix branch. `melos version` then looks for the release tag of the wrong
+  version and releases the wrong set of commits.
+</Warning>
+
+If the fix cannot be picked because the code has diverged too much, write the
+fix directly on the hot-fix branch with a Conventional Commits message instead.
+`melos version` treats it like any other commit.
+
+### 4. Version the packages
+
+Run `melos version` on the hot-fix branch, exactly as you would on the default
+branch:
+
+```bash
+melos version
+```
+
+Melos finds the picked commits after the latest release tag of the branch,
+bumps the versions, writes the changelog entries, and creates the release commit
+and the tags on the hot-fix branch. The changelog entries link to the commits
+on the hot-fix branch, which are the commits that the released version
+contains.
+
+Check the versions that Melos proposes before confirming them. The picked
+commits decide the next version, so a picked `feat` commit results in a minor
+version such as `1.1.0`. If that version was already released from the default
+branch, the release from the hot-fix branch would collide with it. Melos does
+not detect this. It does not replace a tag that already exists, and a version
+that was already published cannot be published again. Only pick fixes onto a
+hot-fix branch when possible, or choose the version yourself:
+
+```bash
+melos version --manual-version=my_package:1.0.1
+```
+
+### 5. Publish and push
+
+Publish the packages from the hot-fix branch and push the branch together with
+its tags:
+
+```bash
+melos publish --no-dry-run
+git push --follow-tags
+```
+
+### 6. Keep the default branch up to date
+
+The fix itself is already on the default branch, since it was picked from
+there. It is listed in the changelog of the next release from the default
+branch as well, which is correct, since that release also contains the fix.
+
+What the default branch does not have is the changelog section of the hot-fix
+release, for example `## 1.0.1`. If you want the changelog on the default branch
+to show all released versions, copy that section into the `CHANGELOG.md` on the
+default branch by hand, below the sections of the newer versions, and commit it
+with a type that neither triggers a release nor shows up in the next changelog,
+for example `chore`.
+
+Do not merge the hot-fix branch into the default branch for this, and do not
+pick its release commit. Both bring the versions and the changelog of the
+hot-fix branch onto the default branch, where they conflict with the newer
+ones.
+
+## Summary
+
+| On a hot-fix branch                                      | Why                                                                  |
+| -------------------------------------------------------- | -------------------------------------------------------------------- |
+| Create the branch from a release tag                     | The version, the tag and the changelog of the branch then line up.   |
+| Push the branch with `--set-upstream`                    | `melos version` fetches tags with `git pull --tags` by default.      |
+| Adjust `command/version/branch` if it is set             | Otherwise `melos version` refuses to run on the branch.              |
+| Pick fixes with `melos cherry-pick`                      | Changelogs and versions of the branch stay intact.                   |
+| Never merge the default branch or pick its release commits | They carry the versions and the changelog of the default branch.   |
+| Check the proposed versions, prefer fixes only           | A version that was already released elsewhere would collide.         |
+| Copy the changelog section to the default branch by hand | Merging the branch back conflicts with the newer versions and changelog. |

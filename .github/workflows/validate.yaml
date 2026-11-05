@@ -10,7 +10,7 @@ jobs:
   analyze:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -18,22 +18,34 @@ jobs:
       - name: Install Tools
         run: ./.github/workflows/scripts/install-tools.sh
       - name: Analyze
-        uses: invertase/github-action-dart-analyzer@v1
-        with:
-          fatal-infos: true
-          fatal-warnings: true
+        run: melos analyze --fatal-infos --fatal-warnings
 
   # This job ensures `melos` compiles and runs fine on the
   # minimum Dart SDK version that it supports.
   dart_version:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - uses: dart-lang/setup-dart@v1
         with:
-          sdk: 3.0.0 # Update when min sdk supported version of `melos` package changes.
+          sdk: 3.9.0 # Update when min sdk supported version of `melos` package changes.
       - name: Run Melos
         run: ./.github/workflows/scripts/install-tools.sh
+
+  # This job validates the agent skills that the `melos` package ships in
+  # `packages/melos/skills`, see `skills_lint.yaml` in the repository root.
+  skills_lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - name: Install skills_lint
+        run: dart pub global activate skills_lint
+      - name: Lint skills
+        run: dart pub global run skills_lint --print-warnings
 
   # This job ensures `melos` can be installed alongside Flutter dependencies on
   # the stable channel.
@@ -41,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -54,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -68,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: subosito/flutter-action@v2
@@ -78,13 +90,13 @@ jobs:
       - name: Install Tools
         run: ./.github/workflows/scripts/install-tools.sh
       - name: Run Tests
-        run: melos test --no-select
+        run: melos test
 
   test_macos:
     runs-on: macos-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: subosito/flutter-action@v2
@@ -94,13 +106,13 @@ jobs:
       - name: Install Tools
         run: ./.github/workflows/scripts/install-tools.sh
       - name: Run Tests
-        run: melos test --no-select
+        run: melos test
 
   test_windows:
     runs-on: windows-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: subosito/flutter-action@v2
@@ -114,4 +126,4 @@ jobs:
         # When using PowerShell, the exit code is not propagated correctly.
         # Even running `CMD /C melos ...` from PowerShell does not work.
         shell: cmd
-        run: melos test --no-select
+        run: melos test

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 import 'command_configs/command_configs.dart';
@@ -13,19 +12,21 @@ import 'common/validation.dart';
 import 'global_options.dart';
 import 'logging.dart';
 import 'package.dart';
-import 'workspace_configs.dart';
+import 'workspace_config.dart';
 
 class IdeWorkspace {
   IdeWorkspace._(this._workspace);
 
   final MelosWorkspace _workspace;
 
-  late final IntellijProject intelliJ =
-      IntellijProject.fromWorkspace(_workspace);
+  late final IntellijProject intelliJ = IntellijProject.fromWorkspace(
+    _workspace,
+  );
 }
 
-/// A representation of a workspace. This includes its packages, configuration
-/// such as scripts and more.
+/// A representation of a workspace.
+///
+/// This includes its packages, configuration such as scripts and more.
 class MelosWorkspace {
   MelosWorkspace({
     required this.name,
@@ -33,6 +34,7 @@ class MelosWorkspace {
     required this.config,
     required this.allPackages,
     required this.filteredPackages,
+    required this.rootPackage,
     required this.dependencyOverridePackages,
     required this.sdkPath,
     required this.logger,
@@ -45,12 +47,15 @@ class MelosWorkspace {
     PackageFilters? packageFilters,
     required MelosLogger logger,
   }) async {
-    final allPackages = await PackageMap.resolvePackages(
+    final entryPoints = workspaceConfig.ide.intelliJ.entryPoints;
+    final packages = await PackageMap.resolvePackages(
       workspacePath: workspaceConfig.path,
       packages: workspaceConfig.packages,
       ignore: workspaceConfig.ignore,
       categories: workspaceConfig.categories,
       logger: logger,
+      discoverNestedWorkspaces: workspaceConfig.discoverNestedWorkspaces,
+      entryPoints: entryPoints,
     );
     final dependencyOverridePackages = await PackageMap.resolvePackages(
       workspacePath: workspaceConfig.path,
@@ -59,8 +64,23 @@ class MelosWorkspace {
       categories: const {},
       logger: logger,
     );
+    final rootPackage = await PackageMap.resolveRootPackage(
+      workspacePath: workspaceConfig.path,
+      logger: logger,
+      categories: workspaceConfig.categories,
+      entryPoints: entryPoints,
+    );
 
-    final filteredPackages = await allPackages.applyFilters(packageFilters);
+    // Add root package to workspace packages if enabled
+    final allPackages = workspaceConfig.useRootAsPackage
+        ? packages.addPackage(rootPackage)
+        : packages;
+
+    final filteredPackages = await allPackages.applyFilters(
+      packageFilters,
+      pubConfig: workspaceConfig.pub,
+      workspaceTag: workspaceConfig.commands.version.workspaceTag,
+    );
 
     return MelosWorkspace(
       name: workspaceConfig.name,
@@ -68,6 +88,7 @@ class MelosWorkspace {
       config: workspaceConfig,
       allPackages: allPackages,
       logger: logger,
+      rootPackage: rootPackage,
       filteredPackages: filteredPackages,
       dependencyOverridePackages: dependencyOverridePackages,
       sdkPath: resolveSdkPath(
@@ -82,15 +103,18 @@ class MelosWorkspace {
 
   final MelosLogger logger;
 
-  /// An optional name as defined in "melos.yaml". This name is used for logging
+  /// The name defined in the root "pubspec.yaml". This name is used for logging
   /// purposes and also used when generating certain IDE files.
   final String name;
 
   /// Full file path to the location of this workspace.
   final String path;
 
-  /// Configuration as defined in the "melos.yaml" file if it exists.
+  /// Configuration as defined in the "pubspec.yaml" file.
   final MelosWorkspaceConfig config;
+
+  /// The root package of this workspace.
+  final Package rootPackage;
 
   /// All packages managed in this Melos workspace.
   ///
@@ -110,8 +134,9 @@ class MelosWorkspace {
   late final IdeWorkspace ide = IdeWorkspace._(this);
 
   /// Returns true if this workspace contains ANY Flutter package.
-  late final bool isFlutterWorkspace =
-      allPackages.values.any((package) => package.isFlutterPackage);
+  late final bool isFlutterWorkspace = allPackages.values.any(
+    (package) => package.isFlutterPackage,
+  );
 
   /// Path to the Dart/Flutter SDK, if specified by the user.
   final String? sdkPath;
@@ -194,7 +219,6 @@ class MelosWorkspace {
 /// from the config file.
 ///
 /// Relative paths are resolved relative to the workspace path.
-@visibleForTesting
 String? resolveSdkPath({
   required String? configSdkPath,
   required String? envSdkPath,

@@ -16,7 +16,7 @@ class RestrictedBranchException implements MelosException {
 
   @override
   String toString() =>
-      'RestrictedBranchException: This command is configured in melos.yaml '
+      'RestrictedBranchException: This command is configured in pubspec.yaml '
       'to only be allowed to run on the "$allowedBranch" but the current '
       'branch is "$currentBranch".';
 }

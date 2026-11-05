@@ -1,9 +1,23 @@
 export 'src/command_configs/command_configs.dart'
-    show BootstrapCommandConfigs, CleanCommandConfigs, VersionCommandConfigs;
+    show
+        AnalyzeCommandConfigs,
+        BootstrapCommandConfigs,
+        CleanCommandConfigs,
+        CommandConfigs,
+        ExecCommandConfigs,
+        FormatCommandConfigs,
+        ListCommandConfigs,
+        PublishCommandConfigs,
+        RunCommandConfigs,
+        TestCommandConfigs,
+        VersionCommandConfigs,
+        VersioningMode;
 export 'src/commands/runner.dart'
     show
         BootstrapException,
-        ListOutputKind,
+        CherryPickConflictException,
+        CherryPickException,
+        FixedVersioningException,
         Melos,
         NoPackageFoundScriptException,
         NoScriptException,
@@ -17,6 +31,8 @@ export 'src/common/changelog.dart'
         MarkdownStringBufferExtension;
 export 'src/common/exception.dart' show CancelledException, MelosException;
 export 'src/common/io.dart' show IOException;
+export 'src/common/list_output_kind.dart' show ListOutputKind;
+export 'src/common/pub_config.dart' show PubClientConfig;
 export 'src/common/validation.dart' show MelosConfigException;
 export 'src/common/versioning.dart' show ManualVersionChange, SemverReleaseType;
 export 'src/global_options.dart' show GlobalOptions;
@@ -28,7 +44,7 @@ export 'src/package.dart'
         PackageFilters,
         PackageMap,
         PackageType;
-export 'src/scripts.dart' show ExecOptions, Script, Scripts;
+export 'src/scripts.dart' show ExecOptions, ProcessStdio, Script, Scripts;
 export 'src/workspace.dart' show IdeWorkspace, MelosWorkspace;
-export 'src/workspace_configs.dart'
-    show IDEConfigs, IntelliJConfig, MelosWorkspaceConfig;
+export 'src/workspace_config.dart'
+    show IDEConfigs, IdeRunConfiguration, IntelliJConfig, MelosWorkspaceConfig;

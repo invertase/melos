@@ -9,28 +9,21 @@ extension DependencyExtension on Dependency {
     return null;
   }
 
-  /// Whether the json can be inlined with its parent.
+  /// Converts this dependency to the value used for it in a `pubspec.yaml`
+  /// file, inlining the version or url where pub allows it.
   ///
-  /// For example for [HostedDependency] the version shouldn't be on a separate
-  /// line when only the version is defined.
-  bool get inlineVersion {
-    if (this is HostedDependency) {
-      return (this as HostedDependency).hosted == null &&
-          versionConstraint != null;
-    }
-    return false;
-  }
-
-  Object toJson() {
+  /// This intentionally differs from `Dependency.toJson` in `pubspec_parse`,
+  /// which always produces a map.
+  Object toYaml() {
     final self = this;
     if (self is PathDependency) {
-      return self.toJson();
+      return self.toYaml();
     } else if (self is HostedDependency) {
-      return self.toJson();
+      return self.toYaml();
     } else if (self is GitDependency) {
-      return self.toJson();
+      return self.toYaml();
     } else if (self is SdkDependency) {
-      return self.toJson();
+      return self.toYaml();
     } else {
       throw UnimplementedError();
     }
@@ -38,7 +31,7 @@ extension DependencyExtension on Dependency {
 }
 
 extension PathDependencyExtension on PathDependency {
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toYaml() {
     return {
       'path': path,
     };
@@ -46,32 +39,46 @@ extension PathDependencyExtension on PathDependency {
 }
 
 extension HostedDependencyExtension on HostedDependency {
-  Object toJson() {
-    return inlineVersion
+  Object toYaml() {
+    return _inlineVersion
         ? version.toString()
         : {
+            'hosted': hosted!.url?.toString(),
             'version': version.toString(),
-            if (hosted != null)
-              'hosted': {
-                'name': hosted!.declaredName,
-                'url': hosted!.url?.toString(),
-              },
           };
+  }
+
+  /// Whether the json can be inlined with its parent.
+  ///
+  /// For example for [HostedDependency] the version shouldn't be on a separate
+  /// line when only the version is defined.
+  bool get _inlineVersion {
+    return hosted == null;
   }
 }
 
 extension GitDependencyExtension on GitDependency {
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toYaml() {
     return {
-      'url': url.toString(),
-      if (ref != null) 'ref': ref,
-      if (path != null) 'path': path,
+      'git': _inlineUrl
+          ? url.toString()
+          : {
+              'url': url.toString(),
+              if (ref != null) 'ref': ref,
+              if (path != null) 'path': path,
+            },
     };
+  }
+
+  /// Whether the url can be inlined with its parent.
+  /// This happens when the [ref] and [path] are null.
+  bool get _inlineUrl {
+    return ref == null && path == null;
   }
 }
 
 extension SdkDependencyExtension on SdkDependency {
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toYaml() {
     return {
       'sdk': sdk,
       'version': version.toString(),
@@ -80,7 +87,7 @@ extension SdkDependencyExtension on SdkDependency {
 }
 
 extension DependencyMapExtension on Map<String, Dependency> {
-  Map<String, Object?> toJson() {
-    return map((key, value) => MapEntry(key, value.toJson()));
+  Map<String, Object?> toYaml() {
+    return map((key, value) => MapEntry(key, value.toYaml()));
   }
 }

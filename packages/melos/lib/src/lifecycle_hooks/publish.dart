@@ -28,7 +28,7 @@ class PublishLifecycleHooks extends LifecycleHooks {
       other.post == post;
 
   @override
-  int get hashCode => Object.hash(runtimeType, pre, post);
+  int get hashCode => Object.hashAll([runtimeType, pre, post]);
 
   @override
   String toString() {

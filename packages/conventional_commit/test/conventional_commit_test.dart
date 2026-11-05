@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 import 'package:conventional_commit/conventional_commit.dart';
 import 'package:test/test.dart';
 
@@ -8,7 +7,8 @@ A body describing this commit in more detail.
 The body in this example is multi-line.
 ''';
 
-const commitMessageWithBodyExample = '''
+const commitMessageWithBodyExample =
+    '''
 refactor: did something
 
 $bodyExample
@@ -54,29 +54,37 @@ void main() {
       expect(ConventionalCommit.tryParse('feat()'), isNull);
     });
 
-    test('accepts commit messages with or without a space before description',
-        () {
-      expect(ConventionalCommit.tryParse('feat:new thing'), isNotNull);
-      expect(ConventionalCommit.tryParse('feat(foo):new thing'), isNotNull);
-      expect(ConventionalCommit.tryParse('feat: new thing'), isNotNull);
-      expect(ConventionalCommit.tryParse('feat(foo): new thing'), isNotNull);
-    });
+    test(
+      'accepts commit messages with or without a space before description',
+      () {
+        expect(ConventionalCommit.tryParse('feat:new thing'), isNotNull);
+        expect(ConventionalCommit.tryParse('feat(foo):new thing'), isNotNull);
+        expect(ConventionalCommit.tryParse('feat: new thing'), isNotNull);
+        expect(ConventionalCommit.tryParse('feat(foo): new thing'), isNotNull);
+      },
+    );
 
-    test('accepts commit messages with prefix before conventional commit type',
-        () {
-      expect(
-        ConventionalCommit.tryParse('Merged PR 404: feat(scope): new feature'),
-        isNotNull,
-      );
-      expect(
-        ConventionalCommit.tryParse('Merge pull request #404: feat(foo):bar'),
-        isNotNull,
-      );
-      expect(
-        ConventionalCommit.tryParse('Merged branch develop to main: fix: test'),
-        isNotNull,
-      );
-    });
+    test(
+      'accepts commit messages with prefix before conventional commit type',
+      () {
+        expect(
+          ConventionalCommit.tryParse(
+            'Merged PR 404: feat(scope): new feature',
+          ),
+          isNotNull,
+        );
+        expect(
+          ConventionalCommit.tryParse('Merge pull request #404: feat(foo):bar'),
+          isNotNull,
+        );
+        expect(
+          ConventionalCommit.tryParse(
+            'Merged branch develop to main: fix: test',
+          ),
+          isNotNull,
+        );
+      },
+    );
 
     test(
       'correctly parses commit with prefix before conventional commit type',
@@ -247,43 +255,41 @@ void main() {
         isFalse,
       );
       expect(
-        ConventionalCommit.tryParse('docs(scope,dope): foo bar')!
-            .isBreakingChange,
+        ConventionalCommit.tryParse(
+          'docs(scope,dope): foo bar',
+        )!.isBreakingChange,
         isFalse,
       );
       expect(
-        ConventionalCommit.tryParse('docs(scope,dope)!: foo bar')!
-            .isBreakingChange,
+        ConventionalCommit.tryParse(
+          'docs(scope,dope)!: foo bar',
+        )!.isBreakingChange,
         isTrue,
       );
       expect(
         ConventionalCommit.tryParse(
           'docs(scope): foo bar \n\nBREAKING: I broke something.',
-        )!
-            .isBreakingChange,
+        )!.isBreakingChange,
         isTrue,
       );
       // Confirm exact matching of `BREAKING: ` (with space after colon).
       expect(
         ConventionalCommit.tryParse(
           'docs(scope): foo bar \n\nBREAKING:I broke something.',
-        )!
-            .isBreakingChange,
+        )!.isBreakingChange,
         isFalse,
       );
       expect(
         ConventionalCommit.tryParse(
           'docs(scope): foo bar \n\nBREAKING CHANGE: I broke something.',
-        )!
-            .isBreakingChange,
+        )!.isBreakingChange,
         isTrue,
       );
       // Confirm exact matching of `BREAKING CHANGE: ` (with space after colon).
       expect(
         ConventionalCommit.tryParse(
           'docs(scope): foo bar \n\nBREAKING CHANGE:I broke something.',
-        )!
-            .isBreakingChange,
+        )!.isBreakingChange,
         isFalse,
       );
     });
@@ -295,13 +301,15 @@ void main() {
         isNull,
       );
       expect(
-        ConventionalCommit.tryParse('docs(scope): foo bar')!
-            .breakingChangeDescription,
+        ConventionalCommit.tryParse(
+          'docs(scope): foo bar',
+        )!.breakingChangeDescription,
         isNull,
       );
       expect(
-        ConventionalCommit.tryParse('docs(scope,dope): foo bar')!
-            .breakingChangeDescription,
+        ConventionalCommit.tryParse(
+          'docs(scope,dope): foo bar',
+        )!.breakingChangeDescription,
         isNull,
       );
 
@@ -309,14 +317,16 @@ void main() {
       // description is not used.
       //  - without scopes
       expect(
-        ConventionalCommit.tryParse('docs!: foo bar')!
-            .breakingChangeDescription,
+        ConventionalCommit.tryParse(
+          'docs!: foo bar',
+        )!.breakingChangeDescription,
         equals('foo bar'),
       );
       // - with scopes
       expect(
-        ConventionalCommit.tryParse('docs(scope,dope)!: foo bar')!
-            .breakingChangeDescription,
+        ConventionalCommit.tryParse(
+          'docs(scope,dope)!: foo bar',
+        )!.breakingChangeDescription,
         equals('foo bar'),
       );
 
@@ -324,8 +334,7 @@ void main() {
       expect(
         ConventionalCommit.tryParse(
           'docs(scope): foo bar \n\nBREAKING: I broke something.',
-        )!
-            .breakingChangeDescription,
+        )!.breakingChangeDescription,
         equals('I broke something.'),
       );
 
@@ -333,8 +342,7 @@ void main() {
       expect(
         ConventionalCommit.tryParse(
           'docs(scope): foo bar \n\nBREAKING CHANGE: I broke something again.',
-        )!
-            .breakingChangeDescription,
+        )!.breakingChangeDescription,
         equals('I broke something again.'),
       );
     });
@@ -345,8 +353,9 @@ void main() {
         isFalse,
       );
       expect(
-        ConventionalCommit.tryParse("Merge branch 'main' of invertase/melos")!
-            .isMergeCommit,
+        ConventionalCommit.tryParse(
+          "Merge branch 'main' of invertase/melos",
+        )!.isMergeCommit,
         isTrue,
       );
       expect(
@@ -358,13 +367,15 @@ void main() {
         isFalse,
       );
       expect(
-        ConventionalCommit.tryParse('docs(scope): Merge foo bar')!
-            .isMergeCommit,
+        ConventionalCommit.tryParse(
+          'docs(scope): Merge foo bar',
+        )!.isMergeCommit,
         isFalse,
       );
       expect(
-        ConventionalCommit.tryParse('docs(scope,dope)!: Merge foo bar')!
-            .isMergeCommit,
+        ConventionalCommit.tryParse(
+          'docs(scope,dope)!: Merge foo bar',
+        )!.isMergeCommit,
         isFalse,
       );
     });
@@ -404,8 +415,9 @@ void main() {
 
     test('footers', () {
       // With a multi-line/paragraph body.
-      final commitWithBodyParsed =
-          ConventionalCommit.tryParse(commitMessageWithBodyExample)!;
+      final commitWithBodyParsed = ConventionalCommit.tryParse(
+        commitMessageWithBodyExample,
+      )!;
       // Body should not leak into footers.
       expect(
         commitWithBodyParsed.footers.length,
@@ -413,9 +425,9 @@ void main() {
       );
       // Footers should exclude the breaking change footer.
       expect(
-        commitWithBodyParsed.footers.firstWhereOrNull(
-          (element) => element.contains('BREAKING'),
-        ),
+        commitWithBodyParsed.footers
+            .where((element) => element.contains('BREAKING'))
+            .firstOrNull,
         isNull,
       );
       expect(
@@ -428,13 +440,14 @@ void main() {
       );
 
       // Footers should still parse without a body.
-      final commitWithoutBodyParsed =
-          ConventionalCommit.tryParse(commitMessageWithoutBodyExample)!;
+      final commitWithoutBodyParsed = ConventionalCommit.tryParse(
+        commitMessageWithoutBodyExample,
+      )!;
       // Header should not leak into footers.
       expect(
-        commitWithoutBodyParsed.footers.firstWhereOrNull(
-          (element) => element.contains('refactor: did something'),
-        ),
+        commitWithoutBodyParsed.footers
+            .where((element) => element.contains('refactor: did something'))
+            .firstOrNull,
         isNull,
       );
       expect(

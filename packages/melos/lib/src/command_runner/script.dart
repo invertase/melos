@@ -1,5 +1,6 @@
 import '../commands/runner.dart';
-import '../workspace_configs.dart';
+import '../common/utils.dart';
+import '../workspace_config.dart';
 import 'base.dart';
 
 class ScriptCommand extends MelosCommand {
@@ -7,10 +8,12 @@ class ScriptCommand extends MelosCommand {
     super.config, {
     required this.scripts,
   }) : assert(scripts.isNotEmpty) {
+    setupPackageFilterParser();
     argParser.addFlag(
       'no-select',
       negatable: false,
-      help: 'Skips the prompt to select a package (if defined in the script '
+      help:
+          'Skips the prompt to select a package (if defined in the script '
           """configuration). Filters defined in the script's "packageFilters" """
           'options will however still be applied.',
     );
@@ -38,7 +41,7 @@ class ScriptCommand extends MelosCommand {
 
   @override
   String get description =>
-      'Run scripts by name defined in the workspace melos.yaml config file.';
+      'Run scripts by name defined in the workspace pubspec.yaml config file.';
 
   @override
   final String invocation = 'melos <script>';
@@ -51,7 +54,11 @@ class ScriptCommand extends MelosCommand {
     final melos = Melos(logger: logger, config: config);
 
     final scriptName = argResults!.name;
-    final noSelect = argResults!['no-select'] as bool;
+    final noSelect = argResults!.optional('no-select') as bool?;
+
+    final packageFilters = hasPackageFilterArgs
+        ? parsePackageFilters(config.path, includeConfigIgnore: false)
+        : null;
 
     try {
       return await melos.run(
@@ -59,10 +66,11 @@ class ScriptCommand extends MelosCommand {
         scriptName: scriptName,
         noSelect: noSelect,
         extraArgs: argResults!.rest,
+        packageFilters: packageFilters,
       );
     } on NoPackageFoundScriptException catch (err) {
       logger.warning(err.toString(), label: false);
-      logger.log(usage);
+      logger.stdout(usage);
     }
   }
 }

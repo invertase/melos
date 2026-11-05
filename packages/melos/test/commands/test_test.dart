@@ -1,0 +1,277 @@
+import 'dart:io';
+
+import 'package:melos/melos.dart';
+import 'package:melos/src/common/glob.dart';
+import 'package:melos/src/common/io.dart';
+import 'package:path/path.dart' as p;
+import 'package:pubspec_parse/pubspec_parse.dart';
+import 'package:test/test.dart';
+
+import '../matchers.dart';
+import '../utils.dart';
+
+void main() {
+  group('Melos Test', () {
+    test('skips packages without a test/ directory', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a', 'b'],
+      );
+
+      final aDir = await createProject(workspaceDir, Pubspec('a'));
+      writeTextFile(
+        p.join(aDir.path, 'test', 'a_test.dart'),
+        '''
+import 'package:test/test.dart';
+
+void main() {
+  test('passes', () {
+    expect(1, 1);
+  });
+}
+''',
+        recursive: true,
+      );
+
+      await createProject(workspaceDir, Pubspec('b'));
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(logger: logger, config: config);
+
+      await melos.test();
+
+      expect(logger.output.normalizeLines(), contains('a:'));
+      expect(logger.output.normalizeLines(), isNot(contains('b:')));
+    });
+
+    test(
+      'reports no packages found when none have a test/ directory',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b'],
+        );
+        await createProject(workspaceDir, Pubspec('a'));
+        await createProject(workspaceDir, Pubspec('b'));
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(logger: logger, config: config);
+
+        await melos.test();
+
+        expect(
+          logger.output.normalizeLines(),
+          ignoringAnsii(
+            contains('No packages with a test/ directory found.'),
+          ),
+        );
+      },
+    );
+
+    test('sets exitCode to 1 when a package test run fails', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+      );
+      final aDir = await createProject(workspaceDir, Pubspec('a'));
+      writeTextFile(
+        p.join(aDir.path, 'test', 'a_test.dart'),
+        '''
+import 'package:test/test.dart';
+
+void main() {
+  test('fails', () {
+    expect(1, 2);
+  });
+}
+''',
+        recursive: true,
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(logger: logger, config: config);
+
+      final previousExitCode = exitCode;
+      await melos.test();
+
+      expect(exitCode, 1);
+
+      exitCode = previousExitCode;
+    });
+
+    test('does not fail when no tests ran in a package', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+        configBuilder: (path) => MelosWorkspaceConfig(
+          path: path,
+          name: 'test_workspace',
+          packages: const [],
+          sdkPath: 'fake_sdk',
+        ),
+      );
+      final aDir = await createProject(workspaceDir, Pubspec('a'));
+      writeTextFile(
+        p.join(aDir.path, 'test', 'a_test.dart'),
+        '',
+        recursive: true,
+      );
+
+      final fakeDartPath = p.join(workspaceDir.path, 'fake_sdk', 'bin', 'dart');
+      writeTextFile(fakeDartPath, '#!/bin/sh\nexit 79\n', recursive: true);
+      if (Platform.isWindows) {
+        writeTextFile('$fakeDartPath.bat', '@echo off\r\nexit /b 79\r\n');
+      } else {
+        await Process.run('chmod', ['+x', fakeDartPath]);
+      }
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(logger: logger, config: config);
+
+      final previousExitCode = exitCode;
+      await melos.test();
+
+      expect(exitCode, previousExitCode);
+      expect(
+        logger.output.normalizeLines(),
+        ignoringAnsii(contains('a: SUCCESS (no tests ran)')),
+      );
+    });
+
+    test('passes --no-pub only to flutter test', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a', 'b'],
+      );
+
+      final aDir = await createProject(
+        workspaceDir,
+        Pubspec(
+          'a',
+          dependencies: {
+            'flutter': SdkDependency('flutter'),
+          },
+        ),
+      );
+      writeTextFile(
+        p.join(aDir.path, 'test', 'a_test.dart'),
+        '',
+        recursive: true,
+      );
+
+      final bDir = await createProject(workspaceDir, Pubspec('b'));
+      writeTextFile(
+        p.join(bDir.path, 'test', 'b_test.dart'),
+        '',
+        recursive: true,
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(logger: logger, config: config);
+
+      final previousExitCode = exitCode;
+      await melos.test(noPub: true);
+      exitCode = previousExitCode;
+
+      final output = logger.output.removeAnsiCodes();
+
+      expect(output, contains('flutter test --no-pub'));
+      expect(output, isNot(contains('dart test --no-pub')));
+    });
+
+    test(
+      'correctly detects a flutter package inside a pub workspace',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a'],
+        );
+
+        await createProject(
+          workspaceDir,
+          Pubspec(
+            'a',
+            dependencies: {
+              'flutter': SdkDependency('flutter'),
+            },
+          ),
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(logger: TestLogger(), config: config);
+        final workspace = await melos.createWorkspace();
+
+        final package = workspace.filteredPackages.values.first;
+
+        expect(package.name, 'a');
+        // Regression check for https://github.com/invertase/melos/issues/830:
+        // package-type detection must still work under pub workspace
+        // resolution, since `melos test` relies on it to pick
+        // `flutter test` vs `dart test`.
+        expect(package.isFlutterPackage, isTrue);
+      },
+    );
+
+    group('config', () {
+      Future<TestLogger> runTestWith(
+        TestCommandConfigs testConfigs, {
+        int? concurrency,
+      }) async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_workspace',
+            packages: [createGlob('packages/**', currentDirectoryPath: path)],
+            commands: CommandConfigs(test: testConfigs),
+          ),
+          workspacePackages: ['a'],
+        );
+
+        final aDir = await createProject(workspaceDir, Pubspec('a'));
+        writeTextFile(
+          p.join(aDir.path, 'test', 'a_test.dart'),
+          'void main() {}',
+          recursive: true,
+        );
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+
+        await Melos(
+          logger: logger,
+          config: config,
+        ).test(concurrency: concurrency);
+
+        return logger;
+      }
+
+      test('uses the configured concurrency', () async {
+        final logger = await runTestWith(
+          const TestCommandConfigs(concurrency: 2),
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          contains('dart test --concurrency=2'),
+        );
+      });
+
+      test('command line options take precedence over the config', () async {
+        final logger = await runTestWith(
+          const TestCommandConfigs(concurrency: 2),
+          concurrency: 3,
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          contains('dart test --concurrency=3'),
+        );
+      });
+    });
+  });
+}

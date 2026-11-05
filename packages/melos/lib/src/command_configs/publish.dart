@@ -4,7 +4,7 @@ import 'package:meta/meta.dart';
 import '../../melos.dart';
 import '../common/validation.dart';
 import '../lifecycle_hooks/publish.dart';
-import '../workspace_configs.dart';
+import '../workspace_config.dart';
 
 /// Configurations for `melos publish`.
 @immutable
@@ -22,6 +22,11 @@ class PublishCommandConfigs {
     List<AggregateChangelogConfig>? aggregateChangelogs,
     this.fetchTags = true,
     this.hooks = PublishLifecycleHooks.empty,
+    this.pubServer,
+    this.dryRun,
+    this.gitTagVersion,
+    this.force,
+    this.skipValidation,
   }) : _aggregateChangelogs = aggregateChangelogs;
 
   factory PublishCommandConfigs.fromYaml(
@@ -73,7 +78,7 @@ class PublishCommandConfigs {
 
     final aggregateChangelogs = <AggregateChangelogConfig>[];
     if (workspaceChangelog ?? true) {
-      aggregateChangelogs.add(AggregateChangelogConfig.workspace());
+      aggregateChangelogs.add(const AggregateChangelogConfig.workspace());
     }
 
     final changelogsYaml = assertKeyIsA<List<Object?>?>(
@@ -124,6 +129,36 @@ class PublishCommandConfigs {
       path: 'command/publish',
     );
 
+    final pubServer = assertKeyIsA<String?>(
+      key: 'pubServer',
+      map: yaml,
+      path: 'command/publish',
+    );
+
+    final dryRun = assertKeyIsA<bool?>(
+      key: 'dryRun',
+      map: yaml,
+      path: 'command/publish',
+    );
+
+    final gitTagVersion = assertKeyIsA<bool?>(
+      key: 'gitTagVersion',
+      map: yaml,
+      path: 'command/publish',
+    );
+
+    final force = assertKeyIsA<bool?>(
+      key: 'force',
+      map: yaml,
+      path: 'command/publish',
+    );
+
+    final skipValidation = assertKeyIsA<bool?>(
+      key: 'skipValidation',
+      map: yaml,
+      path: 'command/publish',
+    );
+
     final hooksMap = assertKeyIsA<Map<Object?, Object?>?>(
       key: 'hooks',
       map: yaml,
@@ -137,7 +172,8 @@ class PublishCommandConfigs {
           )
         : PublishLifecycleHooks.empty;
 
-    final changelogCommitBodiesEntry = assertKeyIsA<Map<Object?, Object?>?>(
+    final changelogCommitBodiesEntry =
+        assertKeyIsA<Map<Object?, Object?>?>(
           key: 'changelogCommitBodies',
           map: yaml,
           path: 'command/publish',
@@ -169,6 +205,11 @@ class PublishCommandConfigs {
       aggregateChangelogs: aggregateChangelogs,
       fetchTags: fetchTags ?? true,
       hooks: hooks,
+      pubServer: pubServer,
+      dryRun: dryRun,
+      gitTagVersion: gitTagVersion,
+      force: force,
+      skipValidation: skipValidation,
     );
   }
 
@@ -188,7 +229,7 @@ class PublishCommandConfigs {
   /// Whether to add commits ids in the generated CHANGELOG.md.
   final bool includeCommitId;
 
-  /// Wheter to include commit bodies in the generated CHANGELOG.md.
+  /// Whether to include commit bodies in the generated CHANGELOG.md.
   final bool includeCommitBody;
 
   /// Whether to only include commit bodies for breaking changes.
@@ -207,7 +248,7 @@ class PublishCommandConfigs {
   /// A list of changelogs configurations that will be used to generate
   /// changelogs which describe the changes in multiple packages.
   List<AggregateChangelogConfig> get aggregateChangelogs =>
-      _aggregateChangelogs ?? [AggregateChangelogConfig.workspace()];
+      _aggregateChangelogs ?? [const AggregateChangelogConfig.workspace()];
 
   final List<AggregateChangelogConfig>? _aggregateChangelogs;
 
@@ -217,6 +258,32 @@ class PublishCommandConfigs {
   /// Lifecycle hooks for this command.
   final PublishLifecycleHooks hooks;
 
+  /// The pub server URL to publish packages to.
+  ///
+  /// When set, `--server <url>` is passed to `dart pub publish`. If not set,
+  /// the per-package `publish_to` field in `pubspec.yaml` is used.
+  final String? pubServer;
+
+  /// Whether packages are validated but not actually published.
+  ///
+  /// The default is `true`.
+  final bool? dryRun;
+
+  /// Whether missing tags are added for the published releases.
+  ///
+  /// Tags are only created when [dryRun] is disabled. The default is `false`.
+  final bool? gitTagVersion;
+
+  /// Whether the confirmation prompt is skipped when [dryRun] is disabled.
+  ///
+  /// The default is `false`.
+  final bool? force;
+
+  /// Whether packages are published without validation and resolution.
+  ///
+  /// The default is `false`.
+  final bool? skipValidation;
+
   Map<String, Object?> toJson() {
     return {
       if (branch != null) 'branch': branch,
@@ -225,10 +292,16 @@ class PublishCommandConfigs {
       'includeCommitId': includeCommitId,
       'linkToCommits': linkToCommits,
       'updateGitTagRefs': updateGitTagRefs,
-      'aggregateChangelogs':
-          aggregateChangelogs.map((config) => config.toJson()).toList(),
+      'aggregateChangelogs': aggregateChangelogs
+          .map((config) => config.toJson())
+          .toList(),
       'fetchTags': fetchTags,
       'hooks': hooks.toJson(),
+      if (pubServer != null) 'pubServer': pubServer,
+      if (dryRun != null) 'dryRun': dryRun,
+      if (gitTagVersion != null) 'gitTagVersion': gitTagVersion,
+      if (force != null) 'force': force,
+      if (skipValidation != null) 'skipValidation': skipValidation,
     };
   }
 
@@ -240,27 +313,44 @@ class PublishCommandConfigs {
       other.message == message &&
       other.includeScopes == includeScopes &&
       other.includeCommitId == includeCommitId &&
+      other.includeCommitBody == includeCommitBody &&
+      other.commitBodyOnlyBreaking == commitBodyOnlyBreaking &&
       other.linkToCommits == linkToCommits &&
       other.updateGitTagRefs == updateGitTagRefs &&
       other.releaseUrl == releaseUrl &&
-      const DeepCollectionEquality()
-          .equals(other.aggregateChangelogs, aggregateChangelogs) &&
+      const DeepCollectionEquality().equals(
+        other.aggregateChangelogs,
+        aggregateChangelogs,
+      ) &&
       other.fetchTags == fetchTags &&
-      other.hooks == hooks;
+      other.hooks == hooks &&
+      other.pubServer == pubServer &&
+      other.dryRun == dryRun &&
+      other.gitTagVersion == gitTagVersion &&
+      other.force == force &&
+      other.skipValidation == skipValidation;
 
   @override
-  int get hashCode =>
-      runtimeType.hashCode ^
-      branch.hashCode ^
-      message.hashCode ^
-      includeScopes.hashCode ^
-      includeCommitId.hashCode ^
-      linkToCommits.hashCode ^
-      updateGitTagRefs.hashCode ^
-      releaseUrl.hashCode ^
-      const DeepCollectionEquality().hash(aggregateChangelogs) ^
-      fetchTags.hashCode ^
-      hooks.hashCode;
+  int get hashCode => Object.hashAll([
+    runtimeType,
+    branch,
+    message,
+    includeScopes,
+    includeCommitId,
+    includeCommitBody,
+    commitBodyOnlyBreaking,
+    linkToCommits,
+    updateGitTagRefs,
+    releaseUrl,
+    const DeepCollectionEquality().hash(aggregateChangelogs),
+    fetchTags,
+    hooks,
+    pubServer,
+    dryRun,
+    gitTagVersion,
+    force,
+    skipValidation,
+  ]);
 
   @override
   String toString() {
@@ -276,6 +366,11 @@ PublishCommandConfigs(
   aggregateChangelogs: $aggregateChangelogs,
   fetchTags: $fetchTags,
   hooks: $hooks,
+  pubServer: $pubServer,
+  dryRun: $dryRun,
+  gitTagVersion: $gitTagVersion,
+  force: $force,
+  skipValidation: $skipValidation,
 )''';
   }
 }

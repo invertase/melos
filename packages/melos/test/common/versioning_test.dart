@@ -12,18 +12,26 @@ void main() {
         ConventionalCommit.tryParse('chore!: foo bar')!.isVersionableCommit,
         isTrue,
       );
+      // `docs` commits do not trigger a version bump on their own.
       expect(
         ConventionalCommit.tryParse('docs: foo bar')!.isVersionableCommit,
+        isFalse,
+      );
+      // A breaking `docs` commit is still versionable.
+      expect(
+        ConventionalCommit.tryParse('docs!: foo bar')!.isVersionableCommit,
         isTrue,
       );
       expect(
-        ConventionalCommit.tryParse('refactor(scope): foo bar')!
-            .isVersionableCommit,
+        ConventionalCommit.tryParse(
+          'refactor(scope): foo bar',
+        )!.isVersionableCommit,
         isTrue,
       );
       expect(
-        ConventionalCommit.tryParse('revert(scope,dope)!: foo bar')!
-            .isVersionableCommit,
+        ConventionalCommit.tryParse(
+          'revert(scope,dope)!: foo bar',
+        )!.isVersionableCommit,
         isTrue,
       );
       expect(
@@ -31,27 +39,64 @@ void main() {
         isTrue,
       );
       expect(
-        ConventionalCommit.tryParse('ci(scope,dope): foo bar')!
-            .isVersionableCommit,
+        ConventionalCommit.tryParse(
+          'ci(scope,dope): foo bar',
+        )!.isVersionableCommit,
         isFalse,
       );
       expect(
-        ConventionalCommit.tryParse('Merged PR 1337: bar foo')!
-            .isVersionableCommit,
+        ConventionalCommit.tryParse(
+          'Merged PR 1337: bar foo',
+        )!.isVersionableCommit,
         isFalse,
       );
       expect(
-        ConventionalCommit.tryParse('Merged PR 1337: fix(1338): bar foo')!
-            .isVersionableCommit,
+        ConventionalCommit.tryParse(
+          'Merged PR 1337: fix(1338): bar foo',
+        )!.isVersionableCommit,
         isTrue,
       );
       expect(
-        ConventionalCommit.tryParse('Merged PR: fix(*): bar foo')!
-            .isVersionableCommit,
+        ConventionalCommit.tryParse(
+          'Merged PR: fix(*): bar foo',
+        )!.isVersionableCommit,
         isTrue,
       );
       expect(
         ConventionalCommit.tryParse('Merged foo into bar')!.isVersionableCommit,
+        isFalse,
+      );
+    });
+
+    test('includeInChangelog', () {
+      // Version-bumping commits are always included in the changelog.
+      expect(
+        ConventionalCommit.tryParse('feat: foo bar')!.includeInChangelog,
+        isTrue,
+      );
+      expect(
+        ConventionalCommit.tryParse('fix: foo bar')!.includeInChangelog,
+        isTrue,
+      );
+      // `docs` commits are included in the changelog even though they do not
+      // trigger a version bump.
+      expect(
+        ConventionalCommit.tryParse('docs: foo bar')!.includeInChangelog,
+        isTrue,
+      );
+      expect(
+        ConventionalCommit.tryParse(
+          'docs(scope): foo bar',
+        )!.includeInChangelog,
+        isTrue,
+      );
+      // Other non-versionable types are still excluded from the changelog.
+      expect(
+        ConventionalCommit.tryParse('ci: foo bar')!.includeInChangelog,
+        isFalse,
+      );
+      expect(
+        ConventionalCommit.tryParse('chore: foo bar')!.includeInChangelog,
         isFalse,
       );
     });
@@ -66,13 +111,15 @@ void main() {
         equals(SemverReleaseType.patch),
       );
       expect(
-        ConventionalCommit.tryParse('refactor(scope): foo bar')!
-            .semverReleaseType,
+        ConventionalCommit.tryParse(
+          'refactor(scope): foo bar',
+        )!.semverReleaseType,
         equals(SemverReleaseType.patch),
       );
       expect(
-        ConventionalCommit.tryParse('feat(scope,dope): foo bar')!
-            .semverReleaseType,
+        ConventionalCommit.tryParse(
+          'feat(scope,dope): foo bar',
+        )!.semverReleaseType,
         equals(SemverReleaseType.minor),
       );
     });
@@ -154,7 +201,8 @@ class VersioningTestCase extends VersioningTestCaseBase {
     expect(
       resolveNextVersion().toString(),
       equals(expectedVersion),
-      reason: 'The version created did not match the version expected by '
+      reason:
+          'The version created did not match the version expected by '
           'this test case: $this.',
     );
   }
@@ -174,18 +222,18 @@ class NullSafetyTestCase extends VersioningTestCase {
     super.expectedVersion,
     super.requestedReleaseType,
   ) : super(
-          requestedPreId: 'nullsafety',
-          shouldMakePrereleaseVersion: true,
-        );
+        requestedPreId: 'nullsafety',
+        shouldMakePrereleaseVersion: true,
+      );
 }
 
 class UnsupportedPreReleaseTestCase extends VersioningTestCaseBase {
   const UnsupportedPreReleaseTestCase(String currentVersion)
-      : super(
-          currentVersion,
-          SemverReleaseType.patch,
-          shouldMakePrereleaseVersion: true,
-        );
+    : super(
+        currentVersion,
+        SemverReleaseType.patch,
+        shouldMakePrereleaseVersion: true,
+      );
 
   @override
   String get title => 'the version $currentVersion should be unsupported';
@@ -195,7 +243,8 @@ class UnsupportedPreReleaseTestCase extends VersioningTestCaseBase {
     expect(
       resolveNextVersion,
       throwsA(isA<UnsupportedError>()),
-      reason: 'Creating a new version should have thrown an exception, '
+      reason:
+          'Creating a new version should have thrown an exception, '
           'but it did not: $this.',
     );
   }
@@ -209,6 +258,17 @@ const _versioningTestCases = [
   VersioningTestCase('1.1.1', '2.0.0', SemverReleaseType.major),
   VersioningTestCase('1.1.1', '1.2.0', SemverReleaseType.minor),
   VersioningTestCase('1.1.1', '1.1.2', SemverReleaseType.patch),
+
+  // An integer build number (e.g. `+11`) is retained and incremented when
+  // bumping a version, regardless of the release type.
+  VersioningTestCase('3.0.0+11', '4.0.0+12', SemverReleaseType.major),
+  VersioningTestCase('3.0.0+11', '3.1.0+12', SemverReleaseType.minor),
+  VersioningTestCase('3.0.0+11', '3.0.1+12', SemverReleaseType.patch),
+  // No build number is added when the current version doesn't have one.
+  VersioningTestCase('3.0.0', '3.0.1', SemverReleaseType.patch),
+  // Non-integer or multi-component build metadata is not retained.
+  VersioningTestCase('3.0.0+foo', '4.0.0', SemverReleaseType.major),
+  VersioningTestCase('3.0.0+1.2', '4.0.0', SemverReleaseType.major),
   VersioningTestCase(
     '1.0.0',
     '2.0.0-dev.0',
@@ -241,24 +301,27 @@ const _versioningTestCases = [
   // shifted down one slot
   VersioningTestCase('0.1.0', '0.2.0', SemverReleaseType.major),
   VersioningTestCase('0.1.0', '0.1.1', SemverReleaseType.minor),
+  // A patch release below 1.0.0 bumps the patch component rather than creating
+  // a build number.
   VersioningTestCase(
     '0.1.0',
-    '0.1.0+1',
+    '0.1.1',
     SemverReleaseType.patch,
   ),
+  // An existing integer build number is retained and incremented across bumps.
   VersioningTestCase(
     '0.1.1+1',
-    '0.2.0',
+    '0.2.0+2',
     SemverReleaseType.major,
   ),
   VersioningTestCase(
     '0.1.1+1',
-    '0.1.2',
+    '0.1.2+2',
     SemverReleaseType.minor,
   ),
   VersioningTestCase(
     '0.1.1+1',
-    '0.1.1+2',
+    '0.1.2+2',
     SemverReleaseType.patch,
   ),
   VersioningTestCase(
@@ -275,7 +338,7 @@ const _versioningTestCases = [
   ),
   VersioningTestCase(
     '0.1.0',
-    '0.1.0-dev.0+1',
+    '0.1.1-dev.0',
     SemverReleaseType.patch,
     shouldMakePrereleaseVersion: true,
   ),
@@ -406,7 +469,7 @@ const _versioningTestCases = [
   ),
   NullSafetyTestCase(
     '0.1.0+1',
-    '0.2.0-1.0.nullsafety.0',
+    '0.2.0-1.0.nullsafety.0+2',
     SemverReleaseType.patch,
   ),
 

@@ -27,12 +27,16 @@ sort of version upgrade is required. Melos understands
 used specification for commit messages which are readable by humans and
 machines.
 
-Alternatively, packages can be versioned manually by specifing a version
+Alternatively, packages can be versioned manually by specifying a version
 increase (`major`, `minor`, `patch` or `build`) or an exact version.
 
 For customizing the versioning process, see the
 [configuration options](/configuration/overview#commandversion) for the
 `version` command.
+
+By default, each package is versioned independently. If you want all packages
+in the workspace to always share the same version, enable the
+[fixed versioning mode](/commands/version#fixed-versioning-mode).
 
 ### Automatic Versioning
 
@@ -42,7 +46,9 @@ steps:
 1. Apply [filters](/filters) to the list of workspace packages.
 2. Load the commit history for each package. If the `--diff` option is
    specified, Melos will only load the specified commit. Otherwise it will load
-   all commits since the last version tag (e.g. `foo-v1.0.0`).
+   all commits since the last version tag (e.g. `foo-v1.0.0`, or `v1.0.0` for
+   the root package when `useRootAsPackage` is enabled and for all packages
+   when `workspaceTag` is enabled in fixed versioning mode).
 3. Parse commit messages as Conventional Commits. If a commit message does not
    follow the Conventional Commits specification, it will be ignored.
 4. Filter out commits with types that don't trigger a version bump. For example,
@@ -57,13 +63,15 @@ steps:
 
 Currently the following commit types trigger a version bump:
 
-- `docs` - A documentation change.
 - `feat` - A new feature.
 - `fix` - A bug fix.
 - `bug` - A bug fix.
 - `perf` - A change that improves performance.
 - `refactor` - A change that neither fixes a bug nor adds a feature.
 - `revert` - A change that reverts a previous commit.
+
+`docs` commits (documentation changes) do not trigger a version bump on their
+own, but they are listed in the changelog when the package is versioned.
 
 The first matching rule in the list below determines the version bump for a
 commit:
@@ -77,6 +85,32 @@ the conventional commit type. This is useful since some collaborative version
 control systems use these non-configurable prefixes when they merge pull
 requests.
 
+#### Versions below 1.0.0
+
+Semantic versioning doesn't promise any compatibility between versions prior to
+`1.0.0`, but the Dart community convention is to treat those versions
+semantically as well, with the interpretation of each number shifted down one
+slot:
+
+- a **major** (breaking) bump increments the minor: `0.1.2` → `0.2.0`.
+- a **minor** (feature) bump increments the patch: `0.1.2` → `0.1.3`.
+- a **patch** bump also increments the patch: `0.1.2` → `0.1.3`.
+
+#### Build numbers
+
+A version may carry a build number, the `+N` suffix (e.g. `3.0.0+11`). When a
+package's current version has an integer build number, Melos retains it and
+increments it by one on every version bump, regardless of the bump type:
+
+- `3.0.0+11` with a major bump → `4.0.0+12`
+- `3.0.0+11` with a patch bump → `3.0.1+12`
+
+If the current version has no build number, none is added (e.g. `3.0.0` →
+`3.0.1`). Build metadata that is not a single integer (such as a prerelease-style
+tag, a git hash, or a dot-separated build) is not retained:
+
+- `3.0.0+abc` with a major bump → `4.0.0`
+
 #### Not using Conventional Commits?
 
 If an existing Git project is already established and does not use Conventional
@@ -88,7 +122,7 @@ are ready to release a package for the first time with Melos use [manual
 versioning](/guides/automated-releases#manual-versioning). This will ensure that the version increment is
 appropriate for all commits, including those that Melos cannot interpret.
 
-Once you have manullay versioning every packages at least once, you can savely
+Once you have manullay versioning every packages at least once, you can safely
 use automatic versioning.
 
 ### Manual Versioning
@@ -139,14 +173,16 @@ package.
 
 Package version tags have the format `<package-name>-v<version>`.
 
-This behavior can be disabled by passing `--no-git-tag-version`.
+Creating the tags can be disabled by passing `--no-git-tag-version`; the
+version commit is still created. To skip the commit as well, pass
+`--no-git-commit-version`, which also implies `--no-git-tag-version`.
 
 #### Hook
 
 After updating `pubspec.yaml` files and changelogs but before creating the
-version commit, the `command/version/hooks/preCommit` script in `melos.yaml` is
-executed. This allows you to run custom code before the version commit is
-created.
+version commit, the `command/version/hooks/preCommit` script in root
+`pubspec.yaml` is executed. This allows you to run custom code before the
+version commit is created.
 
 Note that you have to stage changes that you make in the hook and want to have
 included in the version commit yourself.
@@ -200,12 +236,13 @@ melos version --release-url
 melos version -r
 ```
 
-To enable this feature permanently, add the following to your `melos.yaml`:
+To enable this feature permanently, add the following to your root `pubspec.yaml`:
 
 ```yaml
-command:
-  version:
-    releaseUrl: true
+melos:
+  command:
+    version:
+      releaseUrl: true
 ```
 
 ## Git Hosted Packages
@@ -217,7 +254,7 @@ accordingly.
 
 To use this feature enable
 [`command/version/updateGitTagRefs`](/configuration/overview#updategittagrefs)
-in `melos.yaml`
+in your root `pubspec.yaml`
 
 Take the following git dependency:
 

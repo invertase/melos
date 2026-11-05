@@ -1,3 +1,13 @@
+## 0.6.1+1
+
+ - **FIX**: Update to Dart SDK 3.8.0 and preserve trailing commas ([#908](https://github.com/invertase/melos/issues/908)). ([eecfa4ea](https://github.com/invertase/melos/commit/eecfa4ea7caff55a58ad98d712213320285a0039))
+
+## 0.6.1
+
+> Note: This release has breaking changes.
+
+ - **BREAKING** **FEAT**: Migrate to use the Pub workspaces feature ([#816](https://github.com/invertase/melos/issues/816)). ([3602d904](https://github.com/invertase/melos/commit/3602d904fbde7f3fc7d918ab8413483efef42b20))
+
 ## 0.6.0+1
 
  - **FIX**: commit scopes that contain "-" should be treated as valid scopes ([#496](https://github.com/invertase/melos/issues/496)). ([615c208e](https://github.com/invertase/melos/commit/615c208e08bb6c7a4c159fe0a06561b0b42edd50))

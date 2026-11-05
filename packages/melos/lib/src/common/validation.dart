@@ -4,12 +4,14 @@ library validation;
 import 'exception.dart';
 
 T assertIsA<T>({
+  required Object? value,
   int? index,
   Object? key,
   String? path,
-  required Object? value,
 }) {
-  if (value is T) return value;
+  if (value is T) {
+    return value;
+  }
 
   throw MelosConfigException.invalidType(
     index: index,
@@ -21,27 +23,29 @@ T assertIsA<T>({
 }
 
 T assertKeyIsA<T>({
-  String? path,
   required Object key,
   required Map<Object?, Object?> map,
+  String? path,
 }) {
   if (null is! T && !map.containsKey(key)) {
     throw MelosConfigException.missingKey(key: key, path: path);
   }
 
-  return assertIsA<T>(value: map[key], key: key);
+  return assertIsA<T>(value: map[key], key: key, path: path);
 }
 
 List<String> assertListOrString({
-  String? path,
   required Object key,
   required Map<Object?, Object?> map,
+  String? path,
   bool isRequired = false,
 }) {
   final value = map[key];
 
   if (value == null) {
-    if (isRequired) throw MelosConfigException.missingKey(key: key, path: path);
+    if (isRequired) {
+      throw MelosConfigException.missingKey(key: key, path: path);
+    }
     return [];
   }
 
@@ -65,11 +69,11 @@ List<String> assertListOrString({
 }
 
 List<T> assertListIsA<T>({
-  String? path,
   required Object key,
   required Map<Object?, Object?> map,
   required bool isRequired,
   required T Function(int index, Object? value) assertItemIsA,
+  String? path,
 }) {
   final collection = assertKeyIsA<Iterable<Object?>?>(key: key, map: map);
 
@@ -77,7 +81,7 @@ List<T> assertListIsA<T>({
     throw MelosConfigException.missingKey(key: key, path: path);
   }
 
-  if (collection != null && collection.isEmpty) {
+  if (isRequired && collection != null && collection.isEmpty) {
     throw MelosConfigException(
       'The $key list is empty but at least one value was expected.',
     );
@@ -90,12 +94,12 @@ List<T> assertListIsA<T>({
 }
 
 Map<T, V> assertMapIsA<T, V>({
-  String? path,
   required Object key,
   required Map<Object?, Object?> map,
   required bool isRequired,
   required T Function(Object? value) assertKey,
   required V Function(Object? key, Object? value) assertValue,
+  String? path,
 }) {
   final collection = assertKeyIsA<Map<Object?, Object?>?>(key: key, map: map);
 
@@ -109,7 +113,8 @@ Map<T, V> assertMapIsA<T, V>({
   };
 }
 
-/// Thrown when `melos.yaml` configuration is malformed.
+/// Thrown when the melos section of the root `pubspec.yaml` configuration is
+/// malformed.
 class MelosConfigException implements MelosException {
   MelosConfigException(this.message);
 
@@ -118,28 +123,32 @@ class MelosConfigException implements MelosException {
     int? index,
     String? path,
   }) : this(
-          '${_descriptor(key: key, index: index, path: path)} '
-          'is required but missing',
-        );
+         '${_descriptor(key: key, index: index, path: path)} '
+         'is required but missing',
+       );
 
   MelosConfigException.invalidType({
     required Object expectedType,
+    required Object? value,
     Object? key,
     int? index,
-    required Object? value,
     String? path,
   }) : this(
-          '${_descriptor(key: key, index: index, path: path)} '
-          'is expected to be a $expectedType but got $value',
-        );
+         '${_descriptor(key: key, index: index, path: path)} '
+         'is expected to be a $expectedType but got $value',
+       );
 
   static String _descriptor({Object? key, String? path, int? index}) {
     if (key != null) {
-      if (path == null) return 'The property $key';
+      if (path == null) {
+        return 'The property $key';
+      }
       return 'The property $key at $path';
     }
     if (index != null) {
-      if (path == null) return 'The index $index';
+      if (path == null) {
+        return 'The index $index';
+      }
       return 'The index $index at $path';
     }
 
@@ -149,5 +158,5 @@ class MelosConfigException implements MelosException {
   final String message;
 
   @override
-  String toString() => 'melos.yaml: $message';
+  String toString() => 'pubspec.yaml: $message';
 }

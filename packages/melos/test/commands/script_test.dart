@@ -1,7 +1,7 @@
 import 'package:melos/src/command_runner/script.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/scripts.dart';
-import 'package:melos/src/workspace_configs.dart';
+import 'package:melos/src/workspace_config.dart';
 import 'package:test/test.dart';
 
 import '../utils.dart';
@@ -22,6 +22,7 @@ void main() {
             'test_script3': Script(name: 'test_script3', run: ''),
           }),
         ),
+        workspacePackages: [],
       );
 
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -48,6 +49,7 @@ void main() {
             'test_script3': Script(name: 'test_script3', run: ''),
           }),
         ),
+        workspacePackages: [],
       );
 
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
@@ -68,6 +70,7 @@ void main() {
             'clean': Script(name: 'clean', run: ''),
           }),
         ),
+        workspacePackages: [],
       );
 
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);

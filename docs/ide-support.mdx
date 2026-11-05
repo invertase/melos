@@ -14,12 +14,32 @@ Melos integrates with IntelliJ via the generation of
 files (`.iml` files) during `melos bootstrap`.
 
 Melos will create an IntelliJ project module for each package in your Melos
-workspace, and will create flutter and dart Run configurations for your
-`main.dart`s and your package's test suite.
+workspace, and will create Run configurations for your packages:
+
+- **Flutter Run** for each Flutter app (a Flutter package with a
+  `lib/main.dart`, or with an entry point configured through
+  [`runArguments`](/configuration/overview#runarguments)).
+- **Dart Run** for each Dart file in the `bin` directory of a pure Dart
+  package (a package that does not [need the Flutter SDK](/filters#--flutter)).
+- **Flutter Test** for each Flutter package or plugin, excluding apps, that has
+  a `test` directory.
+- **Dart Test** for each pure Dart package that has a `test` directory.
+- **Melos Run** for each script defined in your workspace configuration.
+
+The Flutter Run and Dart Run configurations can be disabled with the
+[`generateAppRunConfigs`](/configuration/overview#generateapprunconfigs)
+option.
+
+The IntelliJ files are not generated when Melos detects that it is running in a
+continuous integration environment, which is when one of the `CI`,
+`CONTINUOUS_INTEGRATION`, `BUILD_NUMBER` or `RUN_ID` environment variables is
+set.
 
 ![Generated Run configurations](/assets/intellij-run-configurations.png)
 
 ### `melos.yaml`
+
+<Info> This is only supported for Melos v6 and lower</Info>
 
 Autocompletion and validation of `melos.yaml` can be enabled in IntelliJ by
 going to `Settings` > `Languages & Frameworks` > `Schemas and DTDs` >

@@ -10,7 +10,8 @@ class CleanCommand extends MelosCommand {
   final String name = 'clean';
 
   @override
-  final String description = 'Clean this workspace and all packages. '
+  final String description =
+      'Clean this workspace and all packages. '
       'This deletes the temporary pub & ide files such as ".packages" & '
       '".flutter-plugins". Supports all package filtering options.';
 

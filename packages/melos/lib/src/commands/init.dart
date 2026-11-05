@@ -15,7 +15,7 @@ mixin _InitMixin on _Melos {
     }
 
     final isCurrentDir = directory == '.';
-    final dir = Directory(directory);
+    final dir = isCurrentDir ? Directory.current : Directory(directory);
     if (!isCurrentDir && dir.existsSync()) {
       throw StateError('Directory $directory already exists');
     } else {
@@ -27,11 +27,18 @@ mixin _InitMixin on _Melos {
     }
 
     final dartVersion = utils.currentDartVersion('dart');
-    final melosYaml = <String, Object?>{
-      'name': qualifiedWorkspaceName,
-      'packages': [if (useAppDir) 'apps/*', 'packages/*'],
-      if (packages.isNotEmpty) 'packages': packages,
-    };
+    final workspacePackages = await PackageMap.resolvePackages(
+      workspacePath: dir.path,
+      packages: [
+        Glob('packages/**'),
+        if (useAppDir) Glob('apps/**'),
+        ...packages.map(Glob.new),
+      ],
+      ignore: [],
+      categories: {},
+      logger: logger,
+    );
+
     final pubspecYaml = <String, dynamic>{
       'name': qualifiedWorkspaceName,
       'environment': {
@@ -40,16 +47,22 @@ mixin _InitMixin on _Melos {
       'dev_dependencies': {
         'melos': '^$melosVersion',
       },
+      'workspace': workspacePackages.values
+          .map((pkg) => p.relative(pkg.path, from: dir.absolute.path))
+          .map((rel) => rel.replaceAll(r'\', '/'))
+          .toList(),
+      'melos': '',
     };
 
-    final melosFile = File(p.join(dir.absolute.path, 'melos.yaml'));
     final pubspecFile = File(p.join(dir.absolute.path, 'pubspec.yaml'));
 
-    melosFile.writeAsStringSync(
-      (YamlEditor('')..update([], melosYaml)).toString(),
-    );
     pubspecFile.writeAsStringSync(
-      (YamlEditor('')..update([], pubspecYaml)).toString(),
+      // YamlEditor adds empty strings and empty lists to the pubspec.yaml file
+      // if the value is empty. This is a workaround to remove them.
+      (YamlEditor('')..update([], pubspecYaml))
+          .toString()
+          .replaceFirst('""', '')
+          .replaceFirst('[]', ''),
     );
 
     logger.log(

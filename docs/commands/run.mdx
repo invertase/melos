@@ -6,10 +6,26 @@ description: Learn more about the `run` command in Melos.
 # Run Command
 
 Run a [script](/configuration/scripts) by name defined in the workspace
-`melos.yaml` config file.
+root `pubspec.yaml` config file.
 
 ```bash
 melos run <name>
+```
+
+A script can also be run directly as `melos <name>`, without `run`:
+
+```bash
+melos <name>
+```
+
+<Info>Supports all [Melos filtering](/filters) flags.</Info>
+
+Package filter options can be passed to override or further restrict the filters
+defined in the script configuration. For example, to run a script only on
+packages matching a specific scope:
+
+```bash
+melos run test --scope="my_package*"
 ```
 
 ## --no-select
@@ -20,4 +36,59 @@ applied.
 
 ```bash
 melos run <name> --no-select
+```
+
+To skip the prompt for every run, set
+[`command/run/noSelect`](/configuration/overview#noselect) in the workspace
+configuration.
+
+## --run-unchanged
+
+Runs scripts that specify [`exec/sources`](/configuration/scripts#sources) in
+every package, even in the packages in which the sources did not change.
+
+```bash
+melos run <name> --run-unchanged
+```
+
+## --ignore-sources
+
+Ignores the [`exec/sources`](/configuration/scripts#sources) of scripts, so that
+they run in every package without calculating or storing checksums. See
+[`melos exec --ignore-sources`](/commands/exec#--ignore-sources) for more
+details.
+
+```bash
+melos run <name> --ignore-sources
+```
+
+## --list
+
+Displays all scripts defined in the Melos workspace.
+
+```bash
+melos run --list
+```
+
+Use `--json` to output the list in JSON format.
+
+```bash
+melos run --list --json
+```
+
+### --include-private
+
+Using `--include-private` ignores the private configuration on scripts.
+The private scripts are shown in prompts, listings and they can be executed directly.
+
+```bash
+melos run --list --include-private
+```
+
+### --group (-g)
+
+Filters scripts to include only those that belong to the specified group.
+
+```bash
+melos run --group <group>
 ```

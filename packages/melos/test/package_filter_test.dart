@@ -1,17 +1,22 @@
 import 'package:glob/glob.dart';
 import 'package:melos/melos.dart';
 import 'package:melos/src/common/glob.dart';
+import 'package:melos/src/common/http.dart';
 import 'package:melos/src/common/io.dart';
+import 'package:melos/src/common/pub_credential.dart';
 import 'package:path/path.dart' as p;
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
+import 'matchers.dart';
 import 'utils.dart';
 
 void main() {
   group('PackageFilters', () {
     test('dirExists', () async {
-      final workspaceDir = await createTemporaryWorkspace();
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a', 'b'],
+      );
 
       final aDir = await createProject(
         workspaceDir,
@@ -28,8 +33,8 @@ void main() {
       final workspace = await MelosWorkspace.fromConfig(
         config,
         logger: TestLogger().toMelosLogger(),
-        packageFilters: PackageFilters(
-          dirExists: const ['test'],
+        packageFilters: const PackageFilters(
+          dirExists: ['test'],
         ),
       );
 
@@ -47,7 +52,9 @@ void main() {
     });
 
     test('fileExists', () async {
-      final workspaceDir = await createTemporaryWorkspace();
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a', 'b'],
+      );
 
       final aDir = await createProject(
         workspaceDir,
@@ -64,8 +71,8 @@ void main() {
       final workspace = await MelosWorkspace.fromConfig(
         config,
         logger: TestLogger().toMelosLogger(),
-        packageFilters: PackageFilters(
-          fileExists: const ['log.txt'],
+        packageFilters: const PackageFilters(
+          fileExists: ['log.txt'],
         ),
       );
 
@@ -83,7 +90,9 @@ void main() {
     });
 
     test('ignore', () async {
-      final workspaceDir = await createTemporaryWorkspace();
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a', 'b'],
+      );
 
       await createProject(
         workspaceDir,
@@ -142,6 +151,7 @@ void main() {
 
       final workspaceDir = await createTemporaryWorkspace(
         configBuilder: configBuilder,
+        workspacePackages: ['a', 'ab', 'abc', 'b', 'c'],
       );
 
       await createProject(
@@ -192,6 +202,216 @@ void main() {
           isA<Package>().having((p) => p.name, 'name', 'abc'),
         ],
       );
+    });
+
+    group('flutter', () {
+      MelosWorkspace buildWorkspace() {
+        final workspaceBuilder = VirtualWorkspaceBuilder('name: test')
+          ..addPackage('''
+            name: a
+            dependencies:
+              flutter:
+                sdk: flutter
+          ''')
+          ..addPackage('''
+            name: b
+            dependencies:
+              a: any
+          ''')
+          ..addPackage('''
+            name: c
+          ''');
+        return workspaceBuilder.build();
+      }
+
+      test('includes packages that transitively need Flutter', () async {
+        final workspace = buildWorkspace();
+        final filteredPackages = await workspace.allPackages.applyFilters(
+          const PackageFilters(flutter: true),
+        );
+
+        expect(filteredPackages.keys, ['a', 'b']);
+      });
+
+      test('excludes packages that transitively need Flutter', () async {
+        final workspace = buildWorkspace();
+        final filteredPackages = await workspace.allPackages.applyFilters(
+          const PackageFilters(flutter: false),
+        );
+
+        expect(filteredPackages.keys, ['c']);
+      });
+
+      test('does not filter when not specified', () async {
+        final workspace = buildWorkspace();
+        final filteredPackages = await workspace.allPackages.applyFilters(
+          const PackageFilters(),
+        );
+
+        expect(filteredPackages.keys, ['a', 'b', 'c']);
+      });
+    });
+
+    group('postFilters', () {
+      MelosWorkspace buildWorkspace() {
+        final workspaceBuilder = VirtualWorkspaceBuilder('name: test')
+          ..addPackage('''
+            name: app
+            dependencies:
+              models: any
+              utils: any
+          ''')
+          ..addPackage('''
+            name: models
+            dependencies:
+              utils: any
+            dev_dependencies:
+              build_runner: any
+          ''')
+          ..addPackage('''
+            name: utils
+          ''');
+        return workspaceBuilder.build();
+      }
+
+      test('filters the included dependencies', () async {
+        final workspace = buildWorkspace();
+        final filteredPackages = await workspace.allPackages.applyFilters(
+          PackageFilters(
+            scope: [Glob('app')],
+            includeDependencies: true,
+            postFilters: const PackageFilters(dependsOn: ['build_runner']),
+          ),
+        );
+
+        expect(filteredPackages.keys, ['models']);
+      });
+
+      test('filters the included dependents', () async {
+        final workspace = buildWorkspace();
+        final filteredPackages = await workspace.allPackages.applyFilters(
+          PackageFilters(
+            scope: [Glob('utils')],
+            includeDependents: true,
+            postFilters: PackageFilters(ignore: [Glob('app')]),
+          ),
+        );
+
+        expect(filteredPackages.keys, unorderedEquals(['utils', 'models']));
+      });
+
+      test('are also applied to the packages that matched the other '
+          'filters', () async {
+        final workspace = buildWorkspace();
+        final filteredPackages = await workspace.allPackages.applyFilters(
+          PackageFilters(
+            scope: [Glob('app')],
+            includeDependencies: true,
+            postFilters: const PackageFilters(noDependsOn: ['models']),
+          ),
+        );
+
+        expect(filteredPackages.keys, unorderedEquals(['models', 'utils']));
+      });
+
+      test('are applied without including dependents or '
+          'dependencies', () async {
+        final workspace = buildWorkspace();
+        final filteredPackages = await workspace.allPackages.applyFilters(
+          const PackageFilters(
+            postFilters: PackageFilters(dependsOn: ['build_runner']),
+          ),
+        );
+
+        expect(filteredPackages.keys, ['models']);
+      });
+
+      test('throws when the post filters include dependents, dependencies '
+          'or other post filters', () async {
+        final workspace = buildWorkspace();
+
+        for (final postFilters in const [
+          PackageFilters(includeDependents: true),
+          PackageFilters(includeDependencies: true),
+          PackageFilters(postFilters: PackageFilters()),
+        ]) {
+          await expectLater(
+            workspace.allPackages.applyFilters(
+              PackageFilters(postFilters: postFilters),
+            ),
+            throwsMelosConfigException(),
+          );
+        }
+      });
+
+      test('looks up the published state of each package once', () async {
+        final previousHttpClient = internalHttpClient;
+        final previousCredentialStore = internalPubCredentialStore;
+        addTearDown(() {
+          internalHttpClient = previousHttpClient;
+          internalPubCredentialStore = previousCredentialStore;
+        });
+        internalPubCredentialStore = PubCredentialStore([]);
+        final requestedPackages = <String>[];
+        internalHttpClient = HttpClientMock((request) {
+          final name = request.url.pathSegments.last;
+          requestedPackages.add(name);
+          return HttpClientMock.parseResponse(
+            '{"name": "$name", "versions": []}',
+          );
+        });
+
+        final workspaceBuilder = VirtualWorkspaceBuilder('name: test')
+          ..addPackage('''
+            name: app
+            version: 1.0.0
+            dependencies:
+              models: any
+              utils: any
+          ''')
+          ..addPackage('''
+            name: models
+            version: 1.0.0
+          ''')
+          ..addPackage('''
+            name: utils
+            version: 1.0.0
+          ''');
+        final workspace = workspaceBuilder.build();
+        final filteredPackages = await workspace.allPackages.applyFilters(
+          PackageFilters(
+            scope: [Glob('app')],
+            published: false,
+            includeDependencies: true,
+            postFilters: const PackageFilters(published: false),
+          ),
+        );
+
+        expect(
+          filteredPackages.keys,
+          unorderedEquals(['app', 'models', 'utils']),
+        );
+        expect(
+          requestedPackages,
+          unorderedEquals(['app', 'models', 'utils']),
+        );
+      });
+
+      test('included packages skip the other filters when there are no '
+          'post filters', () async {
+        final workspace = buildWorkspace();
+        final filteredPackages = await workspace.allPackages.applyFilters(
+          PackageFilters(
+            scope: [Glob('app')],
+            includeDependencies: true,
+          ),
+        );
+
+        expect(
+          filteredPackages.keys,
+          unorderedEquals(['app', 'models', 'utils']),
+        );
+      });
     });
   });
 }

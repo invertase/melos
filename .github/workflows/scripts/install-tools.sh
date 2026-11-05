@@ -1,4 +1,4 @@
 #!/bin/bash
 
-dart pub global activate --source="path" . --executable="melos" --overwrite
+dart pub global activate --source="path" packages/melos --executable="melos" --overwrite
 melos bootstrap

@@ -1,7 +1,34 @@
+import 'package:melos/melos.dart';
 import 'package:melos/src/common/git_repository.dart';
+import 'package:melos/src/common/pending_package_update.dart';
+import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 
+import 'utils.dart';
+
 void main() {
+  group('releaseUrlForUpdate', () {
+    test('uses the plain version tag as title for the root package', () async {
+      final workspace = await createTemporaryMelosWorkspace(
+        workspacePackages: ['a'],
+      );
+      final update = MelosPendingPackageUpdate.manual(
+        workspace,
+        workspace.rootPackage,
+        const [],
+        Version(1, 2, 3),
+        logger: TestLogger().toMelosLogger(),
+      );
+      final url = GitHubRepository(
+        owner: 'invertase',
+        name: 'melos',
+      ).releaseUrlForUpdate(update);
+
+      expect(url.queryParameters['tag'], 'v1.2.3');
+      expect(url.queryParameters['title'], 'v1.2.3');
+    });
+  });
+
   group('GitHubRepository', () {
     group('fromUrl', () {
       test('parse GitHub repository URL correctly', () {
@@ -169,8 +196,7 @@ void main() {
         expect(repo.url, Uri.parse('https://gitlab.invertase.dev/a/b/c/'));
       });
 
-      test(
-          'parse GitLab repository spec with sub-path and nested groups '
+      test('parse GitLab repository spec with sub-path and nested groups '
           'correctly', () {
         final repo = GitLabRepository(
           origin: 'https://invertase.dev/gitlab',
@@ -269,8 +295,7 @@ void main() {
         expect(repo.url, Uri.parse('https://bitbucket.invertase.dev/a/b/c/'));
       });
 
-      test(
-          'parse Bitbucket repository spec with sub-path and nested groups '
+      test('parse Bitbucket repository spec with sub-path and nested groups '
           'correctly', () {
         final repo = BitbucketRepository(
           origin: 'https://invertase.dev/bitbucket',
@@ -450,14 +475,16 @@ void main() {
 
   group('parseHostedGitRepositoryUrl', () {
     test('parses GitHub repository URL', () {
-      final repo =
-          parseHostedGitRepositoryUrl(Uri.parse('https://github.com/a/b'));
+      final repo = parseHostedGitRepositoryUrl(
+        Uri.parse('https://github.com/a/b'),
+      );
       expect(repo, isA<GitHubRepository>());
     });
 
     test('parses GitLab repository URL', () {
-      final repo =
-          parseHostedGitRepositoryUrl(Uri.parse('https://gitlab.com/a/b'));
+      final repo = parseHostedGitRepositoryUrl(
+        Uri.parse('https://gitlab.com/a/b'),
+      );
       expect(repo, isA<GitLabRepository>());
     });
 

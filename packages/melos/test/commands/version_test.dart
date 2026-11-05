@@ -1,13 +1,16 @@
 import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
+import 'package:glob/glob.dart';
 import 'package:melos/melos.dart';
-import 'package:melos/src/command_configs/command_configs.dart';
+import 'package:melos/src/command_runner.dart';
+import 'package:melos/src/common/git_tag_pattern_dependency.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
+import 'package:yaml_edit/yaml_edit.dart';
 
 import '../utils.dart';
 
@@ -19,37 +22,259 @@ void main() {
   });
 
   group('version', () {
-    // Regression test for: https://github.com/invertase/melos/issues/531
-    test('--no-dependent-versions does not modify workspace changelog',
-        () async {
-      MelosWorkspaceConfig workspaceConfig(String path) => MelosWorkspaceConfig(
-            path: path,
-            name: 'test_workspace',
-            packages: [
-              createGlob('packages/**', currentDirectoryPath: path),
-            ],
-            commands: const CommandConfigs(
-              version: VersionCommandConfigs(
-                fetchTags: false,
-              ),
-            ),
-          );
+    test('Correctly updates min version in git tag pattern dependency '
+        'on major version change', () async {
       final workspaceDir = await createTemporaryWorkspace(
-        configBuilder: workspaceConfig,
+        configBuilder: _workspaceConfigBuilder,
+        workspacePackages: ['foo', 'bar'],
+        useLocalTmpDirectory: true,
+      );
+
+      const barPubspecYaml = '''
+name: bar
+resolution: workspace
+version: 1.0.0
+environment: 
+  sdk: ^3.10.0
+dependencies:
+  foo:
+    git:
+      url: github.com/foo/foo.git
+      path: packages/foo
+      tag_pattern: foo-v{{version}}
+    version: ^1.0.0
+''';
+
+      await createProject(
+        workspaceDir,
+        Pubspec(
+          'foo',
+          version: Version(1, 0, 0),
+        ),
+      );
+
+      await createProject(
+        workspaceDir,
+        Pubspec.parse(barPubspecYaml),
+        rawPubspecContent: barPubspecYaml,
+      );
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(config: config, logger: logger);
+      await melos.bootstrap(offline: true);
+      await melos.version(
+        versionPrivatePackages: true,
+        gitCommit: false,
+        force: true,
+        manualVersions: {
+          'foo': ManualVersionChange(Version(2, 0, 0)),
+        },
+      );
+
+      final barPubspecFile = File(
+        p.join(workspaceDir.path, 'packages/bar/pubspec.yaml'),
+      );
+
+      final gitTagDependency = GitTagPatternDependency.fromRawCommit(
+        pubspec: barPubspecFile.readAsStringSync(),
+        name: 'foo',
+      );
+
+      expect(gitTagDependency, isNotNull);
+      expect(gitTagDependency!.minVersion, Version(2, 0, 0));
+    });
+    test('Does min version in git tag pattern dependency'
+        ' on minor version change', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: _workspaceConfigBuilder,
+        workspacePackages: ['foo', 'bar'],
+        useLocalTmpDirectory: true,
+      );
+
+      const barPubspecYaml = '''
+name: bar
+resolution: workspace
+version: 1.0.0
+environment: 
+  sdk: ^3.10.0
+dependencies:
+  foo:
+    git:
+      url: github.com/foo/foo.git
+      path: packages/foo
+      tag_pattern: foo-v{{version}}
+    version: ^1.0.0
+''';
+
+      await createProject(
+        workspaceDir,
+        Pubspec(
+          'foo',
+          version: Version(1, 0, 0),
+        ),
+      );
+
+      await createProject(
+        workspaceDir,
+        Pubspec.parse(barPubspecYaml),
+        rawPubspecContent: barPubspecYaml,
+      );
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(config: config, logger: logger);
+      await melos.bootstrap(offline: true);
+      await melos.version(
+        versionPrivatePackages: true,
+        gitCommit: false,
+        force: true,
+        manualVersions: {
+          'foo': ManualVersionChange(Version(1, 1, 0)),
+        },
+      );
+
+      final barPubspecFile = File(
+        p.join(workspaceDir.path, 'packages/bar/pubspec.yaml'),
+      );
+
+      final gitTagDependency = GitTagPatternDependency.fromRawCommit(
+        pubspec: barPubspecFile.readAsStringSync(),
+        name: 'foo',
+      );
+
+      expect(gitTagDependency, isNotNull);
+      expect(gitTagDependency!.minVersion, Version(1, 1, 0));
+    });
+    test('Does min version in git tag pattern dependency'
+        ' on patch version change', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: _workspaceConfigBuilder,
+        workspacePackages: ['foo', 'bar'],
+        useLocalTmpDirectory: true,
+      );
+
+      const barPubspecYaml = '''
+name: bar
+resolution: workspace
+version: 1.0.0
+environment: 
+  sdk: ^3.10.0
+dependencies:
+  foo:
+    git:
+      url: github.com/foo/foo.git
+      path: packages/foo
+      tag_pattern: foo-v{{version}}
+    version: ^1.0.0
+''';
+
+      await createProject(
+        workspaceDir,
+        Pubspec(
+          'foo',
+          version: Version(1, 0, 0),
+        ),
+      );
+
+      await createProject(
+        workspaceDir,
+        Pubspec.parse(barPubspecYaml),
+        rawPubspecContent: barPubspecYaml,
+      );
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(config: config, logger: logger);
+      await melos.bootstrap(offline: true);
+      await melos.version(
+        versionPrivatePackages: true,
+        gitCommit: false,
+        force: true,
+        manualVersions: {
+          'foo': ManualVersionChange(Version(1, 0, 1)),
+        },
+      );
+
+      final barPubspecFile = File(
+        p.join(workspaceDir.path, 'packages/bar/pubspec.yaml'),
+      );
+
+      final gitTagDependency = GitTagPatternDependency.fromRawCommit(
+        pubspec: barPubspecFile.readAsStringSync(),
+        name: 'foo',
+      );
+
+      expect(gitTagDependency, isNotNull);
+      expect(gitTagDependency!.minVersion, Version(1, 0, 1));
+    });
+    test('Does fix version in git tag pattern dependency'
+        ' on version change', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: _workspaceConfigBuilder,
+        workspacePackages: ['foo', 'bar'],
+        useLocalTmpDirectory: true,
+      );
+
+      const barPubspecYaml = '''
+name: bar
+resolution: workspace
+version: 1.0.0
+environment: 
+  sdk: ^3.10.0
+dependencies:
+  foo:
+    git:
+      url: github.com/foo/foo.git
+      path: packages/foo
+      tag_pattern: foo-v{{version}}
+    version: 1.0.0
+''';
+
+      await createProject(
+        workspaceDir,
+        Pubspec(
+          'foo',
+          version: Version(1, 0, 0),
+        ),
+      );
+
+      await createProject(
+        workspaceDir,
+        Pubspec.parse(barPubspecYaml),
+        rawPubspecContent: barPubspecYaml,
+      );
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(config: config, logger: logger);
+      await melos.bootstrap(offline: true);
+      await melos.version(
+        versionPrivatePackages: true,
+        gitCommit: false,
+        force: true,
+        manualVersions: {
+          'foo': ManualVersionChange(Version(1, 1, 0)),
+        },
+      );
+
+      final barPubspecFile = File(
+        p.join(workspaceDir.path, 'packages/bar/pubspec.yaml'),
+      );
+
+      final gitTagDependency = GitTagPatternDependency.fromRawCommit(
+        pubspec: barPubspecFile.readAsStringSync(),
+        name: 'foo',
+      );
+
+      expect(gitTagDependency, isNotNull);
+      expect(gitTagDependency!.minVersion, Version(1, 1, 0));
+    });
+    test('Correctly updates package version', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        configBuilder: _workspaceConfigBuilder,
+        workspacePackages: ['a'],
+        useLocalTmpDirectory: true,
       );
       await createProject(
         workspaceDir,
         Pubspec('a', version: Version(0, 0, 1)),
-      );
-      await createProject(
-        workspaceDir,
-        Pubspec(
-          'b',
-          version: Version(0, 0, 1),
-          dependencies: {
-            'a': HostedDependency(version: VersionConstraint.any),
-          },
-        ),
       );
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
       final melos = Melos(config: config, logger: logger);
@@ -67,10 +292,6 @@ void main() {
         },
       );
 
-      final workspaceChangelogContent = File(
-        p.join(workspaceDir.path, 'CHANGELOG.md'),
-      ).readAsStringSync();
-
       final loggerOutput = logger.output;
       expect(
         loggerOutput,
@@ -81,28 +302,2608 @@ The following 1 packages will be updated:
         ),
       );
 
-      expect(
-        workspaceChangelogContent,
-        isNot(
+      final pubspec = Pubspec.parse(
+        File(
+          p.join(workspaceDir.path, 'packages/a/pubspec.yaml'),
+        ).readAsStringSync(),
+      );
+      expect(pubspec.version, Version(0, 1, 0));
+    });
+
+    // Regression test for: https://github.com/invertase/melos/issues/531
+    test(
+      '--no-dependent-versions does not modify workspace changelog',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _workspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(0, 0, 1)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec(
+            'b',
+            version: Version(0, 0, 1),
+            dependencies: {
+              'a': HostedDependency(version: VersionConstraint.any),
+            },
+          ),
+        );
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+
+        await melos.bootstrap();
+        await melos.version(
+          updateDependentsConstraints: false,
+          updateDependentsVersions: false,
+          versionPrivatePackages: true,
+          gitCommit: false,
+          gitTag: false,
+          force: true,
+          manualVersions: {
+            'a': ManualVersionChange(Version(0, 1, 0)),
+          },
+        );
+
+        final workspaceChangelogContent = File(
+          p.join(workspaceDir.path, 'CHANGELOG.md'),
+        ).readAsStringSync();
+
+        final loggerOutput = logger.output;
+        expect(
+          loggerOutput,
           contains(
             AnsiStyles.strip('''
-> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
-
- - `b` - `v0.0.1+1`
+The following 1 packages will be updated:
 '''),
           ),
-        ),
-      );
-      expect(
-        workspaceChangelogContent,
-        contains(
-          AnsiStyles.strip('''
+        );
+
+        expect(
+          workspaceChangelogContent,
+          isNot(
+            contains(
+              AnsiStyles.strip('''
+> Packages listed below depend on other packages in this workspace that have had changes. Their versions have been incremented to bump the minimum dependency versions of the packages they depend upon in this project.
+
+ - `b` - `v0.0.2`
+'''),
+            ),
+          ),
+        );
+        expect(
+          workspaceChangelogContent,
+          contains(
+            AnsiStyles.strip('''
 #### `a` - `v0.1.0`
 
  - Bump "a" to `0.1.0`.
 '''),
-        ),
+          ),
+        );
+      },
+    );
+
+    group('--ignore', () {
+      test('ignores packages matching the ignore glob', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _workspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(0, 0, 1)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(0, 0, 1)),
+        );
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+
+        await melos.bootstrap(offline: true);
+        await melos.version(
+          packageFilters: PackageFilters(ignore: [Glob('b')]),
+          updateDependentsConstraints: false,
+          updateDependentsVersions: false,
+          versionPrivatePackages: true,
+          gitCommit: false,
+          gitTag: false,
+          force: true,
+          manualVersions: {
+            'a': ManualVersionChange(Version(0, 1, 0)),
+          },
+        );
+
+        final pubspecA = Pubspec.parse(
+          File(
+            p.join(workspaceDir.path, 'packages/a/pubspec.yaml'),
+          ).readAsStringSync(),
+        );
+        final pubspecB = Pubspec.parse(
+          File(
+            p.join(workspaceDir.path, 'packages/b/pubspec.yaml'),
+          ).readAsStringSync(),
+        );
+        expect(pubspecA.version, Version(0, 1, 0));
+        expect(pubspecB.version, Version(0, 0, 1));
+      });
+
+      test(
+        'skips manual version for ignored package and logs warning',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _workspaceConfigBuilder,
+            workspacePackages: ['a'],
+            useLocalTmpDirectory: true,
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(0, 0, 1)),
+          );
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+
+          await melos.bootstrap(offline: true);
+          await melos.version(
+            packageFilters: PackageFilters(ignore: [Glob('a')]),
+            updateDependentsConstraints: false,
+            updateDependentsVersions: false,
+            versionPrivatePackages: true,
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            manualVersions: {
+              'a': ManualVersionChange(Version(0, 1, 0)),
+            },
+          );
+
+          final pubspec = Pubspec.parse(
+            File(
+              p.join(workspaceDir.path, 'packages/a/pubspec.yaml'),
+            ).readAsStringSync(),
+          );
+          // Package should NOT have been versioned since it was ignored.
+          expect(pubspec.version, Version(0, 0, 1));
+          expect(
+            logger.output,
+            contains('excluded by package filters'),
+          );
+        },
+      );
+
+      test(
+        'does not version dependents of ignored intermediate packages',
+        () async {
+          // Setup: core -> mid -> app
+          // core is versioned, mid is ignored.
+          // app depends on mid, so it should NOT get a dependent version bump
+          // since mid (the intermediate) is ignored and won't be bumped.
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _workspaceConfigBuilder,
+            workspacePackages: ['core', 'mid', 'app'],
+            useLocalTmpDirectory: true,
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec('core', version: Version(0, 0, 1)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'mid',
+              version: Version(0, 0, 1),
+              dependencies: {
+                'core': HostedDependency(version: VersionConstraint.any),
+              },
+            ),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'app',
+              version: Version(0, 0, 1),
+              dependencies: {
+                'mid': HostedDependency(version: VersionConstraint.any),
+              },
+            ),
+          );
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+
+          await melos.bootstrap(offline: true);
+          await melos.version(
+            packageFilters: PackageFilters(ignore: [Glob('mid')]),
+            versionPrivatePackages: true,
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            manualVersions: {
+              'core': ManualVersionChange(Version(0, 1, 0)),
+            },
+          );
+
+          final pubspecCore = Pubspec.parse(
+            File(
+              p.join(workspaceDir.path, 'packages/core/pubspec.yaml'),
+            ).readAsStringSync(),
+          );
+          final pubspecMid = Pubspec.parse(
+            File(
+              p.join(workspaceDir.path, 'packages/mid/pubspec.yaml'),
+            ).readAsStringSync(),
+          );
+          final pubspecApp = Pubspec.parse(
+            File(
+              p.join(workspaceDir.path, 'packages/app/pubspec.yaml'),
+            ).readAsStringSync(),
+          );
+          // core was manually versioned.
+          expect(pubspecCore.version, Version(0, 1, 0));
+          // mid is ignored, should NOT have been bumped.
+          expect(pubspecMid.version, Version(0, 0, 1));
+          // app depends only on mid (which is ignored), so it should also NOT
+          // have been bumped.
+          expect(pubspecApp.version, Version(0, 0, 1));
+        },
+      );
+
+      test(
+        'versions dependents that have a non-ignored path to the versioned '
+        'package',
+        () async {
+          // Setup: core -> mid (ignored), core -> app, mid -> app
+          // core is versioned, mid is ignored.
+          // app depends on both core and mid. Since app directly depends on
+          // core (non-ignored path), it should still get a dependent bump.
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _workspaceConfigBuilder,
+            workspacePackages: ['core', 'mid', 'app'],
+            useLocalTmpDirectory: true,
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec('core', version: Version(0, 0, 1)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'mid',
+              version: Version(0, 0, 1),
+              dependencies: {
+                'core': HostedDependency(version: VersionConstraint.any),
+              },
+            ),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'app',
+              version: Version(0, 0, 1),
+              dependencies: {
+                'core': HostedDependency(version: VersionConstraint.any),
+                'mid': HostedDependency(version: VersionConstraint.any),
+              },
+            ),
+          );
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+
+          await melos.bootstrap(offline: true);
+          await melos.version(
+            packageFilters: PackageFilters(ignore: [Glob('mid')]),
+            versionPrivatePackages: true,
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            manualVersions: {
+              'core': ManualVersionChange(Version(0, 1, 0)),
+            },
+          );
+
+          final pubspecApp = Pubspec.parse(
+            File(
+              p.join(workspaceDir.path, 'packages/app/pubspec.yaml'),
+            ).readAsStringSync(),
+          );
+          // app directly depends on core, so it should get a dependent bump
+          // even though mid is ignored.
+          expect(pubspecApp.version, Version.parse('0.0.2'));
+        },
+      );
+
+      test(
+        'skips package with own changes if it depends on ignored package '
+        'with changes',
+        () async {
+          // Setup: a depends on b, both have manual versions specified.
+          // b is ignored. a should NOT be versioned because its dependency
+          // on b (which has pending changes) would produce a broken release.
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _workspaceConfigBuilder,
+            workspacePackages: ['a', 'b'],
+            useLocalTmpDirectory: true,
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'a',
+              version: Version(0, 0, 1),
+              dependencies: {
+                'b': HostedDependency(version: VersionConstraint.any),
+              },
+            ),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec('b', version: Version(0, 0, 1)),
+          );
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+
+          await melos.bootstrap(offline: true);
+          await melos.version(
+            packageFilters: PackageFilters(ignore: [Glob('b')]),
+            updateDependentsConstraints: false,
+            updateDependentsVersions: false,
+            versionPrivatePackages: true,
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            manualVersions: {
+              'a': ManualVersionChange(Version(0, 1, 0)),
+              'b': ManualVersionChange(Version(0, 1, 0)),
+            },
+          );
+
+          final pubspecA = Pubspec.parse(
+            File(
+              p.join(workspaceDir.path, 'packages/a/pubspec.yaml'),
+            ).readAsStringSync(),
+          );
+          final pubspecB = Pubspec.parse(
+            File(
+              p.join(workspaceDir.path, 'packages/b/pubspec.yaml'),
+            ).readAsStringSync(),
+          );
+          // b is ignored, should not be versioned.
+          expect(pubspecB.version, Version(0, 0, 1));
+          // a depends on ignored b which has pending changes, so a should
+          // also be skipped to avoid a broken release.
+          expect(pubspecA.version, Version(0, 0, 1));
+          expect(
+            logger.output,
+            contains('depends on an ignored package'),
+          );
+        },
+      );
+    });
+
+    // Regression coverage for
+    // https://github.com/invertase/melos/issues/1039: a dependent's
+    // constraint on a versioned package used to be corrupted (not just left
+    // un-rewritten) when it was declared as a quoted, space-separated range
+    // (e.g. `">=0.4.0 <1.0.0"`), because the regex used to locate the old
+    // constraint stopped matching at the first space, and the caret rewrite
+    // was spliced over only that partial match. `crypto_keys_plus` in
+    // https://github.com/Bdaya-Dev/oidc is the real-world package that hit
+    // this.
+    group('dependent constraint rewrite (regression for #1039)', () {
+      Future<void> expectDependentPubspecRewrite({
+        required String dependentPubspecYaml,
+        required String expectedDependentPubspecYaml,
+        // Extra real workspace packages to create alongside `a` and `b`,
+        // e.g. to give a sibling dependency in `b`'s pubspec something
+        // resolvable to point at.
+        Map<String, Version> extraWorkspacePackages = const {},
+      }) async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _workspaceConfigBuilder,
+          workspacePackages: ['a', 'b', ...extraWorkspacePackages.keys],
+          useLocalTmpDirectory: true,
+        );
+
+        // `a`'s starting version must be admitted by every constraint used
+        // below to declare a dependency on it, or `pub get` will (correctly)
+        // fail to resolve the workspace before `melos version` ever runs.
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(0, 4, 0)),
+        );
+
+        for (final entry in extraWorkspacePackages.entries) {
+          await createProject(
+            workspaceDir,
+            Pubspec(entry.key, version: entry.value),
+          );
+        }
+
+        await createProject(
+          workspaceDir,
+          Pubspec.parse(dependentPubspecYaml),
+          rawPubspecContent: dependentPubspecYaml,
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+
+        await melos.bootstrap(offline: true);
+        await melos.version(
+          // Avoids the "provide an additional changelog entry message?"
+          // prompt this test has no commits to answer for; irrelevant to the
+          // dependent pubspec rewrite under test.
+          updateChangelog: false,
+          // Isolates the dependent *constraint* rewrite under test from the
+          // unrelated (and separately covered) cascading dependent *version*
+          // bump, which would otherwise also touch `b`'s own `version:`.
+          updateDependentsVersions: false,
+          versionPrivatePackages: true,
+          gitCommit: false,
+          gitTag: false,
+          force: true,
+          manualVersions: {
+            'a': ManualVersionChange(Version(0, 6, 0)),
+          },
+        );
+
+        final actual = File(
+          p.join(workspaceDir.path, 'packages/b/pubspec.yaml'),
+        ).readAsStringSync();
+
+        // The rewritten pubspec must always remain valid, parseable YAML -
+        // this is the assertion that would have caught #1039 even without
+        // pinning the exact expected output below.
+        expect(() => Pubspec.parse(actual), returnsNormally);
+
+        expect(actual, expectedDependentPubspecYaml);
+      }
+
+      test(
+        'quoted, space-separated range constraint (exact bug from #1039)',
+        () async {
+          const dependentPubspecYaml = '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  a: ">=0.4.0 <1.0.0"
+''';
+          await expectDependentPubspecRewrite(
+            dependentPubspecYaml: dependentPubspecYaml,
+            expectedDependentPubspecYaml: '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  a: ^0.6.0
+''',
+          );
+        },
+      );
+
+      test('single-quoted, space-separated range constraint', () async {
+        const dependentPubspecYaml = '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  a: '>=0.4.0 <1.0.0'
+''';
+        await expectDependentPubspecRewrite(
+          dependentPubspecYaml: dependentPubspecYaml,
+          expectedDependentPubspecYaml: '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  a: ^0.6.0
+''',
+        );
+      });
+
+      test('unquoted caret constraint (regression guard)', () async {
+        const dependentPubspecYaml = '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  a: ^0.4.0
+''';
+        await expectDependentPubspecRewrite(
+          dependentPubspecYaml: dependentPubspecYaml,
+          expectedDependentPubspecYaml: '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  a: ^0.6.0
+''',
+        );
+      });
+
+      test('"any" constraint (regression guard)', () async {
+        const dependentPubspecYaml = '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  a: any
+''';
+        await expectDependentPubspecRewrite(
+          dependentPubspecYaml: dependentPubspecYaml,
+          expectedDependentPubspecYaml: '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  a: ^0.6.0
+''',
+        );
+      });
+
+      test(
+        'exact pinned version constraint is replaced with an exact pin '
+        '(regression guard)',
+        () async {
+          const dependentPubspecYaml = '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  a: 0.4.0
+''';
+          await expectDependentPubspecRewrite(
+            dependentPubspecYaml: dependentPubspecYaml,
+            expectedDependentPubspecYaml: '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  a: 0.6.0
+''',
+          );
+        },
+      );
+
+      test(
+        'prerelease and build metadata suffix constraint (regression guard)',
+        () async {
+          // An explicit range (rather than `^0.4.0-dev.1+001`) is used here
+          // so the constraint still admits `a`'s actual starting version,
+          // `0.4.0` - a caret range anchored on a pre-release only admits
+          // versions up to (but excluding) the associated stable release.
+          const dependentPubspecYaml = '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  a: ">=0.4.0-dev.1+001 <1.0.0"
+''';
+          await expectDependentPubspecRewrite(
+            dependentPubspecYaml: dependentPubspecYaml,
+            expectedDependentPubspecYaml: '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  a: ^0.6.0
+''',
+          );
+        },
+      );
+
+      test(
+        'trailing comment on the constraint line is preserved '
+        '(regression guard)',
+        () async {
+          const dependentPubspecYaml = '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  a: ">=0.4.0 <1.0.0" # keep this note
+''';
+          await expectDependentPubspecRewrite(
+            dependentPubspecYaml: dependentPubspecYaml,
+            expectedDependentPubspecYaml: '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  a: ^0.6.0 # keep this note
+''',
+          );
+        },
+      );
+
+      test(
+        'sibling dependencies are left untouched (regression guard)',
+        () async {
+          const dependentPubspecYaml = '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  c: ^2.0.0
+  a: ">=0.4.0 <1.0.0"
+''';
+          await expectDependentPubspecRewrite(
+            dependentPubspecYaml: dependentPubspecYaml,
+            expectedDependentPubspecYaml: '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  c: ^2.0.0
+  a: ^0.6.0
+''',
+            extraWorkspacePackages: {'c': Version(2, 0, 0)},
+          );
+        },
+      );
+
+      test(
+        'quoted, space-separated range constraint on an externally hosted '
+        'dependency',
+        () async {
+          const dependentPubspecYaml = '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  a:
+    hosted: https://my-registry.example.com
+    version: ">=0.4.0 <1.0.0"
+''';
+          await expectDependentPubspecRewrite(
+            dependentPubspecYaml: dependentPubspecYaml,
+            expectedDependentPubspecYaml: '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  a:
+    hosted: https://my-registry.example.com
+    version: ^0.6.0
+''',
+          );
+        },
+      );
+
+      test(
+        'quoted, space-separated range constraint on a git tag pattern '
+        'dependency',
+        () async {
+          const dependentPubspecYaml = '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  a:
+    git:
+      url: github.com/a/a.git
+      path: packages/a
+      tag_pattern: a-v{{version}}
+    version: ">=0.4.0 <1.0.0"
+''';
+          // Git tag pattern dependencies preserve whether the *existing*
+          // constraint used caret syntax; `">=0.4.0 <1.0.0"` above has no
+          // leading `^`, so the rewritten value doesn't gain one either.
+          await expectDependentPubspecRewrite(
+            dependentPubspecYaml: dependentPubspecYaml,
+            expectedDependentPubspecYaml: '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dependencies:
+  a:
+    git:
+      url: github.com/a/a.git
+      path: packages/a
+      tag_pattern: a-v{{version}}
+    version: 0.6.0
+''',
+          );
+        },
+      );
+
+      test(
+        'quoted, space-separated range constraint under dev_dependencies',
+        () async {
+          const dependentPubspecYaml = '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dev_dependencies:
+  a: ">=0.4.0 <1.0.0"
+''';
+          await expectDependentPubspecRewrite(
+            dependentPubspecYaml: dependentPubspecYaml,
+            expectedDependentPubspecYaml: '''
+name: b
+resolution: workspace
+version: 1.0.0
+environment:
+  sdk: ^3.10.0
+dev_dependencies:
+  a: ^0.6.0
+''',
+          );
+        },
+      );
+    });
+
+    // Regression test for: https://github.com/invertase/melos/issues/1057
+    test(
+      '--yes does not prompt when manually versioning with a changelog',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _workspaceConfigBuilder,
+          workspacePackages: ['a'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(0, 0, 1)),
+        );
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+
+        await melos.bootstrap();
+
+        // Any attempt to prompt in this zone blows up, so the test fails if
+        // `--yes` (`force`) is not honoured, regardless of whether a terminal
+        // is attached.
+        await IOOverrides.runZoned(
+          () => melos.version(
+            updateDependentsConstraints: false,
+            updateDependentsVersions: false,
+            versionPrivatePackages: true,
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            manualVersions: {
+              'a': ManualVersionChange(Version(0, 1, 0)),
+            },
+          ),
+          stdin: _ThrowingStdin.new,
+        );
+
+        final pubspec = Pubspec.parse(
+          File(
+            p.join(workspaceDir.path, 'packages/a/pubspec.yaml'),
+          ).readAsStringSync(),
+        );
+        expect(pubspec.version, Version(0, 1, 0));
+
+        final changelog = File(
+          p.join(workspaceDir.path, 'packages/a/CHANGELOG.md'),
+        ).readAsStringSync();
+        expect(changelog, contains('0.1.0'));
+        expect(changelog, contains('Bump "a" to `0.1.0`.'));
+      },
+    );
+
+    group('fixed mode', () {
+      Future<void> commitPackageChange(
+        Directory workspaceDir,
+        String packageName,
+        String message,
+      ) async {
+        File(
+          p.join(workspaceDir.path, 'packages', packageName, 'change.txt'),
+        ).writeAsStringSync(message);
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', message]);
+      }
+
+      Version pubspecVersion(Directory workspaceDir, String packageName) {
+        return Pubspec.parse(
+          File(
+            p.join(workspaceDir.path, 'packages', packageName, 'pubspec.yaml'),
+          ).readAsStringSync(),
+        ).version!;
+      }
+
+      String packageChangelog(Directory workspaceDir, String packageName) {
+        return File(
+          p.join(workspaceDir.path, 'packages', packageName, 'CHANGELOG.md'),
+        ).readAsStringSync();
+      }
+
+      test(
+        'bumps all packages to the same version based on the most '
+        'significant change',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _fixedModeWorkspaceConfigBuilder,
+            workspacePackages: ['a', 'b', 'c'],
+            useLocalTmpDirectory: true,
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec('b', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'c',
+              version: Version(1, 0, 0),
+              dependencies: {
+                'a': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+          await _runGit(workspaceDir, ['init']);
+          await _runGit(workspaceDir, ['add', '.']);
+          await _runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+          await commitPackageChange(workspaceDir, 'a', 'fix: a bug fix');
+          await commitPackageChange(workspaceDir, 'b', 'feat: a new feature');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          // The feature in "b" causes a minor bump for the whole workspace.
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 1, 0));
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 1, 0));
+          expect(pubspecVersion(workspaceDir, 'c'), Version(1, 1, 0));
+
+          // The dependency constraint of "c" on "a" is updated to the
+          // lockstep version.
+          final pubspecC = Pubspec.parse(
+            File(
+              p.join(workspaceDir.path, 'packages/c/pubspec.yaml'),
+            ).readAsStringSync(),
+          );
+          final constraint =
+              (pubspecC.dependencies['a']! as HostedDependency).version;
+          expect(constraint, VersionConstraint.parse('^1.1.0'));
+
+          // Packages with changes get their regular changelog entries.
+          expect(packageChangelog(workspaceDir, 'a'), contains('a bug fix'));
+          expect(
+            packageChangelog(workspaceDir, 'b'),
+            contains('a new feature'),
+          );
+          // Packages without changes get a lockstep changelog entry.
+          expect(
+            packageChangelog(workspaceDir, 'c'),
+            contains(
+              'Bump version to keep all packages in the workspace in '
+              'lockstep.',
+            ),
+          );
+
+          // The workspace changelog lists the lockstep-only package in its
+          // own section.
+          final workspaceChangelog = File(
+            p.join(workspaceDir.path, 'CHANGELOG.md'),
+          ).readAsStringSync();
+          expect(
+            workspaceChangelog,
+            contains('Packages versioned in lockstep only:'),
+          );
+          expect(workspaceChangelog, contains('`c` - `v1.1.0`'));
+        },
+      );
+
+      test('a breaking change bumps all packages with a major '
+          'version', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(1, 0, 0)),
+        );
+        await _runGit(workspaceDir, ['init']);
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+        await commitPackageChange(workspaceDir, 'a', 'feat!: breaking change');
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+        await melos.version(gitCommit: false, gitTag: false, force: true);
+
+        expect(pubspecVersion(workspaceDir, 'a'), Version(2, 0, 0));
+        expect(pubspecVersion(workspaceDir, 'b'), Version(2, 0, 0));
+      });
+
+      test('diverged versions converge on the highest current '
+          'version', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(2, 3, 0)),
+        );
+        await _runGit(workspaceDir, ['init']);
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+        await commitPackageChange(workspaceDir, 'a', 'fix: a bug fix');
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+        await melos.version(gitCommit: false, gitTag: false, force: true);
+
+        expect(pubspecVersion(workspaceDir, 'a'), Version(2, 3, 1));
+        expect(pubspecVersion(workspaceDir, 'b'), Version(2, 3, 1));
+      });
+
+      test('a manual version is applied to all packages', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(1, 0, 0)),
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+        await melos.version(
+          gitCommit: false,
+          gitTag: false,
+          force: true,
+          // Skip changelogs to avoid the changelog message prompt for
+          // manually versioned packages without commits.
+          updateChangelog: false,
+          manualVersions: {
+            'a': ManualVersionChange(Version(2, 0, 0)),
+          },
+        );
+
+        expect(pubspecVersion(workspaceDir, 'a'), Version(2, 0, 0));
+        expect(pubspecVersion(workspaceDir, 'b'), Version(2, 0, 0));
+      });
+
+      test('conflicting manual versions throw', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(1, 0, 0)),
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+
+        await expectLater(
+          melos.version(
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            updateChangelog: false,
+            manualVersions: {
+              'a': ManualVersionChange(Version(2, 0, 0)),
+              'b': ManualVersionChange(Version(3, 0, 0)),
+            },
+          ),
+          throwsA(isA<FixedVersioningException>()),
+        );
+      });
+
+      test('a manual version below a current version throws', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(3, 0, 0)),
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+
+        await expectLater(
+          melos.version(
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            updateChangelog: false,
+            manualVersions: {
+              'a': ManualVersionChange(Version(2, 0, 0)),
+            },
+          ),
+          throwsA(isA<FixedVersioningException>()),
+        );
+      });
+
+      test('private packages are not versioned by default', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(1, 0, 0), publishTo: 'none'),
+        );
+        await _runGit(workspaceDir, ['init']);
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+        await commitPackageChange(workspaceDir, 'a', 'fix: a bug fix');
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+        await melos.version(gitCommit: false, gitTag: false, force: true);
+
+        expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+        expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 0));
+      });
+
+      test('a relative manual version is applied to the highest current '
+          'version', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(2, 3, 0)),
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+        await melos.version(
+          gitCommit: false,
+          gitTag: false,
+          force: true,
+          updateChangelog: false,
+          manualVersions: {
+            // Although "a" is at 1.0.0, the patch bump is applied to the
+            // highest current version in the workspace.
+            'a': ManualVersionChange.incrementBySemverReleaseType(
+              SemverReleaseType.patch,
+            ),
+          },
+        );
+
+        expect(pubspecVersion(workspaceDir, 'a'), Version(2, 3, 1));
+        expect(pubspecVersion(workspaceDir, 'b'), Version(2, 3, 1));
+      });
+
+      test('packages already at the lockstep version are left '
+          'untouched', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(2, 0, 0)),
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+        await melos.version(
+          gitCommit: false,
+          gitTag: false,
+          force: true,
+          updateChangelog: false,
+          manualVersions: {
+            'a': ManualVersionChange(Version(2, 0, 0)),
+          },
+        );
+
+        expect(pubspecVersion(workspaceDir, 'a'), Version(2, 0, 0));
+        expect(pubspecVersion(workspaceDir, 'b'), Version(2, 0, 0));
+        expect(
+          logger.output,
+          contains('already at the lockstep version 2.0.0'),
+        );
+        // No changelog was written for the package that was already at the
+        // lockstep version.
+        expect(
+          File(
+            p.join(workspaceDir.path, 'packages/b/CHANGELOG.md'),
+          ).existsSync(),
+          isFalse,
+        );
+      });
+
+      test('does not version packages that depend on an ignored package '
+          'with changes', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b', 'core'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('core', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec(
+            'b',
+            version: Version(1, 0, 0),
+            dependencies: {
+              'core': HostedDependency(
+                version: VersionConstraint.parse('^1.0.0'),
+              ),
+            },
+          ),
+        );
+        await _runGit(workspaceDir, ['init']);
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+        await commitPackageChange(workspaceDir, 'a', 'fix: a bug fix');
+        await commitPackageChange(workspaceDir, 'core', 'feat!: breaking');
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+        await melos.version(
+          packageFilters: PackageFilters(ignore: [Glob('core')]),
+          gitCommit: false,
+          gitTag: false,
+          force: true,
+        );
+
+        // Only "a" is versioned; "core" is ignored and "b" depends on the
+        // ignored "core" which has pending changes.
+        expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+        expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 0));
+        expect(pubspecVersion(workspaceDir, 'core'), Version(1, 0, 0));
+        expect(
+          logger.output,
+          contains(
+            'Package "b" is not versioned in lockstep because it depends on '
+            'an ignored package that has pending changes.',
+          ),
+        );
+      });
+
+      test('does nothing when there are no versionable changes', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(1, 0, 0)),
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+        await melos.version(gitCommit: false, gitTag: false, force: true);
+
+        expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 0));
+        expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 0));
+        expect(
+          logger.output,
+          contains('No packages were found that required versioning.'),
+        );
+      });
+    });
+
+    group('smart-dependents', () {
+      Version pubspecVersion(Directory workspaceDir, String packageName) {
+        return Pubspec.parse(
+          File(
+            p.join(workspaceDir.path, 'packages', packageName, 'pubspec.yaml'),
+          ).readAsStringSync(),
+        ).version!;
+      }
+
+      test(
+        'skips dependents whose declared constraint allows the updated version',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _workspaceConfigBuilder,
+            workspacePackages: ['a', 'b'],
+            useLocalTmpDirectory: true,
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'b',
+              version: Version(1, 0, 0),
+              dependencies: {
+                'a': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+
+          await melos.bootstrap(offline: true);
+          await melos.version(
+            versionPrivatePackages: true,
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            smartDependents: true,
+            manualVersions: {
+              'a': ManualVersionChange(Version(1, 0, 1)),
+            },
+          );
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          // `b` already allowed 1.0.1 via `^1.0.0`, so it is NOT bumped.
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 0));
+
+          final bPubspec = Pubspec.parse(
+            File(
+              p.join(workspaceDir.path, 'packages/b/pubspec.yaml'),
+            ).readAsStringSync(),
+          );
+          final aDep = bPubspec.dependencies['a']! as HostedDependency;
+          expect(
+            aDep.version,
+            VersionConstraint.parse('^1.0.0'),
+          );
+        },
+      );
+
+      test(
+        'versions dependents whose declared constraint does not allow the '
+        'updated version',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _workspaceConfigBuilder,
+            workspacePackages: ['a', 'b'],
+            useLocalTmpDirectory: true,
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'b',
+              version: Version(1, 0, 0),
+              dependencies: {
+                'a': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+
+          await melos.bootstrap(offline: true);
+          await melos.version(
+            versionPrivatePackages: true,
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            smartDependents: true,
+            manualVersions: {
+              'a': ManualVersionChange(Version(2, 0, 0)),
+            },
+          );
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(2, 0, 0));
+          // `b` did NOT allow 2.0.0 via `^1.0.0`, so it gets a patch bump and
+          // constraint rewrite.
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 1));
+
+          final bPubspec = Pubspec.parse(
+            File(
+              p.join(workspaceDir.path, 'packages/b/pubspec.yaml'),
+            ).readAsStringSync(),
+          );
+          final aDep = bPubspec.dependencies['a']! as HostedDependency;
+          expect(
+            aDep.version,
+            VersionConstraint.parse('^2.0.0'),
+          );
+        },
+      );
+
+      test(
+        'stops transitive cascade at intermediate package whose constraint '
+        'allows updated version',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _workspaceConfigBuilder,
+            workspacePackages: ['a', 'b', 'c'],
+            useLocalTmpDirectory: true,
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'b',
+              version: Version(1, 0, 0),
+              dependencies: {
+                'a': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'c',
+              version: Version(1, 0, 0),
+              dependencies: {
+                'b': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+
+          await melos.bootstrap(offline: true);
+          await melos.version(
+            versionPrivatePackages: true,
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            smartDependents: true,
+            manualVersions: {
+              'a': ManualVersionChange(Version(2, 0, 0)),
+            },
+          );
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(2, 0, 0));
+          // `b` did NOT allow 2.0.0, so it gets bumped to 1.0.1 and constraint
+          // updated.
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 1));
+          // `c` allows 1.0.1 via `^1.0.0`, so cascade stops at `b` and `c` is
+          // NOT bumped.
+          expect(pubspecVersion(workspaceDir, 'c'), Version(1, 0, 0));
+
+          final cPubspec = Pubspec.parse(
+            File(
+              p.join(workspaceDir.path, 'packages/c/pubspec.yaml'),
+            ).readAsStringSync(),
+          );
+          final bDep = cPubspec.dependencies['b']! as HostedDependency;
+          expect(
+            bDep.version,
+            VersionConstraint.parse('^1.0.0'),
+          );
+        },
+      );
+
+      test(
+        'honors smartDependents configured in melos.yaml',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _smartDependentsWorkspaceConfigBuilder,
+            workspacePackages: ['a', 'b'],
+            useLocalTmpDirectory: true,
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'b',
+              version: Version(1, 0, 0),
+              dependencies: {
+                'a': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+
+          await melos.bootstrap(offline: true);
+          await melos.version(
+            versionPrivatePackages: true,
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            manualVersions: {
+              'a': ManualVersionChange(Version(1, 0, 1)),
+            },
+          );
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          // `smartDependents` was enabled in config, so `b` is skipped on
+          // compatible patch.
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 0));
+        },
+      );
+
+      test(
+        'CLI runner respects smartDependents from melos.yaml without explicit '
+        'flag',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _smartDependentsWorkspaceConfigBuilder,
+            workspacePackages: ['a', 'b'],
+            useLocalTmpDirectory: true,
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'b',
+              version: Version(1, 0, 0),
+              dependencies: {
+                'a': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final runner = MelosCommandRunner(config);
+
+          await runner.run([
+            'version',
+            '--yes',
+            '--no-git-tag-version',
+            '--no-git-commit-version',
+            '--all',
+            '-V',
+            'a:1.0.1',
+          ]);
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 0));
+        },
+      );
+
+      test(
+        'CLI runner overrides smartDependents config with '
+        '--no-smart-dependents',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _smartDependentsWorkspaceConfigBuilder,
+            workspacePackages: ['a', 'b'],
+            useLocalTmpDirectory: true,
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'b',
+              version: Version(1, 0, 0),
+              dependencies: {
+                'a': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final runner = MelosCommandRunner(config);
+
+          await runner.run([
+            'version',
+            '--yes',
+            '--no-git-tag-version',
+            '--no-git-commit-version',
+            '--no-smart-dependents',
+            '--all',
+            '-V',
+            'a:1.0.1',
+          ]);
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          // Explicit --no-smart-dependents forces legacy cascade bump.
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 1));
+        },
+      );
+
+      test(
+        'CLI runner enables smartDependents with --smart-dependents flag',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _workspaceConfigBuilder,
+            workspacePackages: ['a', 'b'],
+            useLocalTmpDirectory: true,
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'b',
+              version: Version(1, 0, 0),
+              dependencies: {
+                'a': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final runner = MelosCommandRunner(config);
+
+          await runner.run([
+            'version',
+            '--yes',
+            '--no-git-tag-version',
+            '--no-git-commit-version',
+            '--smart-dependents',
+            '--all',
+            '-V',
+            'a:1.0.1',
+          ]);
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          // Explicit --smart-dependents skips bump on compatible patch.
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 0));
+        },
+      );
+
+      test(
+        'skips dev_dependencies whose declared constraint allows updated '
+        'version',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _workspaceConfigBuilder,
+            workspacePackages: ['a', 'b'],
+            useLocalTmpDirectory: true,
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'b',
+              version: Version(1, 0, 0),
+              devDependencies: {
+                'a': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+
+          await melos.bootstrap(offline: true);
+          await melos.version(
+            versionPrivatePackages: true,
+            gitCommit: false,
+            gitTag: false,
+            force: true,
+            smartDependents: true,
+            manualVersions: {
+              'a': ManualVersionChange(Version(1, 0, 1)),
+            },
+          );
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 0));
+        },
+      );
+    });
+
+    group('workspaceTag', () {
+      Future<void> commitPackageChange(
+        Directory workspaceDir,
+        String packageName,
+        String message,
+      ) async {
+        File(
+          p.join(workspaceDir.path, 'packages', packageName, 'change.txt'),
+        ).writeAsStringSync(message);
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', message]);
+      }
+
+      Version pubspecVersion(Directory workspaceDir, String packageName) {
+        return Pubspec.parse(
+          File(
+            p.join(workspaceDir.path, 'packages', packageName, 'pubspec.yaml'),
+          ).readAsStringSync(),
+        ).version!;
+      }
+
+      Future<Directory> createWorkspace() async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _workspaceTagWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(1, 0, 0)),
+        );
+        await _runGit(workspaceDir, ['init']);
+        await _runGit(workspaceDir, ['config', 'user.name', 'Melos Test']);
+        await _runGit(
+          workspaceDir,
+          ['config', 'user.email', 'test@melos.invertase.dev'],
+        );
+        await _runGit(workspaceDir, ['config', 'commit.gpgsign', 'false']);
+        return workspaceDir;
+      }
+
+      test('creates a single plain version tag for the workspace', () async {
+        final workspaceDir = await createWorkspace();
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+        await commitPackageChange(workspaceDir, 'a', 'feat: a new feature');
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+        await melos.version(force: true);
+
+        expect(pubspecVersion(workspaceDir, 'a'), Version(1, 1, 0));
+        expect(pubspecVersion(workspaceDir, 'b'), Version(1, 1, 0));
+        expect(await _gitTags(workspaceDir), ['v1.1.0']);
+
+        // The tag message keeps the markdown headings of the release notes.
+        final tagMessage = await _gitTagMessage(workspaceDir, 'v1.1.0');
+        expect(tagMessage, contains('# a'));
+        expect(tagMessage, contains('# b'));
+        expect(tagMessage, contains('## 1.1.0'));
+        expect(tagMessage, contains('a new feature'));
+      });
+
+      test('updates git refs of dependents to the plain version tag', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _workspaceTagWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec(
+            'b',
+            version: Version(1, 0, 0),
+            dependencies: {
+              'a': GitDependency(
+                Uri.parse('https://github.com/invertase/melos.git'),
+                ref: 'v1.0.0',
+              ),
+            },
+          ),
+        );
+        await _runGit(workspaceDir, ['init']);
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+        await _runGit(workspaceDir, ['tag', 'v1.0.0']);
+        File(
+          p.join(workspaceDir.path, 'packages', 'a', 'change.txt'),
+        ).writeAsStringSync('feat');
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', 'feat: a new feature']);
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.version(gitCommit: false, gitTag: false, force: true);
+
+        final pubspecB = File(
+          p.join(workspaceDir.path, 'packages/b/pubspec.yaml'),
+        ).readAsStringSync();
+        expect(pubspecB, contains('ref: v1.1.0'));
+        expect(pubspecB, isNot(contains('a-v1.1.0')));
+      });
+
+      test(
+        'uses the plain version tag to determine the commits since the last '
+        'release',
+        () async {
+          final workspaceDir = await createWorkspace();
+          await commitPackageChange(workspaceDir, 'a', 'feat: a new feature');
+          await _runGit(workspaceDir, ['tag', 'v1.0.0']);
+          await commitPackageChange(workspaceDir, 'b', 'fix: a bug fix');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          // Only the fix after the workspace tag is considered, so the
+          // workspace is bumped with a patch instead of a minor.
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 1));
+        },
+      );
+
+      test(
+        'uses the tag with the highest version when tags of both formats '
+        'exist',
+        () async {
+          final workspaceDir = await createWorkspace();
+          await commitPackageChange(workspaceDir, 'a', 'feat: an old feature');
+          await _runGit(workspaceDir, ['tag', 'v0.8.0']);
+          await commitPackageChange(workspaceDir, 'a', 'feat: a new feature');
+          await _runGit(workspaceDir, ['tag', 'a-v0.9.0']);
+          await _runGit(workspaceDir, ['tag', 'b-v0.9.0']);
+          await commitPackageChange(workspaceDir, 'b', 'fix: a bug fix');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 1));
+        },
+      );
+
+      test(
+        'still recognizes tags prefixed with the package name',
+        () async {
+          final workspaceDir = await createWorkspace();
+          await commitPackageChange(workspaceDir, 'a', 'feat: a new feature');
+          await _runGit(workspaceDir, ['tag', 'a-v1.0.0']);
+          await _runGit(workspaceDir, ['tag', 'b-v1.0.0']);
+          await commitPackageChange(workspaceDir, 'b', 'fix: a bug fix');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 1));
+        },
+      );
+    });
+
+    group('useRootAsPackage', () {
+      void setRootVersion(Directory workspaceDir, Version version) {
+        final pubspecFile = File(p.join(workspaceDir.path, 'pubspec.yaml'));
+        final editor = YamlEditor(pubspecFile.readAsStringSync())
+          ..update(['version'], version.toString());
+        pubspecFile.writeAsStringSync(editor.toString());
+      }
+
+      Future<void> commitRootChange(
+        Directory workspaceDir,
+        String message,
+      ) async {
+        File(
+          p.join(workspaceDir.path, 'change.txt'),
+        ).writeAsStringSync(message);
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', message]);
+      }
+
+      Version rootVersion(Directory workspaceDir) {
+        return Pubspec.parse(
+          File(p.join(workspaceDir.path, 'pubspec.yaml')).readAsStringSync(),
+        ).version!;
+      }
+
+      test('creates plain version tags for the root package', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _useRootAsPackageWorkspaceConfigBuilder,
+          workspacePackages: ['a'],
+          useLocalTmpDirectory: true,
+        );
+        setRootVersion(workspaceDir, Version(1, 0, 0));
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await _runGit(workspaceDir, ['init']);
+        await _runGit(workspaceDir, ['config', 'user.name', 'Melos Test']);
+        await _runGit(
+          workspaceDir,
+          ['config', 'user.email', 'test@melos.invertase.dev'],
+        );
+        await _runGit(workspaceDir, ['config', 'commit.gpgsign', 'false']);
+        await commitRootChange(workspaceDir, 'feat: a new feature');
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+        await melos.version(force: true);
+
+        expect(rootVersion(workspaceDir), Version(1, 1, 0));
+        final tags = await _gitTags(workspaceDir);
+        expect(tags, contains('v1.1.0'));
+        expect(tags, contains('a-v1.1.0'));
+        expect(tags, isNot(contains('workspace-v1.1.0')));
+      });
+
+      test(
+        'uses plain version tags to determine the commits since the last '
+        'release of the root package',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _useRootAsPackageWorkspaceConfigBuilder,
+            workspacePackages: ['a'],
+            useLocalTmpDirectory: true,
+          );
+          setRootVersion(workspaceDir, Version(1, 0, 0));
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await _runGit(workspaceDir, ['init']);
+          await commitRootChange(workspaceDir, 'feat: a new feature');
+          await _runGit(workspaceDir, ['tag', 'v1.0.0']);
+          await commitRootChange(workspaceDir, 'fix: a bug fix');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          // Only the fix after the plain version tag is considered, so the
+          // root package is bumped with a patch instead of a minor.
+          expect(rootVersion(workspaceDir), Version(1, 0, 1));
+        },
+      );
+
+      test(
+        'uses the root package tag with the highest version when tags of '
+        'both formats exist',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _useRootAsPackageWorkspaceConfigBuilder,
+            workspacePackages: ['a'],
+            useLocalTmpDirectory: true,
+          );
+          setRootVersion(workspaceDir, Version(1, 0, 0));
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await _runGit(workspaceDir, ['init']);
+          await commitRootChange(workspaceDir, 'feat: an old feature');
+          await _runGit(workspaceDir, ['tag', 'v0.8.0']);
+          await commitRootChange(workspaceDir, 'feat: a new feature');
+          await _runGit(workspaceDir, ['tag', 'workspace-v0.9.0']);
+          await commitRootChange(workspaceDir, 'fix: a bug fix');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          // The tag prefixed with the package name has the highest version,
+          // so only the fix after it is considered.
+          expect(rootVersion(workspaceDir), Version(1, 0, 1));
+        },
+      );
+
+      test(
+        'prefers the plain root package tag when it has the highest version',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _useRootAsPackageWorkspaceConfigBuilder,
+            workspacePackages: ['a'],
+            useLocalTmpDirectory: true,
+          );
+          setRootVersion(workspaceDir, Version(1, 0, 0));
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await _runGit(workspaceDir, ['init']);
+          await commitRootChange(workspaceDir, 'feat: an old feature');
+          await _runGit(workspaceDir, ['tag', 'workspace-v0.8.0']);
+          await commitRootChange(workspaceDir, 'feat: a new feature');
+          await _runGit(workspaceDir, ['tag', 'v0.9.0']);
+          await commitRootChange(workspaceDir, 'fix: a bug fix');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          expect(rootVersion(workspaceDir), Version(1, 0, 1));
+        },
+      );
+
+      test(
+        'prefers the plain root package tag when tags of both formats have '
+        'the same version',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _useRootAsPackageWorkspaceConfigBuilder,
+            workspacePackages: ['a'],
+            useLocalTmpDirectory: true,
+          );
+          setRootVersion(workspaceDir, Version(1, 0, 0));
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await _runGit(workspaceDir, ['init']);
+          await commitRootChange(workspaceDir, 'feat: an old feature');
+          await _runGit(workspaceDir, ['tag', 'v0.9.0']);
+          await commitRootChange(workspaceDir, 'feat: a new feature');
+          await _runGit(workspaceDir, ['tag', 'workspace-v0.9.0']);
+          await commitRootChange(workspaceDir, 'fix: a bug fix');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          // The plain version tag is preferred even though the tag prefixed
+          // with the package name is newer, so the feature after the plain
+          // tag is included.
+          expect(rootVersion(workspaceDir), Version(1, 1, 0));
+        },
+      );
+
+      test(
+        'ignores tags that do not contain a version for the root package',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _useRootAsPackageWorkspaceConfigBuilder,
+            workspacePackages: ['a'],
+            useLocalTmpDirectory: true,
+          );
+          setRootVersion(workspaceDir, Version(1, 0, 0));
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await _runGit(workspaceDir, ['init']);
+          await commitRootChange(workspaceDir, 'feat: a new feature');
+          await _runGit(workspaceDir, ['tag', 'v8_dart-v0.9.0']);
+          await commitRootChange(workspaceDir, 'fix: a bug fix');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          // The tag does not belong to the root package, so the whole history
+          // is considered and the feature causes a minor bump.
+          expect(rootVersion(workspaceDir), Version(1, 1, 0));
+        },
+      );
+
+      test('warns when the root package tag already exists', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _useRootAsPackageWorkspaceConfigBuilder,
+          workspacePackages: ['a'],
+          useLocalTmpDirectory: true,
+        );
+        setRootVersion(workspaceDir, Version(1, 0, 0));
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await _runGit(workspaceDir, ['init']);
+        await _runGit(workspaceDir, ['config', 'user.name', 'Melos Test']);
+        await _runGit(
+          workspaceDir,
+          ['config', 'user.email', 'test@melos.invertase.dev'],
+        );
+        await _runGit(workspaceDir, ['config', 'commit.gpgsign', 'false']);
+        await commitRootChange(workspaceDir, 'chore: initial');
+        await _runGit(workspaceDir, ['tag', 'v1.0.0']);
+        await commitRootChange(workspaceDir, 'feat: a new feature');
+        await _runGit(workspaceDir, ['tag', 'v1.1.0']);
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.bootstrap(offline: true);
+        await melos.version(force: true);
+
+        expect(
+          logger.output,
+          contains('The git tag "v1.1.0" was not created'),
+        );
+      });
+
+      test(
+        'still recognizes root package tags prefixed with the package name',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _useRootAsPackageWorkspaceConfigBuilder,
+            workspacePackages: ['a'],
+            useLocalTmpDirectory: true,
+          );
+          setRootVersion(workspaceDir, Version(1, 0, 0));
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await _runGit(workspaceDir, ['init']);
+          await commitRootChange(workspaceDir, 'feat: a new feature');
+          await _runGit(workspaceDir, ['tag', 'workspace-v1.0.0']);
+          await commitRootChange(workspaceDir, 'fix: a bug fix');
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(config: config, logger: logger);
+          await melos.bootstrap(offline: true);
+          await melos.version(gitCommit: false, gitTag: false, force: true);
+
+          expect(rootVersion(workspaceDir), Version(1, 0, 1));
+        },
+      );
+    });
+
+    group('config', () {
+      Version pubspecVersion(Directory workspaceDir, String packageName) {
+        return Pubspec.parse(
+          File(
+            p.join(workspaceDir.path, 'packages', packageName, 'pubspec.yaml'),
+          ).readAsStringSync(),
+        ).version!;
+      }
+
+      bool hasChangelog(Directory workspaceDir, String packageName) {
+        return File(
+          p.join(workspaceDir.path, 'packages', packageName, 'CHANGELOG.md'),
+        ).existsSync();
+      }
+
+      test(
+        'CLI runner respects the versioning defaults from melos.yaml',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _versionDefaultsWorkspaceConfigBuilder,
+            workspacePackages: ['a'],
+            useLocalTmpDirectory: true,
+          );
+
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+
+          // Neither --yes, --all, --no-changelog, --no-git-tag-version nor
+          // --no-git-commit-version is passed, they all come from the config.
+          await MelosCommandRunner(config).run(['version', '-V', 'a:1.0.1']);
+
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+          expect(hasChangelog(workspaceDir, 'a'), isFalse);
+        },
+      );
+
+      test('command line options take precedence over the config', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _versionDefaultsWorkspaceConfigBuilder,
+          workspacePackages: ['a'],
+          useLocalTmpDirectory: true,
+        );
+
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+
+        await MelosCommandRunner(
+          config,
+        ).run(['version', '--changelog', '-V', 'a:1.0.1']);
+
+        expect(hasChangelog(workspaceDir, 'a'), isTrue);
+      });
+    });
+
+    group('sign off', () {
+      Future<Directory> createWorkspace({
+        MelosWorkspaceConfig Function(String path)? configBuilder,
+      }) async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: configBuilder ?? _workspaceConfigBuilder,
+          workspacePackages: ['a'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await _runGit(workspaceDir, ['init']);
+        await _runGit(workspaceDir, ['config', 'user.name', 'Melos Test']);
+        await _runGit(
+          workspaceDir,
+          ['config', 'user.email', 'test@melos.invertase.dev'],
+        );
+        await _runGit(workspaceDir, ['config', 'commit.gpgsign', 'false']);
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+        File(
+          p.join(workspaceDir.path, 'packages', 'a', 'change.txt'),
+        ).writeAsStringSync('feat');
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', 'feat: a new feature']);
+        return workspaceDir;
+      }
+
+      test('is disabled by default', () async {
+        final workspaceDir = await createWorkspace();
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.version(force: true);
+
+        expect(
+          await _gitLastCommitMessage(workspaceDir),
+          isNot(contains('Signed-off-by:')),
+        );
+      });
+
+      test('adds a Signed-off-by trailer when enabled', () async {
+        final workspaceDir = await createWorkspace();
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: logger);
+        await melos.version(force: true, signOff: true);
+
+        expect(
+          await _gitLastCommitMessage(workspaceDir),
+          contains('Signed-off-by: Melos Test <test@melos.invertase.dev>'),
+        );
+      });
+
+      test('can be enabled from the config', () async {
+        final workspaceDir = await createWorkspace(
+          configBuilder: _signOffWorkspaceConfigBuilder,
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+
+        await MelosCommandRunner(config).run(['version', '--yes']);
+
+        expect(
+          await _gitLastCommitMessage(workspaceDir),
+          contains('Signed-off-by: Melos Test <test@melos.invertase.dev>'),
+        );
+      });
+
+      test(
+        'the command line option takes precedence over the config',
+        () async {
+          final workspaceDir = await createWorkspace(
+            configBuilder: _signOffWorkspaceConfigBuilder,
+          );
+
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+
+          await MelosCommandRunner(
+            config,
+          ).run(['version', '--yes', '--no-sign-off']);
+
+          expect(
+            await _gitLastCommitMessage(workspaceDir),
+            isNot(contains('Signed-off-by:')),
+          );
+        },
       );
     });
   });
+}
+
+MelosWorkspaceConfig _workspaceTagWorkspaceConfigBuilder(String path) {
+  return MelosWorkspaceConfig(
+    path: path,
+    name: 'test_workspace',
+    packages: [
+      createGlob('packages/**', currentDirectoryPath: path),
+    ],
+    commands: const CommandConfigs(
+      version: VersionCommandConfigs(
+        fetchTags: false,
+        mode: VersioningMode.fixed,
+        workspaceTag: true,
+        updateGitTagRefs: true,
+      ),
+    ),
+  );
+}
+
+MelosWorkspaceConfig _useRootAsPackageWorkspaceConfigBuilder(String path) {
+  return MelosWorkspaceConfig(
+    path: path,
+    name: 'test_workspace',
+    packages: [
+      createGlob('packages/**', currentDirectoryPath: path),
+    ],
+    useRootAsPackage: true,
+    commands: const CommandConfigs(
+      version: VersionCommandConfigs(
+        fetchTags: false,
+        updateGitTagRefs: true,
+      ),
+    ),
+  );
+}
+
+Future<void> _runGit(Directory workspaceDir, List<String> args) async {
+  final result = await Process.run(
+    'git',
+    [
+      '-c',
+      'user.name=Melos Test',
+      '-c',
+      'user.email=test@melos.invertase.dev',
+      '-c',
+      'commit.gpgsign=false',
+      ...args,
+    ],
+    workingDirectory: workspaceDir.path,
+  );
+  if (result.exitCode != 0) {
+    throw Exception(
+      'git ${args.join(' ')} failed:\n${result.stdout}\n${result.stderr}',
+    );
+  }
+}
+
+Future<String> _gitLastCommitMessage(Directory workspaceDir) async {
+  final result = await Process.run(
+    'git',
+    ['log', '-1', '--format=%B'],
+    workingDirectory: workspaceDir.path,
+  );
+  return result.stdout as String;
+}
+
+Future<String> _gitTagMessage(Directory workspaceDir, String tag) async {
+  final result = await Process.run(
+    'git',
+    ['tag', '-l', '--format=%(contents)', tag],
+    workingDirectory: workspaceDir.path,
+  );
+  return result.stdout as String;
+}
+
+Future<List<String>> _gitTags(Directory workspaceDir) async {
+  final result = await Process.run(
+    'git',
+    ['tag', '-l'],
+    workingDirectory: workspaceDir.path,
+  );
+  return (result.stdout as String)
+      .split('\n')
+      .map((tag) => tag.trim())
+      .where((tag) => tag.isNotEmpty)
+      .toList();
+}
+
+MelosWorkspaceConfig _smartDependentsWorkspaceConfigBuilder(String path) {
+  return MelosWorkspaceConfig(
+    path: path,
+    name: 'test_workspace',
+    packages: [
+      createGlob('packages/**', currentDirectoryPath: path),
+    ],
+    commands: const CommandConfigs(
+      version: VersionCommandConfigs(
+        fetchTags: false,
+        smartDependents: true,
+      ),
+    ),
+  );
+}
+
+MelosWorkspaceConfig _fixedModeWorkspaceConfigBuilder(String path) {
+  return MelosWorkspaceConfig(
+    path: path,
+    name: 'test_workspace',
+    packages: [
+      createGlob('packages/**', currentDirectoryPath: path),
+    ],
+    commands: const CommandConfigs(
+      version: VersionCommandConfigs(
+        fetchTags: false,
+        mode: VersioningMode.fixed,
+      ),
+    ),
+  );
+}
+
+/// A [Stdin] that claims to have a terminal but fails on every terminal
+/// operation, like the environments described in
+/// https://github.com/invertase/melos/issues/1057.
+class _ThrowingStdin implements Stdin {
+  @override
+  bool get hasTerminal => true;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw StateError(
+    'Unexpected prompt: stdin was used while running with `--yes`.',
+  );
+}
+
+MelosWorkspaceConfig _workspaceConfigBuilder(String path) {
+  return MelosWorkspaceConfig(
+    path: path,
+    name: 'test_workspace',
+    packages: [
+      createGlob('packages/**', currentDirectoryPath: path),
+    ],
+    commands: const CommandConfigs(
+      version: VersionCommandConfigs(
+        fetchTags: false,
+        updateGitTagRefs: true,
+      ),
+    ),
+  );
+}
+
+MelosWorkspaceConfig _signOffWorkspaceConfigBuilder(String path) {
+  return MelosWorkspaceConfig(
+    path: path,
+    name: 'test_workspace',
+    packages: [
+      createGlob('packages/**', currentDirectoryPath: path),
+    ],
+    commands: const CommandConfigs(
+      version: VersionCommandConfigs(fetchTags: false, signOff: true),
+    ),
+  );
+}
+
+MelosWorkspaceConfig _versionDefaultsWorkspaceConfigBuilder(String path) {
+  return MelosWorkspaceConfig(
+    path: path,
+    name: 'test_workspace',
+    packages: [
+      createGlob('packages/**', currentDirectoryPath: path),
+    ],
+    commands: const CommandConfigs(
+      version: VersionCommandConfigs(
+        fetchTags: false,
+        force: true,
+        versionPrivatePackages: true,
+        updateChangelog: false,
+        gitTagVersion: false,
+        gitCommitVersion: false,
+      ),
+    ),
+  );
 }

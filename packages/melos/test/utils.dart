@@ -2,18 +2,18 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:cli_util/cli_logging.dart';
+import 'package:glob/glob.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart' as http_testing;
 import 'package:melos/melos.dart';
-import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
-import 'package:melos/src/common/platform.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
+import 'package:yaml_edit/yaml_edit.dart';
 
 import 'pubspec_extension.dart';
 
@@ -73,8 +73,17 @@ class TestLogger extends StandardLogger {
   }
 }
 
-Directory createTestTempDir() {
-  final dir = createTempDir(Directory.systemTemp.path);
+Directory createTestTempDir({bool isLocal = false}) {
+  // Resolve symlinks (and 8.3 short names on Windows) to get the canonical
+  // long-form path. On Windows CI, TEMP uses 8.3 short names like RUNNER~1
+  // instead of runneradmin, which breaks glob traversal since directory
+  // listings return long-form names that won't match the short-form pattern.
+  final dir =
+      (isLocal
+              ? Directory(p.join(Directory.current.path, '.dart_tool'))
+              : Directory.systemTemp)
+          .createTempSync('melos_test_')
+          .resolveSymbolicLinksSync();
   addTearDown(() => deleteEntry(dir));
   return Directory(dir);
 }
@@ -101,33 +110,47 @@ typedef TestWorkspaceConfigBuilder = MelosWorkspaceConfig Function(String path);
 
 MelosWorkspaceConfig _defaultWorkspaceConfigBuilder(String path) =>
     MelosWorkspaceConfig(
-      name: 'Melos',
-      packages: [
-        createGlob('packages/**', currentDirectoryPath: path),
-      ],
+      name: 'workspace',
+      packages: const <Glob>[],
       path: path,
     );
 
 Future<Directory> createTemporaryWorkspace({
+  required List<String> workspacePackages,
   TestWorkspaceConfigBuilder configBuilder = _defaultWorkspaceConfigBuilder,
   bool runPubGet = false,
   bool createLockfile = false,
+  bool withExamples = false,
+  bool prependPackages = true,
+  bool useLocalTmpDirectory = false,
 }) async {
-  final tempDir = createTempDir(p.join(Directory.current.path, '.dart_tool'));
-  addTearDown(() => deleteEntry(tempDir));
+  final workspacePath = createTestTempDir(isLocal: useLocalTmpDirectory).path;
+  addTearDown(() => deleteEntry(workspacePath));
 
-  final workspacePath = tempDir;
+  final workspacePackagesPaths = workspacePackages
+      .map(
+        (name) => (!prependPackages || name.contains('packages'))
+            ? name
+            : 'packages/$name',
+      )
+      .toList();
 
   await createProject(
     Directory(workspacePath),
     Pubspec(
       'workspace',
+      repository: Uri.tryParse('https://github.com/invertase/melos'),
       environment: defaultTestEnvironment,
+      workspace: [
+        ...workspacePackagesPaths,
+        if (withExamples)
+          ...workspacePackagesPaths.map((path) => '$path/example'),
+      ],
       devDependencies: {
         'melos': PathDependency(Directory.current.path),
       },
     ),
-    path: '.',
+    path: workspacePath,
     createLockfile: createLockfile,
   );
 
@@ -135,31 +158,38 @@ Future<Directory> createTemporaryWorkspace({
     await _runPubGet(workspacePath);
   }
 
-  final config =
-      (configBuilder(workspacePath)..validatePhysicalWorkspace()).toJson();
+  final pubspecFile = File(p.join(workspacePath, 'pubspec.yaml'));
+  final config = YamlEditor('')
+    ..update([], configBuilder(workspacePath).toYaml());
+  pubspecFile.writeAsStringSync(config.toString(), mode: FileMode.append);
 
-  writeTextFile(
-    p.join(workspacePath, 'melos.yaml'),
-    prettyEncodeJson(config),
-  );
-
-  return Directory(tempDir);
+  return Directory(workspacePath);
 }
 
+/// Creates a new project in the given [workspace] directory.
+///
+/// If you pass a [rawPubspecContent], it will be used as the content of the
+/// `pubspec.yaml` file instead of generating one from the [partialPubspec].
+/// This helps testing edge cases that are not supported by
+/// the pubspec_parse package.
 Future<Directory> createProject(
   Directory workspace,
   Pubspec partialPubspec, {
   String? path,
   bool createLockfile = false,
+  bool inWorkspace = true,
+  String? rawPubspecContent,
 }) async {
-  final pubspec = partialPubspec.environment != null &&
-          partialPubspec.environment!.isNotEmpty
-      ? partialPubspec
-      : partialPubspec.copyWith(
-          environment: {
+  final pubspec = partialPubspec.copyWith(
+    environment: partialPubspec.environment.isEmpty
+        ? {
             'sdk': defaultTestEnvironment['sdk'],
-          },
-        );
+          }
+        : null,
+    resolution: inWorkspace && partialPubspec.name != 'workspace'
+        ? 'workspace'
+        : null,
+  );
 
   final projectDirectory = Directory(
     p.joinAll([
@@ -175,7 +205,12 @@ Future<Directory> createProject(
 
   ensureDir(projectDirectory.path);
 
-  await pubspec.save(projectDirectory);
+  if (rawPubspecContent != null) {
+    final pubspecFile = File(p.join(projectDirectory.path, 'pubspec.yaml'));
+    await pubspecFile.writeAsString(rawPubspecContent);
+  } else {
+    await pubspec.save(projectDirectory);
+  }
 
   if (createLockfile) {
     final lockfile = p.join(projectDirectory.path, 'pubspec.lock');
@@ -211,6 +246,32 @@ Future<Directory> createProject(
   return projectDirectory;
 }
 
+/// Does the same as [createTemporaryWorkspace], but returns the resulting
+/// [MelosWorkspace] instance instead of the directory.
+Future<MelosWorkspace> createTemporaryMelosWorkspace({
+  required List<String> workspacePackages,
+  TestWorkspaceConfigBuilder configBuilder = _defaultWorkspaceConfigBuilder,
+  bool runPubGet = false,
+  bool createLockfile = false,
+  bool withExamples = false,
+  bool prependPackages = true,
+  MelosLogger? logger,
+}) async {
+  final workspacePath = await createTemporaryWorkspace(
+    workspacePackages: workspacePackages,
+    configBuilder: configBuilder,
+    runPubGet: runPubGet,
+    createLockfile: createLockfile,
+    withExamples: withExamples,
+    prependPackages: prependPackages,
+  );
+  final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspacePath);
+  return MelosWorkspace.fromConfig(
+    config,
+    logger: logger ?? TestLogger().toMelosLogger(),
+  );
+}
+
 String packageConfigPath(String packageRoot) {
   return p.join(
     packageRoot,
@@ -223,6 +284,8 @@ String pubspecPath(String directory) {
   return p.join(directory, 'pubspec.yaml');
 }
 
+/// Most of the time [dir] should be the root of the monorepo, after the move to
+/// pub workspaces has been done.
 PackageConfig packageConfigForPackageAt(Directory dir) {
   final source = readTextFile(packageConfigPath(dir.path));
   return PackageConfig.fromJson(json.decode(source) as Map<String, Object?>);
@@ -236,14 +299,14 @@ class PackageConfig {
   });
 
   PackageConfig.fromJson(Map<String, Object?> json)
-      : this._(
-          json,
-          generator: json['generator']! as String,
-          packages: (json['packages']! as List)
-              .cast<Map<String, Object?>>()
-              .map(PackageDependencyConfig.fromJson)
-              .toList(),
-        );
+    : this._(
+        json,
+        generator: json['generator']! as String,
+        packages: (json['packages']! as List)
+            .cast<Map<String, Object?>>()
+            .map(PackageDependencyConfig.fromJson)
+            .toList(),
+      );
 
   final Map<String, Object?> _map;
   final List<PackageDependencyConfig> packages;
@@ -264,12 +327,12 @@ class PackageDependencyConfig {
   });
 
   PackageDependencyConfig.fromJson(Map<String, Object?> json)
-      : this._(
-          json,
-          name: json['name']! as String,
-          rootUri: json['rootUri']! as String,
-          packageUri: json['packageUri']! as String,
-        );
+    : this._(
+        json,
+        name: json['name']! as String,
+        rootUri: json['rootUri']! as String,
+        packageUri: json['packageUri']! as String,
+      );
 
   final String name;
   final String rootUri;
@@ -283,8 +346,8 @@ class PackageDependencyConfig {
 }
 
 Pubspec pubspecFromJsonFile({
-  String path = 'test/test_assets/',
   required String fileName,
+  String path = 'test/test_assets/',
 }) {
   final filePath = '$path$fileName';
   final jsonAsString = readTextFile(filePath);
@@ -307,11 +370,10 @@ class VirtualWorkspaceBuilder {
     this.defaultPackagesPath = 'packages',
     this.sdkPath,
     Logger? logger,
-  })  : logger = (logger ?? TestLogger()).toMelosLogger(),
-        path =
-            path ?? (currentPlatform.isWindows ? r'\\workspace' : '/workspace');
+  }) : logger = (logger ?? TestLogger()).toMelosLogger(),
+       path = path ?? Directory.systemTemp.createTempSync('melos_test_').path;
 
-  /// The contents of the melos.yaml file, to configure the workspace.
+  /// The contents of the melos section in the root `pubspec.yaml` file.
   final String melosYaml;
 
   /// The absolute path to the workspace.
@@ -328,9 +390,8 @@ class VirtualWorkspaceBuilder {
   final String? sdkPath;
 
   Map<String, Object?> get _defaultWorkspaceConfig => {
-        'name': 'virtual-workspace',
-        'packages': ['$defaultPackagesPath/**'],
-      };
+    'name': 'virtual-workspace',
+  };
 
   final List<_VirtualPackage> _packages = [];
 
@@ -348,20 +409,26 @@ class VirtualWorkspaceBuilder {
 
   /// Build the workspace based on the current configuration of this builder.
   MelosWorkspace build() {
+    final pubspecConfig = _defaultWorkspaceConfig;
+    pubspecConfig['melos'] =
+        loadYaml(melosYaml) as Map<Object?, Object?>? ?? {};
     final config = MelosWorkspaceConfig.fromYaml(
-      {
-        ..._defaultWorkspaceConfig,
-        ...loadYaml(melosYaml) as Map<Object?, Object?>? ?? {},
-      },
+      pubspecConfig,
       path: path,
     );
 
-    final packageMap = _buildVirtualPackageMap(_packages, logger);
+    final packageMap = _buildVirtualPackageMap(
+      _packages,
+      logger,
+      entryPoints: config.ide.intelliJ.entryPoints,
+    );
+    final rootPackage = _buildRootPackage(config, logger);
 
     return MelosWorkspace(
       name: config.name,
       path: config.path,
       config: config,
+      rootPackage: rootPackage,
       allPackages: packageMap,
       filteredPackages: packageMap,
       dependencyOverridePackages: _buildVirtualPackageMap(const [], logger),
@@ -370,10 +437,31 @@ class VirtualWorkspaceBuilder {
     );
   }
 
+  Package _buildRootPackage(MelosWorkspaceConfig config, MelosLogger logger) {
+    final pubspec = Pubspec(
+      config.name,
+      workspace: config.packages.map((g) => g.pattern).toList(),
+    );
+    return Package(
+      pubspec: pubspec,
+      name: config.name,
+      path: config.path,
+      version: Version.none,
+      publishTo: null,
+      dependencies: [],
+      devDependencies: ['melos'],
+      dependencyOverrides: [],
+      packageMap: {},
+      pathRelativeToWorkspace: '.',
+      categories: [],
+    );
+  }
+
   PackageMap _buildVirtualPackageMap(
     List<_VirtualPackage> packages,
-    MelosLogger logger,
-  ) {
+    MelosLogger logger, {
+    Map<String, List<String>> entryPoints = const {},
+  }) {
     final packageMap = <String, Package>{};
 
     for (final package in packages) {
@@ -393,6 +481,7 @@ class VirtualWorkspaceBuilder {
         packageMap: packageMap,
         pathRelativeToWorkspace: pathRelativeToWorkspace,
         categories: [],
+        entryPoints: entryPoints[name] ?? const [],
       );
     }
 
@@ -401,7 +490,7 @@ class VirtualWorkspaceBuilder {
 }
 
 final defaultTestEnvironment = {
-  'sdk': VersionConstraint.parse('>=2.12.0 <3.0.0'),
+  'sdk': VersionConstraint.parse('^3.10.0'),
 };
 
 class _VirtualPackage {
@@ -424,5 +513,10 @@ class HttpClientMock extends http_testing.MockClient {
 }
 
 extension StringTestExtension on String {
-  String normalizeNewLines() => replaceAll('\r\n', '\n');
+  String normalizeLines() => replaceAll('\r\n', '\n').removeAnsiCodes();
+
+  String removeAnsiCodes() {
+    final ansiEscapePattern = RegExp(r'\x1B\[[0-9;]*[a-zA-Z]');
+    return replaceAll(ansiEscapePattern, '');
+  }
 }

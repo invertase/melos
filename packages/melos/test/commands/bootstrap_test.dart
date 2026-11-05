@@ -1,25 +1,25 @@
-import 'dart:io' as io;
+import 'dart:io';
 
 import 'package:melos/melos.dart';
-import 'package:melos/src/command_configs/command_configs.dart';
-import 'package:melos/src/commands/runner.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
+import 'package:melos/src/common/shared_dependency_marker.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
+import 'package:platform/platform.dart' show FakePlatform, LocalPlatform;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 
 import '../matchers.dart';
+import '../mock_env.dart';
 import '../utils.dart';
 import '../workspace_config_test.dart';
 
 void main() {
   group('bootstrap', () {
-    test(
-        'supports path dependencies in the pubspec for dependencies that '
+    test('supports path dependencies in the pubspec for dependencies that '
         'are not part of the workspace', () async {
       final absoluteDir = createTestTempDir();
       final relativeDir = createTestTempDir();
@@ -47,11 +47,13 @@ void main() {
         path: '',
       );
 
-      final workspaceDir = await createTemporaryWorkspace();
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+      );
 
       final aPath = p.join(workspaceDir.path, 'packages', 'a');
 
-      final aDir = await createProject(
+      await createProject(
         workspaceDir,
         Pubspec(
           'a',
@@ -95,9 +97,7 @@ void main() {
 melos bootstrap
   └> ${workspaceDir.path}
 
-Running "${pubExecArgs.join(' ')} get" in workspace packages...
-  ✓ a
-    └> packages/a
+Running "${pubExecArgs.join(' ')} get" in workspace...
   > SUCCESS
 
 Generating IntelliJ IDE files...
@@ -108,11 +108,11 @@ Generating IntelliJ IDE files...
         ),
       );
 
-      final aPackageConfigPath = packageConfigPath(aDir.path);
+      final workspaceConfigPath = packageConfigPath(workspaceDir.path);
       String resolvePathRelativeToPackageConfig(String path) =>
-          p.canonicalize(p.join(p.dirname(aPackageConfigPath), path));
+          p.canonicalize(p.join(p.dirname(workspaceConfigPath), path));
 
-      final aConfig = packageConfigForPackageAt(aDir);
+      final aConfig = packageConfigForPackageAt(workspaceDir);
       final actualAbsolutePath = p.prettyUri(
         aConfig.packages.firstWhere((p) => p.name == 'absolute').rootUri,
       );
@@ -149,11 +149,151 @@ Generating IntelliJ IDE files...
     });
 
     test(
+      'properly compares the path changes on git references',
+      () async {
+        final temporaryGitRepositoryPath = createTestTempDir().absolute.path;
+
+        await Process.run(
+          'git',
+          ['init'],
+          workingDirectory: temporaryGitRepositoryPath,
+        );
+
+        await createProject(
+          Directory('$temporaryGitRepositoryPath/dependency1'),
+          Pubspec('dependency'),
+        );
+
+        await createProject(
+          Directory('$temporaryGitRepositoryPath/dependency2'),
+          Pubspec('dependency'),
+        );
+
+        await Process.run(
+          'git',
+          ['add', '-A'],
+          workingDirectory: temporaryGitRepositoryPath,
+        );
+
+        await Process.run(
+          'git',
+          ['commit', '--message="Initial commit"'],
+          workingDirectory: temporaryGitRepositoryPath,
+        );
+
+        final workspaceDirectory = await createTemporaryWorkspace(
+          workspacePackages: [
+            'git_references',
+          ],
+        );
+
+        final initialReference = {
+          'git': {
+            'url': 'file://$temporaryGitRepositoryPath',
+            'path': 'dependency1/packages/dependency',
+          },
+        };
+
+        await createProject(
+          workspaceDirectory,
+          Pubspec(
+            'git_references',
+            dependencies: {
+              'dependency': GitDependency(
+                Uri.parse(initialReference['git']!['url']!),
+                path: initialReference['git']!['path'],
+              ),
+            },
+          ),
+        );
+
+        final logger = TestLogger();
+        final initialConfig = MelosWorkspaceConfig.fromYaml(
+          {
+            'name': 'test',
+            'workspace': const ['packages/git_references'],
+            'melos': {
+              'command': {
+                'bootstrap': {
+                  'dependencies': {
+                    'dependency': initialReference,
+                  },
+                },
+              },
+            },
+          },
+          path: workspaceDirectory.path,
+        );
+
+        final melosBeforeChangingPath = Melos(
+          logger: logger,
+          config: initialConfig,
+        );
+
+        await runMelosBootstrap(melosBeforeChangingPath, logger);
+
+        final packageConfig = packageConfigForPackageAt(workspaceDirectory);
+        final dependencyPackage = packageConfig.packages.singleWhere(
+          (package) => package.name == 'dependency',
+        );
+
+        expect(
+          dependencyPackage.rootUri,
+          contains('dependency1/packages/dependency'),
+        );
+
+        final configWithChangedPath = MelosWorkspaceConfig.fromYaml(
+          {
+            'name': 'test',
+            'workspace': const ['packages/git_references'],
+            'melos': {
+              'command': {
+                'bootstrap': {
+                  'dependencies': {
+                    'dependency': {
+                      'git': {
+                        'url': 'file://$temporaryGitRepositoryPath',
+                        'path': 'dependency2/packages/dependency',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          path: workspaceDirectory.path,
+        );
+
+        final melosAfterChangingPath = Melos(
+          logger: logger,
+          config: configWithChangedPath,
+        );
+
+        await runMelosBootstrap(melosAfterChangingPath, logger);
+
+        final alteredPackageConfig = packageConfigForPackageAt(
+          workspaceDirectory,
+        );
+        final alteredDependencyPackage = alteredPackageConfig.packages
+            .singleWhere((package) => package.name == 'dependency');
+
+        expect(
+          alteredDependencyPackage.rootUri,
+          contains('dependency2/packages/dependency'),
+        );
+      },
+      // This test works locally, but we can't create git repositories in CI.
+      skip: Platform.environment.containsKey('CI'),
+    );
+
+    test(
       'resolves workspace packages with path dependency',
       () async {
-        final workspaceDir = await createTemporaryWorkspace();
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b', 'c', 'd'],
+        );
 
-        final aDir = await createProject(
+        await createProject(
           workspaceDir,
           Pubspec(
             'a',
@@ -178,8 +318,9 @@ Generating IntelliJ IDE files...
         );
 
         final logger = TestLogger();
-        final config =
-            await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
         final melos = Melos(
           logger: logger,
           config: config,
@@ -196,23 +337,7 @@ Generating IntelliJ IDE files...
 melos bootstrap
   └> ${workspaceDir.path}
 
-Running "flutter pub get" in workspace packages...''',
-                '''
-  ✓ a
-    └> packages/a
-''',
-                '''
-  ✓ b
-    └> packages/b
-''',
-                '''
-  ✓ c
-    └> packages/c
-''',
-                '''
-  ✓ d
-    └> packages/d
-''',
+Running "flutter pub get" in workspace...''',
                 '''
   > SUCCESS
 
@@ -226,42 +351,22 @@ Generating IntelliJ IDE files...
           ),
         );
 
-        final aConfig = packageConfigForPackageAt(aDir);
+        final aConfig = packageConfigForPackageAt(workspaceDir);
 
         expect(
           aConfig.packages.firstWhere((p) => p.name == 'b').rootUri,
-          '../../b',
+          '../packages/b',
         );
       },
-      timeout:
-          io.Platform.isLinux ? const Timeout(Duration(seconds: 45)) : null,
-    );
-
-    test(
-      'bootstrap transitive dependencies',
-      () async => dependencyResolutionTest(
-        {
-          'a': [],
-          'b': ['a'],
-          'c': ['b'],
-        },
-      ),
-    );
-
-    test(
-      'bootstrap cyclic dependencies',
-      () async => dependencyResolutionTest(
-        {
-          'a': ['b'],
-          'b': ['a'],
-        },
-      ),
+      timeout: const Timeout(Duration(seconds: 90)),
     );
 
     test('respects user dependency_overrides', () async {
-      final workspaceDir = await createTemporaryWorkspace();
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+      );
 
-      final pkgA = await createProject(
+      await createProject(
         workspaceDir,
         Pubspec(
           'a',
@@ -277,6 +382,7 @@ Generating IntelliJ IDE files...
       await createProject(
         workspaceDir,
         Pubspec('path'),
+        inWorkspace: false,
       );
 
       final logger = TestLogger();
@@ -288,7 +394,7 @@ Generating IntelliJ IDE files...
 
       await runMelosBootstrap(melos, logger);
 
-      final packageConfig = packageConfigForPackageAt(pkgA);
+      final packageConfig = packageConfigForPackageAt(workspaceDir);
       expect(
         packageConfig.packages
             .firstWhere((package) => package.name == 'path')
@@ -297,8 +403,287 @@ Generating IntelliJ IDE files...
       );
     });
 
+    test(
+      'writes dependencyOverridePaths to workspace pubspec_overrides.yaml '
+      'with melos-managed marker',
+      () async {
+        final overrideDir = createTestTempDir();
+        final overrideProject = await createProject(
+          overrideDir,
+          Pubspec('override_pkg'),
+          path: '',
+        );
+
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a'],
+          configBuilder: (path) => MelosWorkspaceConfig(
+            name: 'workspace',
+            packages: [createGlob('packages/**', currentDirectoryPath: path)],
+            commands: CommandConfigs(
+              bootstrap: BootstrapCommandConfigs(
+                dependencyOverridePaths: [
+                  createGlob(overrideProject.path, currentDirectoryPath: path),
+                ],
+              ),
+            ),
+            path: path,
+          ),
+        );
+
+        await createProject(
+          workspaceDir,
+          Pubspec(
+            'a',
+            dependencies: {
+              'override_pkg': HostedDependency(version: VersionConstraint.any),
+            },
+          ),
+        );
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(logger: logger, config: config);
+
+        await runMelosBootstrap(melos, logger);
+
+        final overridesPath = pubspecOverridesPathForDirectory(
+          workspaceDir.path,
+        );
+        expect(File(overridesPath).existsSync(), isTrue);
+
+        final overridesContent = readTextFile(overridesPath);
+        expect(
+          overridesContent,
+          contains('# melos_managed_dependency_overrides: override_pkg'),
+        );
+
+        final parsedOverrides = loadYaml(overridesContent) as YamlMap;
+        final dependencyOverrides =
+            parsedOverrides['dependency_overrides'] as YamlMap;
+        expect(
+          (dependencyOverrides['override_pkg'] as YamlMap)['path'],
+          relativePath(overrideProject.path, workspaceDir.path),
+        );
+
+        final aConfig = packageConfigForPackageAt(workspaceDir);
+        expect(
+          p.canonicalize(
+            p.join(
+              p.dirname(packageConfigPath(workspaceDir.path)),
+              p.prettyUri(
+                aConfig.packages
+                    .firstWhere((p) => p.name == 'override_pkg')
+                    .rootUri,
+              ),
+            ),
+          ),
+          p.canonicalize(overrideProject.path),
+        );
+      },
+    );
+
+    test(
+      'preserves user-defined dependency_overrides alongside melos-managed '
+      'ones',
+      () async {
+        final overrideDir = createTestTempDir();
+        final overrideProject = await createProject(
+          overrideDir,
+          Pubspec('override_pkg'),
+          path: '',
+        );
+
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a'],
+          configBuilder: (path) => MelosWorkspaceConfig(
+            name: 'workspace',
+            packages: [createGlob('packages/**', currentDirectoryPath: path)],
+            commands: CommandConfigs(
+              bootstrap: BootstrapCommandConfigs(
+                dependencyOverridePaths: [
+                  createGlob(overrideProject.path, currentDirectoryPath: path),
+                ],
+              ),
+            ),
+            path: path,
+          ),
+        );
+
+        await createProject(
+          workspaceDir,
+          Pubspec(
+            'a',
+            dependencies: {
+              'override_pkg': HostedDependency(version: VersionConstraint.any),
+              'meta': HostedDependency(version: VersionConstraint.any),
+            },
+          ),
+        );
+
+        // Pre-existing pubspec_overrides.yaml with a user-defined override.
+        final overridesPath = pubspecOverridesPathForDirectory(
+          workspaceDir.path,
+        );
+        writeTextFile(
+          overridesPath,
+          '''
+dependency_overrides:
+  meta:
+    hosted: https://pub.dev
+    version: ^1.0.0
+''',
+        );
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(logger: logger, config: config);
+
+        await runMelosBootstrap(melos, logger);
+
+        final overridesContent = readTextFile(overridesPath);
+        expect(
+          overridesContent,
+          contains('# melos_managed_dependency_overrides: override_pkg'),
+        );
+
+        final parsed = loadYaml(overridesContent) as YamlMap;
+        final overrides = parsed['dependency_overrides'] as YamlMap;
+        // User-defined entry preserved.
+        expect(overrides.containsKey('meta'), isTrue);
+        // Melos-managed entry written.
+        expect(
+          (overrides['override_pkg'] as YamlMap)['path'],
+          relativePath(overrideProject.path, workspaceDir.path),
+        );
+      },
+    );
+
+    test(
+      'expands glob patterns in dependencyOverridePaths to multiple packages',
+      () async {
+        final overridesRoot = createTestTempDir();
+        final overrideOne = await createProject(
+          overridesRoot,
+          Pubspec('override_one'),
+          path: 'one',
+          inWorkspace: false,
+        );
+        final overrideTwo = await createProject(
+          overridesRoot,
+          Pubspec('override_two'),
+          path: 'two',
+          inWorkspace: false,
+        );
+
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a'],
+          configBuilder: (path) => MelosWorkspaceConfig(
+            name: 'workspace',
+            packages: [createGlob('packages/**', currentDirectoryPath: path)],
+            commands: CommandConfigs(
+              bootstrap: BootstrapCommandConfigs(
+                dependencyOverridePaths: [
+                  createGlob(
+                    p.join(overridesRoot.path, '*'),
+                    currentDirectoryPath: path,
+                  ),
+                ],
+              ),
+            ),
+            path: path,
+          ),
+        );
+
+        await createProject(
+          workspaceDir,
+          Pubspec(
+            'a',
+            dependencies: {
+              'override_one': HostedDependency(version: VersionConstraint.any),
+              'override_two': HostedDependency(version: VersionConstraint.any),
+            },
+          ),
+        );
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        await runMelosBootstrap(Melos(logger: logger, config: config), logger);
+
+        final overridesPath = pubspecOverridesPathForDirectory(
+          workspaceDir.path,
+        );
+        final overridesContent = readTextFile(overridesPath);
+        expect(
+          overridesContent,
+          contains(
+            '# melos_managed_dependency_overrides: '
+            'override_one,override_two',
+          ),
+        );
+
+        final overrides =
+            (loadYaml(overridesContent) as YamlMap)['dependency_overrides']
+                as YamlMap;
+        expect(
+          (overrides['override_one'] as YamlMap)['path'],
+          relativePath(overrideOne.path, workspaceDir.path),
+        );
+        expect(
+          (overrides['override_two'] as YamlMap)['path'],
+          relativePath(overrideTwo.path, workspaceDir.path),
+        );
+      },
+    );
+
+    test(
+      'removes obsolete melos-managed dependency_overrides on bootstrap',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a'],
+        );
+
+        await createProject(
+          workspaceDir,
+          Pubspec('a'),
+        );
+
+        // Simulate state left by a previous bootstrap that had a
+        // dependencyOverridePaths entry which is no longer configured.
+        final overridesPath = pubspecOverridesPathForDirectory(
+          workspaceDir.path,
+        );
+        writeTextFile(
+          overridesPath,
+          '''
+# melos_managed_dependency_overrides: stale_pkg
+dependency_overrides:
+  stale_pkg:
+    path: ../stale_pkg
+''',
+        );
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        await runMelosBootstrap(Melos(logger: logger, config: config), logger);
+
+        // The stale managed override and marker comment should be gone.
+        expect(File(overridesPath).existsSync(), isFalse);
+      },
+    );
+
     test('bootstrap flutter example packages', () async {
-      final workspaceDir = await createTemporaryWorkspace();
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+        withExamples: true,
+      );
 
       await createProject(
         workspaceDir,
@@ -311,7 +696,7 @@ Generating IntelliJ IDE files...
         path: 'packages/a',
       );
 
-      final examplePkg = await createProject(
+      await createProject(
         workspaceDir,
         Pubspec(
           'example',
@@ -331,159 +716,17 @@ Generating IntelliJ IDE files...
 
       await runMelosBootstrap(melos, logger);
 
-      final examplePkgConfig = packageConfigForPackageAt(examplePkg);
-      final aPkgDependencyConfig = examplePkgConfig.packages
-          .firstWhere((package) => package.name == 'a');
-      expect(aPkgDependencyConfig.rootUri, '../../');
-    });
-
-    group('mergeMelosPubspecOverrides', () {
-      void expectMergedMelosPubspecOverrides({
-        required Map<String, String> melosDependencyOverrides,
-        required String? currentPubspecOverrides,
-        required String? updatedPubspecOverrides,
-      }) {
-        expect(
-          mergeMelosPubspecOverrides(
-            {
-              for (final entry in melosDependencyOverrides.entries)
-                entry.key: PathDependency(entry.value),
-            },
-            currentPubspecOverrides,
-          ),
-          updatedPubspecOverrides,
-        );
-      }
-
-      test('pubspec_overrides.yaml does not exist', () {
-        expectMergedMelosPubspecOverrides(
-          melosDependencyOverrides: {},
-          currentPubspecOverrides: null,
-          updatedPubspecOverrides: null,
-        );
-        expectMergedMelosPubspecOverrides(
-          melosDependencyOverrides: {'a': '../a'},
-          currentPubspecOverrides: null,
-          updatedPubspecOverrides: '''
-# melos_managed_dependency_overrides: a
-dependency_overrides:
-  a:
-    path: ../a
-''',
-        );
-      });
-
-      test('existing pubspec_overrides.yaml is empty', () {
-        expectMergedMelosPubspecOverrides(
-          melosDependencyOverrides: {},
-          currentPubspecOverrides: '',
-          updatedPubspecOverrides: null,
-        );
-        expectMergedMelosPubspecOverrides(
-          melosDependencyOverrides: {'a': '../a'},
-          currentPubspecOverrides: '',
-          updatedPubspecOverrides: '''
-# melos_managed_dependency_overrides: a
-dependency_overrides:
-  a:
-    path: ../a
-''',
-        );
-      });
-
-      test('existing pubspec_overrides.yaml has dependency_overrides', () {
-        expectMergedMelosPubspecOverrides(
-          melosDependencyOverrides: {'a': '../a'},
-          currentPubspecOverrides: '''
-dependency_overrides:
-  x: any
-''',
-          updatedPubspecOverrides: '''
-# melos_managed_dependency_overrides: a
-dependency_overrides:
-  a:
-    path: ../a
-  x: any
-''',
-        );
-      });
-
-      test('add melos managed dependency', () {
-        expectMergedMelosPubspecOverrides(
-          melosDependencyOverrides: {'a': '../a', 'b': '../b'},
-          currentPubspecOverrides: '''
-# melos_managed_dependency_overrides: a
-dependency_overrides:
-  a:
-    path: ../a
-''',
-          updatedPubspecOverrides: '''
-# melos_managed_dependency_overrides: a,b
-dependency_overrides:
-  a:
-    path: ../a
-  b:
-    path: ../b
-''',
-        );
-      });
-
-      test('remove melos managed dependency', () {
-        expectMergedMelosPubspecOverrides(
-          melosDependencyOverrides: {},
-          currentPubspecOverrides: '''
-# melos_managed_dependency_overrides: a
-dependency_overrides:
-  a:
-    path: ../a
-''',
-          updatedPubspecOverrides: '',
-        );
-      });
-
-      test('update melos managed dependency', () {
-        expectMergedMelosPubspecOverrides(
-          melosDependencyOverrides: {'a': '../aa'},
-          currentPubspecOverrides: '''
-# melos_managed_dependency_overrides: a
-dependency_overrides:
-  a:
-    path: ../a
-''',
-          updatedPubspecOverrides: '''
-# melos_managed_dependency_overrides: a
-dependency_overrides:
-  a:
-    path: ../aa
-''',
-        );
-      });
-
-      test('add, update and remove melos managed dependency', () {
-        expectMergedMelosPubspecOverrides(
-          melosDependencyOverrides: {'b': '../bb', 'c': '../c'},
-          currentPubspecOverrides: '''
-# melos_managed_dependency_overrides: a,b
-dependency_overrides:
-  a:
-    path: ../a
-  b:
-    path: ../b
-''',
-          updatedPubspecOverrides: '''
-# melos_managed_dependency_overrides: b,c
-dependency_overrides:
-  b:
-    path: ../bb
-  c:
-    path: ../c
-''',
-        );
-      });
+      final workspacePkgConfig = packageConfigForPackageAt(workspaceDir);
+      final aPkgDependencyConfig = workspacePkgConfig.packages.firstWhere(
+        (package) => package.name == 'a',
+      );
+      expect(aPkgDependencyConfig.rootUri, '../packages/a');
     });
 
     test('handles errors in pub get', () async {
-      final workspaceDir = await createTemporaryWorkspace();
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+      );
 
       await createProject(
         workspaceDir,
@@ -515,8 +758,11 @@ dependency_overrides:
       await expectLater(
         melos.bootstrap(),
         throwsA(
-          isA<BootstrapException>()
-              .having((e) => e.package.name, 'package.name', 'a'),
+          isA<BootstrapException>().having(
+            (e) => e.package.name,
+            'package.name',
+            'workspace',
+          ),
         ),
       );
 
@@ -527,10 +773,10 @@ dependency_overrides:
 melos bootstrap
   └> ${workspaceDir.path}
 
-Running "${pubExecArgs.join(' ')} get" in workspace packages...
-  - a
-    └> packages/a
-e-       └> Failed to install.
+Running "${pubExecArgs.join(' ')} get" in workspace...
+  - workspace
+    └> .
+e-       └> Failed to run pub get.
 
 Resolving dependencies...
 e-Because a depends on package_that_does_not_exists any which doesn't exist (could not find package package_that_does_not_exists at https://pub.dev), version solving failed.
@@ -541,12 +787,15 @@ e-Because a depends on package_that_does_not_exists any which doesn't exist (cou
 
     test('can run pub get offline', () async {
       final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: [],
         configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
           createYamlMap(
             {
-              'command': {
-                'bootstrap': {
-                  'runPubGetOffline': true,
+              'melos': {
+                'command': {
+                  'bootstrap': {
+                    'runPubGetOffline': true,
+                  },
                 },
               },
             },
@@ -577,7 +826,7 @@ e-Because a depends on package_that_does_not_exists any which doesn't exist (cou
 melos bootstrap
   └> ${workspaceDir.path}
 
-Running "${pubExecArgs.join(' ')} get --offline" in workspace packages...
+Running "${pubExecArgs.join(' ')} get --offline" in workspace...
   > SUCCESS
 
 Generating IntelliJ IDE files...
@@ -586,17 +835,60 @@ Generating IntelliJ IDE files...
  -> 0 packages bootstrapped
 ''',
         ),
+      );
+    });
+
+    test('can run pub get without the example directory', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: [],
+        configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
+          createYamlMap(
+            {
+              'melos': {
+                'command': {
+                  'bootstrap': {
+                    'noExample': true,
+                  },
+                },
+              },
+            },
+            defaults: configMapDefaults,
+          ),
+          path: path,
+        ),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final workspace = await MelosWorkspace.fromConfig(
+        config,
+        logger: logger.toMelosLogger(),
+      );
+      final melos = Melos(logger: logger, config: config);
+      final pubExecArgs = pubCommandExecArgs(
+        useFlutter: workspace.isFlutterWorkspace,
+        workspace: workspace,
+      );
+
+      await runMelosBootstrap(melos, logger);
+
+      expect(
+        logger.output.normalizeLines(),
+        contains('Running "${pubExecArgs.join(' ')} get --no-example"'),
       );
     });
 
     test('can run pub get --enforce-lockfile', () async {
       final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: [],
         configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
           createYamlMap(
             {
-              'command': {
-                'bootstrap': {
-                  'enforceLockfile': true,
+              'melos': {
+                'command': {
+                  'bootstrap': {
+                    'enforceLockfile': true,
+                  },
                 },
               },
             },
@@ -619,64 +911,16 @@ Generating IntelliJ IDE files...
         workspace: workspace,
       );
 
-      await runMelosBootstrap(melos, logger);
-
-      expect(
-        logger.output,
-        ignoringAnsii(
-          '''
-melos bootstrap
-  └> ${workspaceDir.path}
-
-Running "${pubExecArgs.join(' ')} get --enforce-lockfile" in workspace packages...
-  > SUCCESS
-
-Generating IntelliJ IDE files...
-  > SUCCESS
-
- -> 0 packages bootstrapped
-''',
-        ),
-      );
-    });
-
-    test('can run pub get --no-enforce-lockfile when enforced in config',
-        () async {
-      final workspaceDir = await createTemporaryWorkspace(
-        configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
-          createYamlMap(
-            {
-              'command': {
-                'bootstrap': {
-                  'enforceLockfile': true,
-                },
-              },
-            },
-            defaults: configMapDefaults,
-          ),
-          path: path,
-        ),
-        createLockfile: true,
-      );
-
-      final logger = TestLogger();
-      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
-      final workspace = await MelosWorkspace.fromConfig(
-        config,
-        logger: logger.toMelosLogger(),
-      );
-      final melos = Melos(logger: logger, config: config);
-      final pubExecArgs = pubCommandExecArgs(
-        useFlutter: workspace.isFlutterWorkspace,
-        workspace: workspace,
-      );
-
-      await runMelosBootstrap(
-        melos,
-        logger,
+      await melos.runPubGetForPackage(
+        workspace,
+        workspace.rootPackage,
+        noExample: true,
+        runOffline: false,
         enforceLockfile: false,
       );
 
+      await runMelosBootstrap(melos, logger);
+
       expect(
         logger.output,
         ignoringAnsii(
@@ -684,7 +928,7 @@ Generating IntelliJ IDE files...
 melos bootstrap
   └> ${workspaceDir.path}
 
-Running "${pubExecArgs.join(' ')} get" in workspace packages...
+Running "${pubExecArgs.join(' ')} get --enforce-lockfile" in workspace...
   > SUCCESS
 
 Generating IntelliJ IDE files...
@@ -696,14 +940,80 @@ Generating IntelliJ IDE files...
       );
     });
 
+    test(
+      'can run pub get --no-enforce-lockfile when enforced in config',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: [],
+          configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
+            createYamlMap(
+              {
+                'melos': {
+                  'command': {
+                    'bootstrap': {
+                      'enforceLockfile': true,
+                    },
+                  },
+                },
+              },
+              defaults: configMapDefaults,
+            ),
+            path: path,
+          ),
+          createLockfile: true,
+        );
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final workspace = await MelosWorkspace.fromConfig(
+          config,
+          logger: logger.toMelosLogger(),
+        );
+        final melos = Melos(logger: logger, config: config);
+        final pubExecArgs = pubCommandExecArgs(
+          useFlutter: workspace.isFlutterWorkspace,
+          workspace: workspace,
+        );
+
+        await runMelosBootstrap(
+          melos,
+          logger,
+          enforceLockfile: false,
+        );
+
+        expect(
+          logger.output,
+          ignoringAnsii(
+            '''
+melos bootstrap
+  └> ${workspaceDir.path}
+
+Running "${pubExecArgs.join(' ')} get" in workspace...
+  > SUCCESS
+
+Generating IntelliJ IDE files...
+  > SUCCESS
+
+ -> 0 packages bootstrapped
+''',
+          ),
+        );
+      },
+    );
+
     test('can run pub get --enforce-lockfile without lockfile', () async {
       final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: [],
         configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
           createYamlMap(
             {
-              'command': {
-                'bootstrap': {
-                  'enforceLockfile': true,
+              'melos': {
+                'command': {
+                  'bootstrap': {
+                    'enforceLockfile': true,
+                  },
                 },
               },
             },
@@ -734,7 +1044,113 @@ Generating IntelliJ IDE files...
 melos bootstrap
   └> ${workspaceDir.path}
 
-Running "${pubExecArgs.join(' ')} get" in workspace packages...
+Running "${pubExecArgs.join(' ')} get" in workspace...
+  > SUCCESS
+
+Generating IntelliJ IDE files...
+  > SUCCESS
+
+ -> 0 packages bootstrapped
+''',
+        ),
+      );
+    });
+
+    test('can run pub get with extra pubGetArgs from config', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: [],
+        configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
+          createYamlMap(
+            {
+              'melos': {
+                'command': {
+                  'bootstrap': {
+                    'pubGetArgs': ['--no-precompile'],
+                  },
+                },
+              },
+            },
+            defaults: configMapDefaults,
+          ),
+          path: path,
+        ),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final workspace = await MelosWorkspace.fromConfig(
+        config,
+        logger: logger.toMelosLogger(),
+      );
+      final melos = Melos(logger: logger, config: config);
+      final pubExecArgs = pubCommandExecArgs(
+        useFlutter: workspace.isFlutterWorkspace,
+        workspace: workspace,
+      );
+
+      await runMelosBootstrap(melos, logger);
+
+      expect(
+        logger.output,
+        ignoringAnsii(
+          '''
+melos bootstrap
+  └> ${workspaceDir.path}
+
+Running "${pubExecArgs.join(' ')} get --no-precompile" in workspace...
+  > SUCCESS
+
+Generating IntelliJ IDE files...
+  > SUCCESS
+
+ -> 0 packages bootstrapped
+''',
+        ),
+      );
+    });
+
+    test('can run pub get with multiple pubGetArgs from config', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: [],
+        configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
+          createYamlMap(
+            {
+              'melos': {
+                'command': {
+                  'bootstrap': {
+                    'pubGetArgs': ['--no-precompile', '--no-example'],
+                  },
+                },
+              },
+            },
+            defaults: configMapDefaults,
+          ),
+          path: path,
+        ),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final workspace = await MelosWorkspace.fromConfig(
+        config,
+        logger: logger.toMelosLogger(),
+      );
+      final melos = Melos(logger: logger, config: config);
+      final pubExecArgs = pubCommandExecArgs(
+        useFlutter: workspace.isFlutterWorkspace,
+        workspace: workspace,
+      );
+
+      await runMelosBootstrap(melos, logger);
+
+      expect(
+        logger.output,
+        ignoringAnsii(
+          '''
+melos bootstrap
+  └> ${workspaceDir.path}
+
+Running "${pubExecArgs.join(' ')} get --no-precompile --no-example" in workspace...
   > SUCCESS
 
 Generating IntelliJ IDE files...
@@ -750,6 +1166,7 @@ Generating IntelliJ IDE files...
       'applies shared dependencies from melos config',
       () async {
         final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b'],
           configBuilder: (path) => MelosWorkspaceConfig(
             name: 'Melos',
             packages: [
@@ -758,7 +1175,7 @@ Generating IntelliJ IDE files...
             commands: CommandConfigs(
               bootstrap: BootstrapCommandConfigs(
                 environment: {
-                  'sdk': VersionConstraint.parse('>=2.18.0 <3.0.0'),
+                  'sdk': VersionConstraint.parse('>=3.6.0 <4.0.0'),
                   'flutter': VersionConstraint.parse('>=2.18.0 <3.0.0'),
                 },
                 dependencies: {
@@ -779,9 +1196,9 @@ Generating IntelliJ IDE files...
                   ),
                 },
                 devDependencies: {
-                  'build_runner': HostedDependency(
+                  'flame_lint': HostedDependency(
                     version: VersionConstraint.compatibleWith(
-                      Version.parse('2.4.6'),
+                      Version.parse('1.2.1'),
                     ),
                   ),
                 },
@@ -798,18 +1215,21 @@ Generating IntelliJ IDE files...
             environment: {},
             dependencies: {
               'intl': HostedDependency(
-                version:
-                    VersionConstraint.compatibleWith(Version.parse('0.18.1')),
+                version: VersionConstraint.compatibleWith(
+                  Version.parse('0.18.1'),
+                ),
               ),
               'path': HostedDependency(
-                version:
-                    VersionConstraint.compatibleWith(Version.parse('1.7.2')),
+                version: VersionConstraint.compatibleWith(
+                  Version.parse('1.7.2'),
+                ),
               ),
             },
             devDependencies: {
-              'build_runner': HostedDependency(
-                version:
-                    VersionConstraint.compatibleWith(Version.parse('2.4.0')),
+              'flame_lint': HostedDependency(
+                version: VersionConstraint.compatibleWith(
+                  Version.parse('1.2.0'),
+                ),
               ),
             },
           ),
@@ -825,12 +1245,14 @@ Generating IntelliJ IDE files...
             },
             dependencies: {
               'integral_isolates': HostedDependency(
-                version:
-                    VersionConstraint.compatibleWith(Version.parse('0.4.1')),
+                version: VersionConstraint.compatibleWith(
+                  Version.parse('0.4.1'),
+                ),
               ),
               'intl': HostedDependency(
-                version:
-                    VersionConstraint.compatibleWith(Version.parse('0.17.0')),
+                version: VersionConstraint.compatibleWith(
+                  Version.parse('0.17.0'),
+                ),
               ),
               'path': HostedDependency(version: VersionConstraint.any),
             },
@@ -838,8 +1260,9 @@ Generating IntelliJ IDE files...
         );
 
         final logger = TestLogger();
-        final config =
-            await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
         final melos = Melos(
           logger: logger,
           config: config,
@@ -858,15 +1281,16 @@ Generating IntelliJ IDE files...
           equals(defaultTestEnvironment),
         );
         expect(
-          pubspecA.environment?['sdk'],
-          equals(VersionConstraint.parse('>=2.18.0 <3.0.0')),
+          pubspecA.environment['sdk'],
+          equals(VersionConstraint.parse('>=3.6.0 <4.0.0')),
         );
         expect(
           pubspecA.dependencies,
           equals({
             'intl': HostedDependency(
-              version:
-                  VersionConstraint.compatibleWith(Version.parse('0.18.1')),
+              version: VersionConstraint.compatibleWith(
+                Version.parse('0.18.1'),
+              ),
             ),
             'path': HostedDependency(
               version: VersionConstraint.compatibleWith(Version.parse('1.8.3')),
@@ -876,18 +1300,18 @@ Generating IntelliJ IDE files...
         expect(
           pubspecA.devDependencies,
           equals({
-            'build_runner': HostedDependency(
-              version: VersionConstraint.compatibleWith(Version.parse('2.4.6')),
+            'flame_lint': HostedDependency(
+              version: VersionConstraint.compatibleWith(Version.parse('1.2.1')),
             ),
           }),
         );
 
         expect(
-          pubspecBPreBootstrap.environment?['flutter'],
+          pubspecBPreBootstrap.environment['flutter'],
           equals(VersionConstraint.parse('>=2.12.0 <3.0.0')),
         );
         expect(
-          pubspecB.environment?['flutter'],
+          pubspecB.environment['flutter'],
           equals(VersionConstraint.parse('>=2.18.0 <3.0.0')),
         );
         expect(
@@ -897,8 +1321,9 @@ Generating IntelliJ IDE files...
               version: VersionConstraint.compatibleWith(Version.parse('0.4.1')),
             ),
             'intl': HostedDependency(
-              version:
-                  VersionConstraint.compatibleWith(Version.parse('0.18.1')),
+              version: VersionConstraint.compatibleWith(
+                Version.parse('0.18.1'),
+              ),
             ),
             'path': HostedDependency(
               version: VersionConstraint.compatibleWith(Version.parse('1.8.3')),
@@ -915,13 +1340,16 @@ Generating IntelliJ IDE files...
 
     test('correctly inlines shared dependencies', () async {
       final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
         configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
           createYamlMap(
             {
-              'command': {
-                'bootstrap': {
-                  'dependencies': {
-                    'flame': '^1.21.0',
+              'melos': {
+                'command': {
+                  'bootstrap': {
+                    'dependencies': {
+                      'flame': '^1.21.0',
+                    },
                   },
                 },
               },
@@ -956,41 +1384,73 @@ Generating IntelliJ IDE files...
         (pubspecContent['dependencies']! as YamlMap)['flame'],
         '^1.21.0',
       );
+      expect(
+        File(p.join(pkgA.path, 'pubspec.yaml')).readAsStringSync(),
+        isNot(contains(sharedDependencyMarker)),
+      );
     });
-  });
 
-  group('melos bs --skip-linking', () {
-    test('should skip package linking', () async {
-      final workspaceDir = await createTemporaryWorkspace();
-      await createProject(
+    test('marks shared dependencies when configured', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+        configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
+          createYamlMap(
+            {
+              'melos': {
+                'command': {
+                  'bootstrap': {
+                    'markSharedDependencies': true,
+                    'dependencies': {
+                      'flame': '^1.21.0',
+                      'collection': 'any',
+                    },
+                  },
+                },
+              },
+            },
+            defaults: configMapDefaults,
+          ),
+          path: path,
+        ),
+      );
+
+      final pkgA = await createProject(
         workspaceDir,
-        Pubspec('a'),
+        Pubspec(
+          'a',
+          dependencies: {
+            'flame': HostedDependency(version: VersionConstraint.any),
+            'collection': HostedDependency(version: VersionConstraint.any),
+            'path': HostedDependency(version: VersionConstraint.any),
+          },
+        ),
       );
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
       final melos = Melos(logger: logger, config: config);
 
-      await runMelosBootstrap(melos, logger, skipLinking: true);
+      await runMelosBootstrap(melos, logger, noPub: true);
 
+      final pubspecLines = File(
+        p.join(pkgA.path, 'pubspec.yaml'),
+      ).readAsLinesSync();
       expect(
-        logger.output,
-        ignoringAnsii(
-          '''
-melos bootstrap
-  └> ${workspaceDir.path}
-
-Generating IntelliJ IDE files...
-  > SUCCESS
-
- -> 1 packages bootstrapped
-''',
-        ),
+        pubspecLines,
+        containsAll([
+          '  flame: ^1.21.0 $sharedDependencyMarker',
+          '  collection: any $sharedDependencyMarker',
+          '  path: any',
+        ]),
       );
     });
+  });
 
-    test('should work fine with environment config', () async {
+  test(
+    'rollbacks applied shared dependencies on resolution failure',
+    () async {
       final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a', 'b'],
         configBuilder: (path) => MelosWorkspaceConfig(
           name: 'Melos',
           packages: [
@@ -999,8 +1459,24 @@ Generating IntelliJ IDE files...
           commands: CommandConfigs(
             bootstrap: BootstrapCommandConfigs(
               environment: {
-                'sdk': VersionConstraint.parse('>=2.18.0 <3.0.0'),
+                'sdk': VersionConstraint.parse('>=3.6.0 <4.0.0'),
                 'flutter': VersionConstraint.parse('>=2.18.0 <3.0.0'),
+              },
+              dependencies: {
+                'flame': HostedDependency(
+                  version: VersionConstraint.compatibleWith(
+                    // Should fail since the version is not compatible with
+                    // the flutter version.
+                    Version.parse('0.1.0'),
+                  ),
+                ),
+              },
+              devDependencies: {
+                'flame_lint': HostedDependency(
+                  version: VersionConstraint.compatibleWith(
+                    Version.parse('1.2.1'),
+                  ),
+                ),
               },
             ),
           ),
@@ -1008,42 +1484,109 @@ Generating IntelliJ IDE files...
         ),
       );
 
-      await createProject(
+      final pkgA = await createProject(
         workspaceDir,
-        Pubspec('a'),
+        Pubspec(
+          'a',
+          environment: {},
+          dependencies: {
+            'flame': HostedDependency(
+              version: VersionConstraint.compatibleWith(
+                Version.parse('1.23.0'),
+              ),
+            ),
+          },
+          devDependencies: {
+            'flame_lint': HostedDependency(
+              version: VersionConstraint.compatibleWith(Version.parse('1.2.0')),
+            ),
+          },
+        ),
+      );
+
+      final pkgB = await createProject(
+        workspaceDir,
+        Pubspec(
+          'b',
+          environment: {
+            'sdk': VersionConstraint.parse('>=2.12.0 <3.0.0'),
+            'flutter': VersionConstraint.parse('>=2.12.0 <3.0.0'),
+          },
+          dependencies: {
+            'flame': HostedDependency(
+              version: VersionConstraint.compatibleWith(
+                Version.parse('1.23.0'),
+              ),
+            ),
+            'integral_isolates': HostedDependency(
+              version: VersionConstraint.compatibleWith(Version.parse('0.4.1')),
+            ),
+            'intl': HostedDependency(
+              version: VersionConstraint.compatibleWith(
+                Version.parse('0.17.0'),
+              ),
+            ),
+            'path': HostedDependency(version: VersionConstraint.any),
+          },
+        ),
       );
 
       final logger = TestLogger();
       final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
-      final melos = Melos(logger: logger, config: config);
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
 
-      await runMelosBootstrap(melos, logger, skipLinking: true);
+      final pubspecAPreBootstrap = pubspecFromYamlFile(directory: pkgA.path);
+      final pubspecBPreBootstrap = pubspecFromYamlFile(directory: pkgB.path);
+
+      await expectLater(
+        () => runMelosBootstrap(melos, logger),
+        throwsA(isA<BootstrapException>()),
+      );
+
+      final pubspecA = pubspecFromYamlFile(directory: pkgA.path);
+      final pubspecB = pubspecFromYamlFile(directory: pkgB.path);
 
       expect(
-        logger.output,
-        ignoringAnsii(
-          '''
-melos bootstrap
-  └> ${workspaceDir.path}
-
-Updating common dependencies in workspace packages...
-  ✓ a
-    └> Updated environment
-  > SUCCESS
-
-Generating IntelliJ IDE files...
-  > SUCCESS
-
- -> 1 packages bootstrapped
-''',
-        ),
+        pubspecAPreBootstrap.environment,
+        equals(defaultTestEnvironment),
       );
-    });
-  });
+      expect(
+        pubspecA.environment['sdk'],
+        equals(pubspecAPreBootstrap.environment['sdk']),
+      );
+      expect(
+        pubspecA.dependencies,
+        equals(pubspecAPreBootstrap.dependencies),
+      );
+      expect(
+        pubspecA.devDependencies,
+        equals(pubspecAPreBootstrap.devDependencies),
+      );
+
+      expect(
+        pubspecBPreBootstrap.environment['flutter'],
+        equals(VersionConstraint.parse('>=2.12.0 <3.0.0')),
+      );
+      expect(
+        pubspecB.dependencies,
+        equals(pubspecBPreBootstrap.dependencies),
+      );
+      expect(
+        pubspecB.devDependencies,
+        equals(pubspecBPreBootstrap.devDependencies),
+      );
+    },
+    timeout: const Timeout(Duration(minutes: 20)),
+  );
 
   group('melos bs --offline', () {
     test('should run pub get with --offline', () async {
-      final workspaceDir = await createTemporaryWorkspace();
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+      );
       await createProject(
         workspaceDir,
         Pubspec('a'),
@@ -1062,9 +1605,7 @@ Generating IntelliJ IDE files...
 melos bootstrap
   └> ${workspaceDir.path}
 
-Running "dart pub get --offline" in workspace packages...
-  ✓ a
-    └> packages/a
+Running "dart pub get --offline" in workspace...
   > SUCCESS
 
 Generating IntelliJ IDE files...
@@ -1076,121 +1617,182 @@ Generating IntelliJ IDE files...
       );
     });
   });
+
+  group('melos bs in CI', () {
+    test('should not generate IntelliJ IDE files', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+      );
+      await createProject(
+        workspaceDir,
+        Pubspec('a'),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(logger: logger, config: config);
+
+      await runMelosBootstrap(melos, logger, noPub: true, isCI: true);
+
+      expect(
+        logger.output,
+        ignoringAnsii(
+          '''
+melos bootstrap
+  └> ${workspaceDir.path}
+
+Skipping "dart pub get" in workspace (--no-pub)...
+  > SUCCESS
+
+ -> 1 packages bootstrapped
+''',
+        ),
+      );
+      expect(
+        Directory(p.join(workspaceDir.path, '.idea')).existsSync(),
+        isFalse,
+      );
+    });
+  });
+
+  group('melos bs --no-pub', () {
+    test('should skip pub get', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+      );
+      await createProject(
+        workspaceDir,
+        Pubspec('a'),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(logger: logger, config: config);
+
+      await runMelosBootstrap(melos, logger, noPub: true);
+
+      expect(
+        logger.output,
+        ignoringAnsii(
+          '''
+melos bootstrap
+  └> ${workspaceDir.path}
+
+Skipping "dart pub get" in workspace (--no-pub)...
+  > SUCCESS
+
+Generating IntelliJ IDE files...
+  > SUCCESS
+
+ -> 1 packages bootstrapped
+''',
+        ),
+      );
+      expect(
+        File(p.join(workspaceDir.path, 'pubspec.lock')).existsSync(),
+        isFalse,
+      );
+    });
+
+    test('should still apply shared dependencies', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+        configBuilder: (path) => MelosWorkspaceConfig.fromYaml(
+          createYamlMap(
+            {
+              'melos': {
+                'command': {
+                  'bootstrap': {
+                    'dependencies': {
+                      'flame': '^1.21.0',
+                    },
+                  },
+                },
+              },
+            },
+            defaults: configMapDefaults,
+          ),
+          path: path,
+        ),
+      );
+
+      final pkgA = await createProject(
+        workspaceDir,
+        Pubspec(
+          'a',
+          dependencies: {
+            'flame': HostedDependency(version: VersionConstraint.any),
+          },
+        ),
+      );
+
+      final logger = TestLogger();
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+      final melos = Melos(logger: logger, config: config);
+
+      await runMelosBootstrap(melos, logger, noPub: true);
+
+      final pubspecContent = _pubspecContent(pkgA);
+      expect(
+        (pubspecContent['dependencies']! as YamlMap)['flame'],
+        '^1.21.0',
+      );
+      expect(
+        logger.output,
+        ignoringAnsii(
+          contains('Skipping "dart pub get" in workspace (--no-pub)...'),
+        ),
+      );
+      expect(
+        File(p.join(workspaceDir.path, 'pubspec.lock')).existsSync(),
+        isFalse,
+      );
+    });
+  });
 }
 
 Future<void> runMelosBootstrap(
   Melos melos,
   TestLogger logger, {
-  bool skipLinking = false,
   bool? enforceLockfile,
-  bool offline = false,
+  bool? offline,
+  bool? noPub,
+  bool isCI = false,
 }) async {
-  try {
-    await melos.bootstrap(
-      skipLinking: skipLinking,
-      enforceLockfile: enforceLockfile,
-      offline: offline,
-    );
-  } on BootstrapException {
-    // ignore: avoid_print
-    print(logger.output);
-    rethrow;
-  }
+  final environment = {
+    for (final entry in const LocalPlatform().environment.entries)
+      if (!_ciEnvironmentKeys.contains(entry.key)) entry.key: entry.value,
+    if (isCI) 'CI': 'true',
+  };
+
+  await withMockPlatform(
+    () async {
+      try {
+        await melos.bootstrap(
+          enforceLockfile: enforceLockfile,
+          offline: offline,
+          noPub: noPub,
+        );
+      } on BootstrapException {
+        // ignore: avoid_print
+        print(logger.output);
+        rethrow;
+      }
+    },
+    platform: FakePlatform.fromPlatform(
+      const LocalPlatform(),
+    ).copyWith(environment: environment),
+  )();
 }
 
-/// Tests whether dependencies are resolved correctly.
-///
-/// [packages] is a map where keys are package names and values are lists of
-/// packages names on which the package in the corresponding key depends.
-///
-/// In the example below **a** has no dependencies and **b** depends only on
-/// **a**:
-///
-/// ```dart main
-/// final packages = {
-///   'a': [],
-///   'b': ['a']
-/// };
-/// ```
-///
-/// For each entry in [packages] a package with the key as the name will be
-/// generated.
-///
-/// After running `melos bootstrap`, for each package it is verified that all
-/// direct and transitive dependencies are path dependencies with the correct
-/// path.
-Future<void> dependencyResolutionTest(
-  Map<String, List<String>> packages,
-) async {
-  final workspaceDir = await createTemporaryWorkspace();
+const _ciEnvironmentKeys = {
+  'CI',
+  'CONTINUOUS_INTEGRATION',
+  'BUILD_NUMBER',
+  'RUN_ID',
+};
 
-  Future<MapEntry<String, io.Directory>> createPackage(
-    MapEntry<String, List<String>> entry,
-  ) async {
-    final package = entry.key;
-    final dependencies = entry.value;
-    final directory = await createProject(
-      workspaceDir,
-      Pubspec(
-        package,
-        dependencies: {
-          for (final dependency in dependencies)
-            dependency: HostedDependency(version: VersionConstraint.any),
-        },
-      ),
-    );
-
-    return MapEntry(package, directory);
-  }
-
-  final packageDirs = Map.fromEntries(
-    await Future.wait(packages.entries.map(createPackage)),
-  );
-
-  List<String> transitiveDependenciesOfPackage(String root) {
-    final transitiveDependencies = <String>[];
-    final workingSet = packages[root]!.toList();
-
-    while (workingSet.isNotEmpty) {
-      final current = workingSet.removeLast();
-
-      if (current == root) {
-        continue;
-      }
-
-      if (!transitiveDependencies.contains(current)) {
-        transitiveDependencies.add(current);
-        workingSet.addAll(packages[current]!);
-      }
-    }
-
-    return transitiveDependencies;
-  }
-
-  Future<void> validatePackage(String package) async {
-    final packageConfig = packageConfigForPackageAt(packageDirs[package]!);
-    final transitiveDependencies = transitiveDependenciesOfPackage(package);
-
-    for (final dependency in transitiveDependencies) {
-      final dependencyConfig =
-          packageConfig.packages.firstWhere((e) => e.name == dependency);
-      expect(dependencyConfig.rootUri, '../../$dependency');
-    }
-  }
-
-  final logger = TestLogger();
-  final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
-  final melos = Melos(
-    logger: logger,
-    config: config,
-  );
-
-  await runMelosBootstrap(melos, logger);
-
-  await Future.wait<void>(packages.keys.map(validatePackage));
-}
-
-YamlMap _pubspecContent(io.Directory directory) {
+YamlMap _pubspecContent(Directory directory) {
   final source = readTextFile(pubspecPath(directory.path));
   return loadYaml(source) as YamlMap;
 }

@@ -88,13 +88,6 @@ String ensureDir(String dir) {
   return dir;
 }
 
-/// Creates a temp directory in [base], whose name will be [prefix] with
-/// characters appended to it to make a unique name.
-///
-/// Returns the path of the created directory.
-String createTempDir(String base, [String? prefix]) =>
-    Directory(base).createTempSync(prefix).path;
-
 /// Copies a file [from] the source file [to] the destination file.
 void copyFile(String from, String to, {bool recursive = false}) {
   if (recursive) {
@@ -108,7 +101,9 @@ void copyFile(String from, String to, {bool recursive = false}) {
 /// The [File] class overwrites the symlink targets when writing to a file,
 /// which is never what we want, so this delete the symlink first if necessary.
 void deleteIfLink(String file) {
-  if (!linkExists(file)) return;
+  if (!linkExists(file)) {
+    return;
+  }
   Link(file).deleteSync();
 }
 
@@ -187,7 +182,9 @@ void _attempt(
       break;
     } on FileSystemException catch (error) {
       final reason = getErrorReason(error);
-      if (reason == null) rethrow;
+      if (reason == null) {
+        rethrow;
+      }
 
       if (i < maxRetries - 1) {
         sleep(const Duration(milliseconds: 50));
@@ -206,19 +203,19 @@ void _attempt(
 bool _isDirectoryNotEmptyException(FileSystemException e) {
   final errorCode = e.osError?.errorCode;
   return
-      // On Linux rename will fail with NONEMPTY if directory exists:
-      // https://man7.org/linux/man-pages/man2/rename.2.html
-      // #define	ENOTEMPTY	39	/* Directory not empty */
-      // https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/uapi/asm-generic/errno.h#n20
-      (Platform.isLinux && errorCode == 39) ||
-          // On Windows this may fail with ERROR_DIR_NOT_EMPTY or
-          // ERROR_ALREADY_EXISTS
-          // https://docs.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-
-          (Platform.isWindows && (errorCode == 145 || errorCode == 183)) ||
-          // On MacOS rename will fail with ENOTEMPTY if directory exists.
-          // #define ENOTEMPTY       66              /* Directory not empty */
-          // https://github.com/apple-oss-distributions/xnu/blob/bb611c8fecc755a0d8e56e2fa51513527c5b7a0e/bsd/sys/errno.h#L190
-          (Platform.isMacOS && errorCode == 66);
+  // On Linux rename will fail with NONEMPTY if directory exists:
+  // https://man7.org/linux/man-pages/man2/rename.2.html
+  // #define	ENOTEMPTY	39	/* Directory not empty */
+  // https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/uapi/asm-generic/errno.h#n20
+  (Platform.isLinux && errorCode == 39) ||
+      // On Windows this may fail with ERROR_DIR_NOT_EMPTY or
+      // ERROR_ALREADY_EXISTS
+      // https://docs.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-
+      (Platform.isWindows && (errorCode == 145 || errorCode == 183)) ||
+      // On MacOS rename will fail with ENOTEMPTY if directory exists.
+      // #define ENOTEMPTY       66              /* Directory not empty */
+      // https://github.com/apple-oss-distributions/xnu/blob/bb611c8fecc755a0d8e56e2fa51513527c5b7a0e/bsd/sys/errno.h#L190
+      (Platform.isMacOS && errorCode == 66);
 }
 
 class IOException extends MelosException {

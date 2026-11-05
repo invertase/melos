@@ -4,20 +4,25 @@ mixin _AnalyzeMixin on _Melos {
   Future<void> analyze({
     GlobalOptions? global,
     PackageFilters? packageFilters,
-    bool fatalInfos = false,
+    bool? fatalInfos,
     bool? fatalWarnings,
-    int concurrency = 1,
+    int? concurrency,
+    bool? noPub,
   }) async {
-    final workspace =
-        await createWorkspace(global: global, packageFilters: packageFilters);
+    final workspace = await createWorkspace(
+      global: global,
+      packageFilters: packageFilters,
+    );
     final packages = workspace.filteredPackages.values;
+    final analyzeConfig = workspace.config.commands.analyze;
 
     await _analyzeForAllPackages(
       workspace,
       packages,
-      fatalInfos: fatalInfos,
-      fatalWarnings: fatalWarnings,
-      concurrency: concurrency,
+      fatalInfos: fatalInfos ?? analyzeConfig.fatalInfos ?? true,
+      fatalWarnings: fatalWarnings ?? analyzeConfig.fatalWarnings,
+      concurrency: concurrency ?? analyzeConfig.concurrency ?? 1,
+      noPub: noPub ?? analyzeConfig.noPub ?? false,
     );
   }
 
@@ -27,32 +32,44 @@ mixin _AnalyzeMixin on _Melos {
     required bool fatalInfos,
     bool? fatalWarnings,
     required int concurrency,
+    required bool noPub,
   }) async {
     final failures = <String, int?>{};
     final pool = Pool(concurrency);
-    final analyzeArgsString = _getAnalyzeArgs(
+    final dartAnalyzeArgsString = _getAnalyzeArgs(
       workspace: workspace,
       fatalInfos: fatalInfos,
       fatalWarnings: fatalWarnings,
       concurrency: concurrency,
+      noPub: noPub,
     ).join(' ');
-    final useGroupBuffer = concurrency != 1 && packages.length != 1;
+    final useGroupBuffer =
+        logger.isQuiet || (concurrency != 1 && packages.length != 1);
     final dartPackageCount = packages.where((e) => !e.isFlutterPackage).length;
-    final flutterPackageCount =
-        packages.where((e) => e.isFlutterPackage).length;
+    final flutterPackageCount = packages
+        .where((e) => e.isFlutterPackage)
+        .length;
 
     logger.command('melos analyze', withDollarSign: true);
 
     if (dartPackageCount > 0) {
       logger
-          .child(targetStyle(analyzeArgsString))
+          .child(targetStyle(dartAnalyzeArgsString))
           .child('$runningLabel (in $dartPackageCount packages)')
           .newLine();
     }
 
     if (flutterPackageCount > 0) {
+      final flutterAnalyzeArgsString = _getAnalyzeArgs(
+        workspace: workspace,
+        fatalInfos: fatalInfos,
+        fatalWarnings: fatalWarnings,
+        concurrency: concurrency,
+        noPub: noPub,
+        isFlutter: true,
+      ).join(' ');
       logger
-          .child(targetStyle(analyzeArgsString.replaceFirst('dart', 'flutter')))
+          .child(targetStyle(flutterAnalyzeArgsString))
           .child('$runningLabel (in $flutterPackageCount packages)')
           .newLine();
     }
@@ -71,12 +88,15 @@ mixin _AnalyzeMixin on _Melos {
           workspace: workspace,
           fatalInfos: fatalInfos,
           fatalWarnings: fatalWarnings,
+          noPub: noPub,
         ),
         group: group,
       );
 
       if (packageExitCode > 0) {
         failures[package.name] = packageExitCode;
+      } else if (logger.isQuiet) {
+        logger.discardGroup(package.name);
       } else {
         logger.log(
           AnsiStyles.bgBlack.bold.italic('${package.name}: ') +
@@ -86,23 +106,28 @@ mixin _AnalyzeMixin on _Melos {
       }
     }).drain<void>();
 
-    logger.flushGroupBufferIfNeed();
+    await logger.flushGroupBufferIfNeed();
 
-    logger
+    final summaryLogger = failures.isEmpty ? logger : logger.essential;
+
+    summaryLogger
       ..horizontalLine()
       ..newLine()
       ..command('melos analyze', withDollarSign: true);
 
-    final resultLogger = logger.child(targetStyle(analyzeArgsString));
+    final resultLogger = summaryLogger.child(
+      targetStyle(dartAnalyzeArgsString),
+    );
 
     if (failures.isNotEmpty) {
-      final failuresLogger =
-          resultLogger.child('$failedLabel (in ${failures.length} packages)');
+      final failuresLogger = resultLogger.child(
+        '$failedLabel (in ${failures.length} packages)',
+      );
       for (final packageName in failures.keys) {
         failuresLogger.child(
           '${errorPackageNameStyle(packageName)} '
           '${failures[packageName] == null ? '(dependency failed)' : '('
-              'with exit code ${failures[packageName]})'}',
+                    'with exit code ${failures[packageName]})'}',
         );
       }
       exitCode = 1;
@@ -116,15 +141,20 @@ mixin _AnalyzeMixin on _Melos {
     required bool fatalInfos,
     Package? package,
     bool? fatalWarnings,
-    // Note: The `concurrency` argument is intentionally set to a default value
-    // of 1 to prevent its direct use by the `startCommand` function. It is
-    // designed to be utilized only for logging purposes to indicate the level
-    // of concurrency being applied.
+    bool isFlutter = false,
     int concurrency = 1,
+    bool noPub = false,
   }) {
-    final options = _getOptionsArgs(fatalInfos, fatalWarnings, concurrency);
+    final useFlutter = package?.isFlutterPackage ?? isFlutter;
+    final options = _getAnalyzeOptionsArgs(
+      fatalInfos: fatalInfos,
+      fatalWarnings: fatalWarnings,
+      concurrency: concurrency,
+      isFlutter: useFlutter,
+      noPub: noPub,
+    );
     return <String>[
-      if (package?.isFlutterPackage ?? false)
+      if (useFlutter)
         workspace.sdkTool('flutter')
       else
         workspace.sdkTool('dart'),
@@ -133,15 +163,19 @@ mixin _AnalyzeMixin on _Melos {
     ];
   }
 
-  String _getOptionsArgs(
-    bool fatalInfos,
-    bool? fatalWarnings,
-    int concurrency,
-  ) {
+  String _getAnalyzeOptionsArgs({
+    required bool fatalInfos,
+    required bool? fatalWarnings,
+    required int concurrency,
+    required bool isFlutter,
+    required bool noPub,
+  }) {
     final options = <String>[];
 
     if (fatalInfos) {
       options.add('--fatal-infos');
+    } else if (isFlutter) {
+      options.add('--no-fatal-infos');
     }
 
     if (fatalWarnings != null) {
@@ -150,6 +184,10 @@ mixin _AnalyzeMixin on _Melos {
 
     if (concurrency > 1) {
       options.add('--concurrency $concurrency');
+    }
+
+    if (noPub && isFlutter) {
+      options.add('--no-pub');
     }
 
     return options.join(' ');

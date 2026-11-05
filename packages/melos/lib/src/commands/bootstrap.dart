@@ -4,49 +4,49 @@ mixin _BootstrapMixin on _CleanMixin {
   Future<void> bootstrap({
     GlobalOptions? global,
     PackageFilters? packageFilters,
-    bool noExample = false,
+    bool? noExample,
     bool? enforceLockfile,
-    bool skipLinking = false,
-    bool offline = false,
+    bool? offline,
+    bool? noPub,
   }) async {
-    final workspace =
-        await createWorkspace(global: global, packageFilters: packageFilters);
+    final workspace = await createWorkspace(
+      global: global,
+      packageFilters: packageFilters,
+    );
 
     return _runLifecycle(
       workspace,
       CommandWithLifecycle.bootstrap,
       () async {
         final bootstrapCommandConfig = workspace.config.commands.bootstrap;
-        final runOffline = bootstrapCommandConfig.runPubGetOffline || offline;
-        late final hasLockFile =
-            File(p.join(workspace.path, 'pubspec.lock')).existsSync();
+        final runOffline = offline ?? bootstrapCommandConfig.runPubGetOffline;
+        final runNoExample = noExample ?? bootstrapCommandConfig.noExample;
+        final skipPub = noPub ?? bootstrapCommandConfig.noPub;
+        late final hasLockFile = File(
+          p.join(workspace.path, 'pubspec.lock'),
+        ).existsSync();
         final enforceLockfileConfigValue =
             workspace.config.commands.bootstrap.enforceLockfile;
         final shouldEnforceLockfile =
             (enforceLockfile ?? enforceLockfileConfigValue) && hasLockFile;
+        final pubGetArgs = bootstrapCommandConfig.pubGetArgs;
 
-        final pubCommandForLogging = [
-          ...pubCommandExecArgs(
-            useFlutter: workspace.isFlutterWorkspace,
-            workspace: workspace,
-          ),
-          'get',
-          if (noExample) '--no-example',
-          if (runOffline) '--offline',
-          if (shouldEnforceLockfile) '--enforce-lockfile',
-        ].join(' ');
+        final pubCommandForLogging = _buildPubGetCommand(
+          workspace: workspace,
+          noExample: runNoExample,
+          runOffline: runOffline,
+          enforceLockfile: shouldEnforceLockfile,
+          pubGetArgs: pubGetArgs,
+        ).join(' ');
 
         logger
           ..command('melos bootstrap')
           ..child(targetStyle(workspace.path))
           ..newLine();
 
-        if (!utils.isCI && workspace.filteredPackages.keys.length > 20) {
-          logger.warning(
-            'Note: this may take a while in large workspaces such as this one.',
-            label: false,
-          );
-        }
+        final filteredPackages = workspace.filteredPackages.values;
+        final rollbackPubspecContent = <String, String>{};
+        _PubspecOverridesRollback? overridesRollback;
 
         try {
           if (bootstrapCommandConfig.environment != null ||
@@ -54,46 +54,81 @@ mixin _BootstrapMixin on _CleanMixin {
               bootstrapCommandConfig.devDependencies != null) {
             logger.log('Updating common dependencies in workspace packages...');
 
-            final filteredPackages = workspace.filteredPackages.values;
-            await Stream.fromIterable(filteredPackages).parallel((package) {
+            await Stream.fromIterable(filteredPackages).parallel((
+              package,
+            ) async {
+              final pubspecPath = utils.pubspecPathForDirectory(package.path);
+              final pubspecContent = await readTextFileAsync(pubspecPath);
+              rollbackPubspecContent[pubspecPath] = pubspecContent;
+
               return _setSharedDependenciesForPackage(
                 package,
+                pubspecPath: pubspecPath,
+                pubspecContent: pubspecContent,
                 environment: bootstrapCommandConfig.environment,
                 dependencies: bootstrapCommandConfig.dependencies,
                 devDependencies: bootstrapCommandConfig.devDependencies,
+                markSharedDependencies:
+                    bootstrapCommandConfig.markSharedDependencies,
               );
             }).drain<void>();
-
-            logger
-              ..child(successLabel, prefix: '> ')
-              ..newLine();
           }
 
-          if (!skipLinking) {
+          overridesRollback = await _writeWorkspaceDependencyOverrides(
+            workspace,
+          );
+
+          if (skipPub) {
             logger.log(
-              'Running "$pubCommandForLogging" in workspace packages...',
+              'Skipping "$pubCommandForLogging" in workspace (--no-pub)...',
+            );
+          } else {
+            logger.log(
+              'Running "$pubCommandForLogging" in workspace...',
             );
 
-            await _linkPackagesWithPubspecOverrides(
+            await _runPubGetForWorkspace(
               workspace,
+              noExample: runNoExample,
+              runOffline: runOffline,
               enforceLockfile: shouldEnforceLockfile,
-              noExample: noExample,
+              pubGetArgs: pubGetArgs,
+            );
+          }
+
+          logger
+            ..child(successLabel, prefix: '> ')
+            ..newLine();
+        } on BootstrapException catch (exception) {
+          if (rollbackPubspecContent.isNotEmpty) {
+            logger.log(
+              'Dependency resolution failed, rolling back changes to '
+              'the pubspec.yaml files...',
             );
 
-            logger
-              ..child(successLabel, prefix: '> ')
-              ..newLine();
+            await Stream.fromIterable(rollbackPubspecContent.entries).parallel((
+              entry,
+            ) async {
+              await writeTextFileAsync(entry.key, entry.value);
+            }).drain<void>();
           }
-        } on BootstrapException catch (exception) {
+
+          if (overridesRollback != null) {
+            await overridesRollback.restore();
+          }
+
           _logBootstrapException(exception, workspace);
           rethrow;
         }
 
-        if (workspace.config.ide.intelliJ.enabled) {
+        if (workspace.config.ide.intelliJ.enabled && !utils.isCI) {
           logger.log('Generating IntelliJ IDE files...');
 
           await cleanIntelliJ(workspace);
-          await workspace.ide.intelliJ.generate();
+          await workspace.ide.intelliJ.generate(
+            generateRunScripts:
+                workspace.config.ide.intelliJ.generateAppRunConfigs,
+          );
           logger
             ..child(successLabel, prefix: '> ')
             ..newLine();
@@ -105,136 +140,46 @@ mixin _BootstrapMixin on _CleanMixin {
     );
   }
 
-  Future<void> _linkPackagesWithPubspecOverrides(
+  Future<void> _runPubGetForWorkspace(
     MelosWorkspace workspace, {
-    required bool enforceLockfile,
     required bool noExample,
+    required bool runOffline,
+    required bool enforceLockfile,
+    List<String> pubGetArgs = const [],
   }) async {
-    final filteredPackages = workspace.filteredPackages.values;
-
-    await Stream.fromIterable(filteredPackages).parallel(
-      (package) async {
-        if (package.isExample) {
-          final enclosingPackage = package.enclosingPackage!;
-          if (enclosingPackage.isFlutterPackage &&
-              filteredPackages.contains(enclosingPackage)) {
-            // This package will be bootstrapped as part of bootstrapping
-            // the enclosing package.
-            return;
-          }
-        }
-
-        final bootstrappedPackages = [package];
-        await _generatePubspecOverrides(workspace, package);
-        if (package.isFlutterPackage) {
-          final example = package.examplePackage;
-          if (example != null && filteredPackages.contains(example)) {
-            // The flutter tool bootstraps the example package as part of
-            // bootstrapping the enclosing package, so we need to generate
-            // the pubspec overrides for the example package as well.
-            await _generatePubspecOverrides(workspace, example);
-            bootstrappedPackages.add(example);
-          }
-        }
-        await _runPubGetForPackage(
-          workspace,
-          package,
-          enforceLockfile: enforceLockfile,
-          noExample: noExample,
-        );
-
-        bootstrappedPackages.forEach(_logBootstrapSuccess);
-      },
-      parallelism:
-          workspace.config.commands.bootstrap.runPubGetInParallel ? null : 1,
-    ).drain<void>();
-  }
-
-  Future<void> _generatePubspecOverrides(
-    MelosWorkspace workspace,
-    Package package,
-  ) async {
-    final allTransitiveDependencies =
-        package.allTransitiveDependenciesInWorkspace;
-    final melosDependencyOverrides = <String, Dependency>{};
-
-    // Traversing all packages so that transitive dependencies for the
-    // bootstrapped packages are setup properly.
-    for (final otherPackage in workspace.allPackages.values) {
-      if (allTransitiveDependencies.containsKey(otherPackage.name)) {
-        melosDependencyOverrides[otherPackage.name] = PathDependency(
-          utils.relativePath(otherPackage.path, package.path),
-        );
-      }
-    }
-
-    // Add custom workspace overrides.
-    for (final dependencyOverride
-        in workspace.dependencyOverridePackages.values) {
-      melosDependencyOverrides[dependencyOverride.name] = PathDependency(
-        utils.relativePath(dependencyOverride.path, package.path),
-      );
-    }
-
-    // Add existing dependency overrides from pubspec.yaml last, overwriting
-    // overrides that would be made by Melos, to provide granular control at a
-    // package level.
-    melosDependencyOverrides.addAll(package.pubspec.dependencyOverrides);
-
-    // Load current pubspec_overrides.yaml.
-    final pubspecOverridesFile =
-        utils.pubspecOverridesPathForDirectory(package.path);
-    final pubspecOverridesContents = fileExists(pubspecOverridesFile)
-        ? await readTextFileAsync(pubspecOverridesFile)
-        : null;
-
-    // Write new version of pubspec_overrides.yaml if it has changed.
-    final updatedPubspecOverridesContents = mergeMelosPubspecOverrides(
-      melosDependencyOverrides,
-      pubspecOverridesContents,
+    await runPubGetForPackage(
+      workspace,
+      workspace.rootPackage,
+      noExample: noExample,
+      runOffline: runOffline,
+      enforceLockfile: enforceLockfile,
+      pubGetArgs: pubGetArgs,
     );
-    if (updatedPubspecOverridesContents != null) {
-      if (updatedPubspecOverridesContents.isEmpty) {
-        deleteEntry(pubspecOverridesFile);
-      } else {
-        await writeTextFileAsync(
-          pubspecOverridesFile,
-          updatedPubspecOverridesContents,
-        );
-      }
-    }
   }
 
-  Future<void> _runPubGetForPackage(
+  @visibleForTesting
+  Future<void> runPubGetForPackage(
     MelosWorkspace workspace,
     Package package, {
-    required bool enforceLockfile,
     required bool noExample,
+    required bool runOffline,
+    required bool enforceLockfile,
+    List<String> pubGetArgs = const [],
   }) async {
-    late final hasLockFile =
-        File(p.join(package.path, 'pubspec.lock')).existsSync();
-    final enforceLockfileConfigValue =
-        workspace.config.commands.bootstrap.enforceLockfile;
-    final shouldEnforceLockfile =
-        (enforceLockfileConfigValue || enforceLockfile) && hasLockFile;
-    final command = [
-      ...pubCommandExecArgs(
-        useFlutter: package.isFlutterPackage,
-        workspace: workspace,
-      ),
-      'get',
-      if (noExample) '--no-example',
-      if (workspace.config.commands.bootstrap.runPubGetOffline) '--offline',
-      if (shouldEnforceLockfile) '--enforce-lockfile',
-    ];
-
+    final command = _buildPubGetCommand(
+      workspace: workspace,
+      noExample: noExample,
+      runOffline: runOffline,
+      enforceLockfile: enforceLockfile,
+      pubGetArgs: pubGetArgs,
+    );
     final process = await startCommandRaw(
       command,
       workingDirectory: package.path,
     );
 
     const logTimeout = Duration(seconds: 10);
-    final packagePrefix = '[${AnsiStyles.blue.bold(package.name)}]: ';
+    final packagePrefix = '[${AnsiStyles.blue.bold(workspace.name)}]: ';
     void Function(String) logLineTo(void Function(String) log) =>
         (line) => log.call('$packagePrefix$line');
 
@@ -242,7 +187,7 @@ mixin _BootstrapMixin on _CleanMixin {
     // leaking resources and to ensure that the process exits.
     final stdout = process.stdout.toStringAndLogAfterTimeout(
       timeout: logTimeout,
-      log: logLineTo(logger.stdout),
+      log: logLineTo(logger.log),
     );
     final stderr = process.stderr.toStringAndLogAfterTimeout(
       timeout: logTimeout,
@@ -254,22 +199,99 @@ mixin _BootstrapMixin on _CleanMixin {
     if (exitCode != 0) {
       throw BootstrapException._(
         package,
-        'Failed to install.',
+        'Failed to run pub get.',
         stdout: await stdout,
         stderr: await stderr,
       );
     }
   }
 
+  List<String> _buildPubGetCommand({
+    required MelosWorkspace workspace,
+    required bool noExample,
+    required bool runOffline,
+    required bool enforceLockfile,
+    List<String> pubGetArgs = const [],
+  }) {
+    return [
+      ...pubCommandExecArgs(
+        useFlutter: workspace.isFlutterWorkspace,
+        workspace: workspace,
+      ),
+      'get',
+      if (noExample) '--no-example',
+      if (runOffline) '--offline',
+      if (enforceLockfile) '--enforce-lockfile',
+      ...pubGetArgs,
+    ];
+  }
+
+  /// Writes path-based dependency overrides for the packages matched by
+  /// [BootstrapCommandConfigs.dependencyOverridePaths] to the workspace root
+  /// `pubspec_overrides.yaml`.
+  ///
+  /// The managed entries are tagged with a `melos_managed_dependency_overrides`
+  /// marker comment so user-defined overrides in the same file are preserved.
+  ///
+  /// Returns a rollback handle that restores the file to its previous state, or
+  /// `null` if no changes were made.
+  Future<_PubspecOverridesRollback?> _writeWorkspaceDependencyOverrides(
+    MelosWorkspace workspace,
+  ) async {
+    final overridesPath = utils.pubspecOverridesPathForDirectory(
+      workspace.path,
+    );
+    final originalContent = fileExists(overridesPath)
+        ? await readTextFileAsync(overridesPath)
+        : null;
+
+    final melosDependencyOverrides = <String, Dependency>{
+      for (final package in workspace.dependencyOverridePackages.values)
+        package.name: PathDependency(
+          relativePath(package.path, workspace.path),
+        ),
+    };
+
+    final updatedContent = _mergeMelosPubspecOverrides(
+      melosDependencyOverrides,
+      originalContent,
+    );
+
+    if (updatedContent == null) {
+      return null;
+    }
+
+    if (updatedContent.isEmpty) {
+      deleteEntry(overridesPath);
+    } else {
+      await writeTextFileAsync(overridesPath, updatedContent);
+    }
+
+    final relativeOverridesPath = relativePath(overridesPath, workspace.path);
+    final message = melosDependencyOverrides.isEmpty
+        ? 'Removed obsolete melos-managed dependency_overrides'
+        : 'Linked ${melosDependencyOverrides.length} '
+              'melos-managed dependency_overrides';
+    logger
+        .child(targetStyle(relativeOverridesPath), prefix: '$checkLabel ')
+        .child(message);
+
+    return _PubspecOverridesRollback(
+      path: overridesPath,
+      originalContent: originalContent,
+    );
+  }
+
   Future<void> _setSharedDependenciesForPackage(
     Package package, {
+    required String pubspecPath,
+    required String pubspecContent,
     required Map<String, VersionConstraint?>? environment,
     required Map<String, Dependency>? dependencies,
     required Map<String, Dependency>? devDependencies,
+    required bool markSharedDependencies,
   }) async {
-    final packagePubspecFile = utils.pubspecPathForDirectory(package.path);
-    final packagePubspecContents = await readTextFileAsync(packagePubspecFile);
-    final pubspecEditor = YamlEditor(packagePubspecContents);
+    final pubspecEditor = YamlEditor(pubspecContent);
 
     final updatedEnvironment = _updateEnvironment(
       pubspecEditor: pubspecEditor,
@@ -291,11 +313,19 @@ mixin _BootstrapMixin on _CleanMixin {
       pubspecKey: 'dev_dependencies',
     );
 
-    if (pubspecEditor.edits.isNotEmpty) {
-      await writeTextFileAsync(
-        packagePubspecFile,
-        pubspecEditor.toString(),
-      );
+    final updatedPubspecContent = applySharedDependencyMarkers(
+      pubspecEditor.toString(),
+      sharedKeys: markSharedDependencies
+          ? {
+              'environment': ?environment?.keys,
+              'dependencies': ?dependencies?.keys,
+              'dev_dependencies': ?devDependencies?.keys,
+            }
+          : const {},
+    );
+
+    if (updatedPubspecContent != pubspecContent) {
+      await writeTextFileAsync(pubspecPath, updatedPubspecContent);
 
       final message = <String>[
         if (updatedEnvironment) 'Updated environment',
@@ -336,8 +366,12 @@ mixin _BootstrapMixin on _CleanMixin {
     }
 
     for (final entry in workspaceEnvironment.entries) {
-      if (!packageEnvironment.containsKey(entry.key)) continue;
-      if (packageEnvironment[entry.key] == entry.value) continue;
+      if (!packageEnvironment.containsKey(entry.key)) {
+        continue;
+      }
+      if (packageEnvironment[entry.key] == entry.value) {
+        continue;
+      }
 
       pubspecEditor.update(
         ['environment', entry.key],
@@ -352,18 +386,36 @@ mixin _BootstrapMixin on _CleanMixin {
     return didUpdate;
   }
 
+  bool _areDependenciesEqual(Dependency? a, Dependency? b) {
+    if (a is GitDependency && b is GitDependency) {
+      return a == b && a.path == b.path;
+    } else {
+      return a == b;
+    }
+  }
+
   int _updateDependencies({
     required YamlEditor pubspecEditor,
     required Map<String, Dependency>? workspaceDependencies,
     required Map<String, Dependency> packageDependencies,
     required String pubspecKey,
   }) {
-    if (workspaceDependencies == null) return 0;
+    if (workspaceDependencies == null) {
+      return 0;
+    }
     // Filter out the packages that do not exist in package and only the
     // dependencies that have a different version specified in the workspace.
     final dependenciesToUpdate = workspaceDependencies.entries.where((entry) {
-      if (!packageDependencies.containsKey(entry.key)) return false;
-      if (packageDependencies[entry.key] == entry.value) return false;
+      if (!packageDependencies.containsKey(entry.key)) {
+        return false;
+      }
+      // TODO: We may want to replace the `pubspec` dependency with something
+      // else that is actively maintained, so we don't have to provide our own
+      // equality logic.
+      // See: https://github.com/invertase/melos/discussions/663
+      if (_areDependenciesEqual(packageDependencies[entry.key], entry.value)) {
+        return false;
+      }
       return true;
     });
 
@@ -371,19 +423,13 @@ mixin _BootstrapMixin on _CleanMixin {
       pubspecEditor.update(
         [pubspecKey, entry.key],
         wrapAsYamlNode(
-          entry.value.toJson(),
+          entry.value.toYaml(),
           collectionStyle: CollectionStyle.BLOCK,
         ),
       );
     }
 
     return dependenciesToUpdate.length;
-  }
-
-  void _logBootstrapSuccess(Package package) {
-    logger.child(packageNameStyle(package.name), prefix: '$checkLabel ').child(
-          packagePathStyle(printablePath(package.pathRelativeToWorkspace)),
-        );
   }
 
   void _logBootstrapException(
@@ -420,19 +466,21 @@ mixin _BootstrapMixin on _CleanMixin {
         .map((line) {
           var lineWithWorkspacePackagesHighlighted = line;
           for (final workspacePackage in workspace.allPackages.values) {
-            if (workspacePackage.name == package.name) continue;
+            if (workspacePackage.name == package.name) {
+              continue;
+            }
             lineWithWorkspacePackagesHighlighted =
                 lineWithWorkspacePackagesHighlighted.replaceAll(
-              '${workspacePackage.name} ',
-              '${AnsiStyles.yellowBright(workspacePackage.name)} ',
-            );
+                  '${workspacePackage.name} ',
+                  '${AnsiStyles.yellowBright(workspacePackage.name)} ',
+                );
           }
           return lineWithWorkspacePackagesHighlighted;
         })
         .toList()
         .join('\n');
 
-    logger
+    logger.essential
         .child(targetStyle(package.name), prefix: '- ')
         .child(packagePathStyle(printablePath(package.pathRelativeToWorkspace)))
         .child(errorMessageColor(exception.message), stderr: true)
@@ -447,195 +495,36 @@ mixin _BootstrapMixin on _CleanMixin {
   }
 }
 
-const _managedDependencyOverridesMarker = 'melos_managed_dependency_overrides';
-final _managedDependencyOverridesRegex = RegExp(
-  '^# $_managedDependencyOverridesMarker: (.*)\n',
-  multiLine: true,
-);
+/// Rollback handle for changes made to a `pubspec_overrides.yaml` file during
+/// bootstrap.
+class _PubspecOverridesRollback {
+  _PubspecOverridesRollback({
+    required this.path,
+    required this.originalContent,
+  });
 
-/// Merges the [melosDependencyOverrides] for other workspace packages into the
-/// `pubspec_overrides.yaml` file for a package.
-///
-/// [melosDependencyOverrides] must contain a mapping of workspace package names
-/// to their paths relative to the package.
-///
-/// [pubspecOverridesContent] are the current contents of the package's
-/// `pubspec_overrides.yaml` and may be `null` if the file does not exist.
-///
-/// Whitespace and comments in an existing `pubspec_overrides.yaml` file are
-/// preserved.
-///
-/// Dependency overrides for a melos workspace package that have not been added
-/// by melos are not changed or removed. To mark a dependency override as being
-/// managed by melos, it is added to marker comment when first added by this
-/// function:
-///
-/// ```yaml
-/// # melos_managed_dependency_overrides: a
-/// dependency_overrides:
-///   a:
-///     path: ../a
-/// ```
-///
-/// This function also takes care of removing any dependency overrides that are
-/// obsolete from `dependency_overrides` and the marker comment.
-@visibleForTesting
-String? mergeMelosPubspecOverrides(
-  Map<String, Dependency> melosDependencyOverrides,
-  String? pubspecOverridesContent,
-) {
-  final pubspecOverridesEditor = YamlEditor(pubspecOverridesContent ?? '');
-  final pubspecOverrides = pubspecOverridesEditor
-      .parseAt([], orElse: () => wrapAsYamlNode(null)).value as Object?;
+  final String path;
+  final String? originalContent;
 
-  final dependencyOverrides = pubspecOverridesContent?.isEmpty ?? true
-      ? null
-      : PubspecOverrides.parse(pubspecOverridesContent!).dependencyOverrides;
-  final currentManagedDependencyOverrides = _managedDependencyOverridesRegex
-          .firstMatch(pubspecOverridesContent ?? '')
-          ?.group(1)
-          ?.split(',')
-          .toSet() ??
-      {};
-  final newManagedDependencyOverrides = {...currentManagedDependencyOverrides};
-
-  if (dependencyOverrides != null) {
-    for (final dependencyOverride in dependencyOverrides.entries.toList()) {
-      final packageName = dependencyOverride.key;
-
-      if (currentManagedDependencyOverrides.contains(packageName)) {
-        // This dependency override is managed by melos and might need to be
-        // updated.
-
-        if (melosDependencyOverrides.containsKey(packageName)) {
-          // Update changed dependency override.
-          final currentRef = dependencyOverride.value;
-          final newRef = melosDependencyOverrides[packageName];
-          if (currentRef != newRef) {
-            pubspecOverridesEditor.update(
-              ['dependency_overrides', packageName],
-              wrapAsYamlNode(
-                newRef!.toJson(),
-                collectionStyle: CollectionStyle.BLOCK,
-              ),
-            );
-          }
-        } else {
-          // Remove obsolete dependency override.
-          pubspecOverridesEditor.remove(['dependency_overrides', packageName]);
-          dependencyOverrides.remove(packageName);
-          newManagedDependencyOverrides.remove(packageName);
-        }
+  Future<void> restore() async {
+    if (originalContent == null) {
+      if (fileExists(path)) {
+        deleteEntry(path);
       }
-
-      // Remove this dependency from the list of workspace dependency overrides,
-      // so we only add new overrides later on.
-      melosDependencyOverrides.remove(packageName);
-    }
-  }
-
-  if (melosDependencyOverrides.isNotEmpty) {
-    // Now melosDependencyOverrides only contains new dependencies that need to
-    // be added to the `pubspec_overrides.yaml` file.
-
-    newManagedDependencyOverrides.addAll(melosDependencyOverrides.keys);
-
-    if (pubspecOverrides == null) {
-      pubspecOverridesEditor.update(
-        [],
-        wrapAsYamlNode(
-          {
-            'dependency_overrides': {
-              for (final dependencyOverride in melosDependencyOverrides.entries)
-                dependencyOverride.key: dependencyOverride.value.toJson(),
-            },
-          },
-          collectionStyle: CollectionStyle.BLOCK,
-        ),
-      );
     } else {
-      if (dependencyOverrides == null) {
-        pubspecOverridesEditor.update(
-          ['dependency_overrides'],
-          wrapAsYamlNode(
-            {
-              for (final dependencyOverride in melosDependencyOverrides.entries)
-                dependencyOverride.key: dependencyOverride.value.toJson(),
-            },
-            collectionStyle: CollectionStyle.BLOCK,
-          ),
-        );
-      } else {
-        for (final dependencyOverride in melosDependencyOverrides.entries) {
-          pubspecOverridesEditor.update(
-            ['dependency_overrides', dependencyOverride.key],
-            wrapAsYamlNode(
-              dependencyOverride.value.toJson(),
-              collectionStyle: CollectionStyle.BLOCK,
-            ),
-          );
-        }
-      }
+      await writeTextFileAsync(path, originalContent!);
     }
-  } else {
-    // No dependencies need to be added to the `pubspec_overrides.yaml` file.
-    // This means it is possible that dependency_overrides and/or
-    // melos_managed_dependency_overrides are now empty.
-    if (dependencyOverrides?.isEmpty ?? false) {
-      pubspecOverridesEditor.remove(['dependency_overrides']);
-    }
-  }
-
-  if (pubspecOverridesEditor.edits.isNotEmpty) {
-    var result = pubspecOverridesEditor.toString();
-
-    // The changes to the `pubspec_overrides.yaml` file might require a change
-    // in the managed dependencies marker comment.
-    final setOfManagedDependenciesChanged =
-        !const DeepCollectionEquality.unordered().equals(
-      currentManagedDependencyOverrides,
-      newManagedDependencyOverrides,
-    );
-    if (setOfManagedDependenciesChanged) {
-      if (newManagedDependencyOverrides.isEmpty) {
-        // When there are no managed dependencies, remove the marker comment.
-        result = result.replaceAll(_managedDependencyOverridesRegex, '');
-      } else {
-        if (!_managedDependencyOverridesRegex.hasMatch(result)) {
-          // When there is no marker comment, add one.
-          result = '# $_managedDependencyOverridesMarker: '
-              '${newManagedDependencyOverrides.join(',')}\n$result';
-        } else {
-          // When there is a marker comment, update it.
-          result = result.replaceFirstMapped(
-            _managedDependencyOverridesRegex,
-            (match) => '# $_managedDependencyOverridesMarker: '
-                '${newManagedDependencyOverrides.join(',')}\n',
-          );
-        }
-      }
-    }
-
-    if (result.trim() == '{}') {
-      // YamlEditor uses an empty dictionary ({}) when all properties have been
-      // removed and the file is essentially empty.
-      return '';
-    }
-
-    // Make sure the `pubspec_overrides.yaml` file always ends with a newline.
-    if (result.isEmpty || !result.endsWith('\n')) {
-      result += '\n';
-    }
-
-    return result;
-  } else {
-    return null;
   }
 }
 
 /// An exception for when `pub get` for a package failed.
 class BootstrapException implements MelosException {
-  BootstrapException._(this.package, this.message, {this.stdout, this.stderr});
+  BootstrapException._(
+    this.package,
+    this.message, {
+    this.stdout,
+    this.stderr,
+  });
 
   /// The package that failed
   final Package package;
@@ -645,6 +534,7 @@ class BootstrapException implements MelosException {
 
   @override
   String toString() {
-    return 'BootstrapException: $message: ${package.name} at ${package.path}.';
+    return 'BootstrapException: $message: ${package.name} at '
+        '${package.path}.';
   }
 }

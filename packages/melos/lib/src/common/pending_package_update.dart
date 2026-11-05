@@ -25,6 +25,10 @@ enum PackageUpdateReason {
 
   /// Package is being graduated to a stable version from a prerelease.
   graduate,
+
+  /// Changed to keep the package version in lockstep with the other packages
+  /// in the workspace, even though the package has no changes of its own.
+  lockstep,
 }
 
 @immutable
@@ -34,24 +38,28 @@ class MelosPendingPackageUpdate {
     this.package,
     this.commits,
     this.reason, {
+    required this.logger,
     this.prerelease = false,
     this.graduate = false,
     this.preid,
-    required this.logger,
-  })  : manualVersion = null,
-        userChangelogMessage = null;
+    this.groupCommits,
+    this.lockstepVersion,
+  }) : manualVersion = null,
+       userChangelogMessage = null;
 
   const MelosPendingPackageUpdate.manual(
     this.workspace,
     this.package,
     this.commits,
     this.manualVersion, {
-    this.userChangelogMessage,
     required this.logger,
-  })  : reason = PackageUpdateReason.manual,
-        prerelease = false,
-        graduate = false,
-        preid = null;
+    this.userChangelogMessage,
+    this.groupCommits,
+  }) : reason = PackageUpdateReason.manual,
+       prerelease = false,
+       graduate = false,
+       preid = null,
+       lockstepVersion = null;
 
   /// Commits that triggered this pending update. Can be empty if
   /// [PackageUpdateReason] is [PackageUpdateReason.dependency].
@@ -82,10 +90,25 @@ class MelosPendingPackageUpdate {
   /// user.
   final Version? manualVersion;
 
+  /// The shared next version of all packages in the workspace, when lockstep
+  /// versioning is enabled.
+  ///
+  /// When set, this version is used instead of computing the next version
+  /// from this package's own commits.
+  final Version? lockstepVersion;
+
   /// Changelog message that the user provided directly.
   ///
   /// This is only used for manually versioned packages.
   final String? userChangelogMessage;
+
+  /// Overrides whether changelog entries are grouped by their conventional
+  /// commit type.
+  ///
+  /// When `null`, the value configured in `command/version/changelogFormat/`
+  /// `groupByType` is used. This is set when the `--[no-]group-commits` flag is
+  /// passed to `melos version`.
+  final bool? groupCommits;
 
   final MelosLogger logger;
 
@@ -102,6 +125,7 @@ class MelosPendingPackageUpdate {
   /// Next pub version that will occur as part of this package update.
   Version get nextVersion {
     return manualVersion ??
+        lockstepVersion ??
         versioning.nextVersion(
           currentVersion,
           semverReleaseType!,
@@ -114,9 +138,11 @@ class MelosPendingPackageUpdate {
   /// Taking into account all the commits in this update, what is the highest
   /// [SemverReleaseType].
   ///
-  /// Is `null` for manually versioned packages.
+  /// Is `null` for manually versioned packages and packages that are only
+  /// versioned to keep the workspace in lockstep.
   SemverReleaseType? get semverReleaseType {
-    if (reason == PackageUpdateReason.manual) {
+    if (reason == PackageUpdateReason.manual ||
+        reason == PackageUpdateReason.lockstep) {
       return null;
     }
 
@@ -143,9 +169,15 @@ class MelosPendingPackageUpdate {
         .reduce(math.max)];
   }
 
+  /// Whether this update has any commits that produce changelog entries.
+  bool get hasChangelogCommits {
+    return commits.any((commit) => commit.parsedMessage.includeInChangelog);
+  }
+
   /// Whether this update contains breaking changes.
   bool get hasBreakingChanges {
-    if (reason == PackageUpdateReason.manual) {
+    if (reason == PackageUpdateReason.manual ||
+        reason == PackageUpdateReason.graduate) {
       return commits.any((commit) => commit.parsedMessage.isBreakingChange);
     }
 
@@ -159,7 +191,7 @@ class MelosPendingPackageUpdate {
   }
 
   @override
-  int get hashCode => package.name.hashCode;
+  int get hashCode => Object.hashAll([runtimeType, package.name]);
 
   @override
   String toString() {

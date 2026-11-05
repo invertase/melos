@@ -26,11 +26,20 @@ mixin SupportsManualRelease on HostedGitRepository {
   /// Returns the URL to the prefilled release creation page for the release
   /// of a package.
   Uri releaseUrlForUpdate(MelosPendingPackageUpdate pendingPackageUpdate) {
-    final packageName = pendingPackageUpdate.package.name;
+    final package = pendingPackageUpdate.package;
     final packageVersion = pendingPackageUpdate.nextVersion.toString();
+    final workspaceTag =
+        pendingPackageUpdate.workspace.config.commands.version.workspaceTag;
 
-    final tag = gitTagForPackageVersion(packageName, packageVersion);
-    final title = gitReleaseTitleForPackageVersion(packageName, packageVersion);
+    final tag = gitTagForPackage(
+      package,
+      packageVersion,
+      workspaceTag: workspaceTag,
+    );
+    final title =
+        gitPackageUsesPlainVersionTag(package, workspaceTag: workspaceTag)
+        ? tag
+        : gitReleaseTitleForPackageVersion(package.name, packageVersion);
     final body = pendingPackageUpdate.changelog.markdown;
     final isPreRelease = pendingPackageUpdate.nextVersion.isPreRelease;
 
@@ -55,9 +64,9 @@ mixin SupportsManualRelease on HostedGitRepository {
 @immutable
 class GitHubRepository extends HostedGitRepository with SupportsManualRelease {
   GitHubRepository({
-    String origin = defaultOrigin,
     required this.owner,
     required this.name,
+    String origin = defaultOrigin,
   }) : origin = removeTrailingSlash(origin);
 
   factory GitHubRepository.fromUrl(Uri uri) {
@@ -101,14 +110,16 @@ class GitHubRepository extends HostedGitRepository with SupportsManualRelease {
     String? body,
     bool? isPreRelease,
   }) {
-    return url.resolve('releases/new').replace(
-      queryParameters: <String, String>{
-        if (tag != null) 'tag': tag,
-        if (title != null) 'title': title,
-        if (body != null) 'body': body,
-        if (isPreRelease != null) 'prerelease': '$isPreRelease',
-      },
-    );
+    return url
+        .resolve('releases/new')
+        .replace(
+          queryParameters: <String, String>{
+            if (tag != null) 'tag': tag,
+            if (title != null) 'title': title,
+            if (body != null) 'body': body,
+            if (isPreRelease != null) 'prerelease': '$isPreRelease',
+          },
+        );
   }
 
   @override
@@ -131,16 +142,16 @@ GitHubRepository(
           other.name == name;
 
   @override
-  int get hashCode => origin.hashCode ^ owner.hashCode ^ name.hashCode;
+  int get hashCode => Object.hashAll([runtimeType, origin, owner, name]);
 }
 
 /// A git repository, hosted by GitLab.
 @immutable
 class GitLabRepository extends HostedGitRepository {
   GitLabRepository({
-    String origin = defaultOrigin,
     required this.owner,
     required this.name,
+    String origin = defaultOrigin,
   }) : origin = removeTrailingSlash(origin);
 
   factory GitLabRepository.fromUrl(Uri uri) {
@@ -197,14 +208,14 @@ GitLabRepository(
           other.name == name;
 
   @override
-  int get hashCode => origin.hashCode ^ owner.hashCode ^ name.hashCode;
+  int get hashCode => Object.hashAll([runtimeType, origin, owner, name]);
 }
 
 class BitbucketRepository extends HostedGitRepository {
   BitbucketRepository({
-    String origin = defaultOrigin,
     required this.owner,
     required this.name,
+    String origin = defaultOrigin,
   }) : origin = removeTrailingSlash(origin);
 
   factory BitbucketRepository.fromUrl(Uri uri) {
@@ -255,8 +266,9 @@ class AzureDevOpsRepository extends HostedGitRepository {
   }) : origin = removeTrailingSlash(origin);
 
   factory AzureDevOpsRepository.fromUrl(Uri uri) {
-    final match = RegExp(r'(https://dev.azure.com/.+)/(.+)/_git/(.+)/?$')
-        .firstMatch(uri.toString());
+    final match = RegExp(
+      r'(https://dev.azure.com/.+)/(.+)/_git/(.+)/?$',
+    ).firstMatch(uri.toString());
     if (match != null) {
       return AzureDevOpsRepository(
         origin: match.group(1)!,
@@ -267,8 +279,9 @@ class AzureDevOpsRepository extends HostedGitRepository {
 
     // Azure DevOps has also an older URL format, see
     // https://learn.microsoft.com/en-us/azure/devops/extend/develop/work-with-urls
-    final matchOld = RegExp(r'(https://.+\.visualstudio.com)/(.+)/_git/(.+)/?$')
-        .firstMatch(uri.toString());
+    final matchOld = RegExp(
+      r'(https://.+\.visualstudio.com)/(.+)/_git/(.+)/?$',
+    ).firstMatch(uri.toString());
     if (matchOld != null) {
       return AzureDevOpsRepository(
         origin: matchOld.group(1)!,
@@ -322,7 +335,7 @@ AzureDevOpsRepository(
           other.name == name;
 
   @override
-  int get hashCode => origin.hashCode ^ owner.hashCode ^ name.hashCode;
+  int get hashCode => Object.hashAll([runtimeType, origin, owner, name]);
 }
 
 final _hostsToUrlParser = {

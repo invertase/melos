@@ -4,22 +4,29 @@ mixin _PublishMixin on _ExecMixin {
   Future<void> publish({
     GlobalOptions? global,
     PackageFilters? packageFilters,
-    bool dryRun = true,
-    bool gitTagVersion = true,
+    bool? dryRun,
+    bool? gitTagVersion,
     // yes
-    bool force = false,
+    bool? force,
+    String? pubServer,
+    bool? skipValidation,
   }) async {
-    final workspace =
-        await createWorkspace(global: global, packageFilters: packageFilters);
+    final workspace = await createWorkspace(
+      global: global,
+      packageFilters: packageFilters,
+    );
+    final publishConfig = workspace.config.commands.publish;
 
     return _runLifecycle(workspace, CommandWithLifecycle.publish, () {
       return _publish(
         workspace: workspace,
         global: global,
         packageFilters: packageFilters,
-        dryRun: dryRun,
-        gitTagVersion: gitTagVersion,
-        force: force,
+        dryRun: dryRun ?? publishConfig.dryRun ?? true,
+        gitTagVersion: gitTagVersion ?? publishConfig.gitTagVersion ?? false,
+        force: force ?? publishConfig.force ?? false,
+        pubServer: pubServer ?? publishConfig.pubServer,
+        skipValidation: skipValidation ?? publishConfig.skipValidation ?? false,
       );
     });
   }
@@ -29,15 +36,18 @@ mixin _PublishMixin on _ExecMixin {
     GlobalOptions? global,
     PackageFilters? packageFilters,
     bool dryRun = true,
-    bool gitTagVersion = true,
+    bool gitTagVersion = false,
     // yes
     bool force = false,
+    String? pubServer,
+    bool skipValidation = false,
   }) async {
     logger.command('melos publish${dryRun ? " --$publishOptionDryRun" : ''}');
     logger.child(targetStyle(workspace.path)).newLine();
 
-    final readRegistryProgress =
-        logger.progress('Reading pub registry for package information');
+    final readRegistryProgress = logger.progress(
+      'Reading pub registry for package information',
+    );
 
     Map<String, String?> latestPublishedVersionForPackages;
 
@@ -106,7 +116,9 @@ mixin _PublishMixin on _ExecMixin {
 
     if (!force) {
       final shouldContinue = promptBool();
-      if (!shouldContinue) throw CancelledException();
+      if (!shouldContinue) {
+        throw CancelledException();
+      }
       logger.newLine();
     }
 
@@ -115,6 +127,8 @@ mixin _PublishMixin on _ExecMixin {
       unpublishedPackages,
       dryRun: dryRun,
       gitTagVersion: gitTagVersion,
+      pubServer: pubServer,
+      skipValidation: skipValidation,
     );
   }
 
@@ -124,11 +138,18 @@ mixin _PublishMixin on _ExecMixin {
     final pool = Pool(10);
     final latestPackageVersion = <String, String?>{};
 
-    await pool.forEach<Package, void>(workspace.filteredPackages.values,
-        (package) async {
-      if (package.isPrivate) return;
+    await pool.forEach<Package, void>(workspace.filteredPackages.values, (
+      package,
+    ) async {
+      if (package.isPrivate) {
+        return;
+      }
 
-      final pubPackage = await package.getPublishedPackage();
+      final pubPackage = await package.getPublishedPackage(
+        logger: logger,
+        backoff: workspace.config.pub.retryBackoff,
+        timeout: workspace.config.pub.requestTimeout,
+      );
       final versions = pubPackage?.prioritizedVersions.reversed
           .map((v) => v.version.toString())
           .toList();
@@ -142,12 +163,14 @@ mixin _PublishMixin on _ExecMixin {
       // prerelease version with a matching preid instead if any.
       if (package.version.isPreRelease) {
         final preid = package.version.preRelease.length == 4
-            ? package.version.preRelease[2] as String
-            : package.version.preRelease[0] as String;
-        final versionsWithPreid =
-            versions.where((version) => version.contains(preid)).toList();
-        latestPackageVersion[package.name] =
-            versionsWithPreid.isEmpty ? versions[0] : versionsWithPreid[0];
+            ? package.version.preRelease[2].toString()
+            : package.version.preRelease[0].toString();
+        final versionsWithPreid = versions
+            .where((version) => version.contains(preid))
+            .toList();
+        latestPackageVersion[package.name] = versionsWithPreid.isEmpty
+            ? versions[0]
+            : versionsWithPreid[0];
       } else {
         latestPackageVersion[package.name] = versions[0];
       }
@@ -161,6 +184,8 @@ mixin _PublishMixin on _ExecMixin {
     List<Package> unpublishedPackages, {
     required bool dryRun,
     required bool gitTagVersion,
+    String? pubServer,
+    bool skipValidation = false,
   }) async {
     final updateRegistryProgress = logger.progress(
       'Publishing ${unpublishedPackages.length} packages to registry:',
@@ -176,10 +201,18 @@ mixin _PublishMixin on _ExecMixin {
       execArgs.add('--force');
     }
 
+    if (pubServer != null) {
+      execArgs.addAll(['--server', pubServer]);
+    }
+
+    if (skipValidation) {
+      execArgs.add('--skip-validation');
+    }
+
     await _execForAllPackages(
       workspace,
-      unpublishedPackages,
       execArgs,
+      executablePackages: unpublishedPackages,
       concurrency: 1,
       failFast: true,
       orderDependents: false,
@@ -188,21 +221,42 @@ mixin _PublishMixin on _ExecMixin {
       },
     );
 
-    if (exitCode != 1) {
+    if (exitCode == 0) {
       if (!dryRun && gitTagVersion) {
         logger
           ..newLine()
           ..log('Creating git tags for any versions not already created... ');
-        await Future.forEach(unpublishedPackages, (package) async {
-          final tag =
-              gitTagForPackageVersion(package.name, package.version.toString());
-          await gitTagCreate(
-            tag,
-            'Publish $tag.',
-            workingDirectory: package.path,
-            logger: logger,
-          );
-        });
+        if (workspace.config.commands.version.workspaceTag) {
+          final versions = unpublishedPackages
+              .map((package) => package.version)
+              .toSet();
+          if (versions.length == 1) {
+            final tag = gitTagForVersion(versions.single.toString());
+            await gitTagCreate(
+              tag,
+              'Publish $tag.',
+              workingDirectory: workspace.path,
+              logger: logger,
+            );
+          } else {
+            logger.warning(
+              'Skipping git tag creation since the published packages have '
+              'different versions (${versions.join(', ')}), while '
+              '"command/version/workspaceTag" expects all packages to share '
+              'the same version.',
+            );
+          }
+        } else {
+          await Future.forEach(unpublishedPackages, (package) async {
+            final tag = gitTagForPackage(package, package.version.toString());
+            await gitTagCreate(
+              tag,
+              'Publish $tag.',
+              workingDirectory: package.path,
+              logger: logger,
+            );
+          });
+        }
       }
 
       updateRegistryProgress.finish(

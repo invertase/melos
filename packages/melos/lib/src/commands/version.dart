@@ -8,30 +8,54 @@ mixin _VersionMixin on _RunMixin {
     PackageFilters? packageFilters,
     bool asPrerelease = false,
     bool asStableRelease = false,
-    bool updateChangelog = true,
-    bool updateDependentsConstraints = true,
-    bool updateDependentsVersions = true,
-    bool gitTag = true,
-    bool gitCommit = true,
+    bool? updateChangelog,
+    bool? updateDependentsConstraints,
+    bool? updateDependentsVersions,
+    bool? gitTag,
+    bool? gitCommit,
+    bool? signOff,
     bool? releaseUrl,
+    bool? groupCommits,
     String? message,
-    bool force = false,
+    bool? force,
     // all
     bool showPrivatePackages = false,
     String? preid,
     String? dependentPreid,
-    bool versionPrivatePackages = false,
+    bool? versionPrivatePackages,
+    bool? smartDependents,
     Map<String, versioning.ManualVersionChange> manualVersions = const {},
   }) async {
     if (asPrerelease && asStableRelease) {
       throw ArgumentError('Cannot use both asPrerelease and asStableRelease.');
     }
 
-    if (updateDependentsVersions && !updateDependentsConstraints) {
-      throw ArgumentError(
-        'Cannot use updateDependentsVersions without '
-        'updateDependentsConstraints.',
+    final versionConfig = config.commands.version;
+    final effectiveUpdateDependentsConstraints =
+        updateDependentsConstraints ??
+        versionConfig.updateDependentsConstraints ??
+        true;
+    var effectiveUpdateDependentsVersions =
+        updateDependentsVersions ??
+        versionConfig.updateDependentsVersions ??
+        true;
+
+    if (effectiveUpdateDependentsVersions &&
+        !effectiveUpdateDependentsConstraints) {
+      if ((updateDependentsVersions ?? false) &&
+          !(updateDependentsConstraints ?? true)) {
+        throw ArgumentError(
+          'Cannot use updateDependentsVersions without '
+          'updateDependentsConstraints.',
+        );
+      }
+
+      logger.warning(
+        'updateDependentsVersions is turned on but '
+        'updateDependentsConstraints is turned off. Versioning will continue '
+        'with updateDependentsVersions turned off.',
       );
+      effectiveUpdateDependentsVersions = false;
     }
 
     if ((asPrerelease || asStableRelease) && manualVersions.isNotEmpty) {
@@ -43,10 +67,14 @@ mixin _VersionMixin on _RunMixin {
     final workspace = await createWorkspace(
       global: global,
       // We ignore `diff` package list filtering on the 'version' command as it
-      // already filters it itself, filtering here would map dependant version
+      // already filters it itself, filtering here would map dependent version
       // fail as it won't be aware of any packages that have been filtered out
       // here because of the 'diff' filter.
-      packageFilters: packageFilters?.copyWithDiff(null),
+      packageFilters: packageFilters
+          ?.copyWithDiff(null)
+          .copyWith(
+            postFilters: packageFilters.postFilters?.copyWithDiff(null),
+          ),
     );
 
     return _runLifecycle(workspace, CommandWithLifecycle.version, () {
@@ -56,18 +84,25 @@ mixin _VersionMixin on _RunMixin {
         packageFilters: packageFilters,
         asPrerelease: asPrerelease,
         asStableRelease: asStableRelease,
-        updateChangelog: updateChangelog,
-        updateDependentsConstraints: updateDependentsConstraints,
-        updateDependentsVersions: updateDependentsVersions,
-        gitTag: gitTag,
-        gitCommit: gitCommit,
+        updateChangelog:
+            updateChangelog ?? versionConfig.updateChangelog ?? true,
+        updateDependentsConstraints: effectiveUpdateDependentsConstraints,
+        updateDependentsVersions: effectiveUpdateDependentsVersions,
+        smartDependents: smartDependents ?? versionConfig.smartDependents,
+        gitTag: gitTag ?? versionConfig.gitTagVersion ?? true,
+        gitCommit: gitCommit ?? versionConfig.gitCommitVersion ?? true,
+        signOff: signOff ?? versionConfig.signOff ?? false,
         releaseUrl: releaseUrl,
+        groupCommits: groupCommits,
         message: message,
-        force: force,
+        force: force ?? versionConfig.force ?? false,
         showPrivatePackages: showPrivatePackages,
-        preid: preid,
-        dependentPreid: dependentPreid,
-        versionPrivatePackages: versionPrivatePackages,
+        preid: preid ?? versionConfig.preid,
+        dependentPreid: dependentPreid ?? versionConfig.dependentPreid,
+        versionPrivatePackages:
+            versionPrivatePackages ??
+            versionConfig.versionPrivatePackages ??
+            false,
         manualVersions: manualVersions,
       );
     });
@@ -82,9 +117,12 @@ mixin _VersionMixin on _RunMixin {
     bool updateChangelog = true,
     bool updateDependentsConstraints = true,
     bool updateDependentsVersions = true,
+    bool? smartDependents,
     bool gitTag = true,
     bool gitCommit = true,
+    bool signOff = false,
     bool? releaseUrl,
+    bool? groupCommits,
     String? message,
     bool force = false,
     // all
@@ -94,6 +132,8 @@ mixin _VersionMixin on _RunMixin {
     bool versionPrivatePackages = false,
     Map<String, versioning.ManualVersionChange> manualVersions = const {},
   }) async {
+    final isSmartDependents =
+        smartDependents ?? workspace.config.commands.version.smartDependents;
     if (workspace.config.commands.version.branch != null) {
       final currentBranchName = await gitGetCurrentBranchName(
         workingDirectory: workspace.path,
@@ -127,20 +167,47 @@ mixin _VersionMixin on _RunMixin {
       diff: packageFilters?.diff,
     );
 
-    final packagesWithVersionableCommits =
-        _getPackagesWithVersionableCommits(packageCommits);
+    final packagesWithVersionableCommits = _getPackagesWithVersionableCommits(
+      packageCommits,
+    );
+
+    // Determine which ignored packages have versionable commits or were
+    // specified in --manual-version, so we can prevent versioning packages
+    // that depend on them.
+    final ignoredPackagesWithChanges = await _getIgnoredPackagesWithChanges(
+      workspace,
+      versionPrivatePackages: versionPrivatePackages,
+      diff: packageFilters?.diff,
+    );
+    // Also count ignored packages that were explicitly requested for manual
+    // versioning — this signals the user believes the package has changes
+    // worth releasing, so dependents should not be versioned without it.
+    for (final packageName in manualVersions.keys) {
+      if (workspace.filteredPackages[packageName] == null &&
+          workspace.allPackages[packageName] != null) {
+        ignoredPackagesWithChanges.add(packageName);
+      }
+    }
 
     for (final packageName in manualVersions.keys) {
       if (!workspace.allPackages.keys.contains(packageName)) {
         exitCode = 1;
-        logger
-            .error('package "$packageName" does not exist in this workspace.');
+        logger.error(
+          'package "$packageName" does not exist in this workspace.',
+        );
         return;
+      }
+      if (workspace.filteredPackages[packageName] == null) {
+        logger.warning(
+          'package "$packageName" was specified in --manual-version but is '
+          'excluded by package filters (e.g. --ignore). Skipping.',
+        );
       }
     }
 
     final packagesToManuallyVersion = manualVersions.keys
-        .map((packageName) => workspace.allPackages[packageName]!)
+        .map((name) => workspace.filteredPackages[name])
+        .whereType<Package>()
         .toSet();
     final packagesToAutoVersion = {
       for (final package in workspace.filteredPackages.values)
@@ -148,22 +215,52 @@ mixin _VersionMixin on _RunMixin {
           if (packagesWithVersionableCommits.contains(package.name))
             if (!asStableRelease || !package.version.isPreRelease) package,
     };
-    final packagesToVersion = {
-      ...packagesToManuallyVersion,
-      ...packagesToAutoVersion,
-    };
-    final dependentPackagesToVersion = <Package>{};
+
+    // Remove packages that depend (directly or transitively) on an ignored
+    // package with pending changes, since versioning them without also
+    // versioning the ignored dependency could produce a broken release.
+    if (ignoredPackagesWithChanges.isNotEmpty) {
+      bool dependsOnIgnoredWithChanges(Package package) {
+        final unscoped = workspace.allPackages[package.name]!;
+        return unscoped.allTransitiveDependenciesInWorkspace.keys.any(
+          ignoredPackagesWithChanges.contains,
+        );
+      }
+
+      for (final package in [...packagesToManuallyVersion]) {
+        if (dependsOnIgnoredWithChanges(package)) {
+          packagesToManuallyVersion.remove(package);
+          logger.warning(
+            'Package "${package.name}" depends on an ignored package '
+            'that has pending changes. Skipping to avoid a broken '
+            'release.',
+          );
+        }
+      }
+      for (final package in [...packagesToAutoVersion]) {
+        if (dependsOnIgnoredWithChanges(package)) {
+          packagesToAutoVersion.remove(package);
+          logger.warning(
+            'Package "${package.name}" depends on an ignored package '
+            'that has pending changes. Skipping to avoid a broken '
+            'release.',
+          );
+        }
+      }
+    }
     final pendingPackageUpdates = <MelosPendingPackageUpdate>[];
 
     if (asStableRelease) {
       for (final package in workspace.filteredPackages.values) {
-        if (!package.version.isPreRelease) continue;
+        if (!package.version.isPreRelease) {
+          continue;
+        }
 
         pendingPackageUpdates.add(
           MelosPendingPackageUpdate(
             workspace,
             package,
-            const [],
+            packageCommits[package.name] ?? const [],
             PackageUpdateReason.graduate,
             graduate: asStableRelease,
             prerelease: asPrerelease,
@@ -171,29 +268,6 @@ mixin _VersionMixin on _RunMixin {
             logger: logger,
           ),
         );
-
-        final packageUnscoped = workspace.allPackages[package.name]!;
-        dependentPackagesToVersion
-            .addAll(packageUnscoped.dependentsInWorkspace.values);
-      }
-    }
-
-    for (final package in packagesToVersion) {
-      final packageUnscoped = workspace.allPackages[package.name]!;
-      dependentPackagesToVersion
-          .addAll(packageUnscoped.dependentsInWorkspace.values);
-
-      // Add dependentsInWorkspace dependents in the workspace until no more are
-      // added.
-      var packagesAdded = 1;
-      while (packagesAdded != 0) {
-        final packagesCountBefore = dependentPackagesToVersion.length;
-        final packages = <Package>{...dependentPackagesToVersion};
-        for (final dependentPackage in packages) {
-          dependentPackagesToVersion
-              .addAll(dependentPackage.dependentsInWorkspace.values);
-        }
-        packagesAdded = dependentPackagesToVersion.length - packagesCountBefore;
       }
     }
 
@@ -222,18 +296,26 @@ mixin _VersionMixin on _RunMixin {
                 'Found commits for manually versioned package "$name".',
               );
 
-              promptForMessage = promptBool(
-                message: 'Do you want to provide an additional changelog entry '
-                    'message?',
-                defaultsToWithoutPrompt: false,
-              );
+              // `--yes`/`force` skips all confirmation prompts, so never
+              // prompt here; fall back to the same default that is used when
+              // no prompt is possible.
+              promptForMessage =
+                  !force &&
+                  promptBool(
+                    message:
+                        'Do you want to provide an additional changelog entry '
+                        'message?',
+                    defaultsToWithoutPrompt: false,
+                  );
             }
 
             if (promptForMessage) {
-              userChangelogMessage = promptInput(
-                'Provide a changelog entry message',
-                defaultsTo: defaultUserChangelogMessage,
-              );
+              userChangelogMessage = force
+                  ? defaultUserChangelogMessage
+                  : promptInput(
+                      'Provide a changelog entry message',
+                      defaultsTo: defaultUserChangelogMessage,
+                    );
             }
           }
 
@@ -243,6 +325,7 @@ mixin _VersionMixin on _RunMixin {
             commits,
             version,
             userChangelogMessage: userChangelogMessage,
+            groupCommits: groupCommits,
             logger: logger,
           );
         },
@@ -259,37 +342,30 @@ mixin _VersionMixin on _RunMixin {
           graduate: asStableRelease,
           prerelease: asPrerelease,
           preid: preid,
+          groupCommits: groupCommits,
           logger: logger,
         ),
       ),
     );
 
-    for (final package in dependentPackagesToVersion) {
-      // If updateDependentsVersions is set to false, we do not perform updates.
-      if (!updateDependentsVersions) {
-        break;
-      }
-
-      final packageHasPendingUpdate = pendingPackageUpdates.any(
-        (packageToVersion) => packageToVersion.package.name == package.name,
-      );
-
-      if (!packagesToVersion.contains(package) && !packageHasPendingUpdate) {
-        pendingPackageUpdates.add(
-          MelosPendingPackageUpdate(
-            workspace,
-            package,
-            const [],
-            PackageUpdateReason.dependency,
-            // Dependent packages that should have graduated would have already
-            // gone through graduation logic above. So graduate should use the
-            // default of 'false' here so as not to graduate anything that was
-            // specifically excluded.
-            // graduate: false,
-            prerelease: asPrerelease,
-            preid: dependentPreid ?? preid,
-            logger: logger,
-          ),
+    // Transitively collect dependents in the workspace that need to be
+    // versioned.
+    if (updateDependentsVersions) {
+      if (isSmartDependents) {
+        _collectSmartDependentUpdates(
+          workspace: workspace,
+          pendingPackageUpdates: pendingPackageUpdates,
+          asPrerelease: asPrerelease,
+          preid: preid,
+          dependentPreid: dependentPreid,
+        );
+      } else {
+        _collectLegacyDependentUpdates(
+          workspace: workspace,
+          pendingPackageUpdates: pendingPackageUpdates,
+          asPrerelease: asPrerelease,
+          preid: preid,
+          dependentPreid: dependentPreid,
         );
       }
     }
@@ -297,6 +373,34 @@ mixin _VersionMixin on _RunMixin {
     // Filter out private packages.
     if (!versionPrivatePackages) {
       pendingPackageUpdates.removeWhere((update) => update.package.isPrivate);
+    }
+
+    // In fixed versioning mode all packages are bumped in lockstep to the
+    // same new version, which is derived from the most significant pending
+    // change in the workspace.
+    if (workspace.config.commands.version.mode == VersioningMode.fixed &&
+        pendingPackageUpdates.isNotEmpty) {
+      if (!updateDependentsVersions) {
+        logger.warning(
+          'All packages are versioned together in fixed versioning mode, so '
+          'disabling dependent versioning has no effect.',
+        );
+      }
+      final lockstepUpdates = _lockstepPendingPackageUpdates(
+        workspace: workspace,
+        pendingPackageUpdates: pendingPackageUpdates,
+        packageCommits: packageCommits,
+        ignoredPackagesWithChanges: ignoredPackagesWithChanges,
+        manualVersions: manualVersions,
+        versionPrivatePackages: versionPrivatePackages,
+        asPrerelease: asPrerelease,
+        asStableRelease: asStableRelease,
+        preid: preid,
+        groupCommits: groupCommits,
+      );
+      pendingPackageUpdates
+        ..clear()
+        ..addAll(lockstepUpdates);
     }
 
     if (pendingPackageUpdates.isEmpty) {
@@ -350,6 +454,7 @@ mixin _VersionMixin on _RunMixin {
       updateDependentsConstraints: updateDependentsConstraints,
       updateChangelog: updateChangelog,
       workspace: workspace,
+      smartDependents: isSmartDependents,
     );
 
     final preCommit = workspace.config.commands.version.hooks.preCommit;
@@ -373,11 +478,13 @@ mixin _VersionMixin on _RunMixin {
         pendingPackageUpdates,
         commitMessageTemplate,
         updateDependentsVersions: updateDependentsVersions,
+        signOff: signOff,
       );
     }
 
     if (gitTag && gitCommit) {
       await _gitTagChanges(
+        workspace,
         pendingPackageUpdates,
         updateDependentsVersions: updateDependentsVersions,
       );
@@ -403,23 +510,345 @@ mixin _VersionMixin on _RunMixin {
 
       if (repository == null) {
         logger.warning(
-          'No repository configured in melos.yaml to generate a '
+          'No repository configured in the pubspec.yaml file to generate a '
           'release for.',
         );
       } else if (repository is! SupportsManualRelease) {
         logger.warning('Repository does not support releases urls');
+      } else if (config.commands.version.workspaceTag) {
+        final workspaceVersion = pendingPackageUpdates.first.nextVersion;
+        final tag = gitTagForVersion(workspaceVersion.toString());
+        final releaseUrl = repository.releaseUrl(
+          tag: tag,
+          title: tag,
+          body: _workspaceReleaseNotes(pendingPackageUpdates),
+          isPreRelease: workspaceVersion.isPreRelease,
+        );
+
+        logger.success(
+          'Make sure you create a release for the new workspace version:'
+          '${ansiStylesDisabled ? '\n' : ' '}'
+          '${AnsiStyles.bgBlack.gray(link(releaseUrl, tag))}',
+        );
       } else {
-        final pendingPackageReleases = pendingPackageUpdates.map((update) {
-          return link(
-            repository.releaseUrlForUpdate(update),
-            update.package.name,
-          );
-        }).join(ansiStylesDisabled ? '\n' : ', ');
+        final pendingPackageReleases = pendingPackageUpdates
+            .map((update) {
+              return link(
+                repository.releaseUrlForUpdate(update),
+                update.package.name,
+              );
+            })
+            .join(ansiStylesDisabled ? '\n' : ', ');
 
         logger.success(
           'Make sure you create a release for each new package version:'
           '${ansiStylesDisabled ? '\n' : ' '}'
           '${AnsiStyles.bgBlack.gray(pendingPackageReleases)}',
+        );
+      }
+    }
+  }
+
+  /// Replaces the independently computed [pendingPackageUpdates] with one
+  /// update per (non-private) package in the workspace, all sharing a single
+  /// new lockstep version.
+  ///
+  /// The lockstep version is either the version requested with
+  /// `--manual-version` (relative version changes are applied to the highest
+  /// current version in the workspace) or the highest current version in the
+  /// workspace bumped by the most significant release type across all pending
+  /// updates.
+  List<MelosPendingPackageUpdate> _lockstepPendingPackageUpdates({
+    required MelosWorkspace workspace,
+    required List<MelosPendingPackageUpdate> pendingPackageUpdates,
+    required Map<String, List<RichGitCommit>> packageCommits,
+    required Set<String> ignoredPackagesWithChanges,
+    required Map<String, versioning.ManualVersionChange> manualVersions,
+    required bool versionPrivatePackages,
+    required bool asPrerelease,
+    required bool asStableRelease,
+    required String? preid,
+    required bool? groupCommits,
+  }) {
+    final packages = workspace.filteredPackages.values.where((package) {
+      if (!versionPrivatePackages && package.isPrivate) {
+        return false;
+      }
+      // Packages that depend (directly or transitively) on an ignored package
+      // with pending changes are not versioned, since versioning them without
+      // also versioning the ignored dependency could produce a broken
+      // release. This mirrors the skip logic for independent versioning.
+      if (ignoredPackagesWithChanges.isNotEmpty) {
+        final unscoped = workspace.allPackages[package.name]!;
+        if (unscoped.allTransitiveDependenciesInWorkspace.keys.any(
+          ignoredPackagesWithChanges.contains,
+        )) {
+          logger.warning(
+            'Package "${package.name}" is not versioned in lockstep because '
+            'it depends on an ignored package that has pending changes.',
+          );
+          return false;
+        }
+      }
+      return true;
+    }).toList();
+    if (packages.isEmpty) {
+      return [];
+    }
+
+    // The highest current version in the workspace is used as the base for
+    // the next lockstep version, so that a workspace with (temporarily)
+    // diverged versions converges instead of producing downgrades.
+    final baseVersion = packages
+        .map((package) => package.version)
+        .reduce((a, b) => a >= b ? a : b);
+
+    final manualUpdates = pendingPackageUpdates
+        .where((update) => update.reason == PackageUpdateReason.manual)
+        .toList();
+
+    final Version lockstepVersion;
+    if (manualUpdates.isNotEmpty) {
+      // Manual version changes are applied to the workspace base version
+      // rather than to the individually named packages, so that e.g.
+      // `melos version <package> patch` bumps the whole workspace one patch
+      // version, regardless of which package was named.
+      final manualTargets = {
+        for (final update in manualUpdates)
+          manualVersions[update.package.name]!(baseVersion),
+      };
+      if (manualTargets.length > 1) {
+        throw FixedVersioningException(
+          'All packages share a single version in fixed versioning mode, but '
+          'multiple different versions were specified manually: '
+          '${manualTargets.join(', ')}.',
+        );
+      }
+      lockstepVersion = manualTargets.single;
+    } else {
+      final releaseType = pendingPackageUpdates
+          .map((update) => update.semverReleaseType)
+          .whereType<SemverReleaseType>()
+          .reduce((a, b) => a.index >= b.index ? a : b);
+      lockstepVersion = versioning.nextVersion(
+        baseVersion,
+        releaseType,
+        graduate: asStableRelease,
+        prerelease: asPrerelease,
+        preid: preid,
+      );
+    }
+
+    for (final package in packages) {
+      if (package.version > lockstepVersion) {
+        throw FixedVersioningException(
+          'The lockstep version $lockstepVersion is lower than the current '
+          'version ${package.version} of package "${package.name}".',
+        );
+      }
+    }
+
+    final existingUpdates = {
+      for (final update in pendingPackageUpdates) update.package.name: update,
+    };
+
+    final updates = <MelosPendingPackageUpdate>[];
+    for (final package in packages) {
+      // Packages already at the lockstep version are left untouched, to avoid
+      // rewriting pubspecs and changelogs without an actual version change.
+      if (package.version == lockstepVersion) {
+        final existingUpdate = existingUpdates[package.name];
+        if (existingUpdate != null &&
+            existingUpdate.reason != PackageUpdateReason.dependency) {
+          logger.warning(
+            'Package "${package.name}" has pending changes but is already at '
+            'the lockstep version $lockstepVersion, so it is not versioned.',
+          );
+        } else {
+          logger.log(
+            'Package "${package.name}" is already at the lockstep version '
+            '$lockstepVersion, skipping.',
+          );
+        }
+        continue;
+      }
+
+      updates.add(
+        _lockstepUpdateForPackage(
+          workspace: workspace,
+          package: package,
+          existingUpdate: existingUpdates[package.name],
+          commits: packageCommits[package.name] ?? const [],
+          lockstepVersion: lockstepVersion,
+          asPrerelease: asPrerelease,
+          asStableRelease: asStableRelease,
+          preid: preid,
+          groupCommits: groupCommits,
+        ),
+      );
+    }
+    return updates;
+  }
+
+  MelosPendingPackageUpdate _lockstepUpdateForPackage({
+    required MelosWorkspace workspace,
+    required Package package,
+    required MelosPendingPackageUpdate? existingUpdate,
+    required List<RichGitCommit> commits,
+    required Version lockstepVersion,
+    required bool asPrerelease,
+    required bool asStableRelease,
+    required String? preid,
+    required bool? groupCommits,
+  }) {
+    switch (existingUpdate?.reason) {
+      case PackageUpdateReason.manual:
+        return MelosPendingPackageUpdate.manual(
+          workspace,
+          package,
+          existingUpdate!.commits,
+          lockstepVersion,
+          userChangelogMessage: existingUpdate.userChangelogMessage,
+          groupCommits: existingUpdate.groupCommits,
+          logger: logger,
+        );
+      case PackageUpdateReason.commit:
+      case PackageUpdateReason.graduate:
+        return MelosPendingPackageUpdate(
+          workspace,
+          package,
+          existingUpdate!.commits,
+          existingUpdate.reason,
+          graduate: existingUpdate.graduate,
+          prerelease: existingUpdate.prerelease,
+          preid: existingUpdate.preid,
+          groupCommits: existingUpdate.groupCommits,
+          lockstepVersion: lockstepVersion,
+          logger: logger,
+        );
+      case PackageUpdateReason.dependency:
+      case PackageUpdateReason.lockstep:
+      case null:
+        // Packages without changes of their own are bumped purely to stay in
+        // lockstep with the rest of the workspace. This includes packages that
+        // would only have received a dependency bump in independent mode.
+        return MelosPendingPackageUpdate(
+          workspace,
+          package,
+          commits,
+          PackageUpdateReason.lockstep,
+          graduate: asStableRelease,
+          prerelease: asPrerelease,
+          preid: preid,
+          groupCommits: groupCommits,
+          lockstepVersion: lockstepVersion,
+          logger: logger,
+        );
+    }
+  }
+
+  void _collectSmartDependentUpdates({
+    required MelosWorkspace workspace,
+    required List<MelosPendingPackageUpdate> pendingPackageUpdates,
+    required bool asPrerelease,
+    required String? preid,
+    required String? dependentPreid,
+  }) {
+    final packagesToCheck = List<MelosPendingPackageUpdate>.from(
+      pendingPackageUpdates,
+    );
+    final processedPackages = <String>{};
+
+    while (packagesToCheck.isNotEmpty) {
+      final currentUpdate = packagesToCheck.removeAt(0);
+      if (!processedPackages.add(currentUpdate.package.name)) {
+        continue;
+      }
+
+      final packageUnscoped =
+          workspace.allPackages[currentUpdate.package.name]!;
+      for (final dependent in packageUnscoped.dependentsInWorkspace.values) {
+        if (workspace.filteredPackages[dependent.name] == null) {
+          continue;
+        }
+
+        final alreadyPending = pendingPackageUpdates.any(
+          (u) => u.package.name == dependent.name,
+        );
+        if (alreadyPending) {
+          continue;
+        }
+
+        final allows = _dependencyConstraintAllowsNextVersion(
+          dependent: dependent,
+          dependencyName: currentUpdate.package.name,
+          nextVersion: currentUpdate.nextVersion,
+        );
+
+        if (!allows) {
+          final dependentUpdate = MelosPendingPackageUpdate(
+            workspace,
+            dependent,
+            const [],
+            PackageUpdateReason.dependency,
+            prerelease: asPrerelease,
+            preid: dependentPreid ?? preid,
+            logger: logger,
+          );
+          pendingPackageUpdates.add(dependentUpdate);
+          packagesToCheck.add(dependentUpdate);
+        }
+      }
+    }
+  }
+
+  void _collectLegacyDependentUpdates({
+    required MelosWorkspace workspace,
+    required List<MelosPendingPackageUpdate> pendingPackageUpdates,
+    required bool asPrerelease,
+    required String? preid,
+    required String? dependentPreid,
+  }) {
+    final dependentPackagesToVersion = <Package>{};
+    for (final update in pendingPackageUpdates) {
+      final packageUnscoped = workspace.allPackages[update.package.name]!;
+      dependentPackagesToVersion.addAll(
+        packageUnscoped.dependentsInWorkspace.values.where(
+          (p) => workspace.filteredPackages[p.name] != null,
+        ),
+      );
+    }
+
+    var packagesAdded = 1;
+    while (packagesAdded != 0) {
+      final packagesCountBefore = dependentPackagesToVersion.length;
+      final packages = <Package>{...dependentPackagesToVersion};
+      for (final dependentPackage in packages) {
+        dependentPackagesToVersion.addAll(
+          dependentPackage.dependentsInWorkspace.values.where(
+            (p) => workspace.filteredPackages[p.name] != null,
+          ),
+        );
+      }
+      packagesAdded = dependentPackagesToVersion.length - packagesCountBefore;
+    }
+
+    for (final package in dependentPackagesToVersion) {
+      final packageHasPendingUpdate = pendingPackageUpdates.any(
+        (packageToVersion) => packageToVersion.package.name == package.name,
+      );
+
+      if (!packageHasPendingUpdate) {
+        pendingPackageUpdates.add(
+          MelosPendingPackageUpdate(
+            workspace,
+            package,
+            const [],
+            PackageUpdateReason.dependency,
+            prerelease: asPrerelease,
+            preid: dependentPreid ?? preid,
+            logger: logger,
+          ),
         );
       }
     }
@@ -432,37 +861,62 @@ mixin _VersionMixin on _RunMixin {
     final pubspec = pubspecPathForDirectory(package.path);
     final contents = await readTextFileAsync(pubspec);
 
-    final updatedContents =
-        contents.replaceAllMapped(versionReplaceRegex, (match) {
-      return '${match.group(1)}$version${match.group(3)}';
-    });
+    final editor = YamlEditor(contents);
+    editor.update(['version'], version.toString());
+    await writeTextFileAsync(pubspec, editor.toString());
+  }
 
-    // Sanity check that contents actually changed.
-    if (contents == updatedContents) {
-      logger.trace(
-        'Failed to update a pubspec.yaml version to $version for package '
-        '${package.name}. '
-        'You should probably report this issue with a copy of your '
-        'pubspec.yaml file.',
-      );
-      return;
+  bool _dependencyConstraintAllowsNextVersion({
+    required Package dependent,
+    required String dependencyName,
+    required Version nextVersion,
+  }) {
+    final normalDependency = dependent.pubspec.dependencies[dependencyName];
+    final devDependency = dependent.pubspec.devDependencies[dependencyName];
+    final gitTagDependency = dependent.rawPubspecFileContent != null
+        ? GitTagPatternDependency.fromRawCommit(
+            pubspec: dependent.rawPubspecFileContent!,
+            name: dependencyName,
+          )
+        : null;
+    final dependency = gitTagDependency ?? normalDependency ?? devDependency;
+
+    if (gitTagDependency != null) {
+      return gitTagDependency.minVersion == nextVersion;
     }
 
-    await writeTextFileAsync(pubspec, updatedContents);
+    if (dependency == null) {
+      return true;
+    }
+
+    final constraint = dependency.versionConstraint;
+    if (constraint == null) {
+      return true;
+    }
+
+    if (constraint is Version) {
+      return constraint == nextVersion;
+    }
+
+    return constraint.allows(nextVersion);
   }
 
   Future<void> _setDependencyVersionForDependentPackage(
     Package package,
     String dependencyName,
     Version version,
-    MelosWorkspace workspace,
-  ) {
+    MelosWorkspace workspace, {
+    bool smartDependents = false,
+  }) {
     final currentVersionConstraint =
         (package.pubspec.dependencies[dependencyName] ??
                 package.pubspec.devDependencies[dependencyName])
             ?.versionConstraint;
     final hasExactVersionConstraint = currentVersionConstraint is Version;
     if (hasExactVersionConstraint) {
+      if (currentVersionConstraint == version) {
+        return Future.value();
+      }
       // If the package currently has an exact version constraint, we respect
       // that and replace it with an exact version constraint for the new
       // version.
@@ -472,6 +926,15 @@ mixin _VersionMixin on _RunMixin {
         version,
         workspace,
       );
+    }
+
+    if (smartDependents &&
+        _dependencyConstraintAllowsNextVersion(
+          dependent: package,
+          dependencyName: dependencyName,
+          nextVersion: version,
+        )) {
+      return Future.value();
     }
 
     // By default dependency constraint using caret syntax to ensure the range
@@ -487,8 +950,10 @@ mixin _VersionMixin on _RunMixin {
     // to semver without the actual major, minor & patch versions changing.
     // e.g. >=1.2.0-1.0.nullsafety.0 <1.2.0-2.0.nullsafety.0
     if (version.toString().contains('.nullsafety.')) {
-      final nextMajorFromCurrentVersion =
-          versioning.nextVersion(version, SemverReleaseType.major);
+      final nextMajorFromCurrentVersion = versioning.nextVersion(
+        version,
+        SemverReleaseType.major,
+      );
 
       versionConstraint = VersionRange(
         min: version,
@@ -511,13 +976,22 @@ mixin _VersionMixin on _RunMixin {
     VersionRange dependencyVersion,
     MelosWorkspace workspace,
   ) async {
-    final dependencyReference = package.pubspec.dependencies[dependencyName];
-    final devDependencyReference =
-        package.pubspec.devDependencies[dependencyName];
+    final normalDependency = package.pubspec.dependencies[dependencyName];
+    final devDependency = package.pubspec.devDependencies[dependencyName];
 
-    if (dependencyReference != null &&
-        dependencyReference is! GitDependency &&
-        dependencyReference is! HostedDependency) {
+    // in addition to the pubsec_parse parsed dependencies,
+    // we also need to check if it's a git tag pattern dependency
+    final gitTagDependency = package.rawPubspecFileContent != null
+        ? GitTagPatternDependency.fromRawCommit(
+            pubspec: package.rawPubspecFileContent!,
+            name: dependencyName,
+          )
+        : null;
+    final dependency = gitTagDependency ?? normalDependency ?? devDependency;
+
+    if (dependency != null &&
+        dependency is! GitDependency &&
+        dependency is! HostedDependency) {
       logger.warning(
         'Skipping updating dependency $dependencyName for package '
         '${package.name} - '
@@ -526,40 +1000,72 @@ mixin _VersionMixin on _RunMixin {
       );
       return;
     }
-    if (devDependencyReference != null &&
-        devDependencyReference is! GitDependency &&
-        devDependencyReference is! HostedDependency) {
-      logger.warning(
-        'Skipping updating dev dependency $dependencyName for package '
-        '${package.name} - '
-        'the version is a Map definition and is most likely a dependency that '
-        'is importing from a path or git remote.',
+
+    final pubspecPath = pubspecPathForDirectory(package.path);
+    final pubspecContent = await readTextFileAsync(pubspecPath);
+
+    final isExternalHostedDependency =
+        dependency is HostedDependency && dependency.hosted != null;
+    final isGitDependency = dependency is GitDependency;
+    final isGitTagDependency = dependency is GitTagPatternDependency;
+
+    final section = normalDependency != null
+        ? 'dependencies'
+        : 'dev_dependencies';
+
+    String? updatedContents;
+    if (isGitTagDependency) {
+      updatedContents = _rewriteDependencyVersionAtPath(
+        pubspecContent: pubspecContent,
+        path: [dependency.section, dependencyName, 'version'],
+        dependencyVersion: dependencyVersion,
+        preserveCaretStyle: true,
       );
-      return;
-    }
-
-    final pubspec = pubspecPathForDirectory(package.path);
-    final contents = await readTextFileAsync(pubspec);
-
-    final isGitReference = dependencyReference is GitDependency ||
-        devDependencyReference is GitDependency;
-
-    final String updatedContents;
-    if (isGitReference && workspace.config.commands.version.updateGitTagRefs) {
-      updatedContents = contents.replaceAllMapped(
-        dependencyTagReplaceRegex(dependencyName),
-        (match) => '${match.group(1)}$dependencyName-'
-            'v${dependencyVersion.min ?? dependencyVersion.max!}',
+    } else if (isExternalHostedDependency) {
+      updatedContents = _rewriteDependencyVersionAtPath(
+        pubspecContent: pubspecContent,
+        path: [section, dependencyName, 'version'],
+        dependencyVersion: dependencyVersion,
+        preserveCaretStyle: false,
       );
+    } else if (isGitDependency &&
+        workspace.config.commands.version.updateGitTagRefs) {
+      final dependencyPackage = workspace.allPackages[dependencyName];
+      final newVersion = dependencyVersion.min ?? dependencyVersion.max!;
+      final workspaceTag = workspace.config.commands.version.workspaceTag;
+      if (dependencyPackage != null &&
+          gitPackageUsesPlainVersionTag(
+            dependencyPackage,
+            workspaceTag: workspaceTag,
+          )) {
+        // Plain version tags carry no package name, so the ref is updated at
+        // its exact location instead of by matching the tag name.
+        updatedContents = _rewriteGitRefAtPath(
+          pubspecContent: pubspecContent,
+          path: [section, dependencyName, 'git', 'ref'],
+          ref: gitTagForPackage(
+            dependencyPackage,
+            newVersion.toString(),
+            workspaceTag: workspaceTag,
+          ),
+        );
+      } else {
+        final rewritten = pubspecContent.replaceAllMapped(
+          dependencyTagReplaceRegex(dependencyName),
+          (match) => '${match.group(1)}$dependencyName-v$newVersion',
+        );
+        updatedContents = rewritten == pubspecContent ? null : rewritten;
+      }
     } else {
-      updatedContents = contents.replaceAllMapped(
-        dependencyVersionReplaceRegex(dependencyName),
-        (match) => '${match.group(1)}$dependencyVersion',
+      updatedContents = _rewriteDependencyVersionAtPath(
+        pubspecContent: pubspecContent,
+        path: [section, dependencyName],
+        dependencyVersion: dependencyVersion,
+        preserveCaretStyle: false,
       );
     }
 
-    // Sanity check that contents actually changed.
-    if (contents == updatedContents) {
+    if (updatedContents == null) {
       logger.warning(
         'Failed to update dependency $dependencyName version to '
         '$dependencyVersion for package ${package.name}, '
@@ -569,7 +1075,61 @@ mixin _VersionMixin on _RunMixin {
       return;
     }
 
-    await writeTextFileAsync(pubspec, updatedContents);
+    await writeTextFileAsync(pubspecPath, updatedContents);
+  }
+
+  /// Returns [pubspecContent] rewritten so that the git ref scalar at [path]
+  /// is set to [ref], or `null` if [path] doesn't point to a string scalar.
+  String? _rewriteGitRefAtPath({
+    required String pubspecContent,
+    required List<Object> path,
+    required String ref,
+  }) {
+    final editor = YamlEditor(pubspecContent);
+    final currentNode = editor.parseAt(
+      path,
+      orElse: () => wrapAsYamlNode(null),
+    );
+    if (currentNode.value is! String) {
+      return null;
+    }
+
+    editor.update(path, ref);
+    return editor.toString();
+  }
+
+  /// Returns [pubspecContent] rewritten so that the version constraint
+  /// scalar at [path] is set to [dependencyVersion], preserving everything
+  /// else in the file (formatting, comments, quoting style of unrelated
+  /// values) via [YamlEditor].
+  ///
+  /// Returns `null` if [path] doesn't already point to an existing string
+  /// scalar, for example an optional `version:` key that was never present.
+  /// This mirrors the previous rewrite behavior of leaving such pubspecs
+  /// untouched rather than inserting a new key.
+  String? _rewriteDependencyVersionAtPath({
+    required String pubspecContent,
+    required List<Object> path,
+    required VersionRange dependencyVersion,
+    required bool preserveCaretStyle,
+  }) {
+    final editor = YamlEditor(pubspecContent);
+    final currentNode = editor.parseAt(
+      path,
+      orElse: () => wrapAsYamlNode(null),
+    );
+    if (currentNode.value is! String) {
+      return null;
+    }
+
+    var newValue = dependencyVersion.toString();
+    if (preserveCaretStyle) {
+      final hasCaret = (currentNode.value! as String).startsWith('^');
+      newValue = '${hasCaret ? '^' : ''}${newValue.replaceFirst('^', '')}';
+    }
+
+    editor.update(path, newValue);
+    return editor.toString();
   }
 
   void _logNewVersionTable(
@@ -586,51 +1146,56 @@ mixin _VersionMixin on _RunMixin {
             AnsiStyles.underline.bold('Updated Version'),
             AnsiStyles.underline.bold('Update Reason'),
           ],
-          ...pendingPackageUpdates.where((pendingUpdate) {
-            if (pendingUpdate.reason == PackageUpdateReason.dependency &&
-                !updateDependentsVersions &&
-                !updateDependentsConstraints) {
-              return false;
-            }
-            return true;
-          }).map((pendingUpdate) {
-            return [
-              AnsiStyles.italic(pendingUpdate.package.name),
-              AnsiStyles.dim(pendingUpdate.currentVersion.toString()),
-              if (pendingUpdate.reason == PackageUpdateReason.dependency &&
-                  !updateDependentsVersions)
-                '-'
-              else
-                AnsiStyles.green(pendingUpdate.nextVersion.toString()),
-              AnsiStyles.italic(
-                (() {
-                  switch (pendingUpdate.reason) {
-                    case PackageUpdateReason.manual:
-                      return 'manual versioning';
-                    case PackageUpdateReason.commit:
-                      final semverType =
-                          pendingUpdate.semverReleaseType!.toString().substring(
+          ...pendingPackageUpdates
+              .where((pendingUpdate) {
+                if (pendingUpdate.reason == PackageUpdateReason.dependency &&
+                    !updateDependentsVersions &&
+                    !updateDependentsConstraints) {
+                  return false;
+                }
+                return true;
+              })
+              .map((pendingUpdate) {
+                return [
+                  AnsiStyles.italic(pendingUpdate.package.name),
+                  AnsiStyles.dim(pendingUpdate.currentVersion.toString()),
+                  if (pendingUpdate.reason == PackageUpdateReason.dependency &&
+                      !updateDependentsVersions)
+                    '-'
+                  else
+                    AnsiStyles.green(pendingUpdate.nextVersion.toString()),
+                  AnsiStyles.italic(
+                    (() {
+                      switch (pendingUpdate.reason) {
+                        case PackageUpdateReason.manual:
+                          return 'manual versioning';
+                        case PackageUpdateReason.commit:
+                          final semverType = pendingUpdate.semverReleaseType!
+                              .toString()
+                              .substring(
                                 pendingUpdate.semverReleaseType!
                                         .toString()
                                         .indexOf('.') +
                                     1,
                               );
-                      return 'updated with ${AnsiStyles.underline(semverType)} '
-                          'changes';
-                    case PackageUpdateReason.dependency:
-                      if (pendingUpdate.reason ==
-                              PackageUpdateReason.dependency &&
-                          !updateDependentsVersions) {
-                        return 'dependency constraints changed';
+                          return 'updated with '
+                              '${AnsiStyles.underline(semverType)} changes';
+                        case PackageUpdateReason.dependency:
+                          if (pendingUpdate.reason ==
+                                  PackageUpdateReason.dependency &&
+                              !updateDependentsVersions) {
+                            return 'dependency constraints changed';
+                          }
+                          return 'dependency was updated';
+                        case PackageUpdateReason.graduate:
+                          return 'graduate to stable';
+                        case PackageUpdateReason.lockstep:
+                          return 'lockstep with workspace';
                       }
-                      return 'dependency was updated';
-                    case PackageUpdateReason.graduate:
-                      return 'graduate to stable';
-                  }
-                })(),
-              ),
-            ];
-          }),
+                    })(),
+                  ),
+                ];
+              }),
         ],
         paddingSize: 3,
       ),
@@ -643,6 +1208,7 @@ mixin _VersionMixin on _RunMixin {
     required bool updateDependentsConstraints,
     required bool updateChangelog,
     required MelosWorkspace workspace,
+    bool smartDependents = false,
   }) async {
     // Note: not pooling & parallelizing rights to avoid possible file
     // contention.
@@ -658,23 +1224,27 @@ mixin _VersionMixin on _RunMixin {
 
       // Update dependents.
       if (updateDependentsConstraints) {
-        await Future.forEach([
-          ...pendingPackageUpdate.package.dependentsInWorkspace.values,
-          ...pendingPackageUpdate.package.devDependentsInWorkspace.values,
-        ], (package) {
-          return _setDependencyVersionForDependentPackage(
-            package,
-            pendingPackageUpdate.package.name,
-            // Note if we're not updating dependent versions then we use the
-            // current version rather than the next version as the next version
-            // would never have been applied.
-            (pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
-                    !updateDependentsVersions)
-                ? pendingPackageUpdate.package.version
-                : pendingPackageUpdate.nextVersion,
-            workspace,
-          );
-        });
+        await Future.forEach(
+          [
+            ...pendingPackageUpdate.package.dependentsInWorkspace.values,
+            ...pendingPackageUpdate.package.devDependentsInWorkspace.values,
+          ],
+          (package) {
+            return _setDependencyVersionForDependentPackage(
+              package,
+              pendingPackageUpdate.package.name,
+              // Note if we're not updating dependent versions then we use the
+              // current version rather than the next version as the next
+              // version would never have been applied.
+              (pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
+                      !updateDependentsVersions)
+                  ? pendingPackageUpdate.package.version
+                  : pendingPackageUpdate.nextVersion,
+              workspace,
+              smartDependents: smartDependents,
+            );
+          },
+        );
       }
 
       // Update changelogs if requested.
@@ -687,8 +1257,9 @@ mixin _VersionMixin on _RunMixin {
 
     if (updateChangelog) {
       await Future.wait(
-        workspace.config.commands.version.aggregateChangelogs
-            .map((changelogConfig) {
+        workspace.config.commands.version.aggregateChangelogs.map((
+          changelogConfig,
+        ) {
           return _writeAggregateChangelog(
             workspace,
             changelogConfig,
@@ -711,8 +1282,11 @@ mixin _VersionMixin on _RunMixin {
       today.day.toString().padLeft(2, '0'),
     ].join('-');
 
-    final packages =
-        await workspace.allPackages.applyFilters(config.packageFilters);
+    final packages = await workspace.allPackages.applyFilters(
+      config.packageFilters,
+      pubConfig: workspace.config.pub,
+      workspaceTag: workspace.config.commands.version.workspaceTag,
+    );
     // ignore: parameter_assignments
     pendingPackageUpdates = pendingPackageUpdates
         .where((update) => packages[update.package.name] != null)
@@ -748,19 +1322,55 @@ mixin _VersionMixin on _RunMixin {
     return packagesWithVersionableCommits;
   }
 
+  /// Returns the names of packages that are ignored (in `allPackages` but not
+  /// in `filteredPackages`) and that have versionable commits.
+  Future<Set<String>> _getIgnoredPackagesWithChanges(
+    MelosWorkspace workspace, {
+    required bool versionPrivatePackages,
+    required String? diff,
+  }) async {
+    final ignoredPackages = workspace.allPackages.values.where(
+      (p) => workspace.filteredPackages[p.name] == null,
+    );
+    final result = <String>{};
+    await Pool(10).forEach<Package, void>(ignoredPackages, (package) async {
+      if (!versionPrivatePackages && package.isPrivate) {
+        return;
+      }
+      final commits = await gitCommitsForPackage(
+        package,
+        diff: diff,
+        workspaceTag: workspace.config.commands.version.workspaceTag,
+        logger: logger,
+      );
+      final hasVersionableCommit = commits
+          .map(RichGitCommit.tryParse)
+          .whereType<RichGitCommit>()
+          .any((c) => c.parsedMessage.isVersionableCommit);
+      if (hasVersionableCommit) {
+        result.add(package.name);
+      }
+    }).drain<void>();
+    return result;
+  }
+
   Future<Map<String, List<RichGitCommit>>> _getPackageCommits(
     MelosWorkspace workspace, {
     required bool versionPrivatePackages,
     required String? diff,
   }) async {
     final packageCommits = <String, List<RichGitCommit>>{};
-    await Pool(10).forEach<Package, void>(workspace.filteredPackages.values,
-        (package) async {
-      if (!versionPrivatePackages && package.isPrivate) return;
+    await Pool(10).forEach<Package, void>(workspace.filteredPackages.values, (
+      package,
+    ) async {
+      if (!versionPrivatePackages && package.isPrivate) {
+        return;
+      }
 
       final commits = await gitCommitsForPackage(
         package,
         diff: diff,
+        workspaceTag: workspace.config.commands.version.workspaceTag,
         logger: logger,
       );
 
@@ -772,10 +1382,45 @@ mixin _VersionMixin on _RunMixin {
     return packageCommits;
   }
 
+  /// Release notes for a single workspace release, listing the changelog of
+  /// every versioned package under a heading with the package name.
+  String _workspaceReleaseNotes(
+    List<MelosPendingPackageUpdate> pendingPackageUpdates,
+  ) {
+    return pendingPackageUpdates
+        .map(
+          (update) =>
+              '# ${update.package.name}\n\n${update.changelog.markdown}',
+        )
+        .join('\n');
+  }
+
   Future<void> _gitTagChanges(
+    MelosWorkspace workspace,
     List<MelosPendingPackageUpdate> pendingPackageUpdates, {
     required bool updateDependentsVersions,
   }) async {
+    if (workspace.config.commands.version.workspaceTag) {
+      // All packages share the same version in fixed versioning mode, so a
+      // single plain version tag is created for the whole workspace.
+      final tag = gitTagForVersion(
+        pendingPackageUpdates.first.nextVersion.toString(),
+      );
+      final created = await gitTagCreate(
+        tag,
+        _workspaceReleaseNotes(pendingPackageUpdates),
+        workingDirectory: workspace.path,
+        logger: logger,
+      );
+      if (!created) {
+        logger.warning(
+          'The git tag "$tag" was not created, most likely because it '
+          'already exists.',
+        );
+      }
+      return;
+    }
+
     await Future.forEach(pendingPackageUpdates, (pendingPackageUpdate) async {
       if (pendingPackageUpdate.reason == PackageUpdateReason.dependency &&
           !updateDependentsVersions) {
@@ -783,18 +1428,24 @@ mixin _VersionMixin on _RunMixin {
       }
 
       // TODO '--tag-version-prefix' support (if we decide to support it later)
-      // would pass prefix named arg to gitTagForPackageVersion:
-      final tag = gitTagForPackageVersion(
-        pendingPackageUpdate.package.name,
+      // would pass prefix named arg to gitTagForPackage:
+      final tag = gitTagForPackage(
+        pendingPackageUpdate.package,
         pendingPackageUpdate.nextVersion.toString(),
       );
 
-      await gitTagCreate(
+      final created = await gitTagCreate(
         tag,
         pendingPackageUpdate.changelog.markdown,
         workingDirectory: pendingPackageUpdate.package.path,
         logger: logger,
       );
+      if (!created) {
+        logger.warning(
+          'The git tag "$tag" was not created, most likely because it '
+          'already exists.',
+        );
+      }
     });
   }
 
@@ -803,6 +1454,7 @@ mixin _VersionMixin on _RunMixin {
     List<MelosPendingPackageUpdate> pendingPackageUpdates,
     Template commitMessageTemplate, {
     required bool updateDependentsVersions,
+    required bool signOff,
   }) async {
     final publishedPackagesMessage = pendingPackageUpdates
         .where((update) {
@@ -826,6 +1478,7 @@ mixin _VersionMixin on _RunMixin {
       resolvedCommitMessage,
       workingDirectory: workspace.path,
       logger: logger,
+      signOff: signOff,
     );
   }
 
@@ -857,17 +1510,31 @@ mixin _VersionMixin on _RunMixin {
           logger: logger,
         );
       }
-      await Future.forEach([
-        ...pendingPackageUpdate.package.dependentsInWorkspace.values,
-        ...pendingPackageUpdate.package.devDependentsInWorkspace.values,
-      ], (dependentPackage) async {
-        await gitAdd(
-          'pubspec.yaml',
-          workingDirectory: dependentPackage.path,
-          logger: logger,
-        );
-      });
+      await Future.forEach(
+        [
+          ...pendingPackageUpdate.package.dependentsInWorkspace.values,
+          ...pendingPackageUpdate.package.devDependentsInWorkspace.values,
+        ],
+        (dependentPackage) async {
+          await gitAdd(
+            'pubspec.yaml',
+            workingDirectory: dependentPackage.path,
+            logger: logger,
+          );
+        },
+      );
     });
+  }
+}
+
+class FixedVersioningException extends MelosException {
+  FixedVersioningException(this.message);
+
+  final String message;
+
+  @override
+  String toString() {
+    return 'FixedVersioningException: $message';
   }
 }
 

@@ -1,20 +1,26 @@
 ---
 title: Defining workspace scripts
 description:
-  Defining workspace scripts in Melos via the `melos.yaml` scripts definition.
+  Defining workspace scripts in Melos via the `scripts` section in the root `pubspec.yaml`.
 ---
 
 # Workspace Scripts
 
-Workspace scripts can be executed with `melos run` or will be executed as
-lifecycle hooks of some specific Melos commands.
+Workspace scripts can be executed with `melos run <name>`, or directly as
+`melos <name>`, or will be executed as lifecycle hooks of some specific Melos
+commands.
+
+Remember, the scripts go in the `scripts` section under the `melos` section in
+the root `pubspec.yaml` file. For readability the `melos` section is omitted in
+all examples below except for the first one.
 
 With the simple syntax, only the name of the script and the command to execute
 needs to be specified:
 
 ```yaml
-scripts:
-  hello: echo 'Hello World'
+melos:
+  scripts:
+    hello: echo 'Hello World'
 ```
 
 The extends syntax allows for a more complex configuration of a script:
@@ -22,15 +28,30 @@ The extends syntax allows for a more complex configuration of a script:
 ```yaml
 scripts:
   hello:
-    name: hey
     description: Greet the world
-    run: echo '$GREETING World'
+    run: echo "$GREETING World"
     env:
       GREETING: 'Hey'
 ```
 
 Scripts are executed in a shell. On Windows the shell is `cmd.exe` and on all
 other platforms it is `sh`.
+
+Variables defined in a script's `env` block (as well as the injected `MELOS_*`
+variables) can be referenced with `$GREETING`, `${GREETING}` or `%GREETING%`.
+Use `$GREETING` or `${GREETING}` for cross-platform scripts.
+
+On `sh` (macOS, Linux) the shell expands `$GREETING` and `${GREETING}` itself,
+so normal shell quoting rules apply: single quotes prevent expansion
+(`echo '$GREETING'` prints `$GREETING` literally) while double quotes allow it,
+and values are treated as data rather than being re-parsed, so an `env` value
+containing characters such as `&` or `|` does not alter the command.
+
+On Windows the command is handed to `cmd.exe` through an intermediate
+environment variable, which cmd only expands once, so Melos substitutes the
+value directly for the reference. This means the expansion happens regardless of
+quoting, and `cmd.exe`'s usual caveats around special characters in values
+apply.
 
 If multiple commands are being executed in a script and no further commands
 should be executed after a command has failed, connect the commands with `&&`:
@@ -40,9 +61,10 @@ scripts:
   prepare: melos bootstrap && melos run build
 ```
 
-## name
+## Script name
 
-A unique identifier for the script.
+Each script is identified by its key in the `scripts` map, which must be
+unique. There is no separate `name` field.
 
 ## description
 
@@ -52,12 +74,39 @@ A short description, shown when using `melos run` with no argument.
 
 The command to execute.
 
+## stdio
+
+Controls how the script's process is connected to Melos's own input and output
+streams. Accepts one of:
+
+- `pipe` (default) — Melos captures the script's `stdout` and `stderr` so it can
+  prefix the output with the script name. The script's `stdin` is not connected.
+- `inherit` — the script inherits Melos's `stdin`, `stdout`, and `stderr`
+  directly, giving it a real terminal (TTY). Use this for interactive commands
+  that need a controlling terminal, such as `tmux attach`, `vim`, `less`, or the
+  hot-reload key handlers in `flutter run` / `dart_frog dev`. In this mode Melos
+  does not prefix the script's output.
+
+```yaml
+scripts:
+  attach:
+    run: tmux attach -t my_session
+    stdio: inherit
+```
+
+`stdio: inherit` runs a single foreground process attached to your terminal, so
+it cannot be combined with [`exec`](/configuration/scripts#exec) (which runs the
+script across multiple packages) or [`steps`](/configuration/scripts#steps)
+(which run inside a shared shell). Set `stdio: inherit` on the individual
+scripts referenced from `steps` instead.
+
 ## steps
 
-Enables the combination of multiple scripts within a single script definition
-for complex workflows. In the example below, the pre-commit script is
+Steps enables the combination of multiple scripts within a single script
+definition for complex workflows. In the example below, the pre-commit script is
 configured to sequentially invoke a simple command echo 'hello world',
-followed by Melos commands: format and analyze, each with specific arguments.
+followed by the Melos command to format your workspace and a command to run
+tests through Dart, each command with their specific arguments.
 
 ```yaml
 scripts:
@@ -66,7 +115,7 @@ scripts:
     steps:
       - echo 'hello world'
       - format --output none --set-exit-if-changed
-      - analyze --fatal-infos
+      - dart test --fail-fast .
 ```
 
 Note: When utilizing the `steps`, it's important to understand that options 
@@ -74,15 +123,77 @@ related to exec — such as concurrency — or `packageFilters` cannot be direct
 applied within the steps configuration. Instead, these options should be 
 configured in the individual scripts that are being called as part of the step.
 
+## dependsOn
+
+The names of the scripts that have to run successfully before the script runs.
+In the example below, `melos run test` first runs `generate`, and only runs the
+tests if `generate` succeeded.
+
+```yaml
+scripts:
+  generate:
+    exec: dart run build_runner build
+
+  test:
+    exec: dart test
+    dependsOn:
+      - generate
+```
+
+The dependencies form a graph, which is more flexible than a sequential list of
+[`steps`](/configuration/scripts#steps):
+
+- The scripts that a script depends on can depend on other scripts themselves.
+  All of them run before the requested script, each one after the scripts that
+  it depends on.
+- A script that multiple scripts depend on only runs once when the dependencies
+  of the requested script are resolved. A script that is called from
+  [`steps`](/configuration/scripts#steps) resolves its own dependencies, so a
+  dependency that is shared between multiple steps runs once for each of them.
+- If one of the scripts fails, the scripts that come after it do not run.
+- A script can consist of only `dependsOn`, without `run`, `exec` or `steps`,
+  to group other scripts under a single name. The `env` and `packageFilters` of
+  such a script are not applied to the scripts that it depends on.
+
+```yaml
+scripts:
+  generate: dart run tool/generate.dart
+  build:
+    run: dart run tool/build.dart
+    dependsOn:
+      - generate
+  test:
+    exec: dart test
+    dependsOn:
+      - generate
+  # Runs generate, build and test, with generate only running once.
+  verify:
+    dependsOn:
+      - build
+      - test
+```
+
+Extra arguments that are passed to `melos run` are only passed to the requested
+script, not to the scripts that it depends on. Package filters that are passed
+on the command line, such as `--scope`, apply to all of the scripts. A script
+that is depended on is skipped with a warning if no package matches its filters,
+since it has nothing to do for the selected packages.
+[Private](/configuration/scripts#private) scripts can be used as dependencies.
+
+Melos reports an error if a script depends on a script that does not exist, or
+if the dependencies form a cycle. `dependsOn` is not supported for
+[hooks](/configuration/scripts#hooks).
+
 ## exec
 
 Execute a script in multiple packages through `melos exec`.
 
-This options must either contain the command to execute in multiple packages or
-the options for the `melos exec` command.
+`run` and `exec` are mutually exclusive: a script either runs once in the
+workspace root with [`run`](/configuration/scripts#run), or across multiple
+packages with `exec`.
 
-When using the default options for `melos exec`, it's easiest to specify the
-command in the `exec` option:
+When using the default options for `melos exec`, specify the command directly as
+the value of `exec`:
 
 ```yaml
 scripts:
@@ -90,19 +201,30 @@ scripts:
     exec: echo 'Hello $(dirname $PWD)'
 ```
 
-If you need to provide options for the `exec` command, specify them in the
-`exec` option and specify the command in the `run` option:
+If you need to provide options for the `exec` command, turn `exec` into an object
+and specify the command with the `command` key alongside the options:
 
 ```yaml
 scripts:
   hello:
-    run: echo 'Hello $(dirname $PWD)'
     exec:
+      command: echo 'Hello $(dirname $PWD)'
       concurrency: 1
 ```
 
+<Warning>
+  Prior to Melos 8.0.0, the command was specified in `run` and the options in
+  `exec`. This is no longer supported. Move the command into `exec` under the
+  `command` key. See the
+  [migration guide](/guides/migrations#7xx-to-800) for details.
+</Warning>
+
 See the [`packageFilters`](/configuration/scripts#packagefilters) option for
 filtering the packages to execute the command in.
+
+### command
+
+The command to execute in each package. Required when `exec` is an object.
 
 ### concurrency
 
@@ -123,17 +245,72 @@ leaf packages first and then in packages that depend on them and so on. This is
 useful for example, for a script that generates code in multiple packages, which
 depend on each other. Defaults to `false`.
 
+### groupLogs
+
+Whether the output of the packages should be buffered and printed grouped per
+package once every package has finished, instead of being streamed and
+interleaved while the packages run. The output of packages in which the script
+failed is printed last. Defaults to `false`.
+
+As with the command line flag, this only has an effect when the script runs in
+more than one package with a [`concurrency`](#concurrency) greater than 1 — with
+`concurrency: 1` it is a no-op.
+
+See [`melos exec --group-logs`](/commands/exec#--group-logs) for more details.
+
+### sources
+
+A list of globs, relative to the root of each package, that match the files the
+result of the script depends on. The script is skipped in the packages in which
+none of the matching files, including those of their dependencies in the
+workspace, changed since the script last succeeded in them.
+
+```yaml
+melos:
+  scripts:
+    generate:
+      exec:
+        command: dart run build_runner build
+        orderDependents: true
+        sources:
+          - lib/**.dart
+          - pubspec.yaml
+```
+
+A script that generates files that match the sources, like the one above,
+should also specify [`orderDependents`](#orderdependents). Scripts that do not
+change the sources, such as running tests, do not need it.
+
+Use [`melos run --run-unchanged`](/commands/run#--run-unchanged) to run the
+script in every package regardless, or
+[`melos run --ignore-sources`](/commands/run#--ignore-sources) to turn off the
+checksums completely.
+
+See [`melos exec --sources`](/commands/exec#--sources) for more details.
+
 ## env
 
 A map of environment variables that will be passed to the executed command.
 
 ## packageFilters
 
-The [`melos exec`](/commands/exec) command allows you to execute a command for
-multiple packages. When used in a script, you can declare filter options in the
-`packageFilters` section.
+Selects the packages a script applies to. When running a script that uses
+`packageFilters`, you are prompted to select one of the matching packages, or
+all of them. Use the [`--no-select`](/commands/run#--no-select) option to skip
+the prompt and select all matching packages.
 
-The `hello_flutter` script below is only executed in Flutter packages:
+See the [global options](/filters) for a list of supported filters.
+
+<Warning>
+  The filter names in `packageFilters` are camel cased. For example, for the
+  equivalent of the command line option `--file-exists` use `fileExists`.
+</Warning>
+
+### With `exec`
+
+For an [`exec`](/configuration/scripts#exec) script, the filters decide in which
+packages the command is executed. The `hello_flutter` script below is only
+executed in Flutter packages:
 
 ```yaml
 scripts:
@@ -143,16 +320,65 @@ scripts:
       flutter: true
 ```
 
-See the [global options](/filters) for a list of supported filters.
+### With `run`
+
+A [`run`](/configuration/scripts#run) script always executes once, in the
+workspace root. `packageFilters` does not change that. What it does is pass the
+selected packages to the script through the
+[`MELOS_PACKAGES`](/environment-variables#melos_packages) environment variable,
+which scopes any `melos` command the script itself invokes.
+
+This is useful when the script wraps a Melos command:
+
+```yaml
+scripts:
+  analyze_with_lib:
+    run: melos exec -- dart analyze
+    packageFilters:
+      dirExists:
+        - lib
+```
+
+Selecting a package in the prompt above scopes the nested `melos exec`, so
+`dart analyze` runs in that package.
 
 <Warning>
-  The filter names in `packageFilters` are camel cased. For example, for the
-  equivalent of the command line option `--file-exists` use `fileExists`.
+  If the command is not a `melos` command, nothing reads `MELOS_PACKAGES`, so
+  the filters have no effect beyond the prompt.
 </Warning>
 
-When running a script that uses `packageFilters`, you will be prompted to select
-the package to execute the script in. If you want to skip this prompt and run
-the script in all packages, use the `--no-select` option.
+The script below always runs `dart analyze` once in the workspace root,
+whichever package is selected in the prompt:
+
+```yaml
+scripts:
+  analyze:
+    run: dart analyze
+    packageFilters:
+      dirExists:
+        - lib
+```
+
+To analyze each package individually, use
+[`exec`](/configuration/scripts#exec) instead of `run`.
+
+## private
+
+This option allows you to mark scripts as **private**.
+Private scripts cannot be executed directly and are hidden from the command prompt.
+
+They can only be referenced as `steps` within other scripts, or in the
+[`dependsOn`](/configuration/scripts#dependson) of other scripts.
+
+If you use the `--include-private` flag, this restriction is ignored.
+
+### `groups`
+
+Defines one or more groups for the specified script.
+Scripts can be organized into logical groups, which can later be targeted or filtered
+using the `--group` option when running commands. This is useful for hiding or executing
+only scripts that belong to certain groups.
+
 
 ---
 
@@ -164,14 +390,15 @@ executed, as well as at other interesting points in the command's execution.
 All commands that support hooks, support at least the `pre` and `post` hook.
 
 Hooks are configured in the `hooks` section of a command's configuration in the
-`melos.yaml` file.
+root `pubspec.yaml` file.
 
 ```yaml
-command:
-  bootstrap:
-    hooks:
-      pre: echo `bootstrap command is running...`
-      post: echo `bootstrap command is done`
+melos:
+  command:
+    bootstrap:
+      hooks:
+        pre: echo `bootstrap command is running...`
+        post: echo `bootstrap command is done`
 ```
 
 Currently, the following Melos commands support hooks:
@@ -180,3 +407,20 @@ Currently, the following Melos commands support hooks:
 - [`clean`](/commands/clean)
 - [`version`](/commands/version)
 - [`publish`](/commands/publish)
+
+## Overriding built-in commands
+
+Custom scripts can override Melos built-in commands. When a custom script has
+the same name as a built-in command, the custom script takes precedence. This
+allows you to customize the behavior of built-in commands to match your
+workspace needs.
+
+For example, you can override the built-in `format` command:
+
+```yaml
+scripts:
+  format: dart run custom_formatter
+```
+
+With this configuration, both `melos format` and `melos run format` will execute
+your custom format script instead of the built-in format command.

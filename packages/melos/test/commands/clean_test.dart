@@ -1,56 +1,94 @@
-import 'package:glob/glob.dart';
+import 'dart:io';
+
 import 'package:melos/melos.dart';
+import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
-import 'package:path/path.dart' as p;
-import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
-import '../matchers.dart';
 import '../utils.dart';
 
 void main() {
   group('clean', () {
-    test('removes dependency overrides from pubspec_overrides.yaml', () async {
-      final workspaceDir = await createTemporaryWorkspace(
-        configBuilder: (path) => MelosWorkspaceConfig(
-          path: path,
-          name: 'test_workspace',
-          packages: [Glob('packages/**')],
-        ),
-      );
+    test(
+      'strips melos-managed dependency_overrides from workspace root '
+      'pubspec_overrides.yaml while preserving user-defined entries',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a'],
+        );
 
-      final packageADir = await createProject(workspaceDir, Pubspec('a'));
-      final packageBDir = await createProject(
-        workspaceDir,
-        Pubspec(
-          'b',
-          dependencies: {'a': HostedDependency(version: VersionConstraint.any)},
-        ),
-      );
-      final pubspecOverrides =
-          p.join(packageBDir.path, 'pubspec_overrides.yaml');
+        await createProject(
+          workspaceDir,
+          Pubspec('a'),
+        );
 
-      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
-      final logger = TestLogger();
-      final melos = Melos(config: config, logger: logger);
-      await melos.bootstrap();
+        final overridesPath = pubspecOverridesPathForDirectory(
+          workspaceDir.path,
+        );
+        writeTextFile(
+          overridesPath,
+          '''
+# melos_managed_dependency_overrides: managed_pkg
+dependency_overrides:
+  managed_pkg:
+    path: ../managed_pkg
+  user_pkg:
+    path: ../user_pkg
+''',
+        );
 
-      expect(
-        pubspecOverrides,
-        yamlFile({
-          'dependency_overrides': {
-            'a': {'path': relativePath(packageADir.path, packageBDir.path)},
-          },
-        }),
-      );
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        await Melos(logger: logger, config: config).clean();
 
-      await melos.clean();
+        expect(File(overridesPath).existsSync(), isTrue);
+        final after = readTextFile(overridesPath);
+        expect(
+          after,
+          isNot(contains('melos_managed_dependency_overrides')),
+        );
+        expect(after, isNot(contains('managed_pkg')));
+        expect(after, contains('user_pkg'));
+      },
+    );
 
-      expect(
-        pubspecOverrides,
-        isNot(fileExists),
-      );
-    });
+    test(
+      'deletes workspace pubspec_overrides.yaml when only melos-managed '
+      'entries remain',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a'],
+        );
+
+        await createProject(
+          workspaceDir,
+          Pubspec('a'),
+        );
+
+        final overridesPath = pubspecOverridesPathForDirectory(
+          workspaceDir.path,
+        );
+        writeTextFile(
+          overridesPath,
+          '''
+# melos_managed_dependency_overrides: managed_pkg
+dependency_overrides:
+  managed_pkg:
+    path: ../managed_pkg
+''',
+        );
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        await Melos(logger: logger, config: config).clean();
+
+        expect(File(overridesPath).existsSync(), isFalse);
+      },
+    );
   });
 }

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
+import 'package:xml/xml.dart' as xml;
 
 import '../common/utils.dart' as utils;
 import '../package.dart';
@@ -19,19 +20,27 @@ const String _kTmplExtension = '.tmpl';
 class IntellijProject {
   /// Build a new [IntellijProject] from a [MelosWorkspace].
   IntellijProject.fromWorkspace(MelosWorkspace workspace)
-      : _workspace = workspace;
+    : _workspace = workspace;
 
   final MelosWorkspace _workspace;
 
   final Map<String, String> _cacheTemplates = <String, String>{};
 
+  Future<String>? _pathTemplates;
+
   /// Fully qualified path to the intellij templates shipped as part of Melos.
-  Future<String> get pathTemplates async {
-    return p.join(
+  Future<String> get pathTemplates =>
+      _pathTemplates ??= _resolvePathTemplates();
+
+  Future<String> _resolvePathTemplates() async {
+    // For a globally-activated Melos with a custom PUB_CACHE, the
+    // isolate-resolved root can point into the default pub-cache even though
+    // the templates live in PUB_CACHE (see invertase/melos#749).
+    final melosRoot = utils.applyPubCacheOverride(
       await utils.getMelosRoot(),
-      _kTemplatesDirName,
-      _kIntellijDirName,
+      probeSubdirectory: _kTemplatesDirName,
     );
+    return p.join(melosRoot, _kTemplatesDirName, _kIntellijDirName);
   }
 
   Directory get runConfigurationsDir =>
@@ -114,7 +123,9 @@ class IntellijProject {
     String fileName, {
     String? templateCategory,
   }) async {
-    if (_cacheTemplates[fileName] != null) return _cacheTemplates[fileName]!;
+    if (_cacheTemplates[fileName] != null) {
+      return _cacheTemplates[fileName]!;
+    }
 
     String templatesRootPath;
     if (templateCategory != null) {
@@ -131,18 +142,33 @@ class IntellijProject {
     return template;
   }
 
-  String ideaModuleStringForName(String moduleName, {String? relativePath}) {
+  xml.XmlElement ideaModuleElementForName(
+    String moduleName, {
+    String? relativePath,
+  }) {
     var imlPath = relativePath != null
         ? p.normalize('$relativePath/$moduleName.iml')
         : '$moduleName.iml';
+
     // Use `/` instead of `\` no matter what platform is.
     imlPath = imlPath.replaceAll(r'\', '/');
-    final module = '<module '
-        'fileurl="file://\$PROJECT_DIR\$/$imlPath" '
-        'filepath="\$PROJECT_DIR\$/$imlPath" '
-        '/>';
-    // Pad to preserve formatting on generated file. Indent x6.
-    return '      $module';
+
+    // Build the element with the high-level `XmlBuilder` API rather than
+    // constructing `XmlName`/`XmlElement` directly. The various `XmlName`
+    // constructors that are non-deprecated differ between xml 6 and 7 (e.g.
+    // `XmlName.fromString` is deprecated in xml 7 in favour of the v7-only
+    // `XmlName.qualified`), whereas the string-based builder API is stable and
+    // non-deprecated across the whole supported range. It also escapes
+    // attribute values automatically.
+    final builder = xml.XmlBuilder();
+    builder.element(
+      'module',
+      attributes: {
+        'fileurl': 'file://\$PROJECT_DIR\$/$imlPath',
+        'filepath': '\$PROJECT_DIR\$/$imlPath',
+      },
+    );
+    return builder.buildFragment().children.whereType<xml.XmlElement>().first;
   }
 
   Future<void> forceWriteToFile(String filePath, String fileContents) async {
@@ -209,22 +235,70 @@ class IntellijProject {
     );
   }
 
+  Future<List<xml.XmlElement>> mergeExistingModules(
+    List<xml.XmlElement> melosModules,
+  ) async {
+    if (!fileExists(pathModulesXml)) return melosModules;
+
+    final text = await readTextFileAsync(pathModulesXml);
+    try {
+      final doc = xml.XmlDocument.parse(text);
+
+      String createNormalizedKey(xml.XmlElement e) {
+        final v =
+            e.getAttribute('filepath') ??
+            e.getAttribute('filePath') ??
+            e.getAttribute('fileurl') ??
+            e.getAttribute('fileUrl');
+        return (v ?? '')
+            .trim()
+            .replaceAll(r'\', '/')
+            .replaceFirst(
+              RegExp(r'^file://\$PROJECT_DIR\$/', caseSensitive: false),
+              '',
+            )
+            .replaceFirst(
+              RegExp(r'^\$PROJECT_DIR\$/', caseSensitive: false),
+              '',
+            );
+      }
+
+      final seen = melosModules
+          .map(createNormalizedKey)
+          .where((s) => s.isNotEmpty)
+          .toSet();
+
+      final extras = doc
+          .findAllElements('module')
+          .where(
+            (m) => seen.add(createNormalizedKey(m)),
+          )
+          .map((m) => m.copy());
+
+      return [...melosModules.map((e) => e.copy()), ...extras];
+    } catch (_) {
+      return melosModules;
+    }
+  }
+
   Future<void> writeModulesXml() async {
-    final ideaModules = <String>[];
+    final ideaModules = <xml.XmlElement>[];
+
     for (final package in _workspace.filteredPackages.values) {
       ideaModules.add(
-        ideaModuleStringForName(
+        ideaModuleElementForName(
           packageModuleName(package),
           relativePath: package.pathRelativeToWorkspace,
         ),
       );
     }
-    ideaModules.add(ideaModuleStringForName(workspaceModuleName));
+    ideaModules.add(ideaModuleElementForName(workspaceModuleName));
+    final mergedModules = await mergeExistingModules(ideaModules);
     final ideaModulesXmlTemplate = await readFileTemplate('modules.xml');
     final generatedModulesXml = injectTemplateVariable(
       template: ideaModulesXmlTemplate,
       variableName: 'modules',
-      variableValue: ideaModules.join('\n'),
+      variableValue: mergedModules.join('\n'),
     );
     return forceWriteToFile(pathModulesXml, generatedModulesXml);
   }
@@ -249,21 +323,30 @@ class IntellijProject {
       'Melos -&gt; Clean Workspace': 'clean',
     };
 
+    final scriptNamePrefix = _workspace.config.ide.intelliJ.scriptNamePrefix;
     for (final key in _workspace.config.scripts.keys) {
-      runConfigurations["Melos Run -&gt; '$key'"] = 'run $key';
+      runConfigurations["$scriptNamePrefix'$key'"] = 'run $key';
     }
+
+    final scriptPath = _escapeXmlAttr(getMelosBinForIde());
 
     await Future.forEach(runConfigurations.keys, (scriptName) async {
       final scriptArgs = runConfigurations[scriptName]!;
-      final pathSafeScriptArgs =
-          scriptArgs.replaceAll(RegExp('[^A-Za-z0-9]'), '_');
+      final pathSafeScriptArgs = scriptArgs.replaceAll(
+        RegExp('[^A-Za-z0-9]'),
+        '_',
+      );
 
-      final generatedRunConfiguration =
-          injectTemplateVariables(melosScriptTemplate, {
-        'scriptName': scriptName,
-        'scriptArgs': scriptArgs,
-        'scriptPath': getMelosBinForIde(),
-      });
+      final generatedRunConfiguration = injectTemplateVariables(
+        melosScriptTemplate,
+        {
+          'scriptName': _escapeXmlAttr(scriptName),
+          'scriptArgs': _escapeXmlAttr(scriptArgs),
+          'scriptPath': scriptPath,
+          'executeInTerminal': _workspace.config.ide.intelliJ.executeInTerminal
+              .toString(),
+        },
+      );
 
       final outputFile = p.join(
         pathDotIdea,
@@ -276,63 +359,260 @@ class IntellijProject {
   }
 
   Future<void> writeFlutterRunScripts() async {
-    final flutterTestTemplate = await readFileTemplate(
+    final flutterRunTemplate = await readFileTemplate(
       'flutter_run.xml',
+      templateCategory: 'runConfigurations',
+    );
+    final flutterRunWithArgsTemplate = await readFileTemplate(
+      'flutter_run_with_args.xml',
+      templateCategory: 'runConfigurations',
+    );
+
+    final runArguments = _workspace.config.ide.intelliJ.runArguments;
+
+    // Warn about packages in runArguments that don't exist in the workspace or
+    // that are not Flutter apps, since only Flutter apps use runArguments.
+    for (final packageName in runArguments.keys) {
+      final package = _workspace.filteredPackages.values
+          .where((package) => package.name == packageName)
+          .firstOrNull;
+      if (package == null) {
+        _workspace.logger.warning(
+          'runArguments references package "$packageName" '
+          'which was not found in this workspace.',
+        );
+      } else if (!package.isFlutterApp) {
+        _workspace.logger.warning(
+          'runArguments references package "$packageName" '
+          'which is not a Flutter app, so it has no effect.',
+        );
+      }
+    }
+
+    await Future.forEach(_workspace.filteredPackages.values, (package) async {
+      if (!package.isFlutterApp) {
+        return;
+      }
+
+      final packageRunArgs = runArguments[package.name] ?? [];
+
+      if (packageRunArgs.isEmpty) {
+        // Original behaviour — one default config, no extra args.
+        final generatedRunConfiguration = injectTemplateVariables(
+          flutterRunTemplate,
+          {
+            'flutterRunName': "Flutter Run -&gt; '${package.name}'",
+            'flutterRunMainDartPathRelative': _entryPointPath(
+              package,
+              defaultEntryPoint,
+            ),
+          },
+        );
+        final outputFile = p.join(
+          pathDotIdea,
+          'runConfigurations',
+          'melos_flutter_run_${package.name}.xml',
+        );
+        await forceWriteToFile(outputFile, generatedRunConfiguration);
+      } else {
+        // One config per runArguments entry.
+        for (final runArg in packageRunArgs) {
+          final fileNameSuffix = runArg.fileNameSuffix;
+          final configDisplayName = fileNameSuffix == null
+              ? "Flutter Run -&gt; '${package.name}'"
+              : "Flutter Run -&gt; '${package.name}' ($fileNameSuffix)";
+          final fileSuffix = fileNameSuffix == null
+              ? package.name
+              : '${package.name}_$fileNameSuffix';
+          final entryPoint = runArg.entryPoint ?? defaultEntryPoint;
+
+          if (!package.hasEntryPoint(entryPoint)) {
+            _workspace.logger.warning(
+              'runArguments references the entry point "$entryPoint" for '
+              'package "${package.name}" which does not exist.',
+            );
+          }
+
+          final generatedRunConfiguration = injectTemplateVariables(
+            runArg.args.isEmpty
+                ? flutterRunTemplate
+                : flutterRunWithArgsTemplate,
+            {
+              'flutterRunName': configDisplayName,
+              'flutterRunMainDartPathRelative': _entryPointPath(
+                package,
+                entryPoint,
+              ),
+              if (runArg.args.isNotEmpty)
+                'flutterRunAdditionalArgs': _escapeXmlAttr(runArg.args),
+            },
+          );
+          final outputFile = p.join(
+            pathDotIdea,
+            'runConfigurations',
+            'melos_flutter_run_$fileSuffix.xml',
+          );
+          await forceWriteToFile(outputFile, generatedRunConfiguration);
+        }
+      }
+    });
+  }
+
+  /// Builds the path to [entryPoint] inside [package] relative to the
+  /// workspace root, always using `/` as the separator.
+  String _entryPointPath(Package package, String entryPoint) {
+    return _escapeXmlAttr(
+      p.posix.normalize(
+        p.posix.join(
+          package.pathRelativeToWorkspace.replaceAll(r'\', '/'),
+          entryPoint,
+        ),
+      ),
+    );
+  }
+
+  /// Escapes characters that are unsafe inside XML attribute values.
+  String _escapeXmlAttr(String value) {
+    return value
+        .replaceAll('&', '&amp;')
+        .replaceAll('"', '&quot;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+  }
+
+  /// Builds an IntelliJ `$PROJECT_DIR$` based path to [parts] inside
+  /// [package], always using `/` as the separator.
+  String _projectDirPath(Package package, [List<String> parts = const []]) {
+    final relativePath = p.posix.normalize(
+      p.posix.joinAll([
+        package.pathRelativeToWorkspace.replaceAll(r'\', '/'),
+        ...parts,
+      ]),
+    );
+    if (relativePath == '.') {
+      return r'$PROJECT_DIR$';
+    }
+    return '\$PROJECT_DIR\$/$relativePath';
+  }
+
+  Future<void> writeFlutterTestScripts() {
+    return _writeTestScripts(
+      templateFileName: 'flutter_test.xml',
+      displayName: 'Flutter Test',
+      outputFilePrefix: 'melos_flutter_test_',
+      shouldGenerate: (package) =>
+          package.isFlutterPackage && !package.isFlutterApp,
+    );
+  }
+
+  Future<void> writeDartTestScripts() {
+    return _writeTestScripts(
+      templateFileName: 'dart_test.xml',
+      displayName: 'Dart Test',
+      outputFilePrefix: 'melos_dart_test_',
+      shouldGenerate: (package) => !package.isFlutterPackage,
+    );
+  }
+
+  Future<void> _writeTestScripts({
+    required String templateFileName,
+    required String displayName,
+    required String outputFilePrefix,
+    required bool Function(Package package) shouldGenerate,
+  }) async {
+    final template = await readFileTemplate(
+      templateFileName,
       templateCategory: 'runConfigurations',
     );
 
     await Future.forEach(_workspace.filteredPackages.values, (package) async {
-      if (!package.isFlutterApp) return;
+      if (!package.hasTests || !shouldGenerate(package)) {
+        return;
+      }
 
       final generatedRunConfiguration = injectTemplateVariables(
-        flutterTestTemplate,
+        template,
         {
-          'flutterRunName': "Flutter Run -&gt; '${package.name}'",
-          'flutterRunMainDartPathRelative': p
-              .join(package.pathRelativeToWorkspace, 'lib', 'main.dart')
-              .replaceAll(r'\', '/'),
+          'testsName': _escapeXmlAttr("$displayName -> '${package.name}'"),
+          'testsPath': _escapeXmlAttr(_projectDirPath(package, ['test'])),
         },
       );
       final outputFile = p.join(
         pathDotIdea,
         'runConfigurations',
-        'melos_flutter_run_${package.name}.xml',
+        '$outputFilePrefix${package.name}.xml',
       );
 
       await forceWriteToFile(outputFile, generatedRunConfiguration);
     });
   }
 
-  Future<void> writeFlutterTestScripts() async {
-    final flutterTestTemplate = await readFileTemplate(
-      'flutter_test.xml',
+  Future<void> writeDartRunScripts() async {
+    final dartRunTemplate = await readFileTemplate(
+      'dart_run.xml',
       templateCategory: 'runConfigurations',
     );
 
     await Future.forEach(_workspace.filteredPackages.values, (package) async {
-      if (!package.isFlutterPackage ||
-          package.isFlutterApp ||
-          !package.hasTests) {
+      if (package.isFlutterPackage) {
         return;
       }
 
-      final generatedRunConfiguration =
-          injectTemplateVariables(flutterTestTemplate, {
-        'flutterTestsName': "Flutter Test -&gt; '${package.name}'",
-        'flutterTestsRelativePath':
-            p.join(package.pathRelativeToWorkspace, 'test'),
-      });
-      final outputFile = p.join(
-        pathDotIdea,
-        'runConfigurations',
-        'melos_flutter_test_${package.name}.xml',
-      );
+      final executableNames = _dartExecutableNames(package);
+      for (final executableName in executableNames) {
+        final dartRunName = executableNames.length == 1
+            ? "Dart Run -> '${package.name}'"
+            : "Dart Run -> '${package.name}' ($executableName)";
 
-      await forceWriteToFile(outputFile, generatedRunConfiguration);
+        final generatedRunConfiguration = injectTemplateVariables(
+          dartRunTemplate,
+          {
+            'dartRunName': _escapeXmlAttr(dartRunName),
+            'dartRunFilePath': _escapeXmlAttr(
+              _projectDirPath(package, ['bin', '$executableName.dart']),
+            ),
+            'dartRunWorkingDirectory': _escapeXmlAttr(
+              _projectDirPath(package),
+            ),
+          },
+        );
+        // Package names cannot contain `-`, so it keeps the file name unique
+        // for every package and executable combination.
+        final outputFile = p.join(
+          pathDotIdea,
+          'runConfigurations',
+          'melos_dart_run_${package.name}-$executableName.xml',
+        );
+        await forceWriteToFile(outputFile, generatedRunConfiguration);
+      }
     });
   }
 
-  Future<void> generate() async {
+  /// Names of the Dart files directly inside the `bin` directory of
+  /// [package], sorted so that generation is deterministic.
+  List<String> _dartExecutableNames(Package package) {
+    final binDirectory = Directory(p.join(package.path, 'bin'));
+    if (!dirExists(binDirectory.path)) {
+      return const [];
+    }
+    try {
+      return binDirectory
+          .listSync()
+          .whereType<File>()
+          .where((file) => p.extension(file.path) == '.dart')
+          .map((file) => p.basenameWithoutExtension(file.path))
+          .toList()
+        ..sort();
+    } on FileSystemException catch (error) {
+      _workspace.logger.warning(
+        'Could not list the bin directory of package "${package.name}", '
+        'skipping its Dart run configurations: ${error.message}',
+      );
+      return const [];
+    }
+  }
+
+  Future<void> generate({bool generateRunScripts = true}) async {
     // <WORKSPACE_ROOT>/.idea/.name
     await writeNameFile();
 
@@ -346,9 +626,12 @@ class IntellijProject {
     await writeModulesXml();
 
     // <WORKSPACE_ROOT>/.idea/runConfigurations/<SCRIPT_NAME>.xml
+    if (generateRunScripts) {
+      await writeFlutterRunScripts();
+      await writeDartRunScripts();
+    }
     await writeMelosScripts();
-
-    await writeFlutterRunScripts();
     await writeFlutterTestScripts();
+    await writeDartTestScripts();
   }
 }

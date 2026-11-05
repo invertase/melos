@@ -5,6 +5,162 @@ description: How to migrate between major versions of Melos.
 
 # Migrations
 
+## 7.x.x to 8.0.0
+
+### Configuring `exec` scripts
+
+The way an `exec` script is configured with options has changed. Previously, the
+command was specified in `run` and the `melos exec` options in `exec`:
+
+```yaml
+# Before (no longer supported)
+melos:
+  scripts:
+    test:
+      run: dart test --concurrency=1
+      exec:
+        concurrency: 1
+```
+
+`run` and `exec` are now mutually exclusive: a script either runs once in the
+workspace root with `run`, or across multiple packages with `exec`. When you
+need to pass options to `exec`, move the command into `exec` under the new
+`command` key:
+
+```yaml
+# After
+melos:
+  scripts:
+    test:
+      exec:
+        command: dart test --concurrency=1
+        concurrency: 1
+```
+
+The shorthand form, where `exec` is a string containing the command, is
+unchanged:
+
+```yaml
+melos:
+  scripts:
+    hello:
+      exec: echo 'Hello $(dirname $PWD)'
+```
+
+Melos will fail with a descriptive error, including the converted configuration,
+if it encounters the old format.
+
+### Build numbers when versioning
+
+`melos version` now retains and increments an integer build number on every
+version bump, so `3.0.0+11` becomes `4.0.0+12` instead of `4.0.0`.
+
+A patch release below `1.0.0` now bumps the patch component instead of adding a
+build number, so `0.1.0` becomes `0.1.1` instead of `0.1.0+1`. See
+[Build numbers](/guides/automated-releases#build-numbers) for more details.
+
+## 6.x.x to 7.x.x
+
+Since the [pub workspaces](https://dart.dev/tools/pub/workspaces) feature has
+been released, Melos has been updated to rely on that, instead of creating
+`pubspec_overrides.yaml` files and thus some migration is needed.
+
+The main difference is that:
+1. There is no longer a `melos.yaml` file, only the root `pubspec.yaml`
+2. You now have to add `resolution: workspace` to all of your packages'
+   `pubspec.yaml` files.
+3. You now have to add a list of all your packages to the root `pubspec.yaml`
+   file.
+
+After the migration your root `pubspec.yaml` file would now look something like this:
+```yaml
+name: my_workspace
+publish_to: none
+environment:
+  sdk: ^3.9.0
+workspace:
+  - packages/helper
+  - packages/client_package
+  - packages/server_package
+dev_dependencies:
+  melos: ^7.0.0
+
+melos:
+  # All of the content of your previous melos.yaml file
+  # (Except for the packages and name)
+```
+
+
+And this is what the `pubspec.yaml` file of a package would look like:
+```yaml
+name: my_package
+environment:
+  sdk: ^3.9.0
+resolution: workspace
+```
+
+<Info>
+You have to use Dart SDK 3.9.0 or newer to use pub workspaces reliably.
+If you are using an older version of the Dart SDK, you can still use Melos
+with pub workspaces, but then you have to rely on the `7.0.0-dev.x` versions.
+</Info>
+
+### `melos analyze` was removed in 7.x.x
+
+Since `flutter/dart analyze` now runs in the full pub workspace, the
+`melos analyze` command was removed in Melos 7.0.0.
+
+The command was restored in Melos 8.1.0, where it analyzes all the packages in
+a single run and supports all the package filtering options, see the
+[analyze command](/commands/analyze).
+
+### Root packages
+
+In Melos 6.x, you could include the repository root (`.`) as a package in the
+workspace by listing it in the `packages` configuration. In Melos 7.x with
+pub workspaces, this behavior is not supported by default.
+
+If your project uses the repository root as a package, you have two options:
+
+#### Option 1: Enable `useRootAsPackage`
+
+Recommended for existing projects.
+
+Add the `useRootAsPackage` option to maintain existing behavior:
+
+```yaml
+# pubspec.yaml
+name: my_workspace
+publish_to: none
+environment:
+  sdk: ^3.9.0
+workspace:
+  - packages/helper
+  - packages/client_package
+
+melos:
+  useRootAsPackage: true
+  categories:
+    app:
+      - "."
+    packages:
+      - "packages/**"
+```
+
+This allows the root package to participate in workspace operations such as
+scripts, filtering, and categorization.
+
+#### Option 2: Restructure (Recommended for new projects)
+
+Move your root application into a subdirectory:
+
+1. Create an `apps/` or `app/` directory
+2. Move your main application code there
+3. Update your workspace configuration accordingly
+
+This approach provides better separation between workspace configuration and
+application code.
+
 ## 3.0.0 to 4.0.0
 
 ### `--no-git-tag-version` behavior change

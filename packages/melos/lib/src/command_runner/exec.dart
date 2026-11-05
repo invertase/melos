@@ -1,6 +1,11 @@
 import 'dart:io';
 
+import 'package:glob/glob.dart';
+
 import '../commands/runner.dart';
+import '../common/environment_variable_key.dart';
+import '../common/platform.dart';
+import '../common/utils.dart';
 import 'base.dart';
 
 class ExecCommand extends MelosCommand {
@@ -19,14 +24,48 @@ class ExecCommand extends MelosCommand {
           'packages if the script fails in a individual package.',
     );
     argParser.addFlag(
+      'group-logs',
+      help:
+          'Whether the output of each package should be buffered and printed '
+          'grouped per package once every package has finished, instead of '
+          'being streamed and interleaved while the packages run. The output '
+          'of packages in which the command failed is printed last. Only has '
+          'an effect when running in more than one package with a concurrency '
+          'greater than 1.',
+    );
+    argParser.addFlag(
       'order-dependents',
       abbr: 'o',
-      help: 'Whether exec should order the execution of the script in multiple '
+      help:
+          'Whether exec should order the execution of the script in multiple '
           'packages based on the dependency graph of the packages. The script '
           'will be executed in leaf packages first and then in packages that '
           'depend on them and so on. This is useful for example, for a script '
           'that generates code in multiple packages, which depend on each '
           'other.',
+    );
+    argParser.addMultiOption(
+      'sources',
+      valueHelp: 'glob',
+      splitCommas: false,
+      help:
+          'Globs relative to the root of each package. The command is skipped '
+          'in the packages in which the matching files, and those of their '
+          'dependencies in the workspace, did not change since the command '
+          'last succeeded. Can be specified multiple times.',
+    );
+    argParser.addFlag(
+      'run-unchanged',
+      negatable: false,
+      help:
+          'Run the command in every package, even in the packages in which '
+          'the files matching --sources did not change.',
+    );
+    argParser.addFlag(
+      'ignore-sources',
+      help:
+          'Ignore --sources, so that the command runs in every package '
+          'without calculating or storing checksums.',
     );
   }
 
@@ -46,23 +85,46 @@ class ExecCommand extends MelosCommand {
     final execArgs = argResults!.rest;
 
     if (execArgs.isEmpty) {
-      logger.log(description);
-      logger.log(argParser.usage);
+      logger.stdout(description);
+      logger.stdout(argParser.usage);
       exit(1);
     }
 
     final melos = Melos(logger: logger, config: config);
 
     final packageFilters = parsePackageFilters(config.path);
-    final concurrency = int.parse(argResults!['concurrency'] as String);
-    final failFast = argResults!['fail-fast'] as bool;
-    final orderDependents = argResults!['order-dependents'] as bool;
+    final failFast = argResults!.optional('fail-fast') as bool?;
+    final orderDependents = argResults!.optional('order-dependents') as bool?;
+    final groupLogs = argResults!.optional('group-logs') as bool?;
+    final sources = argResults!['sources'] as List<String>;
+    for (final source in sources) {
+      try {
+        Glob(source);
+      } on FormatException catch (error) {
+        usageException(
+          'The glob "$source" of --sources is invalid: ${error.message}',
+        );
+      }
+    }
+    final environment = currentPlatform.environment;
+    final runUnchanged =
+        argResults!['run-unchanged'] as bool ||
+        environment[EnvironmentVariableKey.melosRunUnchanged] == 'true';
+    final ignoreSources =
+        argResults!.optional('ignore-sources') as bool? ??
+        bool.tryParse(
+          environment[EnvironmentVariableKey.melosIgnoreSources] ?? '',
+        );
 
     return melos.exec(
       execArgs,
-      concurrency: concurrency,
+      concurrency: concurrencyOption,
       failFast: failFast,
       orderDependents: orderDependents,
+      groupLogs: groupLogs,
+      sources: sources,
+      runUnchanged: runUnchanged,
+      ignoreSources: ignoreSources,
       global: global,
       packageFilters: packageFilters,
     );

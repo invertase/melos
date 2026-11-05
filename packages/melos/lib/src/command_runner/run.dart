@@ -1,14 +1,59 @@
 import '../commands/runner.dart';
+import '../common/utils.dart';
 import 'base.dart';
 
 class RunCommand extends MelosCommand {
   RunCommand(super.config) {
+    setupPackageFilterParser();
     argParser.addFlag(
       'no-select',
       negatable: false,
-      help: 'Skips the prompt to select a package (if defined in the script '
+      help:
+          'Skips the prompt to select a package (if defined in the script '
           """configuration). Filters defined in the script's "packageFilters" """
           'options will however still be applied.',
+    );
+    argParser.addFlag(
+      'list',
+      negatable: false,
+      help: 'Lists all scripts defined in the root pubspec.yaml.',
+    );
+
+    argParser.addFlag(
+      'json',
+      negatable: false,
+      help:
+          'Lists all scripts defined in the root pubspec.yaml with '
+          'description in json format.',
+    );
+
+    argParser.addFlag(
+      'include-private',
+      negatable: false,
+      help:
+          'Ignore the "private" option for scripts to show and be able to run '
+          'private scripts',
+    );
+
+    argParser.addOption(
+      'group',
+      abbr: 'g',
+      help: 'Filters the scripts by the group they are belonging to.',
+    );
+
+    argParser.addFlag(
+      'run-unchanged',
+      negatable: false,
+      help:
+          'Run "exec" scripts in every package, even in the packages in which '
+          'the files matching their "sources" did not change.',
+    );
+
+    argParser.addFlag(
+      'ignore-sources',
+      help:
+          'Ignore the "sources" of "exec" scripts, so that they run in every '
+          'package without calculating or storing checksums.',
     );
   }
 
@@ -17,7 +62,7 @@ class RunCommand extends MelosCommand {
 
   @override
   final String description =
-      'Run a script by name defined in the workspace melos.yaml config file.';
+      'Run a script by name defined in the workspace pubspec.yaml config file.';
 
   @override
   final String invocation = 'melos run <name>';
@@ -26,10 +71,21 @@ class RunCommand extends MelosCommand {
   Future<void> run() async {
     final melos = Melos(logger: logger, config: config);
 
-    final noSelect = argResults!['no-select'] as bool;
+    final noSelect = argResults!.optional('no-select') as bool?;
     final scriptName = argResults!.rest.isEmpty ? null : argResults!.rest.first;
-    final extraArgs =
-        scriptName != null ? argResults!.rest.skip(1).toList() : <String>[];
+    final extraArgs = scriptName != null
+        ? argResults!.rest.skip(1).toList()
+        : <String>[];
+    final listScripts = argResults!['list'] as bool;
+    final listScriptsAsJson = argResults!['json'] as bool;
+    final includePrivate = argResults!['include-private'] as bool;
+    final group = argResults!['group'] as String?;
+    final runUnchanged = argResults!['run-unchanged'] as bool;
+    final ignoreSources = argResults!.optional('ignore-sources') as bool?;
+
+    final packageFilters = hasPackageFilterArgs
+        ? parsePackageFilters(config.path, includeConfigIgnore: false)
+        : null;
 
     try {
       return await melos.run(
@@ -37,10 +93,17 @@ class RunCommand extends MelosCommand {
         scriptName: scriptName,
         noSelect: noSelect,
         extraArgs: extraArgs,
+        listScripts: listScripts,
+        listScriptsAsJson: listScriptsAsJson,
+        includePrivate: includePrivate,
+        group: group,
+        packageFilters: packageFilters,
+        runUnchanged: runUnchanged,
+        ignoreSources: ignoreSources,
       );
     } on NoPackageFoundScriptException catch (err) {
       logger.warning(err.toString(), label: false);
-      logger.log(usage);
+      logger.stdout(usage);
     }
   }
 }

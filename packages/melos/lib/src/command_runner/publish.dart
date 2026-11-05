@@ -14,7 +14,8 @@ class PublishCommand extends MelosCommand {
     argParser.addFlag(
       publishOptionGitTagVersion,
       abbr: 't',
-      help: 'Add any missing git tags for release. '
+      help:
+          'Add any missing git tags for release. '
           'Note tags are only created if --no-dry-run is also set.',
     );
     argParser.addFlag(
@@ -22,6 +23,19 @@ class PublishCommand extends MelosCommand {
       abbr: 'y',
       negatable: false,
       help: 'Skip the Y/n confirmation prompt when using --no-dry-run.',
+    );
+    argParser.addOption(
+      publishOptionServer,
+      help:
+          'The URL of the package server to publish to. '
+          'Overrides the pubServer option in the root pubspec.yaml.',
+    );
+    argParser.addFlag(
+      publishOptionSkipValidation,
+      negatable: false,
+      help:
+          'Publish without validation and resolution (this will ignore '
+          'errors). Forwarded to `dart pub publish --skip-validation`.',
     );
   }
 
@@ -35,9 +49,13 @@ class PublishCommand extends MelosCommand {
 
   @override
   Future<void> run() async {
-    final dryRun = argResults![publishOptionDryRun] as bool;
-    final gitTagVersion = argResults![publishOptionGitTagVersion] as bool;
-    final yes = argResults![publishOptionYes] as bool || false;
+    final dryRun = argResults!.optional(publishOptionDryRun) as bool?;
+    final gitTagVersion =
+        argResults!.optional(publishOptionGitTagVersion) as bool?;
+    final yes = argResults!.optional(publishOptionYes) as bool?;
+    final pubServer = argResults!.optional(publishOptionServer) as String?;
+    final skipValidation =
+        argResults!.optional(publishOptionSkipValidation) as bool?;
 
     final melos = Melos(logger: logger, config: config);
     final packageFilters = parsePackageFilters(config.path);
@@ -48,6 +66,8 @@ class PublishCommand extends MelosCommand {
       dryRun: dryRun,
       force: yes,
       gitTagVersion: gitTagVersion,
+      pubServer: pubServer,
+      skipValidation: skipValidation,
     );
   }
 }

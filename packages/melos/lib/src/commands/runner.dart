@@ -8,6 +8,7 @@ import 'package:async/async.dart';
 import 'package:cli_util/cli_logging.dart';
 import 'package:collection/collection.dart';
 import 'package:file/local.dart';
+import 'package:glob/glob.dart';
 import 'package:meta/meta.dart';
 import 'package:mustache_template/mustache.dart';
 import 'package:path/path.dart' as p;
@@ -25,16 +26,22 @@ import '../common/environment_variable_key.dart';
 import '../common/exception.dart';
 import '../common/extensions/dependency.dart';
 import '../common/extensions/environment.dart';
+import '../common/fingerprint.dart';
 import '../common/git.dart';
 import '../common/git_commit.dart';
 import '../common/git_repository.dart';
+import '../common/git_tag_pattern_dependency.dart';
 import '../common/glob.dart';
 import '../common/intellij_project.dart';
 import '../common/io.dart';
+import '../common/list_output_kind.dart';
 import '../common/pending_package_update.dart';
 import '../common/persistent_shell.dart';
 import '../common/platform.dart';
+import '../common/process_output_cancel_token.dart';
 import '../common/pubspec_overrides.dart';
+import '../common/shared_dependency_marker.dart';
+import '../common/topology.dart';
 import '../common/utils.dart' as utils;
 import '../common/utils.dart';
 import '../common/versioning.dart' as versioning;
@@ -45,10 +52,11 @@ import '../logging.dart';
 import '../package.dart';
 import '../scripts.dart';
 import '../workspace.dart';
-import '../workspace_configs.dart';
+import '../workspace_config.dart';
 
 part 'analyze.dart';
 part 'bootstrap.dart';
+part 'cherry_pick.dart';
 part 'clean.dart';
 part 'exec.dart';
 part 'format.dart';
@@ -56,6 +64,7 @@ part 'init.dart';
 part 'list.dart';
 part 'publish.dart';
 part 'run.dart';
+part 'test.dart';
 part 'version.dart';
 
 enum CommandWithLifecycle {
@@ -67,16 +76,18 @@ enum CommandWithLifecycle {
 
 class Melos extends _Melos
     with
+        _AnalyzeMixin,
         _CleanMixin,
         _BootstrapMixin,
         _ListMixin,
         _RunMixin,
         _ExecMixin,
         _VersionMixin,
+        _CherryPickMixin,
         _PublishMixin,
-        _AnalyzeMixin,
         _FormatMixin,
-        _InitMixin {
+        _InitMixin,
+        _TestMixin {
   Melos({
     required this.config,
     Logger? logger,
@@ -98,19 +109,20 @@ abstract class _Melos {
   }) async {
     var filterWithEnv = packageFilters;
 
-    if (currentPlatform.environment
-        .containsKey(EnvironmentVariableKey.melosPackages)) {
+    if (currentPlatform.environment.containsKey(
+      EnvironmentVariableKey.melosPackages,
+    )) {
       // MELOS_PACKAGES environment variable is a comma delimited list of
       // package names - used to scope the `packageFilters` if it is present.
       // This can be user defined or can come from package selection in
       // `melos run`.
-      final filteredPackagesScopeFromEnv =
-          currentPlatform.environment[EnvironmentVariableKey.melosPackages]!
-              .split(',')
-              .map(
-                (e) => createGlob(e, currentDirectoryPath: config.path),
-              )
-              .toList();
+      final filteredPackagesScopeFromEnv = currentPlatform
+          .environment[EnvironmentVariableKey.melosPackages]!
+          .split(',')
+          .map(
+            (e) => createGlob(e, currentDirectoryPath: config.path),
+          )
+          .toList();
 
       filterWithEnv = packageFilters == null
           ? PackageFilters(scope: filteredPackagesScopeFromEnv)
@@ -122,8 +134,7 @@ abstract class _Melos {
       global: global,
       packageFilters: filterWithEnv,
       logger: logger,
-    ))
-      ..validate();
+    ))..validate();
   }
 
   Future<void> _runLifecycle(
@@ -156,7 +167,14 @@ abstract class _Melos {
   }) async {
     logger
       ..command('melos ${command.name} [${script.name}]')
-      ..child(targetStyle(script.command().join(' ').replaceAll('\n', '')))
+      ..child(
+        targetStyle(
+          script
+              .command(melosCommand: config.melosCommand)
+              .join(' ')
+              .replaceAll('\n', ''),
+        ),
+      )
       ..newLine();
 
     final exitCode = await _runScript(script, noSelect: true);
@@ -168,7 +186,8 @@ abstract class _Melos {
 
   Future<void> run({
     String? scriptName,
-    bool noSelect = false,
+    bool? noSelect,
+    PackageFilters? packageFilters,
   });
 
   Future<int> _runScript(

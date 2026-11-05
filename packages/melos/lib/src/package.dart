@@ -14,10 +14,13 @@ import 'common/environment_variable_key.dart';
 import 'common/exception.dart';
 import 'common/git.dart';
 import 'common/glob.dart';
+import 'common/http.dart';
 import 'common/io.dart';
 import 'common/platform.dart';
+import 'common/pub_config.dart';
 import 'common/pub_hosted.dart' as pub;
 import 'common/pub_hosted_package.dart';
+import 'common/retry_backoff.dart';
 import 'common/utils.dart';
 import 'common/validation.dart';
 import 'logging.dart';
@@ -50,12 +53,18 @@ final List<String> cleanablePubFilePaths = [
   '.dart_tool${currentPlatform.pathSeparator}version',
 ];
 
-final _isValidPubPackageNameRegExp =
-    RegExp(r'^[a-z][a-z\d_-]*$', caseSensitive: false);
+final _isValidPubPackageNameRegExp = RegExp(
+  r'^[a-z_][a-z\d_-]*$',
+  caseSensitive: false,
+);
 
 /// Returns whether the given [name] is a valid pub package name.
 bool isValidPubPackageName(String name) =>
     _isValidPubPackageNameRegExp.hasMatch(name);
+
+/// The entry point that Flutter runs when no other target is specified,
+/// relative to the package root.
+const defaultEntryPoint = 'lib/main.dart';
 
 /// Enum representing what type of package this is.
 enum PackageType {
@@ -65,29 +74,7 @@ enum PackageType {
   flutterApp,
 }
 
-RegExp versionReplaceRegex = RegExp(
-  r'''^(version\s?:\s*?['"]?)(?<version>[\w\-.+_]{5,})(.*$)''',
-  multiLine: true,
-);
-
 const _versionRegExp = r'''\d+\.\d+\.\d+[\w\-.+_]*''';
-
-const _versionConstraintRegExp =
-    r"""(?<version>any|["'^<>=]*\d+\.\d+\.\d+['"<>=\w\-.+_]*)""";
-
-RegExp dependencyVersionReplaceRegex(String dependencyName) {
-  return RegExp(
-    '''(?<dependency>^\\s+$dependencyName\\s?:\\s?)(?!\$)$_versionConstraintRegExp''',
-    multiLine: true,
-  );
-}
-
-RegExp hostedDependencyVersionReplaceRegex(String dependencyName) {
-  return RegExp(
-    '''(^[ \t]*?(?<dependency>$dependencyName)[ \\t]*?:[ \\t]*?[\\s\\S]*?[ \\t]*?version:[ \\t]*?)$_versionConstraintRegExp''',
-    multiLine: true,
-  );
-}
 
 RegExp dependencyTagReplaceRegex(String dependencyName) {
   return RegExp(
@@ -98,30 +85,22 @@ RegExp dependencyTagReplaceRegex(String dependencyName) {
 
 @immutable
 class PackageFilters {
-  PackageFilters({
+  const PackageFilters({
     this.scope = const [],
     this.ignore = const [],
     this.categories = const [],
     this.dirExists = const [],
     this.fileExists = const [],
-    List<String> dependsOn = const [],
-    List<String> noDependsOn = const [],
+    this.dependsOn = const [],
+    this.noDependsOn = const [],
     this.diff,
     this.includePrivatePackages,
     this.published,
-    this.nullSafe,
     bool? flutter,
     this.includeDependencies = false,
     this.includeDependents = false,
-  })  : dependsOn = [
-          ...dependsOn,
-          // ignore: use_if_null_to_convert_nulls_to_bools
-          if (flutter == true) 'flutter',
-        ],
-        noDependsOn = [
-          ...noDependsOn,
-          if (flutter == false) 'flutter',
-        ];
+    this.postFilters,
+  }) : includeFlutterPackages = flutter;
 
   factory PackageFilters.fromYaml(
     Map<Object?, Object?> yaml, {
@@ -176,14 +155,16 @@ class PackageFilters {
       path: path,
     );
 
-    final includeDependents = assertKeyIsA<bool?>(
+    final includeDependents =
+        assertKeyIsA<bool?>(
           key: filterOptionIncludeDependents.camelCased,
           map: yaml,
           path: path,
         ) ??
         false;
 
-    final includeDependencies = assertKeyIsA<bool?>(
+    final includeDependencies =
+        assertKeyIsA<bool?>(
           key: filterOptionIncludeDependencies.camelCased,
           map: yaml,
           path: path,
@@ -208,7 +189,7 @@ class PackageFilters {
         excludePrivatePackagesTmp != null) {
       throw MelosConfigException(
         'Cannot specify both "$noPrivateOptionKey" and '
-        '"$excludePrivatePackagesTmp" at the same time in "$path".',
+        '"$privateOptionKey" at the same time in "$path".',
       );
     }
     bool? includePrivatePackages;
@@ -225,17 +206,26 @@ class PackageFilters {
       path: path,
     );
 
-    final nullSafe = assertKeyIsA<bool?>(
-      key: filterOptionNullsafety.camelCased,
-      map: yaml,
-      path: path,
-    );
-
     final flutter = assertKeyIsA<bool?>(
       key: filterOptionFlutter.camelCased,
       map: yaml,
       path: path,
     );
+
+    final postFiltersKey = filterOptionPostFilters.camelCased;
+    final postFiltersMap = assertKeyIsA<Map<Object?, Object?>?>(
+      key: postFiltersKey,
+      map: yaml,
+      path: path,
+    );
+    final postFilters = postFiltersMap == null
+        ? null
+        : PackageFilters.fromYaml(
+            postFiltersMap,
+            path: '$path/$postFiltersKey',
+            workspacePath: workspacePath,
+          );
+    postFilters?.assertValidPostFilters(path: '$path/$postFiltersKey');
 
     Glob createPackageGlob(String pattern) =>
         createGlob(pattern, currentDirectoryPath: workspacePath);
@@ -252,9 +242,9 @@ class PackageFilters {
       includeDependencies: includeDependencies,
       includePrivatePackages: includePrivatePackages,
       published: published,
-      nullSafe: nullSafe,
       flutter: flutter,
       categories: category.map(createPackageGlob).toList(),
+      postFilters: postFilters,
     );
   }
 
@@ -271,9 +261,10 @@ class PackageFilters {
     required this.diff,
     required this.includePrivatePackages,
     required this.published,
-    required this.nullSafe,
+    required this.includeFlutterPackages,
     required this.includeDependencies,
     required this.includeDependents,
+    required this.postFilters,
   });
 
   /// Patterns for filtering packages by name.
@@ -300,8 +291,11 @@ class PackageFilters {
   /// Filter packages based on whether there were changes between a commit and
   /// the current HEAD or within a range of commits.
   ///
-  /// A range of commits can be specified using the git short hand syntax
+  /// A range of commits can be specified using the git shorthand syntax
   /// `<start-commit>..<end-commit>` and `<start-commit>...<end-commit>`.
+  ///
+  /// Use [gitDiffSinceLatestTag] to filter packages that changed since their
+  /// latest release tag.
   final String? diff;
 
   /// Include/Exclude packages with `publish_to: none`.
@@ -310,8 +304,9 @@ class PackageFilters {
   /// Include/exclude packages that are up-to-date on pub.dev
   final bool? published;
 
-  /// Include/exclude packages that are null-safe.
-  final bool? nullSafe;
+  /// Include/exclude packages that are Flutter packages, see
+  /// [Package.isFlutterPackage].
+  final bool? includeFlutterPackages;
 
   /// Whether to include packages that depends on the filtered packages.
   ///
@@ -323,13 +318,34 @@ class PackageFilters {
   /// This supersede other filters.
   final bool includeDependencies;
 
+  /// Filters that are applied to all packages after the dependents and
+  /// dependencies have been included through [includeDependents] and
+  /// [includeDependencies].
+  ///
+  /// These filters cannot include dependents or dependencies themselves and
+  /// cannot have their own [postFilters].
+  final PackageFilters? postFilters;
+
+  /// Throws a [MelosConfigException] if these filters cannot be used as
+  /// [postFilters].
+  void assertValidPostFilters({required String path}) {
+    if (includeDependents || includeDependencies || postFilters != null) {
+      throw MelosConfigException(
+        '"${filterOptionIncludeDependents.camelCased}", '
+        '"${filterOptionIncludeDependencies.camelCased}" and '
+        '"${filterOptionPostFilters.camelCased}" cannot be used in "$path".',
+      );
+    }
+  }
+
   Map<String, Object?> toJson() {
     return {
       if (scope.isNotEmpty)
         filterOptionScope.camelCased: scope.map((e) => e.toString()).toList(),
       if (categories.isNotEmpty)
-        filterOptionCategory.camelCased:
-            scope.map((e) => e.toString()).toList(),
+        filterOptionCategory.camelCased: categories
+            .map((e) => e.toString())
+            .toList(),
       if (ignore.isNotEmpty)
         filterOptionIgnore.camelCased: ignore.map((e) => e.toString()).toList(),
       if (dirExists.isNotEmpty) filterOptionDirExists.camelCased: dirExists,
@@ -341,9 +357,12 @@ class PackageFilters {
       if (includePrivatePackages != null)
         filterOptionPrivate.camelCased: includePrivatePackages,
       if (published != null) filterOptionPublished.camelCased: published,
-      if (nullSafe != null) filterOptionNullsafety.camelCased: nullSafe,
+      if (includeFlutterPackages != null)
+        filterOptionFlutter.camelCased: includeFlutterPackages,
       if (includeDependents) filterOptionIncludeDependents.camelCased: true,
       if (includeDependencies) filterOptionIncludeDependencies.camelCased: true,
+      if (postFilters != null)
+        filterOptionPostFilters.camelCased: postFilters!.toJson(),
     };
   }
 
@@ -355,13 +374,14 @@ class PackageFilters {
       ignore: ignore,
       includePrivatePackages: includePrivatePackages,
       noDependsOn: noDependsOn,
-      nullSafe: nullSafe,
+      includeFlutterPackages: includeFlutterPackages,
       published: published,
       scope: scope,
       diff: diff,
       includeDependencies: includeDependencies,
       includeDependents: includeDependents,
       categories: categories,
+      postFilters: postFilters,
     );
   }
 
@@ -373,13 +393,14 @@ class PackageFilters {
       ignore: ignore,
       includePrivatePackages: includePrivatePackages,
       noDependsOn: noDependsOn,
-      nullSafe: nullSafe,
+      includeFlutterPackages: includeFlutterPackages,
       published: published,
       scope: scope,
       diff: diff,
       includeDependencies: includeDependencies,
       includeDependents: includeDependents,
       categories: categories,
+      postFilters: postFilters,
     );
   }
 
@@ -390,13 +411,14 @@ class PackageFilters {
     List<Glob>? ignore,
     bool? includePrivatePackages,
     List<String>? noDependsOn,
-    bool? nullSafe,
+    bool? includeFlutterPackages,
     bool? published,
     List<Glob>? scope,
     String? diff,
     bool? includeDependencies,
     bool? includeDependents,
     List<Glob>? categories,
+    PackageFilters? postFilters,
   }) {
     return PackageFilters._(
       dependsOn: dependsOn ?? this.dependsOn,
@@ -407,12 +429,14 @@ class PackageFilters {
       includePrivatePackages:
           includePrivatePackages ?? this.includePrivatePackages,
       noDependsOn: noDependsOn ?? this.noDependsOn,
-      nullSafe: nullSafe ?? this.nullSafe,
+      includeFlutterPackages:
+          includeFlutterPackages ?? this.includeFlutterPackages,
       published: published ?? this.published,
       scope: scope ?? this.scope,
       diff: diff ?? this.diff,
       includeDependencies: includeDependencies ?? this.includeDependencies,
       includeDependents: includeDependents ?? this.includeDependents,
+      postFilters: postFilters ?? this.postFilters,
     );
   }
 
@@ -420,7 +444,7 @@ class PackageFilters {
   bool operator ==(Object other) =>
       other is PackageFilters &&
       runtimeType == other.runtimeType &&
-      other.nullSafe == nullSafe &&
+      other.includeFlutterPackages == includeFlutterPackages &&
       other.published == published &&
       other.includeDependencies == includeDependencies &&
       other.includeDependents == includeDependents &&
@@ -432,30 +456,33 @@ class PackageFilters {
       const DeepCollectionEquality().equals(other.dependsOn, dependsOn) &&
       const DeepCollectionEquality().equals(other.noDependsOn, noDependsOn) &&
       const DeepCollectionEquality().equals(other.categories, categories) &&
-      other.diff == diff;
+      other.diff == diff &&
+      other.postFilters == postFilters;
 
   @override
-  int get hashCode =>
-      runtimeType.hashCode ^
-      nullSafe.hashCode ^
-      published.hashCode ^
-      includeDependencies.hashCode ^
-      includeDependents.hashCode ^
-      includePrivatePackages.hashCode ^
-      const DeepCollectionEquality().hash(scope) ^
-      const DeepCollectionEquality().hash(ignore) ^
-      const DeepCollectionEquality().hash(dirExists) ^
-      const DeepCollectionEquality().hash(fileExists) ^
-      const DeepCollectionEquality().hash(dependsOn) ^
-      const DeepCollectionEquality().hash(noDependsOn) ^
-      const DeepCollectionEquality().hash(categories) ^
-      diff.hashCode;
+  int get hashCode => Object.hashAll([
+    runtimeType,
+    includeFlutterPackages,
+    published,
+    includeDependencies,
+    includeDependents,
+    includePrivatePackages,
+    const DeepCollectionEquality().hash(scope),
+    const DeepCollectionEquality().hash(ignore),
+    const DeepCollectionEquality().hash(dirExists),
+    const DeepCollectionEquality().hash(fileExists),
+    const DeepCollectionEquality().hash(dependsOn),
+    const DeepCollectionEquality().hash(noDependsOn),
+    const DeepCollectionEquality().hash(categories),
+    diff,
+    postFilters,
+  ]);
 
   @override
   String toString() {
     return '''
 PackageFilters(
-  nullSafe: $nullSafe,
+  includeFlutterPackages: $includeFlutterPackages,
   published: $published,
   includeDependencies: $includeDependencies,
   includeDependents: $includeDependents,
@@ -468,6 +495,7 @@ PackageFilters(
   dependsOn: $dependsOn,
   noDependsOn: $noDependsOn,
   diff: $diff,
+  postFilters: ${postFilters.toString().indent('  ')},
 )''';
   }
 }
@@ -484,7 +512,7 @@ class InvalidPackageFiltersException extends MelosException {
 // Not using MapView to prevent map mutation
 class PackageMap {
   PackageMap(Map<String, Package> packages, this._logger)
-      : _map = _packagesSortedByName(packages);
+    : _map = _packagesSortedByName(packages);
 
   static const _commonIgnorePatterns = [
     '**/.dart_tool/**',
@@ -512,12 +540,32 @@ class PackageMap {
     };
   }
 
+  static Future<Package> resolveRootPackage({
+    required String workspacePath,
+    required MelosLogger logger,
+    Map<String, List<Glob>> categories = const {},
+    Map<String, List<String>> entryPoints = const {},
+  }) async {
+    return PackageMap.resolvePackages(
+      workspacePath: workspacePath,
+      packages: [
+        createGlob('.', currentDirectoryPath: workspacePath),
+      ],
+      ignore: [],
+      categories: categories,
+      logger: logger,
+      entryPoints: entryPoints,
+    ).then((packageMap) => packageMap.values.first);
+  }
+
   static Future<PackageMap> resolvePackages({
     required String workspacePath,
     required List<Glob> packages,
     required List<Glob> ignore,
     required Map<String, List<Glob>> categories,
     required MelosLogger logger,
+    bool discoverNestedWorkspaces = false,
+    Map<String, List<String>> entryPoints = const {},
   }) async {
     final pubspecFiles = await _resolvePubspecFiles(
       workspacePath: workspacePath,
@@ -527,19 +575,20 @@ class PackageMap {
         for (final pattern in _commonIgnorePatterns)
           createGlob(pattern, currentDirectoryPath: workspacePath),
       ],
+      discoverNestedWorkspaces: discoverNestedWorkspaces,
     );
 
     final packageMap = <String, Package>{};
 
-    await Future.wait<void>(
-      pubspecFiles.map((pubspecFile) async {
-        final pubspecDirPath = pubspecFile.parent.path;
-        final pubspec = Pubspec.parse(pubspecFile.readAsStringSync());
-        final name = pubspec.name;
+    for (final pubspecFile in pubspecFiles) {
+      final pubspecDirPath = pubspecFile.parent.path;
+      final pubspecFileAsString = pubspecFile.readAsStringSync();
+      final pubspec = Pubspec.parse(pubspecFileAsString);
+      final name = pubspec.name;
 
-        if (packageMap.containsKey(name)) {
-          throw MelosConfigException(
-            '''
+      if (packageMap.containsKey(name)) {
+        throw MelosConfigException(
+          '''
 Multiple packages with the name `$name` found in the workspace, which is unsupported.
 To fix this problem, consider renaming your packages to have a unique name.
 
@@ -547,46 +596,68 @@ The packages that caused the problem are:
 - $name at ${printablePath(relativePath(pubspecDirPath, workspacePath))}
 - $name at ${printablePath(relativePath(packageMap[name]!.path, workspacePath))}
 ''',
-          );
-        }
-
-        final filteredCategories = <String>[];
-
-        categories.forEach((key, value) {
-          final isCategoryMatching = value.any(
-            (category) => category.matches(
-              relativePath(pubspecDirPath, workspacePath),
-            ),
-          );
-
-          if (isCategoryMatching) {
-            filteredCategories.add(key);
-          }
-        });
-
-        packageMap[name] = Package(
-          name: name,
-          path: pubspecDirPath,
-          pathRelativeToWorkspace: relativePath(pubspecDirPath, workspacePath),
-          version: pubspec.version ?? Version.none,
-          publishTo: pubspec.publishTo.let(Uri.parse),
-          packageMap: packageMap,
-          dependencies: pubspec.dependencies.keys.toList(),
-          devDependencies: pubspec.devDependencies.keys.toList(),
-          dependencyOverrides: pubspec.dependencyOverrides.keys.toList(),
-          pubspec: pubspec,
-          categories: filteredCategories,
         );
-      }),
-    );
+      }
+
+      final filteredCategories = <String>[];
+
+      categories.forEach((key, value) {
+        final isCategoryMatching = value.any(
+          (category) => category.matches(
+            relativePath(pubspecDirPath, workspacePath),
+          ),
+        );
+
+        if (isCategoryMatching) {
+          filteredCategories.add(key);
+        }
+      });
+
+      packageMap[name] = Package(
+        name: name,
+        path: pubspecDirPath,
+        pathRelativeToWorkspace: relativePath(pubspecDirPath, workspacePath),
+        version: pubspec.version ?? Version.none,
+        publishTo: pubspec.publishTo.let(Uri.parse),
+        packageMap: packageMap,
+        dependencies: pubspec.dependencies.keys.toList(),
+        devDependencies: pubspec.devDependencies.keys.toList(),
+        dependencyOverrides: pubspec.dependencyOverrides.keys.toList(),
+        pubspec: pubspec,
+        categories: filteredCategories,
+        rawPubspecFileContent: pubspecFileAsString,
+        entryPoints: entryPoints[name] ?? const [],
+      );
+    }
 
     return PackageMap(packageMap, logger);
+  }
+
+  /// Adds a package to this PackageMap, returning a new PackageMap.
+  ///
+  /// If a package with the same name already exists, a warning is logged
+  /// and the existing package is kept.
+  PackageMap addPackage(Package package) {
+    final combinedMap = Map<String, Package>.from(_map);
+
+    if (!combinedMap.containsKey(package.name)) {
+      combinedMap[package.name] = package;
+    } else {
+      _logger.warning(
+        'Package "${package.name}" has the same name as an existing '
+        'workspace package. New package will be ignored. Consider renaming '
+        'one of the packages to avoid this conflict.',
+      );
+    }
+
+    return PackageMap(combinedMap, _logger);
   }
 
   static Future<List<File>> _resolvePubspecFiles({
     required String workspacePath,
     required List<Glob> packages,
     required List<Glob> ignore,
+    required bool discoverNestedWorkspaces,
   }) async {
     final pubspecEntities = await Stream.fromIterable(packages)
         .map(_createPubspecGlob)
@@ -603,12 +674,130 @@ The packages that caused the problem are:
         .map((file) => p.canonicalize(file.absolute.path))
         .toSet();
 
-    return paths.map(File.new).toList();
+    if (!discoverNestedWorkspaces) {
+      return paths.map(File.new).toList();
+    }
+
+    // Recursively discover packages in nested workspaces
+    final allPaths = <String>{...paths};
+    final nestedWorkspacePaths = <String>{};
+
+    // First pass: identify nested workspaces
+    for (final path in paths) {
+      final pubspecFile = File(path);
+      if (await _isWorkspacePubspec(pubspecFile)) {
+        nestedWorkspacePaths.add(p.dirname(path));
+      }
+    }
+
+    // Second pass: discover packages in nested workspaces
+    for (final nestedWorkspacePath in nestedWorkspacePaths) {
+      final nestedPubspecs = await _discoverNestedWorkspacePackages(
+        nestedWorkspacePath: nestedWorkspacePath,
+        rootWorkspacePath: workspacePath,
+        ignore: ignore,
+      );
+      allPaths.addAll(
+        nestedPubspecs.map((file) => p.canonicalize(file.absolute.path)),
+      );
+    }
+
+    return allPaths.map(File.new).toList();
+  }
+
+  /// Checks if a pubspec.yaml file defines a workspace.
+  static Future<bool> _isWorkspacePubspec(File pubspecFile) async {
+    try {
+      if (!pubspecFile.existsSync()) {
+        return false;
+      }
+      final content = await pubspecFile.readAsString();
+      final pubspec = Pubspec.parse(content);
+      return pubspec.workspace != null && pubspec.workspace!.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Discovers all packages in a nested workspace.
+  static Future<List<File>> _discoverNestedWorkspacePackages({
+    required String nestedWorkspacePath,
+    required String rootWorkspacePath,
+    required List<Glob> ignore,
+  }) async {
+    final nestedPubspecFile = File(p.join(nestedWorkspacePath, 'pubspec.yaml'));
+    if (!await _isWorkspacePubspec(nestedPubspecFile)) {
+      return [];
+    }
+
+    final pubspec = Pubspec.parse(await nestedPubspecFile.readAsString());
+    final workspacePaths = pubspec.workspace ?? [];
+
+    final nestedPackages = <File>[];
+    final pubspecIgnoreGlobs = ignore.map(_createPubspecGlob).toList();
+    bool isIgnored(File file) =>
+        pubspecIgnoreGlobs.any((glob) => glob.matches(file.path));
+
+    // Convert relative workspace paths to absolute paths
+    for (final workspacePath in workspacePaths) {
+      final absoluteWorkspacePath = p.isAbsolute(workspacePath)
+          ? workspacePath
+          : p.join(nestedWorkspacePath, workspacePath);
+
+      // Look for pubspec.yaml files in the workspace path and subdirectories
+      final workspaceDir = Directory(absoluteWorkspacePath);
+      if (workspaceDir.existsSync()) {
+        // Check if the workspace path itself has a pubspec.yaml
+        final pubspecAtPath = File(
+          p.join(absoluteWorkspacePath, 'pubspec.yaml'),
+        );
+        if (pubspecAtPath.existsSync() && !isIgnored(pubspecAtPath)) {
+          nestedPackages.add(pubspecAtPath);
+        }
+
+        // Recursively search for pubspec.yaml files in subdirectories
+        await for (final entity in workspaceDir.list(recursive: true)) {
+          if (entity is File &&
+              p.basename(entity.path) == 'pubspec.yaml' &&
+              !isIgnored(entity)) {
+            final canonicalPath = p.canonicalize(entity.absolute.path);
+            // Skip the nested workspace root pubspec.yaml itself
+            final nestedPubspecCanonical = p.canonicalize(
+              nestedPubspecFile.absolute.path,
+            );
+            if (canonicalPath != nestedPubspecCanonical) {
+              nestedPackages.add(entity);
+            }
+          }
+        }
+      }
+    }
+
+    // Recursively discover packages in any nested workspaces we found
+    final allNestedPackages = <File>[...nestedPackages];
+    for (final packageFile in nestedPackages) {
+      if (await _isWorkspacePubspec(packageFile)) {
+        final nestedPath = p.dirname(packageFile.path);
+        final deeperNested = await _discoverNestedWorkspacePackages(
+          nestedWorkspacePath: nestedPath,
+          rootWorkspacePath: rootWorkspacePath,
+          ignore: ignore,
+        );
+        allNestedPackages.addAll(deeperNested);
+      }
+    }
+
+    return allNestedPackages;
   }
 
   static Glob _createPubspecGlob(Glob event) {
+    // Convert backslashes to forward slashes before using p.posix.normalize so
+    // that absolute Windows paths like "C:\pkg" are handled correctly.
+    // p.posix treats '\' as a filename character, not a separator, so without
+    // this conversion it would produce an invalid mixed-separator path.
+    final pattern = '${event.pattern.replaceAll(r'\', '/')}/pubspec.yaml';
     return createGlob(
-      p.posix.normalize('${event.pattern}/pubspec.yaml'),
+      p.posix.normalize(pattern),
       caseSensitive: event.caseSensitive,
       context: event.context,
       recursive: event.recursive,
@@ -630,30 +819,43 @@ The packages that caused the problem are:
   /// Detect packages in the workspace with the provided filters.
   ///
   /// This is the default packages behaviour when a workspace is loaded.
-  Future<PackageMap> applyFilters(PackageFilters? filters) async {
-    if (filters == null) return this;
-
-    var packageList = await values
-        .applyIgnore(filters.ignore)
-        .applyDirExists(filters.dirExists)
-        .applyFileExists(filters.fileExists)
-        .filterPrivatePackages(include: filters.includePrivatePackages)
-        .applyScope(filters.scope)
-        .applyCategories(filters.categories)
-        .applyDependsOn(filters.dependsOn)
-        .applyNoDependsOn(filters.noDependsOn)
-        .filterNullSafe(nullSafe: filters.nullSafe)
-        .filterPublishedPackages(published: filters.published);
-
-    final diff = filters.diff;
-    if (diff != null) {
-      packageList = await packageList.applyDiff(diff, _logger);
+  Future<PackageMap> applyFilters(
+    PackageFilters? filters, {
+    PubClientConfig pubConfig = const PubClientConfig(),
+    bool workspaceTag = false,
+  }) async {
+    if (filters == null) {
+      return this;
     }
+
+    final isPublishedCache = <String, bool>{};
+
+    var packageList = await _applyNarrowingFilters(
+      values,
+      filters,
+      pubConfig: pubConfig,
+      workspaceTag: workspaceTag,
+      isPublishedCache: isPublishedCache,
+    );
 
     packageList = packageList.applyIncludeDependentsOrDependencies(
       includeDependents: filters.includeDependents,
       includeDependencies: filters.includeDependencies,
     );
+
+    final postFilters = filters.postFilters;
+    if (postFilters != null) {
+      postFilters.assertValidPostFilters(
+        path: filterOptionPostFilters.camelCased,
+      );
+      packageList = await _applyNarrowingFilters(
+        packageList,
+        postFilters,
+        pubConfig: pubConfig,
+        workspaceTag: workspaceTag,
+        isPublishedCache: isPublishedCache,
+      );
+    }
 
     return PackageMap(
       {
@@ -662,11 +864,46 @@ The packages that caused the problem are:
       _logger,
     );
   }
+
+  /// Applies all filters of [filters] that narrow down [packages], which is
+  /// every filter except the ones that include dependents and dependencies.
+  Future<Iterable<Package>> _applyNarrowingFilters(
+    Iterable<Package> packages,
+    PackageFilters filters, {
+    required PubClientConfig pubConfig,
+    required bool workspaceTag,
+    required Map<String, bool> isPublishedCache,
+  }) async {
+    final packageList = await packages
+        .applyIgnore(filters.ignore)
+        .applyDirExists(filters.dirExists)
+        .applyFileExists(filters.fileExists)
+        .filterPrivatePackages(include: filters.includePrivatePackages)
+        .applyScope(filters.scope)
+        .applyCategories(filters.categories)
+        .applyDependsOn(filters.dependsOn)
+        .applyNoDependsOn(filters.noDependsOn)
+        .filterFlutterPackages(include: filters.includeFlutterPackages)
+        .filterPublishedPackages(
+          published: filters.published,
+          logger: _logger,
+          pubConfig: pubConfig,
+          isPublishedCache: isPublishedCache,
+        );
+
+    return packageList.applyDiff(
+      filters.diff,
+      _logger,
+      workspaceTag: workspaceTag,
+    );
+  }
 }
 
 extension IterablePackageExt on Iterable<Package> {
   Iterable<Package> applyIgnore(List<Glob> ignore) {
-    if (ignore.isEmpty) return this;
+    if (ignore.isEmpty) {
+      return this;
+    }
 
     return where((package) {
       return ignore.every((glob) => !glob.matches(package.name));
@@ -674,7 +911,9 @@ extension IterablePackageExt on Iterable<Package> {
   }
 
   Iterable<Package> applyDirExists(List<String> directoryPaths) {
-    if (directoryPaths.isEmpty) return this;
+    if (directoryPaths.isEmpty) {
+      return this;
+    }
 
     // Directory exists packages filter, multiple filters behaviour is 'AND'.
     return where((package) {
@@ -686,7 +925,9 @@ extension IterablePackageExt on Iterable<Package> {
   }
 
   Iterable<Package> applyFileExists(List<String> filePaths) {
-    if (filePaths.isEmpty) return this;
+    if (filePaths.isEmpty) {
+      return this;
+    }
 
     return where((package) {
       final fileExistsMatched = filePaths.any((fileExistsPath) {
@@ -710,7 +951,9 @@ extension IterablePackageExt on Iterable<Package> {
   /// If `include` is true, only include private packages. If false, only
   /// include public packages. If null, does nothing.
   Iterable<Package> filterPrivatePackages({bool? include}) {
-    if (include == null) return this;
+    if (include == null) {
+      return this;
+    }
 
     return where((package) => include == package.isPrivate);
   }
@@ -720,20 +963,38 @@ extension IterablePackageExt on Iterable<Package> {
   ///
   /// If `include` is true, only include published packages. If false, only
   /// include unpublished packages. If null, does nothing.
+  ///
+  /// The registry is not queried for packages that are in [isPublishedCache],
+  /// which is updated with the packages that were looked up.
   Future<Iterable<Package>> filterPublishedPackages({
     required bool? published,
+    MelosLogger? logger,
+    PubClientConfig pubConfig = const PubClientConfig(),
+    Map<String, bool>? isPublishedCache,
   }) async {
-    if (published == null) return this;
+    if (published == null) {
+      return this;
+    }
 
     final pool = Pool(10);
     final packagesFilteredWithPublishStatus = <Package>[];
 
+    Future<bool> isPublished(Package package) async {
+      final pubPackage = await package.getPublishedPackage(
+        logger: logger,
+        backoff: pubConfig.retryBackoff,
+        timeout: pubConfig.requestTimeout,
+      );
+
+      return pubPackage?.isVersionPublished(package.version) ?? false;
+    }
+
     await pool.forEach<Package, void>(this, (package) async {
-      final pubPackage = await package.getPublishedPackage();
+      final isOnPubRegistry =
+          isPublishedCache?[package.name] ?? await isPublished(package);
+      isPublishedCache?[package.name] = isOnPubRegistry;
 
-      final isOnPubRegistry = pubPackage?.isVersionPublished(package.version);
-
-      if (published == (isOnPubRegistry ?? false)) {
+      if (published == isOnPubRegistry) {
         packagesFilteredWithPublishStatus.add(package);
       }
     }).drain<void>();
@@ -743,14 +1004,33 @@ extension IterablePackageExt on Iterable<Package> {
 
   Future<Iterable<Package>> applyDiff(
     String? diff,
-    MelosLogger logger,
-  ) async {
-    if (diff == null) return this;
+    MelosLogger logger, {
+    bool workspaceTag = false,
+  }) async {
+    if (diff == null || isEmpty) {
+      return this;
+    }
+
+    final revisionRange = diff.trim();
+    if (revisionRange != gitDiffSinceLatestTag &&
+        !await gitRevisionsExist(
+          revisionRange,
+          workingDirectory: first.path,
+          logger: logger,
+        )) {
+      throw InvalidPackageFiltersException(
+        '"$diff" is not an existing commit, tag or range of commits.',
+      );
+    }
 
     return Pool(10)
         .forEach(this, (package) async {
-          final hasDiff =
-              await gitHasDiffInPackage(package, diff: diff, logger: logger);
+          final hasDiff = await gitHasDiffInPackage(
+            package,
+            diff: diff,
+            workspaceTag: workspaceTag,
+            logger: logger,
+          );
           return MapEntry(package, hasDiff);
         })
         .where((event) => event.value)
@@ -758,25 +1038,18 @@ extension IterablePackageExt on Iterable<Package> {
         .toList();
   }
 
-  /// Whether to include/exclude packages that are null-safe.
-  ///
-  /// If `include` is true, only null-safe packages. If false, only include
-  /// packages that are not null-safe. If null, does nothing.
-  Iterable<Package> filterNullSafe({required bool? nullSafe}) {
-    if (nullSafe == null) return this;
+  Iterable<Package> filterFlutterPackages({bool? include}) {
+    if (include == null) {
+      return this;
+    }
 
-    return where((package) {
-      final version = package.version;
-
-      final isNullsafetyVersion =
-          version.isPreRelease && version.preRelease.contains('nullsafety');
-
-      return nullSafe == isNullsafetyVersion;
-    });
+    return where((package) => include == package.isFlutterPackage);
   }
 
   Iterable<Package> applyScope(List<Glob> scope) {
-    if (scope.isEmpty) return this;
+    if (scope.isEmpty) {
+      return this;
+    }
 
     return where((package) {
       return scope.any(
@@ -786,7 +1059,9 @@ extension IterablePackageExt on Iterable<Package> {
   }
 
   Iterable<Package> applyCategories(List<Glob> appliedCategories) {
-    if (appliedCategories.isEmpty) return this;
+    if (appliedCategories.isEmpty) {
+      return this;
+    }
 
     return where((package) {
       return package.categories.any(
@@ -798,7 +1073,9 @@ extension IterablePackageExt on Iterable<Package> {
   }
 
   Iterable<Package> applyDependsOn(List<String> dependsOn) {
-    if (dependsOn.isEmpty) return this;
+    if (dependsOn.isEmpty) {
+      return this;
+    }
 
     return where((package) {
       return dependsOn.every((element) {
@@ -809,7 +1086,9 @@ extension IterablePackageExt on Iterable<Package> {
   }
 
   Iterable<Package> applyNoDependsOn(List<String> noDependsOn) {
-    if (noDependsOn.isEmpty) return this;
+    if (noDependsOn.isEmpty) {
+      return this;
+    }
 
     return where((package) {
       return noDependsOn.every((element) {
@@ -826,7 +1105,9 @@ extension IterablePackageExt on Iterable<Package> {
     // We apply both dependents and includeDependencies at the same time, as if
     // both flags are enabled, this could otherwise include the dependencies
     // of the dependents – which is undesired.
-    if (!includeDependents && !includeDependencies) return this;
+    if (!includeDependents && !includeDependencies) {
+      return this;
+    }
 
     return {
       for (final package in this) ...[
@@ -853,8 +1134,10 @@ class Package {
     required this.publishTo,
     required this.pubspec,
     required this.categories,
-  })  : _packageMap = packageMap,
-        assert(p.isAbsolute(path));
+    this.rawPubspecFileContent,
+    this.entryPoints = const [],
+  }) : _packageMap = packageMap,
+       assert(p.isAbsolute(path));
 
   final Map<String, Package> _packageMap;
 
@@ -869,9 +1152,29 @@ class Package {
   final Pubspec pubspec;
   final List<String> categories;
 
-  /// Package path as a normalized sting relative to the root of the workspace.
+  //TODO: Remove this when the pubspec_parse package supports tag_pattern.
+  /// Optional raw content of the pubspec.yaml file.
+  ///
+  /// This is a workaround to cover git dependencies
+  /// using the new tag_pattern feature introduced in Dart 3.9.0.
+  /// This is, as of 01/2026, not supported by the pubspec_parse package
+  /// on which this library depends.
+  ///
+  /// Can be removed if [Dart SDK issue #2155](https://github.com/dart-lang/tools/issues/2155)
+  /// has been closed.
+  final String? rawPubspecFileContent;
+
+  /// The entry points that are configured for this package in the workspace
+  /// configuration, relative to the package root.
+  final List<String> entryPoints;
+
+  /// Package path as a normalized string relative to the root of the workspace.
   /// e.g. "packages/firebase_database".
   final String pathRelativeToWorkspace;
+
+  /// Whether this package is the root package of the workspace, which is only
+  /// part of the workspace packages when `useRootAsPackage` is enabled.
+  bool get isWorkspaceRoot => pathRelativeToWorkspace == '.';
 
   late final allDependenciesInWorkspace = {
     ...dependenciesInWorkspace,
@@ -923,17 +1226,18 @@ class Package {
 
   late final Map<String, Package> allTransitiveDependenciesInWorkspace =
       _transitivelyRelatedPackages(
-    root: this,
-    directlyRelatedPackages: (package, isRoot) => isRoot
-        ? package.allDependenciesInWorkspace
-        : package.dependenciesInWorkspace,
-  );
+        root: this,
+        directlyRelatedPackages: (package, isRoot) => isRoot
+            ? package.allDependenciesInWorkspace
+            : package.dependenciesInWorkspace,
+      );
 
   late final Map<String, Package> allTransitiveDependentsInWorkspace =
       _transitivelyRelatedPackages(
-    root: this,
-    directlyRelatedPackages: (package, _) => package.allDependentsInWorkspace,
-  );
+        root: this,
+        directlyRelatedPackages: (package, _) =>
+            package.allDependentsInWorkspace,
+      );
 
   Map<String, Package> _packagesInWorkspaceForNames(List<String> names) {
     return {
@@ -944,59 +1248,111 @@ class Package {
 
   /// Type of this package, e.g. [PackageType.flutterApp].
   PackageType get type {
-    if (isFlutterApp) return PackageType.flutterApp;
-    if (isFlutterPlugin) return PackageType.flutterPlugin;
-    if (isFlutterPackage) return PackageType.flutterPackage;
+    if (isFlutterApp) {
+      return PackageType.flutterApp;
+    }
+    if (isFlutterPlugin) {
+      return PackageType.flutterPlugin;
+    }
+    if (isFlutterPackage) {
+      return PackageType.flutterPackage;
+    }
     return PackageType.dartPackage;
   }
 
   /// Returns whether this package is for Flutter.
   ///
-  /// This is determined by whether the package depends on the Flutter SDK.
-  late final bool isFlutterPackage = dependencies.contains('flutter');
+  /// This is determined by whether the package needs the Flutter SDK itself,
+  /// through any of its dependency sections, or whether it, or any package in
+  /// the workspace that it transitively depends on, requires the Flutter SDK
+  /// from the packages that depend on it, see [_requiresFlutter].
+  late final bool isFlutterPackage =
+      _requiresFlutter ||
+      _dependsOnFlutter({
+        ...pubspec.devDependencies,
+        ...pubspec.dependencyOverrides,
+      }) ||
+      allTransitiveDependenciesInWorkspace.values.any(
+        (package) => package._requiresFlutter,
+      );
+
+  /// Whether this package requires the Flutter SDK from every package that
+  /// depends on it, either through a Flutter SDK constraint in its environment
+  /// or through a regular dependency on Flutter.
+  ///
+  /// The dev dependencies and the dependency overrides are not considered,
+  /// since they do not apply to the packages that depend on this package.
+  late final bool _requiresFlutter =
+      pubspec.environment.containsKey('flutter') ||
+      _dependsOnFlutter(pubspec.dependencies);
+
+  /// Whether any of the [dependencies] is a package that is shipped with the
+  /// Flutter SDK, or the `flutter` package from another source, for example a
+  /// path or a git dependency on a fork of the framework.
+  static bool _dependsOnFlutter(Map<String, Dependency> dependencies) {
+    return dependencies.entries.any(
+      (entry) =>
+          entry.key == 'flutter' ||
+          switch (entry.value) {
+            SdkDependency(:final sdk) => sdk == 'flutter',
+            _ => false,
+          },
+    );
+  }
 
   /// Returns whether this package is private (publish_to set to 'none').
   bool get isPrivate {
     // Unversioned package, assuming private, e.g. example apps.
-    if (pubspec.version == null) return true;
+    if (pubspec.version == null) {
+      return true;
+    }
 
     return publishTo.toString() == 'none';
   }
 
-  /// Queries the pub.dev registry for published versions of this package.
-  /// Primarily used for publish filters and versioning.
-  Future<PubHostedPackage?> getPublishedPackage() async {
+  /// Queries the pub registry for published versions of this package.
+  ///
+  /// By default this uses the standard retry/backoff configuration; callers
+  /// can override [backoff], [timeout] or [onRetry] (primarily in tests) and
+  /// optionally emit retry warnings through [logger].
+  Future<PubHostedPackage?> getPublishedPackage({
+    MelosLogger? logger,
+    RetryNoticeCallback? onRetry,
+    RetryBackoff backoff = const RetryBackoff(),
+    Duration? timeout,
+  }) async {
     if (isPrivate) {
       return null;
     }
 
+    final retryNoticeHandler =
+        onRetry ??
+        (logger == null
+            ? null
+            : (notice) {
+                final delayDescription = notice.delay.inSeconds >= 1
+                    ? '${notice.delay.inSeconds}s'
+                    : '${notice.delay.inMilliseconds}ms';
+                logger.warning(
+                  'Retrying ${notice.method} ${notice.url} '
+                  '(${notice.attempt}/${notice.maxAttempts}) '
+                  'in $delayDescription because ${notice.reason}.',
+                  label: false,
+                );
+              });
+
     final pubClient = pub.PubHostedClient.fromUri(pubHosted: publishTo);
-    return pubClient.fetchPackage(name);
+    return pubClient.fetchPackage(
+      name,
+      logger: logger,
+      onRetry: retryNoticeHandler,
+      backoff: backoff,
+      timeout: timeout,
+    );
   }
 
-  /// The example [Package] contained within this package, if any.
-  ///
-  /// A package is considered to be an example if it is located in the `example`
-  /// directory of the [enclosingPackage].
-  late final Package? examplePackage = () {
-    final examplePath = p.join(path, 'example');
-    return _packageMap.values
-        .firstWhereOrNull((package) => p.equals(package.path, examplePath));
-  }();
-
-  /// The [Package] that encloses this package, if any.
-  ///
-  /// A package is considered to be the enclosing package if this package is
-  /// located in a direct child directory of the enclosing package.
-  late final Package? enclosingPackage = () {
-    final enclosingPackagePath = p.dirname(path);
-    return _packageMap.values.firstWhereOrNull(
-      (package) => p.equals(package.path, enclosingPackagePath),
-    );
-  }();
-
-  /// Whether this package is an example package as defined by [examplePackage].
-  bool get isExample => enclosingPackage?.examplePackage == this;
+  /// Whether this package is an example package.
+  bool get isExample => p.dirname(path).endsWith('example');
 
   /// Returns whether this package is a Flutter app.
   ///
@@ -1005,50 +1361,73 @@ class Package {
   /// - a) the package depends on the Flutter SDK.
   /// - b) the package does not define itself as a Flutter plugin inside
   ///   pubspec.yaml.
-  /// - c) a lib/main.dart file exists in the package.
+  /// - c) one of the configured [entryPoints], or the default entry point of
+  ///   Flutter, lib/main.dart, exists in the package.
   bool get isFlutterApp {
     // Must directly depend on the Flutter SDK.
-    if (!isFlutterPackage) return false;
+    if (!_dependsOnFlutter(pubspec.dependencies)) {
+      return false;
+    }
 
     // Must not have a Flutter plugin definition in its pubspec.yaml.
-    if (pubspec.flutterPlugin != null) return false;
+    if (pubspec.flutterPlugin != null) {
+      return false;
+    }
 
-    return fileExists(p.join(path, 'lib', 'main.dart'));
+    return [...entryPoints, defaultEntryPoint].any(hasEntryPoint);
+  }
+
+  /// Whether the [entryPoint], relative to the package root and using `/` as
+  /// the separator, exists in this package.
+  bool hasEntryPoint(String entryPoint) {
+    return fileExists(p.joinAll([path, ...p.posix.split(entryPoint)]));
   }
 
   /// Returns whether this package supports Flutter for Android.
   bool get flutterAppSupportsAndroid {
-    if (!isFlutterApp) return false;
+    if (!isFlutterApp) {
+      return false;
+    }
     return _flutterAppSupportsPlatform(kAndroid);
   }
 
   /// Returns whether this package supports Flutter for Web.
   bool get flutterAppSupportsWeb {
-    if (!isFlutterApp) return false;
+    if (!isFlutterApp) {
+      return false;
+    }
     return _flutterAppSupportsPlatform(kWeb);
   }
 
   /// Returns whether this package supports Flutter for Windows.
   bool get flutterAppSupportsWindows {
-    if (!isFlutterApp) return false;
+    if (!isFlutterApp) {
+      return false;
+    }
     return _flutterAppSupportsPlatform(kWindows);
   }
 
   /// Returns whether this package supports Flutter for MacOS.
   bool get flutterAppSupportsMacos {
-    if (!isFlutterApp) return false;
+    if (!isFlutterApp) {
+      return false;
+    }
     return _flutterAppSupportsPlatform(kMacos);
   }
 
   /// Returns whether this package supports Flutter for iOS.
   bool get flutterAppSupportsIos {
-    if (!isFlutterApp) return false;
+    if (!isFlutterApp) {
+      return false;
+    }
     return _flutterAppSupportsPlatform(kIos);
   }
 
   /// Returns whether this package supports Flutter for Linux.
   bool get flutterAppSupportsLinux {
-    if (!isFlutterApp) return false;
+    if (!isFlutterApp) {
+      return false;
+    }
     return _flutterAppSupportsPlatform(kLinux);
   }
 
@@ -1060,37 +1439,49 @@ class Package {
 
   /// Returns whether this package supports Flutter for Android.
   bool get flutterPluginSupportsAndroid {
-    if (!isFlutterPlugin) return false;
+    if (!isFlutterPlugin) {
+      return false;
+    }
     return _flutterPluginSupportsPlatform(kAndroid);
   }
 
   /// Returns whether this package supports Flutter for Web.
   bool get flutterPluginSupportsWeb {
-    if (!isFlutterPlugin) return false;
+    if (!isFlutterPlugin) {
+      return false;
+    }
     return _flutterPluginSupportsPlatform(kWeb);
   }
 
   /// Returns whether this package supports Flutter for Windows.
   bool get flutterPluginSupportsWindows {
-    if (!isFlutterPlugin) return false;
+    if (!isFlutterPlugin) {
+      return false;
+    }
     return _flutterPluginSupportsPlatform(kWindows);
   }
 
   /// Returns whether this package supports Flutter for MacOS.
   bool get flutterPluginSupportsMacos {
-    if (!isFlutterPlugin) return false;
+    if (!isFlutterPlugin) {
+      return false;
+    }
     return _flutterPluginSupportsPlatform(kMacos);
   }
 
   /// Returns whether this package supports Flutter for iOS.
   bool get flutterPluginSupportsIos {
-    if (!isFlutterPlugin) return false;
+    if (!isFlutterPlugin) {
+      return false;
+    }
     return _flutterPluginSupportsPlatform(kIos);
   }
 
   /// Returns whether this package supports Flutter for Linux.
   bool get flutterPluginSupportsLinux {
-    if (!isFlutterPlugin) return false;
+    if (!isFlutterPlugin) {
+      return false;
+    }
     return _flutterPluginSupportsPlatform(kLinux);
   }
 
@@ -1138,7 +1529,7 @@ Map<String, Package> _transitivelyRelatedPackages({
   required Package root,
   // ignore: avoid_positional_boolean_parameters
   required Map<String, Package> Function(Package, bool isRoot)
-      directlyRelatedPackages,
+  directlyRelatedPackages,
 }) {
   final result = <String, Package>{};
   final workingSet = directlyRelatedPackages(root, true).values.toList();

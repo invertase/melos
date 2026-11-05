@@ -23,10 +23,12 @@ final successStyle = AnsiStyles.bold;
 final labelStyle = AnsiStyles.bold;
 
 final successLabel = successLableColor(labelStyle('SUCCESS'));
+final noTestsRanLabel = '$successLabel (no tests ran)';
 final warningLabel = warningLabelColor(labelStyle('WARNING'));
 final errorLabel = errorLabelColor(labelStyle('ERROR'));
 final failedLabel = errorLabelColor(labelStyle('FAILED'));
 final canceledLabel = errorLabelColor(labelStyle('CANCELED'));
+final skippedLabel = hintLabelColor(labelStyle('SKIPPED'));
 final hintLabel = hintLabelColor(labelStyle('HINT'));
 final runningLabel = commandLabelColor(labelStyle('RUNNING'));
 final checkLabel = AnsiStyles.greenBright('✓');
@@ -42,18 +44,41 @@ class MelosLogger with _DelegateLogger {
     Logger logger, {
     String indentation = '',
     String childIndentation = '  ',
-  })  : _logger = logger,
-        _indentation = indentation,
-        _childIndentation = childIndentation;
+    this.isQuiet = false,
+  }) : _logger = logger,
+       _indentation = indentation,
+       _childIndentation = childIndentation;
 
   @override
   final Logger _logger;
   final String _indentation;
   final String _childIndentation;
 
+  /// Whether informational messages are suppressed, so that only warnings,
+  /// errors, results and the output of failed commands are printed.
+  ///
+  /// Messages that are logged to a group are always buffered. Use
+  /// [discardGroup] to drop the output of a group that turned out to be
+  /// uninteresting.
+  final bool isQuiet;
+
+  /// A logger that prints informational messages even when [isQuiet] is
+  /// enabled. This is used for messages that explain a failure.
+  late final MelosLogger essential = isQuiet
+      ? MelosLogger(
+          _logger,
+          indentation: _indentation,
+          childIndentation: _childIndentation,
+        )
+      : this;
+
   void log(String message, {String? group}) {
     if (group != null) {
       _stdoutGroup(message, group);
+      return;
+    }
+
+    if (isQuiet) {
       return;
     }
 
@@ -66,6 +91,10 @@ class MelosLogger with _DelegateLogger {
       return;
     }
 
+    if (isQuiet) {
+      return;
+    }
+
     write(message);
   }
 
@@ -73,45 +102,39 @@ class MelosLogger with _DelegateLogger {
     String message,
     String successMarker,
     String failureMarker,
-    Completer<void>? completer, {
-    bool isError = false,
+    Completer<int>? completer, {
+    bool asError = false,
+    String? group,
   }) {
-    final modifiedMessage = _processMessageBasedOnMarkers(
-      message,
-      successMarker,
-      failureMarker,
-      completer,
-    );
-    _logMessage(modifiedMessage, isError);
-  }
-
-  String _processMessageBasedOnMarkers(
-    String message,
-    String successMarker,
-    String failureMarker,
-    Completer<void>? completer,
-  ) {
-    if (message.contains(successMarker)) {
-      completer?.complete();
-      return message.replaceAll(successMarker, '');
+    if (!message.contains(successMarker) && !message.contains(failureMarker)) {
+      _logMessage(message, asError, group: group);
+      return;
     }
 
-    if (message.contains(failureMarker)) {
-      completer?.complete();
-      return message.replaceAll(failureMarker, '');
-    }
+    final isSuccess = message.contains(successMarker);
+    final updatedMessage = message
+        .replaceAll(successMarker, '')
+        .replaceAll(failureMarker, '');
 
-    return message;
+    if (updatedMessage.isNotEmpty) {
+      _logMessage(updatedMessage, asError, group: group);
+    }
+    completer?.complete(isSuccess ? 0 : 1);
   }
 
-  void _logMessage(String message, bool isError) {
+  void _logMessage(String message, bool isError, {String? group}) {
     if (isError) {
-      error(message);
+      error(message, group: group);
+    } else {
+      logWithoutNewLine(message, group: group);
     }
-    write(message);
   }
 
   void command(String command, {bool withDollarSign = false}) {
+    if (isQuiet) {
+      return;
+    }
+
     if (withDollarSign) {
       stdout('${commandColor(r'$')} ${commandStyle(command)}');
     } else {
@@ -130,6 +153,10 @@ class MelosLogger with _DelegateLogger {
       return;
     }
 
+    if (isQuiet) {
+      return;
+    }
+
     if (dryRun) {
       stdout(successMessageColor(message));
     } else {
@@ -143,10 +170,12 @@ class MelosLogger with _DelegateLogger {
     bool label = true,
     bool dryRun = false,
   }) {
-    final labelColor =
-        dryRun ? dryRunWarningLabelColor : dryRunWarningMessageColor;
-    final messageColor =
-        dryRun ? dryRunWarningMessageColor : warningMessageColor;
+    final labelColor = dryRun
+        ? dryRunWarningLabelColor
+        : dryRunWarningMessageColor;
+    final messageColor = dryRun
+        ? dryRunWarningMessageColor
+        : warningMessageColor;
 
     if (group != null) {
       if (label) {
@@ -194,6 +223,10 @@ class MelosLogger with _DelegateLogger {
       return;
     }
 
+    if (isQuiet) {
+      return;
+    }
+
     if (label) {
       stdout(hintMessageColor('$hintLabel: $message'));
     } else {
@@ -207,12 +240,20 @@ class MelosLogger with _DelegateLogger {
       return;
     }
 
+    if (isQuiet) {
+      return;
+    }
+
     _logger.stdout('');
   }
 
   void horizontalLine({String? group}) {
     if (group != null) {
       _stdoutGroup('-' * terminalWidth, group);
+      return;
+    }
+
+    if (isQuiet) {
       return;
     }
 
@@ -230,6 +271,7 @@ class MelosLogger with _DelegateLogger {
       _logger,
       indentation: '$_indentation$_childIndentation',
       childIndentation: childIndentation,
+      isQuiet: isQuiet,
     );
 
     final lines = message.split('\n');
@@ -252,7 +294,12 @@ class MelosLogger with _DelegateLogger {
         _logger,
         indentation: '$_indentation$_childIndentation',
         childIndentation: childIndentation,
+        isQuiet: isQuiet,
       );
+
+  @override
+  Progress progress(String message) =>
+      isQuiet ? _SilentProgress(message) : _logger.progress(message);
 
   @override
   void stdout(String message) => _logger.stdout('$_indentation$message');
@@ -280,9 +327,28 @@ class MelosLogger with _DelegateLogger {
     _groupBuffer[group] = [...previous, _GroupBufferWriteMessage(message)];
   }
 
-  void flushGroupBufferIfNeed() {
-    for (final entry in _groupBuffer.entries) {
-      for (final value in entry.value) {
+  /// Drops everything that has been buffered for [group] without printing it.
+  void discardGroup(String group) => _groupBuffer.remove(group);
+
+  /// Prints everything that has been buffered for a group, one group at a
+  /// time, so that the output of concurrently running commands is not
+  /// interleaved.
+  ///
+  /// Groups are flushed in the order they were first written to, except for
+  /// the groups listed in [lastGroups], which are flushed last (keeping their
+  /// relative order). This is used to print the output of failed packages at
+  /// the end, where it is easy to spot.
+  Future<void> flushGroupBufferIfNeed({
+    Iterable<String> lastGroups = const [],
+  }) {
+    final deferredGroups = lastGroups.toSet();
+    final groupNames = [
+      ..._groupBuffer.keys.where((group) => !deferredGroups.contains(group)),
+      ..._groupBuffer.keys.where(deferredGroups.contains),
+    ];
+
+    for (final groupName in groupNames) {
+      for (final value in _groupBuffer[groupName]!) {
         switch (value) {
           case _GroupBufferStdoutMessage(:final message):
             stdout(message);
@@ -295,6 +361,7 @@ class MelosLogger with _DelegateLogger {
     }
 
     _groupBuffer.clear();
+    return Future.delayed(const Duration(milliseconds: 10));
   }
 }
 
@@ -316,6 +383,16 @@ class _GroupBufferWriteMessage extends _GroupBufferMessage {
   const _GroupBufferWriteMessage(super.message);
 }
 
+class _SilentProgress extends Progress {
+  _SilentProgress(super.message);
+
+  @override
+  void cancel() {}
+
+  @override
+  void finish({String? message, bool showTiming = false}) {}
+}
+
 mixin _DelegateLogger implements Logger {
   Logger get _logger;
 
@@ -333,9 +410,6 @@ mixin _DelegateLogger implements Logger {
 
   @override
   void trace(String message) => _logger.trace(message);
-
-  @override
-  Progress progress(String message) => _logger.progress(message);
 
   @override
   void write(String message) => _logger.write(message);

@@ -1,6 +1,10 @@
+@Timeout(Duration(minutes: 2))
+library;
+
 import 'dart:io';
 
 import 'package:melos/melos.dart';
+import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
@@ -19,7 +23,9 @@ void main() {
     late Directory aDir;
 
     setUp(() async {
-      workspaceDir = await createTemporaryWorkspace();
+      workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a', 'b', 'c'],
+      );
 
       aDir = await createProject(
         workspaceDir,
@@ -27,6 +33,18 @@ void main() {
           'a',
           dependencies: {'c': HostedDependency(version: VersionConstraint.any)},
         ),
+      );
+      writeTextFile(
+        p.join(aDir.path, 'analysis_options.yaml'),
+        '''
+linter:
+  rules:
+    - avoid_print
+    - eol_at_end_of_file
+    - prefer_final_locals
+    - prefer_single_quotes
+    - omit_local_variable_types
+''',
       );
 
       await createProject(
@@ -60,10 +78,10 @@ void main() {
       ''',
       );
 
-      await melos.analyze(fatalInfos: true);
+      await melos.analyze();
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output,
         ignoringAnsii(
           '''
 \$ melos analyze
@@ -99,6 +117,59 @@ ${'-' * terminalWidth}
       );
     });
 
+    test('should only print the packages with issues when quiet', () async {
+      writeTextFile(
+        p.join(aDir.path, 'main.dart'),
+        r'''
+        void main() {
+          for (var i = 0; i < 10; i++) {
+            print('hello ${i + 1}');
+          }
+        }
+      ''',
+      );
+
+      final quietMelos = Melos(
+        logger: MelosLogger(logger, isQuiet: true),
+        config: melos.config,
+      );
+
+      await quietMelos.analyze();
+
+      expect(
+        logger.output,
+        ignoringAnsii(
+          '''
+${'-' * terminalWidth}
+a:
+Analyzing a...
+
+   info - main.dart:3:13 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - main.dart:5:10 - Missing a newline at the end of the file. Try adding a newline at the end of the file. - eol_at_end_of_file
+
+2 issues found.
+${'-' * terminalWidth}
+
+\$ melos analyze
+  └> dart analyze --fatal-infos
+     └> FAILED (in 1 packages)
+        └> a (with exit code 1)
+''',
+        ),
+      );
+    });
+
+    test('should print nothing when quiet and there are no issues', () async {
+      final quietMelos = Melos(
+        logger: MelosLogger(logger, isQuiet: true),
+        config: melos.config,
+      );
+
+      await quietMelos.analyze();
+
+      expect(logger.output, isEmpty);
+    });
+
     test('should run analysis with --fatal-warnings flag', () async {
       writeTextFile(
         p.join(aDir.path, 'main.dart'),
@@ -114,10 +185,10 @@ ${'-' * terminalWidth}
       await melos.analyze(fatalWarnings: true);
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output,
         ignoringAnsii('''
 \$ melos analyze
-  └> dart analyze --fatal-warnings
+  └> dart analyze --fatal-infos --fatal-warnings
      └> RUNNING (in 3 packages)
 
 ${'-' * terminalWidth}
@@ -147,7 +218,7 @@ c: SUCCESS
 ${'-' * terminalWidth}
 
 \$ melos analyze
-  └> dart analyze --fatal-warnings
+  └> dart analyze --fatal-infos --fatal-warnings
      └> FAILED (in 1 packages)
         └> a (with exit code 2)
 '''),
@@ -166,10 +237,10 @@ ${'-' * terminalWidth}
       ''',
       );
 
-      await melos.analyze(fatalWarnings: false);
+      await melos.analyze(fatalInfos: false, fatalWarnings: false);
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output,
         ignoringAnsii('''
 \$ melos analyze
   └> dart analyze --no-fatal-warnings
@@ -209,24 +280,25 @@ ${'-' * terminalWidth}
       );
     });
 
-    test('should run analysis with --fatal-infos and --fatal-warnings',
-        () async {
-      writeTextFile(
-        p.join(aDir.path, 'main.dart'),
-        r'''
+    test(
+      'should run analysis with --fatal-infos and --fatal-warnings',
+      () async {
+        writeTextFile(
+          p.join(aDir.path, 'main.dart'),
+          r'''
         void main() {
            var name = "Jessica";
            int age = 28;
            print("Hello, $name!");
         }
       ''',
-      );
+        );
 
-      await melos.analyze(fatalInfos: true, fatalWarnings: true);
+        await melos.analyze(fatalWarnings: true);
 
-      expect(
-        logger.output.normalizeNewLines(),
-        ignoringAnsii('''
+        expect(
+          logger.output,
+          ignoringAnsii('''
 \$ melos analyze
   └> dart analyze --fatal-infos --fatal-warnings
      └> RUNNING (in 3 packages)
@@ -262,22 +334,26 @@ ${'-' * terminalWidth}
      └> FAILED (in 1 packages)
         └> a (with exit code 2)
 '''),
-      );
-    });
+        );
+      },
+    );
 
     test('should run analysis with --concurrency flag', () async {
       // when concurrency is set to a number bigger than 1 then
       // the output should appears as the following
       await melos.analyze(concurrency: 2);
 
-      final regex =
-          RegExp(r'\$ melos analyze\s+└> dart analyze --concurrency 2');
+      final regex = RegExp(
+        r'\$ melos analyze\s+└> dart analyze --fatal-infos --concurrency 2',
+      );
 
-      expect(regex.hasMatch(logger.output.normalizeNewLines()), isTrue);
+      expect(regex.hasMatch(logger.output.removeAnsiCodes()), isTrue);
     });
 
     test('should run analysis using flutter & dart', () async {
-      final workspaceDir = await createTemporaryWorkspace();
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a', 'b'],
+      );
 
       await createProject(
         workspaceDir,
@@ -308,20 +384,23 @@ ${'-' * terminalWidth}
       await melos.analyze(concurrency: 2);
 
       expect(
-        logger.output
-            .normalizeNewLines()
-            .contains('flutter analyze --concurrency 2'),
+        logger.output.removeAnsiCodes().contains(
+          'flutter analyze --fatal-infos --concurrency 2',
+        ),
         isTrue,
       );
 
-      final dartRegex =
-          RegExp(r'\$ melos analyze\s+└> dart analyze --concurrency 2');
+      final dartRegex = RegExp(
+        r'\$ melos analyze\s+└> dart analyze --fatal-infos --concurrency 2',
+      );
 
-      expect(dartRegex.hasMatch(logger.output.normalizeNewLines()), isTrue);
+      expect(dartRegex.hasMatch(logger.output.removeAnsiCodes()), isTrue);
     });
 
     test('should run analysis using flutter', () async {
-      final workspaceDir = await createTemporaryWorkspace();
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+      );
 
       await createProject(
         workspaceDir,
@@ -341,14 +420,107 @@ ${'-' * terminalWidth}
       );
       await melos.analyze(concurrency: 2);
 
-      final flutterRegex =
-          RegExp(r'\$ melos analyze\s+└> flutter analyze --concurrency 2');
+      final flutterRegex = RegExp(
+        r'\$ melos analyze\s+└> flutter analyze --fatal-infos --concurrency 2',
+      );
 
-      expect(flutterRegex.hasMatch(logger.output.normalizeNewLines()), isTrue);
+      expect(flutterRegex.hasMatch(logger.output.removeAnsiCodes()), isTrue);
+    });
+
+    test('should treat fatal-infos as enabled by default', () async {
+      await melos.analyze();
+
+      final dartRegex = RegExp(
+        r'\$ melos analyze\s+└> dart analyze --fatal-infos',
+      );
+
+      expect(dartRegex.hasMatch(logger.output.removeAnsiCodes()), isTrue);
+    });
+
+    test(
+      'should pass --no-fatal-infos only to flutter when disabled',
+      () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          workspacePackages: ['a', 'b'],
+        );
+
+        await createProject(
+          workspaceDir,
+          Pubspec(
+            'a',
+            dependencies: {
+              'flutter': SdkDependency('flutter'),
+            },
+          ),
+        );
+
+        await createProject(
+          workspaceDir,
+          Pubspec('b'),
+        );
+
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+
+        final melos = Melos(
+          logger: logger,
+          config: config,
+        );
+        await melos.analyze(fatalInfos: false, concurrency: 2);
+
+        final output = logger.output.removeAnsiCodes();
+
+        expect(output.contains('flutter analyze --no-fatal-infos'), isTrue);
+
+        final dartRegex = RegExp(
+          r'\$ melos analyze\s+└> dart analyze --concurrency 2',
+        );
+        expect(dartRegex.hasMatch(output), isTrue);
+        expect(output.contains('dart analyze --no-fatal-infos'), isFalse);
+      },
+    );
+
+    test('should pass --no-pub only to flutter analyze', () async {
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a', 'b'],
+      );
+
+      await createProject(
+        workspaceDir,
+        Pubspec(
+          'a',
+          dependencies: {
+            'flutter': SdkDependency('flutter'),
+          },
+        ),
+      );
+
+      await createProject(workspaceDir, Pubspec('b'));
+
+      final config = await MelosWorkspaceConfig.fromWorkspaceRoot(workspaceDir);
+
+      final melos = Melos(
+        logger: logger,
+        config: config,
+      );
+      await melos.analyze(noPub: true);
+
+      final output = logger.output.removeAnsiCodes();
+
+      expect(output, contains('flutter analyze --fatal-infos --no-pub'));
+
+      final dartRegex = RegExp(
+        r'\$ melos analyze\s+└> dart analyze --fatal-infos\s',
+      );
+      expect(dartRegex.hasMatch(output), isTrue);
+      expect(output, isNot(contains('dart analyze --fatal-infos --no-pub')));
     });
 
     test('should run analysis using dart', () async {
-      final workspaceDir = await createTemporaryWorkspace();
+      final workspaceDir = await createTemporaryWorkspace(
+        workspacePackages: ['a'],
+      );
       await createProject(
         workspaceDir,
         Pubspec('a'),
@@ -363,25 +535,26 @@ ${'-' * terminalWidth}
       await melos.analyze(concurrency: 2);
 
       expect(
-        logger.output
-            .normalizeNewLines()
-            .contains('flutter analyze --concurrency 2'),
+        logger.output.removeAnsiCodes().contains(
+          'flutter analyze --fatal-infos --concurrency 2',
+        ),
         isFalse,
       );
 
-      final dartRegex =
-          RegExp(r'\$ melos analyze\s+└> dart analyze --concurrency 2');
-      expect(dartRegex.hasMatch(logger.output.normalizeNewLines()), isTrue);
+      final dartRegex = RegExp(
+        r'\$ melos analyze\s+└> dart analyze --fatal-infos --concurrency 2',
+      );
+      expect(dartRegex.hasMatch(logger.output.removeAnsiCodes()), isTrue);
     });
 
     test('should run analysis with --concurrency 2 flag', () async {
       await melos.analyze(concurrency: 2);
 
       expect(
-        logger.output.normalizeNewLines(),
+        logger.output,
         ignoringAnsii('''
 \$ melos analyze
-  └> dart analyze --concurrency 2
+  └> dart analyze --fatal-infos --concurrency 2
      └> RUNNING (in 3 packages)
 
 ${'-' * terminalWidth}
@@ -402,30 +575,31 @@ c: SUCCESS
 ${'-' * terminalWidth}
 
 \$ melos analyze
-  └> dart analyze --concurrency 2
+  └> dart analyze --fatal-infos --concurrency 2
      └> SUCCESS
 '''),
       );
     });
 
-    test('should run analysis with --concurrency 2 and --fatal-infos flag',
-        () async {
-      writeTextFile(
-        p.join(aDir.path, 'main.dart'),
-        r'''
+    test(
+      'should run analysis with --concurrency 2 and --fatal-infos flag',
+      () async {
+        writeTextFile(
+          p.join(aDir.path, 'main.dart'),
+          r'''
         void main() {
           for (var i = 0; i < 10; i++) {
             print('hello ${i + 1}');
           }
         }
       ''',
-      );
+        );
 
-      await melos.analyze(concurrency: 2, fatalInfos: true);
+        await melos.analyze(concurrency: 2);
 
-      expect(
-        logger.output.normalizeNewLines(),
-        ignoringAnsii('''
+        expect(
+          logger.output,
+          ignoringAnsii('''
 \$ melos analyze
   └> dart analyze --fatal-infos --concurrency 2
      └> RUNNING (in 3 packages)
@@ -455,7 +629,73 @@ ${'-' * terminalWidth}
      └> FAILED (in 1 packages)
         └> a (with exit code 1)
 '''),
-      );
+        );
+      },
+    );
+
+    group('config', () {
+      Future<TestLogger> runAnalyzeWith(
+        AnalyzeCommandConfigs analyzeConfigs, {
+        bool? fatalInfos,
+        int? concurrency,
+      }) async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: (path) => MelosWorkspaceConfig(
+            path: path,
+            name: 'test_workspace',
+            packages: [createGlob('packages/**', currentDirectoryPath: path)],
+            commands: CommandConfigs(analyze: analyzeConfigs),
+          ),
+          workspacePackages: ['a'],
+        );
+        await createProject(workspaceDir, Pubspec('a'));
+
+        final logger = TestLogger();
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        await Melos(logger: logger, config: config).analyze(
+          fatalInfos: fatalInfos,
+          concurrency: concurrency,
+        );
+
+        return logger;
+      }
+
+      test('uses the configured fatalInfos and concurrency', () async {
+        final logger = await runAnalyzeWith(
+          const AnalyzeCommandConfigs(fatalInfos: false, concurrency: 2),
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          contains('dart analyze --concurrency 2'),
+        );
+      });
+
+      test('uses the configured fatalWarnings', () async {
+        final logger = await runAnalyzeWith(
+          const AnalyzeCommandConfigs(fatalWarnings: true),
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          contains('dart analyze --fatal-infos --fatal-warnings'),
+        );
+      });
+
+      test('command line options take precedence over the config', () async {
+        final logger = await runAnalyzeWith(
+          const AnalyzeCommandConfigs(fatalInfos: false, concurrency: 2),
+          fatalInfos: true,
+          concurrency: 3,
+        );
+
+        expect(
+          logger.output.normalizeLines(),
+          contains('dart analyze --fatal-infos --concurrency 3'),
+        );
+      });
     });
   });
 }
