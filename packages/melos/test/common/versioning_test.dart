@@ -280,6 +280,58 @@ const _versioningTestCases = [
     shouldMakePrereleaseVersion: true,
   ),
 
+  // Continuing a prerelease retains and increments an integer build number.
+  VersioningTestCase(
+    '1.3.0-beta.0+2',
+    '1.3.0-beta.1+3',
+    SemverReleaseType.patch,
+    shouldMakePrereleaseVersion: true,
+  ),
+  VersioningTestCase(
+    '1.3.0-beta.0+2',
+    '1.3.0-rc.0+3',
+    SemverReleaseType.patch,
+    requestedPreId: 'rc',
+    shouldMakePrereleaseVersion: true,
+  ),
+  VersioningTestCase(
+    '1.3.0-dev.0+2',
+    '1.3.0-dev.1+3',
+    SemverReleaseType.patch,
+    shouldMakePrereleaseVersion: true,
+  ),
+  VersioningTestCase(
+    '1.3.0-dev.0+2',
+    '1.3.0-dev.1+3',
+    SemverReleaseType.minor,
+    shouldMakePrereleaseVersion: true,
+  ),
+  VersioningTestCase(
+    '1.3.0-dev.0+2',
+    '1.3.0-dev.1+3',
+    SemverReleaseType.major,
+    shouldMakePrereleaseVersion: true,
+  ),
+  VersioningTestCase(
+    '1.3.0-dev.0+2',
+    '1.3.0-beta.0+3',
+    SemverReleaseType.patch,
+    requestedPreId: 'beta',
+    shouldMakePrereleaseVersion: true,
+  ),
+  VersioningTestCase(
+    '1.3.0-dev.0+abc',
+    '1.3.0-dev.1',
+    SemverReleaseType.patch,
+    shouldMakePrereleaseVersion: true,
+  ),
+  VersioningTestCase(
+    '1.3.0-dev.0+1.2',
+    '1.3.0-dev.1',
+    SemverReleaseType.patch,
+    shouldMakePrereleaseVersion: true,
+  ),
+
   // Ensure that we reset the preid int if preid name has changed,
   // e.g. was "...dev.3" and is now a "beta" preid so the next
   // prerelease version becomes "...beta.0" instead of "...beta.4".

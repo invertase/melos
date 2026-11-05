@@ -117,11 +117,15 @@ Version nextPrereleaseVersion(
       nextPreidInt = 0;
     }
 
+    final currentBuildNumber = _integerBuildNumber(currentVersion);
     return Version(
       currentVersion.major,
       currentVersion.minor,
       currentVersion.patch,
       pre: '$nextPreidName.$nextPreidInt',
+      build: currentBuildNumber == null
+          ? null
+          : (currentBuildNumber + 1).toString(),
     );
   }
 
