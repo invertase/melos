@@ -1,0 +1,5 @@
+node_modules/
+
+# reeval: scratch runs and debug data; local keys
+.reeval/
+.env*
