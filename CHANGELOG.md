@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 2026-11-06
+
+### Changes
+
+---
+
+Packages with breaking changes:
+
+ - There are no breaking changes in this release.
+
+Packages with other changes:
+
+ - [`melos` - `v8.10.1`](#melos---v8101)
+
+---
+
+#### `melos` - `v8.10.1`
+
+ - **FIX**(version): retain and increment build numbers in continuing prereleases ([#1117](https://github.com/invertase/melos/issues/1117)). ([1e23faf5](https://github.com/invertase/melos/commit/1e23faf519beb9e030c177a6eac1d698797af972))
+
+
 ## 2026-10-27
 
 ### Changes

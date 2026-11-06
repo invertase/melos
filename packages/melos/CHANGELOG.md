@@ -1,3 +1,7 @@
+## 8.10.1
+
+ - **FIX**(version): retain and increment build numbers in continuing prereleases ([#1117](https://github.com/invertase/melos/issues/1117)). ([1e23faf5](https://github.com/invertase/melos/commit/1e23faf519beb9e030c177a6eac1d698797af972))
+
 ## 8.10.0
 
  - **FEAT**: ship agent skills with the melos package ([#1110](https://github.com/invertase/melos/issues/1110)). ([290a11f0](https://github.com/invertase/melos/commit/290a11f02b3fb33719812d8cb6018f0a5d0b282d))
