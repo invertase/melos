@@ -224,7 +224,7 @@ melos:
 ```
 
 See the
-[Getting Started](https://melos.invertase.dev/~melos-latest/getting-started#single-package-projects-non-monorepo)
+[Getting Started](https://melos.invertase.dev/~melos-latest/getting-started/single-package)
 page and the
 [Configuration Overview](https://melos.invertase.dev/~melos-latest/configuration/overview#userootaspackage)
 for more details.
