@@ -22,14 +22,65 @@
 
 ## About
 
-Melos is a CLI for Dart and Flutter projects with one package or many. It links
-local packages, runs commands across them, and versions and publishes them from
-Conventional Commits.
+Splitting up large code bases into separate independently versioned packages is
+extremely useful for code sharing. However, making changes across many
+repositories is _messy_ and difficult to track, and testing across repositories
+gets complicated really fast.
 
-[Learn more about Melos](https://melos.invertase.dev/~melos-latest/) on the
-docs Overview, including key features and how Melos compares to other tools.
-[Projects using Melos](https://melos.invertase.dev/~melos-latest/projects) lists
-repositories that use it.
+To solve these (and many other) problems, some projects will organize their code
+bases into multi-package repositories (sometimes called
+[monorepos](https://en.wikipedia.org/wiki/Monorepo))
+
+**Melos is a tool that optimizes the workflow around managing multi-package
+repositories with git and Pub.**
+
+It is in active development and is in use on projects such as
+[FlutterFire](https://github.com/firebase/flutterfire) and
+[Flame](https://github.com/flame-engine/flame), see
+[Projects using Melos](https://melos.invertase.dev/~melos-latest/projects)
+for more projects.
+
+Melos is for applications just as much as it is for packages that are published
+to [pub.dev](https://pub.dev). A workspace can contain your Flutter and Dart
+applications together with the internal packages that they share, and Melos
+will run your scripts, tests and analysis across all of them, generate IDE run
+configurations for the applications and version them, including the build
+number of a version like `1.2.3+45`. Nothing has to be published to use Melos.
+
+Melos is not limited to monorepos either. It works just as well in a repository
+with a single application or package, where you can still use features like
+versioning, changelog generation, publishing and scripts, see
+[Using Melos without a monorepo](#using-melos-without-a-monorepo).
+
+### How does Melos relate to other monorepo tools?
+
+Melos is the monorepo tool for the Dart and Flutter ecosystem. If you are coming
+from another ecosystem, Melos is the Dart and Flutter alternative to tools like:
+
+- [Lerna](https://lerna.js.org), [Nx](https://nx.dev),
+  [Turborepo](https://turborepo.com) and [Rush](https://rushjs.io) for
+  JavaScript and TypeScript, which run tasks across packages and handle
+  versioning and publishing.
+- [npm workspaces](https://docs.npmjs.com/cli/using-npm/workspaces),
+  [Yarn workspaces](https://yarnpkg.com/features/workspaces) and
+  [pnpm workspaces](https://pnpm.io/workspaces) for JavaScript and TypeScript,
+  and [Cargo workspaces](https://doc.rust-lang.org/cargo/reference/workspaces.html)
+  for Rust, which link local packages together. In Dart this part is handled by
+  [pub workspaces](https://dart.dev/tools/pub/workspaces), which Melos builds
+  on top of.
+- [Changesets](https://github.com/changesets/changesets),
+  [semantic-release](https://semantic-release.gitbook.io) and
+  [release-please](https://github.com/googleapis/release-please) for automated
+  versioning, changelog generation and publishing.
+
+Melos combines these responsibilities in a single tool that understands Dart and
+Flutter packages, `pubspec.yaml` files and [pub.dev](https://pub.dev), so that
+you can run scripts and commands across packages, filter packages, and version
+and publish them based on
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+
+Learn more about Melos from the
+[docs](https://melos.invertase.dev/~melos-latest/).
 
 ## Migrate to Melos 8.x.x
 
