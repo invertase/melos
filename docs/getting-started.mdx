@@ -1,199 +1,141 @@
 ---
-title: Getting Started
-description: Learn how to start using Melos in your project
+title: Getting started
+description: Activate Melos, add it to the root `pubspec.yaml` file, and bootstrap the workspace.
 ---
 
-# Getting Started
+Before you use Melos, complete a few one-time setup steps.
 
-Melos requires a few one-off steps to be completed before you can start using
-it.
+<Steps>
+  <Step title="Read the pub workspaces guide">
+    Before you set up the repository, read the [pub workspaces guide](https://dart.dev/tools/pub/workspaces).
+  </Step>
+  <Step title="Activate Melos">
+    To use Melos from anywhere on your system, install it as a
+    [global package](https://dart.dev/tools/pub/cmd/pub-global#running-a-script-from-your-path)
+    via [pub.dev](https://pub.dev/):
 
-## Pub Workspaces
+    ```bash
+    dart pub global activate melos
+    ```
 
-First start by reading the short Pub Workspaces guide for how to get your
-monorepo ready to be used with Melos and Pub Workspaces, the guide can be
-found on the [Dart website](https://dart.dev/tools/pub/workspaces).
+    <Warning>
+      If using Git Bash on Windows, `melos` is not callable directly as it
+      has a `*.bat` extension. To call Melos with arguments, you can update your `~/.bash_profile` file with
+      the following function:
 
-## Installation
+      ```bash
+      function melos() {
+        melos.bat $@
+      }
+      ```
+    </Warning>
+  </Step>
+  <Step title="Create the workspace pubspec">
+    If you don't have a `pubspec.yaml` file at the workspace root yet, create one
+    now:
 
-Install Melos as a
-[global package](https://dart.dev/tools/pub/cmd/pub-global#running-a-script-from-your-path)
-via [pub.dev](https://pub.dev/) so it can be used from anywhere on your system:
+    ```yaml
+    name: my_project
+    publish_to: none
+    environment:
+      sdk: ^3.9.0
+    workspace:
+      - packages/helper
+      - packages/client_package
+      - packages/server_package
+    ```
 
-```bash
-dart pub global activate melos
-```
+    <Info>
+    Starting from Dart v3.11.0, the workspace definition supports globs.
+    </Info>
 
-<Warning>
-  If using Git Bash on Windows, `melos` will not be callable directly as it
-  will have a `*.bat` extension. You can update your `~/.bash_profile` with
-  the following function to call melos with arguments:
+    Where `packages/helper`, `packages/client_package`, and `packages/server_package`
+    are the paths to the packages in your workspace.
 
-  ```bash
-  function melos() {
-    melos.bat $@
-  }
-  ```
-</Warning>
+    Melos is designed to work with a workspace. A workspace is a directory that
+    contains all the packages you develop together. Its root
+    directory must contain a `pubspec.yaml` file defining the workspace.
 
-## Setup a workspace
+    With Melos, the workspace root holds configuration rather than an app or
+    package. You can still put a package in the root; Melos supports that.
+    When using `useRootAsPackage: true`, it is even required.
+    For more information, see [`useRootAsPackage`](/configuration/overview#userootaspackage).
 
-Melos is designed to work with a workspace. A workspace is a directory which
-contains all the packages that are going to be developed together. Its root
-directory must contain a `pubspec.yaml` file defining the workspace.
+    The following is the recommended workspace directory structure:
 
-### Recommended directory structure
+    ```console
+    my_project
+    ├── apps
+    │   ├── apps_1
+    │   └── apps_2
+    ├── packages
+    │   ├── package_1
+    │   └── package_2
+    ├── pubspec.yaml
+    └── README.md
+    ```
 
-When using Melos it's recommended to not have an app/package in the root of the
-workspace, since that is where the configuration for the workspace will live.
-If you want to you can still do it though, and Melos will work just fine, when
-using `useRootAsPackage: true` it is even required, see
-[here](/configuration/overview#userootaspackage).
+    Different Melos workspaces might use different versions of Melos. The root
+    `pubspec.yaml` file includes the `melos` package so everyone in the workspace,
+    including continuous integration (CI) jobs, uses the same Melos version. The
+    globally installed version of Melos switches to the version specified in the
+    `pubspec.yaml` file, if both versions are not the same.
 
-The following is the recommended workspace directory structure:
+    The corresponding `pubspec.lock` file belongs in the repository, not in `.gitignore`.
+  </Step>
+  <Step title="Add Melos to the workspace">
+    Add Melos as a development dependency by running the following command:
 
-```console
-my_project
-├── apps
-│   ├── apps_1
-│   └── apps_2
-├── packages
-│   ├── package_1
-│   └── package_2
-├── pubspec.yaml
-└── README.md
-```
+    ```bash
+    dart pub add melos --dev
+    ```
+  </Step>
+  <Step title="Mark each package as a workspace member">
+    In each package `pubspec.yaml` file, add the `resolution: workspace` field:
 
-### Install Melos in the workspace
+    ```yaml
+    name: my_package
+    resolution: workspace
 
-Different Melos workspaces might use different versions of Melos. To ensure
-everyone working in the workspace (as well as CI jobs) is using the same version
-of Melos, a dependency on the `melos` package has to be added to the
-`pubspec.yaml` file at the workspace root directory. The globally installed
-version of Melos will switch to the version specified in the `pubspec.yaml`
-file, if both versions are not the same.
+    # ...
+    ```
+  </Step>
+  <Step title="Bootstrap the workspace">
+    Bootstrap the workspace. Bootstrapping has
+    three primary functions:
 
-If you don't have a `pubspec.yaml` file at the workspace root yet, create one
-now:
+    - Installing all package dependencies (internally using `pub get`).
+    - Syncing shared dependencies between packages.
+    - Running any bootstrap lifecycle scripts.
 
-```yaml
-name: my_project
-publish_to: none
-environment:
-  sdk: ^3.9.0
-workspace:
-  - packages/helper
-  - packages/client_package
-  - packages/server_package
-```
+    Bootstrap your project by running the following command:
 
-<Info>
-Starting from Dart v3.11.0, the workspace definition will support globs.
-</Info>
+    ```bash
+    melos bootstrap
+    ```
 
-Where `packages/helper`, `packages/client_package` and `packages/server_package`
-are the paths to the packages in your workspace.
-
-The corresponding `pubspec.lock` file should also be committed. Make sure to
-exclude it from the `.gitignore` file.
-
-Add Melos as a development dependency by running the following command:
-
-```bash
-dart pub add melos --dev
-```
-
-### Configure your packages
-
-Next, in all your packages `pubspec.yaml` files, add the
-`resolution: workspace` field:
-
-```yaml
-name: my_package
-resolution: workspace
-
-...
-```
-
-## Bootstrapping
-
-Once installed & setup, Melos needs to be bootstrapped. Bootstrapping has
-three primary functions:
-
-1. Installing all package dependencies (internally using `pub get`).
-2. Syncing shared dependencies between packages.
-3. Running any bootstrap lifecycle scripts.
-
-Bootstrap your project by running the following command:
-
-```bash
-melos bootstrap
-```
-
-If you wonder why bootstrapping is needed you can read more about it in the
-[Bootstrap section](/commands/bootstrap).
+    For more information about bootstrapping, see the
+    [Bootstrap section](/reference/commands/bootstrap).
+  </Step>
+</Steps>
 
 ## Single package projects (non-monorepo)
 
-Melos can also be used for projects with a single application or package to
-leverage its features like versioning, publishing, and changelog generation.
-This is useful when you want to use Melos tools but don't have a monorepo
-structure.
-
-For single package setup, just add `useRootAsPackage: true` to your
-`pubspec.yaml`:
-
-```yaml
-name: my_single_package
-environment:
-  sdk: ^3.9.0
-
-dev_dependencies:
-  melos: ^8.0.0
-
-melos:
-  useRootAsPackage: true
-```
-
-Applications are usually private (`publish_to: none`) and private packages are
-skipped by `melos version` by default. To version an application you also need
-to pass `--all` to `melos version`, or set
-[`versionPrivatePackages: true`](/configuration/overview#versionprivatepackages):
-
-```yaml
-name: my_application
-publish_to: none
-environment:
-  sdk: ^3.9.0
-
-dev_dependencies:
-  melos: ^8.0.0
-
-melos:
-  useRootAsPackage: true
-  command:
-    version:
-      versionPrivatePackages: true
-```
-
-The build number of the version of an application is retained and incremented
-when it is versioned, so `1.2.3+45` becomes `1.3.0+46`, see
-[Build numbers](/guides/automated-releases#build-numbers).
+A repository with one application or package uses a different `pubspec.yaml` file. For more information about single package projects, see [Single package projects](/getting-started/single-package).
 
 ## Next steps
 
-Once successfully bootstrapped, you can develop your packages side-by-side with
-changes to a single package immediately reflecting across other dependent
-packages.
+After you bootstrap the workspace, you can change a package and
+use that change in the packages that depend on it.
 
 Melos also provides other helpful features such as running scripts across all
-packages. For example, to run dart analyzer in each package, add a new `script`
-item in your root `pubspec.yaml`:
+packages. For example, to run the Dart analyzer in each package, add a new `script`
+item in your root `pubspec.yaml` file:
 
 ```yaml
 name: my_workspace
 
-...
+# ...
 
 melos:
   scripts:
@@ -201,12 +143,11 @@ melos:
       run: melos exec -c 1 --depends-on build_runner -- dart run build_runner build
 ```
 
-Then execute the command by running `melos generate`.
+Then run that script with `melos generate`.
 
-If you're looking for some inspiration as to what scripts can help with, check
-out the
+For more information about scripts, see the
 [FlutterFire repository](https://github.com/firebase/flutterfire/blob/main/pubspec.yaml)
 or the [Flame repository](https://github.com/flame-engine/flame/blob/main/pubspec.yaml).
 
-If you are using VS Code, there is an [extension](/ide-support#vs-code)
+If you are using Visual Studio Code (VS Code), there is a [VS Code extension](/ide-support#vs-code)
 available, to integrate Melos with VS Code.
