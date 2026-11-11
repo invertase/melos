@@ -1,0 +1,26 @@
+---
+title: Melos skills
+description: Install the skills a coding agent uses to configure, script, and version a workspace that already depends on Melos.
+---
+
+Melos skills are instructions for a coding agent. They cover the root `pubspec.yaml` file, scripts, commands, versioning, and upgrading to Melos 8.
+
+1. Install Melos from [Workspace](/getting-started) or [Single package](/getting-started/single-package).
+2. Run `melos bootstrap`.
+3. From the workspace root, install the Melos skills:
+
+```bash
+dart run skills@ get
+```
+
+The command copies five skills into the `.agents/skills/` directory, and into the folder of each agent it detects:
+
+- `melos-workspace-setup` for the root `pubspec.yaml` file, bootstrap, and a single package
+- `melos-commands` for `analyze`, `test`, `exec`, `run`, and filters
+- `melos-scripts` for `melos.scripts`
+- `melos-versioning` for `version`, `publish`, and hot-fix releases
+- `melos-migration` for a repo still on the `melos.yaml` file or the Melos 7 `exec` shape
+
+Dart and Flutter skills are a separate install. They apply inside one package. Run that work across the workspace with `melos test` or `melos analyze`.
+
+The install command copies the skills into your project. Upgrading the `melos` package does not update that copy. After you upgrade Melos, run `dart run skills@ get` again to refresh the skills.
