@@ -1,0 +1,321 @@
+---
+title: Version command
+description: Version packages and write changelogs from Conventional Commits.
+---
+
+<Info>Supports all [Melos filtering](/filters) flags.</Info>
+
+Automatically version and generate changelogs for all packages.
+
+```bash
+melos version
+```
+
+For more information, see [Automated Releases](/guides/automated-releases).
+
+To release from a branch other than the default branch, such as a hot-fix
+branch, see [Releasing from Hot-fix Branches](/guides/hot-fix-releases).
+
+## Fixed versioning mode
+
+By default, each package is versioned independently, based on the commits that
+touched that package. You can instead make every package in the workspace share
+the same version. That setup is also called lockstep versioning, and it is
+similar to the "fixed" release mode of tools like Nx and Lerna. Set the
+[`command/version/mode`](/configuration/overview#mode) configuration to
+`fixed`:
+
+```yaml
+melos:
+  command:
+    version:
+      mode: fixed
+```
+
+In `fixed` mode, `melos version` does the following:
+
+- Determines a single new version for the whole workspace. Melos takes the
+  highest current package version and increments it by the most significant
+  change across all packages. That change is major if any package has a
+  breaking change, minor if any package has a new feature, and patch otherwise.
+- Bumps every package in the workspace to that version, including packages
+  without changes of their own. Their changelog notes that the version was
+  bumped to keep the workspace in lockstep, and packages with changes get
+  their regular changelog entries.
+- Applies a manually specified version (`melos version <package> <version>`)
+  to all packages in the workspace. Relative version changes (`major`,
+  `minor`, `patch`, or `build`) are applied to the highest current version in
+  the workspace, regardless of which package was named.
+- Leaves packages that are already at the new shared version untouched.
+
+### Private packages and filters
+
+Private packages are still skipped unless `--all` is passed, and packages
+excluded with filters (such as `--ignore`) are not bumped. If you want the
+workspace to stay in sync, use filters with care. Because all packages are
+versioned together, `--no-dependent-versions` has no effect in `fixed` mode.
+
+If there are no versionable changes in any package, `melos version` does
+nothing, just like in `independent` mode.
+
+### Workspace git tags
+
+By default each package is still tagged individually, for example
+`PACKAGE_NAME-v1.2.3`. To tag each release with a single plain version tag for
+the whole workspace instead, for example `v1.2.3`, enable
+[`command/version/workspaceTag`](/configuration/overview#workspacetag):
+
+```yaml
+melos:
+  command:
+    version:
+      mode: fixed
+      workspaceTag: true
+```
+
+## Hooks
+
+The `version` command supports the `preCommit` hook in addition to the
+[common hooks](/configuration/scripts#hooks). `preCommit` runs before the
+version commit is created. It lets you make your own changes as part of
+versioning. You need to stage changes that you make yourself.
+
+Configure `preCommit` like this:
+
+```yaml
+melos:
+  command:
+    version:
+      hooks:
+        preCommit: |
+          # Make changes to the version commit here.
+          # You need to stage changes that you make yourself.
+```
+
+## --prerelease (-p)
+
+Versions any packages with changes as a prerelease. Cannot be combined with
+`--graduate`. Defaults to `false`.
+
+```bash
+melos version --prerelease
+melos version -p
+```
+
+## --graduate (-g)
+
+Graduates current prerelease versioned packages to stable versions, for example
+"0.10.0-dev.1" becomes "0.10.0". Cannot be combined with `--prerelease`.
+Defaults to `false`.
+
+```bash
+melos version --graduate
+melos version -g
+```
+
+## --[no-]changelog (-c)
+
+Updates `CHANGELOG.md` files from Conventional Commits. Defaults to
+`true`.
+
+```bash
+melos version --changelog
+melos version -c
+```
+
+Use `--no-changelog` to disable.
+
+## --[no-]git-tag-version (-t)
+
+Creates a git tag. Defaults to `true`.
+
+```bash
+melos version --git-tag-version
+melos version -t
+```
+
+Use `--no-git-tag-version` to disable. The version commit is still created; use
+`--no-git-commit-version` to skip it as well.
+
+## --[no-]git-commit-version (-C)
+
+Commits the changes to the `pubspec.yaml` and changelog files. Defaults to
+`true`.
+
+```bash
+melos version --git-commit-version
+melos version -C
+```
+
+Use `--no-git-commit-version` to disable. Passing it also implies
+`--no-git-tag-version`.
+
+## --[no-]sign-off (-s)
+
+Adds a `Signed-off-by` trailer to the version commit, the same as passing
+`--signoff` to `git commit`. Defaults to `false`.
+
+```bash
+melos version --sign-off
+melos version -s
+```
+
+Use `--no-sign-off` to disable.
+
+The default for this option can be configured in
+[`command/version/signOff`](/configuration/overview#signoff) in your root
+`pubspec.yaml` file.
+
+<Info>
+  Melos runs `git commit` in your repository, so Git itself handles signing the
+  commit with GPG or SSH. Set `git config commit.gpgsign true` (and
+  `tag.gpgSign` for the version tags) to have the commits created by Melos
+  signed.
+</Info>
+
+## --[no-]release-url (-r)
+
+Generates and prints a link to the prefilled release creation page for each
+package after versioning. Defaults to `false`.
+
+```bash
+melos version --release-url
+melos version -r
+```
+
+Use `--no-release-url` to disable.
+
+The default for this option can be configured in
+[`command/version/releaseUrl`](/configuration/overview#releaseurl)
+in your root `pubspec.yaml` file.
+
+## --[no-]group-commits
+
+Groups changelog entries by their conventional commit type. For example, all
+features go under a `Features` header and all fixes under a `Bug Fixes` header,
+instead of a single flat list. Defaults to `false`.
+
+```bash
+melos version --group-commits
+```
+
+Use `--no-group-commits` to disable.
+
+The default for this option can be configured in
+[`command/version/changelogFormat/groupByType`](/configuration/overview#groupbytype)
+in your root `pubspec.yaml` file.
+
+## --[no-]dependent-constraints (-d)
+
+Updates dependency version constraints of packages in this workspace that depend
+on any of the packages this versioning run updates. Defaults to `true`.
+
+```bash
+melos version --no-dependent-constraints
+```
+
+Use `--no-dependent-constraints` to disable.
+
+## --[no-]dependent-versions (-D)
+
+Makes a new patch version and changelog entry in packages that are updated due to
+`--dependent-constraints` changes. Only usable with `--dependent-constraints`
+enabled and Conventional Commits based versioning. Defaults to `true`.
+
+```bash
+melos version --no-dependent-versions
+```
+
+Use `--no-dependent-versions` to disable.
+
+## --[no-]smart-dependents
+
+Bumps dependent package versions and rewrites dependency constraints only when
+declared SemVer constraints do not allow the updated version. When enabled,
+packages whose declared constraints already satisfy the new dependency version
+are skipped. Defaults to `false`.
+
+```bash
+melos version --smart-dependents
+```
+
+The default for this option can be configured in
+[`command/version/smartDependents`](/configuration/overview#smartdependents)
+in your root `pubspec.yaml` file.
+
+## --all (-a)
+
+Versions private packages that are skipped by default.
+
+```bash
+melos version --all
+melos version -a
+```
+
+## --yes
+
+Skips the `Y/n` confirmation prompt, for example on a continuous integration
+server. Skipping also applies to the prompts of `--manual-version`.
+
+```bash
+melos version --yes
+```
+
+## --preid
+
+When run with this option, `melos version` increments prerelease versions
+using the specified prerelease identifier. For example, a `beta` preid with
+`--prerelease` results in a version in the format `1.0.0-1.0.beta.0`. Applies
+only to Conventional Commits based versioning.
+
+```bash
+melos version --prerelease --preid=beta
+```
+
+## --dependent-preid
+
+This option is the same as `--preid`, but only applies to packages that are
+versioned due to a change in a dependency version. When this option is not
+provided but the `--preid` option is, the value of the `--preid` option is used
+instead.
+
+```bash
+melos version --prerelease --dependent-preid=beta
+```
+
+## --message (-m)
+
+Overrides the release's commit message. If the message contains
+`{new_package_versions}`, Melos replaces it with the list of newly versioned
+package names. If `--message` is not provided, the message defaults to:
+
+```text
+chore(release): publish packages
+
+{new_package_versions}
+```
+
+Example:
+
+```bash
+melos version --message="chore(release): publish new versions"
+```
+
+## --manual-version (-V)
+
+Manually specifies a version change for a package. Can be used multiple times.
+Each value must be in the format
+`<package name>:<major|patch|minor|build|exactVersion>`. Cannot be combined with
+`--graduate` or `--prerelease`.
+
+```bash
+melos version --manual-version=PACKAGE_NAME:patch
+melos version --manual-version=PACKAGE_NAME:1.0.0
+melos version -V PACKAGE_NAME:1.0.0
+
+# To manually version multiple packages
+
+melos version --manual-version=PACKAGE_NAME:patch --manual-version=OTHER_PACKAGE:major
+melos version --manual-version=PACKAGE_NAME:1.0.0 --manual-version=OTHER_PACKAGE:1.0.0
+melos version -V PACKAGE_NAME:1.0.0 -V OTHER_PACKAGE:2.0.0
+```

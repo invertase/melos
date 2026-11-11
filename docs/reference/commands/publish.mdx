@@ -1,0 +1,122 @@
+---
+title: Publish command
+description: Send new package versions to pub.dev. A dry run is the default.
+---
+
+<Info>Supports all [Melos filtering](/filters) flags.</Info>
+
+Publish any unpublished packages or package versions in your repository to
+pub.dev. `dry-run` is enabled by default.
+
+```bash
+melos publish
+```
+
+## --[no-]dry-run (-n)
+
+Flags whether to publish the packages as a dry run (validate but do not
+publish). Defaults to `true`.
+
+```bash
+# Publish packages with dry run
+
+melos publish --dry-run
+
+# Publish packages without dry run
+
+melos publish --no-dry-run
+```
+
+Use `--no-dry-run` to disable.
+
+## --server
+
+The URL of the package server to publish to. When set, Melos forwards
+`--server <url>` to `dart pub publish`, overriding the per-package
+`publish_to` field in the `pubspec.yaml` file.
+
+```bash
+melos publish --no-dry-run --server https://pub.flutter-io.cn
+```
+
+You can also set the server URL workspace-wide in the root `pubspec.yaml`
+file via the `pubServer` option under `command/publish`. Then you don't
+have to pass `--server` on every invocation:
+
+```yaml
+# root pubspec.yaml
+
+melos:
+  command:
+    publish:
+      pubServer: https://pub.flutter-io.cn
+```
+
+The CLI flag takes precedence over the `pubServer` config value when both are
+provided.
+
+## --skip-validation
+
+Publishes without validation and resolution. When set, Melos forwards
+`--skip-validation` to `dart pub publish`, so Melos publishes packages even
+if they have validation errors or warnings. Skipping validation is useful for
+private package servers that don't require the same level of validation as
+pub.dev.
+
+```bash
+melos publish --no-dry-run --skip-validation
+```
+
+Melos already forwards `--force` to `dart pub publish` when you use
+`--no-dry-run`, because Melos handles the confirmation prompt.
+
+## --yes (-y)
+
+Skips the `Y/n` confirmation prompt when publishing with `--no-dry-run`, for
+example on a continuous integration server.
+
+```bash
+melos publish --no-dry-run --yes
+```
+
+## --git-tag-version (-t)
+
+Adds any missing git tags for release. Melos creates tags only when
+`--no-dry-run` is also set.
+
+```bash
+melos publish --no-dry-run --git-tag-version
+```
+
+`melos version` creates tags automatically unless you pass
+`--no-git-tag-version`. You usually do not need `--git-tag-version` on
+`melos publish` unless you version and publish packages by hand.
+
+## Hooks
+
+Melos supports various command [lifecycle hooks](/configuration/scripts#hooks)
+that can be defined in your root `pubspec.yaml` file.
+
+For example, to run a build runner before publish and remove generated files
+afterward, add `pre` and `post` hook scripts to your root `pubspec.yaml`
+file:
+
+```yaml
+# root pubspec.yaml
+# ...
+
+melos:
+  command:
+    publish:
+      hooks:
+        pre: dart pub run build_runner build
+        post: dart pub run build_runner clean
+# ...
+
+```
+
+The `pre` hook runs before `melos publish`. The `post` hook runs after
+`melos publish` finishes. Hooks run one time per publish, even when multiple
+packages are published. They also run during a dry run.
+You can detect a dry run by checking the `MELOS_PUBLISH_DRY_RUN`
+environment variable.

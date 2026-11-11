@@ -1,0 +1,157 @@
+---
+title: Bootstrap command
+description: Link local packages and install dependencies in the workspace.
+---
+
+<Info>Supports all [Melos filtering](/filters) flags.</Info>
+
+This command initializes the workspace and installs remaining package
+dependencies.
+
+```bash
+melos bootstrap
+# or
+
+melos bs
+```
+
+Bootstrapping has three primary functions:
+
+1. Installing all package dependencies (internally using `pub get`).
+2. Syncing shared dependencies between packages.
+3. Running any bootstrap lifecycle scripts.
+
+## Why is bootstrapping required?
+
+After Dart 3.6.0 introduced [Pub workspaces](https://dart.dev/tools/pub/workspaces),
+`melos bootstrap` is no longer strictly required, because Pub already links
+workspace packages. Running `melos bootstrap` is still useful when you want
+shared dependencies or custom setup scripts on the bootstrap hooks.
+
+### Benefits
+
+Why use a Melos monorepo?
+
+- All local packages can link to local directories rather than remote ones,
+  without modifying the `pubspec.yaml` file.
+  - **Example:** Package `A` depends on package `B`, and both exist in the
+    monorepo. If you run `pub get` inside package `A`, `pub` retrieves package
+    `B` from pub.dev because it does not treat `B` as local. With Melos and Pub
+    workspaces, package `B` resolves to a relative path in the repository.
+  - Path dependency overrides in package `A` can point at package `B`, but you
+    would add and remove them by hand for every publish or commit. That does not
+    scale. [FlutterFire](https://github.com/FirebaseExtended/flutterfire) has
+    over 40 packages with nested local links (run `melos list --graph` to see
+    its graph). Cycles make this worse: package `C` depends on `B`, and `C`
+    also depends on `A`.
+- Interlinking surfaces Dart analyzer issues early.
+  - **Example:** Package `A` relies on package `B` in the same monorepo. Package
+    `B` gets a minor API change. After `pub get` on package `A`, the Dart
+    analyzer and IDEs report no issues because `pub get` installed `B` from
+    pub.dev (not the unpublished local copy). With Melos, packages use local
+    versions, so the analyzer and IDEs flag the break and any non-breaking
+    deprecations.
+- Interlinking lets you work on new, unpublished, or private packages without
+  dependency overrides.
+
+## Combine with filters
+
+Bootstrap supports all package filtering options. To bootstrap only a subset of
+your packages:
+
+```bash
+# Only bootstrap packages that have
+# changed since the main branch.
+
+melos bootstrap --diff="main"
+```
+
+## Bootstrap flags
+
+- `--no-example` excludes Flutter package example dependencies
+  (see [dart-lang/pub#3856](https://github.com/dart-lang/pub/pull/3856)).
+  - Runs `pub get` with the `--no-example` flag.
+- `--enforce-lockfile` enforces versions from `.lock` files.
+  - Check `.lock` files into the repository, or the command may fail.
+- `--no-enforce-lockfile` ignores versions from `.lock` files when
+  `enforce-lockfile` is set in the root `pubspec.yaml` file.
+- `--offline` resolves dependencies from the local cache only by running
+  `pub get` with the `--offline` flag.
+- `--no-pub` skips `pub get`. Bootstrap still applies shared dependencies,
+  dependency overrides, and IDE files. Use this when you want to update the
+  workspace `pubspec.yaml` files without resolving dependencies yet.
+
+In addition to these flags, `melos bootstrap` supports configurations in your
+root `pubspec.yaml` file.
+
+### Shared dependencies
+
+To share dependency versions across packages in your Melos project, add those
+dependencies to the bootstrap config in your root `pubspec.yaml` file.
+
+Bootstrap keeps a root `environment`, `dependencies`, or `dev_dependencies`
+entry in sync when that entry also exists in a package. It updates that package
+entry to match the bootstrap config each time you run `melos bootstrap`.
+
+For example, a root bootstrap config can look like this:
+
+```yaml
+# root pubspec.yaml
+# ...
+
+melos:
+  command:
+    bootstrap:
+      environment:
+        sdk: ">=3.0.0 <4.0.0"
+        flutter: ">=3.0.0 <4.0.0"
+      dependencies:
+        collection: ^1.18.0
+        integral_isolates: any
+        uni_links2:
+        uni_links_macos:
+          git: https://github.com/example/uni_links_macos.git
+
+      dev_dependencies:
+        build_runner: ^2.3.3
+# ...
+
+```
+
+Because bootstrap overwrites synced versions each run, you may want shared
+entries to stand out in package files. When
+[`markSharedDependencies`](/configuration/overview#markshareddependencies) is
+enabled, Melos marks every shared entry in package `pubspec.yaml` files with a
+comment:
+
+```yaml
+# packages/my_package/pubspec.yaml
+
+dependencies:
+  collection: ^1.18.0 # Managed by Melos, change it in the bootstrap config of the root pubspec.yaml
+  path: ^1.9.0
+```
+
+## Add a post-bootstrap lifecycle script
+
+Melos supports command [lifecycle hooks](/configuration/scripts#hooks) in your
+root `pubspec.yaml` file.
+
+To run a build runner automatically after `melos bootstrap`, add a `post` hook
+script:
+
+```yaml
+# root pubspec.yaml
+# ...
+
+melos:
+  command:
+    bootstrap:
+      hooks:
+        post: dart pub run build_runner build
+# ...
+
+```
+
+A `post` hook helps meet local project requirements, such as generating files,
+when anyone works on the monorepo, including external contributors.
