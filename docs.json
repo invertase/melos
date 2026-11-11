@@ -8,9 +8,9 @@
   },
   "favicon": "/assets/logo.png",
   "theme": {
-    "primary": "#F09030",
-    "primaryLight": "#F09030",
-    "primaryDark": "#E07820"
+    "primary": "#FBB03B",
+    "primaryLight": "#FBB03B",
+    "primaryDark": "#E09A28"
   },
   "scripts": {
     "googleAnalytics": "G-Q7ME6WLFEJ"
