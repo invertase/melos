@@ -1,0 +1,10 @@
+---
+title: Migrating to v4
+description: "The `--no-git-tag-version` flag no longer skips the version commit when moving to Melos 4."
+---
+
+### `--no-git-tag-version` behavior change
+
+If you used `--no-git-tag-version` and relied on it not creating a commit, also
+pass `--no-git-commit-version` so versioning does not create a commit
+automatically.

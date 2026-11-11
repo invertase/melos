@@ -1,0 +1,103 @@
+---
+title: Migrating to v7
+description: Move a Melos 6 workspace onto pub workspaces and the root pubspec.yaml.
+---
+
+[Pub workspaces](https://dart.dev/tools/pub/workspaces) are available, and Melos
+uses them instead of creating `pubspec_overrides.yaml` files. A migration is
+required.
+
+### Main differences
+
+- No longer a `melos.yaml` file, only the root `pubspec.yaml` file
+- `resolution: workspace` in all of your packages' `pubspec.yaml` files
+- A list of all your packages in the root `pubspec.yaml` file
+
+After the migration, your root `pubspec.yaml` file looks like the following
+example:
+```yaml
+name: my_workspace
+publish_to: none
+environment:
+  sdk: ^3.9.0
+workspace:
+  - packages/helper
+  - packages/client_package
+  - packages/server_package
+dev_dependencies:
+  melos: ^7.0.0
+
+melos:
+  # All of the content of your previous melos.yaml file
+  # (Except for the packages and name)
+```
+
+
+A package `pubspec.yaml` file looks like the following example:
+```yaml
+name: my_package
+environment:
+  sdk: ^3.9.0
+resolution: workspace
+```
+
+You have to use Dart SDK 3.9.0 or newer to use pub workspaces.
+If you use an older Dart SDK, you can still use Melos with pub workspaces on
+the `7.0.0-dev.x` versions.
+
+### `melos analyze` was removed in 7.x.x
+
+Because `flutter/dart analyze` runs in the full pub workspace, the
+`melos analyze` command was removed in Melos 7.0.0.
+
+The command was restored in Melos 8.1.0. It analyzes all the packages in a
+single run and supports all the package filtering options. For more
+information, see the [analyze command](/reference).
+
+### Root packages
+
+In Melos 6.x, you could include the repository root (`.`) as a package in the
+workspace by listing it in the `packages` configuration. In Melos 7.x with
+pub workspaces, this behavior is not supported by default.
+
+If your project uses the repository root as a package, you have two options:
+
+#### Option 1: Enable `useRootAsPackage`
+
+Recommended for existing projects.
+
+Add the `useRootAsPackage` option to maintain existing behavior:
+
+```yaml
+# pubspec.yaml
+
+name: my_workspace
+publish_to: none
+environment:
+  sdk: ^3.9.0
+workspace:
+  - packages/helper
+  - packages/client_package
+
+melos:
+  useRootAsPackage: true
+  categories:
+    app:
+      - "."
+    packages:
+      - "packages/**"
+```
+
+The `useRootAsPackage` option allows the root package to participate in
+workspace operations such as scripts, filtering, and categorization.
+
+#### Option 2: Restructure (recommended for new projects)
+
+Move your root application into a subdirectory:
+
+1. Create an `apps/` or `app/` directory.
+2. Move your main application code there.
+3. Update your workspace configuration accordingly.
+
+This approach provides better separation between workspace configuration and
+application code.
