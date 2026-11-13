@@ -171,8 +171,8 @@ class ConventionalCommit {
   /// the scopes in the commit message.
   final bool isBreakingChange;
 
-  /// The description of the breaking change, e.g. the text after BREAKING
-  /// CHANGE: <description>.
+  /// The description of the breaking change, e.g. the text after
+  /// `BREAKING CHANGE: <description>`.
   ///
   /// Will be null if [isBreakingChange] is false. Defaults to [description] if
   /// the `BREAKING CHANGE:` footer format was not used, e.g. only `!` after the
@@ -194,7 +194,7 @@ class ConventionalCommit {
   /// Note this can contain multiple paragraphs separated by new lines.
   final String? body;
 
-  /// Footers other than BREAKING CHANGE: <description> may be provided and
+  /// Footers other than `BREAKING CHANGE: <description>` may be provided and
   /// follow a convention similar to git trailer format.
   ///
   /// A footer’s token MUST use "-" in place of whitespace characters, e.g.,
