@@ -1,28 +1,26 @@
 ---
-title: Run Command
-description: Learn more about the `run` command in Melos.
+title: Run command
+description: Run a named script from the root pubspec.yaml.
 ---
-
-# Run Command
 
 Run a [script](/configuration/scripts) by name defined in the workspace
 root `pubspec.yaml` config file.
 
 ```bash
-melos run <name>
+melos run SCRIPT_NAME
 ```
 
-A script can also be run directly as `melos <name>`, without `run`:
+You can also run a script directly as `melos SCRIPT_NAME`, without `run`:
 
 ```bash
-melos <name>
+melos SCRIPT_NAME
 ```
 
 <Info>Supports all [Melos filtering](/filters) flags.</Info>
 
-Package filter options can be passed to override or further restrict the filters
-defined in the script configuration. For example, to run a script only on
-packages matching a specific scope:
+Pass package filter options to override or further restrict the filters
+defined in the script configuration. For example, this command runs a script
+only on packages that match a specific scope:
 
 ```bash
 melos run test --scope="my_package*"
@@ -31,11 +29,10 @@ melos run test --scope="my_package*"
 ## --no-select
 
 Skips the prompt to select a package (if defined in the script configuration).
-Filters defined in the script's "packageFilters" options will however still be
-applied.
+Melos still applies filters defined in the script's `packageFilters` options.
 
 ```bash
-melos run <name> --no-select
+melos run SCRIPT_NAME --no-select
 ```
 
 To skip the prompt for every run, set
@@ -48,18 +45,17 @@ Runs scripts that specify [`exec/sources`](/configuration/scripts#sources) in
 every package, even in the packages in which the sources did not change.
 
 ```bash
-melos run <name> --run-unchanged
+melos run SCRIPT_NAME --run-unchanged
 ```
 
 ## --ignore-sources
 
-Ignores the [`exec/sources`](/configuration/scripts#sources) of scripts, so that
-they run in every package without calculating or storing checksums. See
-[`melos exec --ignore-sources`](/commands/exec#--ignore-sources) for more
-details.
+Ignores the `exec/sources` of scripts, so that they run in every package
+without calculating or storing checksums. For more information, see
+[`melos exec --ignore-sources`](/reference/commands/exec#--ignore-sources).
 
 ```bash
-melos run <name> --ignore-sources
+melos run SCRIPT_NAME --ignore-sources
 ```
 
 ## --list
@@ -78,8 +74,8 @@ melos run --list --json
 
 ### --include-private
 
-Using `--include-private` ignores the private configuration on scripts.
-The private scripts are shown in prompts, listings and they can be executed directly.
+Using `--include-private` ignores the `private` configuration on scripts.
+Private scripts appear in prompts and listings, and you can run them directly.
 
 ```bash
 melos run --list --include-private
@@ -90,5 +86,5 @@ melos run --list --include-private
 Filters scripts to include only those that belong to the specified group.
 
 ```bash
-melos run --group <group>
+melos run --group GROUP
 ```

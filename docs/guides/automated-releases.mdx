@@ -1,67 +1,63 @@
 ---
-title: Automated Releases
-description:
-  Automate your workflow by versioning and publishing packages with Melos and
-  Conventional Commits.
+title: Automated releases
+description: Version packages and publish them to pub.dev from Conventional Commits.
 ---
 
-# Automated Releases
+Melos can automate versioning and publishing of your packages.
 
-Melos is able to automate **versioning** and **publishing** of your packages.
+Automation covers the following:
 
-This includes:
-
-- incrementing of versions based on commit messages.
-- updating version constraints of dependents.
-- generating of changelogs.
-- running versioning hook scripts.
-- update package version tags in git dependencies.
-- publishing of packages to [pub.dev](https://pub.dev).
+- Incrementing versions based on commit messages.
+- Updating version constraints of dependents.
+- Generating changelogs.
+- Running versioning hook scripts.
+- Updating package version tags in git dependencies.
+- Publishing packages to [pub.dev](https://pub.dev).
 
 ## Versioning
 
-Packages can be versioned automatically based on their commit history. For this
-to work, Melos needs to be able to parse commit messages and detect exactly what
-sort of version upgrade is required. Melos understands
+Melos can version packages automatically based on their commit history. For
+automatic versioning to work, Melos needs to parse commit messages and detect
+exactly what sort of version upgrade is required. Melos understands
 [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), a widely
-used specification for commit messages which are readable by humans and
+used specification for commit messages that are readable by humans and
 machines.
 
-Alternatively, packages can be versioned manually by specifying a version
-increase (`major`, `minor`, `patch` or `build`) or an exact version.
+Alternatively, you can version packages manually by specifying a version
+increase (`major`, `minor`, `patch`, or `build`) or an exact version.
 
-For customizing the versioning process, see the
+For more information about customizing the versioning process, see the
 [configuration options](/configuration/overview#commandversion) for the
 `version` command.
 
-By default, each package is versioned independently. If you want all packages
+By default, Melos versions each package independently. If you want all packages
 in the workspace to always share the same version, enable the
-[fixed versioning mode](/commands/version#fixed-versioning-mode).
+[fixed versioning mode](/reference/commands/version#fixed-versioning-mode).
 
-### Automatic Versioning
+### Automatic versioning
 
 To determine which packages to version and how, Melos performs the following
 steps:
 
 1. Apply [filters](/filters) to the list of workspace packages.
 2. Load the commit history for each package. If the `--diff` option is
-   specified, Melos will only load the specified commit. Otherwise it will load
-   all commits since the last version tag (e.g. `foo-v1.0.0`, or `v1.0.0` for
-   the root package when `useRootAsPackage` is enabled and for all packages
-   when `workspaceTag` is enabled in fixed versioning mode).
+   specified, Melos loads only the specified commit. Otherwise, Melos loads
+   all commits after the last version tag. Examples include `package_name-v1.0.0`,
+   or `v1.0.0` for the root package when `useRootAsPackage` is enabled, and for
+   all packages when `workspaceTag` is enabled in fixed versioning mode.
 3. Parse commit messages as Conventional Commits. If a commit message does not
-   follow the Conventional Commits specification, it will be ignored.
+   follow the Conventional Commits specification, Melos ignores it.
 4. Filter out commits with types that don't trigger a version bump. For example,
-   `chore` commits will be ignored.
-5. If at this point no commits remain, the package will not be versioned.
+   Melos ignores `chore` commits.
+5. If at this point no commits remain, Melos does not version the package.
 6. Determine the version upgrade required for each package based on the commit
    with the most significant version bump. For example, if a package has a
-   `feat` commit and a `fix` commit, the package will be versioned with a
+   `feat` commit and a `fix` commit, Melos versions the package with a
    `minor` upgrade.
 
 #### Conventional Commits
 
-Currently the following commit types trigger a version bump:
+The following commit types trigger a version bump:
 
 - `feat` - A new feature.
 - `fix` - A bug fix.
@@ -73,152 +69,150 @@ Currently the following commit types trigger a version bump:
 `docs` commits (documentation changes) do not trigger a version bump on their
 own, but they are listed in the changelog when the package is versioned.
 
-The first matching rule in the list below determines the version bump for a
+The first matching rule in the following list determines the version bump for a
 commit:
 
-1. A breaking change will trigger a **major** version bump.
-2. A feature will trigger a **minor** version bump.
-3. All other changes will trigger a **patch** version bump.
+1. A breaking change triggers a `major` version bump.
+2. A feature triggers a `minor` version bump.
+3. All other changes trigger a `patch` version bump.
 
 Melos supports prefixes (like `Merge ...` and `Merged ...` for example) before
-the conventional commit type. This is useful since some collaborative version
-control systems use these non-configurable prefixes when they merge pull
+the conventional commit type. Prefix support helps when collaborative version
+control systems add these non-configurable prefixes as they merge pull
 requests.
 
 #### Versions below 1.0.0
 
-Semantic versioning doesn't promise any compatibility between versions prior to
-`1.0.0`, but the Dart community convention is to treat those versions
-semantically as well, with the interpretation of each number shifted down one
-slot:
+Semantic versioning does not promise compatibility before `1.0.0`. The Dart
+community still treats those versions semantically, with each number shifted
+down one slot:
 
-- a **major** (breaking) bump increments the minor: `0.1.2` → `0.2.0`.
-- a **minor** (feature) bump increments the patch: `0.1.2` → `0.1.3`.
-- a **patch** bump also increments the patch: `0.1.2` → `0.1.3`.
+- A `major` (breaking) bump increments the minor: `0.1.2` → `0.2.0`.
+- A `minor` (feature) bump increments the patch: `0.1.2` → `0.1.3`.
+- A `patch` bump also increments the patch: `0.1.2` → `0.1.3`.
 
 #### Build numbers
 
-A version may carry a build number, the `+N` suffix (e.g. `3.0.0+11`). When a
-package's current version has an integer build number, Melos retains it and
-increments it by one on every version bump, regardless of the bump type:
+A version may carry a build number, the `+N` suffix (for example `3.0.0+11`). When
+a package's current version has an integer build number, Melos retains it. Melos
+increments that build number by one on every version bump, regardless of bump
+type:
 
-- `3.0.0+11` with a major bump → `4.0.0+12`
-- `3.0.0+11` with a patch bump → `3.0.1+12`
+- `3.0.0+11` with a `major` bump → `4.0.0+12`
+- `3.0.0+11` with a `patch` bump → `3.0.1+12`
 
-If the current version has no build number, none is added (e.g. `3.0.0` →
+If the current version has no build number, none is added (for example `3.0.0` →
 `3.0.1`). Build metadata that is not a single integer (such as a prerelease-style
 tag, a git hash, or a dot-separated build) is not retained:
 
-- `3.0.0+abc` with a major bump → `4.0.0`
+- `3.0.0+abc` with a `major` bump → `4.0.0`
 
 #### Not using Conventional Commits?
 
-If an existing Git project is already established and does not use Conventional
-Commits, it is still possible to adopt the convention and use Melos for future
-releases.
+You can still adopt Conventional Commits in an existing Git project and use
+Melos for later releases.
 
-Just start writing commit messages that follow Conventional Commits. When you
-are ready to release a package for the first time with Melos use [manual
-versioning](/guides/automated-releases#manual-versioning). This will ensure that the version increment is
-appropriate for all commits, including those that Melos cannot interpret.
+Start writing commit messages that follow Conventional Commits. When you are
+ready to release a package for the first time with Melos, use [manual
+versioning](/guides/automated-releases#manual-versioning). Manual versioning
+sets a version increment appropriate for all commits, including commits Melos
+cannot interpret.
 
-Once you have manullay versioning every packages at least once, you can safely
-use automatic versioning.
+After you manually version every package at least once, you can use automatic
+versioning.
 
-### Manual Versioning
+### Manual versioning
 
 Manual versioning allows you to specify a version increment (`major`, `minor`,
-`patch` or `build`) or an exact version for one or more packages.
+`patch`, or `build`) or an exact version for one or more packages.
 
 If you only want to manually version a single package, you can use the following
 syntax:
 
 ```sh
-melos version <package-name> <version-change>
+melos version PACKAGE_NAME VERSION_CHANGE
 ```
 
-To manually version multiple packages use the `--manual-version` (short `-V`)
+To manually version multiple packages, use the `--manual-version` (short `-V`)
 option:
 
 ```sh
-melos version --manual-version <package-1-name>:<version-change> --manual-version <package-2-name>:<version-change>
+melos version --manual-version PACKAGE_1_NAME:VERSION_CHANGE --manual-version PACKAGE_2_NAME:VERSION_CHANGE
 # Same but with short version
-melos version -V <package-1-name>:<version-change> -V <package-2-name>:<version-change>
+
+melos version -V PACKAGE_1_NAME:VERSION_CHANGE -V PACKAGE_2_NAME:VERSION_CHANGE
 ```
 
-Note that when using the `--manual-version` option, the automatic versioning
-process is executed normally, except for the packages that are manually
-versioned. It allows to mix automatic and manual versioning. The
-[`--ignore`](/filters#--ignore) filter can be used to exclude all packages from
-automatic versioning, by passing `--ignore '*'`.
+When you use `--manual-version`, Melos still runs automatic versioning for other
+packages. You can mix automatic and manual versioning. Pass `--ignore '*'` to
+exclude all packages from automatic versioning. For more information, see
+[`--ignore`](/filters#--ignore).
 
-### Dependents Versioning
+### Dependents versioning
 
 By default, Melos also updates the constraints in the `pubspec.yaml` files of
-dependents of the packages that were versioned. This can be disabled by passing
-`--no-dependent-constraints`.
+dependents of the packages that were versioned. Pass
+`--no-dependent-constraints` to disable constraint updates.
 
-If such a dependent is not already being versioned, a **patch** version bump
-will be created for it. This can be disabled by passing
-`--no-dependent-versions`.
+If Melos is not already versioning that dependent, it creates a `patch`
+version bump for it. Pass `--no-dependent-versions` to disable dependent version
+bumps.
 
-Note that dependents of versioned packages are not filtered by the specified
-package filters.
+Melos does not apply the specified package filters to dependents of versioned
+packages.
 
-### Committing and Tagging Version Changes
+### Commit and tag version changes
 
 After updating the `pubspec.yaml` files and changelogs of the versioned
-packages, Melos will commit the changes and add a package version tag for each
+packages, Melos commits the changes and adds a package version tag for each
 package.
 
-Package version tags have the format `<package-name>-v<version>`.
+Package version tags have the format `PACKAGE_NAME-vVERSION`.
 
-Creating the tags can be disabled by passing `--no-git-tag-version`; the
-version commit is still created. To skip the commit as well, pass
-`--no-git-commit-version`, which also implies `--no-git-tag-version`.
+Pass `--no-git-tag-version` to skip creating tags; Melos still creates the
+version commit. Pass `--no-git-commit-version` to skip the commit as well (that
+flag also implies `--no-git-tag-version`).
 
 #### Hook
 
 After updating `pubspec.yaml` files and changelogs but before creating the
-version commit, the `command/version/hooks/preCommit` script in root
-`pubspec.yaml` is executed. This allows you to run custom code before the
-version commit is created.
+version commit, Melos runs the `command/version/hooks/preCommit` script in the
+root `pubspec.yaml` file. Use the hook to run custom code before Melos creates
+the version commit.
 
-Note that you have to stage changes that you make in the hook and want to have
-included in the version commit yourself.
+Stage any hook changes yourself if you want them in the version commit.
 
 ### Changelog
 
 Melos updates the changelog for each package that is versioned by prepending a
-section for the new version. You can disable this behavior by passing
-`--no-changelog`.
+section for the new version. Pass `--no-changelog` to skip changelog updates.
 
-See the [configuration options](/configuration/overview#commandversion) for the
-`version` command for customizing changelog generation.
+For more information about customizing changelog generation, see the
+configuration options for the `version` command.
 
 Melos can also write a
-[workspace changelog](/configuration/overview#workspacechangelog). This is
-enabled by default.
+[workspace changelog](/configuration/overview#workspacechangelog). Melos enables
+the workspace changelog by default.
 
 ## Publishing
 
-To publish packages on [pub.dev](https://pub.dev) you must:
+Before you publish packages on [pub.dev](https://pub.dev), confirm the following:
 
-1. Have permission to publish all the packages.
-2. Be on a machine which is authenticated with Pub.
+1. Confirm you have permission to publish all the packages.
+2. Authenticate the machine with Pub.
 
 <Info>Internally, Melos uses `pub publish` to publish the packages.</Info>
 
-Once you have [versioned](/guides/automated-releases#versioning) your packages,
-run the publish command to check everything is good to go:
+After you finish [versioning](/guides/automated-releases#versioning) your packages,
+run `melos publish` to preview pending publishes:
 
 ```sh
 melos publish
 ```
 
-By default, a dry-run is performed (nothing will be published).
+By default, Melos performs a dry-run and does not publish anything.
 
-Once satisfied with your pending releases, release them to
+When you are satisfied with your pending releases, publish them to
 [pub.dev](https://pub.dev):
 
 ```sh
@@ -229,14 +223,16 @@ melos publish --no-dry-run
 
 Melos can generate a link to the prefilled release creation page.
 
-To enable this once use one of the following arguments to `melos version`:
+To enable release URLs for a single run, pass one of these arguments to
+`melos version`:
 
 ```sh
 melos version --release-url
 melos version -r
 ```
 
-To enable this feature permanently, add the following to your root `pubspec.yaml`:
+To enable release URLs permanently, add the following to your root
+`pubspec.yaml` file:
 
 ```yaml
 melos:
@@ -245,16 +241,15 @@ melos:
       releaseUrl: true
 ```
 
-## Git Hosted Packages
+## Git hosted packages
 
-If your packages are private and you don't publish them to
-[pub.dev](https://pub.dev), you can use package version tags as git reference in
-your `pubspec.yaml` files and Melos will ensure that the tags are updated
-accordingly.
+If your packages are private and you do not publish them to
+[pub.dev](https://pub.dev), use package version tags as git references in your
+`pubspec.yaml` files. Melos updates those tags accordingly.
 
-To use this feature enable
+To use this feature, enable
 [`command/version/updateGitTagRefs`](/configuration/overview#updategittagrefs)
-in your root `pubspec.yaml`
+in your root `pubspec.yaml` file.
 
 Take the following git dependency:
 
@@ -262,19 +257,19 @@ Take the following git dependency:
 dependencies:
   internal_dep:
     git:
-      url: git@github.com:org/repo.git
+      url: git@example.com:org/repo.git
       path: packages/internal_dep
       ref: internal_dep-v0.0.1
 ```
 
-When creating a patch release for `internal_dep` through `melos version` the
-`ref` would be updated to the new version:
+When you create a patch release for `internal_dep` with `melos version`, Melos
+updates the `ref` to the new version:
 
 ```yaml
 dependencies:
   internal_dep:
     git:
-      url: git@github.com:org/repo.git
+      url: git@example.com:org/repo.git
       path: packages/internal_dep
       ref: internal_dep-v0.0.2
 ```

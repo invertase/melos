@@ -146,6 +146,7 @@ including the sources of its workspace dependencies, changed. Combine it with
 ## References
 
 - Filters: https://melos.invertase.dev/~melos-latest/filters
-- Commands: https://melos.invertase.dev/~melos-latest/commands/bootstrap and
-  the sibling pages for `exec`, `run`, `analyze`, `format`, `test`, `list`,
-  `changed`, `clean` and `init`
+- Commands: https://melos.invertase.dev/~melos-latest/reference/commands/bootstrap and
+  the sibling pages for `exec`, `run`, `format`, `test`, `list`, `changed`,
+  `clean` and `init`. Analyze lives at
+  https://melos.invertase.dev/~melos-latest/reference

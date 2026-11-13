@@ -1,0 +1,79 @@
+---
+title: List command
+description: Print local packages as text, JSON, or a dependency graph.
+---
+
+<Info>Supports all [Melos filtering](/filters) flags.</Info>
+
+List information about the local packages.
+
+```bash
+melos list
+# or
+
+melos ls
+```
+
+## --long (-l)
+
+Shows verbose information. Defaults to `false`.
+
+```bash
+melos list --long
+melos list -l
+```
+
+## --relative (-r)
+
+When printing output, uses package paths relative to the root of the workspace.
+Defaults to `false` (or full paths).
+
+```bash
+melos list --relative
+melos list -r
+```
+
+## --parsable (-p)
+
+Shows parsable output instead of a column view. Defaults to `false`.
+
+```bash
+melos list --parsable
+melos list -p
+```
+
+## --json
+
+Shows information as a JSON array. Defaults to `false`.
+
+```bash
+melos list --json
+```
+
+## --graph
+
+Shows dependency graph as a JSON-formatted adjacency list. Defaults to `false`.
+
+## --gviz
+
+Shows dependency graph in Graphviz DOT language. Defaults to `false`.
+
+```bash
+melos list --gviz
+```
+
+## --mermaid
+
+Shows dependency graph in Mermaid diagram. Defaults to `false`.
+
+```bash
+melos list --mermaid
+```
+
+## --cycles
+
+Finds cycles in package dependencies in the workspace.
+
+```bash
+melos list --cycles
+```

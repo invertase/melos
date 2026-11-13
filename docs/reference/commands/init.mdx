@@ -1,0 +1,103 @@
+---
+title: Init command
+description: Create a new Melos workspace in the current repository.
+---
+
+The `init` command initializes a new Melos workspace.
+It creates the necessary configuration files and
+directory structure for your monorepo.
+
+## Basic usage
+
+Create a Melos workspace in the current repository:
+
+```bash
+melos init [WORKSPACE_NAME]
+```
+
+If you omit a workspace name, Melos prompts you for one.
+By default, it uses the current directory name.
+
+## Options
+
+### --directory (-d)
+Specifies the directory where the workspace is created.
+If you omit it, Melos prompts you for one.
+Defaults to the workspace name, or current directory (`.`)
+if the workspace name matches the current directory name.
+
+Create a workspace in a custom directory:
+
+```bash
+melos init my_workspace --directory custom_dir
+```
+
+### --packages (-p)
+Defines additional glob patterns for package directories
+to include in the workspace, on top of `packages/**` and, if enabled,
+`apps/**`. Accepts comma-separated values and can be specified multiple times.
+Packages that already exist and match one of the patterns are added to the
+`workspace` list of the created `pubspec.yaml` file.
+
+Include extra package globs when you initialize:
+
+```bash
+melos init --packages "modules/*" --packages "libs/*"
+```
+
+## Interactive setup
+
+When you run `melos init`, Melos guides you through this interactive setup:
+
+1. Prompt for a workspace name (defaults to the current directory name if omitted).
+2. Ask for a directory location (defaults to the workspace name, or `.` if that matches the current directory).
+3. Ask whether to include an `apps` directory (defaults to true).
+
+## Created files
+
+The command creates the following structure:
+
+```text
+DIRECTORY/
+├── pubspec.yaml  # Root package and Melos workspace configuration
+├── packages/     # Packages directory (always created)
+└── apps/         # Apps directory (created if confirmed during setup)
+```
+
+No `melos.yaml` file is created. Melos is configured in the `melos` section of
+the root `pubspec.yaml` file. For more information, see the
+[configuration overview](/configuration/overview).
+
+### pubspec.yaml
+The root `pubspec.yaml` file includes the following:
+- Project name (same as workspace name)
+- Dart SDK constraints (based on current Dart version)
+- Melos as a dev dependency
+- A `workspace` list of existing package paths under `packages/`, `apps/` (if enabled), and the `--packages` patterns
+- An empty `melos` section
+
+The `workspace` list is omitted when no packages exist yet. After you create
+packages, add them to the `workspace` list.
+
+## Example
+
+Initialize a workspace with a custom directory and package globs:
+
+```bash
+# Basic initialization
+
+melos init my_workspace
+
+# Custom initialization with options
+
+melos init my_workspace \
+  --directory custom_dir \
+  --packages "modules/*"
+```
+
+After initialization, bootstrap your workspace:
+
+```bash
+cd DIRECTORY
+melos bootstrap
+```

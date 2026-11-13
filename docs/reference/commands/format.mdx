@@ -1,43 +1,36 @@
 ---
-title: Format Command
-description: Learn more about the `format` command in Melos.
+title: Format command
+description: Format Dart code in the workspace with `dart format`.
 ---
-
-# Format Command
 
 <Info>Supports all [Melos filtering](/filters) flags.</Info>
 
-The format command is used to format the code in your Melos workspace according
-to Dart's formatting standards.
+Format the code in your Melos workspace according to Dart formatting standards.
 
 ```bash
 melos format
 ```
 
-<Info>
-To learn more, visit the [Dart format](https://dart.dev/tools/dart-format) 
-documentation.
-</Info>
-
+For more information, see [Dart format](https://dart.dev/tools/dart-format).
 
 ## --set-exit-if-changed
-Return exit code 1 if there are any formatting changes. This flag is
+If there are any formatting changes, returns exit code 1. This flag is
 particularly useful in CI/CD pipelines to automatically detect and reject
-commits that do not adhere to the formatting standards, ensuring code quality.
+commits that do not adhere to the formatting standards.
 
 ```bash
 melos format --set-exit-if-changed
 ```
 
 <Info>
-By default, dart format overwrites the Dart files.
+By default, `dart format` overwrites the Dart files.
 </Info>
 
 ## --output
 This option is useful when you want to review formatting changes without
 directly overwriting your files.
 
-It takes one of `json`, `none`, `show` or `write` (the default, which
+It takes one of `json`, `none`, `show`, or `write` (the default, which
 overwrites the files on disk).
 
 Outputs the formatted code to the console.
@@ -45,6 +38,7 @@ Outputs the formatted code to the console.
 ```bash
 melos format --output show
 # or
+
 melos format -o show
 ```
 
@@ -70,10 +64,11 @@ melos format --line-length 100
 ```
 
 ## concurrency (-c)
-Defines the max concurrency value of how many packages will execute the command
-in at any one time. Defaults to `1`.
+Defines the max concurrency value of how many packages execute the command
+at any one time. Defaults to `1`.
 
 ```bash
 # Set a 5 concurrency
+
 melos format -c 5
 ```

@@ -1,0 +1,70 @@
+---
+title: Test command
+description: Run flutter test or dart test for every package that has a test directory.
+---
+
+<Info>Supports all [Melos filtering](/filters) flags.</Info>
+
+This command runs the tests of all the local packages in your workspace that
+have a `test/` directory, in a single run. Melos uses `flutter test` for
+packages that depend on the Flutter SDK and `dart test` for all other packages.
+
+```bash
+melos test
+```
+
+Melos skips packages without a `test/` directory. The command fails if any
+package's tests fail, and it lists the failing packages in the run summary.
+
+`dart test` and `flutter test` exit with the exit code `79` when no tests ran.
+Melos treats this exit code as a success, so that packages without any tests to
+run do not fail the command.
+
+For more information, see [Dart testing](https://dart.dev/tools/testing).
+
+You can configure the defaults for these options in the
+[`command/test`](/configuration/overview#commandtest) section of your root
+`pubspec.yaml` file.
+
+## Concurrency (-c)
+
+Defines how many packages can execute the command at the same time. Defaults to
+`1`.
+
+When the value is higher than `1`, Melos also passes `--concurrency` to
+`dart test` and `flutter test`.
+
+Set concurrency to 5:
+
+```bash
+# Set concurrency to 5
+
+melos test -c 5
+```
+
+## --no-pub
+
+Skips the implicit `pub get` that `flutter test` runs before testing a package,
+by passing `--no-pub` to it. This has no effect on Dart-only packages, since
+`dart test` does not support the flag.
+
+Skip the implicit `pub get` before Flutter tests:
+
+```bash
+melos test --no-pub
+```
+
+## Filtering packages
+
+Since the command supports all Melos filtering flags, you can run the tests of
+a subset of your packages:
+
+```bash
+# Only run the tests of the packages that have changed since the main branch
+
+melos test --diff=origin/main
+
+# Only run the tests of the Flutter packages
+
+melos test --flutter
+```

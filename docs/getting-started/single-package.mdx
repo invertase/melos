@@ -1,0 +1,43 @@
+---
+title: Single package projects
+description: Use versioning, changelogs, publishing, and scripts in a repo with one application or package.
+---
+
+Set `useRootAsPackage: true` in the package `pubspec.yaml` file. No workspace list is required.
+
+```yaml
+name: my_single_package
+environment:
+  sdk: ^3.9.0
+
+dev_dependencies:
+  melos: ^8.0.0
+
+melos:
+  useRootAsPackage: true
+```
+
+Applications are usually private (`publish_to: none`), and `melos version` skips
+private packages by default. To version an application, you also need
+to pass `--all` to `melos version`, or set
+[`versionPrivatePackages: true`](/configuration/overview#versionprivatepackages):
+
+```yaml
+name: my_application
+publish_to: none
+environment:
+  sdk: ^3.9.0
+
+dev_dependencies:
+  melos: ^8.0.0
+
+melos:
+  useRootAsPackage: true
+  command:
+    version:
+      versionPrivatePackages: true
+```
+
+The build number of the version of an application is retained and incremented
+when it is versioned, so `1.2.3+45` becomes `1.3.0+46`, see
+[Build numbers](/guides/automated-releases#build-numbers).

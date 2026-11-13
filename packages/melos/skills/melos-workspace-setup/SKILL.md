@@ -216,6 +216,6 @@ environment:
   https://melos.invertase.dev/~melos-latest/configuration/overview
 - Getting started:
   https://melos.invertase.dev/~melos-latest/getting-started
-- Bootstrap command: https://melos.invertase.dev/~melos-latest/commands/bootstrap
+- Bootstrap command: https://melos.invertase.dev/~melos-latest/reference/commands/bootstrap
 - JSON schema for the `melos` section:
   https://raw.githubusercontent.com/invertase/melos/main/melos.yaml.schema.json

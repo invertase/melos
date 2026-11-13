@@ -282,4 +282,4 @@ command:
 - Scripts: https://melos.invertase.dev/~melos-latest/configuration/scripts
 - Environment variables:
   https://melos.invertase.dev/~melos-latest/environment-variables
-- Run command: https://melos.invertase.dev/~melos-latest/commands/run
+- Run command: https://melos.invertase.dev/~melos-latest/reference/commands/run

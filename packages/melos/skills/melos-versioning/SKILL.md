@@ -199,7 +199,7 @@ never merge the hot-fix branch back.
   https://melos.invertase.dev/~melos-latest/guides/automated-releases
 - Hot-fix releases:
   https://melos.invertase.dev/~melos-latest/guides/hot-fix-releases
-- Version command: https://melos.invertase.dev/~melos-latest/commands/version
-- Publish command: https://melos.invertase.dev/~melos-latest/commands/publish
+- Version command: https://melos.invertase.dev/~melos-latest/reference/commands/version
+- Publish command: https://melos.invertase.dev/~melos-latest/reference/commands/publish
 - Cherry-pick command:
-  https://melos.invertase.dev/~melos-latest/commands/cherry-pick
+  https://melos.invertase.dev/~melos-latest/reference/commands/cherry-pick
