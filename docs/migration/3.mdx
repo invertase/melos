@@ -1,0 +1,126 @@
+---
+title: Migrating to v3
+description: Add Melos as a workspace dependency and switch local linking to pubspec_overrides.yaml.
+---
+
+### Melos versions in workspaces
+
+From Melos 3.0.0, specify the Melos version for a workspace in a `pubspec.yaml`
+file next to the `melos.yaml` file in the workspace root directory.
+
+Different Melos workspaces might use different versions of Melos. Add a `melos`
+dependency to the workspace-root `pubspec.yaml` file so everyone, including CI
+jobs, uses the same Melos version. The globally installed Melos binary switches
+to the version in the `pubspec.yaml` file when the versions differ.
+
+Pin Melos for the workspace:
+
+1. If you don't have a `pubspec.yaml` file at the workspace root yet, create
+   one:
+
+```yaml
+name: my_project_workspace
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+```
+
+2. Commit the corresponding `pubspec.lock` file.
+
+3. Do not list `pubspec.lock` in the `.gitignore` file.
+
+4. Add Melos as a development dependency:
+
+```bash
+dart pub add melos --dev
+```
+
+### Local package linking with `pubspec_overrides.yaml`
+
+The initial mechanism used by Melos to link local packages for development had
+some issues when interacting with other tooling. An often-encountered error is
+"The pubspec.yaml file has changed since the pubspec.lock file was generated"
+([GitHub issue #117](https://github.com/invertase/melos/issues/117)).
+
+To resolve this issue, Melos generates `pubspec_overrides.yaml` files in the
+root of each package that needs dependency overrides. Before Melos 3.0.0, you
+had to opt in by setting `command/bootstrap/usePubspecOverrides` in the
+`melos.yaml` file to `true`.
+
+Melos uses only this mechanism, and the `usePubspecOverrides` configuration
+option has been removed.
+
+Ignore `pubspec_overrides.yaml` files in git. Add the following to your
+`.gitignore` file:
+
+```text
+pubspec_overrides.yaml
+```
+
+### `--since` was removed in favour of `--diff`
+
+The `--since` flag was removed in favour of `--diff`. Use `--diff` to specify a
+single commit or a range of commits.
+
+To migrate from `--since` to `--diff`, replace `--since` with `--diff`.
+
+### Changed option defaults
+
+The following options are enabled by default:
+
+- [`command/version/includeScopes`](/configuration/overview#includescopes)
+- [`command/version/linkToCommits`](/configuration/overview#linktocommits), if
+  [`repository`](/configuration/overview#repository) is configured
+- [`command/version/workspaceChangelog`](/configuration/overview#workspacechangelog)
+
+### Lifecycle hooks
+
+Lifecycle hooks have been moved to the respective command configurations.
+Previously, hooks were defined in `scripts`. The `pre` hook had the same name as
+the command, and the `post` hook had the name of the command with `post`
+appended. Hooks are defined in `command/<name>/hooks`.
+
+- `bootstrap` -> `command/bootstrap/hooks/pre`
+- `postbootstrap` -> `command/bootstrap/hooks/post`
+- `clean` -> `command/clean/hooks/pre`
+- `postclean` -> `command/clean/hooks/post`
+- `version` -> `command/version/hooks/preCommit`
+- `postversion` -> `command/version/hooks/post`
+
+#### Version command hooks
+
+The `version` hook was previously executed during versioning, before the version
+commit was created. The `pre` hook runs before the `version` command, like for
+all other commands.
+
+The new `preCommit` hook runs before the version commit is created and matches
+the previous `version` hook.
+
+### Package filters
+
+The `select-package` option for scripts has been renamed to
+[`packageFilters`](/configuration/scripts#packagefilters). This brings it in
+line with
+[`command/version/changelogs/packageFilters`](/configuration/overview#packagefilters).
+
+Filter names in `packageFilters` use camelCase instead of kebab-case.
+
+For example, take the following `test` script configuration:
+
+```yaml
+scripts:
+  test:
+    exec: dart test
+    packageFilters:
+      dirExists: test
+```
+
+This would previously have been written as:
+
+```yaml
+scripts:
+  test:
+    exec: dart test
+    select-package:
+      dir-exists: test
+```

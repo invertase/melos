@@ -37,7 +37,7 @@ repositories with git and Pub.**
 It is in active development and is in use on projects such as
 [FlutterFire](https://github.com/firebase/flutterfire) and
 [Flame](https://github.com/flame-engine/flame), see
-[Projects using Melos](https://melos.invertase.dev/~melos-latest#projects-using-melos)
+[Projects using Melos](https://melos.invertase.dev/~melos-latest/projects)
 for more projects.
 
 Melos is for applications just as much as it is for packages that are published
@@ -78,6 +78,9 @@ Flutter packages, `pubspec.yaml` files and [pub.dev](https://pub.dev), so that
 you can run scripts and commands across packages, filter packages, and version
 and publish them based on
 [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+
+Learn more about Melos from the
+[docs](https://melos.invertase.dev/~melos-latest/).
 
 ## Migrate to Melos 8.x.x
 
@@ -133,7 +136,7 @@ needed:
 > root as a package, you can enable `useRootAsPackage: true` in the melos
 > configuration to maintain this behavior, or restructure your project to
 > move the main application to a subdirectory. See the
-> [Configuration Overview](https://melos.invertase.dev/~melos-latest/configuration/overview#useRootAsPackage)
+> [Configuration Overview](https://melos.invertase.dev/~melos-latest/configuration/overview#userootaspackage)
 > for details.
 
 After the migration, your root `pubspec.yaml` file would now look something
@@ -168,7 +171,7 @@ resolution: workspace
 > Melos 8.x.x requires Dart SDK 3.9.0 or newer.
 
 If you are already on Melos 7.x.x only step 5 applies. See the
-[migration guide](https://melos.invertase.dev/~melos-latest/guides/migrations)
+[migration guide](https://melos.invertase.dev/~melos-latest/migration)
 for more details.
 
 ## GitHub Action
@@ -272,9 +275,9 @@ melos:
 ```
 
 See the
-[Getting Started](https://melos.invertase.dev/~melos-latest/getting-started#single-package-projects-non-monorepo)
+[Getting Started](https://melos.invertase.dev/~melos-latest/getting-started/single-package)
 page and the
-[Configuration Overview](https://melos.invertase.dev/~melos-latest/configuration/overview#useRootAsPackage)
+[Configuration Overview](https://melos.invertase.dev/~melos-latest/configuration/overview#userootaspackage)
 for more details.
 
 ## What can Melos do?
@@ -444,9 +447,9 @@ Add a README badge to your project to show it off:
 ```
 
 You can also submit a PR to add your project to the list of
-[projects using Melos](https://melos.invertase.dev/~melos-latest#projects-using-melos),
+[projects using Melos](https://melos.invertase.dev/~melos-latest/projects),
 by updating the
-[docs](https://github.com/invertase/melos/edit/main/docs/index.mdx).
+[docs](https://github.com/invertase/melos/edit/main/docs/projects.mdx).
 
 ## License
 

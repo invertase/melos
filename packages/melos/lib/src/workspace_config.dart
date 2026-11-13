@@ -624,7 +624,7 @@ class MelosWorkspaceConfig {
               '${AnsiStyles.bold('pubspec.yaml')} file.',
           '',
           'For more information on migrating to version 7.0.0, see: '
-              'https://melos.invertase.dev/guides/migrations#6xx-to-7xx'
+              'https://melos.invertase.dev/migration/7'
               '',
           'To migrate at a later time, ensure you have version 6.3.0 or below '
               'installed: dart pub global activate melos 6.3.0',

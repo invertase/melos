@@ -1,15 +1,13 @@
 ---
-title: Filtering Packages
-description: Learn more about all the package filtering flags in Melos.
+title: Package filters
+description: Flags that limit a Melos command to a chosen set of packages.
 ---
 
-# Filtering Packages
-
-Each Melos command can be used alongside the following global filters:
+Melos commands support the following global filters:
 
 ## --no-private
 
-Exclude private packages (`publish_to: none`). They are included by default.
+Excludes private packages (`publish_to: none`). They are included by default.
 
 ```bash
 melos bootstrap --no-private
@@ -17,7 +15,7 @@ melos bootstrap --no-private
 
 ## --published
 
-Filter packages where the current local package version exists on pub.dev.
+Filters packages where the current local package version exists on pub.dev.
 
 ```bash
 melos bootstrap --published
@@ -28,84 +26,91 @@ published yet.
 
 ## --scope
 
-Include only packages with names matching the given glob. This option can be
+Includes only packages with names matching the given glob. This option can be
 repeated.
 
 ```bash
 # Run `flutter build ios` on all packages with "example" in the package name
+
 melos exec --scope="*example*" -- flutter build ios
 ```
 
 ## --ignore
 
-Exclude packages with names matching the given glob. This option can be
+Excludes packages with names matching the given glob. This option can be
 repeated.
 
 ```bash
 # Run `flutter build ios` on all packages but ignore those whose packages names contain "internal"
+
 melos exec --ignore="*internal*" -- flutter build ios
 ```
 
 ## --category
 
-Filter packages based on categories declared in the root `pubspec.yaml` file.
+Filters packages based on categories declared in the root `pubspec.yaml` file.
 
 ```bash
 # Run `flutter build ios` on all packages in the "examples" category.
+
 melos exec --category="examples" -- flutter build ios
 ```
 
 ## --diff
 
-Filter packages based on whether there were changes between a commit and the
-current HEAD or within a range of commits.
+Filters packages based on whether there were changes between a commit and the
+current `HEAD` or within a range of commits.
 
-A range of commits can be specified using the git shorthand syntax
-`<start-commit>..<end-commit>` and `<start-commit>...<end-commit>`.
+Specify a range of commits using the git shorthand syntax
+`START_COMMIT..END_COMMIT` and `START_COMMIT...END_COMMIT`.
 
 ```bash
 # Run `flutter build ios` on all packages that are different between current
 # branch and the specified commit hash.
-melos exec --diff=<commit hash> -- flutter build ios
+
+melos exec --diff=COMMIT_HASH -- flutter build ios
 
 # Run `flutter build ios` on all packages that are different between remote
-# `main` branch and HEAD.
+# `main` branch and `HEAD`.
+
 melos exec --diff=origin/main...HEAD -- flutter build ios
 ```
 
 To list the packages that changed since their latest release tag, use the
-[`changed`](/commands/changed) command.
+[`changed`](/reference/commands/changed) command.
 
 ## --dir-exists
 
-Include only packages where a specific directory exists inside the package.
+Includes only packages where a specific directory exists inside the package.
 
 ```bash
 # Only bootstrap packages with an example directory
+
 melos bootstrap --dir-exists="example"
 ```
 
 ## --file-exists
 
-Include only packages where a specific file exists in the package.
+Includes only packages where a specific file exists in the package.
 
 ```bash
 # Only bootstrap packages with an README.md file
+
 melos bootstrap --file-exists="README.md"
 ```
 
 ## --flutter
 
-Filter packages that need the Flutter SDK. A package needs the Flutter SDK when
-its `pubspec.yaml` either:
+Filters packages that need the Flutter SDK. A package needs the Flutter SDK when
+its `pubspec.yaml` file meets any of these conditions:
 
 - depends on a package that is shipped with the Flutter SDK (`sdk: flutter`),
   for example `flutter` or `flutter_test`, in any dependency section,
 - declares a Flutter SDK constraint under `environment`, or
 - depends, directly or transitively, on another package in the workspace that
   declares a Flutter SDK constraint or that has Flutter in its `dependencies`.
-  The `dev_dependencies` and `dependency_overrides` of that package are not
-  considered, since they do not apply to the packages that depend on it.
+  Melos ignores the `dev_dependencies` and `dependency_overrides` of that
+  package, because they do not apply to the packages that depend on it.
 
 ```bash
 melos exec --flutter -- flutter test
@@ -113,9 +118,8 @@ melos exec --flutter -- flutter test
 
 Use `--no-flutter` to filter packages that do not need the Flutter SDK.
 
-A package that only needs the Flutter SDK because of a dependency that is not
-part of the workspace, for example a hosted package, can declare that with a
-Flutter SDK constraint:
+If a package needs the Flutter SDK only because of a dependency outside the
+workspace (for example a hosted package), declare a Flutter SDK constraint:
 
 ```yaml
 environment:
@@ -128,7 +132,7 @@ package in commands such as `melos analyze` and `melos test`.
 
 ## --depends-on
 
-Include only packages that depend on specific dependencies.
+Includes only packages that depend on specific dependencies.
 
 ```bash
 melos exec --depends-on="flutter" --depends-on="firebase_core" -- flutter test
@@ -158,30 +162,32 @@ melos list --scope=some_package --include-dependents
 
 The packages that are included through `--include-dependencies` and
 `--include-dependents` skip all the other filters. Use `--post-filter` to apply
-a filter after the dependencies and dependents have been included. The value is
+a filter after Melos includes the dependencies and dependents. The value is
 any of the other filters, written without the leading dashes. The option can be
 repeated.
 
 ```bash
 # Run `build_runner` in `some_package` and all of its transitive dependencies,
 # but only in the packages that depend on `build_runner`.
+
 melos exec --scope=some_package --include-dependencies \
   --post-filter=depends-on=build_runner -- dart run build_runner build
 
 # Run the tests of all changed packages and their transitive dependents, but
 # only in the packages that have a `test` directory.
+
 melos exec --diff=origin/main...HEAD --include-dependents \
   --post-filter=dir-exists=test -- dart test
 ```
 
 Flags are written in the same way, for example `--post-filter=no-private`.
 
-The post filters are applied to all the packages, including the ones that
-matched the other filters. `include-dependencies` and `include-dependents`
-cannot be used as post filters.
+Post filters apply to all packages, including those that matched the other
+filters. `include-dependencies` and `include-dependents` cannot be used as post
+filters.
 
-In [`packageFilters`](/configuration/scripts#packagefilters), the post filters
-are defined with the `postFilters` option:
+In [`packageFilters`](/configuration/scripts#packagefilters), the `postFilters`
+option defines the post filters:
 
 ```yaml
 melos:

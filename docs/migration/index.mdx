@@ -1,0 +1,58 @@
+---
+title: Migrating to v8
+description: Changes to exec scripts and build numbers when moving from Melos 7 to Melos 8.
+---
+
+## Configure `exec` scripts
+
+How you configure an `exec` script with options has changed. Previously, the
+command was specified in `run` and the `melos exec` options in `exec`:
+
+```yaml
+# Before (no longer supported)
+
+melos:
+  scripts:
+    test:
+      run: dart test --concurrency=1
+      exec:
+        concurrency: 1
+```
+
+`run` and `exec` are mutually exclusive: a script either runs once in the
+workspace root with `run`, or across multiple packages with `exec`. When you
+need to pass options to `exec`, move the command into `exec` under the
+`command` key:
+
+```yaml
+# After
+
+melos:
+  scripts:
+    test:
+      exec:
+        command: dart test --concurrency=1
+        concurrency: 1
+```
+
+The shorthand form, where `exec` is a string containing the command, is
+unchanged:
+
+```yaml
+melos:
+  scripts:
+    hello:
+      exec: echo 'Hello $(dirname $PWD)'
+```
+
+Melos fails with a descriptive error, including the converted configuration,
+if it encounters the old format.
+
+## Build numbers when versioning
+
+`melos version` retains and increments an integer build number on every
+version bump, so `3.0.0+11` becomes `4.0.0+12` instead of `4.0.0`.
+
+A patch release below `1.0.0` bumps the patch component instead of adding a
+build number, so `0.1.0` becomes `0.1.1` instead of `0.1.0+1`. For more
+information, see [Build numbers](/guides/automated-releases#build-numbers).

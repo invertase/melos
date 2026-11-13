@@ -168,6 +168,6 @@ Melos 3 to 4:
 ## References
 
 - Migrations guide:
-  https://melos.invertase.dev/~melos-latest/guides/migrations
+  https://melos.invertase.dev/~melos-latest/migration
 - Configuration overview:
   https://melos.invertase.dev/~melos-latest/configuration/overview

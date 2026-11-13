@@ -1,54 +1,257 @@
 {
+  "$schema": "https://docs.page/schema.json",
   "name": "Melos",
-  "logo": "/assets/logo.png",
-  "logoDark": "/assets/logo-dark.png",
-  "twitter": "invertaseio",
-  "anchors": [{ "title": "Discord", "icon": "discord", "link": "https://invertase.link/discord" }],
-  "theme": "#FFA03F",
+  "description": "A tool for managing Dart and Flutter projects, with one or many packages.",
+  "logo": {
+    "light": "/assets/logo.png",
+    "dark": "/assets/logo-dark.png"
+  },
   "favicon": "/assets/logo.png",
-  "googleAnalytics": "G-Q7ME6WLFEJ",
-  "sidebar": [
-    ["Overview", "/"],
-    ["Getting Started", "/getting-started"],
-    ["Filters", "/filters"],
-    [
-      "Configuration",
-      [
-        ["Overview", "/configuration/overview"],
-        ["Scripts", "/configuration/scripts"]
-      ]
-    ],
-    [
-      "Commands",
-      [
-        ["analyze", "/commands/analyze"],
-        ["bootstrap", "/commands/bootstrap"],
-        ["changed", "/commands/changed"],
-        ["cherry-pick", "/commands/cherry-pick"],
-        ["clean", "/commands/clean"],
-        ["format", "/commands/format"],
-        ["exec", "/commands/exec"],
-        ["init", "/commands/init"],
-        ["list", "/commands/list"],
-        ["publish", "/commands/publish"],
-        ["run", "/commands/run"],
-        ["test", "/commands/test"],
-        ["version", "/commands/version"]
-      ]
-    ],
-    ["Environment Variables", "/environment-variables"],
-    ["IDE Support", "/ide-support"],
-    [
-      "Guides",
-      [
-        [
-          "Manage multi-package Flutter projects",
-          "https://sagarsuri56.medium.com/managing-multi-package-flutter-projects-with-melos-c8ce96fa7c82"
-        ],
-        ["Automated Releases", "/guides/automated-releases"],
-        ["Releasing from Hot-fix Branches", "/guides/hot-fix-releases"],
-        ["Migrations", "/guides/migrations"]
-      ]
+  "theme": {
+    "primary": "#FBB03B",
+    "primaryLight": "#FBB03B",
+    "primaryDark": "#E09A28"
+  },
+  "scripts": {
+    "googleAnalytics": "G-Q7ME6WLFEJ"
+  },
+  "header": {
+    "showGitHubCard": true
+  },
+  "agent": {
+    "placeholder": "Ask about a Melos workspace",
+    "questions": [
+      "How do I bootstrap a workspace?",
+      "How do I version and publish from Conventional Commits?",
+      "How do I migrate off melos.yaml?"
     ]
+  },
+  "social": {
+    "x": "invertaseio",
+    "github": "invertase/melos",
+    "discord": "https://invertase.link/discord"
+  },
+  "anchors": [
+    {
+      "title": "Discord",
+      "icon": "discord",
+      "href": "https://invertase.link/discord"
+    }
+  ],
+  "redirects": {
+    "/about": "/",
+    "/getting-started#single-package-projects-non-monorepo": "/getting-started/single-package",
+    "/#projects-using-melos": "/projects",
+    "/guides/migrations": "/migration",
+    "/guides/migrations#7xx-to-800": "/migration",
+    "/guides/migrations#6xx-to-7xx": "/migration/7",
+    "/guides/migrations#300-to-400": "/migration/4",
+    "/guides/migrations#200-to-300": "/migration/3",
+    "/guides/migrations#configuring-exec-scripts": "/migration#configure-exec-scripts",
+    "/guides/migrations#build-numbers-when-versioning": "/migration#build-numbers-when-versioning",
+    "/guides/migrations#melos-analyze-was-removed-in-7xx": "/migration/7#melos-analyze-was-removed-in-7xx",
+    "/guides/migrations#root-packages": "/migration/7#root-packages",
+    "/guides/migrations#versioning-of-melos-in-workspaces": "/migration/3#melos-versions-in-workspaces",
+    "/guides/migrations#local-package-linking-with-pubspecoverridesyaml": "/migration/3#local-package-linking-with-pubspecoverridesyaml",
+    "/guides/migrations#--since-was-removed-in-favour-of---diff": "/migration/3#--since-was-removed-in-favour-of---diff",
+    "/guides/migrations#changed-option-defaults": "/migration/3#changed-option-defaults",
+    "/guides/migrations#lifecycle-hooks": "/migration/3#lifecycle-hooks",
+    "/guides/migrations#package-filters": "/migration/3#package-filters",
+    "/guides/migrations#--no-git-tag-version-behavior-change": "/migration/4#--no-git-tag-version-behavior-change",
+    "/guides/migrations#option-1-enable-userootaspackage": "/migration/7#option-1-enable-userootaspackage",
+    "/guides/migrations#option-2-restructure-recommended-for-new-projects": "/migration/7#option-2-restructure-recommended-for-new-projects",
+    "/guides/migrations#version-command-hooks": "/migration/3#version-command-hooks",
+    "/reference/migrations": "/migration",
+    "/reference/migrations#7xx-to-800": "/migration",
+    "/reference/migrations#6xx-to-7xx": "/migration/7",
+    "/reference/migrations#300-to-400": "/migration/4",
+    "/reference/migrations#200-to-300": "/migration/3",
+    "/reference/migrations#configuring-exec-scripts": "/migration#configure-exec-scripts",
+    "/reference/migrations#build-numbers-when-versioning": "/migration#build-numbers-when-versioning",
+    "/reference/migrations#melos-analyze-was-removed-in-7xx": "/migration/7#melos-analyze-was-removed-in-7xx",
+    "/reference/migrations#root-packages": "/migration/7#root-packages",
+    "/reference/migrations#option-1-enable-userootaspackage": "/migration/7#option-1-enable-userootaspackage",
+    "/reference/migrations#option-2-restructure-recommended-for-new-projects": "/migration/7#option-2-restructure-recommended-for-new-projects",
+    "/reference/migrations#versioning-of-melos-in-workspaces": "/migration/3#melos-versions-in-workspaces",
+    "/reference/migrations#local-package-linking-with-pubspecoverridesyaml": "/migration/3#local-package-linking-with-pubspecoverridesyaml",
+    "/reference/migrations#--since-was-removed-in-favour-of---diff": "/migration/3#--since-was-removed-in-favour-of---diff",
+    "/reference/migrations#changed-option-defaults": "/migration/3#changed-option-defaults",
+    "/reference/migrations#lifecycle-hooks": "/migration/3#lifecycle-hooks",
+    "/reference/migrations#version-command-hooks": "/migration/3#version-command-hooks",
+    "/reference/migrations#package-filters": "/migration/3#package-filters",
+    "/reference/migrations#--no-git-tag-version-behavior-change": "/migration/4#--no-git-tag-version-behavior-change",
+    "/migration/8": "/migration",
+    "/migration#configuring-exec-scripts": "/migration#configure-exec-scripts",
+    "/migration/3#versioning-of-melos-in-workspaces": "/migration/3#melos-versions-in-workspaces",
+    "/reference/commands/analyze": "/reference",
+    "/reference/filters": "/filters",
+    "/reference/configuration/overview": "/configuration/overview",
+    "/reference/configuration/scripts": "/configuration/scripts",
+    "/reference/environment-variables": "/environment-variables",
+    "/commands/analyze": "/reference",
+    "/commands/bootstrap": "/reference/commands/bootstrap",
+    "/commands/changed": "/reference/commands/changed",
+    "/commands/cherry-pick": "/reference/commands/cherry-pick",
+    "/commands/clean": "/reference/commands/clean",
+    "/commands/exec": "/reference/commands/exec",
+    "/commands/format": "/reference/commands/format",
+    "/commands/init": "/reference/commands/init",
+    "/commands/list": "/reference/commands/list",
+    "/commands/publish": "/reference/commands/publish",
+    "/commands/run": "/reference/commands/run",
+    "/commands/test": "/reference/commands/test",
+    "/commands/version": "/reference/commands/version"
+  },
+  "tabs": [
+    {
+      "id": "docs",
+      "title": "Documentation",
+      "href": "/"
+    },
+    {
+      "id": "migration",
+      "title": "Migration",
+      "href": "/migration"
+    },
+    {
+      "id": "reference",
+      "title": "Reference",
+      "href": "/reference"
+    }
+  ],
+  "sidebar": [
+    {
+      "group": "Getting Started",
+      "icon": "house",
+      "tab": "docs",
+      "pages": [
+        {
+          "title": "Overview",
+          "href": "/"
+        },
+        {
+          "group": "Install",
+          "pages": [
+            {
+              "title": "Workspace",
+              "href": "/getting-started"
+            },
+            {
+              "title": "Single package",
+              "href": "/getting-started/single-package"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group": "Agents",
+      "icon": "robot",
+      "tab": "docs",
+      "pages": [
+        {
+          "title": "Melos skills",
+          "href": "/agents"
+        }
+      ]
+    },
+    {
+      "group": "Features",
+      "icon": "gears",
+      "tab": "docs",
+      "pages": [
+        {
+          "title": "Configuration",
+          "href": "/configuration/overview"
+        },
+        {
+          "title": "Scripts",
+          "href": "/configuration/scripts"
+        },
+        {
+          "title": "Environment variables",
+          "href": "/environment-variables"
+        },
+        {
+          "title": "Package filters",
+          "href": "/filters"
+        },
+        {
+          "title": "IDE support",
+          "href": "/ide-support"
+        }
+      ]
+    },
+    {
+      "group": "Guides",
+      "icon": "book-open",
+      "tab": "docs",
+      "pages": [
+        {
+          "title": "Manage multi-package Flutter projects",
+          "href": "https://sagarsuri56.medium.com/managing-multi-package-flutter-projects-with-melos-c8ce96fa7c82"
+        },
+        {
+          "title": "Automated releases",
+          "href": "/guides/automated-releases"
+        },
+        {
+          "title": "Releasing from hot-fix branches",
+          "href": "/guides/hot-fix-releases"
+        }
+      ]
+    },
+    {
+      "tab": "docs",
+      "pages": [
+        {
+          "title": "Projects",
+          "href": "/projects"
+        }
+      ]
+    },
+    {
+      "group": "Commands",
+      "icon": "terminal",
+      "tab": "reference",
+      "pages": [
+        { "title": "analyze", "href": "/reference" },
+        { "title": "bootstrap", "href": "/reference/commands/bootstrap" },
+        { "title": "changed", "href": "/reference/commands/changed" },
+        { "title": "cherry-pick", "href": "/reference/commands/cherry-pick" },
+        { "title": "clean", "href": "/reference/commands/clean" },
+        { "title": "exec", "href": "/reference/commands/exec" },
+        { "title": "format", "href": "/reference/commands/format" },
+        { "title": "init", "href": "/reference/commands/init" },
+        { "title": "list", "href": "/reference/commands/list" },
+        { "title": "publish", "href": "/reference/commands/publish" },
+        { "title": "run", "href": "/reference/commands/run" },
+        { "title": "test", "href": "/reference/commands/test" },
+        { "title": "version", "href": "/reference/commands/version" }
+      ]
+    },
+    {
+      "group": "Migration Guides",
+      "icon": "code-branch",
+      "tab": "migration",
+      "pages": [
+        {
+          "title": "Migrating to v8",
+          "href": "/migration"
+        },
+        {
+          "title": "Migrating to v7",
+          "href": "/migration/7"
+        },
+        {
+          "title": "Migrating to v4",
+          "href": "/migration/4"
+        },
+        {
+          "title": "Migrating to v3",
+          "href": "/migration/3"
+        }
+      ]
+    }
   ]
 }

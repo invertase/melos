@@ -1,11 +1,7 @@
 ---
-title: Environment Variables
-description:
-  Learn more about all the environment variables Melos supports and also
-  pre-populates.
+title: Environment variables
+description: Variables Melos reads, and the ones it sets for `melos exec` and exec scripts.
 ---
-
-# Environment Variables
 
 These variables are available as environment variables in the commands run by
 `melos exec` and in [`exec`](/configuration/scripts#exec) scripts:
@@ -17,7 +13,7 @@ melos:
       exec: echo $MELOS_PACKAGE_NAME $MELOS_PACKAGE_VERSION $MELOS_PACKAGE_PATH
 ```
 
-The variables that describe a package only exist while `melos exec` runs a
+The variables that describe a package only exist when `melos exec` runs a
 command in that package. When you call `melos exec` yourself, from a terminal or
 from a [`run`](/configuration/scripts#run) script, a POSIX shell expands
 `$MELOS_PACKAGE_NAME` to an empty string before Melos starts. Wrap the command
@@ -39,7 +35,7 @@ melos:
       exec: echo \$(basename $MELOS_PACKAGE_PATH)
 ```
 
-`$MELOS_PACKAGE_NAME` is also replaced in the paths passed to the
+Melos also replaces `$MELOS_PACKAGE_NAME` in the paths passed to the
 `--file-exists` package filter:
 
 ```bash
@@ -50,126 +46,122 @@ melos exec --file-exists='test_driver/$MELOS_PACKAGE_NAME_e2e.dart' -- echo hell
 
 ### `MELOS_ROOT_PATH`
 
-The path to the mono-repo root
+The path to the monorepo root
 
 ### `MELOS_PACKAGE_NAME`
 
-The name of the package that's currently executing a script (when using
-`melos exec`)
+The name of the package that's executing a script (when using `melos exec`)
 
 ### `MELOS_PACKAGE_VERSION`
 
-The version of the package that's currently executing a script (when using
-`melos exec`)
+The version of the package that's executing a script (when using `melos exec`)
 
 ### `MELOS_PACKAGE_PATH`
 
-The path of the package that's currently executing a script (when using
-`melos exec`).
+The path of the package that's executing a script (when using `melos exec`).
 
 ### `MELOS_PARENT_PACKAGE_NAME`
 
-The name of the parent package of the example that's currently being executed
-in a script (when using `melos exec`).
+The name of the parent package of the example that's being executed in a
+script (when using `melos exec`).
 
 ### `MELOS_PARENT_PACKAGE_VERSION`
 
-The version of the parent package of the example that's currently being executed
-in a script (when using `melos exec`).
+The version of the parent package of the example that's being executed in a
+script (when using `melos exec`).
 
 ### `MELOS_PARENT_PACKAGE_PATH`
 
-The path of the parent package of the example that's currently being executed
-in a script (when using `melos exec`).
+The path of the parent package of the example that's being executed in a
+script (when using `melos exec`).
 
 ### `MELOS_PUBLISH_DRY_RUN`
 
-Whether the current publish is a dry run or not. This is `true` when running
-`melos publish --dry-run` and `false` otherwise.
+Whether the current publish is a dry run or not. This variable is `true` when
+running `melos publish --dry-run` and `false` otherwise.
 
 ### `MELOS_TERMINAL_WIDTH`
 
 The width of the terminal, in columns, that Melos uses to wrap its output.
-Melos sets this variable for the scripts that it runs, so that a `melos`
-command invoked by a script uses the same width as the outer one. It can also
-be set by the user to override the detected width, for example on a continuous
-integration server where no terminal is attached (Melos falls back to 80
-columns there).
+Melos sets this variable for the scripts that it runs. A nested `melos`
+command then uses the same width as the outer one. You can also set it to
+override the detected width. For example, on a continuous integration server
+with no terminal, Melos falls back to 80 columns.
 
 #### What is a 'parent package'
 
 If an example package exists in a directory that is a child of another package,
-then its parent is the 'parent package'. For example; the package
-`firebase_auth` has an `example` directory that is also a package, when running
-a `melos exec` script in the `example` package then the parent package would be
+then its parent is the 'parent package'. For example, the package
+`firebase_auth` has an `example` directory that is also a package. When a
+`melos exec` script runs in that `example` package, the parent package is
 `firebase_auth`.
 
-Note, this 'parent package' functionality only currently works when the 'child
+Note, this 'parent package' functionality only works when the 'child
 package' name ends with `example`.
 
-## User Defined
+## User defined
 
 ### `MELOS_PACKAGES`
 
-Define a comma delimited list of package names that Melos should focus on. This
-will act as the `scope` global package filter, and it will override the `scope`
-for all the filtering options defined in the `packageFilters` section.
+A comma-delimited list of package names that Melos focuses on. This
+list acts as the `scope` global package filter, and it overrides the `scope`
+for all filtering options in the `packageFilters` section.
 
-Melos also sets this variable itself when running a script that declares
-[`packageFilters`](/configuration/scripts#packagefilters), so that a `melos`
-command invoked by the script is scoped to the selected packages.
+Melos also sets this variable itself when a script declares
+[`packageFilters`](/configuration/scripts#packagefilters). Nested `melos`
+commands then stay scoped to the selected packages.
 
 ### `MELOS_SDK_PATH`
 
 The path to the Dart/Flutter SDK to use. This environment variable has
-precedence over the `sdkPath` option in the root `pubspec.yaml`, but is
-overridden by the command line option `--sdk-path`.
+precedence over the `sdkPath` option in the root `pubspec.yaml` file, but
+the `--sdk-path` command line option overrides it.
 
 ### `MELOS_QUIET`
 
-Set to `true` to only print warnings, errors and the output of failed commands.
-This environment variable has precedence over the
-[`quiet`](/configuration/overview#quiet) option in the root `pubspec.yaml`, but
-is overridden by the command line options `--quiet` and `--no-quiet`.
+When `true`, Melos prints only warnings, errors, and the output of failed
+commands. This environment variable has precedence over the
+[`quiet`](/configuration/overview#quiet) option in the root `pubspec.yaml` file,
+but the `--quiet` and `--no-quiet` command line options override it.
 
-Melos also sets this variable itself for the scripts that it runs in quiet mode,
-so that a `melos` command invoked by a script is quiet too.
+Melos also sets this variable itself for scripts it runs in quiet mode.
+Nested `melos` commands then stay quiet too.
 
 ### `MELOS_RUN_UNCHANGED`
 
-Set to `true` to make [`melos exec`](/commands/exec#--sources) run the command
-in every package, even in the packages in which the sources did not change. This
-has the same effect as the command line option `--run-unchanged`.
+When `true`, [`melos exec`](/reference/commands/exec#--sources) runs the
+command in every package, including packages whose sources did not change.
+This setting has the same effect as the command line option `--run-unchanged`.
 
-Melos also sets this variable itself for the scripts that it runs with
-[`melos run --run-unchanged`](/commands/run#--run-unchanged), so that it
-applies to every `melos exec` command invoked by a script.
+Melos also sets this variable itself for scripts run with
+[`melos run --run-unchanged`](/reference/commands/run#--run-unchanged). It then
+applies to every nested `melos exec` command.
 
 ### `MELOS_IGNORE_SOURCES`
 
-Set to `true` to make [`melos exec`](/commands/exec#--ignore-sources) ignore the
-sources of commands, so that they run in every package without calculating or
-storing checksums, for example on a continuous integration server. This
-environment variable has precedence over the
+When `true`, [`melos exec`](/reference/commands/exec#--ignore-sources) ignores
+command sources. Commands run in every package without calculating or storing
+checksums, for example on a continuous integration server. This environment
+variable has precedence over the
 [`ignoreSources`](/configuration/overview#ignoresources) option in the root
-`pubspec.yaml`, but is overridden by the command line options
-`--ignore-sources` and `--no-ignore-sources`.
+`pubspec.yaml` file, but the `--ignore-sources` and `--no-ignore-sources`
+command line options override it.
 
 Melos also sets this variable itself for the scripts that it runs with
-[`melos run --ignore-sources`](/commands/run#--ignore-sources).
+[`melos run --ignore-sources`](/reference/commands/run#--ignore-sources).
 
 ### `MELOS_ANSI_STYLES`
 
-Set to `true` to make Melos style its output with colors, even if it does not
-write to a terminal, for example on a continuous integration server. Set to
-`false` to never style the output.
+When `true`, Melos styles its output with colors even if it does not write to
+a terminal. This is useful on a continuous integration server, for example.
+When `false`, Melos never styles the output.
 
 Melos also sets this variable itself for the scripts that it runs. Melos
-captures the output of those scripts, so a `melos` command invoked by a script
-cannot detect the terminal on its own and would otherwise lose its colors.
+captures the output of those scripts. A nested `melos` command cannot detect
+the terminal on its own and otherwise loses its colors.
 
-Other tools that are invoked by a script do not write to a terminal either, so
-most of them turn off their colors. They usually have an option to turn colors
+Other tools that a script invokes do not write to a terminal either, so most
+of them turn off their colors. They usually have an option to turn colors
 back on, for example `flutter --color test` or `dart test --color`. Scripts that
 need a real terminal can use
 [`stdio: inherit`](/configuration/scripts#stdio).

@@ -1,9 +1,7 @@
 ---
-title: Cherry-pick Command
-description: Learn more about the `cherry-pick` command in Melos.
+title: Cherry-pick command
+description: Copy commits onto this branch and leave out the release changes those commits contain.
 ---
-
-# Cherry-pick Command
 
 Cherry-pick commits onto the current branch without the release changes they
 contain.
@@ -14,35 +12,34 @@ melos cherry-pick 4ba1b8f
 
 This command is meant for branches other than the default branch that packages
 are released from, for example a hot-fix branch for an older version. The
-changelogs and the versions on such a branch differ from the ones on the default
-branch, so they must not be carried over together with a fix. `melos
-cherry-pick` runs `git cherry-pick` for you and leaves out the following
-changes from each picked commit:
+changelogs and versions on such a branch differ from those on the default
+branch. Do not carry them over with a fix. `melos cherry-pick` runs `git
+cherry-pick` for you and leaves out the following changes from each picked
+commit:
 
 - Changes to the `CHANGELOG.md` files of the packages, to the workspace
   changelog, and to the other
   [aggregate changelogs](/configuration/overview#changelogs) of the workspace.
   Conflicts in these files are resolved automatically by keeping the changelog
   of the current branch.
-- Changes to the `version` of the packages in their `pubspec.yaml` files.
-- Changes to the dependencies between the packages of the workspace, which are
+- Changes to the `version` of the packages in their `pubspec.yaml` files
+- Changes to the dependencies between the packages of the workspace. These are
   the version constraints and tag references that `melos version` updates in the
   dependents of a released package. A dependency on a workspace package that a
-  commit adds is still picked, only changes to existing ones are left out.
+  commit adds is still picked. Only changes to existing ones are left out.
 
 All other changes to a `pubspec.yaml` file are kept. Conflicts that only
-concern the fields above are resolved automatically by keeping the values of the
+concern those fields are resolved automatically by keeping the values of the
 current branch.
 
 All other changes are picked as usual. Afterwards, [`melos
-version`](/commands/version) can be run on the branch. It finds the picked
-commits since the latest release of the branch, and writes the changelog entries
-and the new versions that are correct for this branch.
+version`](/reference/commands/version) can be run on the branch. It finds the
+picked commits since the latest release of the branch. It writes the changelog
+entries and versions that are correct for this branch. For more information
+about the whole workflow, see [Releasing from Hot-fix
+Branches](/guides/hot-fix-releases).
 
-<Info>
-  To learn more about the whole workflow, visit the [Releasing from Hot-fix
-  Branches](/guides/hot-fix-releases) guide.
-</Info>
+## Several commits
 
 Several commits can be picked at once. They are picked in the order that they
 are given in, and a commit that is given more than once is only picked once:
@@ -79,11 +76,18 @@ release changes, the command stops and lists the conflicted
 files. The changelogs are already restored at this point. Resolve the conflicts
 as you would with `git cherry-pick`:
 
-```bash
-# Resolve the conflicts in the listed files, then stage them.
-git add .
-git cherry-pick --continue
-```
+1. Resolve the conflicts in the listed files.
+2. Stage the resolved files.
+
+   ```bash
+   git add .
+   ```
+
+3. Continue the cherry-pick.
+
+   ```bash
+   git cherry-pick --continue
+   ```
 
 If a `pubspec.yaml` file is listed, other parts of it than the release changes
 conflict as well. Keep the `version` and the constraints on other workspace
@@ -91,8 +95,8 @@ packages of the current branch when resolving it. To cancel the pick instead,
 run `git cherry-pick --abort`.
 
 If more commits were given than the one that conflicted, the command prints the
-ones that have not been picked yet. Run `melos cherry-pick` again with those
-commits once the conflicts are resolved.
+ones that have not been picked yet. After the conflicts are resolved, run
+`melos cherry-pick` again with those commits.
 
 ## --[no-]record-origin
 
