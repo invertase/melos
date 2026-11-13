@@ -430,7 +430,7 @@ Run "melos help <command>" for more information about a command.
 ## How to Contribute
 
 To start making contributions please refer to
-[`CONTRIBUTING.md`](./CONTRIBUTING.md).
+[`CONTRIBUTING.md`](../../CONTRIBUTING.md).
 
 ## Lerna
 
