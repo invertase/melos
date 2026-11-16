@@ -76,6 +76,18 @@ jobs:
       - name: Check formatting
         run: melos format --output none --set-exit-if-changed
 
+  # This job scores the publishable packages with pana, so that a package
+  # losing pub points is caught before it is published.
+  pana:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - uses: bluefireteam/pana_workspace@v0
+
   test_linux:
     runs-on: ubuntu-latest
     timeout-minutes: 25
