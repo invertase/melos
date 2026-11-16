@@ -163,10 +163,9 @@ If Melos is not already versioning that dependent, it creates a `patch`
 version bump for it. Pass `--no-dependent-versions` to disable dependent version
 bumps.
 
-Package filters also apply to dependents: Melos bumps the version of a
-dependent only if the dependent passes the filters. Melos still updates the
-dependency constraints of every dependent, including dependents that the filters
-exclude.
+Package filters other than `--diff` also apply to dependents: Melos bumps the
+version of a dependent only if the dependent passes the filters. Melos still
+updates the dependency constraints of dependents that the filters exclude.
 
 ### Commit and tag version changes
 

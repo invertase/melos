@@ -81,7 +81,7 @@ Every command that supports filters accepts these. Options can be repeated.
 | `--flutter` / `--no-flutter` | need, or do not need, the Flutter SDK |
 | `--depends-on=<pkg>` | depend on the package |
 | `--no-depends-on=<pkg>` | do not depend on the package |
-| `--no-private` | are not `publish_to: none` |
+| `--private` / `--no-private` | are, or are not, private (`publish_to: none` or no `version`) |
 | `--published` / `--no-published` | have, or have not, their current version on pub.dev |
 | `--include-dependencies` | plus their transitive workspace dependencies |
 | `--include-dependents` | plus their transitive workspace dependents |
