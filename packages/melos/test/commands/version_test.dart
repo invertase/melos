@@ -7,11 +7,13 @@ import 'package:melos/src/command_runner.dart';
 import 'package:melos/src/common/git_tag_pattern_dependency.dart';
 import 'package:melos/src/common/glob.dart';
 import 'package:path/path.dart' as p;
+import 'package:platform/platform.dart' show FakePlatform, LocalPlatform;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
+import '../mock_env.dart';
 import '../utils.dart';
 
 void main() {
@@ -2622,6 +2624,195 @@ dev_dependencies:
         ).run(['version', '--changelog', '-V', 'a:1.0.1']);
 
         expect(hasChangelog(workspaceDir, 'a'), isTrue);
+      });
+    });
+
+    group('melos version <package> <change>', () {
+      Future<void> commitPackageChange(
+        Directory workspaceDir,
+        String packageName,
+        String message,
+      ) async {
+        File(
+          p.join(workspaceDir.path, 'packages', packageName, 'change.txt'),
+        ).writeAsStringSync(message);
+        await _runGit(workspaceDir, ['add', '.']);
+        await _runGit(workspaceDir, ['commit', '-m', message]);
+      }
+
+      Version pubspecVersion(Directory workspaceDir, String packageName) {
+        return Pubspec.parse(
+          File(
+            p.join(workspaceDir.path, 'packages', packageName, 'pubspec.yaml'),
+          ).readAsStringSync(),
+        ).version!;
+      }
+
+      Future<void> runVersion(
+        Directory workspaceDir,
+        String packageName,
+        String change,
+      ) async {
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        await MelosCommandRunner(config).run([
+          'version',
+          '--yes',
+          '--no-changelog',
+          '--no-git-tag-version',
+          '--no-git-commit-version',
+          packageName,
+          change,
+        ]);
+      }
+
+      test('bumps every package in fixed mode', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _fixedModeWorkspaceConfigBuilder,
+          workspacePackages: ['a', 'b'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('b', version: Version(1, 0, 0)),
+        );
+
+        await runVersion(workspaceDir, 'a', '2.0.0');
+
+        expect(pubspecVersion(workspaceDir, 'a'), Version(2, 0, 0));
+        expect(pubspecVersion(workspaceDir, 'b'), Version(2, 0, 0));
+      });
+
+      test(
+        'versions the package when one of its dependencies has unreleased '
+        'changes',
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            configBuilder: _workspaceConfigBuilder,
+            workspacePackages: ['a', 'b'],
+            useLocalTmpDirectory: true,
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 0, 0)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec(
+              'b',
+              version: Version(1, 0, 0),
+              dependencies: {
+                'a': HostedDependency(
+                  version: VersionConstraint.parse('^1.0.0'),
+                ),
+              },
+            ),
+          );
+          await _runGit(workspaceDir, ['init']);
+          await _runGit(workspaceDir, ['add', '.']);
+          await _runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+          await commitPackageChange(workspaceDir, 'a', 'feat: a new feature');
+
+          await runVersion(workspaceDir, 'b', 'patch');
+
+          expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 1));
+          // Only the named package is versioned.
+          expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 0));
+        },
+      );
+
+      test(
+        'ignores MELOS_PACKAGES',
+        withMockPlatform(
+          () async {
+            final workspaceDir = await createTemporaryWorkspace(
+              configBuilder: _workspaceConfigBuilder,
+              workspacePackages: ['a', 'b'],
+              useLocalTmpDirectory: true,
+            );
+            await createProject(
+              workspaceDir,
+              Pubspec('a', version: Version(1, 0, 0)),
+            );
+            await createProject(
+              workspaceDir,
+              Pubspec('b', version: Version(1, 0, 0)),
+            );
+            await _runGit(workspaceDir, ['init']);
+            await _runGit(workspaceDir, ['add', '.']);
+            await _runGit(workspaceDir, ['commit', '-m', 'chore: initial']);
+            await commitPackageChange(workspaceDir, 'b', 'fix: a bug fix');
+
+            await runVersion(workspaceDir, 'a', 'patch');
+
+            expect(pubspecVersion(workspaceDir, 'a'), Version(1, 0, 1));
+            expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 0));
+          },
+          platform: FakePlatform.fromPlatform(const LocalPlatform())
+            ..environment['MELOS_PACKAGES'] = 'b',
+        ),
+      );
+
+      test(
+        'bumps every package in fixed mode when MELOS_PACKAGES is set',
+        withMockPlatform(
+          () async {
+            final workspaceDir = await createTemporaryWorkspace(
+              configBuilder: _fixedModeWorkspaceConfigBuilder,
+              workspacePackages: ['a', 'b'],
+              useLocalTmpDirectory: true,
+            );
+            await createProject(
+              workspaceDir,
+              Pubspec('a', version: Version(1, 0, 0)),
+            );
+            await createProject(
+              workspaceDir,
+              Pubspec('b', version: Version(1, 0, 0)),
+            );
+
+            await runVersion(workspaceDir, 'a', 'minor');
+
+            expect(pubspecVersion(workspaceDir, 'a'), Version(1, 1, 0));
+            expect(pubspecVersion(workspaceDir, 'b'), Version(1, 1, 0));
+          },
+          platform: FakePlatform.fromPlatform(const LocalPlatform())
+            ..environment['MELOS_PACKAGES'] = 'a',
+        ),
+      );
+
+      test('onlyManualVersions rejects invalid arguments', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _workspaceConfigBuilder,
+          workspacePackages: ['a'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: TestLogger());
+
+        await expectLater(
+          melos.version(onlyManualVersions: true),
+          throwsArgumentError,
+        );
+        await expectLater(
+          melos.version(
+            onlyManualVersions: true,
+            manualVersions: {'a': ManualVersionChange(Version(2, 0, 0))},
+            packageFilters: PackageFilters(scope: [Glob('a')]),
+          ),
+          throwsArgumentError,
+        );
       });
     });
 

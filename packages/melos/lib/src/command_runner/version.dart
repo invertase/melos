@@ -2,13 +2,11 @@ import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:collection/collection.dart';
-import 'package:glob/glob.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 import '../commands/runner.dart';
 import '../common/utils.dart';
 import '../common/versioning.dart';
-import '../package.dart';
 import 'base.dart';
 
 /// Template variable that is replaced with versioned package info in commit
@@ -213,10 +211,13 @@ class VersionCommand extends MelosCommand {
       }
 
       return melos.version(
-        // We only want to version the specified package and not all packages
-        // that could be versioned.
-        packageFilters: PackageFilters(scope: [Glob(packageName)]),
+        global: global,
+        // Version only the specified package rather than every package with
+        // versionable commits. This is not done with a package filter, which
+        // would leave the rest of the workspace out of fixed versioning mode
+        // and count every other package as ignored.
         manualVersions: {packageName: versionChange},
+        onlyManualVersions: true,
         force: force,
         gitTag: tag,
         gitCommit: commit,

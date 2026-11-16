@@ -3,6 +3,12 @@ part of 'runner.dart';
 mixin _VersionMixin on _RunMixin {
   /// Version packages automatically based on the git history or with manually
   /// specified versions.
+  ///
+  /// With [onlyManualVersions], no package is versioned from its commits, only
+  /// through [manualVersions], which must not be empty. Package filters and the
+  /// `MELOS_PACKAGES` environment variable are not applied. Dependents and, in
+  /// fixed versioning mode, the rest of the workspace are still versioned with
+  /// the manually versioned packages.
   Future<void> version({
     GlobalOptions? global,
     PackageFilters? packageFilters,
@@ -25,6 +31,7 @@ mixin _VersionMixin on _RunMixin {
     bool? versionPrivatePackages,
     bool? smartDependents,
     Map<String, versioning.ManualVersionChange> manualVersions = const {},
+    bool onlyManualVersions = false,
   }) async {
     if (asPrerelease && asStableRelease) {
       throw ArgumentError('Cannot use both asPrerelease and asStableRelease.');
@@ -64,8 +71,22 @@ mixin _VersionMixin on _RunMixin {
       );
     }
 
+    if (onlyManualVersions) {
+      if (manualVersions.isEmpty) {
+        throw ArgumentError('onlyManualVersions requires manualVersions.');
+      }
+      if (packageFilters != null) {
+        throw ArgumentError(
+          'Cannot use packageFilters with onlyManualVersions.',
+        );
+      }
+    }
+
     final workspace = await createWorkspace(
       global: global,
+      // The manual versions name the packages to version, so MELOS_PACKAGES
+      // must not leave them, or the rest of a fixed versioning workspace, out.
+      scopeFromEnvironment: !onlyManualVersions,
       // We ignore `diff` package list filtering on the 'version' command as it
       // already filters it itself, filtering here would map dependent version
       // fail as it won't be aware of any packages that have been filtered out
@@ -104,6 +125,7 @@ mixin _VersionMixin on _RunMixin {
             versionConfig.versionPrivatePackages ??
             false,
         manualVersions: manualVersions,
+        onlyManualVersions: onlyManualVersions,
       );
     });
   }
@@ -131,6 +153,7 @@ mixin _VersionMixin on _RunMixin {
     String? dependentPreid,
     bool versionPrivatePackages = false,
     Map<String, versioning.ManualVersionChange> manualVersions = const {},
+    bool onlyManualVersions = false,
   }) async {
     final isSmartDependents =
         smartDependents ?? workspace.config.commands.version.smartDependents;
@@ -210,10 +233,11 @@ mixin _VersionMixin on _RunMixin {
         .whereType<Package>()
         .toSet();
     final packagesToAutoVersion = {
-      for (final package in workspace.filteredPackages.values)
-        if (!packagesToManuallyVersion.contains(package))
-          if (packagesWithVersionableCommits.contains(package.name))
-            if (!asStableRelease || !package.version.isPreRelease) package,
+      if (!onlyManualVersions)
+        for (final package in workspace.filteredPackages.values)
+          if (!packagesToManuallyVersion.contains(package))
+            if (packagesWithVersionableCommits.contains(package.name))
+              if (!asStableRelease || !package.version.isPreRelease) package,
     };
 
     // Remove packages that depend (directly or transitively) on an ignored
@@ -380,7 +404,7 @@ mixin _VersionMixin on _RunMixin {
     // change in the workspace.
     if (workspace.config.commands.version.mode == VersioningMode.fixed &&
         pendingPackageUpdates.isNotEmpty) {
-      if (!updateDependentsVersions) {
+      if (!updateDependentsVersions && !onlyManualVersions) {
         logger.warning(
           'All packages are versioned together in fixed versioning mode, so '
           'disabling dependent versioning has no effect.',

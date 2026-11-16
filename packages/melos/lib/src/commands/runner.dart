@@ -103,15 +103,20 @@ abstract class _Melos {
   MelosLogger get logger;
   MelosWorkspaceConfig get config;
 
+  /// Creates the workspace, scoped by [packageFilters] and, unless
+  /// [scopeFromEnvironment] is false, by the `MELOS_PACKAGES` environment
+  /// variable.
   Future<MelosWorkspace> createWorkspace({
     GlobalOptions? global,
     PackageFilters? packageFilters,
+    bool scopeFromEnvironment = true,
   }) async {
     var filterWithEnv = packageFilters;
 
-    if (currentPlatform.environment.containsKey(
-      EnvironmentVariableKey.melosPackages,
-    )) {
+    if (scopeFromEnvironment &&
+        currentPlatform.environment.containsKey(
+          EnvironmentVariableKey.melosPackages,
+        )) {
       // MELOS_PACKAGES environment variable is a comma delimited list of
       // package names - used to scope the `packageFilters` if it is present.
       // This can be user defined or can come from package selection in
