@@ -8,11 +8,13 @@ import 'package:melos/src/common/glob.dart';
 import 'package:melos/src/common/io.dart';
 import 'package:melos/src/common/utils.dart';
 import 'package:path/path.dart' as p;
+import 'package:platform/platform.dart' show FakePlatform, LocalPlatform;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 
 import '../matchers.dart';
+import '../mock_env.dart';
 import '../utils.dart';
 
 void main() {
@@ -79,6 +81,69 @@ ${'-' * terminalWidth}
         ),
       );
     });
+
+    test(
+      'sets the parent package variables for an example package',
+      withMockPlatform(
+        () async {
+          final workspaceDir = await createTemporaryWorkspace(
+            workspacePackages: ['a'],
+            withExamples: true,
+          );
+          final aDir = await createProject(
+            workspaceDir,
+            Pubspec('a', version: Version(1, 2, 3)),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec('a_example'),
+            path: p.join('packages', 'a', 'example'),
+          );
+
+          // A Dart script prints the variables, because `%VAR%` inside the
+          // command is not expanded by `cmd.exe /C %MELOS_SCRIPT%` on Windows.
+          final scriptPath = p.join(
+            createTestTempDir().path,
+            'print_parent.dart',
+          );
+          writeTextFile(scriptPath, r'''
+import 'dart:io';
+
+void main() {
+  final env = Platform.environment;
+  print(
+    'parent: ${env['MELOS_PARENT_PACKAGE_NAME']} '
+    '${env['MELOS_PARENT_PACKAGE_VERSION']} '
+    '${env['MELOS_PARENT_PACKAGE_PATH']}',
+  );
+}
+''');
+
+          final logger = TestLogger();
+          final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+            workspaceDir,
+          );
+          final melos = Melos(logger: logger, config: config);
+
+          await melos.exec(['dart', scriptPath], concurrency: 1);
+
+          final output = logger.output.normalizeLines();
+          expect(
+            output,
+            // Package paths are canonicalized, which lowercases them on
+            // Windows.
+            contains(
+              'a_example:\nparent: a 1.2.3 ${p.canonicalize(aDir.path)}\n',
+            ),
+          );
+          expect(output, contains('a:\nparent: null null null\n'));
+        },
+        // `melos test` sets MELOS_TEST, which makes `melos exec` drop the
+        // Melos variables.
+        platform: FakePlatform.fromPlatform(const LocalPlatform())
+          ..environment.remove('MELOS_TEST'),
+      ),
+    );
 
     group('concurrent processes', () {
       /// Use this file instead of running "exit 1" so the failure

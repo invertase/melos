@@ -1351,8 +1351,9 @@ class Package {
     );
   }
 
-  /// Whether this package is an example package.
-  bool get isExample => p.dirname(path).endsWith('example');
+  /// Whether this package is an example package, that is, whether its
+  /// directory name ends with `example`, like `my_package/example`.
+  bool get isExample => p.basename(path).endsWith('example');
 
   /// Returns whether this package is a Flutter app.
   ///
