@@ -133,6 +133,10 @@ syntax:
 melos version PACKAGE_NAME VERSION_CHANGE
 ```
 
+This form doesn't version other packages from their commits, ignores package
+filters, and doesn't bump the versions of dependents. For details, see
+[Version one package](/reference/commands/version#version-one-package).
+
 To manually version multiple packages, use the `--manual-version` (short `-V`)
 option:
 

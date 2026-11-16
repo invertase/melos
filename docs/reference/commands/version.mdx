@@ -16,6 +16,35 @@ For more information, see [Automated Releases](/guides/automated-releases).
 To release from a branch other than the default branch, such as a hot-fix
 branch, see [Releasing from Hot-fix Branches](/guides/hot-fix-releases).
 
+## Version one package
+
+To set the version of a single package regardless of its commits, pass the
+package name and a version change:
+
+```bash
+melos version PACKAGE_NAME VERSION_CHANGE
+```
+
+`VERSION_CHANGE` is `major`, `minor`, `patch`, `build` (increments the build
+number), or an exact version such as `1.2.3`.
+
+This form differs from `--manual-version`:
+
+- It doesn't version any other package from its commits, and it ignores
+  package filters. If the `MELOS_PACKAGES` environment variable is set, it must
+  include the package.
+- It doesn't bump the versions of dependents, as if you passed
+  `--no-dependent-versions`. Melos still updates their dependency constraints
+  unless you pass `--no-dependent-constraints`.
+- It ignores `--all`, `--prerelease`, `--graduate`, `--preid`,
+  `--dependent-preid`, and `--manual-version`.
+
+In [fixed versioning mode](#fixed-versioning-mode), every package moves to the
+new version.
+
+Use `--manual-version` instead to version several packages at once, or to
+version a private package together with `--all`.
+
 ## Fixed versioning mode
 
 By default, each package is versioned independently, based on the commits that

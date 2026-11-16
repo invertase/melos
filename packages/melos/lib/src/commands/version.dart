@@ -3,6 +3,10 @@ part of 'runner.dart';
 mixin _VersionMixin on _RunMixin {
   /// Version packages automatically based on the git history or with manually
   /// specified versions.
+  ///
+  /// With [onlyManualVersions], no package is versioned from its commits, only
+  /// through [manualVersions]. Dependents and, in fixed versioning mode, the
+  /// rest of the workspace are still versioned with them.
   Future<void> version({
     GlobalOptions? global,
     PackageFilters? packageFilters,
@@ -25,6 +29,7 @@ mixin _VersionMixin on _RunMixin {
     bool? versionPrivatePackages,
     bool? smartDependents,
     Map<String, versioning.ManualVersionChange> manualVersions = const {},
+    bool onlyManualVersions = false,
   }) async {
     if (asPrerelease && asStableRelease) {
       throw ArgumentError('Cannot use both asPrerelease and asStableRelease.');
@@ -104,6 +109,7 @@ mixin _VersionMixin on _RunMixin {
             versionConfig.versionPrivatePackages ??
             false,
         manualVersions: manualVersions,
+        onlyManualVersions: onlyManualVersions,
       );
     });
   }
@@ -131,6 +137,7 @@ mixin _VersionMixin on _RunMixin {
     String? dependentPreid,
     bool versionPrivatePackages = false,
     Map<String, versioning.ManualVersionChange> manualVersions = const {},
+    bool onlyManualVersions = false,
   }) async {
     final isSmartDependents =
         smartDependents ?? workspace.config.commands.version.smartDependents;
@@ -210,10 +217,11 @@ mixin _VersionMixin on _RunMixin {
         .whereType<Package>()
         .toSet();
     final packagesToAutoVersion = {
-      for (final package in workspace.filteredPackages.values)
-        if (!packagesToManuallyVersion.contains(package))
-          if (packagesWithVersionableCommits.contains(package.name))
-            if (!asStableRelease || !package.version.isPreRelease) package,
+      if (!onlyManualVersions)
+        for (final package in workspace.filteredPackages.values)
+          if (!packagesToManuallyVersion.contains(package))
+            if (packagesWithVersionableCommits.contains(package.name))
+              if (!asStableRelease || !package.version.isPreRelease) package,
     };
 
     // Remove packages that depend (directly or transitively) on an ignored
@@ -380,7 +388,7 @@ mixin _VersionMixin on _RunMixin {
     // change in the workspace.
     if (workspace.config.commands.version.mode == VersioningMode.fixed &&
         pendingPackageUpdates.isNotEmpty) {
-      if (!updateDependentsVersions) {
+      if (!updateDependentsVersions && !onlyManualVersions) {
         logger.warning(
           'All packages are versioned together in fixed versioning mode, so '
           'disabling dependent versioning has no effect.',
