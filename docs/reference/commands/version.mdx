@@ -31,8 +31,7 @@ number), or an exact version such as `1.2.3`.
 This form differs from `--manual-version`:
 
 - It doesn't version any other package from its commits, and it ignores
-  package filters. If the `MELOS_PACKAGES` environment variable is set, it must
-  include the package.
+  package filters and the `MELOS_PACKAGES` environment variable.
 - It doesn't bump the versions of dependents, as if you passed
   `--no-dependent-versions`. Melos still updates their dependency constraints
   unless you pass `--no-dependent-constraints`.

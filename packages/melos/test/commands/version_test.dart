@@ -2727,7 +2727,7 @@ dev_dependencies:
       );
 
       test(
-        'does not version the other packages selected by MELOS_PACKAGES',
+        'ignores MELOS_PACKAGES',
         withMockPlatform(
           () async {
             final workspaceDir = await createTemporaryWorkspace(
@@ -2754,9 +2754,66 @@ dev_dependencies:
             expect(pubspecVersion(workspaceDir, 'b'), Version(1, 0, 0));
           },
           platform: FakePlatform.fromPlatform(const LocalPlatform())
-            ..environment['MELOS_PACKAGES'] = 'a,b',
+            ..environment['MELOS_PACKAGES'] = 'b',
         ),
       );
+
+      test(
+        'bumps every package in fixed mode when MELOS_PACKAGES is set',
+        withMockPlatform(
+          () async {
+            final workspaceDir = await createTemporaryWorkspace(
+              configBuilder: _fixedModeWorkspaceConfigBuilder,
+              workspacePackages: ['a', 'b'],
+              useLocalTmpDirectory: true,
+            );
+            await createProject(
+              workspaceDir,
+              Pubspec('a', version: Version(1, 0, 0)),
+            );
+            await createProject(
+              workspaceDir,
+              Pubspec('b', version: Version(1, 0, 0)),
+            );
+
+            await runVersion(workspaceDir, 'a', 'minor');
+
+            expect(pubspecVersion(workspaceDir, 'a'), Version(1, 1, 0));
+            expect(pubspecVersion(workspaceDir, 'b'), Version(1, 1, 0));
+          },
+          platform: FakePlatform.fromPlatform(const LocalPlatform())
+            ..environment['MELOS_PACKAGES'] = 'a',
+        ),
+      );
+
+      test('onlyManualVersions rejects invalid arguments', () async {
+        final workspaceDir = await createTemporaryWorkspace(
+          configBuilder: _workspaceConfigBuilder,
+          workspacePackages: ['a'],
+          useLocalTmpDirectory: true,
+        );
+        await createProject(
+          workspaceDir,
+          Pubspec('a', version: Version(1, 0, 0)),
+        );
+        final config = await MelosWorkspaceConfig.fromWorkspaceRoot(
+          workspaceDir,
+        );
+        final melos = Melos(config: config, logger: TestLogger());
+
+        await expectLater(
+          melos.version(onlyManualVersions: true),
+          throwsArgumentError,
+        );
+        await expectLater(
+          melos.version(
+            onlyManualVersions: true,
+            manualVersions: {'a': ManualVersionChange(Version(2, 0, 0))},
+            packageFilters: PackageFilters(scope: [Glob('a')]),
+          ),
+          throwsArgumentError,
+        );
+      });
     });
 
     group('sign off', () {

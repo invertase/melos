@@ -214,9 +214,8 @@ class VersionCommand extends MelosCommand {
         global: global,
         // Version only the specified package rather than every package with
         // versionable commits. This is not done with a package filter, which
-        // would leave the rest of the workspace out of fixed versioning mode,
-        // count every other package as ignored, and be replaced by
-        // MELOS_PACKAGES.
+        // would leave the rest of the workspace out of fixed versioning mode
+        // and count every other package as ignored.
         manualVersions: {packageName: versionChange},
         onlyManualVersions: true,
         force: force,

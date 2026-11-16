@@ -5,8 +5,10 @@ mixin _VersionMixin on _RunMixin {
   /// specified versions.
   ///
   /// With [onlyManualVersions], no package is versioned from its commits, only
-  /// through [manualVersions]. Dependents and, in fixed versioning mode, the
-  /// rest of the workspace are still versioned with them.
+  /// through [manualVersions], which must not be empty. Package filters and the
+  /// `MELOS_PACKAGES` environment variable are not applied. Dependents and, in
+  /// fixed versioning mode, the rest of the workspace are still versioned with
+  /// the manually versioned packages.
   Future<void> version({
     GlobalOptions? global,
     PackageFilters? packageFilters,
@@ -69,8 +71,22 @@ mixin _VersionMixin on _RunMixin {
       );
     }
 
+    if (onlyManualVersions) {
+      if (manualVersions.isEmpty) {
+        throw ArgumentError('onlyManualVersions requires manualVersions.');
+      }
+      if (packageFilters != null) {
+        throw ArgumentError(
+          'Cannot use packageFilters with onlyManualVersions.',
+        );
+      }
+    }
+
     final workspace = await createWorkspace(
       global: global,
+      // The manual versions name the packages to version, so MELOS_PACKAGES
+      // must not leave them, or the rest of a fixed versioning workspace, out.
+      scopeFromEnvironment: !onlyManualVersions,
       // We ignore `diff` package list filtering on the 'version' command as it
       // already filters it itself, filtering here would map dependent version
       // fail as it won't be aware of any packages that have been filtered out
