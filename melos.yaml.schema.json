@@ -207,7 +207,7 @@
           "properties": {
             "runPubGetInParallel": {
               "type": "boolean",
-              "description": "Whether to run `pub get` in parallel during bootstrapping."
+              "description": "Has no effect. Bootstrap runs a single `pub get` at the workspace root."
             },
             "runPubGetOffline": {
               "type": "boolean",

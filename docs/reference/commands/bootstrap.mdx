@@ -71,10 +71,13 @@ melos bootstrap --diff="main"
 - `--no-example` excludes Flutter package example dependencies
   (see [dart-lang/pub#3856](https://github.com/dart-lang/pub/pull/3856)).
   - Runs `pub get` with the `--no-example` flag.
-- `--enforce-lockfile` enforces versions from `.lock` files.
-  - Check `.lock` files into the repository, or the command may fail.
-- `--no-enforce-lockfile` ignores versions from `.lock` files when
-  `enforce-lockfile` is set in the root `pubspec.yaml` file.
+- `--enforce-lockfile` enforces the versions in the workspace `pubspec.lock`
+  file by running `pub get` with the `--enforce-lockfile` flag.
+  - If the workspace root has no `pubspec.lock` file, Melos runs `pub get`
+    without the flag, so no versions are enforced. Check `pubspec.lock` into
+    the repository.
+- `--no-enforce-lockfile` turns enforcement off when `enforceLockfile` is set
+  in the root `pubspec.yaml` file.
 - `--offline` resolves dependencies from the local cache only by running
   `pub get` with the `--offline` flag.
 - `--no-pub` skips `pub get`. Bootstrap still applies shared dependencies,

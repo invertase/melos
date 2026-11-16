@@ -204,7 +204,8 @@ melos:
 
 `bootstrap`, `clean`, `version` and `publish` support `pre` and `post`.
 `version` additionally supports `preCommit`. The publish hooks also run on a
-dry run; check `MELOS_PUBLISH_DRY_RUN` to tell the two apart.
+dry run and can't tell it apart from a real publish: `MELOS_PUBLISH_DRY_RUN` is
+only set for `dart pub publish`.
 
 ## Environment variables
 

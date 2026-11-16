@@ -41,10 +41,12 @@ steps:
 
 1. Apply [filters](/filters) to the list of workspace packages.
 2. Load the commit history for each package. If the `--diff` option is
-   specified, Melos loads only the specified commit. Otherwise, Melos loads
-   all commits after the last version tag. Examples include `package_name-v1.0.0`,
-   or `v1.0.0` for the root package when `useRootAsPackage` is enabled, and for
-   all packages when `workspaceTag` is enabled in fixed versioning mode.
+   specified, Melos loads only the commits in that range. A single commit or
+   tag, such as `--diff=v1.0.0`, is read as the range from it to `HEAD`
+   (`v1.0.0...HEAD`). Otherwise, Melos loads all commits after the last version
+   tag. Examples include `package_name-v1.0.0`, or `v1.0.0` for the root package
+   when `useRootAsPackage` is enabled, and for all packages when `workspaceTag`
+   is enabled in fixed versioning mode.
 3. Parse commit messages as Conventional Commits. If a commit message does not
    follow the Conventional Commits specification, Melos ignores it.
 4. Filter out commits with types that don't trigger a version bump. For example,
@@ -144,9 +146,12 @@ melos version -V PACKAGE_1_NAME:VERSION_CHANGE -V PACKAGE_2_NAME:VERSION_CHANGE
 ```
 
 When you use `--manual-version`, Melos still runs automatic versioning for other
-packages. You can mix automatic and manual versioning. Pass `--ignore '*'` to
-exclude all packages from automatic versioning. For more information, see
-[`--ignore`](/filters#--ignore).
+packages. You can mix automatic and manual versioning. To version only the
+packages you name, also pass [`--scope`](/filters#--scope) for each of them.
+Package filters apply to `--manual-version` too, so a filter that excludes every
+package, such as `--ignore '*'`, leaves nothing to version. Melos also skips a
+package that depends on a package outside the filters with unreleased changes,
+to avoid a broken release.
 
 ### Dependents versioning
 
@@ -158,8 +163,9 @@ If Melos is not already versioning that dependent, it creates a `patch`
 version bump for it. Pass `--no-dependent-versions` to disable dependent version
 bumps.
 
-Melos does not apply the specified package filters to dependents of versioned
-packages.
+Package filters other than `--diff` also apply to dependents: Melos bumps the
+version of a dependent only if the dependent passes the filters. Melos still
+updates the dependency constraints of dependents that the filters exclude.
 
 ### Commit and tag version changes
 

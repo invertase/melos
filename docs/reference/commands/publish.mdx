@@ -117,6 +117,6 @@ melos:
 
 The `pre` hook runs before `melos publish`. The `post` hook runs after
 `melos publish` finishes. Hooks run one time per publish, even when multiple
-packages are published. They also run during a dry run.
-You can detect a dry run by checking the `MELOS_PUBLISH_DRY_RUN`
-environment variable.
+packages are published. They also run during a dry run, and Melos doesn't tell
+them which mode it is in: `MELOS_PUBLISH_DRY_RUN` is only set for the
+`dart pub publish` command that Melos runs in each package.

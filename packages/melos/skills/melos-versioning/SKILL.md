@@ -69,17 +69,20 @@ melos version --smart-dependents           # Only bump dependents whose constrai
 melos version --group-commits              # Group changelog entries by type
 melos version -m "chore(release): publish {new_package_versions}"
 
-# Manual versioning, mixable with automatic versioning of the other packages
-melos version my_package minor
+# Manual versioning
+melos version my_package minor             # Only this package
 melos version my_package 2.0.0
-melos version -V my_package:patch -V other_package:1.0.0
-melos version --ignore '*' -V my_package:major   # Only the manual one
+melos version -V my_package:patch -V other_package:1.0.0   # Others still automatic
+melos version --scope my_package -V my_package:major       # Only the manual one
 
 melos publish                              # Dry run
 melos publish --no-dry-run --yes           # Publish
 melos publish --no-dry-run --git-tag-version   # Also create missing tags
 melos publish --no-dry-run --server https://pub.example.dev
 ```
+
+With `--scope`, a manually versioned package is skipped if it depends on a
+package outside the filters that has unreleased changes.
 
 The first release of a repository that did not use Conventional Commits
 before should be a manual version, so that the bump covers the unparsable
@@ -91,8 +94,9 @@ When a package is versioned, the constraints on it in the other workspace
 packages are updated (`--no-dependent-constraints` disables it) and those
 dependents get a patch bump with a changelog entry
 (`--no-dependent-versions` disables it). `smartDependents: true` skips
-dependents whose constraint already allows the new version. Dependents are
-not filtered by the package filters.
+dependents whose constraint already allows the new version. Package filters
+other than `--diff` also apply to dependents: a dependent outside them keeps
+its version, but its constraints are still updated.
 
 ## Configuration
 

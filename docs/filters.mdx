@@ -7,10 +7,19 @@ Melos commands support the following global filters:
 
 ## --no-private
 
-Excludes private packages (`publish_to: none`). They are included by default.
+Excludes private packages (`publish_to: none`, or no `version`). They are
+included by default.
 
 ```bash
 melos bootstrap --no-private
+```
+
+## --private
+
+Includes only private packages (`publish_to: none`, or no `version`).
+
+```bash
+melos exec --private -- dart test
 ```
 
 ## --published
