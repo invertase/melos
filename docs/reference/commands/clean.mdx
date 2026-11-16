@@ -12,15 +12,18 @@ and generated Melos IDE files.
 melos clean
 ```
 
-These files include:
+Melos deletes the following files and directories:
 
 - `{packageRoot}/.packages`
 - `{packageRoot}/.flutter-plugins`
 - `{packageRoot}/.flutter-plugins-dependencies`
-- `{packageRoot}/.dart_tool/package_config.json`
-- `{packageRoot}/.dart_tool/package_config_subset`
-- `{packageRoot}/.dart_tool/version`
+- `{packageRoot}/.dart_tool` (the whole directory)
 - `{workspaceRoot}/.idea/runConfigurations/melos_*.xml`
+
+Melos also removes the dependency overrides that it manages from
+`pubspec_overrides.yaml`, at the workspace root and in each package. Entries
+that you added yourself are kept, and the file is deleted if no entries are
+left.
 
 To remove temporary files and reinstall dependencies, run:
 

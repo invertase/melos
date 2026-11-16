@@ -69,11 +69,11 @@ melos version --smart-dependents           # Only bump dependents whose constrai
 melos version --group-commits              # Group changelog entries by type
 melos version -m "chore(release): publish {new_package_versions}"
 
-# Manual versioning, mixable with automatic versioning of the other packages
-melos version my_package minor
+# Manual versioning
+melos version my_package minor             # Only this package
 melos version my_package 2.0.0
-melos version -V my_package:patch -V other_package:1.0.0
-melos version --ignore '*' -V my_package:major   # Only the manual one
+melos version -V my_package:patch -V other_package:1.0.0   # Others still automatic
+melos version --scope my_package -V my_package:major       # Only the manual one
 
 melos publish                              # Dry run
 melos publish --no-dry-run --yes           # Publish

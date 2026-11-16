@@ -418,6 +418,10 @@ invocation does rather than how the command behaves are not configurable: the
 An option passed on the command line always takes precedence over its
 configured default.
 
+The `bootstrap`, `clean`, `version`, and `publish` commands also take a `hooks`
+key, which configures scripts that run before and after the command. For more
+information, see [Hooks](/configuration/scripts#hooks).
+
 ## command/bootstrap
 
 Configuration for the `bootstrap` command.
@@ -485,9 +489,9 @@ melos:
 
 ### runPubGetInParallel
 
-Whether to run `pub get` in parallel during bootstrapping.
-
-The default is `true`.
+This option has no effect. Bootstrap runs a single `pub get` at the workspace
+root, so there is nothing to run in parallel. Melos still accepts the option so
+that existing configurations keep working.
 
 ### runPubGetOffline
 
@@ -504,6 +508,9 @@ specified in the `pubspec.lock` file.
 
 This is useful in CI environments or when you want every environment and
 machine to use the same package versions.
+
+Melos only passes `--enforce-lockfile` when the workspace root has a
+`pubspec.lock` file. Without one, `pub get` runs without the option.
 
 The default is `false`.
 
@@ -953,6 +960,23 @@ Whether `--no-pub` is passed to `flutter analyze`, to skip the implicit
 `pub get`. It has no effect on `dart analyze`, which never runs `pub get`.
 
 The default is `false`.
+
+## command/clean
+
+Configuration for the `clean` command.
+
+### hooks
+
+[Lifecycle hooks](/configuration/scripts#hooks) that run before (`pre`) and
+after (`post`) `melos clean`.
+
+```yaml
+melos:
+  command:
+    clean:
+      hooks:
+        post: melos exec --flutter -- flutter clean
+```
 
 ## command/exec
 

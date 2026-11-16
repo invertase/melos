@@ -77,8 +77,20 @@ script (when using `melos exec`).
 
 ### `MELOS_PUBLISH_DRY_RUN`
 
-Whether the current publish is a dry run or not. This variable is `true` when
-running `melos publish --dry-run` and `false` otherwise.
+Whether the current publish is a dry run. This variable is `true` for a dry
+run, which is the default, and `false` when the publish isn't a dry run
+(`--no-dry-run`, or `dryRun: false` in
+[`command/publish`](/configuration/overview#dryrun)). Melos sets it only for the
+`dart pub publish` command that it runs in each package. Lifecycle hooks don't
+receive it.
+
+### `MELOS_SCRIPT`
+
+The command that Melos is running, as a single string. Melos sets it for most
+commands it starts, such as scripts, `melos exec` commands, and lifecycle
+hooks, and runs the command through the shell with `eval "$MELOS_SCRIPT"`
+(`%MELOS_SCRIPT%` on Windows). The individual `steps` of a script don't get
+it.
 
 ### `MELOS_TERMINAL_WIDTH`
 
