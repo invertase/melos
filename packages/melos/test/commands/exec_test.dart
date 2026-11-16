@@ -87,8 +87,13 @@ ${'-' * terminalWidth}
       withMockPlatform(
         () async {
           final workspaceDir = await createTemporaryWorkspace(
-            workspacePackages: ['a'],
-            withExamples: true,
+            workspacePackages: [
+              'packages/a',
+              'packages/a/example',
+              'packages/a/example/app',
+              'example',
+            ],
+            prependPackages: false,
           );
           final aDir = await createProject(
             workspaceDir,
@@ -98,6 +103,18 @@ ${'-' * terminalWidth}
             workspaceDir,
             Pubspec('a_example'),
             path: p.join('packages', 'a', 'example'),
+          );
+          await createProject(
+            workspaceDir,
+            Pubspec('a_example_app'),
+            path: p.join('packages', 'a', 'example', 'app'),
+          );
+          // Its parent directory is the workspace root, which is not a
+          // package.
+          await createProject(
+            workspaceDir,
+            Pubspec('top_example'),
+            path: 'example',
           );
 
           // A Dart script prints the variables, because `%VAR%` inside the
@@ -137,9 +154,12 @@ void main() {
             ),
           );
           expect(output, contains('a:\nparent: null null null\n'));
+          expect(output, contains('a_example_app:\nparent: null null null\n'));
+          expect(output, contains('top_example:\nparent: null null null\n'));
         },
-        // `melos test` sets MELOS_TEST, which makes `melos exec` drop the
-        // Melos variables.
+        // `melos exec` drops the Melos variables when MELOS_TEST is set, so
+        // remove it in case the tests run with it, as in
+        // `MELOS_TEST=true dart test`.
         platform: FakePlatform.fromPlatform(const LocalPlatform())
           ..environment.remove('MELOS_TEST'),
       ),

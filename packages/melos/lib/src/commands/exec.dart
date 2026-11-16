@@ -89,24 +89,20 @@ mixin _ExecMixin on _Melos {
         EnvironmentVariableKey.path: workspace.childProcessPath!,
     };
 
-    if (package.isExample) {
-      final exampleParentPackagePath = p.normalize('${package.path}/..');
-      final exampleParentPubspecPath = p.normalize(
-        '$exampleParentPackagePath/pubspec.yaml',
-      );
-
-      if (fileExists(exampleParentPubspecPath)) {
-        final exampleParentPackage = Pubspec.parse(
-          await readTextFileAsync(exampleParentPubspecPath),
-        );
-
-        environment[EnvironmentVariableKey.melosParentPackageName] =
-            exampleParentPackage.name;
-        environment[EnvironmentVariableKey.melosParentPackageVersion] =
-            (exampleParentPackage.version ?? Version.none).toString();
-        environment[EnvironmentVariableKey.melosParentPackagePath] =
-            exampleParentPackagePath;
-      }
+    // The parent must be a workspace package, so that, for example, a
+    // top-level `example` package doesn't get the workspace root as parent.
+    final exampleParentPackage = package.isExample
+        ? workspace.allPackages.values.firstWhereOrNull(
+            (other) => p.equals(other.path, p.dirname(package.path)),
+          )
+        : null;
+    if (exampleParentPackage != null) {
+      environment[EnvironmentVariableKey.melosParentPackageName] =
+          exampleParentPackage.name;
+      environment[EnvironmentVariableKey.melosParentPackageVersion] =
+          exampleParentPackage.version.toString();
+      environment[EnvironmentVariableKey.melosParentPackagePath] =
+          exampleParentPackage.path;
     }
     if (environment.containsKey(EnvironmentVariableKey.melosTest)) {
       EnvironmentVariableKey.allMelosKeys().forEach(environment.remove);
