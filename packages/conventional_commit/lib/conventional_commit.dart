@@ -120,13 +120,16 @@ class ConventionalCommit {
         .toList();
 
     // We assume that anything left over in the commit message after removing
-    // the header and footers is the body. This is a quick way to support
-    // multi-paragraph multi-line bodies.
-    String? body = commitWithoutHeader;
-    for (final footer in footers) {
-      body = body!.replaceAll(footer, '');
-    }
-    body = body!.trim();
+    // the header and footer lines is the body. This is a quick way to support
+    // multi-paragraph multi-line bodies. Footer lines are removed by matching
+    // whole lines rather than by substring replacement, so that body prose
+    // which happens to contain the same text as a footer is not corrupted.
+    final footerLines = footers.toSet();
+    String? body = commitWithoutHeader
+        .split('\n')
+        .where((line) => !footerLines.contains(line.trim()))
+        .join('\n')
+        .trim();
     if (body.isEmpty) {
       // Should be null if no body specified, or empty in this case.
       body = null;

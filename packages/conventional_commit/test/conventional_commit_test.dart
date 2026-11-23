@@ -413,6 +413,25 @@ void main() {
       );
     });
 
+    test('body is not corrupted when it contains text matching a footer', () {
+      const commitMessage = '''
+fix: resolve timeout
+
+The old Refs #123 approach was wrong and needed a rewrite.
+
+Refs #123
+''';
+      final commit = ConventionalCommit.tryParse(commitMessage)!;
+      // The footer line should be extracted.
+      expect(commit.footers, equals(['Refs #123']));
+      // The inline occurrence of "Refs #123" inside the body paragraph must be
+      // preserved; only the footer line should be stripped from the body.
+      expect(
+        commit.body,
+        equals('The old Refs #123 approach was wrong and needed a rewrite.'),
+      );
+    });
+
     test('footers', () {
       // With a multi-line/paragraph body.
       final commitWithBodyParsed = ConventionalCommit.tryParse(
